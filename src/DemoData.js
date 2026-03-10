@@ -94,7 +94,8 @@ export const MOCK_MESSAGES = [
         text: 'Hello Sophie, are you available tomorrow at 4 PM?',
         time: '2:32 PM',
         status: 'unread',
-        conflict: true
+        conflict: true,
+        lang: 'en'
     },
     {
         id: 2,
@@ -102,7 +103,8 @@ export const MOCK_MESSAGES = [
         from: '+44 7700 900456',
         text: 'Hi, what are your rates for 2 hours?',
         time: '2:15 PM',
-        status: 'read'
+        status: 'read',
+        lang: 'en'
     },
     // Bella's Messages
     {
@@ -111,7 +113,8 @@ export const MOCK_MESSAGES = [
         from: '+44 7700 900789',
         text: 'Bella! Long time no see. Are you in Manchester tonight?',
         time: '3:05 PM',
-        status: 'unread'
+        status: 'unread',
+        lang: 'en'
     },
     {
         id: 4,
@@ -119,7 +122,8 @@ export const MOCK_MESSAGES = [
         from: '+44 7700 900888',
         text: 'New booking request for weekend.',
         time: '12:40 PM',
-        status: 'unread'
+        status: 'unread',
+        lang: 'en'
     },
     // Chloe's Messages
     {
@@ -128,7 +132,8 @@ export const MOCK_MESSAGES = [
         from: '+44 7700 900999',
         text: 'Hey Chloe, when is your next Birmingham availability?',
         time: 'Yesterday',
-        status: 'unread'
+        status: 'unread',
+        lang: 'en'
     },
     // Elena's Messages
     {
@@ -137,7 +142,8 @@ export const MOCK_MESSAGES = [
         from: '+1 212 555 0101',
         text: 'Elena, is there availability for a shoot tomorrow?',
         time: '1:00 PM',
-        status: 'unread'
+        status: 'unread',
+        lang: 'en'
     }
 ];
 

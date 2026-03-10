@@ -69,6 +69,7 @@ function App() {
   // Simulation Context
   const [activeClient, setActiveClient] = useState(MOCK_CLIENTS[0]);
   const [activeOperator, setActiveOperator] = useState(MOCK_OPERATORS[0]);
+  const [clientNotes, setClientNotes] = useState({});
 
   const handleLogin = (user) => {
     setActiveOperator(user);
@@ -171,7 +172,9 @@ function App() {
 
   const handleSendMessage = (text = messageValue) => {
     if (!text.trim()) return;
-    setSentMessages(prev => [...prev, { id: Date.now(), text, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
+    const targetLang = selectedChat?.lang || 'en';
+    const isTranslated = lang !== targetLang;
+    setSentMessages(prev => [...prev, { id: Date.now(), text, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), translated: isTranslated ? targetLang : null }]);
     setMessageValue('');
   };
 
@@ -200,6 +203,25 @@ function App() {
 
   const endCall = () => setActiveCall(null);
   const formatTime = (s) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
+
+  const getSmartReplies = (chatText, appLang) => {
+    if (!chatText) return [];
+    const lowerText = chatText.toLowerCase();
+    if (lowerText.includes('tomorrow') || lowerText.includes('zítra')) {
+      return appLang === 'cz' ? ["Zítra mám čas od 14:00.", "Zítřek je plný, co takhle pozítří?", "Ano, zítra se můžeme vidět."] : ["I'm free from 2 PM tomorrow.", "Tomorrow is fully booked, how about the day after?", "Yes, we can meet tomorrow."];
+    }
+    if (lowerText.includes('rate') || lowerText.includes('cena')) {
+      return appLang === 'cz' ? ["Moje sazba je £200/h.", "Nabízím i delší schůzky za zvýhodněnou cenu.", "Můžeme se dohodnout, napiš mi víc."] : ["My rate is £200/h.", "I also offer longer bookings at a discount.", "We can discuss it."];
+    }
+    if (lowerText.includes('tonight') || lowerText.includes('dnes')) {
+      return appLang === 'cz' ? ["Dnes večer mám volno od 20:00.", "Dnešek mám bohužel už plný.", "Zavoláš mi a domluvíme se?"] : ["I'm free tonight from 8 PM.", "I'm fully booked for tonight, sorry.", "Can you call me to arrange?"];
+    }
+    return appLang === 'cz' ? ["Ahoj! Jsem tu, hodil by se ti čas v 16:00?", "Ráda si popovídám víc. Zavoláš mi?"] : ["Hey! I'm around, would 4pm work?", "I'd love to chat more. Call me?"];
+  };
+
+  const currentSmartReplies = useMemo(() => {
+    return selectedChat ? getSmartReplies(selectedChat.text, lang) : [];
+  }, [selectedChat, lang]);
 
   if (!isLoggedIn) {
     return <LoginScreen onLogin={handleLogin} lang={lang} setLang={setLang} t={t} />;
@@ -372,33 +394,67 @@ function App() {
               </div>
             </div>
 
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.1)' }}>
-              {selectedChat ? (
-                <>
-                  <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-color)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><div className="avatar-circle"><Users color="var(--accent-color)" size={24} /></div><div><div style={{ fontWeight: '700', fontSize: '1.1rem' }}>{selectedChat.from}</div><div style={{ fontSize: '0.8rem', color: 'var(--success-color)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Shield size={12} /> {t('secureConnection')}</div></div></div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><button onClick={startCall} className="status-badge clickable"><Signal size={16} /> {t('voiceCall')}</button><MoreVertical size={22} color="var(--text-secondary)" cursor="pointer" /></div>
-                  </div>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'row' }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.1)' }}>
+                {selectedChat ? (
+                  <>
+                    <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-color)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><div className="avatar-circle"><Users color="var(--accent-color)" size={24} /></div><div><div style={{ fontWeight: '700', fontSize: '1.1rem' }}>{selectedChat.from}</div><div style={{ fontSize: '0.8rem', color: 'var(--success-color)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Shield size={12} /> {t('secureConnection')}</div></div></div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><button onClick={startCall} className="status-badge pulse-call-btn" style={{ fontWeight: '700', color: 'var(--accent-color)', cursor: 'pointer' }}><Signal size={16} /> {t('voiceCall')}</button><MoreVertical size={22} color="var(--text-secondary)" cursor="pointer" /></div>
+                    </div>
 
-                  <div style={{ flex: 1, padding: '2.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    <div className="message-bubble-in">{selectedChat.text}</div>
-                    {sentMessages.map(m => <div key={m.id} className="message-bubble-out">{m.text}</div>)}
-                  </div>
-
-                  <div style={{ padding: '1.5rem 2rem', background: 'rgba(5,7,10,0.4)', borderTop: '1px solid var(--card-border)', marginBottom: '4rem' }}>
-                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', fontSize: '0.75rem', fontWeight: '800', borderRight: '1px solid var(--card-border)', paddingRight: '1rem', whiteSpace: 'nowrap' }}><Sparkles size={14} /> {t('aiSuggestions')}</div>
-                      {MOCK_SMART_REPLIES[lang].map(reply => (
-                        <button key={reply.id} onClick={() => handleSendMessage(reply.text)} className="suggestion-chip">{reply.text}</button>
+                    <div style={{ flex: 1, padding: '2.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                      <div className="message-bubble-in">{selectedChat.text}</div>
+                      {sentMessages.map(m => (
+                        <div key={m.id} style={{ alignSelf: 'flex-end', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                          <div className="message-bubble-out">{m.text}</div>
+                          {m.translated && (
+                            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                              <Globe size={10} color="var(--text-secondary)" /> {t('translatedTo')} {m.translated.toUpperCase()}
+                            </div>
+                          )}
+                        </div>
                       ))}
                     </div>
-                    <div style={{ display: 'flex', gap: '1.25rem' }}>
-                      <input type="text" value={messageValue} onChange={(e) => setMessageValue(e.target.value)} placeholder={t('typeResponse')} style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '1.25rem', borderRadius: '16px', color: 'white' }} />
-                      <button onClick={() => handleSendMessage()} style={{ background: 'var(--accent-color)', border: 'none', width: '60px', height: '60px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 5px 15px var(--accent-glow)' }}><Send size={24} color="white" /></button>
+
+                    <div style={{ padding: '1.5rem 2rem', background: 'rgba(5,7,10,0.4)', borderTop: '1px solid var(--card-border)', marginBottom: '4rem' }}>
+                      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', fontSize: '0.75rem', fontWeight: '800', borderRight: '1px solid var(--card-border)', paddingRight: '1rem', whiteSpace: 'nowrap' }}><Sparkles size={14} /> {t('aiSuggestions')}</div>
+                        {currentSmartReplies.map((replyText, idx) => (
+                          <button key={idx} onClick={() => handleSendMessage(replyText)} className="suggestion-chip">{replyText}</button>
+                        ))}
+                      </div>
+                      <div style={{ display: 'flex', gap: '1.25rem' }}>
+                        <input type="text" value={messageValue} onChange={(e) => setMessageValue(e.target.value)} placeholder={t('typeResponse')} style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '1.25rem', borderRadius: '16px', color: 'white' }} />
+                        <button onClick={() => handleSendMessage()} style={{ background: 'var(--accent-color)', border: 'none', width: '60px', height: '60px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 5px 15px var(--accent-glow)' }}><Send size={24} color="white" /></button>
+                      </div>
                     </div>
+                  </>
+                ) : <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ textAlign: 'center' }}><MessageSquare size={64} style={{ marginBottom: '1.5rem', opacity: 0.2 }} /><h3>Select a conversation</h3></div></div>}
+              </div>
+
+              {selectedChat && (
+                <div className="notes-panel-container" style={{ padding: '2rem 1.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                    <FileText size={20} color="var(--accent-color)" />
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>{t('internalNotes')}</h3>
                   </div>
-                </>
-              ) : <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ textAlign: 'center' }}><MessageSquare size={64} style={{ marginBottom: '1.5rem', opacity: 0.2 }} /><h3>Select a conversation</h3></div></div>}
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1rem', fontWeight: '600' }}>
+                    {selectedChat.from}
+                  </div>
+                  <textarea
+                    className="note-input"
+                    placeholder={t('notesPlaceholder')}
+                    value={clientNotes[selectedChat.from] || ''}
+                    onChange={(e) => setClientNotes(prev => ({ ...prev, [selectedChat.from]: e.target.value }))}
+                    style={{ flex: 1 }}
+                  />
+                  <div style={{ marginTop: '1rem', fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                    <Shield size={14} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
+                    Notes are end-to-end encrypted and shared only within the active operator group.
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -40,6 +40,9 @@ export const TRANSLATIONS = {
         loginError: 'Invalid credentials. Access denied.',
         quickLogin: 'Quick Demo Access',
         logout: 'Log Out System',
+        internalNotes: 'Internal Notes',
+        notesPlaceholder: 'Add private notes for this client...',
+        translatedTo: 'Translated to',
     },
     cz: {
         logo: 'NEXUS',
@@ -82,5 +85,8 @@ export const TRANSLATIONS = {
         loginError: 'Neplatné údaje. Přístup zamítnut.',
         quickLogin: 'Rychlý demo přístup',
         logout: 'Odhlásit ze systému',
+        internalNotes: 'Interní poznámky',
+        notesPlaceholder: 'Přidat soukromou poznámku k tomuto klientovi...',
+        translatedTo: 'Přeloženo do',
     }
 };
