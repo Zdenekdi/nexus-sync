@@ -226,6 +226,37 @@ function App() {
           ))}
         </div>
 
+        {/* Profile (Girl) Switcher */}
+        <div style={{ marginTop: '2.5rem', flex: 1 }}>
+          <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.1em' }}>MY ASSIGNED GIRLS</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+            {myProfiles.map(p => {
+              const unread = getUnreadForProfile(p.id);
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => {
+                    setActiveProfile(p);
+                    setActiveTab('inbox');
+                    setSelectedChatId(null);
+                  }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', border: '1px solid',
+                    borderRadius: '10px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s',
+                    background: activeProfile?.id === p.id ? 'rgba(255,255,255,0.05)' : 'transparent',
+                    borderColor: activeProfile?.id === p.id ? 'var(--accent-color)' : 'transparent',
+                    position: 'relative'
+                  }}
+                >
+                  <div style={{ width: '8px', height: '8px', background: p.status === 'online' ? 'var(--success-color)' : 'var(--text-secondary)', borderRadius: '50%' }}></div>
+                  <span style={{ fontSize: '0.85rem', fontWeight: activeProfile?.id === p.id ? '700' : '500', color: activeProfile?.id === p.id ? 'white' : 'var(--text-secondary)' }}>{p.name}</span>
+                  {unread > 0 && <div style={{ marginLeft: 'auto', background: 'var(--error-color)', color: 'white', fontSize: '0.6rem', padding: '1px 5px', borderRadius: '4px', fontWeight: '900' }}>{unread}</div>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div style={{ marginTop: 'auto', marginBottom: '4rem' }}>
           <div className="glass-card" style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderColor: 'var(--card-border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
