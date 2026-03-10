@@ -1,0 +1,424 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  Users, Activity, Shield, RefreshCw, ExternalLink,
+  MessageSquare, LayoutDashboard, Settings, PieChart,
+  Send, MoreVertical, CheckCheck, Play, Fingerprint,
+  Globe, Cpu, Zap, Signal, Calendar, AlertTriangle, Clock, Search, LogOut,
+  TrendingUp, DollarSign, BarChart3, Bell, Lock, Smartphone, Phone, X, Check, FileText, User, Sparkles, Building2, ChevronDown
+} from 'lucide-react';
+import { MOCK_PROFILES, MOCK_MESSAGES, MOCK_STATS, MOCK_CALENDAR, MOCK_CHART_DATA, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_SMART_REPLIES, MOCK_CLIENTS, MOCK_OPERATORS } from './DemoData';
+import { TRANSLATIONS } from './translations';
+
+function App() {
+  const [lang, setLang] = useState('cz');
+  const [activeTab, setActiveTab] = useState('inbox');
+
+  // Multi-Tenancy State
+  const [activeClient, setActiveClient] = useState(MOCK_CLIENTS[0]);
+  const [activeOperator, setActiveOperator] = useState(MOCK_OPERATORS[0]);
+
+  // Current Profile Context
+  const [activeProfile, setActiveProfile] = useState(null);
+  const [selectedChatId, setSelectedChatId] = useState(null);
+
+  const [messageValue, setMessageValue] = useState('');
+  const [sentMessages, setSentMessages] = useState([]);
+  const [activeCall, setActiveCall] = useState(null);
+  const [incomingCall, setIncomingCall] = useState(null);
+  const [callTime, setCallTime] = useState(0);
+
+  const t = (key) => TRANSLATIONS[lang][key] || key;
+
+  // Filter operators based on active client
+  const availableOperators = useMemo(() =>
+    MOCK_OPERATORS.filter(op => op.clientId === activeClient.id),
+    [activeClient.id]);
+
+  // Filter profiles based on active client AND assigned profiles of the operator
+  const availableProfiles = useMemo(() => {
+    return MOCK_PROFILES.filter(profile =>
+      profile.clientId === activeClient.id &&
+      activeOperator.assignedProfiles.includes(profile.id)
+    );
+  }, [activeClient.id, activeOperator.id]);
+
+  // Initialize active profile if none selected or if it's no longer available
+  useEffect(() => {
+    if (!activeProfile || !availableProfiles.find(p => p.id === activeProfile.id)) {
+      setActiveProfile(availableProfiles[0] || null);
+    }
+  }, [availableProfiles, activeProfile]);
+
+  const filteredMessages = useMemo(() =>
+    activeProfile ? MOCK_MESSAGES.filter(msg => msg.profileId === activeProfile.id) : [],
+    [activeProfile]);
+
+  const totalUnread = useMemo(() =>
+    MOCK_MESSAGES.filter(msg =>
+      msg.status === 'unread' &&
+      availableProfiles.some(p => p.id === msg.profileId)
+    ).length,
+    [availableProfiles]);
+
+  const getUnreadForProfile = (profileId) => {
+    return MOCK_MESSAGES.filter(msg => msg.profileId === profileId && msg.status === 'unread').length;
+  };
+
+  const selectedChat = useMemo(() => {
+    if (selectedChatId) return filteredMessages.find(m => m.id === selectedChatId);
+    return filteredMessages[0] || null;
+  }, [selectedChatId, filteredMessages]);
+
+  useEffect(() => {
+    let timer;
+    if (activeCall?.status === 'active') {
+      timer = setInterval(() => {
+        setCallTime(prev => prev + 1);
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+      if (!activeCall) setCallTime(0);
+    };
+  }, [activeCall]);
+
+  const handleSendMessage = (text = messageValue) => {
+    if (!text.trim()) return;
+    setSentMessages(prev => [...prev, { id: Date.now(), text, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
+    setMessageValue('');
+  };
+
+  const startCall = () => {
+    if (!activeProfile) return;
+    setActiveCall({ status: 'connecting', startTime: Date.now(), caller: selectedChat?.from || activeProfile.name });
+    setTimeout(() => {
+      setActiveCall({ status: 'active', startTime: Date.now(), caller: selectedChat?.from || activeProfile.name });
+    }, 2000);
+  };
+
+  const simulateIncomingCall = () => {
+    if (!activeProfile) return;
+    setIncomingCall({
+      caller: '+44 7700 900555',
+      profileId: activeProfile.id,
+      profileName: activeProfile.name
+    });
+  };
+
+  const acceptCall = () => {
+    const caller = incomingCall.caller;
+    setIncomingCall(null);
+    setActiveCall({ status: 'active', startTime: Date.now(), caller });
+  };
+
+  const endCall = () => setActiveCall(null);
+  const formatTime = (s) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
+
+  return (
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-color)', color: 'var(--text-primary)' }}>
+      {/* Sidebar */}
+      <nav style={{
+        width: '280px',
+        borderRight: '1px solid var(--card-border)',
+        padding: '2rem 1.5rem',
+        background: 'rgba(5, 7, 10, 0.4)',
+        backdropFilter: 'blur(30px)',
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'sticky',
+        top: 0,
+        height: '100vh',
+        zIndex: 10
+      }}>
+        <div style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ width: '42px', height: '42px', background: 'var(--accent-color)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 15px var(--accent-glow)' }}>
+              <Zap color="white" fill="white" size={22} />
+            </div>
+            <span style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '0.05em' }}>{t('logo')}</span>
+          </div>
+
+          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '8px', border: '1px solid var(--card-border)' }}>
+            <button onClick={() => setLang('cz')} style={{ padding: '4px 8px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}>CZ</button>
+            <button onClick={() => setLang('en')} style={{ padding: '4px 8px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}>EN</button>
+          </div>
+        </div>
+
+        {/* Agency/Operator Context Switcher */}
+        <div style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
+            <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Building2 size={12} /> AGENCY HUB
+            </div>
+            <select
+              value={activeClient.id}
+              onChange={(e) => {
+                const client = MOCK_CLIENTS.find(c => c.id === e.target.value);
+                setActiveClient(client);
+                const firstOp = MOCK_OPERATORS.find(op => op.clientId === client.id);
+                setActiveOperator(firstOp);
+                setSelectedChatId(null);
+              }}
+              style={{ width: '100%', background: 'transparent', border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: '700', cursor: 'pointer', outline: 'none' }}
+            >
+              {MOCK_CLIENTS.map(c => <option key={c.id} value={c.id} style={{ background: '#0a0a0a' }}>{c.name}</option>)}
+            </select>
+          </div>
+
+          <div style={{ padding: '0.75rem', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '12px', border: '1px solid var(--accent-color)' }}>
+            <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--accent-color)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <User size={12} /> ACTIVE OPERATOR
+            </div>
+            <select
+              value={activeOperator.id}
+              onChange={(e) => {
+                const op = MOCK_OPERATORS.find(o => o.id === e.target.value);
+                setActiveOperator(op);
+                setSelectedChatId(null);
+              }}
+              style={{ width: '100%', background: 'transparent', border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: '700', cursor: 'pointer', outline: 'none' }}
+            >
+              {availableOperators.map(o => <option key={o.id} value={o.id} style={{ background: '#0a0a0a' }}>{o.name}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          {[
+            { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: totalUnread },
+            { id: 'calendar', icon: Calendar, label: t('schedule') },
+            { id: 'profiles', icon: Users, label: t('profiles') },
+            { id: 'activity', icon: Activity, label: t('auditLog') },
+            { id: 'settings', icon: Settings, label: t('settings') },
+          ].map(item => (
+            <button key={item.id} onClick={() => setActiveTab(item.id)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1rem', border: 'none', borderRadius: '12px',
+                background: activeTab === item.id ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+                cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s ease'
+              }}
+            >
+              <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
+              <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '700' : '500', fontSize: '1rem' }}>{item.label}</span>
+              {item.badge > 0 && <div className="unread-badge">{item.badge}</div>}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ marginTop: 'auto' }}>
+          <div className="glass-card" style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderColor: 'var(--card-border)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ width: '40px', height: '40px', background: 'rgba(59, 130, 246, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Users size={18} color="var(--accent-color)" /></div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.875rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>{activeOperator.name} <div style={{ background: 'var(--success-color)', width: '6px', height: '6px', borderRadius: '50%' }}></div></div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{activeProfile?.name || 'No Profile'}</div>
+                <div style={{ fontSize: '0.6rem', color: 'var(--accent-color)', fontWeight: '800', marginTop: '0.2rem' }}>{availableProfiles.length} {t('profiles')}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Area */}
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflowY: 'auto' }}>
+        {activeTab === 'inbox' && (
+          <div style={{ display: 'flex', flex: 1, height: '100%' }} className="fade-in">
+            <div style={{ width: '380px', borderRight: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: '2rem 1.5rem', borderBottom: '1px solid var(--card-border)' }}>
+                <h2 style={{ fontSize: '1.5rem', marginBottom: '1.25rem' }}>{t('inbox')} ({activeProfile?.name || '...'})</h2>
+                <div style={{ position: 'relative' }}>
+                  <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                  <input type="text" placeholder={t('searchPlaceholder')} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.85rem 0.85rem 0.85rem 2.5rem', borderRadius: '12px', color: 'white' }} />
+                </div>
+              </div>
+              <div style={{ overflowY: 'auto', flex: 1 }}>
+                {filteredMessages.length > 0 ? filteredMessages.map(msg => (
+                  <div key={msg.id} onClick={() => { setSelectedChatId(msg.id); setSentMessages([]); }}
+                    style={{ padding: '1.5rem', borderBottom: '1px solid var(--card-border)', background: selectedChat?.id === msg.id ? 'rgba(59, 130, 246, 0.05)' : 'transparent', cursor: 'pointer', position: 'relative' }}>
+                    {msg.status === 'unread' && <div className="dot"></div>}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}><span style={{ fontWeight: '700', fontSize: '1.1rem' }}>{msg.from}</span><span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{msg.time}</span></div>
+                    <div className="truncate-text">{msg.text}</div>
+                  </div>
+                )) : <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>{t('noMessages')}</div>}
+              </div>
+            </div>
+
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.1)' }}>
+              {selectedChat ? (
+                <>
+                  <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-color)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><div className="avatar-circle"><Users color="var(--accent-color)" size={24} /></div><div><div style={{ fontWeight: '700', fontSize: '1.1rem' }}>{selectedChat.from}</div><div style={{ fontSize: '0.8rem', color: 'var(--success-color)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Shield size={12} /> {t('secureConnection')}</div></div></div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><button onClick={startCall} className="status-badge clickable"><Signal size={16} /> {t('voiceCall')}</button><MoreVertical size={22} color="var(--text-secondary)" cursor="pointer" /></div>
+                  </div>
+
+                  <div style={{ flex: 1, padding: '2.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    <div className="message-bubble-in">{selectedChat.text}</div>
+                    {sentMessages.map(m => <div key={m.id} className="message-bubble-out">{m.text}</div>)}
+                  </div>
+
+                  <div style={{ padding: '1.5rem 2rem', background: 'rgba(5,7,10,0.4)', borderTop: '1px solid var(--card-border)' }}>
+                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', fontSize: '0.75rem', fontWeight: '800', borderRight: '1px solid var(--card-border)', paddingRight: '1rem', whiteSpace: 'nowrap' }}><Sparkles size={14} /> {t('aiSuggestions')}</div>
+                      {MOCK_SMART_REPLIES[lang].map(reply => (
+                        <button key={reply.id} onClick={() => handleSendMessage(reply.text)} className="suggestion-chip">{reply.text}</button>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: '1.25rem' }}>
+                      <input type="text" value={messageValue} onChange={(e) => setMessageValue(e.target.value)} placeholder={t('typeResponse')} style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '1.25rem', borderRadius: '16px', color: 'white' }} />
+                      <button onClick={() => handleSendMessage()} style={{ background: 'var(--accent-color)', border: 'none', width: '60px', height: '60px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 5px 15px var(--accent-glow)' }}><Send size={24} color="white" /></button>
+                    </div>
+                  </div>
+                </>
+              ) : <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ textAlign: 'center' }}><MessageSquare size={64} style={{ marginBottom: '1.5rem', opacity: 0.2 }} /><h3>Select a conversation</h3></div></div>}
+            </div>
+          </div>
+        )}
+
+        {/* Profiles View - Filtered by Operator Assignment */}
+        {activeTab === 'profiles' && (
+          <div style={{ padding: '3rem' }} className="fade-in">
+            <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '2rem' }}>{t('managedProfiles')} ({activeOperator.name})</h2>
+            <div className="grid">
+              {availableProfiles.map((profile, i) => {
+                const unread = getUnreadForProfile(profile.id);
+                return (
+                  <div key={i} className="glass-card" style={{ padding: '2rem', borderColor: unread > 0 && activeProfile?.id !== profile.id ? 'var(--error-color)' : 'var(--card-border)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                      <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>{profile.name}</div>
+                      {unread > 0 && activeProfile?.id !== profile.id && <div style={{ background: 'var(--error-color)', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '900' }}>{unread} {t('new')}</div>}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setActiveProfile(profile);
+                        setSelectedChatId(null);
+                      }}
+                      className="action-btn"
+                      style={{ background: activeProfile?.id === profile.id ? 'rgba(59, 130, 246, 0.1)' : 'var(--accent-color)' }}
+                    >
+                      {activeProfile?.id === profile.id ? t('active') : t('switchToProfile')}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Audit Log View - Shared for Agency Management */}
+        {activeTab === 'activity' && (
+          <div style={{ padding: '3rem' }} className="fade-in">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+              <div><h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('auditTrail')} - {activeClient.name}</h2><p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('auditSubtitle')}</p></div>
+              <div className="status-badge" style={{ borderColor: 'var(--accent-color)', color: 'var(--accent-color)' }}><Shield size={16} /> {t('encryptedLog')}</div>
+            </div>
+            <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+              <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+                <thead><tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--card-border)' }}>
+                  {[t('timestamp'), t('event'), t('handledBy'), t('target'), t('hash')].map(h => <th key={h} style={{ padding: '1.25rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{h}</th>)}
+                </tr></thead>
+                <tbody>{MOCK_AUDIT_LOG.filter(log => availableOperators.some(op => op.name === log.operator)).map(log => (
+                  <tr key={log.id} style={{ borderBottom: '1px solid var(--card-border)' }}>
+                    <td style={{ padding: '1.25rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{log.timestamp}</td>
+                    <td style={{ padding: '1.25rem', fontWeight: '700' }}>{log.action}</td>
+                    <td style={{ padding: '1.25rem' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><User size={14} /> {log.operator}</div></td>
+                    <td style={{ padding: '1.25rem' }}>{log.profile !== 'N/A' ? <div className="status-badge-small">{log.profile}</div> : '-'}</td>
+                    <td style={{ padding: '1.25rem' }}><code className="hash-code">{log.hash}</code></td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div style={{ padding: '3rem' }} className="fade-in">
+            <h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('controlCenter')}</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem' }}>{t('configSubtitle')}</p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem', maxWidth: '800px' }}>
+              <div className="settings-section">
+                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Building2 size={20} color="var(--accent-color)" /> Agency Insight: {activeClient.name}</h3>
+                <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                  <div className="glass-card" style={{ padding: '1.5rem' }}>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '0.5rem' }}>TEAM SEATS</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{availableOperators.length} / 10</div>
+                  </div>
+                  <div className="glass-card" style={{ padding: '1.5rem' }}>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '0.5rem' }}>REGIONAL REACH</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{activeClient.region}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="settings-section">
+                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Smartphone size={20} color="var(--accent-color)" /> {t('sessionTopology')}</h3>
+                <div className="glass-card" style={{ padding: 0 }}>
+                  {MOCK_SESSIONS.map((s, i) => (
+                    <div key={i} style={{ padding: '1.5rem', borderBottom: i < MOCK_SESSIONS.length - 1 ? '1px solid var(--card-border)' : 'none', display: 'flex', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', gap: '1.25rem' }}>
+                        <div style={{ background: s.current ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '12px' }}><Smartphone size={20} color={s.current ? 'var(--accent-color)' : 'var(--text-secondary)'} /></div>
+                        <div><div style={{ fontWeight: '700' }}>{s.device} {s.current && <span style={{ color: 'var(--success-color)', fontSize: '0.7rem' }}>({t('thisDevice')})</span>}</div><div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{s.location} • {s.status}</div></div>
+                      </div>
+                      <div className="status-badge">{s.current ? t('secure') : t('revoke')}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="settings-section">
+                <h3 style={{ marginBottom: '1.5rem' }}>{t('simulationTools')}</h3>
+                <button onClick={simulateIncomingCall} className="action-btn" style={{ maxWidth: '300px' }}><Phone size={16} /> {t('simulateCall')}</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Overlays */}
+      {incomingCall && (
+        <div className="incoming-call-popup fade-in">
+          <div className="incoming-card">
+            <div className="avatar-pulse"><Phone size={32} color="white" /></div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--accent-color)' }}>{t('incomingRelay')}</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: '800' }}>{incomingCall.caller}</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('targetLabel')}: <strong>{incomingCall.profileName}</strong></div>
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem' }}><button onClick={() => setIncomingCall(null)} className="circle-btn decline"><X size={20} /></button><button onClick={acceptCall} className="circle-btn accept"><Check size={20} /></button></div>
+          </div>
+        </div>
+      )}
+
+      {activeCall && (
+        <div className="call-overlay"><div className="call-card"><div className="call-avatar-container"><div className="call-avatar"><Users size={48} color="white" /></div></div><h2 style={{ fontSize: '1.75rem', fontWeight: '800' }}>{activeCall.caller}</h2><p>{formatTime(callTime)}</p><button onClick={endCall} className="call-btn end"><Phone size={24} style={{ transform: 'rotate(135deg)' }} /></button></div></div>
+      )}
+
+      <style>{`
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .unread-badge { margin-left: auto; background: var(--error-color); color: white; font-size: 0.7rem; font-weight: 800; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; padding: 0 5px; }
+        .avatar-circle { width: 48px; height: 48px; background: rgba(59, 130, 246, 0.1); border-radius: 50%; display: flex; alignItems: center; justifyContent: center; }
+        .message-bubble-in { align-self: flex-start; max-width: 65%; background: var(--card-bg); padding: 1.5rem; border-radius: 4px 24px 24px 24px; border: 1px solid var(--card-border); }
+        .message-bubble-out { align-self: flex-end; max-width: 65%; background: var(--accent-color); padding: 1.5rem; border-radius: 24px 24px 4px 24px; color: white; box-shadow: 0 10px 30px var(--accent-glow); }
+        .suggestion-chip { background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); color: var(--text-secondary); padding: 0.6rem 1rem; borderRadius: 12px; font-size: 0.85rem; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+        .suggestion-chip:hover { background: rgba(59, 130, 246, 0.1); border-color: var(--accent-color); color: white; }
+        .status-badge-small { font-size: 0.75rem; padding: 0.2rem 0.5rem; border: 1px solid var(--card-border); border-radius: 6px; display: inline-flex; }
+        .hash-code { font-size: 0.8rem; color: var(--text-secondary); background: rgba(255,255,255,0.05); padding: 0.2rem 0.4rem; border-radius: 4px; }
+        .dot { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); width: 6px; height: 6px; background: var(--accent-color); borderRadius: 50%; }
+        .truncate-text { font-size: 0.9rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; WebkitLineClamp: 1; WebkitBoxOrient: vertical; }
+        .incoming-call-popup { position: fixed; bottom: 3rem; right: 3rem; z-index: 1000; width: 400px; }
+        .incoming-card { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(20px); border: 1px solid var(--accent-color); padding: 1.5rem; border-radius: 24px; display: flex; align-items: center; gap: 1.5rem; box-shadow: 0 0 20px var(--accent-glow); }
+        .avatar-pulse { width: 56px; height: 56px; background: var(--accent-color); border-radius: 16px; display: flex; align-items: center; justify-content: center; animation: ringPulse 2s infinite; }
+        @keyframes ringPulse { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
+        .circle-btn { width: 44px; height: 44px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .circle-btn.decline { background: var(--error-color); color: white; }
+        .circle-btn.accept { background: var(--success-color); color: white; }
+        
+        select::-ms-expand { display: none; }
+        select { -webkit-appearance: none; appearance: none; }
+      `}</style>
+    </div>
+  );
+}
+
+export default App;

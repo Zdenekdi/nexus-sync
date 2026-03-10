@@ -1,0 +1,189 @@
+export const MOCK_CLIENTS = [
+    { id: 'agency-01', name: 'Elite Talent Management', region: 'UK/Europe', tier: 'Enterprise' },
+    { id: 'agency-02', name: 'Global Diamond Agency', region: 'International', tier: 'Professional' }
+];
+
+export const MOCK_OPERATORS = [
+    { id: 'op-01', name: 'Alice M.', role: 'Senior Operator', assignedProfiles: ['ldn-01', 'manc-05'], clientId: 'agency-01' },
+    { id: 'op-02', name: 'Mark T.', role: 'Regional Manager', assignedProfiles: ['ldn-01', 'manc-05', 'birm-02', 'nyc-01'], clientId: 'agency-01' },
+    { id: 'op-03', name: 'Sarah K.', role: 'US Specialist', assignedProfiles: ['nyc-01'], clientId: 'agency-02' }
+];
+
+export const MOCK_PROFILES = [
+    {
+        id: 'ldn-01',
+        clientId: 'agency-01',
+        username: 'sophie_uk_24',
+        name: 'Sophie (Central London)',
+        status: 'online',
+        rank: 1,
+        proxy: 'UK-London-Residential',
+        last_top: '2 mins ago',
+        unreadCount: 0,
+        earnings: '£4,250',
+        followers: '12.4k',
+        bio: 'Premium companion service in Central London.'
+    },
+    {
+        id: 'manc-05',
+        clientId: 'agency-01',
+        username: 'bella_star',
+        name: 'Bella (Manchester)',
+        status: 'idle',
+        rank: 4,
+        proxy: 'UK-Manchester-Residential',
+        last_top: '45 mins ago',
+        unreadCount: 3,
+        earnings: '£1,890',
+        followers: '5.2k',
+        bio: 'Your Manchester star.'
+    },
+    {
+        id: 'birm-02',
+        clientId: 'agency-01',
+        username: 'chloe_vip',
+        name: 'Chloe (Birmingham)',
+        status: 'offline',
+        rank: 12,
+        proxy: 'UK-Birmingham-ISP',
+        last_top: '3 hours ago',
+        unreadCount: 1,
+        earnings: '£950',
+        followers: '2.1k',
+        bio: 'Exclusive VIP services in Birmingham.'
+    },
+    {
+        id: 'nyc-01',
+        clientId: 'agency-02',
+        username: 'elena_nyc',
+        name: 'Elena (New York City)',
+        status: 'online',
+        rank: 2,
+        proxy: 'US-NYC-Residential',
+        last_top: '10 mins ago',
+        unreadCount: 5,
+        earnings: '$8,400',
+        followers: '25k',
+        bio: 'NYC premium management.'
+    }
+];
+
+export const MOCK_MESSAGES = [
+    // Sophie's Messages
+    {
+        id: 1,
+        profileId: 'ldn-01',
+        from: '+44 7700 900123',
+        text: 'Hello Sophie, are you available tomorrow at 4 PM?',
+        time: '2:32 PM',
+        status: 'unread',
+        conflict: true
+    },
+    {
+        id: 2,
+        profileId: 'ldn-01',
+        from: '+44 7700 900456',
+        text: 'Hi, what are your rates for 2 hours?',
+        time: '2:15 PM',
+        status: 'read'
+    },
+    // Bella's Messages
+    {
+        id: 3,
+        profileId: 'manc-05',
+        from: '+44 7700 900789',
+        text: 'Bella! Long time no see. Are you in Manchester tonight?',
+        time: '3:05 PM',
+        status: 'unread'
+    },
+    {
+        id: 4,
+        profileId: 'manc-05',
+        from: '+44 7700 900888',
+        text: 'New booking request for weekend.',
+        time: '12:40 PM',
+        status: 'unread'
+    },
+    // Chloe's Messages
+    {
+        id: 5,
+        profileId: 'birm-02',
+        from: '+44 7700 900999',
+        text: 'Hey Chloe, when is your next Birmingham availability?',
+        time: 'Yesterday',
+        status: 'unread'
+    },
+    // Elena's Messages
+    {
+        id: 6,
+        profileId: 'nyc-01',
+        from: '+1 212 555 0101',
+        text: 'Elena, is there availability for a shoot tomorrow?',
+        time: '1:00 PM',
+        status: 'unread'
+    }
+];
+
+export const MOCK_CALENDAR = {
+    events: [
+        { time: '10:00 AM', duration: '1.5h', title: 'Hair & Makeup', status: 'busy', type: 'prep' },
+        { time: '2:00 PM', duration: '1h', title: 'Private Booking', status: 'busy', type: 'work' },
+        { time: '4:00 PM', duration: '2h', title: 'Studio Session', status: 'busy', type: 'work' },
+        { time: '7:30 PM', duration: '3h', title: 'Night Dinner Event', status: 'busy', type: 'work' },
+    ],
+    suggestions: ['6:00 PM', '8:00 PM', '10:30 PM']
+};
+
+export const MOCK_STATS = {
+    activeHubs: 3,
+    messagesToday: 145,
+    uptime: '99.9%',
+    avgResponse: '1.2 mins',
+    revenue: {
+        total: '£7,090',
+        today: '+£420',
+        chart: [12, 18, 15, 25, 32, 28, 45]
+    },
+    engagement: {
+        total: '94%',
+        trend: '+2.4%',
+        chart: [85, 88, 86, 90, 92, 91, 94]
+    }
+};
+
+export const MOCK_CHART_DATA = [
+    { day: 'Mon', revenue: 850, messages: 120 },
+    { day: 'Tue', revenue: 940, messages: 145 },
+    { day: 'Wed', revenue: 1100, messages: 160 },
+    { day: 'Thu', revenue: 980, messages: 130 },
+    { day: 'Fri', revenue: 1250, messages: 190 },
+    { day: 'Sat', revenue: 1500, messages: 210 },
+    { day: 'Sun', revenue: 1300, messages: 180 },
+];
+
+export const MOCK_SESSIONS = [
+    { id: 1, device: 'MacBook Pro 16"', location: 'Prague, CZ', status: 'Active Now', current: true },
+    { id: 2, device: 'iPhone 15 Pro', location: 'Prague, CZ', status: 'Standby', current: false },
+    { id: 3, device: 'iPad Air', location: 'London, UK', status: 'Last seen 2h ago', current: false }
+];
+
+export const MOCK_AUDIT_LOG = [
+    { id: 'ev-101', timestamp: '2024-03-10 08:22:15', action: 'Message Sent', operator: 'Alice M.', profile: 'Sophie (LDN)', recipient: '+44 7700 900123', hash: '8f2a...c91e' },
+    { id: 'ev-102', timestamp: '2024-03-10 08:15:02', action: 'Call Accepted', operator: 'Mark T.', profile: 'Sophie (LDN)', recipient: '+44 7700 900555', hash: '3d1b...a4db' },
+    { id: 'ev-103', timestamp: '2024-03-10 07:45:30', action: 'Profile Active', operator: 'Alice M.', profile: 'Sophie (LDN)', recipient: 'N/A', hash: 'e4ee...08c3' },
+    { id: 'ev-104', timestamp: '2024-03-10 07:12:10', action: 'Message Sent', operator: 'Sarah K.', profile: 'Elena (NYC)', recipient: '+1 212 555 0198', hash: '2e70...18c2' },
+    { id: 'ev-105', timestamp: '2024-03-10 06:30:45', action: 'System Login', operator: 'Alice M.', profile: 'N/A', recipient: 'N/A', hash: '612a...7a8b' },
+];
+
+export const MOCK_SMART_REPLIES = {
+    en: [
+        { id: 1, text: "Hey! I'm around, would 4pm work?" },
+        { id: 2, text: "I'd love to chat more. Call me?" },
+        { id: 3, text: "Tomorrow is perfect for a meet-up." }
+    ],
+    cz: [
+        { id: 1, text: "Ahoj! Jsem tu, hodil by se ti čas v 16:00?" },
+        { id: 2, text: "Ráda si popovídám víc. Zavoláš mi?" },
+        { id: 3, text: "Zítřek je na setkání úplně ideální." }
+    ]
+};
