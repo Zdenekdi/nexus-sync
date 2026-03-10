@@ -4,7 +4,7 @@ import {
   MessageSquare, LayoutDashboard, Settings, PieChart,
   Send, MoreVertical, CheckCheck, Play, Fingerprint,
   Globe, Cpu, Zap, Signal, Calendar, AlertTriangle, Clock, Search, LogOut,
-  TrendingUp, DollarSign, BarChart3, Bell, Lock, Smartphone, Phone, X, Check, FileText, User, Sparkles, Building2, ChevronDown, UserCheck, UserPlus
+  TrendingUp, DollarSign, BarChart3, Bell, Lock, Smartphone, Phone, X, Check, FileText, User, Sparkles, Building2, ChevronDown, UserCheck, UserPlus, Image, FileEdit, Link
 } from 'lucide-react';
 import { MOCK_PROFILES, MOCK_MESSAGES, MOCK_STATS, MOCK_CALENDAR, MOCK_CHART_DATA, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_SMART_REPLIES, MOCK_CLIENTS, MOCK_OPERATORS } from './DemoData';
 import { TRANSLATIONS } from './translations';
@@ -96,6 +96,15 @@ function App() {
   const [activeCall, setActiveCall] = useState(null);
   const [incomingCall, setIncomingCall] = useState(null);
   const [callTime, setCallTime] = useState(0);
+
+  // Web Profiles Sync Simulation State
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState(0);
+  const [syncStatus, setSyncStatus] = useState({
+    aw: 'synced',
+    ege: 'synced',
+    tpb: 'error'
+  });
 
   const t = (key) => TRANSLATIONS[lang][key] || key;
 
@@ -204,6 +213,25 @@ function App() {
   const endCall = () => setActiveCall(null);
   const formatTime = (s) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 
+  const handleSyncAll = () => {
+    setIsSyncing(true);
+    setSyncProgress(0);
+    setSyncStatus({ aw: 'syncing', ege: 'syncing', tpb: 'syncing' });
+
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 5;
+      setSyncProgress(progress);
+      if (progress === 40) setSyncStatus(prev => ({ ...prev, aw: 'synced' }));
+      if (progress === 75) setSyncStatus(prev => ({ ...prev, tpb: 'synced' }));
+      if (progress >= 100) {
+        clearInterval(interval);
+        setIsSyncing(false);
+        setSyncStatus({ aw: 'synced', ege: 'synced', tpb: 'synced' });
+      }
+    }, 150);
+  };
+
   const getSmartReplies = (chatText, appLang) => {
     if (!chatText) return [];
     const lowerText = chatText.toLowerCase();
@@ -302,6 +330,7 @@ function App() {
             { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: totalUnread },
             { id: 'calendar', icon: Calendar, label: t('schedule') },
             { id: 'profiles', icon: Users, label: t('profiles') },
+            { id: 'web-profiles', icon: Globe, label: t('webProfiles') },
             { id: 'activity', icon: Activity, label: t('auditLog') },
             { id: 'settings', icon: Settings, label: t('settings') },
           ].map(item => (
@@ -459,7 +488,122 @@ function App() {
           </div>
         )}
 
-        {/* Profiles View - MANY-TO-MANY TEAM MGMT */}
+        {activeTab === 'web-profiles' && (
+          <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, display: 'flex', gap: '2rem' }} className="fade-in">
+            {/* Left Content Area (Gallery & Bio) */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              <div>
+                <h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('webProfiles')} - {activeProfile?.name || '...'}</h2>
+                <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Zde můžete upravovat texty a fotky, které se následně rozešlou na připojené inzertní weby.</p>
+              </div>
+
+              <div className="glass-card" style={{ padding: '2rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Image size={20} color="var(--accent-color)" /> {t('gallery')}</h3>
+                  <button className="action-btn" style={{ width: 'auto', padding: '0.5rem 1rem', marginTop: 0, fontSize: '0.8rem' }}>+ {t('uploadPhoto')}</button>
+                </div>
+
+                <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-secondary)' }}>{t('publicGallery').toUpperCase()}</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '1rem' }}>
+                      <div className="placeholder-img" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200)' }}></div>
+                      <div className="placeholder-img" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=200)' }}></div>
+                      <div className="placeholder-img" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=200)' }}></div>
+                    </div>
+                  </div>
+                  <div style={{ width: '1px', background: 'var(--card-border)' }}></div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-secondary)' }}>{t('privateGallery').toUpperCase()} (VIP)</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '1rem' }}>
+                      <div className="placeholder-img" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=200)' }}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="glass-card" style={{ padding: '2rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FileEdit size={20} color="var(--accent-color)" /> {t('biography')} & {t('services')}</h3>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button style={{ padding: '4px 8px', border: '1px solid var(--accent-color)', background: 'rgba(59, 130, 246, 0.2)', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700' }}>EN</button>
+                    <button style={{ padding: '4px 8px', border: '1px solid var(--card-border)', background: 'transparent', color: 'var(--text-secondary)', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700' }}>CZ</button>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Motto / Headline</label>
+                    <input type="text" defaultValue={activeProfile?.bio || ''} className="note-input" />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Full Biography</label>
+                    <textarea className="note-input" style={{ height: '150px' }} defaultValue="Hi, I am available in the city center. VIP companion offering GFE, outcalls and incalls. Very friendly and open minded..."></textarea>
+                  </div>
+                  <button className="action-btn" style={{ width: 'fit-content' }}>{t('saveChanges')}</button>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Sync Area */}
+            <div style={{ width: '380px', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              <div className="glass-card" style={{ padding: '2rem', background: 'rgba(5,7,10,0.6)' }}>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}><RefreshCw size={20} color="var(--success-color)" className={isSyncing ? "spin-animation" : ""} /> {t('syncStatus')}</h3>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+                  <div className="sync-platform-row">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div className="platform-icon">AW</div>
+                      <div><div style={{ fontWeight: '700', fontSize: '0.9rem' }}>AdultWork.com</div><div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>UK Primary</div></div>
+                    </div>
+                    <div className={`sync-badge ${syncStatus.aw}`}>
+                      {syncStatus.aw === 'syncing' ? <RefreshCw size={12} className="spin-animation" /> : (syncStatus.aw === 'synced' ? <Check size={12} /> : <X size={12} />)}
+                      {syncStatus.aw.toUpperCase()}
+                    </div>
+                  </div>
+
+                  <div className="sync-platform-row">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div className="platform-icon">EG</div>
+                      <div><div style={{ fontWeight: '700', fontSize: '0.9rem' }}>EuroGirlsEscort</div><div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>EU Wide</div></div>
+                    </div>
+                    <div className={`sync-badge ${syncStatus.ege}`}>
+                      {syncStatus.ege === 'syncing' ? <RefreshCw size={12} className="spin-animation" /> : (syncStatus.ege === 'synced' ? <Check size={12} /> : <X size={12} />)}
+                      {syncStatus.ege.toUpperCase()}
+                    </div>
+                  </div>
+
+                  <div className="sync-platform-row">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div className="platform-icon">TP</div>
+                      <div><div style={{ fontWeight: '700', fontSize: '0.9rem' }}>ThePuntersB...</div><div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Review sync</div></div>
+                    </div>
+                    <div className={`sync-badge ${syncStatus.tpb}`}>
+                      {syncStatus.tpb === 'syncing' ? <RefreshCw size={12} className="spin-animation" /> : (syncStatus.tpb === 'synced' ? <Check size={12} /> : <AlertTriangle size={12} />)}
+                      {syncStatus.tpb.toUpperCase()}
+                    </div>
+                  </div>
+                </div>
+
+                {isSyncing ? (
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.5rem', fontWeight: '700' }}><span>Syncing Profile Data...</span><span>{syncProgress}%</span></div>
+                    <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: `${syncProgress}%`, height: '100%', background: 'var(--accent-color)', transition: 'width 0.2s ease' }}></div>
+                    </div>
+                  </div>
+                ) : (
+                  <button onClick={handleSyncAll} className="action-btn" style={{ background: 'var(--success-color)', boxShadow: '0 5px 15px rgba(16, 185, 129, 0.3)' }}><RefreshCw size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.5rem' }} /> {t('syncAll')}</button>
+                )}
+
+                <div style={{ marginTop: '1.5rem', fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'flex', gap: '0.5rem', alignItems: 'flex-start', background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '12px' }}>
+                  <Link size={14} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
+                  Systém naváže spojení přes proxy bránu uk-london-res-12 a simuluje reálný prohlížeč pro aktualizaci dat bez rizika banu za scrapování.
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         {activeTab === 'profiles' && (
           <div style={{ padding: '3rem', paddingBottom: '8rem' }} className="fade-in">
             <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '2rem' }}>{t('managedProfiles')}</h2>
