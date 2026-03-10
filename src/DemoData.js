@@ -4,9 +4,10 @@ export const MOCK_CLIENTS = [
 ];
 
 export const MOCK_OPERATORS = [
-    { id: 'op-01', name: 'Alice M.', role: 'Senior Operator', assignedProfiles: ['ldn-01', 'manc-05'], clientId: 'agency-01' },
-    { id: 'op-02', name: 'Mark T.', role: 'Regional Manager', assignedProfiles: ['ldn-01', 'manc-05', 'birm-02', 'nyc-01'], clientId: 'agency-01' },
-    { id: 'op-03', name: 'Sarah K.', role: 'US Specialist', assignedProfiles: ['nyc-01'], clientId: 'agency-02' }
+    { id: 'op-01', name: 'Alice M.', role: 'Senior Operator', clientId: 'agency-01', avatar: 'AM' },
+    { id: 'op-02', name: 'Mark T.', role: 'Regional Manager', clientId: 'agency-01', avatar: 'MT' },
+    { id: 'op-03', name: 'Sarah K.', role: 'US Specialist', clientId: 'agency-02', avatar: 'SK' },
+    { id: 'op-04', name: 'Elena B.', role: 'Night Shift', clientId: 'agency-01', avatar: 'EB' }
 ];
 
 export const MOCK_PROFILES = [
@@ -22,7 +23,12 @@ export const MOCK_PROFILES = [
         unreadCount: 0,
         earnings: '£4,250',
         followers: '12.4k',
-        bio: 'Premium companion service in Central London.'
+        bio: 'Premium companion service in Central London.',
+        operators: [
+            { id: 'op-01', active: true, primary: true },
+            { id: 'op-02', active: true, primary: false },
+            { id: 'op-04', active: false, primary: false }
+        ]
     },
     {
         id: 'manc-05',
@@ -36,7 +42,11 @@ export const MOCK_PROFILES = [
         unreadCount: 3,
         earnings: '£1,890',
         followers: '5.2k',
-        bio: 'Your Manchester star.'
+        bio: 'Your Manchester star.',
+        operators: [
+            { id: 'op-01', active: true, primary: true },
+            { id: 'op-04', active: true, primary: false }
+        ]
     },
     {
         id: 'birm-02',
@@ -50,7 +60,11 @@ export const MOCK_PROFILES = [
         unreadCount: 1,
         earnings: '£950',
         followers: '2.1k',
-        bio: 'Exclusive VIP services in Birmingham.'
+        bio: 'Exclusive VIP services in Birmingham.',
+        operators: [
+            { id: 'op-02', active: true, primary: true },
+            { id: 'op-01', active: false, primary: false }
+        ]
     },
     {
         id: 'nyc-01',
@@ -64,7 +78,10 @@ export const MOCK_PROFILES = [
         unreadCount: 5,
         earnings: '$8,400',
         followers: '25k',
-        bio: 'NYC premium management.'
+        bio: 'NYC premium management.',
+        operators: [
+            { id: 'op-03', active: true, primary: true }
+        ]
     }
 ];
 

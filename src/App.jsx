@@ -4,7 +4,7 @@ import {
   MessageSquare, LayoutDashboard, Settings, PieChart,
   Send, MoreVertical, CheckCheck, Play, Fingerprint,
   Globe, Cpu, Zap, Signal, Calendar, AlertTriangle, Clock, Search, LogOut,
-  TrendingUp, DollarSign, BarChart3, Bell, Lock, Smartphone, Phone, X, Check, FileText, User, Sparkles, Building2, ChevronDown
+  TrendingUp, DollarSign, BarChart3, Bell, Lock, Smartphone, Phone, X, Check, FileText, User, Sparkles, Building2, ChevronDown, UserCheck, UserPlus
 } from 'lucide-react';
 import { MOCK_PROFILES, MOCK_MESSAGES, MOCK_STATS, MOCK_CALENDAR, MOCK_CHART_DATA, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_SMART_REPLIES, MOCK_CLIENTS, MOCK_OPERATORS } from './DemoData';
 import { TRANSLATIONS } from './translations';
@@ -13,9 +13,12 @@ function App() {
   const [lang, setLang] = useState('cz');
   const [activeTab, setActiveTab] = useState('inbox');
 
-  // Multi-Tenancy State
+  // Simulation Context
   const [activeClient, setActiveClient] = useState(MOCK_CLIENTS[0]);
   const [activeOperator, setActiveOperator] = useState(MOCK_OPERATORS[0]);
+
+  // Real-time Assignment State (Local Simulation)
+  const [profileAssignments, setProfileAssignments] = useState(MOCK_PROFILES);
 
   // Current Profile Context
   const [activeProfile, setActiveProfile] = useState(null);
@@ -34,20 +37,25 @@ function App() {
     MOCK_OPERATORS.filter(op => op.clientId === activeClient.id),
     [activeClient.id]);
 
-  // Filter profiles based on active client AND assigned profiles of the operator
-  const availableProfiles = useMemo(() => {
-    return MOCK_PROFILES.filter(profile =>
+  // Profiles assigned to CURRENT operator
+  const myProfiles = useMemo(() => {
+    return profileAssignments.filter(profile =>
       profile.clientId === activeClient.id &&
-      activeOperator.assignedProfiles.includes(profile.id)
+      profile.operators.some(op => op.id === activeOperator.id && op.active)
     );
-  }, [activeClient.id, activeOperator.id]);
+  }, [activeClient.id, activeOperator.id, profileAssignments]);
 
-  // Initialize active profile if none selected or if it's no longer available
+  // All Agency profiles for high-level management
+  const allAgencyProfiles = useMemo(() => {
+    return profileAssignments.filter(profile => profile.clientId === activeClient.id);
+  }, [activeClient.id, profileAssignments]);
+
+  // Auto-select profile if needed
   useEffect(() => {
-    if (!activeProfile || !availableProfiles.find(p => p.id === activeProfile.id)) {
-      setActiveProfile(availableProfiles[0] || null);
+    if (!activeProfile || !allAgencyProfiles.find(p => p.id === activeProfile.id)) {
+      setActiveProfile(myProfiles[0] || allAgencyProfiles[0] || null);
     }
-  }, [availableProfiles, activeProfile]);
+  }, [myProfiles, allAgencyProfiles, activeProfile]);
 
   const filteredMessages = useMemo(() =>
     activeProfile ? MOCK_MESSAGES.filter(msg => msg.profileId === activeProfile.id) : [],
@@ -56,9 +64,23 @@ function App() {
   const totalUnread = useMemo(() =>
     MOCK_MESSAGES.filter(msg =>
       msg.status === 'unread' &&
-      availableProfiles.some(p => p.id === msg.profileId)
+      myProfiles.some(p => p.id === msg.profileId)
     ).length,
-    [availableProfiles]);
+    [myProfiles]);
+
+  const toggleOperatorStatus = (profileId, operatorId) => {
+    setProfileAssignments(prev => prev.map(p => {
+      if (p.id === profileId) {
+        return {
+          ...p,
+          operators: p.operators.map(op =>
+            op.id === operatorId ? { ...op, active: !op.active } : op
+          )
+        };
+      }
+      return p;
+    }));
+  };
 
   const getUnreadForProfile = (profileId) => {
     return MOCK_MESSAGES.filter(msg => msg.profileId === profileId && msg.status === 'unread').length;
@@ -115,7 +137,46 @@ function App() {
   const formatTime = (s) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-color)', color: 'var(--text-primary)' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-color)', color: 'var(--text-primary)', position: 'relative' }}>
+
+      {/* Simulation Toolbar (Footer Fix) */}
+      <div style={{ position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)', background: 'rgba(5,7,10,0.8)', backdropFilter: 'blur(20px)', padding: '0.75rem 2rem', borderRadius: '50px', border: '1px solid var(--accent-color)', zIndex: 1000, display: 'flex', alignItems: 'center', gap: '2rem', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }}>
+        <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--accent-color)', letterSpacing: '0.1em' }}>DEMO SIMULATION CONTROLS:</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Building2 size={14} color="var(--text-secondary)" />
+            <select
+              value={activeClient.id}
+              onChange={(e) => {
+                const client = MOCK_CLIENTS.find(c => c.id === e.target.value);
+                setActiveClient(client);
+                const firstOp = MOCK_OPERATORS.find(op => op.clientId === client.id);
+                setActiveOperator(firstOp);
+                setSelectedChatId(null);
+              }}
+              style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '0.8rem', fontWeight: '700', outline: 'none' }}
+            >
+              {MOCK_CLIENTS.map(c => <option key={c.id} value={c.id} style={{ background: '#0a0a0a' }}>{c.name}</option>)}
+            </select>
+          </div>
+          <div style={{ width: '1px', height: '20px', background: 'var(--card-border)' }}></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <User size={14} color="var(--accent-color)" />
+            <select
+              value={activeOperator.id}
+              onChange={(e) => {
+                const op = MOCK_OPERATORS.find(o => o.id === e.target.value);
+                setActiveOperator(op);
+                setSelectedChatId(null);
+              }}
+              style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '0.8rem', fontWeight: '700', outline: 'none' }}
+            >
+              {availableOperators.map(o => <option key={o.id} value={o.id} style={{ background: '#0a0a0a' }}>{o.name}</option>)}
+            </select>
+          </div>
+        </div>
+      </div>
+
       {/* Sidebar */}
       <nav style={{
         width: '280px',
@@ -137,49 +198,9 @@ function App() {
             </div>
             <span style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '0.05em' }}>{t('logo')}</span>
           </div>
-
           <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '8px', border: '1px solid var(--card-border)' }}>
             <button onClick={() => setLang('cz')} style={{ padding: '4px 8px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}>CZ</button>
             <button onClick={() => setLang('en')} style={{ padding: '4px 8px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}>EN</button>
-          </div>
-        </div>
-
-        {/* Agency/Operator Context Switcher */}
-        <div style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <div style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
-            <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Building2 size={12} /> AGENCY HUB
-            </div>
-            <select
-              value={activeClient.id}
-              onChange={(e) => {
-                const client = MOCK_CLIENTS.find(c => c.id === e.target.value);
-                setActiveClient(client);
-                const firstOp = MOCK_OPERATORS.find(op => op.clientId === client.id);
-                setActiveOperator(firstOp);
-                setSelectedChatId(null);
-              }}
-              style={{ width: '100%', background: 'transparent', border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: '700', cursor: 'pointer', outline: 'none' }}
-            >
-              {MOCK_CLIENTS.map(c => <option key={c.id} value={c.id} style={{ background: '#0a0a0a' }}>{c.name}</option>)}
-            </select>
-          </div>
-
-          <div style={{ padding: '0.75rem', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '12px', border: '1px solid var(--accent-color)' }}>
-            <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--accent-color)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <User size={12} /> ACTIVE OPERATOR
-            </div>
-            <select
-              value={activeOperator.id}
-              onChange={(e) => {
-                const op = MOCK_OPERATORS.find(o => o.id === e.target.value);
-                setActiveOperator(op);
-                setSelectedChatId(null);
-              }}
-              style={{ width: '100%', background: 'transparent', border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: '700', cursor: 'pointer', outline: 'none' }}
-            >
-              {availableOperators.map(o => <option key={o.id} value={o.id} style={{ background: '#0a0a0a' }}>{o.name}</option>)}
-            </select>
           </div>
         </div>
 
@@ -205,15 +226,15 @@ function App() {
           ))}
         </div>
 
-        <div style={{ marginTop: 'auto' }}>
+        <div style={{ marginTop: 'auto', marginBottom: '4rem' }}>
           <div className="glass-card" style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderColor: 'var(--card-border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <div style={{ width: '40px', height: '40px', background: 'rgba(59, 130, 246, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Users size={18} color="var(--accent-color)" /></div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '0.875rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>{activeOperator.name} <div style={{ background: 'var(--success-color)', width: '6px', height: '6px', borderRadius: '50%' }}></div></div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{activeProfile?.name || 'No Profile'}</div>
-                <div style={{ fontSize: '0.6rem', color: 'var(--accent-color)', fontWeight: '800', marginTop: '0.2rem' }}>{availableProfiles.length} {t('profiles')}</div>
+              <div style={{ width: '40px', height: '40px', background: 'rgba(59, 130, 246, 0.2)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'var(--accent-color)', fontSize: '0.75rem' }}>{activeOperator.avatar}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activeOperator.name}</div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{activeOperator.role}</div>
               </div>
+              <div style={{ width: '8px', height: '8px', background: 'var(--success-color)', borderRadius: '50%' }}></div>
             </div>
           </div>
         </div>
@@ -256,7 +277,7 @@ function App() {
                     {sentMessages.map(m => <div key={m.id} className="message-bubble-out">{m.text}</div>)}
                   </div>
 
-                  <div style={{ padding: '1.5rem 2rem', background: 'rgba(5,7,10,0.4)', borderTop: '1px solid var(--card-border)' }}>
+                  <div style={{ padding: '1.5rem 2rem', background: 'rgba(5,7,10,0.4)', borderTop: '1px solid var(--card-border)', marginBottom: '4rem' }}>
                     <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', fontSize: '0.75rem', fontWeight: '800', borderRight: '1px solid var(--card-border)', paddingRight: '1rem', whiteSpace: 'nowrap' }}><Sparkles size={14} /> {t('aiSuggestions')}</div>
                       {MOCK_SMART_REPLIES[lang].map(reply => (
@@ -274,29 +295,61 @@ function App() {
           </div>
         )}
 
-        {/* Profiles View - Filtered by Operator Assignment */}
+        {/* Profiles View - MANY-TO-MANY TEAM MGMT */}
         {activeTab === 'profiles' && (
-          <div style={{ padding: '3rem' }} className="fade-in">
-            <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '2rem' }}>{t('managedProfiles')} ({activeOperator.name})</h2>
-            <div className="grid">
-              {availableProfiles.map((profile, i) => {
-                const unread = getUnreadForProfile(profile.id);
+          <div style={{ padding: '3rem', paddingBottom: '8rem' }} className="fade-in">
+            <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '2rem' }}>{t('managedProfiles')}</h2>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              {allAgencyProfiles.map((profile, i) => {
+                const isMyProfile = myProfiles.find(p => p.id === profile.id);
+                const activeCount = profile.operators.filter(op => op.active).length;
+
                 return (
-                  <div key={i} className="glass-card" style={{ padding: '2rem', borderColor: unread > 0 && activeProfile?.id !== profile.id ? 'var(--error-color)' : 'var(--card-border)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                      <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>{profile.name}</div>
-                      {unread > 0 && activeProfile?.id !== profile.id && <div style={{ background: 'var(--error-color)', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '900' }}>{unread} {t('new')}</div>}
+                  <div key={i} className="glass-card" style={{ padding: '2rem', display: 'flex', gap: '2.5rem', borderColor: isMyProfile ? 'rgba(59, 130, 246, 0.4)' : 'var(--card-border)' }}>
+                    <div style={{ flex: '0 0 250px' }}>
+                      <div style={{ fontSize: '1.75rem', fontWeight: '900', marginBottom: '0.5rem' }}>{profile.name}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.5rem' }}>
+                        <div style={{ padding: '0.2rem 0.6rem', borderRadius: '4px', background: activeCount > 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: activeCount > 0 ? 'var(--success-color)' : 'var(--error-color)', fontSize: '0.7rem', fontWeight: '900', border: '1px solid currentColor' }}>
+                          {activeCount > 0 ? `${activeCount} OPERATORS ACTIVE` : 'NO COVERAGE'}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => toggleOperatorStatus(profile.id, activeOperator.id)}
+                        className={`action-btn ${isMyProfile ? 'active' : ''}`}
+                        style={{ background: isMyProfile ? 'rgba(239, 68, 68, 0.2)' : 'var(--accent-color)', color: isMyProfile ? 'var(--error-color)' : 'white' }}
+                      >
+                        {isMyProfile ? 'DEACTIVATE MY SEAT' : 'ACTIVATE MY SEAT'}
+                      </button>
+                      <button
+                        onClick={() => setActiveProfile(profile)}
+                        style={{ width: '100%', marginTop: '0.75rem', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--card-border)', background: 'transparent', color: 'white', fontWeight: '700', cursor: 'pointer' }}
+                      >
+                        OPEN CONTEXT
+                      </button>
                     </div>
-                    <button
-                      onClick={() => {
-                        setActiveProfile(profile);
-                        setSelectedChatId(null);
-                      }}
-                      className="action-btn"
-                      style={{ background: activeProfile?.id === profile.id ? 'rgba(59, 130, 246, 0.1)' : 'var(--accent-color)' }}
-                    >
-                      {activeProfile?.id === profile.id ? t('active') : t('switchToProfile')}
-                    </button>
+
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.05em' }}>ASSIGNED TEAM:</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
+                        {profile.operators.map(profileOp => {
+                          const opData = MOCK_OPERATORS.find(o => o.id === profileOp.id);
+                          return (
+                            <div key={profileOp.id} style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: '1rem', opacity: profileOp.active ? 1 : 0.4 }}>
+                              <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: '900' }}>{opData.avatar}</div>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>{opData.name}</div>
+                                <div style={{ fontSize: '0.65rem', color: profileOp.primary ? 'var(--accent-color)' : 'var(--text-secondary)' }}>{profileOp.primary ? 'Primary' : 'Support'}</div>
+                              </div>
+                              {profileOp.active && <UserCheck size={16} color="var(--success-color)" />}
+                            </div>
+                          );
+                        })}
+                        <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.01)', borderRadius: '15px', border: '1px dashed var(--card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+                          <UserPlus size={16} /> <span style={{ fontSize: '0.8rem', fontWeight: '700' }}>Add</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 );
               })}
@@ -304,9 +357,8 @@ function App() {
           </div>
         )}
 
-        {/* Audit Log View - Shared for Agency Management */}
         {activeTab === 'activity' && (
-          <div style={{ padding: '3rem' }} className="fade-in">
+          <div style={{ padding: '3rem', paddingBottom: '8rem' }} className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
               <div><h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('auditTrail')} - {activeClient.name}</h2><p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('auditSubtitle')}</p></div>
               <div className="status-badge" style={{ borderColor: 'var(--accent-color)', color: 'var(--accent-color)' }}><Shield size={16} /> {t('encryptedLog')}</div>
@@ -331,7 +383,7 @@ function App() {
         )}
 
         {activeTab === 'settings' && (
-          <div style={{ padding: '3rem' }} className="fade-in">
+          <div style={{ padding: '3rem', paddingBottom: '8rem' }} className="fade-in">
             <h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('controlCenter')}</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem' }}>{t('configSubtitle')}</p>
 
@@ -416,6 +468,8 @@ function App() {
         
         select::-ms-expand { display: none; }
         select { -webkit-appearance: none; appearance: none; }
+        
+        .action-btn.active { background: rgba(239, 68, 68, 0.1) !important; color: var(--error-color) !important; border-color: var(--error-color) !important; }
       `}</style>
     </div>
   );
