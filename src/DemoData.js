@@ -4,10 +4,10 @@ export const MOCK_CLIENTS = [
 ];
 
 export const MOCK_OPERATORS = [
-    { id: 'op-01', name: 'Alice M.', role: 'Senior Operator', clientId: 'agency-01', avatar: 'AM' },
-    { id: 'op-02', name: 'Mark T.', role: 'Regional Manager', clientId: 'agency-01', avatar: 'MT' },
-    { id: 'op-03', name: 'Sarah K.', role: 'US Specialist', clientId: 'agency-02', avatar: 'SK' },
-    { id: 'op-04', name: 'Elena B.', role: 'Night Shift', clientId: 'agency-01', avatar: 'EB' }
+    { id: 'op-01', name: 'Alice M.', role: 'Senior Operator', clientId: 'agency-01', avatar: 'AM', email: 'alice@nexus.sync', password: 'password123' },
+    { id: 'op-02', name: 'Mark T.', role: 'Regional Manager', clientId: 'agency-01', avatar: 'MT', email: 'mark@nexus.sync', password: 'password123' },
+    { id: 'op-03', name: 'Sarah K.', role: 'US Specialist', clientId: 'agency-02', avatar: 'SK', email: 'sarah@nexus.sync', password: 'password123' },
+    { id: 'op-04', name: 'Elena B.', role: 'Night Shift', clientId: 'agency-01', avatar: 'EB', email: 'elena@nexus.sync', password: 'password123' }
 ];
 
 export const MOCK_PROFILES = [
