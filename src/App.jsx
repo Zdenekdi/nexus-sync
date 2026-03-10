@@ -20,8 +20,8 @@ function App() {
   // Real-time Assignment State (Local Simulation)
   const [profileAssignments, setProfileAssignments] = useState(MOCK_PROFILES);
 
-  // Current Profile Context
-  const [activeProfile, setActiveProfile] = useState(null);
+  // Current Profile ID (Stable Reference)
+  const [activeProfileId, setActiveProfileId] = useState(null);
   const [selectedChatId, setSelectedChatId] = useState(null);
 
   const [messageValue, setMessageValue] = useState('');
@@ -50,12 +50,11 @@ function App() {
     return profileAssignments.filter(profile => profile.clientId === activeClient.id);
   }, [activeClient.id, profileAssignments]);
 
-  // Auto-select profile if needed
-  useEffect(() => {
-    if (!activeProfile || !allAgencyProfiles.find(p => p.id === activeProfile.id)) {
-      setActiveProfile(myProfiles[0] || allAgencyProfiles[0] || null);
-    }
-  }, [myProfiles, allAgencyProfiles, activeProfile]);
+  // Derived Active Profile Object
+  const activeProfile = useMemo(() => {
+    const found = allAgencyProfiles.find(p => p.id === activeProfileId);
+    return found || myProfiles[0] || allAgencyProfiles[0] || null;
+  }, [activeProfileId, allAgencyProfiles, myProfiles]);
 
   const filteredMessages = useMemo(() =>
     activeProfile ? MOCK_MESSAGES.filter(msg => msg.profileId === activeProfile.id) : [],
@@ -152,6 +151,7 @@ function App() {
                 setActiveClient(client);
                 const firstOp = MOCK_OPERATORS.find(op => op.clientId === client.id);
                 setActiveOperator(firstOp);
+                setActiveProfileId(null);
                 setSelectedChatId(null);
               }}
               style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '0.8rem', fontWeight: '700', outline: 'none' }}
@@ -167,6 +167,7 @@ function App() {
               onChange={(e) => {
                 const op = MOCK_OPERATORS.find(o => o.id === e.target.value);
                 setActiveOperator(op);
+                setActiveProfileId(null);
                 setSelectedChatId(null);
               }}
               style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '0.8rem', fontWeight: '700', outline: 'none' }}
@@ -236,7 +237,7 @@ function App() {
                 <button
                   key={p.id}
                   onClick={() => {
-                    setActiveProfile(p);
+                    setActiveProfileId(p.id);
                     setActiveTab('inbox');
                     setSelectedChatId(null);
                   }}
@@ -353,7 +354,10 @@ function App() {
                         {isMyProfile ? 'DEACTIVATE MY SEAT' : 'ACTIVATE MY SEAT'}
                       </button>
                       <button
-                        onClick={() => setActiveProfile(profile)}
+                        onClick={() => {
+                          setActiveProfileId(profile.id);
+                          setActiveTab('inbox');
+                        }}
                         style={{ width: '100%', marginTop: '0.75rem', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--card-border)', background: 'transparent', color: 'white', fontWeight: '700', cursor: 'pointer' }}
                       >
                         OPEN CONTEXT
