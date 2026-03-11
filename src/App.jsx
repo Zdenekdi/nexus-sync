@@ -4,7 +4,7 @@ import {
   MessageSquare, LayoutDashboard, Settings, PieChart,
   Send, MoreVertical, CheckCheck, Play, Fingerprint,
   Globe, Cpu, Zap, Signal, Calendar, AlertTriangle, Clock, Search, LogOut,
-  TrendingUp, DollarSign, BarChart3, Bell, Lock, Smartphone, Phone, X, Check, FileText, User, Sparkles, Building2, ChevronDown, UserCheck, UserPlus, Image, FileEdit, Link
+  TrendingUp, DollarSign, BarChart3, Bell, Lock, Smartphone, Phone, X, Check, FileText, User, Sparkles, Building2, ChevronDown, UserCheck, UserPlus, Image, FileEdit, Link, StickyNote
 } from 'lucide-react';
 import { MOCK_PROFILES, MOCK_MESSAGES, MOCK_STATS, MOCK_CALENDAR, MOCK_CHART_DATA, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_SMART_REPLIES, MOCK_CLIENTS, MOCK_OPERATORS } from './DemoData';
 import { TRANSLATIONS } from './translations';
@@ -106,6 +106,16 @@ function App() {
     tpb: 'error'
   });
 
+  // Translator & Notes State
+  const [activeContextTab, setActiveContextTab] = useState('note'); // 'translator' or 'note'
+  const [sourceText, setSourceText] = useState('');
+  const [translatedText, setTranslatedText] = useState('');
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [targetLang, setTargetLang] = useState('en'); // Default target language for translator
+  const [internalNote, setInternalNote] = useState('');
+  const [showNotification, setShowNotification] = useState(false);
+
+
   const t = (key) => TRANSLATIONS[lang][key] || key;
 
   // Filter operators based on active client
@@ -166,6 +176,14 @@ function App() {
     return filteredMessages[0] || null;
   }, [selectedChatId, filteredMessages]);
 
+  // Combine selectedChat with its client info for easier access
+  const activeChat = useMemo(() => {
+    if (!selectedChat) return null;
+    const profile = allAgencyProfiles.find(p => p.id === selectedChat.profileId);
+    const client = MOCK_CLIENTS.find(c => c.id === profile?.clientId);
+    return { ...selectedChat, client };
+  }, [selectedChat, allAgencyProfiles]);
+
   useEffect(() => {
     let timer;
     if (activeCall?.status === 'active') {
@@ -178,6 +196,23 @@ function App() {
       if (!activeCall) setCallTime(0);
     };
   }, [activeCall]);
+
+  useEffect(() => {
+    if (activeChat) {
+      if (!isTranslating) {
+        setSourceText("");
+        setTranslatedText("");
+      }
+      setInternalNote("");
+      // Load mock notes if not already loaded into local state
+      if (activeChat.client && !clientNotes[activeChat.client.id]) {
+        setClientNotes(prev => ({
+          ...prev,
+          [activeChat.client.id]: activeChat.client.notes || []
+        }));
+      }
+    }
+  }, [activeChat, isTranslating]);
 
   const handleSendMessage = (text = messageValue) => {
     if (!text.trim()) return;
@@ -251,6 +286,55 @@ function App() {
     return selectedChat ? getSmartReplies(selectedChat.text, lang) : [];
   }, [selectedChat, lang]);
 
+  const handleTranslate = () => {
+    if (!sourceText.trim()) {
+      setTranslatedText('');
+      return;
+    }
+    setIsTranslating(true);
+    // Simulate API call
+    setTimeout(() => {
+      const mockTranslations = {
+        'en': {
+          'hello': 'Ahoj', 'how are you': 'Jak se máš?', 'good morning': 'Dobré ráno',
+          'i am free from 2 pm tomorrow': 'Zítra mám volno od 14:00',
+          'my rate is £200/h': 'Moje sazba je £200/h',
+          'i am free tonight from 8 pm': 'Dnes večer mám volno od 20:00'
+        },
+        'cz': {
+          'ahoj': 'Hello', 'jak se máš?': 'How are you?', 'dobré ráno': 'Good morning',
+          'zítra mám volno od 14:00': 'I am free from 2 PM tomorrow',
+          'moje sazba je £200/h': 'My rate is £200/h',
+          'dnes večer mám volno od 20:00': 'I am free tonight from 8 PM'
+        }
+      };
+      const lowerSource = sourceText.toLowerCase();
+      const translated = mockTranslations[targetLang]?.[lowerSource] || `[Translated to ${targetLang.toUpperCase()}: ${sourceText}]`;
+      setTranslatedText(translated);
+      setIsTranslating(false);
+    }, 700);
+  };
+
+  // Handle Note Save
+  const handleSaveNote = () => {
+    if (!internalNote.trim() || !activeChat?.client?.id) return;
+
+    const newNote = {
+      id: Date.now(),
+      text: internalNote,
+      author: activeOperator?.name || "Operator",
+      timestamp: new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    };
+
+    setClientNotes(prev => ({
+      ...prev,
+      [activeChat.client.id]: [newNote, ...(prev[activeChat.client.id] || [])]
+    }));
+    setInternalNote('');
+    setShowNotification(true);
+    setTimeout(() => setShowNotification(false), 2000);
+  };
+
   if (!isLoggedIn) {
     return <LoginScreen onLogin={handleLogin} lang={lang} setLang={setLang} t={t} />;
   }
@@ -295,6 +379,19 @@ function App() {
               {availableOperators.map(o => <option key={o.id} value={o.id} style={{ background: '#0a0a0a' }}>{o.name}</option>)}
             </select>
           </div>
+          {!activeOperator.isAdmin && (
+            <>
+              <div style={{ height: '32px', width: '1px', background: 'var(--card-border)' }} />
+              <button
+                onClick={() => setShowCallSimulation(true)}
+                className="status-badge pulse-call-btn"
+                style={{ cursor: 'pointer', border: 'none', color: 'var(--accent-color)' }}
+              >
+                <Phone size={16} />
+                <span style={{ fontWeight: '700' }}>{t('simulateCall')}</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -327,10 +424,12 @@ function App() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {[
-            { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: totalUnread },
-            { id: 'calendar', icon: Calendar, label: t('schedule') },
-            { id: 'profiles', icon: Users, label: t('profiles') },
-            { id: 'web-profiles', icon: Globe, label: t('webProfiles') },
+            ...(activeOperator.isAdmin ? [] : [
+              { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: totalUnread },
+              { id: 'calendar', icon: Calendar, label: t('schedule') },
+              { id: 'profiles', icon: Users, label: t('profiles') },
+              { id: 'web-profiles', icon: Globe, label: t('webProfiles') }
+            ]),
             ...(activeOperator.isAdmin ? [{ id: 'analytics', icon: BarChart3, label: t('analytics') }] : []),
             { id: 'activity', icon: Activity, label: t('auditLog') },
             { id: 'settings', icon: Settings, label: t('settings') },
@@ -350,35 +449,37 @@ function App() {
         </div>
 
         {/* Profile (Girl) Switcher */}
-        <div style={{ marginTop: '2.5rem', flex: 1 }}>
-          <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.1em' }}>MY ASSIGNED GIRLS</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-            {myProfiles.map(p => {
-              const unread = getUnreadForProfile(p.id);
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => {
-                    setActiveProfileId(p.id);
-                    setActiveTab('inbox');
-                    setSelectedChatId(null);
-                  }}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', border: '1px solid',
-                    borderRadius: '10px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s',
-                    background: activeProfile?.id === p.id ? 'rgba(255,255,255,0.05)' : 'transparent',
-                    borderColor: activeProfile?.id === p.id ? 'var(--accent-color)' : 'transparent',
-                    position: 'relative'
-                  }}
-                >
-                  <div style={{ width: '8px', height: '8px', background: p.status === 'online' ? 'var(--success-color)' : 'var(--text-secondary)', borderRadius: '50%' }}></div>
-                  <span style={{ fontSize: '0.85rem', fontWeight: activeProfile?.id === p.id ? '700' : '500', color: activeProfile?.id === p.id ? 'white' : 'var(--text-secondary)' }}>{p.name}</span>
-                  {unread > 0 && <div style={{ marginLeft: 'auto', background: 'var(--error-color)', color: 'white', fontSize: '0.6rem', padding: '1px 5px', borderRadius: '4px', fontWeight: '900' }}>{unread}</div>}
-                </button>
-              );
-            })}
+        {!activeOperator.isAdmin && (
+          <div style={{ marginTop: '2.5rem', flex: 1 }}>
+            <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.1em' }}>MY ASSIGNED GIRLS</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: '35vh', overflowY: 'auto' }} className="custom-scrollbar">
+              {myProfiles.map(p => {
+                const unread = getUnreadForProfile(p.id);
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      setActiveProfileId(p.id);
+                      setActiveTab('inbox');
+                      setSelectedChatId(null);
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', border: '1px solid',
+                      borderRadius: '10px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s',
+                      background: activeProfile?.id === p.id ? 'rgba(255,255,255,0.05)' : 'transparent',
+                      borderColor: activeProfile?.id === p.id ? 'var(--accent-color)' : 'transparent',
+                      position: 'relative'
+                    }}
+                  >
+                    <div style={{ width: '8px', height: '8px', background: p.status === 'online' ? 'var(--success-color)' : 'var(--text-secondary)', borderRadius: '50%' }}></div>
+                    <span style={{ fontSize: '0.85rem', fontWeight: activeProfile?.id === p.id ? '700' : '500', color: activeProfile?.id === p.id ? 'white' : 'var(--text-secondary)' }}>{p.name}</span>
+                    {unread > 0 && <div style={{ marginLeft: 'auto', background: 'var(--error-color)', color: 'white', fontSize: '0.6rem', padding: '1px 5px', borderRadius: '4px', fontWeight: '900' }}>{unread}</div>}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         <div style={{ marginTop: 'auto', marginBottom: '4rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <button
@@ -747,53 +848,9 @@ function App() {
                       >
                         OPEN CONTEXT
                       </button>
-           <div style={{ marginTop: '2rem' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.05em', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            MY ASSIGNED GIRLS
-            {myProfiles.reduce((sum, p) => sum + p.unreadCount, 0) > 0 && (
-              <span style={{ background: 'var(--accent-color)', color: 'white', padding: '2px 6px', borderRadius: '10px', fontSize: '0.65rem' }}>
-                {myProfiles.reduce((sum, p) => sum + p.unreadCount, 0)} new
-              </span>
-            )}
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '35vh', overflowY: 'auto', paddingRight: '0.5rem' }} className="custom-scrollbar">
-            {myProfiles.map(profile => (
-              <button 
-                key={profile.id}
-                onClick={() => {
-                  setActiveTab('inbox');
-                  setSelectedProfile(profile.id);
-                }}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', border: 'none', borderRadius: '12px',
-                  background: 'rgba(255, 255, 255, 0.02)', cursor: 'pointer', transition: 'all 0.2s ease', borderLeft: '3px solid transparent'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                  e.currentTarget.style.borderLeft = '3px solid var(--accent-color)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
-                  e.currentTarget.style.borderLeft = '3px solid transparent';
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <div style={{ position: 'relative' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: '800' }}>
-                      {profile.name.charAt(0)}
-                    </div>
-                    <div style={{ position: 'absolute', bottom: -2, right: -2, width: '12px', height: '12px', borderRadius: '50%', background: profile.status === 'online' ? 'var(--success-color)' : profile.status === 'idle' ? '#f59e0b' : 'var(--text-secondary)', border: '2px solid var(--sidebar-bg)' }} />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'white' }}>{profile.name.split(' ')[0]}</span>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{profile.last_top}</span>
-                  </div>
-                </div>
-                {profile.unreadCount > 0 && <div className="unread-badge" style={{ transform: 'scale(0.8)' }}>{profile.unreadCount}</div>}
-              </button>
-            ))}
-          </div>
-        </div>
+          {!activeOperator.isAdmin && (
+            <div style={{ marginTop: '2rem' }}></div>
+          )}
                     </div>
 
                     <div style={{ flex: 1 }}>

@@ -223,6 +223,13 @@ export const MOCK_MESSAGES = [
     }
 ];
 
+export const MOCK_CLIENT_DB = [
+  { id: 'c-01', name: 'John Doe', avatar: 'JD', status: 'online', type: 'Premium', tags: ['VIP', 'Regular'], notes: [{ id: 1, text: "Prefers evening calls. Usually tips well.", author: "System", timestamp: "2024-02-15 18:30" }] },
+  { id: 'c-02', name: 'Mike Smith', avatar: 'MS', status: 'offline', type: 'Standard', tags: ['New'], notes: [] },
+  { id: 'c-03', name: 'Alfie B.', avatar: 'AB', status: 'idle', type: 'VIP', tags: ['High Spender', 'Requires Verification'], notes: [] },
+  { id: 'c-04', name: 'Tom H.', avatar: 'TH', status: 'online', type: 'Standard', tags: [], notes: [] }
+];
+
 export const MOCK_CALENDAR = {
     events: [
         { time: '10:00 AM', duration: '1.5h', title: 'Hair & Makeup', status: 'busy', type: 'prep' },
