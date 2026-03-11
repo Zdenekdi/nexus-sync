@@ -4,10 +4,10 @@ export const MOCK_CLIENTS = [
 ];
 
 export const MOCK_OPERATORS = [
-    { id: 'op-01', name: 'Alice M.', role: 'Senior Operator', clientId: 'agency-01', avatar: 'AM', email: 'alice@nexus.sync', password: 'password123' },
-    { id: 'op-02', name: 'Mark T.', role: 'Regional Manager', clientId: 'agency-01', avatar: 'MT', email: 'mark@nexus.sync', password: 'password123' },
-    { id: 'op-03', name: 'Sarah K.', role: 'US Specialist', clientId: 'agency-02', avatar: 'SK', email: 'sarah@nexus.sync', password: 'password123' },
-    { id: 'op-04', name: 'Elena B.', role: 'Night Shift', clientId: 'agency-01', avatar: 'EB', email: 'elena@nexus.sync', password: 'password123' }
+    { id: 'op-01', name: 'Alice M.', role: 'Senior Operator', clientId: 'agency-01', avatar: 'AM', email: 'alice@nexus.sync', password: 'password123', metrics: { messages: 842, calls: 45, conversion: '12%' } },
+    { id: 'op-02', name: 'Mark T.', role: 'Regional Manager', clientId: 'agency-01', avatar: 'MT', email: 'mark@nexus.sync', password: 'password123', isAdmin: true, metrics: { messages: 156, calls: 8, conversion: '8%' } },
+    { id: 'op-03', name: 'Sarah K.', role: 'US Specialist', clientId: 'agency-02', avatar: 'SK', email: 'sarah@nexus.sync', password: 'password123', metrics: { messages: 530, calls: 22, conversion: '15%' } },
+    { id: 'op-04', name: 'Elena B.', role: 'Night Shift', clientId: 'agency-01', avatar: 'EB', email: 'elena@nexus.sync', password: 'password123', metrics: { messages: 620, calls: 14, conversion: '9%' } }
 ];
 
 export const MOCK_PROFILES = [
@@ -22,6 +22,7 @@ export const MOCK_PROFILES = [
         last_top: '2 mins ago',
         unreadCount: 0,
         earnings: '£4,250',
+        bookings: 28,
         followers: '12.4k',
         bio: 'Premium companion service in Central London.',
         operators: [
@@ -41,6 +42,7 @@ export const MOCK_PROFILES = [
         last_top: '45 mins ago',
         unreadCount: 3,
         earnings: '£1,890',
+        bookings: 12,
         followers: '5.2k',
         bio: 'Your Manchester star.',
         operators: [
@@ -59,6 +61,7 @@ export const MOCK_PROFILES = [
         last_top: '3 hours ago',
         unreadCount: 1,
         earnings: '£950',
+        bookings: 4,
         followers: '2.1k',
         bio: 'Exclusive VIP services in Birmingham.',
         operators: [
@@ -77,10 +80,83 @@ export const MOCK_PROFILES = [
         last_top: '10 mins ago',
         unreadCount: 5,
         earnings: '$8,400',
+        bookings: 45,
         followers: '25k',
         bio: 'NYC premium management.',
         operators: [
             { id: 'op-03', active: true, primary: true }
+        ]
+    },
+    {
+        id: 'leeds-01',
+        clientId: 'agency-01',
+        username: 'mia_leeds',
+        name: 'Mia (Leeds)',
+        status: 'online',
+        rank: 8,
+        proxy: 'UK-Leeds-ISP',
+        last_top: '15 mins ago',
+        unreadCount: 2,
+        earnings: '£1,200',
+        bookings: 6,
+        followers: '3.4k',
+        bio: 'Leeds companion.',
+        operators: [
+            { id: 'op-01', active: true, primary: true }
+        ]
+    },
+    {
+        id: 'newc-03',
+        clientId: 'agency-01',
+        username: 'katerina_newc',
+        name: 'Katerina (Newcastle)',
+        status: 'idle',
+        rank: 15,
+        proxy: 'UK-Newcastle-Residential',
+        last_top: '1 hour ago',
+        unreadCount: 0,
+        earnings: '£850',
+        bookings: 3,
+        followers: '1.8k',
+        bio: 'Newcastle exclusive.',
+        operators: [
+            { id: 'op-01', active: true, primary: true }
+        ]
+    },
+    {
+        id: 'bris-02',
+        clientId: 'agency-01',
+        username: 'zoe_bristol',
+        name: 'Zoe (Bristol)',
+        status: 'offline',
+        rank: 22,
+        proxy: 'UK-Bristol-ISP',
+        last_top: '5 hours ago',
+        unreadCount: 1,
+        earnings: '£450',
+        bookings: 2,
+        followers: '900',
+        bio: 'Bristol visits.',
+        operators: [
+            { id: 'op-01', active: true, primary: true }
+        ]
+    },
+    {
+        id: 'card-01',
+        clientId: 'agency-01',
+        username: 'lily_cardiff',
+        name: 'Lily (Cardiff)',
+        status: 'online',
+        rank: 6,
+        proxy: 'UK-Cardiff-Residential',
+        last_top: 'Just now',
+        unreadCount: 4,
+        earnings: '£1,600',
+        bookings: 8,
+        followers: '4.2k',
+        bio: 'Cardiff sensation.',
+        operators: [
+            { id: 'op-01', active: true, primary: true }
         ]
     }
 ];

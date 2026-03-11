@@ -331,6 +331,7 @@ function App() {
             { id: 'calendar', icon: Calendar, label: t('schedule') },
             { id: 'profiles', icon: Users, label: t('profiles') },
             { id: 'web-profiles', icon: Globe, label: t('webProfiles') },
+            ...(activeOperator.isAdmin ? [{ id: 'analytics', icon: BarChart3, label: t('analytics') }] : []),
             { id: 'activity', icon: Activity, label: t('auditLog') },
             { id: 'settings', icon: Settings, label: t('settings') },
           ].map(item => (
@@ -604,6 +605,114 @@ function App() {
             </div>
           </div>
         )}
+
+        {activeTab === 'analytics' && activeOperator.isAdmin && (
+          <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1 }} className="fade-in">
+            <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '2.5rem' }}>{t('agencyOverview')}</h2>
+            
+            {/* Top Metric Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
+              <div className="glass-card" style={{ padding: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: 'var(--text-secondary)' }}>
+                  <DollarSign size={20} color="var(--success-color)" />
+                  <span style={{ fontSize: '0.8rem', fontWeight: '700', letterSpacing: '0.05em' }}>{t('totalRevenue').toUpperCase()}</span>
+                </div>
+                <div style={{ fontSize: '2rem', fontWeight: '900' }}>£15,490</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--success-color)', marginTop: '0.5rem', fontWeight: '700' }}>+12.4% vs last week</div>
+              </div>
+              
+              <div className="glass-card" style={{ padding: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: 'var(--text-secondary)' }}>
+                  <Calendar size={20} color="var(--accent-color)" />
+                  <span style={{ fontSize: '0.8rem', fontWeight: '700', letterSpacing: '0.05em' }}>{t('activeBookings').toUpperCase()}</span>
+                </div>
+                <div style={{ fontSize: '2rem', fontWeight: '900' }}>89</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--success-color)', marginTop: '0.5rem', fontWeight: '700' }}>+5 this week</div>
+              </div>
+
+              <div className="glass-card" style={{ padding: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: 'var(--text-secondary)' }}>
+                  <MessageSquare size={20} color="#a855f7" />
+                  <span style={{ fontSize: '0.8rem', fontWeight: '700', letterSpacing: '0.05em' }}>{t('totalMessages').toUpperCase()}</span>
+                </div>
+                <div style={{ fontSize: '2rem', fontWeight: '900' }}>2,148</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Across all profiles</div>
+              </div>
+
+              <div className="glass-card" style={{ padding: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: 'var(--text-secondary)' }}>
+                  <TrendingUp size={20} color="#f59e0b" />
+                  <span style={{ fontSize: '0.8rem', fontWeight: '700', letterSpacing: '0.05em' }}>{t('conversionRate').toUpperCase()}</span>
+                </div>
+                <div style={{ fontSize: '2rem', fontWeight: '900' }}>11.5%</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--success-color)', marginTop: '0.5rem', fontWeight: '700' }}>+1.2% trend</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '2rem' }}>
+              {/* Left Column: Profile Earnings */}
+              <div style={{ flex: 1 }}>
+                <h3 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Users size={20} color="var(--accent-color)" /> {t('perfByProfile')}
+                </h3>
+                <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+                  <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--card-border)' }}>
+                        <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>PROFILE</th>
+                        <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t('rank').toUpperCase()}</th>
+                        <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t('activeBookings').toUpperCase()}</th>
+                        <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem', textAlign: 'right' }}>{t('earnings').toUpperCase()}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allAgencyProfiles.sort((a,b) => parseInt(b.earnings.replace(/\D/g,'')) - parseInt(a.earnings.replace(/\D/g,''))).map((p) => (
+                        <tr key={p.id} style={{ borderBottom: '1px solid var(--card-border)' }}>
+                          <td style={{ padding: '1rem', fontWeight: '700' }}>{p.name}</td>
+                          <td style={{ padding: '1rem' }}><div className="status-badge-small" style={{ borderColor: 'var(--success-color)', color: 'var(--success-color)' }}>Top {p.rank}</div></td>
+                          <td style={{ padding: '1rem', color: 'white' }}>{p.bookings}</td>
+                          <td style={{ padding: '1rem', textAlign: 'right', fontWeight: '800', color: 'var(--accent-color)' }}>{p.earnings}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Right Column: Operator Activity */}
+              <div style={{ width: '450px' }}>
+                <h3 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Activity size={20} color="var(--accent-color)" /> {t('perfByOperator')}
+                </h3>
+                <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+                  <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--card-border)' }}>
+                        <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>OPERATOR</th>
+                        <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem', textAlign: 'right' }}>{t('totalMessages').toUpperCase()}</th>
+                        <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem', textAlign: 'right' }}>{t('callsHandled').toUpperCase()}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {availableOperators.sort((a,b) => b.metrics.messages - a.metrics.messages).map((op, i) => (
+                        <tr key={op.id} style={{ borderBottom: i < availableOperators.length - 1 ? '1px solid var(--card-border)' : 'none' }}>
+                          <td style={{ padding: '1rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                              <div style={{ width: '28px', height: '28px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: '900' }}>{op.avatar}</div>
+                              <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{op.name}</div>
+                            </div>
+                          </td>
+                          <td style={{ padding: '1rem', textAlign: 'right', fontWeight: '700' }}>{op.metrics.messages}</td>
+                          <td style={{ padding: '1rem', textAlign: 'right', color: 'var(--text-secondary)' }}>{op.metrics.calls}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         {activeTab === 'profiles' && (
           <div style={{ padding: '3rem', paddingBottom: '8rem' }} className="fade-in">
             <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '2rem' }}>{t('managedProfiles')}</h2>
@@ -638,6 +747,53 @@ function App() {
                       >
                         OPEN CONTEXT
                       </button>
+           <div style={{ marginTop: '2rem' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.05em', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            MY ASSIGNED GIRLS
+            {myProfiles.reduce((sum, p) => sum + p.unreadCount, 0) > 0 && (
+              <span style={{ background: 'var(--accent-color)', color: 'white', padding: '2px 6px', borderRadius: '10px', fontSize: '0.65rem' }}>
+                {myProfiles.reduce((sum, p) => sum + p.unreadCount, 0)} new
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '35vh', overflowY: 'auto', paddingRight: '0.5rem' }} className="custom-scrollbar">
+            {myProfiles.map(profile => (
+              <button 
+                key={profile.id}
+                onClick={() => {
+                  setActiveTab('inbox');
+                  setSelectedProfile(profile.id);
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', border: 'none', borderRadius: '12px',
+                  background: 'rgba(255, 255, 255, 0.02)', cursor: 'pointer', transition: 'all 0.2s ease', borderLeft: '3px solid transparent'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                  e.currentTarget.style.borderLeft = '3px solid var(--accent-color)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
+                  e.currentTarget.style.borderLeft = '3px solid transparent';
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ position: 'relative' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: '800' }}>
+                      {profile.name.charAt(0)}
+                    </div>
+                    <div style={{ position: 'absolute', bottom: -2, right: -2, width: '12px', height: '12px', borderRadius: '50%', background: profile.status === 'online' ? 'var(--success-color)' : profile.status === 'idle' ? '#f59e0b' : 'var(--text-secondary)', border: '2px solid var(--sidebar-bg)' }} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'white' }}>{profile.name.split(' ')[0]}</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{profile.last_top}</span>
+                  </div>
+                </div>
+                {profile.unreadCount > 0 && <div className="unread-badge" style={{ transform: 'scale(0.8)' }}>{profile.unreadCount}</div>}
+              </button>
+            ))}
+          </div>
+        </div>
                     </div>
 
                     <div style={{ flex: 1 }}>
