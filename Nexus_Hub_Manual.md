@@ -5,12 +5,27 @@ Vítejte v systému **Nexus Hub (AW Nexus)** – centrálním bodu pro správu p
 ---
 
 ### 1. Přihlášení (Login Screen)
-Demo začíná premium přihlašovací obrazovkou. 
+
+Demo začíná premium přihlašovací obrazovkou.
+
 - Systém podporuje více operátorských rolí.
 - Přihlášení simuluje zabezpečený přístup k agenturním datům.
 
+#### Přihlašovací údaje pro Demo
+
+| Role | Email | Heslo |
+| :--- | :--- | :--- |
+| **Super Admin** | `admin@nexus.ai` | `password123` |
+| **Regional Manager (Admin)** | `mark@nexus.sync` | `password123` |
+| **Senior Operator** | `alice@nexus.sync` | `password123` |
+| **US Specialist (Operator)** | `sarah@nexus.sync` | `password123` |
+| **Night Shift (Operator)** | `elena@nexus.sync` | `password123` |
+| **Model** | `diana@nexus.sync` | `password123` |
+
 ### 2. Inbox a Chytré Zprávy (AI Suggestions)
+
 Hlavní modul pro komunikaci se zákazníky.
+
 - **Jednotná schránka:** Všechny zprávy z AdultWork, SMS i Telegramu na jednom místě.
 - **AI Smart Replies:** Systém analyzuje kontext zpráv (např. dotazy na cenu nebo čas) a navrhuje rychlé odpovědi v češtině i angličtině.
 - **Automatický překlad:** Zprávy jsou automaticky překládány do jazyka klienta (např. EN -> CZ).

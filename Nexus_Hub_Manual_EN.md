@@ -5,9 +5,22 @@ Welcome to the **Nexus Hub (AW Nexus)** – the central point for profile manage
 ---
 
 ### 1. Login Screen
+
 The demo starts with a premium login screen.
+
 - The system supports multiple operator roles.
 - Login simulates secure access to agency-level data.
+
+#### Demo Credentials
+
+| Role | Email | Password |
+| :--- | :--- | :--- |
+| **Super Admin** | `admin@nexus.ai` | `password123` |
+| **Regional Manager (Admin)** | `mark@nexus.sync` | `password123` |
+| **Senior Operator** | `alice@nexus.sync` | `password123` |
+| **US Specialist (Operator)** | `sarah@nexus.sync` | `password123` |
+| **Night Shift (Operator)** | `elena@nexus.sync` | `password123` |
+| **Model** | `diana@nexus.sync` | `password123` |
 
 ### 2. Inbox and AI Suggestions
 The primary module for client communication.
