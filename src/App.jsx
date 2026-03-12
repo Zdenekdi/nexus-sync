@@ -4,7 +4,7 @@ import {
   MessageSquare, LayoutDashboard, Settings, PieChart,
   Send, MoreVertical, CheckCheck, Play, Fingerprint,
   Globe, Cpu, Zap, Signal, Calendar, AlertTriangle, Clock, Search, LogOut,
-  TrendingUp, DollarSign, BarChart3, Bell, Lock, Smartphone, Phone, X, Check, FileText, User, Sparkles, Building2, ChevronDown, UserCheck, UserPlus, Image, FileEdit, Link, StickyNote, Mic, MicOff, FileSearch, ShieldAlert, CreditCard
+  TrendingUp, DollarSign, BarChart3, Bell, Lock, Smartphone, Phone, X, Check, FileText, User, Sparkles, Building2, ChevronDown, UserCheck, UserPlus, Image, FileEdit, Link, StickyNote, Mic, MicOff, FileSearch, ShieldAlert, CreditCard, Menu
 } from 'lucide-react';
 import { MOCK_PROFILES, MOCK_MESSAGES, MOCK_STATS, MOCK_CALENDAR, MOCK_CHART_DATA, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_SMART_REPLIES, MOCK_CLIENTS, MOCK_OPERATORS, MOCK_CLIENT_DB, MOCK_AGENCIES } from './DemoData';
 import { TRANSLATIONS } from './translations';
@@ -70,24 +70,34 @@ function App() {
 
   // Simulation Context
   const [activeClient, setActiveClient] = useState(() => {
-    const saved = localStorage.getItem('nexus_activeClient');
-    return saved ? JSON.parse(saved) : MOCK_CLIENTS[0];
+    try {
+      const saved = localStorage.getItem('nexus_activeClient');
+      if (saved && saved !== 'undefined') return JSON.parse(saved);
+    } catch (e) { console.error('Error parsing activeClient', e); }
+    return MOCK_CLIENTS[0];
   });
   const [activeOperator, setActiveOperator] = useState(() => {
-    const saved = localStorage.getItem('nexus_activeOperator');
-    return saved ? JSON.parse(saved) : MOCK_OPERATORS[0];
+    try {
+      const saved = localStorage.getItem('nexus_activeOperator');
+      if (saved && saved !== 'undefined') return JSON.parse(saved);
+    } catch (e) { console.error('Error parsing activeOperator', e); }
+    return MOCK_OPERATORS[0];
   });
   const [clientNotes, setClientNotes] = useState({});
 
   const handleLogin = (user) => {
-    const client = MOCK_CLIENTS.find(c => c.id === user.clientId);
+    const client = MOCK_CLIENTS.find(c => c.id === user.clientId) || null;
     setActiveOperator(user);
     setActiveClient(client);
     setIsLoggedIn(true);
     
     localStorage.setItem('nexus_isLoggedIn', 'true');
     localStorage.setItem('nexus_activeOperator', JSON.stringify(user));
-    localStorage.setItem('nexus_activeClient', JSON.stringify(client));
+    if (client) {
+      localStorage.setItem('nexus_activeClient', JSON.stringify(client));
+    } else {
+      localStorage.removeItem('nexus_activeClient');
+    }
   };
 
   const handleLogout = () => {
@@ -145,6 +155,16 @@ function App() {
   const [bookingSchedule, setBookingSchedule] = useState(MOCK_CALENDAR.events);
   const [bookingCollision, setBookingCollision] = useState(null);
 
+  // Mobile Responsiveness State
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const checkBookingCollision = (date, time, duration) => {
     // Basic collision detection for the demo
     // Convert time to minutes from midnight for easier comparison
@@ -172,21 +192,22 @@ function App() {
 
   // Filter operators based on active client
   const availableOperators = useMemo(() =>
-    MOCK_OPERATORS.filter(op => op.clientId === activeClient.id),
-    [activeClient.id]);
+    MOCK_OPERATORS.filter(op => op.clientId === activeClient?.id),
+    [activeClient?.id]);
 
   // Profiles assigned to CURRENT operator
   const myProfiles = useMemo(() => {
     return profileAssignments.filter(profile =>
-      profile.clientId === activeClient.id &&
+      profile.clientId === activeClient?.id &&
       profile.operators.some(op => op.id === activeOperator.id && op.active)
     );
-  }, [activeClient.id, activeOperator.id, profileAssignments]);
+  }, [activeClient?.id, activeOperator.id, profileAssignments]);
 
   // All Agency profiles for high-level management
   const allAgencyProfiles = useMemo(() => {
-    return profileAssignments.filter(profile => profile.clientId === activeClient.id);
-  }, [activeClient.id, profileAssignments]);
+    if (!activeClient) return profileAssignments; // Show all for Super Admin or when no client
+    return profileAssignments.filter(p => p.clientId === activeClient.id);
+  }, [profileAssignments, activeClient]);
 
   const myProfileIds = useMemo(() => myProfiles.map(p => p.id), [myProfiles]);
 
@@ -300,7 +321,7 @@ function App() {
       text: val, 
       from: 'me', 
       time: 'Just now', 
-      translated: activeClient.lang !== activeOperator.lang ? activeClient.lang : null 
+      translated: activeClient?.lang !== activeOperator.lang ? activeClient?.lang : null 
     };
     
     setSessionHistories(prev => ({
@@ -309,7 +330,7 @@ function App() {
     }));
     
     setMessageValue('');
-  }, [messageValue, selectedChat, activeClient.lang, activeOperator.lang]);
+  }, [messageValue, selectedChat, activeClient?.lang, activeOperator.lang]);
 
   const startCall = () => {
     if (!activeProfile) return;
@@ -428,15 +449,101 @@ function App() {
 
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: 'var(--bg-color)', color: 'white', position: 'relative' }}>
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media (max-width: 768px) {
+          .desktop-sidebar {
+            position: fixed !important;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            width: 280px;
+            z-index: 2000;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+          }
+          .desktop-sidebar.open {
+            transform: translateX(0);
+          }
+          .main-content {
+            margin-left: 0 !important;
+          }
+          .mobile-header {
+            display: flex !important;
+          }
+          .hide-on-mobile {
+            display: none !important;
+          }
+          /* Stack columns in Inbox */
+          .inbox-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .inbox-panel {
+            display: none;
+          }
+          .inbox-panel.active {
+            display: flex;
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: var(--bg-color);
+          }
+          .demo-controls {
+             bottom: 1rem !important;
+             padding: 0.5rem 1rem !important;
+             gap: 0.5rem !important;
+             width: 90% !important;
+             overflow-x: auto;
+          }
+          .demo-controls-label {
+            display: none !important;
+          }
+        }
+      ` }} />
+
+      {/* Mobile Top Bar */}
+      <div className="mobile-header" style={{ 
+        display: 'none', 
+        position: 'fixed', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        height: '60px', 
+        background: 'rgba(5,7,10,0.8)', 
+        backdropFilter: 'blur(20px)', 
+        borderBottom: '1px solid var(--card-border)', 
+        zIndex: 1500,
+        alignItems: 'center',
+        padding: '0 1.5rem',
+        justifyContent: 'space-between'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <Zap color="var(--accent-color)" size={20} />
+          <span style={{ fontWeight: '900', fontSize: '1.1rem' }}>NEXUS</span>
+        </div>
+        <button 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}
+        >
+          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+
+      {/* Overlay for mobile sidebar */}
+      {isMobile && isMobileMenuOpen && (
+        <div 
+          onClick={() => setIsMobileMenuOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1999 }}
+        />
+      )}
 
       {/* Simulation Toolbar (Footer Fix) */}
-      <div style={{ position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)', background: 'rgba(5,7,10,0.8)', backdropFilter: 'blur(20px)', padding: '0.75rem 2rem', borderRadius: '50px', border: '1px solid var(--accent-color)', zIndex: 1000, display: 'flex', alignItems: 'center', gap: '2rem', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }}>
-        <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--accent-color)', letterSpacing: '0.1em' }}>DEMO SIMULATION CONTROLS:</div>
+      <div className="demo-controls" style={{ position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)', background: 'rgba(5,7,10,0.8)', backdropFilter: 'blur(20px)', padding: '0.75rem 2rem', borderRadius: '50px', border: '1px solid var(--accent-color)', zIndex: 1000, display: 'flex', alignItems: 'center', gap: '2rem', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }}>
+        <div className="demo-controls-label" style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--accent-color)', letterSpacing: '0.1em' }}>DEMO SIMULATION CONTROLS:</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Building2 size={14} color="var(--text-secondary)" />
             <select
-              value={activeClient.id}
+              value={activeClient?.id || ''}
               onChange={(e) => {
                 const client = MOCK_CLIENTS.find(c => c.id === e.target.value);
                 setActiveClient(client);
@@ -483,7 +590,7 @@ function App() {
       </div>
 
       {/* Sidebar */}
-      <nav style={{
+      <nav className={`desktop-sidebar ${isMobileMenuOpen ? 'open' : ''}`} style={{
         width: '280px',
         flexShrink: 0,
         borderRight: '1px solid var(--card-border)',
@@ -642,10 +749,18 @@ function App() {
       </nav>
 
       {/* Main Area */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', minWidth: 0, overflow: 'hidden' }}>
+      <main className="main-content" style={{ 
+        flex: 1, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        height: '100vh', 
+        minWidth: 0, 
+        overflow: 'hidden',
+        paddingTop: isMobile ? '60px' : 0
+      }}>
         {activeTab === 'inbox' && (
-          <div style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden' }} className="fade-in">
-            <div style={{ width: '380px', flexShrink: 0, borderRight: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden' }} className="fade-in inbox-grid">
+            <div className={`inbox-panel ${!selectedChatId ? 'active' : ''}`} style={{ width: '380px', flexShrink: 0, borderRight: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column' }}>
               <div style={{ padding: '2rem 1.5rem', borderBottom: '1px solid var(--card-border)' }}>
                 <h2 style={{ fontSize: '1.5rem', marginBottom: '1.25rem' }}>{t('inbox')} ({activeProfile?.name || '...'})</h2>
                 <div style={{ position: 'relative' }}>
@@ -688,12 +803,21 @@ function App() {
               </div>
             </div>
 
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minWidth: 0, overflow: 'hidden' }}>
+            <div className={`inbox-panel ${selectedChatId ? 'active' : ''} ${isMobile && !selectedChatId ? 'hidden-mobile' : ''}`} style={{ flex: 1, display: 'flex', flexDirection: 'row', minWidth: 0, overflow: 'hidden' }}>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.1)', minWidth: 0 }}>
                 {selectedChat ? (
                   <>
                     <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-color)', zIndex: 5 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><div className="avatar-circle"><Users color="var(--accent-color)" size={24} /></div><div><div style={{ fontWeight: '700', fontSize: '1.1rem' }}>{selectedChat.from}</div><div style={{ fontSize: '0.8rem', color: 'var(--success-color)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Shield size={12} /> {t('secureConnection')}</div></div></div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        {isMobile && (
+                          <button 
+                            onClick={() => setSelectedChatId(null)}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--accent-color)', cursor: 'pointer', padding: '0.5rem 0.5rem 0.5rem 0' }}
+                          >
+                            <X size={20} />
+                          </button>
+                        )}
+                        <div className="avatar-circle"><Users color="var(--accent-color)" size={24} /></div><div><div style={{ fontWeight: '700', fontSize: '1.1rem' }}>{selectedChat.from}</div><div style={{ fontSize: '0.8rem', color: 'var(--success-color)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Shield size={12} /> {t('secureConnection')}</div></div></div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <button 
                           onClick={() => {
@@ -1220,7 +1344,7 @@ function App() {
                           const opData = MOCK_OPERATORS.find(o => o.id === profileOp.id);
                           return (
                             <div key={profileOp.id} style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: '1rem', opacity: profileOp.active ? 1 : 0.4 }}>
-                              <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: '900' }}>{opData.avatar}</div>
+                              <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: '900' }}>{opData.avatar}</div>
                               <div style={{ flex: 1 }}>
                                 <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>{opData.name}</div>
                                 <div style={{ fontSize: '0.65rem', color: profileOp.primary ? 'var(--accent-color)' : 'var(--text-secondary)' }}>{profileOp.primary ? 'Primary' : 'Support'}</div>
@@ -1244,7 +1368,7 @@ function App() {
         {activeTab === 'activity' && (
           <div style={{ padding: '3rem', paddingBottom: '8rem' }} className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-              <div><h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('auditTrail')} - {activeClient.name}</h2><p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('auditSubtitle')}</p></div>
+              <div><h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('auditTrail')} - {activeClient?.name || 'System'}</h2><p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('auditSubtitle')}</p></div>
               <div className="status-badge" style={{ borderColor: 'var(--accent-color)', color: 'var(--accent-color)' }}><Shield size={16} /> {t('encryptedLog')}</div>
             </div>
             <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -1273,7 +1397,7 @@ function App() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem', maxWidth: '800px' }}>
               <div className="settings-section">
-                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Building2 size={20} color="var(--accent-color)" /> Agency Insight: {activeClient.name}</h3>
+                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Building2 size={20} color="var(--accent-color)" /> Agency Insight: {activeClient?.name || 'Global'}</h3>
                 <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                   <div className="glass-card" style={{ padding: '1.5rem' }}>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '0.5rem' }}>TEAM SEATS</div>
@@ -1281,7 +1405,7 @@ function App() {
                   </div>
                   <div className="glass-card" style={{ padding: '1.5rem' }}>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '0.5rem' }}>REGIONAL REACH</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{activeClient.region}</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{activeClient?.region || 'Global'}</div>
                   </div>
                 </div>
               </div>

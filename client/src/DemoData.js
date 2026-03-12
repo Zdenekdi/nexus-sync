@@ -9,6 +9,7 @@ export const MOCK_AGENCIES = [
         name: 'Elite Talent Management',
         region: 'UK/Europe',
         tier: 'Enterprise',
+        status: 'active', // 'active' or 'suspended'
         subscription: {
             plan: 'Premium',
             status: 'active',
@@ -16,7 +17,9 @@ export const MOCK_AGENCIES = [
             endDate: '2024-01-01'
         },
         features: {
+            ai_relay: true,
             analytics: true,
+            enterprise_proxies: true,
             multiUser: true,
             customReports: true
         }
@@ -26,6 +29,7 @@ export const MOCK_AGENCIES = [
         name: 'Global Diamond Agency',
         region: 'International',
         tier: 'Professional',
+        status: 'active',
         subscription: {
             plan: 'Standard',
             status: 'active',
@@ -33,7 +37,9 @@ export const MOCK_AGENCIES = [
             endDate: '2024-03-15'
         },
         features: {
+            ai_relay: true,
             analytics: true,
+            enterprise_proxies: false,
             multiUser: false,
             customReports: false
         }
