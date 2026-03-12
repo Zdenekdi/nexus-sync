@@ -1310,24 +1310,25 @@ function App() {
         )}
 
         {activeTab === 'super-admin' && activeOperator.isSuperAdmin && (
-          <div style={{ padding: '3rem', paddingBottom: '8rem' }} className="fade-in">
-            <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Super Admin Infrastructure</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>Global management of agencies, subscriptions, and system-wide capabilities.</p>
+          <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
+            <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>System Infrastructure Control</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>Global oversight of system health, agency subscriptions, and core service provisioning.</p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
               {/* Stats Overview */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
                 {[
-                  { label: 'TOTAL AGENCIES', value: MOCK_AGENCIES.length, icon: Building2, color: '#3b82f6' },
-                  { label: 'ACTIVE PROFILES', value: MOCK_PROFILES.length, icon: Users, color: '#8b5cf6' },
-                  { label: 'MONTHLY REVENUE', value: '$12,450', icon: CreditCard, color: '#10b981' },
-                  { label: 'SYSTEM UPTIME', value: '99.98%', icon: Activity, color: '#f59e0b' }
+                  { label: 'TOTAL AGENCIES', value: MOCK_AGENCIES.length, icon: Building2, color: '#3b82f6', trend: '+2 this month' },
+                  { label: 'ACTIVE PROFILES', value: MOCK_PROFILES.length, icon: Users, color: '#8b5cf6', trend: 'Global Reach' },
+                  { label: 'MONTHLY REVENUE', value: '$12,450', icon: CreditCard, color: '#10b981', trend: '+12% growth' },
+                  { label: 'SYSTEM UPTIME', value: '99.98%', icon: Activity, color: '#f59e0b', trend: 'All nodes active' }
                 ].map((stat, i) => (
                   <div key={i} className="glass-card" style={{ padding: '1.5rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                       <div style={{ background: `${stat.color}20`, padding: '0.5rem', borderRadius: '10px' }}>
                         <stat.icon size={20} color={stat.color} />
                       </div>
+                      <div style={{ fontSize: '0.65rem', color: stat.color, fontWeight: '800' }}>{stat.trend}</div>
                     </div>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>{stat.label}</div>
                     <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{stat.value}</div>
@@ -1335,91 +1336,137 @@ function App() {
                 ))}
               </div>
 
-              {/* Agency & Subscription Management */}
+              {/* Infrastructure Monitor */}
+              <div className="glass-card" style={{ padding: '2rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Cpu size={24} color="var(--accent-color)" /> Global Node Status & Load
+                  </h3>
+                  <div className="status-badge" style={{ borderColor: 'var(--success-color)', color: 'var(--success-color)' }}>
+                    SECURE PROXY TUNNEL ACTIVE
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}>
+                  {[
+                    { node: 'UK-LDN-01', location: 'London, UK', status: 'Optimal', latency: '42ms', load: '12%' },
+                    { node: 'US-NYC-04', location: 'New York, USA', status: 'Optimal', latency: '115ms', load: '28%' },
+                    { node: 'EU-PRG-02', location: 'Prague, CZ', status: 'Optimal', latency: '18ms', load: '5%' }
+                  ].map((node, i) => (
+                    <div key={i} style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--card-border)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                        <div style={{ fontWeight: '800', fontSize: '1.1rem' }}>{node.node}</div>
+                        <div className="dot" style={{ background: 'var(--success-color)', position: 'static', transform: 'none' }}></div>
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>{node.location}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: '700' }}>
+                        <span>Latency: <span style={{ color: 'var(--accent-color)' }}>{node.latency}</span></span>
+                        <span>Load: {node.load}</span>
+                      </div>
+                      <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', marginTop: '0.75rem', overflow: 'hidden' }}>
+                        <div style={{ width: node.load, height: '100%', background: 'var(--accent-color)' }}></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Agency Manager */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                   <h3 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Building2 size={24} color="var(--accent-color)" /> Agency & Subscription Manager
+                    <Building2 size={24} color="#8b5cf6" /> Portfolio & Subscription Manager
                   </h3>
-                  <button className="action-btn" style={{ width: 'auto', padding: '0.6rem 1.25rem' }}><Plus size={18} /> Add New Agency</button>
+                  <button className="action-btn" style={{ width: 'auto', padding: '0.6rem 1.25rem' }}>+ Provision New Agency</button>
                 </div>
-                
                 <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead>
                       <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--card-border)' }}>
-                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>AGENCY NAME</th>
+                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>AGENCY / REGION</th>
                         <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>STATUS</th>
-                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>PLAN</th>
-                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>BILLING</th>
-                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>FEATURES</th>
-                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>ACTIONS</th>
+                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>BILLING TIER</th>
+                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>EQUIPMENT</th>
+                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textAlign: 'right' }}>ACTIONS</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {MOCK_AGENCIES.map((agency, i) => (
-                        <tr key={agency.id} style={{ borderBottom: i < MOCK_AGENCIES.length - 1 ? '1px solid var(--card-border)' : 'none' }}>
-                          <td style={{ padding: '1.25rem 1.5rem' }}>
-                            <div style={{ fontWeight: '700', fontSize: '1rem' }}>{agency.name}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Region: {agency.region}</div>
-                          </td>
-                          <td style={{ padding: '1.25rem 1.5rem' }}>
-                            <div style={{ 
-                              display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.2rem 0.6rem', borderRadius: '6px',
-                              background: agency.subscription.status === 'active' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                              color: agency.subscription.status === 'active' ? 'var(--success-color)' : 'var(--error-color)',
-                              fontSize: '0.7rem', fontWeight: '800'
-                            }}>
-                              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }}></div>
-                              {agency.subscription.status.toUpperCase()}
-                            </div>
-                          </td>
-                          <td style={{ padding: '1.25rem 1.5rem', fontWeight: '700', fontSize: '0.9rem' }}>{agency.subscription.plan}</td>
-                          <td style={{ padding: '1.25rem 1.5rem', fontSize: '0.85rem' }}>
-                            <div>Next: {agency.subscription.endDate}</div>
-                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>$499.00 USD</div>
-                          </td>
-                          <td style={{ padding: '1.25rem 1.5rem' }}>
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                              <Shield size={16} color={agency.features.analytics ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)'} strokeWidth={3} />
-                              <Users size={16} color={agency.features.multiUser ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)'} strokeWidth={3} />
-                              <Layout size={16} color={agency.features.customReports ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)'} strokeWidth={3} />
-                            </div>
-                          </td>
-                          <td style={{ padding: '1.25rem 1.5rem' }}>
-                            <button className="status-badge" style={{ cursor: 'pointer', background: 'rgba(255,255,255,0.05)', color: 'white' }}>Manage</button>
-                          </td>
-                        </tr>
-                      ))}
+                      {MOCK_AGENCIES.map((agency, i) => {
+                        const agencyProfilesCount = MOCK_PROFILES.filter(p => p.clientId === agency.id).length;
+                        const agencyOpsCount = MOCK_OPERATORS.filter(o => o.clientId === agency.id).length;
+                        return (
+                          <tr key={agency.id} style={{ borderBottom: i < MOCK_AGENCIES.length - 1 ? '1px solid var(--card-border)' : 'none' }}>
+                            <td style={{ padding: '1.25rem 1.5rem' }}>
+                              <div style={{ fontWeight: '700', fontSize: '1rem' }}>{agency.name}</div>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Region: {agency.region} • {agencyProfilesCount} Profiles</div>
+                            </td>
+                            <td style={{ padding: '1.25rem 1.5rem' }}>
+                              <div style={{ 
+                                display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.2rem 0.6rem', borderRadius: '6px',
+                                background: agency.subscription.status === 'active' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                color: agency.subscription.status === 'active' ? 'var(--success-color)' : 'var(--error-color)',
+                                fontSize: '0.7rem', fontWeight: '800'
+                              }}>
+                                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }}></div>
+                                {agency.subscription.status.toUpperCase()}
+                              </div>
+                            </td>
+                            <td style={{ padding: '1.25rem 1.5rem' }}>
+                              <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{agency.subscription.plan} Plan</div>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Next renewal: {agency.subscription.endDate}</div>
+                            </td>
+                            <td style={{ padding: '1.25rem 1.5rem' }}>
+                              <div style={{ fontSize: '0.85rem' }}>{agencyOpsCount} Operator Seats</div>
+                              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.4rem' }}>
+                                <Shield size={14} color={agency.features.analytics ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)'} strokeWidth={3} />
+                                <Users size={14} color={agency.features.multiUser ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)'} strokeWidth={3} />
+                                <Globe size={14} color={agency.features.customReports ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)'} strokeWidth={3} />
+                              </div>
+                            </td>
+                            <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
+                              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                <button className="status-badge" style={{ cursor: 'pointer', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-color)', border: '1px solid var(--accent-color)' }}>Impersonate</button>
+                                <button className="status-badge" style={{ cursor: 'pointer', background: 'rgba(0,0,0,0.2)', color: 'white' }}>Settings</button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
               </div>
 
-              {/* System Capabilities / Feature Toggles */}
-              <div className="glass-card" style={{ padding: '2rem' }}>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <ShieldAlert size={24} color="#f59e0b" /> Global Feature Provisioning
-                </h3>
+              {/* Global Feature Provisioning */}
+              <div className="glass-card" style={{ padding: '2rem', background: 'rgba(5,7,10,0.4)', border: '1px dashed var(--accent-color)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Zap size={24} color="#f59e0b" /> Master Feature Provisioning
+                  </h3>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '700' }}>SYSTEM CAPABILITIES TOGGLES</div>
+                </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2rem' }}>
                   {[
-                    { id: 'ai_trans', label: 'AI Real-time Translation', desc: 'Auto-translate messages for all supported agencies.', active: true },
-                    { id: 'vc_hub', label: 'Voice Hub & Call Simulation', desc: 'Enable voice call infrastructure and overlays.', active: true },
-                    { id: 'crm_adv', label: 'Advanced CRM & Client Notes', desc: 'Persistent client interactions and internal operator logs.', active: true },
-                    { id: 'stats_bi', label: 'BI Analytics & Performance', desc: 'Enterprise-level statistics and operator metrics.', active: false }
+                    { id: 'ai_trans', label: 'Global AI Voice Relay', desc: 'Auto-provision secure voice corridors for phone simulation.', active: true },
+                    { id: 'vc_hub', label: 'Cross-Agency Analytics', desc: 'Allow managers to view performance trends across multiple regions.', active: true },
+                    { id: 'crm_adv', label: 'Enterprise Proxy Pooling', desc: 'Dynamic residential proxy allocation for enhanced privacy.', active: true },
+                    { id: 'stats_bi', label: 'Automatic Payout Processing', desc: 'Scheduled generation of agency-wide billing reports.', active: false }
                   ].map((feature, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--card-border)' }}>
                       <div>
                         <div style={{ fontWeight: '700', marginBottom: '0.25rem' }}>{feature.label}</div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{feature.desc}</div>
                       </div>
-                      <div style={{ 
-                        width: '44px', height: '24px', background: feature.active ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)',
-                        borderRadius: '20px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s'
-                      }}>
+                      <div 
+                        onClick={() => {}} // Local simulation
+                        className={`toggle-switch ${feature.active ? 'active' : ''}`}
+                        style={{ 
+                          width: '40px', height: '20px', background: feature.active ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)',
+                          borderRadius: '20px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s'
+                        }}
+                      >
                         <div style={{ 
-                          width: '18px', height: '18px', background: 'white', borderRadius: '50%',
-                          position: 'absolute', top: '3px', left: feature.active ? '23px' : '3px', transition: 'all 0.3s'
+                          width: '14px', height: '14px', background: 'white', borderRadius: '50%',
+                          position: 'absolute', top: '2px', left: feature.active ? '22px' : '3px', transition: 'all 0.3s'
                         }}></div>
                       </div>
                     </div>
