@@ -118,6 +118,39 @@ function App() {
   // Call Mute State
   const [isMuted, setIsMuted] = useState(false);
 
+  // Booking Modal State
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [bookingDetails, setBookingDetails] = useState({
+    date: new Date().toISOString().split('T')[0],
+    time: '14:00',
+    duration: '60',
+    type: 'work'
+  });
+  const [bookingSchedule, setBookingSchedule] = useState(MOCK_CALENDAR.events);
+  const [bookingCollision, setBookingCollision] = useState(null);
+
+  const checkBookingCollision = (date, time, duration) => {
+    // Basic collision detection for the demo
+    // Convert time to minutes from midnight for easier comparison
+    const [hours, minutes] = time.split(':').map(Number);
+    const startMins = hours * 60 + minutes;
+    const endMins = startMins + parseInt(duration);
+
+    const collision = bookingSchedule.find(event => {
+      const [eHours, eMinutes] = event.time.split(' ')[0].split(':').map(Number);
+      const isPm = event.time.includes('PM') && eHours !== 12;
+      const hoursCorrected = isPm ? eHours + 12 : (event.time.includes('AM') && eHours === 12 ? 0 : eHours);
+      
+      const eventStartMins = hoursCorrected * 60 + (eMinutes || 0);
+      const eventDuration = parseFloat(event.duration) * 60;
+      const eventEndMins = eventStartMins + eventDuration;
+
+      return (startMins < eventEndMins && endMins > eventStartMins);
+    });
+
+    return collision;
+  };
+
 
   const t = (key) => TRANSLATIONS[lang][key] || key;
 
@@ -140,6 +173,31 @@ function App() {
   }, [activeClient.id, profileAssignments]);
 
   const myProfileIds = useMemo(() => myProfiles.map(p => p.id), [myProfiles]);
+
+  const handleConfirmBooking = () => {
+    const collision = checkBookingCollision(bookingDetails.date, bookingDetails.time, bookingDetails.duration);
+    if (!collision) {
+      // Add to local schedule
+      const newEvent = {
+        time: `${bookingDetails.time} ${parseInt(bookingDetails.time) >= 12 ? 'PM' : 'AM'}`,
+        duration: `${parseInt(bookingDetails.duration) / 60}h`,
+        title: `Private Booking - ${selectedChat.from}`,
+        status: 'busy',
+        type: bookingDetails.type
+      };
+      setBookingSchedule([...bookingSchedule, newEvent]);
+      
+      // Send automated message
+      const confirmText = lang === 'cz' 
+        ? `Vaše rezervace na ${bookingDetails.date} v ${bookingDetails.time} na ${bookingDetails.duration} min byla potvrzena. Těším se na vás!`
+        : `Your booking for ${bookingDetails.date} at ${bookingDetails.time} for ${bookingDetails.duration} min has been confirmed. Looking forward to it!`;
+      
+      handleSendMessage(confirmText);
+      setIsBookingModalOpen(false);
+    } else {
+      setBookingCollision(collision);
+    }
+  };
 
   // Derived Active Profile Object
   const activeProfile = useMemo(() => {
@@ -608,7 +666,10 @@ function App() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><div className="avatar-circle"><Users color="var(--accent-color)" size={24} /></div><div><div style={{ fontWeight: '700', fontSize: '1.1rem' }}>{selectedChat.from}</div><div style={{ fontSize: '0.8rem', color: 'var(--success-color)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Shield size={12} /> {t('secureConnection')}</div></div></div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <button 
-                          onClick={() => setActiveTab('calendar')} 
+                          onClick={() => {
+                            setBookingCollision(null);
+                            setIsBookingModalOpen(true);
+                          }} 
                           className="status-badge" 
                           style={{ fontWeight: '700', color: 'var(--warning-color)', cursor: 'pointer', border: '1px solid var(--warning-color)' }}
                         >
@@ -779,6 +840,83 @@ function App() {
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'calendar' && (
+          <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, display: 'flex', flexDirection: 'column' }} className="fade-in">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+              <div>
+                <h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('schedule') || 'Rozvrh Rezervací'} - {activeProfile?.name || '...'}</h2>
+                <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Správa schůzek a dostupnosti pro vybraný profil.</p>
+              </div>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                 <div className="status-badge" style={{ borderColor: 'var(--accent-color)', color: 'var(--accent-color)' }}>
+                   <Activity size={16} /> {bookingSchedule.length} UDÁLOSTÍ
+                 </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem', flex: 1, minHeight: 0 }}>
+              <div className="glass-card" style={{ padding: '2rem', overflowY: 'auto' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {bookingSchedule.sort((a,b) => {
+                    const timeToMins = (t) => {
+                      const [h, m] = t.split(' ')[0].split(':').map(Number);
+                      const isPm = t.includes('PM') && h !== 12;
+                      return (isPm ? h + 12 : (t.includes('AM') && h === 12 ? 0 : h)) * 60 + (m || 0);
+                    };
+                    return timeToMins(a.time) - timeToMins(b.time);
+                  }).map((event, idx) => (
+                    <div key={idx} style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '1.5rem', 
+                      padding: '1.25rem', 
+                      background: 'rgba(255,255,255,0.02)', 
+                      borderRadius: '16px', 
+                      border: '1px solid var(--card-border)',
+                      borderLeft: `4px solid ${event.type === 'work' ? 'var(--accent-color)' : 'var(--warning-color)'}`
+                    }}>
+                      <div style={{ width: '80px', flexShrink: 0 }}>
+                        <div style={{ fontWeight: '800', fontSize: '1.1rem' }}>{event.time}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{event.duration}</div>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '700', fontSize: '1rem', marginBottom: '0.2rem' }}>{event.title}</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: event.status === 'busy' ? 'var(--error-color)' : 'var(--success-color)' }}></div>
+                          {event.status.toUpperCase()}
+                        </div>
+                      </div>
+                      <div style={{ opacity: 0.5 }}>
+                        <MoreVertical size={18} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                <div className="glass-card" style={{ padding: '1.5rem' }}>
+                  <h3 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Clock size={18} color="var(--warning-color)" /> DOPORUČENÉ SLOTY
+                  </h3>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+                    {MOCK_CALENDAR.suggestions.map(s => (
+                      <div key={s} className="status-badge" style={{ background: 'rgba(245, 158, 11, 0.1)', cursor: 'pointer', border: '1px solid var(--warning-color)', color: 'white' }}>{s}</div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="glass-card" style={{ padding: '1.5rem', background: 'rgba(59, 130, 246, 0.05)', border: '1px dashed var(--accent-color)' }}>
+                  <h3 style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '1rem' }}>TIP PRO OPERÁTORA</h3>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                    Vždy potvrďte rezervaci klientovi i v chatu. Systém po potvrzení v popupu pošle automatickou zprávu za vás.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -1317,6 +1455,89 @@ function App() {
           </div>
         )}
       </main>
+      
+      {/* Booking Modal */}
+      {isBookingModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '500px', padding: '2.5rem', border: '1px solid var(--accent-color)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <Calendar size={28} color="var(--accent-color)" /> {t('createBooking') || 'Nova Rezervace'}
+              </h2>
+              <X size={24} color="var(--text-secondary)" cursor="pointer" onClick={() => setIsBookingModalOpen(false)} />
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>CLIENT / GIRL</label>
+                <div style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', display: 'flex', gap: '1rem' }}>
+                   <div style={{ fontWeight: '700' }}>{selectedChat.from}</div>
+                   <div style={{ color: 'var(--text-secondary)' }}>→</div>
+                   <div style={{ fontWeight: '700', color: 'var(--accent-color)' }}>{activeProfile?.name}</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>DATE</label>
+                  <input type="date" value={bookingDetails.date} onChange={(e) => setBookingDetails({...bookingDetails, date: e.target.value})} style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.75rem', borderRadius: '12px', color: 'white' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>TIME</label>
+                  <input type="time" value={bookingDetails.time} onChange={(e) => setBookingDetails({...bookingDetails, time: e.target.value})} style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.75rem', borderRadius: '12px', color: 'white' }} />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>DURATION</label>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  {['30', '60', '90', '120'].map(mins => (
+                    <button key={mins} onClick={() => setBookingDetails({...bookingDetails, duration: mins})} style={{ flex: 1, padding: '0.6rem', borderRadius: '10px', border: '1px solid', borderColor: bookingDetails.duration === mins ? 'var(--accent-color)' : 'var(--card-border)', background: bookingDetails.duration === mins ? 'rgba(59, 130, 246, 0.1)' : 'transparent', color: bookingDetails.duration === mins ? 'white' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer' }}>{mins}m</button>
+                  ))}
+                </div>
+              </div>
+
+              {bookingCollision && (
+                <div style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--error-color)', borderRadius: '12px', display: 'flex', gap: '0.75rem' }}>
+                  <AlertTriangle size={20} color="var(--error-color)" style={{ flexShrink: 0 }} />
+                  <div>
+                    <div style={{ color: 'var(--error-color)', fontWeight: '800', fontSize: '0.85rem', marginBottom: '0.25rem' }}>COLLISION DETECTED</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Overlaps with: <strong>{bookingCollision.title} ({bookingCollision.time})</strong></div>
+                    <button 
+                      onClick={() => {
+                        // Simple logic for next slot: exact end of collision
+                        const [h, m] = bookingCollision.time.split(' ')[0].split(':').map(Number);
+                        const isPm = bookingCollision.time.includes('PM') && h !== 12;
+                        const hCorrected = isPm ? h + 12 : (bookingCollision.time.includes('AM') && h === 12 ? 0 : h);
+                        const dur = parseFloat(bookingCollision.duration) * 60;
+                        const startTotal = hCorrected * 60 + (m || 0);
+                        const endTotal = startTotal + dur;
+                        const nextH = Math.floor(endTotal / 60);
+                        const nextM = endTotal % 60;
+                        const nextTime = `${String(nextH).padStart(2, '0')}:${String(nextM).padStart(2, '0')}`;
+                        setBookingDetails({...bookingDetails, time: nextTime});
+                        setBookingCollision(null);
+                      }}
+                      style={{ marginTop: '0.75rem', background: 'white', color: 'black', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer' }}
+                    >
+                      MOVE TO NEXT SLOT
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <button 
+                onClick={handleConfirmBooking}
+                className="action-btn" 
+                style={{ background: bookingCollision ? 'rgba(255,255,255,0.1)' : 'var(--accent-color)', color: 'white', marginTop: '1rem', opacity: bookingCollision ? 0.5 : 1 }}
+                disabled={!!bookingCollision}
+              >
+                {t('confirmBooking') || 'CONFIRM RESERVATION'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Overlays */}
       {incomingCall && (
