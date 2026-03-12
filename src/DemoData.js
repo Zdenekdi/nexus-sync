@@ -3,11 +3,50 @@ export const MOCK_CLIENTS = [
     { id: 'agency-02', name: 'Global Diamond Agency', region: 'International', tier: 'Professional' }
 ];
 
+export const MOCK_AGENCIES = [
+    {
+        id: 'agency-01',
+        name: 'Elite Talent Management',
+        region: 'UK/Europe',
+        tier: 'Enterprise',
+        subscription: {
+            plan: 'Premium',
+            status: 'active',
+            startDate: '2023-01-01',
+            endDate: '2024-01-01'
+        },
+        features: {
+            analytics: true,
+            multiUser: true,
+            customReports: true
+        }
+    },
+    {
+        id: 'agency-02',
+        name: 'Global Diamond Agency',
+        region: 'International',
+        tier: 'Professional',
+        subscription: {
+            plan: 'Standard',
+            status: 'active',
+            startDate: '2023-03-15',
+            endDate: '2024-03-15'
+        },
+        features: {
+            analytics: true,
+            multiUser: false,
+            customReports: false
+        }
+    }
+];
+
 export const MOCK_OPERATORS = [
     { id: 'op-01', name: 'Alice M.', role: 'Senior Operator', clientId: 'agency-01', avatar: 'AM', email: 'alice@nexus.sync', password: 'password123', metrics: { messages: 842, calls: 45, conversion: '12%' } },
     { id: 'op-02', name: 'Mark T.', role: 'Regional Manager', clientId: 'agency-01', avatar: 'MT', email: 'mark@nexus.sync', password: 'password123', isAdmin: true, metrics: { messages: 156, calls: 8, conversion: '8%' } },
     { id: 'op-03', name: 'Sarah K.', role: 'US Specialist', clientId: 'agency-02', avatar: 'SK', email: 'sarah@nexus.sync', password: 'password123', metrics: { messages: 530, calls: 22, conversion: '15%' } },
-    { id: 'op-04', name: 'Elena B.', role: 'Night Shift', clientId: 'agency-01', avatar: 'EB', email: 'elena@nexus.sync', password: 'password123', metrics: { messages: 620, calls: 14, conversion: '9%' } }
+    { id: 'op-04', name: 'Elena B.', role: 'Night Shift', clientId: 'agency-01', avatar: 'EB', email: 'elena@nexus.sync', password: 'password123', metrics: { messages: 620, calls: 14, conversion: '9%' } },
+    { id: 'op-05', name: 'Diana', role: 'Model', avatar: 'D', email: 'diana@nexus.sync', password: 'password123', isModel: true },
+    { id: 'op-06', name: 'Super Admin', role: 'System Owner', clientId: null, avatar: 'SA', email: 'admin@nexus.ai', password: 'password123', isSuperAdmin: true }
 ];
 
 export const MOCK_PROFILES = [
@@ -232,12 +271,15 @@ export const MOCK_CLIENT_DB = [
 
 export const MOCK_CALENDAR = {
     events: [
-        { time: '10:00 AM', duration: '1.5h', title: 'Hair & Makeup', status: 'busy', type: 'prep' },
-        { time: '2:00 PM', duration: '1h', title: 'Private Booking', status: 'busy', type: 'work' },
-        { time: '4:00 PM', duration: '2h', title: 'Studio Session', status: 'busy', type: 'work' },
-        { time: '7:30 PM', duration: '3h', title: 'Night Dinner Event', status: 'busy', type: 'work' },
+        { time: '10:00 AM', duration: '1.5h', title: 'Hair & Makeup - London Studio', status: 'busy', type: 'prep' },
+        { time: '12:30 PM', duration: '1h', title: 'Lunch Interview (Press)', status: 'busy', type: 'work' },
+        { time: '2:00 PM', duration: '1h', title: 'Private Booking - Chelsea', status: 'busy', type: 'work' },
+        { time: '4:00 PM', duration: '2h', title: 'Studio Session (New Collection)', status: 'busy', type: 'work' },
+        { time: '7:00 PM', duration: '1h', title: 'Transport to Event', status: 'busy', type: 'prep' },
+        { time: '8:00 PM', duration: '3h', title: 'VIP Gala Dinner', status: 'busy', type: 'work' },
+        { time: '11:00 PM', duration: '1h', title: 'Late Night Wrap-up', status: 'busy', type: 'work' },
     ],
-    suggestions: ['6:00 PM', '8:00 PM', '10:30 PM']
+    suggestions: ['6:00 PM', '9:30 PM', '10:30 PM']
 };
 
 export const MOCK_STATS = {

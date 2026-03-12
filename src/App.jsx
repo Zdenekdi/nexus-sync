@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Users, Activity, Shield, RefreshCw, ExternalLink,
   MessageSquare, LayoutDashboard, Settings, PieChart,
   Send, MoreVertical, CheckCheck, Play, Fingerprint,
   Globe, Cpu, Zap, Signal, Calendar, AlertTriangle, Clock, Search, LogOut,
-  TrendingUp, DollarSign, BarChart3, Bell, Lock, Smartphone, Phone, X, Check, FileText, User, Sparkles, Building2, ChevronDown, UserCheck, UserPlus, Image, FileEdit, Link, StickyNote
+  TrendingUp, DollarSign, BarChart3, Bell, Lock, Smartphone, Phone, X, Check, FileText, User, Sparkles, Building2, ChevronDown, UserCheck, UserPlus, Image, FileEdit, Link, StickyNote, Mic, MicOff, FileSearch, ShieldAlert, CreditCard
 } from 'lucide-react';
-import { MOCK_PROFILES, MOCK_MESSAGES, MOCK_STATS, MOCK_CALENDAR, MOCK_CHART_DATA, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_SMART_REPLIES, MOCK_CLIENTS, MOCK_OPERATORS } from './DemoData';
+import { MOCK_PROFILES, MOCK_MESSAGES, MOCK_STATS, MOCK_CALENDAR, MOCK_CHART_DATA, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_SMART_REPLIES, MOCK_CLIENTS, MOCK_OPERATORS, MOCK_CLIENT_DB, MOCK_AGENCIES } from './DemoData';
 import { TRANSLATIONS } from './translations';
 
 const LoginScreen = ({ onLogin, lang, setLang, t }) => {
@@ -92,7 +92,6 @@ function App() {
   const [selectedChatId, setSelectedChatId] = useState(null);
 
   const [messageValue, setMessageValue] = useState('');
-  const [sentMessages, setSentMessages] = useState([]);
   const [activeCall, setActiveCall] = useState(null);
   const [incomingCall, setIncomingCall] = useState(null);
   const [callTime, setCallTime] = useState(0);
@@ -113,7 +112,11 @@ function App() {
   const [isTranslating, setIsTranslating] = useState(false);
   const [targetLang, setTargetLang] = useState('en'); // Default target language for translator
   const [internalNote, setInternalNote] = useState('');
-  const [showNotification, setShowNotification] = useState(false);
+  const [sessionHistories, setSessionHistories] = useState({}); // Stores sent messages per chat ID
+  const [showOnlyOnline, setShowOnlyOnline] = useState(false);
+
+  // Call Mute State
+  const [isMuted, setIsMuted] = useState(false);
 
 
   const t = (key) => TRANSLATIONS[lang][key] || key;
@@ -136,22 +139,38 @@ function App() {
     return profileAssignments.filter(profile => profile.clientId === activeClient.id);
   }, [activeClient.id, profileAssignments]);
 
+  const myProfileIds = useMemo(() => myProfiles.map(p => p.id), [myProfiles]);
+
   // Derived Active Profile Object
   const activeProfile = useMemo(() => {
     const found = allAgencyProfiles.find(p => p.id === activeProfileId);
     return found || myProfiles[0] || allAgencyProfiles[0] || null;
   }, [activeProfileId, allAgencyProfiles, myProfiles]);
 
-  const filteredMessages = useMemo(() =>
-    activeProfile ? MOCK_MESSAGES.filter(msg => msg.profileId === activeProfile.id) : [],
-    [activeProfile]);
+  // Filter messages for current operator/model
+  const filteredMessages = useMemo(() => {
+    let base = MOCK_MESSAGES;
+
+    // If it's a model, they only see their own profile's messages
+    if (activeOperator.isModel) {
+      // Find the profile belonging to this model (for demo, we assume Diana owns 'p-04')
+      // In a real app, op.profileId would exist.
+      const modelProfileId = 'p-04';
+      base = base.filter(m => m.profileId === modelProfileId);
+    } else if (!activeOperator.isAdmin) {
+      // Standard operator sees messages from profiles they are assigned to
+      base = base.filter(m => myProfileIds.includes(m.profileId));
+    }
+
+    return base.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  }, [activeOperator, myProfileIds]);
 
   const totalUnread = useMemo(() =>
     MOCK_MESSAGES.filter(msg =>
-      msg.status === 'unread' &&
-      myProfiles.some(p => p.id === msg.profileId)
+      (activeOperator.isModel ? msg.profileId === 'p-04' : myProfileIds.includes(msg.profileId)) &&
+      msg.status === 'unread'
     ).length,
-    [myProfiles]);
+    [myProfileIds, activeOperator]);
 
   const toggleOperatorStatus = (profileId, operatorId) => {
     setProfileAssignments(prev => prev.map(p => {
@@ -197,30 +216,26 @@ function App() {
     };
   }, [activeCall]);
 
-  useEffect(() => {
-    if (activeChat) {
-      if (!isTranslating) {
-        setSourceText("");
-        setTranslatedText("");
-      }
-      setInternalNote("");
-      // Load mock notes if not already loaded into local state
-      if (activeChat.client && !clientNotes[activeChat.client.id]) {
-        setClientNotes(prev => ({
-          ...prev,
-          [activeChat.client.id]: activeChat.client.notes || []
-        }));
-      }
-    }
-  }, [activeChat, isTranslating]);
+  // No side effects needed for chat change now that resets are in onClick handlers.
 
-  const handleSendMessage = (text = messageValue) => {
-    if (!text.trim()) return;
-    const targetLang = selectedChat?.lang || 'en';
-    const isTranslated = lang !== targetLang;
-    setSentMessages(prev => [...prev, { id: Date.now(), text, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), translated: isTranslated ? targetLang : null }]);
+  const handleSendMessage = useCallback((val = messageValue) => {
+    if (!val.trim() || !selectedChat?.id) return;
+    const now = Date.now();
+    const newMessage = { 
+      id: now, 
+      text: val, 
+      from: 'me', 
+      time: 'Just now', 
+      translated: activeClient.lang !== activeOperator.lang ? activeClient.lang : null 
+    };
+    
+    setSessionHistories(prev => ({
+      ...prev,
+      [selectedChat.id]: [...(prev[selectedChat.id] || []), newMessage]
+    }));
+    
     setMessageValue('');
-  };
+  }, [messageValue, selectedChat, activeClient.lang, activeOperator.lang]);
 
   const startCall = () => {
     if (!activeProfile) return;
@@ -317,7 +332,7 @@ function App() {
 
   // Handle Note Save
   const handleSaveNote = () => {
-    if (!internalNote.trim() || !activeChat?.client?.id) return;
+    if (!internalNote.trim() || !activeChat?.from) return;
 
     const newNote = {
       id: Date.now(),
@@ -328,11 +343,9 @@ function App() {
 
     setClientNotes(prev => ({
       ...prev,
-      [activeChat.client.id]: [newNote, ...(prev[activeChat.client.id] || [])]
+      [activeChat.from]: [newNote, ...(prev[activeChat.from] || [])]
     }));
     setInternalNote('');
-    setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 2000);
   };
 
   if (!isLoggedIn) {
@@ -383,7 +396,7 @@ function App() {
             <>
               <div style={{ height: '32px', width: '1px', background: 'var(--card-border)' }} />
               <button
-                onClick={() => setShowCallSimulation(true)}
+                onClick={simulateIncomingCall}
                 className="status-badge pulse-call-btn"
                 style={{ cursor: 'pointer', border: 'none', color: 'var(--accent-color)' }}
               >
@@ -424,14 +437,21 @@ function App() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {[
-            ...(activeOperator.isAdmin ? [] : [
-              { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: totalUnread },
-              { id: 'calendar', icon: Calendar, label: t('schedule') },
+            // Operational Tabs (Now visible to Admins/Managers too so they can see Inbox/Notes)
+            { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator.isModel ? 0 : totalUnread },
+            { id: 'calendar', icon: Calendar, label: t('schedule') },
+            ...(activeOperator.isModel ? [] : [
               { id: 'profiles', icon: Users, label: t('profiles') },
               { id: 'web-profiles', icon: Globe, label: t('webProfiles') }
             ]),
-            ...(activeOperator.isAdmin ? [{ id: 'analytics', icon: BarChart3, label: t('analytics') }] : []),
-            { id: 'activity', icon: Activity, label: t('auditLog') },
+            // Manager Tabs
+            ...(activeOperator.isAdmin ? [
+              { id: 'analytics', icon: BarChart3, label: t('analytics') },
+              { id: 'qa', icon: FileSearch, label: 'QA & Review' }
+            ] : []),
+            // Universal Tabs (except Models don't need Audit Log here)
+            ...(activeOperator.isModel ? [] : [{ id: 'activity', icon: Activity, label: t('auditLog') }]),
+            ...(activeOperator.isSuperAdmin ? [{ id: 'super-admin', icon: ShieldAlert, label: 'Super Admin' }] : []),
             { id: 'settings', icon: Settings, label: t('settings') },
           ].map(item => (
             <button key={item.id} onClick={() => setActiveTab(item.id)}
@@ -448,12 +468,27 @@ function App() {
           ))}
         </div>
 
-        {/* Profile (Girl) Switcher */}
-        {!activeOperator.isAdmin && (
-          <div style={{ marginTop: '2.5rem', flex: 1 }}>
-            <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.1em' }}>MY ASSIGNED GIRLS</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: '35vh', overflowY: 'auto' }} className="custom-scrollbar">
-              {myProfiles.map(p => {
+        {/* Profile (Girl) Switcher - Hidden ONLY for Models (Visible for Operators and Admins) */}
+        {!activeOperator.isModel && (
+          <div style={{ marginTop: '2.5rem', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>MY ASSIGNED GIRLS</div>
+              <button 
+                onClick={() => setShowOnlyOnline(!showOnlyOnline)}
+                style={{ 
+                  background: showOnlyOnline ? 'var(--success-color)' : 'transparent', 
+                  color: showOnlyOnline ? 'white' : 'var(--text-secondary)', 
+                  fontSize: '0.7rem', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem',
+                  padding: '6px 12px', borderRadius: '8px', border: '2px solid currentColor',
+                  boxShadow: showOnlyOnline ? '0 0 15px rgba(16, 185, 129, 0.3)' : 'none',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                {showOnlyOnline ? 'ONLINE ONLY' : 'SHOW ALL'}
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: '40vh', overflowY: 'auto', paddingRight: '4px' }} className="custom-scrollbar">
+              {myProfiles.filter(p => !showOnlyOnline || p.status === 'online').map(p => {
                 const unread = getUnreadForProfile(p.id);
                 return (
                   <button
@@ -515,7 +550,18 @@ function App() {
               </div>
               <div style={{ overflowY: 'auto', flex: 1 }}>
                 {filteredMessages.length > 0 ? filteredMessages.map(msg => (
-                  <div key={msg.id} onClick={() => { setSelectedChatId(msg.id); setSentMessages([]); }}
+                  <div key={msg.id} onClick={() => { 
+                    setSelectedChatId(msg.id); 
+                    if (!isTranslating) {
+                      setSourceText("");
+                      setTranslatedText("");
+                    }
+                    setInternalNote("");
+                    // Initialize client notes entry if missing
+                    if (msg.from && !clientNotes[msg.from]) {
+                      setClientNotes(prev => ({ ...prev, [msg.from]: [] }));
+                    }
+                  }}
                     style={{ padding: '1.5rem', borderBottom: '1px solid var(--card-border)', background: selectedChat?.id === msg.id ? 'rgba(59, 130, 246, 0.05)' : 'transparent', cursor: 'pointer', position: 'relative' }}>
                     {msg.status === 'unread' && <div className="dot"></div>}
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}><span style={{ fontWeight: '700', fontSize: '1.1rem' }}>{msg.from}</span><span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{msg.time}</span></div>
@@ -536,7 +582,7 @@ function App() {
 
                     <div style={{ flex: 1, padding: '2.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                       <div className="message-bubble-in">{selectedChat.text}</div>
-                      {sentMessages.map(m => (
+                      {(sessionHistories[selectedChat.id] || []).map(m => (
                         <div key={m.id} style={{ alignSelf: 'flex-end', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                           <div className="message-bubble-out">{m.text}</div>
                           {m.translated && (
@@ -565,24 +611,116 @@ function App() {
               </div>
 
               {selectedChat && (
-                <div className="notes-panel-container" style={{ padding: '2rem 1.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                    <FileText size={20} color="var(--accent-color)" />
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>{t('internalNotes')}</h3>
-                  </div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1rem', fontWeight: '600' }}>
-                    {selectedChat.from}
-                  </div>
-                  <textarea
-                    className="note-input"
-                    placeholder={t('notesPlaceholder')}
-                    value={clientNotes[selectedChat.from] || ''}
-                    onChange={(e) => setClientNotes(prev => ({ ...prev, [selectedChat.from]: e.target.value }))}
-                    style={{ flex: 1 }}
-                  />
-                  <div style={{ marginTop: '1rem', fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-                    <Shield size={14} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
-                    Notes are end-to-end encrypted and shared only within the active operator group.
+                <div className="notes-panel-container" style={{ width: '400px', borderLeft: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column', background: 'var(--bg-color)', overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', flex: 1, flexDirection: 'column', overflow: 'hidden' }}>
+                    
+                    {/* Tabs for Translator / Note */}
+                    <div style={{ display: 'flex', borderBottom: '1px solid var(--card-border)', background: 'rgba(255, 255, 255, 0.02)' }}>
+                      <button
+                        onClick={() => setActiveContextTab('translator')}
+                        style={{
+                          flex: 1, padding: '0.75rem', border: 'none', background: 'transparent',
+                          color: activeContextTab === 'translator' ? 'var(--accent-color)' : 'var(--text-secondary)',
+                          borderBottom: activeContextTab === 'translator' ? '2px solid var(--accent-color)' : '2px solid transparent',
+                          fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+                        }}
+                      >
+                        <Globe size={14} /> Translator
+                      </button>
+                      <button
+                        onClick={() => setActiveContextTab('note')}
+                        style={{
+                          flex: 1, padding: '0.75rem', border: 'none', background: 'transparent',
+                          color: activeContextTab === 'note' ? '#f59e0b' : 'var(--text-secondary)',
+                          borderBottom: activeContextTab === 'note' ? '2px solid #f59e0b' : '2px solid transparent',
+                          fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+                        }}
+                      >
+                        <StickyNote size={14} /> Internal Note
+                      </button>
+                    </div>
+
+                    {/* Stable Content Area */}
+                    <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto' }} className="custom-scrollbar">
+                      {activeContextTab === 'translator' ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                          <textarea
+                            value={sourceText}
+                            onChange={(e) => setSourceText(e.target.value)}
+                            placeholder="Type text to translate..."
+                            style={{
+                              width: '100%', height: '100px', background: 'rgba(0, 0, 0, 0.2)', border: '1px solid var(--card-border)',
+                              borderRadius: '12px', padding: '1rem', color: 'white', resize: 'none', fontSize: '0.9rem'
+                            }}
+                          />
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <select
+                              value={targetLang}
+                              onChange={(e) => setTargetLang(e.target.value)}
+                              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', padding: '0.4rem 0.8rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '700', outline: 'none' }}
+                            >
+                              <option value="en" style={{ background: '#0a0a0a' }}>TO ENGLISH</option>
+                              <option value="cz" style={{ background: '#0a0a0a' }}>TO CZECH</option>
+                            </select>
+                            <button
+                              onClick={handleTranslate}
+                              disabled={isTranslating}
+                              style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                            >
+                              {isTranslating ? <RefreshCw size={14} className="spin-animation" /> : <Sparkles size={14} />}
+                              Translate
+                            </button>
+                          </div>
+                          {translatedText && (
+                            <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '12px', padding: '1rem', position: 'relative' }}>
+                              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--accent-color)', marginBottom: '0.5rem', letterSpacing: '0.1em' }}>TRANSLATED:</div>
+                              <div style={{ fontSize: '0.95rem', color: 'white' }}>{translatedText}</div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+                          <textarea
+                            value={internalNote}
+                            onChange={(e) => setInternalNote(e.target.value)}
+                            placeholder="Add a new internal note for this client..."
+                            style={{
+                              width: '100%', minHeight: '100px', background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.2)',
+                              borderRadius: '12px', padding: '1rem', color: '#f59e0b', resize: 'vertical', fontSize: '0.9rem'
+                            }}
+                          />
+                          <button
+                            onClick={handleSaveNote}
+                            disabled={!internalNote.trim()}
+                            style={{
+                              alignSelf: 'flex-end', background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.4)',
+                              padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '700', cursor: internalNote.trim() ? 'pointer' : 'not-allowed',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            Save Note
+                          </button>
+                          
+                          {/* Saved Notes List */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.5rem' }}>
+                            {activeChat?.from && (clientNotes[activeChat.from] || []).map(note => (
+                              <div key={note.id} style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px', borderLeft: '3px solid #f59e0b' }}>
+                                <div style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.9)', marginBottom: '0.5rem', whiteSpace: 'pre-wrap' }}>{note.text}</div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                                  <span>{note.author}</span>
+                                  <span>{note.timestamp}</span>
+                                </div>
+                              </div>
+                            ))}
+                            {(!activeChat?.from || !clientNotes[activeChat.from] || clientNotes[activeChat.from].length === 0) && (
+                              <div style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)', fontStyle: 'italic', padding: '2rem 0' }}>
+                                No internal notes saved yet.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -848,9 +986,7 @@ function App() {
                       >
                         OPEN CONTEXT
                       </button>
-          {!activeOperator.isAdmin && (
-            <div style={{ marginTop: '2rem' }}></div>
-          )}
+
                     </div>
 
                     <div style={{ flex: 1 }}>
@@ -948,6 +1084,182 @@ function App() {
             </div>
           </div>
         )}
+
+        {activeTab === 'super-admin' && activeOperator.isSuperAdmin && (
+          <div style={{ padding: '3rem', paddingBottom: '8rem' }} className="fade-in">
+            <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Super Admin Infrastructure</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>Global management of agencies, subscriptions, and system-wide capabilities.</p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+              {/* Stats Overview */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
+                {[
+                  { label: 'TOTAL AGENCIES', value: MOCK_AGENCIES.length, icon: Building2, color: '#3b82f6' },
+                  { label: 'ACTIVE PROFILES', value: MOCK_PROFILES.length, icon: Users, color: '#8b5cf6' },
+                  { label: 'MONTHLY REVENUE', value: '$12,450', icon: CreditCard, color: '#10b981' },
+                  { label: 'SYSTEM UPTIME', value: '99.98%', icon: Activity, color: '#f59e0b' }
+                ].map((stat, i) => (
+                  <div key={i} className="glass-card" style={{ padding: '1.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                      <div style={{ background: `${stat.color}20`, padding: '0.5rem', borderRadius: '10px' }}>
+                        <stat.icon size={20} color={stat.color} />
+                      </div>
+                    </div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>{stat.label}</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{stat.value}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Agency & Subscription Management */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Building2 size={24} color="var(--accent-color)" /> Agency & Subscription Manager
+                  </h3>
+                  <button className="action-btn" style={{ width: 'auto', padding: '0.6rem 1.25rem' }}><Plus size={18} /> Add New Agency</button>
+                </div>
+                
+                <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--card-border)' }}>
+                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>AGENCY NAME</th>
+                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>STATUS</th>
+                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>PLAN</th>
+                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>BILLING</th>
+                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>FEATURES</th>
+                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>ACTIONS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {MOCK_AGENCIES.map((agency, i) => (
+                        <tr key={agency.id} style={{ borderBottom: i < MOCK_AGENCIES.length - 1 ? '1px solid var(--card-border)' : 'none' }}>
+                          <td style={{ padding: '1.25rem 1.5rem' }}>
+                            <div style={{ fontWeight: '700', fontSize: '1rem' }}>{agency.name}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Region: {agency.region}</div>
+                          </td>
+                          <td style={{ padding: '1.25rem 1.5rem' }}>
+                            <div style={{ 
+                              display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.2rem 0.6rem', borderRadius: '6px',
+                              background: agency.subscription.status === 'active' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                              color: agency.subscription.status === 'active' ? 'var(--success-color)' : 'var(--error-color)',
+                              fontSize: '0.7rem', fontWeight: '800'
+                            }}>
+                              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }}></div>
+                              {agency.subscription.status.toUpperCase()}
+                            </div>
+                          </td>
+                          <td style={{ padding: '1.25rem 1.5rem', fontWeight: '700', fontSize: '0.9rem' }}>{agency.subscription.plan}</td>
+                          <td style={{ padding: '1.25rem 1.5rem', fontSize: '0.85rem' }}>
+                            <div>Next: {agency.subscription.endDate}</div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>$499.00 USD</div>
+                          </td>
+                          <td style={{ padding: '1.25rem 1.5rem' }}>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <Shield size={16} color={agency.features.analytics ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)'} strokeWidth={3} />
+                              <Users size={16} color={agency.features.multiUser ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)'} strokeWidth={3} />
+                              <Layout size={16} color={agency.features.customReports ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)'} strokeWidth={3} />
+                            </div>
+                          </td>
+                          <td style={{ padding: '1.25rem 1.5rem' }}>
+                            <button className="status-badge" style={{ cursor: 'pointer', background: 'rgba(255,255,255,0.05)', color: 'white' }}>Manage</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* System Capabilities / Feature Toggles */}
+              <div className="glass-card" style={{ padding: '2rem' }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <ShieldAlert size={24} color="#f59e0b" /> Global Feature Provisioning
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2rem' }}>
+                  {[
+                    { id: 'ai_trans', label: 'AI Real-time Translation', desc: 'Auto-translate messages for all supported agencies.', active: true },
+                    { id: 'vc_hub', label: 'Voice Hub & Call Simulation', desc: 'Enable voice call infrastructure and overlays.', active: true },
+                    { id: 'crm_adv', label: 'Advanced CRM & Client Notes', desc: 'Persistent client interactions and internal operator logs.', active: true },
+                    { id: 'stats_bi', label: 'BI Analytics & Performance', desc: 'Enterprise-level statistics and operator metrics.', active: false }
+                  ].map((feature, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--card-border)' }}>
+                      <div>
+                        <div style={{ fontWeight: '700', marginBottom: '0.25rem' }}>{feature.label}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{feature.desc}</div>
+                      </div>
+                      <div style={{ 
+                        width: '44px', height: '24px', background: feature.active ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)',
+                        borderRadius: '20px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s'
+                      }}>
+                        <div style={{ 
+                          width: '18px', height: '18px', background: 'white', borderRadius: '50%',
+                          position: 'absolute', top: '3px', left: feature.active ? '23px' : '3px', transition: 'all 0.3s'
+                        }}></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'qa' && activeOperator.isAdmin && (
+          <div style={{ padding: '3rem', height: '100%', overflowY: 'auto' }} className="fade-in">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+              <div>
+                <h2 style={{ fontSize: '2rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <FileSearch size={28} color="var(--accent-color)" /> QA & Quality Review
+                </h2>
+                <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Review agency-wide client notes and interactions.</p>
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              {MOCK_MESSAGES.reduce((acc, msg) => {
+                if (!acc.find(m => m.from === msg.from)) acc.push(msg);
+                return acc;
+              }, []).map(clientMsg => (
+                <div key={clientMsg.from} className="glass-card" style={{ padding: '2rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '1.2rem' }}>
+                        {clientMsg.from.slice(-2)}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: '800' }}>{clientMsg.from}</div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Client History</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 style={{ fontSize: '0.9rem', color: '#f59e0b', marginBottom: '1rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <StickyNote size={16} /> INTERNAL NOTES LOG
+                    </h3>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {(clientNotes[clientMsg.from] || []).map(note => (
+                        <div key={note.id} style={{ background: 'rgba(245, 158, 11, 0.05)', borderLeft: '4px solid #f59e0b', padding: '1rem', borderRadius: '0 12px 12px 0' }}>
+                          <div style={{ fontSize: '1rem', color: 'white', marginBottom: '0.75rem', lineHeight: '1.5' }}>{note.text}</div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                            <span>Logged by: <strong style={{ color: 'white' }}>{note.author}</strong></span>
+                            <span>{note.timestamp}</span>
+                          </div>
+                        </div>
+                      ))}
+                      {(!clientNotes[clientMsg.from] || clientNotes[clientMsg.from].length === 0) && (
+                        <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontStyle: 'italic', padding: '1rem' }}>No notes found for this client.</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Overlays */}
@@ -966,7 +1278,34 @@ function App() {
       )}
 
       {activeCall && (
-        <div className="call-overlay"><div className="call-card"><div className="call-avatar-container"><div className="call-avatar"><Users size={48} color="white" /></div></div><h2 style={{ fontSize: '1.75rem', fontWeight: '800' }}>{activeCall.caller}</h2><p>{formatTime(callTime)}</p><button onClick={endCall} className="call-btn end"><Phone size={24} style={{ transform: 'rotate(135deg)' }} /></button></div></div>
+        <div className="call-overlay">
+          <div className="call-card">
+            <div className="call-avatar-container">
+              <div className="call-avatar">
+                <Users size={48} color="white" />
+              </div>
+            </div>
+            <h2 style={{ fontSize: '1.75rem', fontWeight: '800' }}>{activeCall.caller}</h2>
+            <p style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.6)', marginBottom: '1.5rem' }}>{formatTime(callTime)}</p>
+            
+            <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+              <button 
+                onClick={() => setIsMuted(!isMuted)} 
+                className={`call-btn ${isMuted ? 'muted' : ''}`}
+                style={{ 
+                  width: '56px', height: '56px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s',
+                  background: isMuted ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255,255,255,0.1)', border: isMuted ? '1px solid var(--error-color)' : '1px solid rgba(255,255,255,0.2)' 
+                }}
+              >
+                {isMuted ? <MicOff size={24} color="var(--error-color)" /> : <Mic size={24} color="white" />}
+              </button>
+              
+              <button onClick={endCall} className="call-btn end">
+                <Phone size={24} style={{ transform: 'rotate(135deg)' }} />
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <style>{`
