@@ -104,6 +104,8 @@ function App() {
     // Redirect Super Admin to their dashboard
     if (user.isSuperAdmin) {
       setActiveTab('agencies');
+    } else if (user.isAdmin) {
+      setActiveTab('hierarchy');
     } else {
       setActiveTab('inbox');
     }
@@ -638,17 +640,19 @@ function App() {
               { id: 'plans', icon: CreditCard, label: 'Subscriptions' },
               { id: 'features', icon: Zap, label: 'Global Features' }
             ] : [
-              { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator.isModel ? 0 : totalUnread },
-              { id: 'calendar', icon: Calendar, label: t('schedule') },
-              ...(activeOperator.isModel ? [] : [
-                { id: 'profiles', icon: Users, label: t('profiles') },
-                { id: 'web-profiles', icon: Globe, label: t('webProfiles') }
-              ]),
               ...(activeOperator.isAdmin ? [
-                { id: 'analytics', icon: BarChart3, label: t('analytics') },
-                { id: 'qa', icon: FileSearch, label: 'QA & Review' }
-              ] : []),
-              ...(activeOperator.isModel ? [] : [{ id: 'activity', icon: Activity, label: t('auditLog') }])
+                { id: 'hierarchy', icon: Users, label: 'Hierarchy' },
+                { id: 'analytics', icon: BarChart3, label: 'Reports' }
+              ] : [
+                { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator.isModel ? 0 : totalUnread },
+                { id: 'calendar', icon: Calendar, label: t('schedule') },
+                ...(activeOperator.isModel ? [] : [
+                  { id: 'profiles', icon: Users, label: t('profiles') },
+                  { id: 'web-profiles', icon: Globe, label: t('webProfiles') }
+                ]),
+                ...(activeOperator.isModel ? [] : [{ id: 'activity', icon: Activity, label: t('auditLog') }])
+              ]),
+              { id: 'qa', icon: FileSearch, label: 'QA & Review' }
             ]),
             { id: 'settings', icon: Settings, label: t('settings') },
           ].map(item => (
@@ -666,8 +670,8 @@ function App() {
           ))}
         </div>
 
-        {/* Profile (Girl) Switcher - Hidden for Models AND Super Admin */}
-        {!activeOperator.isModel && !activeOperator.isSuperAdmin && (
+        {/* Profile (Girl) Switcher - Hidden for Models, Super Admin, AND Regional Managers/Admins */}
+        {!activeOperator.isModel && !activeOperator.isSuperAdmin && !activeOperator.isAdmin && (
           <div style={{ marginTop: '2.5rem', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>MY ASSIGNED GIRLS</div>
@@ -1210,6 +1214,68 @@ function App() {
           </div>
         )}
 
+        {activeTab === 'hierarchy' && activeOperator.isAdmin && (
+          <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
+            <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Team Hierarchy</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>Overview of operators and their assigned model distribution.</p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              {MOCK_OPERATORS.filter(op => op.clientId === activeOperator.clientId && !op.isAdmin && !op.isSuperAdmin).map(op => {
+                const assignedModels = MOCK_PROFILES.filter(p => p.operators.some(o => o.id === op.id && o.active));
+                return (
+                  <div key={op.id} className="glass-card" style={{ padding: '2rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                        <div style={{ width: '60px', height: '60px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: '800', color: 'var(--accent-color)' }}>
+                          {op.avatar}
+                        </div>
+                        <div>
+                          <h3 style={{ fontSize: '1.5rem', fontWeight: '800' }}>{op.name}</h3>
+                          <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{op.role} • {assignedModels.length} Assigned Models</div>
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem', letterSpacing: '0.1em' }}>TODAY'S PERFORMANCE</div>
+                        <div style={{ display: 'flex', gap: '1.5rem' }}>
+                          <div>
+                            <div style={{ fontSize: '1.1rem', fontWeight: '800' }}>{op.metrics?.messages || 0}</div>
+                            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>MESSAGES</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '1.1rem', fontWeight: '800' }}>{op.metrics?.conversion || '0%'}</div>
+                            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>CONVERSION</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
+                      {assignedModels.map(model => (
+                        <div key={model.id} style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <div style={{ width: '40px', height: '40px', background: 'var(--accent-color)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '0.8rem' }}>
+                            {model.username.substring(0,2).toUpperCase()}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{model.name}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: model.status === 'online' ? 'var(--success-color)' : 'var(--text-secondary)' }} />
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{model.status.toUpperCase()}</span>
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '0.85rem', fontWeight: '800' }}>{model.unreadCount}</div>
+                            <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>UNREAD</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {activeTab === 'analytics' && activeOperator.isAdmin && (
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1 }} className="fade-in">
             <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '2.5rem' }}>{t('agencyOverview')}</h2>
@@ -1449,6 +1515,39 @@ function App() {
                 </div>
               )}
             </div>
+
+            {activeOperator.isAdmin && !activeOperator.isSuperAdmin && (
+              <div className="glass-card" style={{ padding: '2rem', marginTop: '3rem' }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '2rem' }}>Operator Daily Performance</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {MOCK_OPERATORS.filter(op => op.clientId === activeOperator.clientId && !op.isAdmin && !op.isSuperAdmin).map(op => (
+                    <div key={op.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{ width: '40px', height: '40px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: 'var(--accent-color)' }}>{op.avatar}</div>
+                        <div>
+                          <div style={{ fontWeight: '700' }}>{op.name}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{op.role}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '3rem', textAlign: 'right' }}>
+                        <div>
+                          <div style={{ fontSize: '1rem', fontWeight: '800' }}>{op.metrics?.messages || 0}</div>
+                          <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>MESSAGES</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '1rem', fontWeight: '800' }}>{op.metrics?.calls || 0}</div>
+                          <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>CALLS</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--success-color)' }}>{op.metrics?.conversion || '0%'}</div>
+                          <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>CONV. RATE</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
