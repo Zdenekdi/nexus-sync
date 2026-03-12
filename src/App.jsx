@@ -63,25 +63,41 @@ const LoginScreen = ({ onLogin, lang, setLang, t }) => {
 
 function App() {
   const [lang, setLang] = useState('cz');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return localStorage.getItem('nexus_isLoggedIn') === 'true';
+  });
   const [activeTab, setActiveTab] = useState('inbox');
 
   // Simulation Context
-  const [activeClient, setActiveClient] = useState(MOCK_CLIENTS[0]);
-  const [activeOperator, setActiveOperator] = useState(MOCK_OPERATORS[0]);
+  const [activeClient, setActiveClient] = useState(() => {
+    const saved = localStorage.getItem('nexus_activeClient');
+    return saved ? JSON.parse(saved) : MOCK_CLIENTS[0];
+  });
+  const [activeOperator, setActiveOperator] = useState(() => {
+    const saved = localStorage.getItem('nexus_activeOperator');
+    return saved ? JSON.parse(saved) : MOCK_OPERATORS[0];
+  });
   const [clientNotes, setClientNotes] = useState({});
 
   const handleLogin = (user) => {
-    setActiveOperator(user);
     const client = MOCK_CLIENTS.find(c => c.id === user.clientId);
+    setActiveOperator(user);
     setActiveClient(client);
     setIsLoggedIn(true);
+    
+    localStorage.setItem('nexus_isLoggedIn', 'true');
+    localStorage.setItem('nexus_activeOperator', JSON.stringify(user));
+    localStorage.setItem('nexus_activeClient', JSON.stringify(client));
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
     setActiveProfileId(null);
     setSelectedChatId(null);
+    
+    localStorage.removeItem('nexus_isLoggedIn');
+    localStorage.removeItem('nexus_activeOperator');
+    localStorage.removeItem('nexus_activeClient');
   };
 
   // Real-time Assignment State (Local Simulation)
@@ -592,12 +608,6 @@ function App() {
         )}
 
         <div style={{ marginTop: 'auto', marginBottom: '4rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <button
-            onClick={handleLogout}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '12px', color: 'var(--error-color)', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s' }}
-          >
-            <LogOut size={16} /> {t('logout')}
-          </button>
           <div className="glass-card" style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderColor: 'var(--card-border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <div style={{ width: '40px', height: '40px', background: 'rgba(59, 130, 246, 0.2)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'var(--accent-color)', fontSize: '0.75rem' }}>{activeOperator.avatar}</div>
@@ -608,6 +618,26 @@ function App() {
               <div style={{ width: '8px', height: '8px', background: 'var(--success-color)', borderRadius: '50%' }}></div>
             </div>
           </div>
+          <button
+            onClick={handleLogout}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.75rem', 
+              padding: '0.75rem 1rem', 
+              background: 'rgba(239, 68, 68, 0.1)', 
+              border: '1px solid rgba(239, 68, 68, 0.2)', 
+              borderRadius: '12px', 
+              color: 'var(--error-color)', 
+              fontSize: '0.8rem', 
+              fontWeight: '700', 
+              cursor: 'pointer', 
+              transition: 'all 0.2s',
+              justifyContent: 'center'
+            }}
+          >
+            <LogOut size={16} /> {t('logout')}
+          </button>
         </div>
       </nav>
 
