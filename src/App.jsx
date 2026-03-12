@@ -353,7 +353,7 @@ function App() {
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-color)', color: 'var(--text-primary)', position: 'relative' }}>
+    <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: 'var(--bg-color)', color: 'white', position: 'relative' }}>
 
       {/* Simulation Toolbar (Footer Fix) */}
       <div style={{ position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)', background: 'rgba(5,7,10,0.8)', backdropFilter: 'blur(20px)', padding: '0.75rem 2rem', borderRadius: '50px', border: '1px solid var(--accent-color)', zIndex: 1000, display: 'flex', alignItems: 'center', gap: '2rem', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }}>
@@ -411,6 +411,7 @@ function App() {
       {/* Sidebar */}
       <nav style={{
         width: '280px',
+        flexShrink: 0,
         borderRight: '1px solid var(--card-border)',
         padding: '2rem 1.5rem',
         background: 'rgba(5, 7, 10, 0.4)',
@@ -473,19 +474,35 @@ function App() {
           <div style={{ marginTop: '2.5rem', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>MY ASSIGNED GIRLS</div>
-              <button 
-                onClick={() => setShowOnlyOnline(!showOnlyOnline)}
-                style={{ 
-                  background: showOnlyOnline ? 'var(--success-color)' : 'transparent', 
-                  color: showOnlyOnline ? 'white' : 'var(--text-secondary)', 
-                  fontSize: '0.7rem', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem',
-                  padding: '6px 12px', borderRadius: '8px', border: '2px solid currentColor',
-                  boxShadow: showOnlyOnline ? '0 0 15px rgba(16, 185, 129, 0.3)' : 'none',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                {showOnlyOnline ? 'ONLINE ONLY' : 'SHOW ALL'}
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span style={{ fontSize: '0.7rem', fontWeight: '800', color: showOnlyOnline ? 'var(--success-color)' : 'var(--text-secondary)', transition: 'color 0.2s' }}>ONLINE</span>
+                <div 
+                  onClick={() => setShowOnlyOnline(!showOnlyOnline)}
+                  className={`toggle-switch ${showOnlyOnline ? 'active' : ''}`}
+                  style={{ 
+                    width: '40px', 
+                    height: '20px', 
+                    background: showOnlyOnline ? 'var(--success-color)' : 'rgba(255,255,255,0.1)',
+                    borderRadius: '20px',
+                    position: 'relative',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    border: '1px solid ' + (showOnlyOnline ? 'var(--success-color)' : 'var(--card-border)')
+                  }}
+                >
+                  <div style={{ 
+                    width: '14px', 
+                    height: '14px', 
+                    background: 'white', 
+                    borderRadius: '50%',
+                    position: 'absolute',
+                    top: '2px',
+                    left: showOnlyOnline ? '22px' : '3px',
+                    transition: 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                  }}></div>
+                </div>
+              </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: '40vh', overflowY: 'auto', paddingRight: '4px' }} className="custom-scrollbar">
               {myProfiles.filter(p => !showOnlyOnline || p.status === 'online').map(p => {
@@ -537,7 +554,7 @@ function App() {
       </nav>
 
       {/* Main Area */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflowY: 'auto' }}>
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', minWidth: 0, overflow: 'hidden' }}>
         {activeTab === 'inbox' && (
           <div style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden' }} className="fade-in">
             <div style={{ width: '380px', flexShrink: 0, borderRight: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column' }}>
@@ -562,22 +579,44 @@ function App() {
                       setClientNotes(prev => ({ ...prev, [msg.from]: [] }));
                     }
                   }}
-                    style={{ padding: '1.5rem', borderBottom: '1px solid var(--card-border)', background: selectedChat?.id === msg.id ? 'rgba(59, 130, 246, 0.05)' : 'transparent', cursor: 'pointer', position: 'relative' }}>
+                    style={{ 
+                      padding: '1.5rem', 
+                      borderBottom: '1px solid var(--card-border)', 
+                      background: selectedChat?.id === msg.id ? 'rgba(59, 130, 246, 0.2)' : 'transparent', 
+                      cursor: 'pointer', 
+                      position: 'relative',
+                      borderLeft: selectedChat?.id === msg.id ? '6px solid var(--accent-color)' : '6px solid transparent',
+                      boxShadow: selectedChat?.id === msg.id ? 'inset 0 0 20px rgba(59, 130, 246, 0.1)' : 'none',
+                      transition: 'all 0.2s ease'
+                    }}>
                     {msg.status === 'unread' && <div className="dot"></div>}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}><span style={{ fontWeight: '700', fontSize: '1.1rem' }}>{msg.from}</span><span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{msg.time}</span></div>
-                    <div className="truncate-text">{msg.text}</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                      <span style={{ fontWeight: selectedChat?.id === msg.id ? '800' : '700', fontSize: '1.1rem', color: selectedChat?.id === msg.id ? 'white' : 'inherit' }}>{msg.from}</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{msg.time}</span>
+                    </div>
+                    <div className="truncate-text" style={{ opacity: selectedChat?.id === msg.id ? 1 : 0.7 }}>{msg.text}</div>
                   </div>
                 )) : <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>{t('noMessages')}</div>}
               </div>
             </div>
 
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'row' }}>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.1)' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minWidth: 0, overflow: 'hidden' }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.1)', minWidth: 0 }}>
                 {selectedChat ? (
                   <>
-                    <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-color)' }}>
+                    <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-color)', zIndex: 5 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><div className="avatar-circle"><Users color="var(--accent-color)" size={24} /></div><div><div style={{ fontWeight: '700', fontSize: '1.1rem' }}>{selectedChat.from}</div><div style={{ fontSize: '0.8rem', color: 'var(--success-color)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Shield size={12} /> {t('secureConnection')}</div></div></div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><button onClick={startCall} className="status-badge pulse-call-btn" style={{ fontWeight: '700', color: 'var(--accent-color)', cursor: 'pointer' }}><Signal size={16} /> {t('voiceCall')}</button><MoreVertical size={22} color="var(--text-secondary)" cursor="pointer" /></div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <button 
+                          onClick={() => setActiveTab('calendar')} 
+                          className="status-badge" 
+                          style={{ fontWeight: '700', color: 'var(--warning-color)', cursor: 'pointer', border: '1px solid var(--warning-color)' }}
+                        >
+                          <Calendar size={16} /> {t('createBooking') || 'Book Session'}
+                        </button>
+                        <button onClick={startCall} className="status-badge pulse-call-btn" style={{ fontWeight: '700', color: 'var(--accent-color)', cursor: 'pointer' }}><Signal size={16} /> {t('voiceCall')}</button>
+                        <MoreVertical size={22} color="var(--text-secondary)" cursor="pointer" />
+                      </div>
                     </div>
 
                     <div style={{ flex: 1, padding: '2.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -1350,6 +1389,9 @@ function App() {
         select { -webkit-appearance: none; appearance: none; }
         
         .action-btn.active { background: rgba(239, 68, 68, 0.1) !important; color: var(--error-color) !important; border-color: var(--error-color) !important; }
+        
+        .toggle-switch.active { box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
+        .toggle-switch:hover { border-color: var(--accent-color) !important; }
       `}</style>
     </div>
   );
