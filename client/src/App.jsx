@@ -6,7 +6,7 @@ import {
   Globe, Cpu, Zap, Signal, Calendar, AlertTriangle, Clock, Search, LogOut,
   TrendingUp, DollarSign, BarChart3, Bell, Lock, Smartphone, Phone, X, Check, FileText, User, Sparkles, Building2, ChevronDown, UserCheck, UserPlus, Image, FileEdit, Link, StickyNote, Mic, MicOff, FileSearch, ShieldAlert, CreditCard, Menu, Bug, HardDrive
 } from 'lucide-react';
-import { MOCK_PROFILES, MOCK_MESSAGES, MOCK_STATS, MOCK_CALENDAR, MOCK_CHART_DATA, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_SMART_REPLIES, MOCK_CLIENTS, MOCK_OPERATORS, MOCK_CLIENT_DB, MOCK_AGENCIES } from './DemoData';
+import { MOCK_PROFILES, MOCK_MESSAGES, MOCK_STATS, MOCK_CALENDAR, MOCK_CHART_DATA, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_SMART_REPLIES, MOCK_CLIENTS, MOCK_OPERATORS, MOCK_CLIENT_DB, MOCK_AGENCIES, MOCK_PERMISSIONS } from './DemoData';
 import { TRANSLATIONS } from './translations';
 
 const LoginScreen = ({ onLogin, lang, setLang, t }) => {
@@ -148,6 +148,7 @@ function App() {
   const [targetLang, setTargetLang] = useState('en'); // Default target language for translator
   const [internalNote, setInternalNote] = useState('');
   const [sessionHistories, setSessionHistories] = useState({}); // Stores sent messages per chat ID
+  const [rolePermissions, setRolePermissions] = useState(MOCK_PERMISSIONS);
   const [showOnlyOnline, setShowOnlyOnline] = useState(false);
 
   // Call Mute State
@@ -632,6 +633,7 @@ function App() {
             ...(activeOperator.isSuperAdmin ? [
               { id: 'infra', icon: HardDrive, label: 'Infrastructure' },
               { id: 'agencies', icon: Building2, label: 'Agencies' },
+              { id: 'permissions', icon: Shield, label: 'Permissions' },
               { id: 'features', icon: Zap, label: 'Global Features' }
             ] : [
               { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator.isModel ? 0 : totalUnread },
@@ -1543,7 +1545,31 @@ function App() {
                           <tr key={agency.id} style={{ borderBottom: i < MOCK_AGENCIES.length - 1 ? '1px solid var(--card-border)' : 'none' }}>
                             <td style={{ padding: '1.25rem 1.5rem' }}>
                               <div style={{ fontWeight: '700', fontSize: '1rem' }}>{agency.name}</div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Region: {agency.region} • {agencyProfilesCount} Profiles</div>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Region: {agency.region}</div>
+                            </td>
+                            <td style={{ padding: '1.25rem 1.5rem' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <Users size={14} color="var(--accent-color)" />
+                                <span style={{ fontWeight: '700' }}>{agencyProfilesCount}</span>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Profiles</span>
+                              </div>
+                            </td>
+                            <td style={{ padding: '1.25rem 1.5rem' }}>
+                              <div style={{ fontSize: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                                {Object.entries(
+                                  MOCK_OPERATORS
+                                    .filter(o => o.clientId === agency.id)
+                                    .reduce((acc, current) => {
+                                      acc[current.role] = (acc[current.role] || 0) + 1;
+                                      return acc;
+                                    }, {})
+                                ).map(([role, count]) => (
+                                  <span key={role} style={{ background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--card-border)' }}>
+                                    <strong>{count}</strong> {role}
+                                  </span>
+                                ))}
+                                {agencyOpsCount === 0 && <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>No operators</span>}
+                              </div>
                             </td>
                             <td style={{ padding: '1.25rem 1.5rem' }}>
                               <div style={{ 
@@ -1664,6 +1690,61 @@ function App() {
                   ))}
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Permissions Dashboard (Phase 3) */}
+        {activeTab === 'permissions' && activeOperator.isSuperAdmin && (
+          <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
+            <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #3b82f6, #10b981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Role Permissions</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>Manage granular access levels and capabilities for each system role.</p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '2rem' }}>
+              {Object.entries(rolePermissions).map(([role, perms]) => (
+                <div key={role} className="glass-card" style={{ padding: '2rem', height: 'fit-content' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <div style={{ width: '40px', height: '40px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Shield size={20} color="var(--accent-color)" />
+                      </div>
+                      <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>{role}</h3>
+                    </div>
+                    <div className="status-badge-small" style={{ borderColor: 'var(--accent-color)', color: 'var(--accent-color)', fontWeight: '700' }}>
+                      {Object.values(perms).filter(v => v).length} Enabled
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    {Object.entries(perms).map(([permKey, isEnabled]) => (
+                      <div key={permKey} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                        <span style={{ fontSize: '0.9rem', color: isEnabled ? 'white' : 'var(--text-secondary)', fontWeight: '600' }}>
+                          {permKey.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                        </span>
+                        <div 
+                          onClick={() => {
+                            setRolePermissions(prev => ({
+                              ...prev,
+                              [role]: { ...prev[role], [permKey]: !isEnabled }
+                            }));
+                          }}
+                          className={`toggle-switch ${isEnabled ? 'active' : ''}`}
+                          style={{ 
+                            width: '34px', height: '18px', background: isEnabled ? 'var(--accent-color)' : 'rgba(255,255,255,0.05)',
+                            borderRadius: '20px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s',
+                            border: '1px solid var(--card-border)'
+                          }}
+                        >
+                          <div style={{ 
+                            width: '12px', height: '12px', background: 'white', borderRadius: '50%',
+                            position: 'absolute', top: '2px', left: isEnabled ? '18px' : '3px', transition: 'all 0.3s'
+                          }}></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

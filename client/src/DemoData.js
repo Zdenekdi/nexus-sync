@@ -341,3 +341,56 @@ export const MOCK_SMART_REPLIES = {
         { id: 3, text: "Zítřek je na setkání úplně ideální." }
     ]
 };
+
+export const MOCK_PERMISSIONS = {
+    'System Owner': {
+        infrastructure: true,
+        agencies: true,
+        billing: true,
+        global_features: true,
+        audit_logs: true,
+        user_management: true
+    },
+    'Agency Admin': {
+        infrastructure: false,
+        agencies: false,
+        billing: true,
+        global_features: false,
+        audit_logs: true,
+        user_management: true,
+        analytics: true
+    },
+    'Senior Operator': {
+        infrastructure: false,
+        agencies: false,
+        billing: false,
+        global_features: false,
+        audit_logs: false,
+        user_management: false,
+        analytics: true,
+        messaging: true,
+        voice_calls: true
+    },
+    'Operator': {
+        infrastructure: false,
+        agencies: false,
+        billing: false,
+        global_features: false,
+        audit_logs: false,
+        user_management: false,
+        analytics: false,
+        messaging: true,
+        voice_calls: true
+    },
+    'Model': {
+        infrastructure: false,
+        agencies: false,
+        billing: false,
+        global_features: false,
+        audit_logs: false,
+        user_management: false,
+        analytics: false,
+        messaging: true,
+        voice_calls: false
+    }
+};
