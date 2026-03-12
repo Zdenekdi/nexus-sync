@@ -539,8 +539,8 @@ function App() {
       {/* Main Area */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflowY: 'auto' }}>
         {activeTab === 'inbox' && (
-          <div style={{ display: 'flex', flex: 1, height: '100%' }} className="fade-in">
-            <div style={{ width: '380px', borderRight: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden' }} className="fade-in">
+            <div style={{ width: '380px', flexShrink: 0, borderRight: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column' }}>
               <div style={{ padding: '2rem 1.5rem', borderBottom: '1px solid var(--card-border)' }}>
                 <h2 style={{ fontSize: '1.5rem', marginBottom: '1.25rem' }}>{t('inbox')} ({activeProfile?.name || '...'})</h2>
                 <div style={{ position: 'relative' }}>
@@ -607,11 +607,19 @@ function App() {
                       </div>
                     </div>
                   </>
-                ) : <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ textAlign: 'center' }}><MessageSquare size={64} style={{ marginBottom: '1.5rem', opacity: 0.2 }} /><h3>Select a conversation</h3></div></div>}
+                ) : (
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <MessageSquare size={64} style={{ marginBottom: '1.5rem', opacity: 0.2 }} />
+                      <h3 style={{ color: 'var(--text-secondary)' }}>Select a conversation</h3>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {selectedChat && (
-                <div className="notes-panel-container" style={{ width: '400px', borderLeft: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column', background: 'var(--bg-color)', overflow: 'hidden' }}>
+              {/* Permanent Right Panel Container */}
+              <div className="notes-panel-container" style={{ width: '400px', flexShrink: 0, borderLeft: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column', background: 'var(--bg-color)', overflow: 'hidden' }}>
+                {selectedChat ? (
                   <div style={{ display: 'flex', flex: 1, flexDirection: 'column', overflow: 'hidden' }}>
                     
                     {/* Tabs for Translator / Note */}
@@ -722,8 +730,17 @@ function App() {
                       )}
                     </div>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
+                    <div>
+                      <StickyNote size={48} style={{ opacity: 0.1, marginBottom: '1.5rem' }} />
+                      <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: '500' }}>
+                        Select a conversation to view translator and internal notes.
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

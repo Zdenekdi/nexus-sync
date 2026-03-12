@@ -437,14 +437,12 @@ function App() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {[
-            // Standard Operator & Model Tabs
-            ...(activeOperator.isAdmin ? [] : [
-              { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator.isModel ? 0 : totalUnread },
-              { id: 'calendar', icon: Calendar, label: t('schedule') },
-              ...(activeOperator.isModel ? [] : [
-                { id: 'profiles', icon: Users, label: t('profiles') },
-                { id: 'web-profiles', icon: Globe, label: t('webProfiles') }
-              ])
+            // Operational Tabs (Now visible to Admins/Managers too so they can see Inbox/Notes)
+            { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator.isModel ? 0 : totalUnread },
+            { id: 'calendar', icon: Calendar, label: t('schedule') },
+            ...(activeOperator.isModel ? [] : [
+              { id: 'profiles', icon: Users, label: t('profiles') },
+              { id: 'web-profiles', icon: Globe, label: t('webProfiles') }
             ]),
             // Manager Tabs
             ...(activeOperator.isAdmin ? [
@@ -470,17 +468,20 @@ function App() {
           ))}
         </div>
 
-        {/* Profile (Girl) Switcher - Hidden for Managers AND Models */}
-        {(!activeOperator.isAdmin && !activeOperator.isModel) && (
+        {/* Profile (Girl) Switcher - Hidden ONLY for Models (Visible for Operators and Admins) */}
+        {!activeOperator.isModel && (
           <div style={{ marginTop: '2.5rem', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>MY ASSIGNED GIRLS</div>
               <button 
                 onClick={() => setShowOnlyOnline(!showOnlyOnline)}
                 style={{ 
-                  background: 'transparent', color: showOnlyOnline ? 'var(--success-color)' : 'var(--text-secondary)', 
-                  fontSize: '0.6rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem',
-                  padding: '4px 8px', borderRadius: '6px', border: '1px solid currentColor'
+                  background: showOnlyOnline ? 'var(--success-color)' : 'transparent', 
+                  color: showOnlyOnline ? 'white' : 'var(--text-secondary)', 
+                  fontSize: '0.7rem', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem',
+                  padding: '6px 12px', borderRadius: '8px', border: '2px solid currentColor',
+                  boxShadow: showOnlyOnline ? '0 0 15px rgba(16, 185, 129, 0.3)' : 'none',
+                  transition: 'all 0.2s ease'
                 }}
               >
                 {showOnlyOnline ? 'ONLINE ONLY' : 'SHOW ALL'}
@@ -538,8 +539,8 @@ function App() {
       {/* Main Area */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflowY: 'auto' }}>
         {activeTab === 'inbox' && (
-          <div style={{ display: 'flex', flex: 1, height: '100%' }} className="fade-in">
-            <div style={{ width: '380px', borderRight: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden' }} className="fade-in">
+            <div style={{ width: '380px', flexShrink: 0, borderRight: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column' }}>
               <div style={{ padding: '2rem 1.5rem', borderBottom: '1px solid var(--card-border)' }}>
                 <h2 style={{ fontSize: '1.5rem', marginBottom: '1.25rem' }}>{t('inbox')} ({activeProfile?.name || '...'})</h2>
                 <div style={{ position: 'relative' }}>
@@ -606,11 +607,19 @@ function App() {
                       </div>
                     </div>
                   </>
-                ) : <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ textAlign: 'center' }}><MessageSquare size={64} style={{ marginBottom: '1.5rem', opacity: 0.2 }} /><h3>Select a conversation</h3></div></div>}
+                ) : (
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <MessageSquare size={64} style={{ marginBottom: '1.5rem', opacity: 0.2 }} />
+                      <h3 style={{ color: 'var(--text-secondary)' }}>Select a conversation</h3>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {selectedChat && (
-                <div className="notes-panel-container" style={{ width: '400px', borderLeft: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column', background: 'var(--bg-color)', overflow: 'hidden' }}>
+              {/* Permanent Right Panel Container */}
+              <div className="notes-panel-container" style={{ width: '400px', flexShrink: 0, borderLeft: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column', background: 'var(--bg-color)', overflow: 'hidden' }}>
+                {selectedChat ? (
                   <div style={{ display: 'flex', flex: 1, flexDirection: 'column', overflow: 'hidden' }}>
                     
                     {/* Tabs for Translator / Note */}
@@ -721,8 +730,17 @@ function App() {
                       )}
                     </div>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
+                    <div>
+                      <StickyNote size={48} style={{ opacity: 0.1, marginBottom: '1.5rem' }} />
+                      <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: '500' }}>
+                        Select a conversation to view translator and internal notes.
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -1217,16 +1235,19 @@ function App() {
             </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              {MOCK_CLIENT_DB.map(client => (
-                <div key={client.id} className="glass-card" style={{ padding: '2rem' }}>
+              {MOCK_MESSAGES.reduce((acc, msg) => {
+                if (!acc.find(m => m.from === msg.from)) acc.push(msg);
+                return acc;
+              }, []).map(clientMsg => (
+                <div key={clientMsg.from} className="glass-card" style={{ padding: '2rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '1.5rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
                       <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '1.2rem' }}>
-                        {client.avatar}
+                        {clientMsg.from.slice(-2)}
                       </div>
                       <div>
-                        <div style={{ fontSize: '1.25rem', fontWeight: '800' }}>{client.name}</div>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{client.type} Account</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: '800' }}>{clientMsg.from}</div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Client History</div>
                       </div>
                     </div>
                   </div>
@@ -1237,7 +1258,7 @@ function App() {
                     </h3>
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      {(clientNotes[client.id] || client.notes || []).map(note => (
+                      {(clientNotes[clientMsg.from] || []).map(note => (
                         <div key={note.id} style={{ background: 'rgba(245, 158, 11, 0.05)', borderLeft: '4px solid #f59e0b', padding: '1rem', borderRadius: '0 12px 12px 0' }}>
                           <div style={{ fontSize: '1rem', color: 'white', marginBottom: '0.75rem', lineHeight: '1.5' }}>{note.text}</div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
@@ -1246,7 +1267,7 @@ function App() {
                           </div>
                         </div>
                       ))}
-                      {(!clientNotes[client.id] || clientNotes[client.id].length === 0) && (!client.notes || client.notes.length === 0) && (
+                      {(!clientNotes[clientMsg.from] || clientNotes[clientMsg.from].length === 0) && (
                         <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontStyle: 'italic', padding: '1rem' }}>No notes found for this client.</div>
                       )}
                     </div>
