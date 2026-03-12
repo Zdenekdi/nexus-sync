@@ -394,3 +394,30 @@ export const MOCK_PERMISSIONS = {
         voice_calls: false
     }
 };
+
+export const MOCK_PLANS = [
+    { 
+        id: 'standard', 
+        name: 'Standard', 
+        price: '€49/mo', 
+        profilesLimit: 3, 
+        features: ['AI Voice Relay (Limited)', 'Basic Analytics', 'Standard Support'],
+        description: 'Perfect for small agencies or independent managers.'
+    },
+    { 
+        id: 'professional', 
+        name: 'Professional', 
+        price: '€149/mo', 
+        profilesLimit: 10, 
+        features: ['Full AI Voice Relay', 'Advanced Analytics', 'Multi-User Access', '24/7 Priority Support'],
+        description: 'Elite features for growing agencies with multiple operators.'
+    },
+    { 
+        id: 'enterprise', 
+        name: 'Enterprise', 
+        price: 'Custom', 
+        profilesLimit: 'Unlimited', 
+        features: ['Custom Nodes', 'White-labeling', 'API Access', 'Dedicated Account Manager'],
+        description: 'Scalable infrastructure for large-scale operations.'
+    }
+];

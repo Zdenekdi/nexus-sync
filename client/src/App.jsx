@@ -6,7 +6,7 @@ import {
   Globe, Cpu, Zap, Signal, Calendar, AlertTriangle, Clock, Search, LogOut,
   TrendingUp, DollarSign, BarChart3, Bell, Lock, Smartphone, Phone, X, Check, FileText, User, Sparkles, Building2, ChevronDown, UserCheck, UserPlus, Image, FileEdit, Link, StickyNote, Mic, MicOff, FileSearch, ShieldAlert, CreditCard, Menu, Bug, HardDrive
 } from 'lucide-react';
-import { MOCK_PROFILES, MOCK_MESSAGES, MOCK_STATS, MOCK_CALENDAR, MOCK_CHART_DATA, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_SMART_REPLIES, MOCK_CLIENTS, MOCK_OPERATORS, MOCK_CLIENT_DB, MOCK_AGENCIES, MOCK_PERMISSIONS } from './DemoData';
+import { MOCK_PROFILES, MOCK_MESSAGES, MOCK_STATS, MOCK_CALENDAR, MOCK_CHART_DATA, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_SMART_REPLIES, MOCK_CLIENTS, MOCK_OPERATORS, MOCK_CLIENT_DB, MOCK_AGENCIES, MOCK_PERMISSIONS, MOCK_PLANS } from './DemoData';
 import { TRANSLATIONS } from './translations';
 
 const LoginScreen = ({ onLogin, lang, setLang, t }) => {
@@ -149,6 +149,7 @@ function App() {
   const [internalNote, setInternalNote] = useState('');
   const [sessionHistories, setSessionHistories] = useState({}); // Stores sent messages per chat ID
   const [rolePermissions, setRolePermissions] = useState(MOCK_PERMISSIONS);
+  const [subscriptionPlans, setSubscriptionPlans] = useState(MOCK_PLANS);
   const [showOnlyOnline, setShowOnlyOnline] = useState(false);
 
   // Call Mute State
@@ -583,7 +584,7 @@ function App() {
               {availableOperators.map(o => <option key={o.id} value={o.id} style={{ background: '#0a0a0a' }}>{o.name}</option>)}
             </select>
           </div>
-          {!activeOperator.isAdmin && (
+          {!activeOperator.isAdmin && !activeOperator.isSuperAdmin && (
             <>
               <div style={{ height: '32px', width: '1px', background: 'var(--card-border)' }} />
               <button
@@ -634,6 +635,7 @@ function App() {
               { id: 'infra', icon: HardDrive, label: 'Infrastructure' },
               { id: 'agencies', icon: Building2, label: 'Agencies' },
               { id: 'permissions', icon: Shield, label: 'Permissions' },
+              { id: 'plans', icon: CreditCard, label: 'Subscriptions' },
               { id: 'features', icon: Zap, label: 'Global Features' }
             ] : [
               { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator.isModel ? 0 : totalUnread },
@@ -1440,10 +1442,12 @@ function App() {
                 </div>
               </div>
 
-              <div className="settings-section">
-                <h3 style={{ marginBottom: '1.5rem' }}>{t('simulationTools')}</h3>
-                <button onClick={simulateIncomingCall} className="action-btn" style={{ maxWidth: '300px' }}><Phone size={16} /> {t('simulateCall')}</button>
-              </div>
+              {!activeOperator.isSuperAdmin && (
+                <div className="settings-section">
+                  <h3 style={{ marginBottom: '1.5rem' }}>{t('simulationTools')}</h3>
+                  <button onClick={simulateIncomingCall} className="action-btn" style={{ maxWidth: '300px' }}><Phone size={16} /> {t('simulateCall')}</button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1721,28 +1725,81 @@ function App() {
                         <span style={{ fontSize: '0.9rem', color: isEnabled ? 'white' : 'var(--text-secondary)', fontWeight: '600' }}>
                           {permKey.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                         </span>
-                        <div 
-                          onClick={() => {
-                            setRolePermissions(prev => ({
-                              ...prev,
-                              [role]: { ...prev[role], [permKey]: !isEnabled }
-                            }));
-                          }}
-                          className={`toggle-switch ${isEnabled ? 'active' : ''}`}
-                          style={{ 
-                            width: '34px', height: '18px', background: isEnabled ? 'var(--accent-color)' : 'rgba(255,255,255,0.05)',
-                            borderRadius: '20px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s',
-                            border: '1px solid var(--card-border)'
-                          }}
-                        >
-                          <div style={{ 
-                            width: '12px', height: '12px', background: 'white', borderRadius: '50%',
-                            position: 'absolute', top: '2px', left: isEnabled ? '18px' : '3px', transition: 'all 0.3s'
-                          }}></div>
-                        </div>
+                        {role !== 'System Owner' ? (
+                          <div 
+                            onClick={() => {
+                              setRolePermissions(prev => ({
+                                ...prev,
+                                [role]: { ...prev[role], [permKey]: !isEnabled }
+                              }));
+                            }}
+                            className={`toggle-switch ${isEnabled ? 'active' : ''}`}
+                            style={{ 
+                              width: '34px', height: '18px', background: isEnabled ? 'var(--accent-color)' : 'rgba(255,255,255,0.05)',
+                              borderRadius: '20px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s',
+                              border: '1px solid var(--card-border)'
+                            }}
+                          >
+                            <div style={{ 
+                              width: '12px', height: '12px', background: 'white', borderRadius: '50%',
+                              position: 'absolute', top: '2px', left: isEnabled ? '18px' : '3px', transition: 'all 0.3s'
+                            }}></div>
+                          </div>
+                        ) : (
+                          <div style={{ color: 'var(--success-color)', fontSize: '0.7rem', fontWeight: '800' }}>MASTER ACCESS</div>
+                        )}
                       </div>
                     ))}
                   </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Subscription Plans (Phase 4) */}
+        {activeTab === 'plans' && activeOperator.isSuperAdmin && (
+          <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
+            <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #6366f1, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Subscription Plans</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>Configure platform tiers, pricing, and feature availability.</p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '2rem' }}>
+              {subscriptionPlans.map((plan) => (
+                <div key={plan.id} className="glass-card" style={{ padding: '2rem', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+                    <div>
+                      <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.5rem' }}>{plan.name}</h3>
+                      <div style={{ fontSize: '1.25rem', color: 'var(--accent-color)', fontWeight: '700' }}>{plan.price}</div>
+                    </div>
+                    <div style={{ width: '48px', height: '48px', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <CreditCard size={24} color="#6366f1" />
+                    </div>
+                  </div>
+                  
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: '1.6' }}>{plan.description}</p>
+                  
+                  <div style={{ marginBottom: '2rem' }}>
+                    <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.1em' }}>INCLUDED FEATURES</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {plan.features.map((feat, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.85rem' }}>
+                          <Check size={14} color="var(--success-color)" />
+                          <span>{feat}</span>
+                        </div>
+                      ))}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.85rem' }}>
+                        <Users size={14} color="var(--accent-color)" />
+                        <span>Up to <strong>{plan.profilesLimit}</strong> Profiles</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <button 
+                    onClick={() => {}} // Simulation only
+                    style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                  >
+                    <FileEdit size={16} /> Edit Plan Details
+                  </button>
                 </div>
               ))}
             </div>
