@@ -399,25 +399,37 @@ export const MOCK_PLANS = [
     { 
         id: 'standard', 
         name: 'Standard', 
-        price: '€49/mo', 
+        prices: {
+            EU: '€49/mo',
+            UK: '£39/mo',
+            CZ: '1 190 Kč/mo'
+        },
         profilesLimit: 3, 
-        features: ['AI Voice Relay (Limited)', 'Basic Analytics', 'Standard Support'],
-        description: 'Perfect for small agencies or independent managers.'
+        features: ['Unlimited Messaging', 'Standard Translation', 'Shared Proxy Nodes', 'Standard Support'],
+        description: 'Core functionality for single users managing small teams.'
     },
     { 
         id: 'professional', 
         name: 'Professional', 
-        price: '€149/mo', 
+        prices: {
+            EU: '€149/mo',
+            UK: '£129/mo',
+            CZ: '3 690 Kč/mo'
+        },
         profilesLimit: 10, 
-        features: ['Full AI Voice Relay', 'Advanced Analytics', 'Multi-User Access', '24/7 Priority Support'],
-        description: 'Elite features for growing agencies with multiple operators.'
+        features: ['AI Smart Replies', 'Team Access (Manager + Ops)', 'Dedicated Regional Proxy Pool', 'Priority Support'],
+        description: 'Productivity-focused features for growing agencies.'
     },
     { 
         id: 'enterprise', 
         name: 'Enterprise', 
-        price: 'Custom', 
+        prices: {
+            EU: 'Custom',
+            UK: 'Custom',
+            CZ: 'Individuální'
+        },
         profilesLimit: 'Unlimited', 
-        features: ['Custom Nodes', 'White-labeling', 'API Access', 'Dedicated Account Manager'],
-        description: 'Scalable infrastructure for large-scale operations.'
+        features: ['AI Voice Relay', 'Custom AI Model Training', 'Full White-labeling', 'Audit Logs & API Access'],
+        description: 'The ultimate technological infrastructure for large-scale operations.'
     }
 ];

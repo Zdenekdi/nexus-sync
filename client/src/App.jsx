@@ -152,6 +152,12 @@ function App() {
   const [sessionHistories, setSessionHistories] = useState({}); // Stores sent messages per chat ID
   const [rolePermissions, setRolePermissions] = useState(MOCK_PERMISSIONS);
   const [subscriptionPlans, setSubscriptionPlans] = useState(MOCK_PLANS);
+  const [activeMarket, setActiveMarket] = useState('EU'); // 'EU', 'UK', or 'CZ'
+  
+  const currentAgency = useMemo(() => {
+    return MOCK_AGENCIES.find(a => a.id === activeOperator.clientId);
+  }, [activeOperator.clientId]);
+  
   const [showOnlyOnline, setShowOnlyOnline] = useState(false);
 
   // Call Mute State
@@ -171,6 +177,7 @@ function App() {
   // Mobile Responsiveness State
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [mobileView, setMobileView] = useState('list'); // 'list', 'chat', 'details'
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -549,10 +556,26 @@ function App() {
         />
       )}
 
-      {/* Simulation Toolbar (Footer Fix) */}
-      <div className="demo-controls" style={{ position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)', background: 'rgba(5,7,10,0.8)', backdropFilter: 'blur(20px)', padding: '0.75rem 2rem', borderRadius: '50px', border: '1px solid var(--accent-color)', zIndex: 1000, display: 'flex', alignItems: 'center', gap: '2rem', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }}>
-        <div className="demo-controls-label" style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--accent-color)', letterSpacing: '0.1em' }}>DEMO SIMULATION CONTROLS:</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      {/* Simulation Toolbar (Footer Optimization) (Phase 7/10) */}
+      <div className="demo-controls" style={{ 
+        position: 'fixed', 
+        bottom: isMobile ? '10px' : '2rem', 
+        left: isMobile ? '10px' : '50%', 
+        right: isMobile ? '10px' : 'auto',
+        transform: isMobile ? 'none' : 'translateX(-50%)', 
+        background: 'rgba(5,7,10,0.85)', 
+        backdropFilter: 'blur(20px)', 
+        padding: isMobile ? '0.6rem 1rem' : '0.75rem 2rem', 
+        borderRadius: '50px', 
+        border: '1px solid var(--accent-color)', 
+        zIndex: 1000, 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: isMobile ? '1rem' : '2rem', 
+        boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+        maxWidth: isMobile ? 'calc(100% - 20px)' : 'none'
+      }}>
+        {!isMobile && <div className="demo-controls-label" style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--accent-color)', letterSpacing: '0.1em' }}>DEMO SIMULATION CONTROLS:</div>}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Building2 size={14} color="var(--text-secondary)" />
             <select
@@ -565,7 +588,7 @@ function App() {
                 setActiveProfileId(null);
                 setSelectedChatId(null);
               }}
-              style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '0.8rem', fontWeight: '700', outline: 'none' }}
+              style={{ background: 'transparent', border: 'none', color: 'white', fontSize: isMobile ? '0.7rem' : '0.8rem', fontWeight: '700', outline: 'none', maxWidth: isMobile ? '80px' : 'none' }}
             >
               {MOCK_CLIENTS.map(c => <option key={c.id} value={c.id} style={{ background: '#0a0a0a' }}>{c.name}</option>)}
             </select>
@@ -581,7 +604,7 @@ function App() {
                 setActiveProfileId(null);
                 setSelectedChatId(null);
               }}
-              style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '0.8rem', fontWeight: '700', outline: 'none' }}
+              style={{ background: 'transparent', border: 'none', color: 'white', fontSize: isMobile ? '0.7rem' : '0.8rem', fontWeight: '700', outline: 'none', maxWidth: isMobile ? '80px' : 'none' }}
             >
               {availableOperators.map(o => <option key={o.id} value={o.id} style={{ background: '#0a0a0a' }}>{o.name}</option>)}
             </select>
@@ -591,15 +614,13 @@ function App() {
               <div style={{ height: '32px', width: '1px', background: 'var(--card-border)' }} />
               <button
                 onClick={simulateIncomingCall}
-                className="status-badge pulse-call-btn"
-                style={{ cursor: 'pointer', border: 'none', color: 'var(--accent-color)' }}
+                className="action-btn pulse-animation"
+                style={{ background: 'var(--accent-color)', color: 'white', width: 'auto', padding: isMobile ? '0.4rem 0.8rem' : '0.5rem 1rem', marginTop: 0, fontSize: isMobile ? '0.65rem' : '0.75rem' }}
               >
-                <Phone size={16} />
-                <span style={{ fontWeight: '700' }}>{t('simulateCall')}</span>
+                <Phone size={14} /> {isMobile ? 'Call' : 'Simulovat hovor'}
               </button>
             </>
           )}
-        </div>
       </div>
 
       {/* Sidebar */}
@@ -642,6 +663,7 @@ function App() {
             ] : [
               ...(activeOperator.isAdmin ? [
                 { id: 'hierarchy', icon: Users, label: 'Hierarchy' },
+                { id: 'plans', icon: CreditCard, label: 'Subscriptions' },
                 { id: 'analytics', icon: BarChart3, label: 'Reports' }
               ] : [
                 { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator.isModel ? 0 : totalUnread },
@@ -656,7 +678,11 @@ function App() {
             ]),
             { id: 'settings', icon: Settings, label: t('settings') },
           ].map(item => (
-            <button key={item.id} onClick={() => setActiveTab(item.id)}
+            <button key={item.id} 
+              onClick={() => {
+                setActiveTab(item.id);
+                if (isMobile) setIsMobileMenuOpen(false);
+              }}
               style={{
                 display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1rem', border: 'none', borderRadius: '12px',
                 background: activeTab === item.id ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
@@ -780,8 +806,10 @@ function App() {
         paddingTop: isMobile ? '60px' : 0
       }}>
         {activeTab === 'inbox' && (
-          <div style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden' }} className="fade-in inbox-grid">
-            <div className={`inbox-panel ${!selectedChatId ? 'active' : ''}`} style={{ width: '380px', flexShrink: 0, borderRight: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden', position: 'relative' }} className="fade-in inbox-grid">
+            {/* Column 1: Inbox List */}
+            {(!isMobile || mobileView === 'list') && (
+              <div className={`inbox-panel ${!selectedChatId ? 'active' : ''}`} style={{ width: isMobile ? '100%' : '380px', flexShrink: 0, borderRight: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column' }}>
               <div style={{ padding: '2rem 1.5rem', borderBottom: '1px solid var(--card-border)' }}>
                 <h2 style={{ fontSize: '1.5rem', marginBottom: '1.25rem' }}>{t('inbox')} ({activeProfile?.name || '...'})</h2>
                 <div style={{ position: 'relative' }}>
@@ -793,6 +821,7 @@ function App() {
                 {filteredMessages.length > 0 ? filteredMessages.map(msg => (
                   <div key={msg.id} onClick={() => { 
                     setSelectedChatId(msg.id); 
+                    if (isMobile) setMobileView('chat');
                     if (!isTranslating) {
                       setSourceText("");
                       setTranslatedText("");
@@ -821,24 +850,32 @@ function App() {
                     <div className="truncate-text" style={{ opacity: selectedChat?.id === msg.id ? 1 : 0.7 }}>{msg.text}</div>
                   </div>
                 )) : <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>{t('noMessages')}</div>}
+                <div style={{ height: isMobile ? '80px' : '0' }}></div>
               </div>
             </div>
+            )}
 
-            <div className={`inbox-panel ${selectedChatId ? 'active' : ''} ${isMobile && !selectedChatId ? 'hidden-mobile' : ''}`} style={{ flex: 1, display: 'flex', flexDirection: 'row', minWidth: 0, overflow: 'hidden' }}>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.1)', minWidth: 0 }}>
+            {(!isMobile || mobileView !== 'list') && (
+              <div className={`inbox-panel ${selectedChatId ? 'active' : ''} ${isMobile && !selectedChatId ? 'hidden-mobile' : ''}`} style={{ flex: 1, display: 'flex', flexDirection: isMobile ? 'column' : 'row', minWidth: 0, overflow: 'hidden' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.1)', minWidth: 0 }}>
                 {selectedChat ? (
                   <>
-                    <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-color)', zIndex: 105 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ padding: isMobile ? '1rem' : '1.5rem 2rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-color)', zIndex: 105 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '1rem' }}>
                         {isMobile && (
                           <button 
-                            onClick={() => setSelectedChatId(null)}
-                            style={{ background: 'transparent', border: 'none', color: 'var(--accent-color)', cursor: 'pointer', padding: '0.5rem 0.5rem 0.5rem 0' }}
+                            onClick={() => setMobileView('list')}
+                            style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: '0.5rem' }}
                           >
-                            <X size={20} />
+                            <ChevronLeft size={24} />
                           </button>
                         )}
-                        <div className="avatar-circle"><Users color="var(--accent-color)" size={24} /></div><div><div style={{ fontWeight: '700', fontSize: '1.1rem' }}>{selectedChat.from}</div><div style={{ fontSize: '0.8rem', color: 'var(--success-color)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Shield size={12} /> {t('secureConnection')}</div></div></div>
+                        <div className="avatar-circle"><Users color="var(--accent-color)" size={24} /></div>
+                        <div>
+                          <div style={{ fontWeight: '700', fontSize: isMobile ? '0.9rem' : '1.1rem' }}>{selectedChat.from}</div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--success-color)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Shield size={10} /> {isMobile ? 'Secure' : t('secureConnection')}</div>
+                        </div>
+                      </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <button 
                           onClick={() => {
@@ -855,7 +892,7 @@ function App() {
                       </div>
                     </div>
 
-                    <div style={{ flex: 1, padding: '2.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    <div style={{ flex: 1, padding: isMobile ? '1.5rem' : '2.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                       <div className="message-bubble-in">{selectedChat.text}</div>
                       {(sessionHistories[selectedChat.id] || []).map(m => (
                         <div key={m.id} style={{ alignSelf: 'flex-end', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
@@ -867,6 +904,7 @@ function App() {
                           )}
                         </div>
                       ))}
+                      <div style={{ height: isMobile ? '80px' : '0' }}></div>
                     </div>
 
                     <div style={{ padding: '1.5rem 2rem', background: 'rgba(5,7,10,0.4)', borderTop: '1px solid var(--card-border)', marginBottom: '4rem' }}>
@@ -892,8 +930,26 @@ function App() {
                 )}
               </div>
 
-              {/* Permanent Right Panel Container */}
-              <div className="notes-panel-container" style={{ width: '400px', flexShrink: 0, borderLeft: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column', background: 'var(--bg-color)', overflow: 'hidden' }}>
+              {/* Permanent Right Panel Container (Phase 10: Conditional and Absolute on mobile) */}
+              {(!isMobile || mobileView === 'details') && (
+                <div className="notes-panel-container" style={{ 
+                  width: isMobile ? '100% ' : '400px', 
+                  flexShrink: 0, 
+                  borderLeft: isMobile ? 'none' : '1px solid var(--card-border)', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  background: 'var(--bg-color)', 
+                  overflow: 'hidden',
+                  position: isMobile ? 'absolute' : 'static',
+                  top: 0, right: 0, bottom: 0, zIndex: 1100
+                }}>
+                  {isMobile && (
+                    <div style={{ padding: '1rem', borderBottom: '1px solid var(--card-border)' }}>
+                      <button onClick={() => setMobileView('chat')} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <ChevronLeft size={20} /> Back to Chat
+                      </button>
+                    </div>
+                  )}
                 {selectedChat ? (
                   <div style={{ display: 'flex', flex: 1, flexDirection: 'column', overflow: 'hidden' }}>
                     
@@ -1016,9 +1072,11 @@ function App() {
                   </div>
                 )}
               </div>
-            </div>
+            )}
           </div>
         )}
+      </div>
+    )}
 
         {activeTab === 'calendar' && (
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, display: 'flex', flexDirection: 'column' }} className="fade-in">
@@ -1856,51 +1914,128 @@ function App() {
           </div>
         )}
 
-        {/* Subscription Plans (Phase 4) */}
-        {activeTab === 'plans' && activeOperator.isSuperAdmin && (
+        {/* Subscription Plans (Phase 4/9) */}
+        {activeTab === 'plans' && (activeOperator.isSuperAdmin || activeOperator.isAdmin) && (
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
-            <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #6366f1, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Subscription Plans</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>Configure platform tiers, pricing, and feature availability.</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem' }}>
+              <div>
+                <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #6366f1, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Subscription Plans</h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', margin: 0 }}>Configure platform tiers, pricing, and feature availability.</p>
+              </div>
+              
+              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '0.5rem', display: 'flex', gap: '0.25rem' }}>
+                {['EU', 'UK', 'CZ'].map(market => (
+                  <button
+                    key={market}
+                    onClick={() => setActiveMarket(market)}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      borderRadius: '8px',
+                      background: activeMarket === market ? 'var(--accent-color)' : 'transparent',
+                      color: activeMarket === market ? 'white' : 'var(--text-secondary)',
+                      border: 'none',
+                      fontSize: '0.8rem',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                    }}
+                  >
+                    {market === 'CZ' ? 'CZ (Kč)' : market === 'UK' ? 'UK (£)' : 'EU (€)'}
+                  </button>
+                ))}
+              </div>
+            </div>
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '2rem' }}>
-              {subscriptionPlans.map((plan) => (
-                <div key={plan.id} className="glass-card" style={{ padding: '2rem', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-                    <div>
-                      <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.5rem' }}>{plan.name}</h3>
-                      <div style={{ fontSize: '1.25rem', color: 'var(--accent-color)', fontWeight: '700' }}>{plan.price}</div>
-                    </div>
-                    <div style={{ width: '48px', height: '48px', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <CreditCard size={24} color="#6366f1" />
-                    </div>
-                  </div>
-                  
-                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: '1.6' }}>{plan.description}</p>
-                  
-                  <div style={{ marginBottom: '2rem' }}>
-                    <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.1em' }}>INCLUDED FEATURES</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      {plan.features.map((feat, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.85rem' }}>
-                          <Check size={14} color="var(--success-color)" />
-                          <span>{feat}</span>
-                        </div>
-                      ))}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.85rem' }}>
-                        <Users size={14} color="var(--accent-color)" />
-                        <span>Up to <strong>{plan.profilesLimit}</strong> Profiles</span>
+              {subscriptionPlans.map((plan) => {
+                const isActive = currentAgency?.tier?.toLowerCase() === plan.id;
+                
+                return (
+                  <div 
+                    key={plan.id} 
+                    className="glass-card" 
+                    style={{ 
+                      padding: '2rem', 
+                      border: isActive ? '2px solid var(--accent-color)' : '1px solid rgba(139, 92, 246, 0.2)',
+                      position: 'relative',
+                      transform: isActive ? 'scale(1.02)' : 'none',
+                      zIndex: isActive ? 1 : 0,
+                      boxShadow: isActive ? '0 0 30px rgba(99, 102, 241, 0.2)' : 'none'
+                    }}
+                  >
+                    {isActive && (
+                      <div style={{ 
+                        position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)',
+                        background: 'var(--accent-color)', color: 'white', padding: '0.25rem 0.75rem',
+                        borderRadius: '20px', fontSize: '0.65rem', fontWeight: '900', letterSpacing: '0.05em'
+                      }}>
+                        CURRENT PLAN
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+                      <div>
+                        <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.5rem' }}>{plan.name}</h3>
+                        <div style={{ fontSize: '1.25rem', color: 'var(--accent-color)', fontWeight: '700' }}>{plan.prices[activeMarket]}</div>
+                      </div>
+                      <div style={{ width: '48px', height: '48px', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <CreditCard size={24} color="#6366f1" />
                       </div>
                     </div>
+                    
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: '1.6' }}>{plan.description}</p>
+                    
+                    <div style={{ marginBottom: '2rem' }}>
+                      <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.1em' }}>INCLUDED FEATURES</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {plan.features.map((feat, i) => (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.85rem' }}>
+                            <Check size={14} color="var(--success-color)" />
+                            <span>{feat}</span>
+                          </div>
+                        ))}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.85rem' }}>
+                          <Users size={14} color="var(--accent-color)" />
+                          <span>Up to <strong>{plan.profilesLimit}</strong> Profiles</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {activeOperator.isSuperAdmin ? (
+                      <button 
+                        onClick={() => {}} // Simulation only
+                        style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                      >
+                        <FileEdit size={16} /> Edit Plan Details
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => {}} // Simulation only
+                        disabled={isActive}
+                        style={{ 
+                          width: '100%', padding: '0.8rem', 
+                          background: isActive ? 'rgba(16, 185, 129, 0.1)' : 'var(--accent-color)', 
+                          border: isActive ? '1px solid var(--success-color)' : 'none', 
+                          borderRadius: '10px', color: 'white', fontWeight: '800', 
+                          cursor: isActive ? 'default' : 'pointer', display: 'flex', alignItems: 'center', 
+                          justifyContent: 'center', gap: '0.5rem',
+                          boxShadow: isActive ? 'none' : '0 10px 20px var(--accent-glow)'
+                        }}
+                      >
+                        {isActive ? (
+                          <>
+                            <CheckCheck size={16} color="var(--success-color)" /> Active
+                          </>
+                        ) : (
+                          <>
+                            <Zap size={16} fill="white" /> 
+                            {plan.id === 'enterprise' ? 'Inquire / Custom' : 'Order Upgrade'}
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
-                  
-                  <button 
-                    onClick={() => {}} // Simulation only
-                    style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                  >
-                    <FileEdit size={16} /> Edit Plan Details
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
