@@ -433,3 +433,29 @@ export const MOCK_PLANS = [
         description: 'The ultimate technological infrastructure for large-scale operations.'
     }
 ];
+
+export const MOCK_REFERRALS = {
+    'op-01': {
+        link: 'https://nexus.sync/ref/alice-m',
+        stats: { clicks: 142, signups: 8, earned: '£450', pending: '£120' },
+        history: [
+            { id: 1, date: '2024-02-15', entity: 'Diamond Stars Agency', status: 'Active', reward: '£150' },
+            { id: 2, date: '2024-03-01', entity: 'Secret Models UK', status: 'Pending', reward: '£120' },
+            { id: 3, date: '2024-03-10', entity: 'Elite Escorts EU', status: 'Active', reward: '£180' }
+        ]
+    },
+    'op-02': {
+        link: 'https://nexus.sync/ref/mark-t',
+        stats: { clicks: 56, signups: 2, earned: '£150', pending: '£0' },
+        history: [
+            { id: 1, date: '2024-01-20', entity: 'Northern Lights Agency', status: 'Active', reward: '£150' }
+        ]
+    },
+    'op-06': { // Super Admin
+        link: 'https://nexus.sync/ref/owner',
+        stats: { clicks: 1240, signups: 45, earned: '£12,500', pending: '£2,400' },
+        history: [
+            { id: 1, date: '2024-03-12', entity: 'Multi-Region Power Agency', status: 'Active', reward: '£2,500' }
+        ]
+    }
+};

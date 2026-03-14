@@ -4,9 +4,9 @@ import {
   MessageSquare, LayoutDashboard, Settings, PieChart,
   Send, MoreVertical, CheckCheck, Play, Fingerprint,
   Globe, Cpu, Zap, Signal, Calendar, AlertTriangle, Clock, Search, LogOut,
-  TrendingUp, DollarSign, BarChart3, Bell, Lock, Smartphone, Phone, X, Check, FileText, User, Sparkles, Building2, ChevronDown, UserCheck, UserPlus, Image, FileEdit, Link, StickyNote, Mic, MicOff, FileSearch, ShieldAlert, CreditCard, Menu, Bug, HardDrive
+  TrendingUp, DollarSign, BarChart3, Bell, Lock, Smartphone, Phone, X, Check, FileText, User, Sparkles, Building2, ChevronDown, UserCheck, UserPlus, Image, FileEdit, Link, StickyNote, Mic, MicOff, FileSearch, ShieldAlert, CreditCard, Menu, Bug, HardDrive, Gift, Copy, Trophy
 } from 'lucide-react';
-import { MOCK_PROFILES, MOCK_MESSAGES, MOCK_STATS, MOCK_CALENDAR, MOCK_CHART_DATA, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_SMART_REPLIES, MOCK_CLIENTS, MOCK_OPERATORS, MOCK_CLIENT_DB, MOCK_AGENCIES, MOCK_PERMISSIONS, MOCK_PLANS } from './DemoData';
+import { MOCK_PROFILES, MOCK_MESSAGES, MOCK_STATS, MOCK_CALENDAR, MOCK_CHART_DATA, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_SMART_REPLIES, MOCK_CLIENTS, MOCK_OPERATORS, MOCK_CLIENT_DB, MOCK_AGENCIES, MOCK_PERMISSIONS, MOCK_PLANS, MOCK_REFERRALS } from './DemoData';
 import { TRANSLATIONS } from './translations';
 
 const LoginScreen = ({ onLogin, lang, setLang, t }) => {
@@ -674,9 +674,10 @@ function App() {
                 ]),
                 ...(activeOperator.isModel ? [] : [{ id: 'activity', icon: Activity, label: t('auditLog') }])
               ]),
-              { id: 'qa', icon: FileSearch, label: 'QA & Review' }
-            ]),
-            { id: 'settings', icon: Settings, label: t('settings') },
+                { id: 'referrals', icon: Gift, label: t('referrals') || 'Doporučení' },
+                { id: 'qa', icon: FileSearch, label: 'QA & Review' }
+              ]),
+              { id: 'settings', icon: Settings, label: t('settings') },
           ].map(item => (
             <button key={item.id} 
               onClick={() => {
@@ -1330,6 +1331,116 @@ function App() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'referrals' && (
+          <div style={{ padding: isMobile ? '1.5rem' : '3rem', height: '100%', overflowY: 'auto', paddingBottom: '8rem' }} className="fade-in custom-scrollbar">
+            <div style={{ marginBottom: '3rem' }}>
+              <h2 style={{ fontSize: isMobile ? '1.8rem' : '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #f59e0b, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                {t('referralProgram') || 'Referral Program'}
+              </h2>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Share Nexus Hub with other agencies and earn recurring rewards.</p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
+              {[
+                { label: 'CLICKS', value: MOCK_REFERRALS[activeOperator.id]?.stats.clicks || 0, icon: Activity, color: '#3b82f6' },
+                { label: 'SIGNUPS', value: MOCK_REFERRALS[activeOperator.id]?.stats.signups || 0, icon: UserPlus, color: '#10b981' },
+                { label: 'EARNED', value: MOCK_REFERRALS[activeOperator.id]?.stats.earned || '£0', icon: Trophy, color: '#f59e0b' },
+                { label: 'PENDING', value: MOCK_REFERRALS[activeOperator.id]?.stats.pending || '£0', icon: Clock, color: 'var(--text-secondary)' }
+              ].map((stat, i) => (
+                <div key={i} className="glass-card" style={{ padding: '1.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                    <stat.icon size={18} color={stat.color} />
+                    <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{stat.label}</span>
+                  </div>
+                  <div style={{ fontSize: '1.75rem', fontWeight: '900' }}>{stat.value}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '2rem', marginBottom: '3rem' }}>
+              <div className="glass-card" style={{ flex: 1, padding: '2rem', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Link size={20} color="#f59e0b" /> YOUR REFERRAL LINK
+                </h3>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+                  Send this link to owners of other agencies. When they sign up for a Professional or Enterprise plan, you get 10% of their subscription fee for the first 12 months.
+                </p>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <div style={{ flex: 1, background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--card-border)', fontFamily: 'monospace', fontSize: '0.9rem', color: '#f59e0b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {MOCK_REFERRALS[activeOperator.id]?.link || 'https://nexus.sync/ref/default'}
+                  </div>
+                  <button className="action-btn" style={{ width: 'auto', padding: '0 1.5rem', marginTop: 0, background: 'var(--accent-color)' }}>
+                    <Copy size={18} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="glass-card" style={{ width: isMobile ? '100%' : '400px', padding: '2rem' }}>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '1.5rem' }}>WHY REFER?</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Check size={18} color="#10b981" />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: '700', fontSize: '0.95rem' }}>Recurring Commission</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Get paid every month they stay subscribed.</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Zap size={18} color="#3b82f6" />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: '700', fontSize: '0.95rem' }}>Instant Credits</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Use your earnings to upgrade your own agency plan.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: '800' }}>Active Referrals & History</h3>
+              </div>
+              <div style={{ padding: '0 1rem' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>
+                      <th style={{ padding: '1.25rem 1rem' }}>AGENCY / ENTITY</th>
+                      <th style={{ padding: '1.25rem 1rem' }}>DATE</th>
+                      <th style={{ padding: '1.25rem 1rem' }}>STATUS</th>
+                      <th style={{ padding: '1.25rem 1rem', textAlign: 'right' }}>REWARD</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(MOCK_REFERRALS[activeOperator.id]?.history || []).map((item) => (
+                      <tr key={item.id} style={{ borderTop: '1px solid var(--card-border)' }}>
+                        <td style={{ padding: '1.25rem 1rem', fontWeight: '700' }}>{item.entity}</td>
+                        <td style={{ padding: '1.25rem 1rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{item.date}</td>
+                        <td style={{ padding: '1.25rem 1rem' }}>
+                          <span className="status-badge-small" style={{ borderColor: item.status === 'Active' ? '#10b981' : '#f59e0b', color: item.status === 'Active' ? '#10b981' : '#f59e0b' }}>
+                            {item.status.toUpperCase()}
+                          </span>
+                        </td>
+                        <td style={{ padding: '1.25rem 1rem', textAlign: 'right', fontWeight: '800', color: '#10b981' }}>{item.reward}</td>
+                      </tr>
+                    ))}
+                    {(!MOCK_REFERRALS[activeOperator.id]?.history || MOCK_REFERRALS[activeOperator.id].history.length === 0) && (
+                      <tr>
+                        <td colSpan="4" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                          No referrals yet. Start sharing your link to earn rewards!
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
