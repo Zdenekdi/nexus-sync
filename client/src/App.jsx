@@ -1,13 +1,18 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  Users, Activity, Shield, RefreshCw, ExternalLink,
-  MessageSquare, LayoutDashboard, Settings, PieChart,
-  Send, MoreVertical, CheckCheck, Play, Fingerprint,
-  Globe, Cpu, Zap, Signal, Calendar, AlertTriangle, Clock, Search, LogOut,
-  TrendingUp, DollarSign, BarChart3, Bell, Lock, Smartphone, Phone, X, Check, FileText, User, Sparkles, Building2, ChevronDown, UserCheck, UserPlus, Image, FileEdit, Link, StickyNote, Mic, MicOff, FileSearch, ShieldAlert, CreditCard, Menu, Bug, HardDrive, Gift, Copy, Trophy
+  Shield, Laptop, Smartphone, Globe, Activity, Building2, MapPin,
+  Search, Send, MessageCircle, Clock, Check, MoreVertical,
+  AlertCircle, ChevronRight, User, Settings, LogOut, Layout,
+  Calendar, Inbox, MessageSquare, Briefcase, Hash, DollarSign,
+  TrendingUp, Users, UserPlus, UserCheck, ShieldCheck, CreditCard,
+  Zap, Building, LayoutDashboard, Database, SmartphoneIcon,
+  Phone, Server, Cpu, FileEdit, CheckCheck, FileSearch, Trash2,
+  Eye, Save, X, RotateCcw, Lock, Share2, Filter, Menu, UserCircle, Plus, Info, ChevronDown, ChevronLeft,
+  BarChart3, ShieldAlert, HardDrive, Gift, Trophy, RefreshCw, Bug, Copy, Signal, Mic, MicOff, Sparkles
 } from 'lucide-react';
-import { MOCK_PROFILES, MOCK_MESSAGES, MOCK_STATS, MOCK_CALENDAR, MOCK_CHART_DATA, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_SMART_REPLIES, MOCK_CLIENTS, MOCK_OPERATORS, MOCK_CLIENT_DB, MOCK_AGENCIES, MOCK_PERMISSIONS, MOCK_PLANS, MOCK_REFERRALS } from './DemoData';
+import { MOCK_OPERATORS, MOCK_CLIENTS, MOCK_AGENCIES, MOCK_PROFILES, MOCK_MESSAGES, MOCK_STATS, MOCK_CALENDAR, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_CHART_DATA, MOCK_SMART_REPLIES, MOCK_PLANS, MOCK_REFERRALS, MOCK_PERMISSIONS } from './DemoData';
 import { TRANSLATIONS } from './translations';
+import { useSocket } from './hooks/useSocket';
 
 const LoginScreen = ({ onLogin, lang, setLang, t }) => {
   const [email, setEmail] = useState('');
@@ -62,110 +67,40 @@ const LoginScreen = ({ onLogin, lang, setLang, t }) => {
 };
 
 function App() {
-  const [lang, setLang] = useState('cz');
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem('nexus_isLoggedIn') === 'true';
-  });
-  const [activeTab, setActiveTab] = useState('inbox');
-  const [isTraining, setIsTraining] = useState(false);
-  const [trainingProgress, setTrainingProgress] = useState(0);
-
-  // Simulation Context
-  const [activeClient, setActiveClient] = useState(() => {
-    try {
-      const saved = localStorage.getItem('nexus_activeClient');
-      if (saved && saved !== 'undefined') return JSON.parse(saved);
-    } catch (e) { console.error('Error parsing activeClient', e); }
-    return MOCK_CLIENTS[0];
   });
   const [activeOperator, setActiveOperator] = useState(() => {
     try {
       const saved = localStorage.getItem('nexus_activeOperator');
-      if (saved && saved !== 'undefined') return JSON.parse(saved);
-    } catch (e) { console.error('Error parsing activeOperator', e); }
-    return MOCK_OPERATORS[0];
+      return (saved && saved !== 'undefined') ? JSON.parse(saved) : MOCK_OPERATORS[0];
+    } catch { return MOCK_OPERATORS[0]; }
   });
-  const [clientNotes, setClientNotes] = useState({});
-  const [isBugReportOpen, setIsBugReportOpen] = useState(false);
-  const [bugDescription, setBugDescription] = useState('');
+  const [activeClient, setActiveClient] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nexus_activeClient');
+      return (saved && saved !== 'undefined') ? JSON.parse(saved) : MOCK_CLIENTS[0];
+    } catch { return MOCK_CLIENTS[0]; }
+  });
 
-  const handleLogin = (user) => {
-    const client = MOCK_CLIENTS.find(c => c.id === user.clientId) || null;
-    setActiveOperator(user);
-    setActiveClient(client);
-    setIsLoggedIn(true);
-    
-    localStorage.setItem('nexus_isLoggedIn', 'true');
-    localStorage.setItem('nexus_activeOperator', JSON.stringify(user));
-    if (client) {
-      localStorage.setItem('nexus_activeClient', JSON.stringify(client));
-    } else {
-      localStorage.removeItem('nexus_activeClient');
-    }
-    
-    // Redirect Super Admin to their dashboard
-    if (user.isSuperAdmin) {
-      setActiveTab('agencies');
-    } else if (user.isAdmin) {
-      setActiveTab('hierarchy');
-    } else {
-      setActiveTab('inbox');
-    }
-  };
-
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setActiveProfileId(null);
-    setSelectedChatId(null);
-    
-    localStorage.removeItem('nexus_isLoggedIn');
-    localStorage.removeItem('nexus_activeOperator');
-    localStorage.removeItem('nexus_activeClient');
-  };
-
-  // Real-time Assignment State (Local Simulation)
-  const [profileAssignments, setProfileAssignments] = useState(MOCK_PROFILES);
-
-  // Current Profile ID (Stable Reference)
-  const [activeProfileId, setActiveProfileId] = useState(null);
+  const [messages, setMessages] = useState(MOCK_MESSAGES);
+  const [profiles, setProfiles] = useState(MOCK_PROFILES);
+  const [activeTab, setActiveTab] = useState('inbox');
+  const [activeProfileId, setActiveProfileId] = useState(MOCK_PROFILES[0].id);
   const [selectedChatId, setSelectedChatId] = useState(null);
+  const [lang, setLang] = useState('en');
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mobileView, setMobileView] = useState('sidebar');
 
-  const [messageValue, setMessageValue] = useState('');
   const [activeCall, setActiveCall] = useState(null);
   const [incomingCall, setIncomingCall] = useState(null);
   const [callTime, setCallTime] = useState(0);
-
-  // Web Profiles Sync Simulation State
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState(0);
-  const [syncStatus, setSyncStatus] = useState({
-    aw: 'synced',
-    ege: 'synced',
-    tpb: 'error'
-  });
-
-  // Translator & Notes State
-  const [activeContextTab, setActiveContextTab] = useState('note'); // 'translator' or 'note'
-  const [sourceText, setSourceText] = useState('');
-  const [translatedText, setTranslatedText] = useState('');
-  const [isTranslating, setIsTranslating] = useState(false);
-  const [targetLang, setTargetLang] = useState('en'); // Default target language for translator
-  const [internalNote, setInternalNote] = useState('');
-  const [sessionHistories, setSessionHistories] = useState({}); // Stores sent messages per chat ID
-  const [rolePermissions, setRolePermissions] = useState(MOCK_PERMISSIONS);
-  const [subscriptionPlans, setSubscriptionPlans] = useState(MOCK_PLANS);
-  const [activeMarket, setActiveMarket] = useState('EU'); // 'EU', 'UK', or 'CZ'
-  
-  const currentAgency = useMemo(() => {
-    return MOCK_AGENCIES.find(a => a.id === activeOperator.clientId);
-  }, [activeOperator.clientId]);
-  
-  const [showOnlyOnline, setShowOnlyOnline] = useState(false);
-
-  // Call Mute State
-  const [isMuted, setIsMuted] = useState(false);
-
-  // Booking Modal State
+  const [syncStatus, setSyncStatus] = useState({ aw: 'idle', ege: 'idle', tpb: 'idle' });
+  const [isTraining, setIsTraining] = useState(false);
+  const [trainingProgress, setTrainingProgress] = useState(0);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [bookingDetails, setBookingDetails] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -175,126 +110,92 @@ function App() {
   });
   const [bookingSchedule, setBookingSchedule] = useState(MOCK_CALENDAR.events);
   const [bookingCollision, setBookingCollision] = useState(null);
+  const [rolePermissions, setRolePermissions] = useState(MOCK_PERMISSIONS);
+  const [subscriptionPlans] = useState(MOCK_PLANS);
+  const [activeMarket, setActiveMarket] = useState('EU');
+  const [showOnlyOnline, setShowOnlyOnline] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [internalNote, setInternalNote] = useState('');
+  const [clientNotes, setClientNotes] = useState({});
+  const [activeContextTab, setActiveContextTab] = useState('note');
+  const [sourceText, setSourceText] = useState('');
+  const [translatedText, setTranslatedText] = useState('');
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [targetLang, setTargetLang] = useState('en');
+  const [messageValue, setMessageValue] = useState('');
+  const [sessionHistories] = useState({});
+  const [isBugReportOpen, setIsBugReportOpen] = useState(false);
+  const [bugDescription, setBugDescription] = useState('');
 
-  // Mobile Responsiveness State
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [mobileView, setMobileView] = useState('list'); // 'list', 'chat', 'details'
-
+  // Handle Window Resize
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const checkBookingCollision = (date, time, duration) => {
-    // Basic collision detection for the demo
-    // Convert time to minutes from midnight for easier comparison
-    const [hours, minutes] = time.split(':').map(Number);
-    const startMins = hours * 60 + minutes;
-    const endMins = startMins + parseInt(duration);
+  // Handle Call Timer
+  useEffect(() => {
+    let interval;
+    if (activeCall) {
+      interval = setInterval(() => setCallTime(prev => prev + 1), 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+      setCallTime(0);
+    };
+  }, [activeCall]);
 
-    const collision = bookingSchedule.find(event => {
-      const [eHours, eMinutes] = event.time.split(' ')[0].split(':').map(Number);
-      const isPm = event.time.includes('PM') && eHours !== 12;
-      const hoursCorrected = isPm ? eHours + 12 : (event.time.includes('AM') && eHours === 12 ? 0 : eHours);
-      
-      const eventStartMins = hoursCorrected * 60 + (eMinutes || 0);
-      const eventDuration = parseFloat(event.duration) * 60;
-      const eventEndMins = eventStartMins + eventDuration;
-
-      return (startMins < eventEndMins && endMins > eventStartMins);
-    });
-
-    return collision;
-  };
-
+  // Initialize Socket Connection
+  useSocket(
+    useCallback((newMsg) => setMessages(prev => [...prev, newMsg]), []),
+    useCallback((updatedMsg) => setMessages(prev => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m)), [])
+  );
 
   const t = (key) => TRANSLATIONS[lang][key] || key;
 
-  // Filter operators based on active client
+  // Memoized Derived Data
   const availableOperators = useMemo(() =>
-    MOCK_OPERATORS.filter(op => op.clientId === activeClient?.id),
-    [activeClient?.id]);
+    activeOperator.isSuperAdmin ? MOCK_OPERATORS : MOCK_OPERATORS.filter(op => op.clientId === activeOperator.clientId),
+    [activeOperator.clientId, activeOperator.isSuperAdmin]
+  );
 
-  // Profiles assigned to CURRENT operator
-  const myProfiles = useMemo(() => {
-    return profileAssignments.filter(profile =>
-      profile.clientId === activeClient?.id &&
-      profile.operators.some(op => op.id === activeOperator.id && op.active)
-    );
-  }, [activeClient?.id, activeOperator.id, profileAssignments]);
-
-  // All Agency profiles for high-level management
-  const allAgencyProfiles = useMemo(() => {
-    if (!activeClient) return profileAssignments; // Show all for Super Admin or when no client
-    return profileAssignments.filter(p => p.clientId === activeClient.id);
-  }, [profileAssignments, activeClient]);
+  const myProfiles = useMemo(() =>
+    profiles.filter(p => p.operators.some(op => op.id === activeOperator.id && op.active)),
+    [profiles, activeOperator.id]
+  );
 
   const myProfileIds = useMemo(() => myProfiles.map(p => p.id), [myProfiles]);
 
-  const handleConfirmBooking = () => {
-    const collision = checkBookingCollision(bookingDetails.date, bookingDetails.time, bookingDetails.duration);
-    if (!collision) {
-      // Add to local schedule
-      const newEvent = {
-        time: `${bookingDetails.time} ${parseInt(bookingDetails.time) >= 12 ? 'PM' : 'AM'}`,
-        duration: `${parseInt(bookingDetails.duration) / 60}h`,
-        title: `Private Booking - ${selectedChat.from}`,
-        status: 'busy',
-        type: bookingDetails.type
-      };
-      setBookingSchedule([...bookingSchedule, newEvent]);
-      
-      // Send automated message
-      const confirmText = lang === 'cz' 
-        ? `Vaše rezervace na ${bookingDetails.date} v ${bookingDetails.time} na ${bookingDetails.duration} min byla potvrzena. Těším se na vás!`
-        : `Your booking for ${bookingDetails.date} at ${bookingDetails.time} for ${bookingDetails.duration} min has been confirmed. Looking forward to it!`;
-      
-      handleSendMessage(confirmText);
-      setIsBookingModalOpen(false);
-    } else {
-      setBookingCollision(collision);
-    }
-  };
+  const allAgencyProfiles = useMemo(() =>
+    activeOperator.isSuperAdmin ? profiles : profiles.filter(p => p.clientId === activeOperator.clientId),
+    [profiles, activeOperator.clientId, activeOperator.isSuperAdmin]
+  );
 
-  // Derived Active Profile Object
-  const activeProfile = useMemo(() => {
-    const found = allAgencyProfiles.find(p => p.id === activeProfileId);
-    return found || myProfiles[0] || allAgencyProfiles[0] || null;
-  }, [activeProfileId, allAgencyProfiles, myProfiles]);
+  const activeProfile = useMemo(() =>
+    profiles.find(p => p.id === activeProfileId) || allAgencyProfiles[0],
+    [profiles, activeProfileId, allAgencyProfiles]
+  );
 
-  // Filter messages for current operator/model
   const filteredMessages = useMemo(() => {
-    let base = MOCK_MESSAGES;
-
-    // If it's a model, they only see their own profile's messages
-    if (activeOperator.isModel) {
-      // Find the profile belonging to this model (for demo, we assume Diana owns 'p-04')
-      // In a real app, op.profileId would exist.
-      const modelProfileId = 'p-04';
-      base = base.filter(m => m.profileId === modelProfileId);
-    } else if (!activeOperator.isAdmin) {
-      // Standard operator sees messages from profiles they are assigned to
-      base = base.filter(m => myProfileIds.includes(m.profileId));
-    }
-
+    let base = messages.filter(m => m.profileId === activeProfileId);
     return base.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  }, [activeOperator, myProfileIds]);
+  }, [messages, activeProfileId]);
 
-  const totalUnread = useMemo(() =>
-    MOCK_MESSAGES.filter(msg =>
-      (activeOperator.isModel ? msg.profileId === 'p-04' : myProfileIds.includes(msg.profileId)) &&
-      msg.status === 'unread'
-    ).length,
-    [myProfileIds, activeOperator]);
+  const selectedChat = useMemo(() =>
+    selectedChatId ? filteredMessages.find(m => m.id === selectedChatId) : (filteredMessages[0] || null),
+    [filteredMessages, selectedChatId]
+  );
+
+  const currentSmartReplies = useMemo(() => MOCK_SMART_REPLIES[lang] || [], [lang]);
+  const currentAgency = useMemo(() => activeClient || MOCK_AGENCIES[0], [activeClient]);
 
   const toggleOperatorStatus = (profileId, operatorId) => {
-    setProfileAssignments(prev => prev.map(p => {
+    setProfiles(prev => prev.map(p => {
       if (p.id === profileId) {
         return {
           ...p,
-          operators: p.operators.map(op =>
+          operators: p.operators.map(op => 
             op.id === operatorId ? { ...op, active: !op.active } : op
           )
         };
@@ -303,56 +204,36 @@ function App() {
     }));
   };
 
-  const getUnreadForProfile = (profileId) => {
-    return MOCK_MESSAGES.filter(msg => msg.profileId === profileId && msg.status === 'unread').length;
+  const handleSaveNote = () => {
+    if (!internalNote.trim() || !selectedChat?.from) return;
+    setClientNotes(prev => ({
+      ...prev,
+      [selectedChat.from]: [
+        ...(prev[selectedChat.from] || []),
+        { id: Date.now(), text: internalNote, author: activeOperator.name, timestamp: new Date().toLocaleString() }
+      ]
+    }));
+    setInternalNote('');
   };
 
-  const selectedChat = useMemo(() => {
-    if (selectedChatId) return filteredMessages.find(m => m.id === selectedChatId);
-    return filteredMessages[0] || null;
-  }, [selectedChatId, filteredMessages]);
+  const totalUnread = useMemo(() =>
+    messages.filter(msg =>
+      (activeOperator.isModel ? msg.profileId === 'p-04' : myProfileIds.includes(msg.profileId)) &&
+      msg.status === 'unread'
+    ).length,
+    [messages, myProfileIds, activeOperator]
+  );
 
-  // Combine selectedChat with its client info for easier access
+  const getUnreadForProfile = (profileId) => {
+    return messages.filter(msg => msg.profileId === profileId && msg.status === 'unread').length;
+  };
+
   const activeChat = useMemo(() => {
     if (!selectedChat) return null;
     const profile = allAgencyProfiles.find(p => p.id === selectedChat.profileId);
     const client = MOCK_CLIENTS.find(c => c.id === profile?.clientId);
     return { ...selectedChat, client };
   }, [selectedChat, allAgencyProfiles]);
-
-  useEffect(() => {
-    let timer;
-    if (activeCall?.status === 'active') {
-      timer = setInterval(() => {
-        setCallTime(prev => prev + 1);
-      }, 1000);
-    }
-    return () => {
-      if (timer) clearInterval(timer);
-      if (!activeCall) setCallTime(0);
-    };
-  }, [activeCall]);
-
-  // No side effects needed for chat change now that resets are in onClick handlers.
-
-  const handleSendMessage = useCallback((val = messageValue) => {
-    if (!val.trim() || !selectedChat?.id) return;
-    const now = Date.now();
-    const newMessage = { 
-      id: now, 
-      text: val, 
-      from: 'me', 
-      time: 'Just now', 
-      translated: activeClient?.lang !== activeOperator.lang ? activeClient?.lang : null 
-    };
-    
-    setSessionHistories(prev => ({
-      ...prev,
-      [selectedChat.id]: [...(prev[selectedChat.id] || []), newMessage]
-    }));
-    
-    setMessageValue('');
-  }, [messageValue, selectedChat, activeClient?.lang, activeOperator.lang]);
 
   const startCall = () => {
     if (!activeProfile) return;
@@ -363,11 +244,11 @@ function App() {
   };
 
   const simulateIncomingCall = () => {
-    if (!activeProfile) return;
+    const randomProfile = myProfiles[Math.floor(Math.random() * myProfiles.length)] || profiles[0];
     setIncomingCall({
-      caller: '+44 7700 900555',
-      profileId: activeProfile.id,
-      profileName: activeProfile.name
+      profileId: randomProfile.id,
+      profileName: randomProfile.name,
+      caller: '+44 7700 900' + Math.floor(100 + Math.random() * 900)
     });
   };
 
@@ -384,14 +265,13 @@ function App() {
     setIsSyncing(true);
     setSyncProgress(0);
     setSyncStatus({ aw: 'syncing', ege: 'syncing', tpb: 'syncing' });
-
-    let progress = 0;
+    let p = 0;
     const interval = setInterval(() => {
-      progress += 5;
-      setSyncProgress(progress);
-      if (progress === 40) setSyncStatus(prev => ({ ...prev, aw: 'synced' }));
-      if (progress === 75) setSyncStatus(prev => ({ ...prev, tpb: 'synced' }));
-      if (progress >= 100) {
+      p += 5;
+      setSyncProgress(p);
+      if (p === 40) setSyncStatus(s => ({ ...s, aw: 'synced' }));
+      if (p === 75) setSyncStatus(s => ({ ...s, tpb: 'synced' }));
+      if (p >= 100) {
         clearInterval(interval);
         setIsSyncing(false);
         setSyncStatus({ aw: 'synced', ege: 'synced', tpb: 'synced' });
@@ -399,70 +279,71 @@ function App() {
     }, 150);
   };
 
-  const getSmartReplies = (chatText, appLang) => {
-    if (!chatText) return [];
-    const lowerText = chatText.toLowerCase();
-    if (lowerText.includes('tomorrow') || lowerText.includes('zítra')) {
-      return appLang === 'cz' ? ["Zítra mám čas od 14:00.", "Zítřek je plný, co takhle pozítří?", "Ano, zítra se můžeme vidět."] : ["I'm free from 2 PM tomorrow.", "Tomorrow is fully booked, how about the day after?", "Yes, we can meet tomorrow."];
+  const handleSendMessage = useCallback((val) => {
+    const text = typeof val === 'string' ? val : messageValue;
+    if (!text.trim() || !selectedChat?.id) return;
+    const newMessage = {
+      id: Date.now(),
+      text: text,
+      from: 'me',
+      time: 'Just now',
+      profileId: activeProfileId
+    };
+    setMessages(prev => [...prev, newMessage]);
+    if (typeof val === 'string') {
+      // automated reply etc
+    } else {
+      setMessageValue('');
     }
-    if (lowerText.includes('rate') || lowerText.includes('cena')) {
-      return appLang === 'cz' ? ["Moje sazba je £200/h.", "Nabízím i delší schůzky za zvýhodněnou cenu.", "Můžeme se dohodnout, napiš mi víc."] : ["My rate is £200/h.", "I also offer longer bookings at a discount.", "We can discuss it."];
-    }
-    if (lowerText.includes('tonight') || lowerText.includes('dnes')) {
-      return appLang === 'cz' ? ["Dnes večer mám volno od 20:00.", "Dnešek mám bohužel už plný.", "Zavoláš mi a domluvíme se?"] : ["I'm free tonight from 8 PM.", "I'm fully booked for tonight, sorry.", "Can you call me to arrange?"];
-    }
-    return appLang === 'cz' ? ["Ahoj! Jsem tu, hodil by se ti čas v 16:00?", "Ráda si popovídám víc. Zavoláš mi?"] : ["Hey! I'm around, would 4pm work?", "I'd love to chat more. Call me?"];
-  };
-
-  const currentSmartReplies = useMemo(() => {
-    return selectedChat ? getSmartReplies(selectedChat.text, lang) : [];
-  }, [selectedChat, lang]);
+  }, [selectedChat?.id, activeProfileId, messageValue]);
 
   const handleTranslate = () => {
-    if (!sourceText.trim()) {
-      setTranslatedText('');
-      return;
-    }
+    if (!sourceText.trim()) return;
     setIsTranslating(true);
-    // Simulate API call
     setTimeout(() => {
-      const mockTranslations = {
-        'en': {
-          'hello': 'Ahoj', 'how are you': 'Jak se máš?', 'good morning': 'Dobré ráno',
-          'i am free from 2 pm tomorrow': 'Zítra mám volno od 14:00',
-          'my rate is £200/h': 'Moje sazba je £200/h',
-          'i am free tonight from 8 pm': 'Dnes večer mám volno od 20:00'
-        },
-        'cz': {
-          'ahoj': 'Hello', 'jak se máš?': 'How are you?', 'dobré ráno': 'Good morning',
-          'zítra mám volno od 14:00': 'I am free from 2 PM tomorrow',
-          'moje sazba je £200/h': 'My rate is £200/h',
-          'dnes večer mám volno od 20:00': 'I am free tonight from 8 PM'
-        }
-      };
-      const lowerSource = sourceText.toLowerCase();
-      const translated = mockTranslations[targetLang]?.[lowerSource] || `[Translated to ${targetLang.toUpperCase()}: ${sourceText}]`;
-      setTranslatedText(translated);
+      setTranslatedText(`[Translated to ${targetLang.toUpperCase()}]: ${sourceText}`);
       setIsTranslating(false);
     }, 700);
   };
 
-  // Handle Note Save
-  const handleSaveNote = () => {
-    if (!internalNote.trim() || !activeChat?.from) return;
-
-    const newNote = {
-      id: Date.now(),
-      text: internalNote,
-      author: activeOperator?.name || "Operator",
-      timestamp: new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  const handleConfirmBooking = () => {
+    const newEvent = {
+        time: `${bookingDetails.time} ${parseInt(bookingDetails.time) >= 12 ? 'PM' : 'AM'}`,
+        duration: `${parseInt(bookingDetails.duration) / 60}h`,
+        title: `Private Booking - ${selectedChat?.from || 'Client'}`,
+        status: 'busy',
+        type: bookingDetails.type
     };
+    setBookingSchedule([...bookingSchedule, newEvent]);
+    setIsBookingModalOpen(false);
+  };
 
-    setClientNotes(prev => ({
-      ...prev,
-      [activeChat.from]: [newNote, ...(prev[activeChat.from] || [])]
-    }));
-    setInternalNote('');
+  const handleLogin = (user) => {
+    const client = MOCK_CLIENTS.find(c => c.id === user.clientId) || null;
+    setActiveOperator(user);
+    setActiveClient(client);
+    setIsLoggedIn(true);
+    
+    localStorage.setItem('nexus_isLoggedIn', 'true');
+    localStorage.setItem('nexus_activeOperator', JSON.stringify(user));
+    if (client) {
+      localStorage.setItem('nexus_activeClient', JSON.stringify(client));
+    }
+
+    if (user.isSuperAdmin) {
+      setActiveTab('agencies');
+    } else {
+      setActiveTab('inbox');
+    }
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setActiveProfileId(null);
+    setSelectedChatId(null);
+    localStorage.removeItem('nexus_isLoggedIn');
+    localStorage.removeItem('nexus_activeOperator');
+    localStorage.removeItem('nexus_activeClient');
   };
 
   if (!isLoggedIn) {
@@ -674,11 +555,12 @@ function App() {
                   { id: 'profiles', icon: Users, label: t('profiles') },
                   { id: 'web-profiles', icon: Globe, label: t('webProfiles') }
                 ]),
+                { id: 'device-setup', icon: SmartphoneIcon, label: 'Device Setup' },
                 ...(activeOperator.isModel ? [] : [{ id: 'activity', icon: Activity, label: t('auditLog') }])
               ]),
-                { id: 'referrals', icon: Gift, label: t('referrals') || 'Doporučení' },
-                { id: 'qa', icon: FileSearch, label: 'QA & Review' }
-              ]),
+              { id: 'referrals', icon: Gift, label: t('referrals') || 'Doporučení' },
+              { id: 'qa', icon: FileSearch, label: 'QA & Review' }
+            ]),
               { id: 'settings', icon: Settings, label: t('settings') },
           ].map(item => (
             <button key={item.id} 
@@ -1269,6 +1151,74 @@ function App() {
                 <div style={{ marginTop: '1.5rem', fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'flex', gap: '0.5rem', alignItems: 'flex-start', background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '12px' }}>
                   <Link size={14} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
                   Systém naváže spojení přes proxy bránu uk-london-res-12 a simuluje reálný prohlížeč pro aktualizaci dat bez rizika banu za scrapování.
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'device-setup' && (
+          <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+              <div>
+                <h2 style={{ fontSize: '2rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <SmartphoneIcon size={28} color="var(--accent-color)" /> {t('deviceSetup') || 'Device Setup Guide'}
+                </h2>
+                <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Propojte svůj telefon s platformou pro automatickou synchronizaci SMS a hovorů.</p>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 400px', gap: '2rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div className="glass-card" style={{ padding: '2rem' }}>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '1.5rem' }}>1. Instalace Aplikace</h3>
+                  <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', fontSize: '0.9rem' }}>
+                    Stáhněte si <strong>Nexus Connect</strong> pro Android z našeho privátního repozitáře. Aplikace vyžaduje oprávnění ke čtení SMS a správě hovorů pro správné fungování relé brány.
+                  </p>
+                  <button className="action-btn" style={{ width: 'auto', padding: '0.75rem 1.5rem', background: 'var(--accent-color)', color: 'white', fontWeight: '700', borderRadius: '12px', cursor: 'pointer', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1.5rem' }}>
+                    <HardDrive size={18} /> Stáhnout APK (v2.4.1)
+                  </button>
+                </div>
+
+                <div className="glass-card" style={{ padding: '2rem' }}>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '1.5rem' }}>2. Konfigurace Zařízení</h3>
+                  <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+                    Zkopírujte tento konfigurační klíč do nastavení aplikace na vašem zařízení. Tento klíč je unikátní pro vaši agenturu a šifruje veškerou komunikaci.
+                  </p>
+                  <div style={{ position: 'relative' }}>
+                    <pre style={{ background: 'rgba(0,0,0,0.3)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--card-border)', color: 'var(--accent-color)', fontSize: '0.8rem', overflowX: 'auto' }}>
+                      {JSON.stringify({
+                        agencyId: activeOperator.clientId,
+                        operatorId: activeOperator.id,
+                        endpoint: "wss://relay.nexus.sync/v2",
+                        token: "eyJhY3RpdmUiOnRydWUsICJleHAiOiAxNzQxODU2MDAwfQ..."
+                      }, null, 2)}
+                    </pre>
+                    <button style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', padding: '0.4rem', borderRadius: '8px', cursor: 'pointer' }}>
+                      <Copy size={14} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div className="glass-card" style={{ padding: '2rem', textAlign: 'center' }}>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '2rem' }}>RYCHLÉ PÁROVÁNÍ</h3>
+                  <div style={{ width: '200px', height: '200px', background: 'white', margin: '0 auto 1.5rem', padding: '15px', borderRadius: '12px' }}>
+                    {/* Mock QR Code */}
+                    <div style={{ width: '100%', height: '100%', background: 'repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 50% / 20px 20px' }}></div>
+                  </div>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Naskenujte QR kód v aplikaci Nexus Connect pro okamžité nastavení.</p>
+                </div>
+
+                <div className="glass-card" style={{ padding: '1.5rem', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                    <CheckCheck size={20} color="var(--success-color)" style={{ flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontWeight: '800', fontSize: '0.9rem', color: 'var(--success-color)', marginBottom: '0.4rem' }}>STATUS PŘIPOJENÍ</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Všechna relé jsou v pořádku. Latence: 24ms</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1984,9 +1934,7 @@ function App() {
                     <button 
                       onClick={() => {
                         setIsTraining(true);
-                        let p = 0;
                         const interval = setInterval(() => {
-                          p += 5;
                           setTrainingProgress(prev => {
                             if (prev >= 100) {
                               clearInterval(interval);
