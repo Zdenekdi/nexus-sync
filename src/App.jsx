@@ -6,20 +6,26 @@ import {
   Globe, Cpu, Zap, Signal, Calendar, AlertTriangle, Clock, Search, LogOut,
   TrendingUp, DollarSign, BarChart3, Bell, Lock, Smartphone, Phone, X, Check, FileText, User, Sparkles, Building2, ChevronDown, UserCheck, UserPlus, Image, FileEdit, Link, StickyNote, Mic, MicOff, FileSearch, ShieldAlert, CreditCard, Menu
 } from 'lucide-react';
+import { auth, profiles } from './api';
+import { QRCodeCanvas } from 'qrcode.react';
 import { MOCK_PROFILES, MOCK_MESSAGES, MOCK_STATS, MOCK_CALENDAR, MOCK_CHART_DATA, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_SMART_REPLIES, MOCK_CLIENTS, MOCK_OPERATORS, MOCK_CLIENT_DB, MOCK_AGENCIES } from './DemoData';
 import { TRANSLATIONS } from './translations';
+import { useSocket } from './hooks/useSocket';
 
 const LoginScreen = ({ onLogin, lang, setLang, t }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const user = MOCK_OPERATORS.find(op => op.email === email && op.password === password);
-    if (user) {
+    try {
+      const response = await auth.login({ email, password });
+      const { user, token } = response.data;
+      localStorage.setItem('token', token);
       onLogin(user);
-    } else {
+    } catch (err) {
+      console.error('Login failed', err);
       setError(true);
       setTimeout(() => setError(false), 3000);
     }
@@ -61,12 +67,142 @@ const LoginScreen = ({ onLogin, lang, setLang, t }) => {
   );
 };
 
+const DeviceSetupView = ({ t }) => {
+  const webhookUrl = "http://localhost:3001/api/device/webhook";
+  const secret = "nexus_secret_882910";
+  
+  const [copiedUrl, setCopiedUrl] = useState(false);
+  const [copiedSecret, setCopiedSecret] = useState(false);
+
+  const copyToClipboard = (text, setCopied) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
+      <div style={{ marginBottom: '2.5rem' }}>
+        <h2 style={{ fontSize: '2rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <Smartphone size={28} color="var(--accent-color)" /> Mobile Device Setup
+        </h2>
+        <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Connect your Android devices to process real-time events via secure webhooks.</p>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 1200 ? '1fr' : '1fr 400px', gap: '2rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div className="glass-card" style={{ padding: '2rem' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Zap size={20} color="var(--accent-color)" /> Step-by-Step Instructions
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {[
+                { step: "1", title: "Download the Webhook App", desc: "Install a supported Android Webhook application (e.g., 'Sms to Webhook' or similar)." },
+                { step: "2", title: "Configure Webhook URL", desc: "Open the app settings and paste the Webhook URL provided on the right." },
+                { step: "3", title: "Add Authorization Secret", desc: "Use the secret key provided to secure your communication corridor." },
+                { step: "4", title: "Start Forwarding", desc: "Enable the forwarding service and verify connection with a test message." }
+              ].map((item, idx) => (
+                <div key={idx} style={{ display: 'flex', gap: '1.25rem' }}>
+                  <div style={{ width: '32px', height: '32px', background: 'var(--accent-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', flexShrink: 0 }}>{item.step}</div>
+                  <div>
+                    <div style={{ fontWeight: '700', marginBottom: '0.25rem' }}>{item.title}</div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>{item.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="glass-card" style={{ padding: '2rem' }}>
+             <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1.5rem' }}>JSON Template Configuration</h3>
+             <pre style={{ background: 'rgba(0,0,0,0.3)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--card-border)', color: '#60a5fa', fontSize: '0.85rem', overflowX: 'auto', fontFamily: 'monospace' }}>
+{`{
+  "device_id": "Nexus_Node_01",
+  "webhook_url": "${webhookUrl}",
+  "secret_key": "${secret}",
+  "retry_policy": "exponential_backoff",
+  "max_retries": 5
+}`}
+             </pre>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          <div className="glass-card" style={{ padding: '2rem', textAlign: 'center' }}>
+            <h3 style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '1.5rem', letterSpacing: '0.1em', color: 'var(--text-secondary)' }}>APP CONFIGURATION QR</h3>
+            <div style={{ background: 'white', borderRadius: '12px', margin: '0 auto 1.5rem', padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(255,255,255,0.1)', width: 'fit-content' }}>
+               <QRCodeCanvas 
+                 value={JSON.stringify({
+                   device_id: "Nexus_Node_01",
+                   webhook_url: webhookUrl,
+                   secret_key: secret
+                 })}
+                 size={200}
+                 level={"H"}
+                 includeMargin={false}
+                 imageSettings={{
+                   src: "/zap-icon.png",
+                   x: undefined,
+                   y: undefined,
+                   height: 40,
+                   width: 40,
+                   excavate: true,
+                 }}
+               />
+            </div>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>Scan this code within the Nexus Mobile app for instant configuration.</p>
+          </div>
+
+          <div className="glass-card" style={{ padding: '2rem' }}>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--accent-color)', marginBottom: '0.5rem', letterSpacing: '0.1em' }}>WEBHOOK ENDPOINT</label>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input readOnly value={webhookUrl} style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.75rem', borderRadius: '8px', color: 'white', fontSize: '0.8rem' }} />
+                <button onClick={() => copyToClipboard(webhookUrl, setCopiedUrl)} style={{ background: 'rgba(59, 130, 246, 0.2)', border: 'none', padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', color: 'white', transition: 'all 0.2s' }}>
+                  {copiedUrl ? <Check size={18} color="var(--success-color)" /> : <ExternalLink size={18} />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--accent-color)', marginBottom: '0.5rem', letterSpacing: '0.1em' }}>SHARED SECRET</label>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input readOnly value={secret} style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.75rem', borderRadius: '8px', color: 'white', fontSize: '0.8rem', fontFamily: 'monospace' }} />
+                <button onClick={() => copyToClipboard(secret, setCopiedSecret)} style={{ background: 'rgba(59, 130, 246, 0.2)', border: 'none', padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', color: 'white', transition: 'all 0.2s' }}>
+                  {copiedSecret ? <Check size={18} color="var(--success-color)" /> : <ExternalLink size={18} />}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 function App() {
   const [lang, setLang] = useState('cz');
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem('nexus_isLoggedIn') === 'true';
   });
   const [activeTab, setActiveTab] = useState('inbox');
+  const [allMessages, setAllMessages] = useState(MOCK_MESSAGES);
+
+  // Real-time Socket Integration
+  const handleNewMessage = useCallback((data) => {
+    const { message } = data;
+    setAllMessages(prev => {
+      // Avoid duplicates if message already exists (e.g. from local optimistic update if implemented)
+      if (prev.find(m => m.id === message.id)) return prev;
+      return [message, ...prev];
+    });
+  }, []);
+
+  const handleMessageUpdated = useCallback((data) => {
+    const { message } = data;
+    setAllMessages(prev => prev.map(m => m.id === message.id ? { ...m, ...message } : m));
+  }, []);
+
+  useSocket(handleNewMessage, handleMessageUpdated);
 
   // Simulation Context
   const [activeClient, setActiveClient] = useState(() => {
@@ -86,18 +222,29 @@ function App() {
   const [clientNotes, setClientNotes] = useState({});
 
   const handleLogin = (user) => {
-    const client = MOCK_CLIENTS.find(c => c.id === user.clientId) || null;
-    setActiveOperator(user);
+    // Transform backend user/agency to match expected demo structure
+    const client = {
+      id: user.agencyId,
+      name: user.agencyName,
+      lang: 'en'
+    };
+    
+    const operator = {
+      ...user,
+      avatar: user.name.charAt(0).toUpperCase(),
+      role: user.role,
+      isSuperAdmin: user.isSuperAdmin
+    };
+
+    setActiveOperator(operator);
     setActiveClient(client);
     setIsLoggedIn(true);
     
     localStorage.setItem('nexus_isLoggedIn', 'true');
-    localStorage.setItem('nexus_activeOperator', JSON.stringify(user));
-    if (client) {
-      localStorage.setItem('nexus_activeClient', JSON.stringify(client));
-    } else {
-      localStorage.removeItem('nexus_activeClient');
-    }
+    localStorage.setItem('nexus_operator', JSON.stringify(operator));
+    localStorage.setItem('nexus_client', JSON.stringify(client));
+    localStorage.setItem('nexus_agencyId', user.agencyId || '');
+    localStorage.setItem('nexus_isSuperAdmin', user.isSuperAdmin ? 'true' : 'false');
   };
 
   const handleLogout = () => {
@@ -110,8 +257,34 @@ function App() {
     localStorage.removeItem('nexus_activeClient');
   };
 
-  // Real-time Assignment State (Local Simulation)
-  const [profileAssignments, setProfileAssignments] = useState(MOCK_PROFILES);
+  // Real-time Assignment State (Local Simulation -> Hybrid)
+  const [profileAssignments, setProfileAssignments] = useState([]);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      const fetchProfiles = async () => {
+        try {
+          const response = await profiles.getAll();
+          // Map backend profiles to frontend format
+          const mappedProfiles = response.data.map(p => ({
+            ...p,
+            clientId: p.agencyId, // Map agencyId to expected clientId
+            username: p.id,
+            operators: p.operators || [] // Ensure operators array exists
+          }));
+          console.log('Fetched and mapped profiles:', mappedProfiles);
+          setProfileAssignments(mappedProfiles);
+        } catch (err) {
+          console.error('Failed to fetch profiles', err);
+          // Fallback to mock data if backend fails for any reason during development
+          setProfileAssignments(MOCK_PROFILES);
+        }
+      };
+      fetchProfiles();
+    } else {
+      setProfileAssignments([]);
+    }
+  }, [isLoggedIn]);
 
   // Current Profile ID (Stable Reference)
   const [activeProfileId, setActiveProfileId] = useState(null);
@@ -195,19 +368,31 @@ function App() {
     MOCK_OPERATORS.filter(op => op.clientId === activeClient?.id),
     [activeClient?.id]);
 
-  // Profiles assigned to CURRENT operator
-  const myProfiles = useMemo(() => {
-    return profileAssignments.filter(profile =>
-      profile.clientId === activeClient?.id &&
-      profile.operators.some(op => op.id === activeOperator.id && op.active)
-    );
-  }, [activeClient?.id, activeOperator.id, profileAssignments]);
-
   // All Agency profiles for high-level management
   const allAgencyProfiles = useMemo(() => {
-    if (!activeClient) return profileAssignments; // Show all for Super Admin or when no client
-    return profileAssignments.filter(p => p.clientId === activeClient.id);
-  }, [profileAssignments, activeClient]);
+    if (activeOperator?.isSuperAdmin) return []; // Superadmins don't manage profiles
+
+    const currentAgencyId = activeOperator?.agencyId || localStorage.getItem('nexus_agencyId');
+    console.log('Filtering for agencyId:', currentAgencyId, 'from', profileAssignments);
+    if (!currentAgencyId) return profileAssignments;
+    const filtered = profileAssignments.filter(p => p.clientId === currentAgencyId);
+    console.log('Filtered profiles:', filtered);
+    return filtered;
+  }, [profileAssignments, activeOperator?.agencyId, activeOperator?.isSuperAdmin]);
+
+  // Profiles assigned to CURRENT operator
+  const myProfiles = useMemo(() => {
+    if (activeOperator?.isSuperAdmin) return []; // Superadmins don't manage profiles
+
+    const profilesToFilter = allAgencyProfiles;
+    if (activeOperator?.isAdmin) return profilesToFilter; // Admins see all agency profiles
+    
+    return profilesToFilter.filter(profile =>
+      !profile.operators || 
+      profile.operators.length === 0 || 
+      profile.operators.some(op => op.id === activeOperator?.id && op.active)
+    );
+  }, [activeOperator?.isAdmin, activeOperator?.id, activeOperator?.isSuperAdmin, allAgencyProfiles]);
 
   const myProfileIds = useMemo(() => myProfiles.map(p => p.id), [myProfiles]);
 
@@ -244,7 +429,7 @@ function App() {
 
   // Filter messages for current operator/model
   const filteredMessages = useMemo(() => {
-    let base = MOCK_MESSAGES;
+    let base = allMessages;
 
     // If it's a model, they only see their own profile's messages
     if (activeOperator.isModel) {
@@ -261,11 +446,11 @@ function App() {
   }, [activeOperator, myProfileIds]);
 
   const totalUnread = useMemo(() =>
-    MOCK_MESSAGES.filter(msg =>
+    allMessages.filter(msg =>
       (activeOperator.isModel ? msg.profileId === 'p-04' : myProfileIds.includes(msg.profileId)) &&
       msg.status === 'unread'
     ).length,
-    [myProfileIds, activeOperator]);
+    [myProfileIds, activeOperator, allMessages]);
 
   const toggleOperatorStatus = (profileId, operatorId) => {
     setProfileAssignments(prev => prev.map(p => {
@@ -282,7 +467,7 @@ function App() {
   };
 
   const getUnreadForProfile = (profileId) => {
-    return MOCK_MESSAGES.filter(msg => msg.profileId === profileId && msg.status === 'unread').length;
+    return allMessages.filter(msg => msg.profileId === profileId && msg.status === 'unread').length;
   };
 
   const selectedChat = useMemo(() => {
@@ -631,6 +816,7 @@ function App() {
               { id: 'analytics', icon: BarChart3, label: t('analytics') },
               { id: 'qa', icon: FileSearch, label: 'QA & Review' }
             ] : []),
+            { id: 'device-setup', icon: Smartphone, label: 'Device Setup' },
             // Universal Tabs (except Models don't need Audit Log here)
             ...(activeOperator.isModel ? [] : [{ id: 'activity', icon: Activity, label: t('auditLog') }]),
             ...(activeOperator.isSuperAdmin ? [{ id: 'super-admin', icon: ShieldAlert, label: 'Super Admin' }] : []),
@@ -650,8 +836,8 @@ function App() {
           ))}
         </div>
 
-        {/* Profile (Girl) Switcher - Hidden ONLY for Models (Visible for Operators and Admins) */}
-        {!activeOperator.isModel && (
+        {/* Profile (Girl) Switcher - Hidden for Models and Superadmins */}
+        {!activeOperator.isModel && !activeOperator.isSuperAdmin && (
           <div style={{ marginTop: '2.5rem', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>MY ASSIGNED GIRLS</div>
@@ -760,7 +946,8 @@ function App() {
       }}>
         {activeTab === 'inbox' && (
           <div style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden' }} className="fade-in inbox-grid">
-            <div className={`inbox-panel ${!selectedChatId ? 'active' : ''}`} style={{ width: '380px', flexShrink: 0, borderRight: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column' }}>
+            {/* On mobile, only show the list if no chat is selected (or we implement a back button) */}
+            <div className={`inbox-panel ${isMobile && selectedChatId ? 'hide-on-mobile' : ''}`} style={{ width: isMobile ? '100%' : '380px', flexShrink: 0, borderRight: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column' }}>
               <div style={{ padding: '2rem 1.5rem', borderBottom: '1px solid var(--card-border)' }}>
                 <h2 style={{ fontSize: '1.5rem', marginBottom: '1.25rem' }}>{t('inbox')} ({activeProfile?.name || '...'})</h2>
                 <div style={{ position: 'relative' }}>
@@ -872,7 +1059,7 @@ function App() {
               </div>
 
               {/* Permanent Right Panel Container */}
-              <div className="notes-panel-container" style={{ width: '400px', flexShrink: 0, borderLeft: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column', background: 'var(--bg-color)', overflow: 'hidden' }}>
+              <div className={`notes-panel-container ${isMobile ? 'hide-on-mobile' : ''}`} style={{ width: '400px', flexShrink: 0, borderLeft: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column', background: 'var(--bg-color)', overflow: 'hidden' }}>
                 {selectedChat ? (
                   <div style={{ display: 'flex', flex: 1, flexDirection: 'column', overflow: 'hidden' }}>
                     
@@ -1654,6 +1841,10 @@ function App() {
               ))}
             </div>
           </div>
+        )}
+
+        {activeTab === 'device-setup' && (
+          <DeviceSetupView t={t} />
         )}
       </main>
       

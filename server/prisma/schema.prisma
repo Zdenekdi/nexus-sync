@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Agency {
+  id        String   @id @default(cuid())
+  name      String
+  region    String
+  plan      String   @default("Standard")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  users     User[]
+  roles     Role[]
+  profiles  Profile[]
+  chats     Chat[]
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  permissions String   // JSON string
+  isSuperAdmin Boolean  @default(false)
+  agencyId    String?  // NULL for global roles
+  agency      Agency?  @relation(fields: [agencyId], references: [id])
+  
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([name, agencyId])
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id])
+  agencyId  String?
+  agency    Agency?  @relation(fields: [agencyId], references: [id])
+  messages  Message[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Profile {
+  id          String    @id @default(cuid())
+  name        String
+  phoneNumber String?   // Real SIM card number for routing
+  status      String    @default("offline")
+  agencyId  String
+  agency    Agency    @relation(fields: [agencyId], references: [id])
+  data      String?   // JSON string
+  chats     Chat[]
+  callLogs  CallLog[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Chat {
+  id            String    @id @default(cuid())
+  externalId    String    // Phone number or external identifier
+  profileId     String
+  profile       Profile   @relation(fields: [profileId], references: [id])
+  agencyId      String
+  agency        Agency    @relation(fields: [agencyId], references: [id])
+  messages      Message[]
+  lastMessageAt DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([externalId, profileId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  chatId    String
+  chat      Chat     @relation(fields: [chatId], references: [id])
+  direction String   // "INBOUND" or "OUTBOUND"
+  text      String
+  status    String   @default("sent") // "sent", "delivered", "read"
+  senderId  String?  // Optional: User who sent the message (if OUTBOUND)
+  sender    User?    @relation(fields: [senderId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CallLog {
+  id        String   @id @default(cuid())
+  profileId String
+  profile   Profile  @relation(fields: [profileId], references: [id])
+  from      String   // Customer phone number
+  duration  Int      @default(0) // Seconds
+  status    String   // "answered", "missed", "rejected"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

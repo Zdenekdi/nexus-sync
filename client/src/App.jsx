@@ -67,6 +67,8 @@ function App() {
     return localStorage.getItem('nexus_isLoggedIn') === 'true';
   });
   const [activeTab, setActiveTab] = useState('inbox');
+  const [isTraining, setIsTraining] = useState(false);
+  const [trainingProgress, setTrainingProgress] = useState(0);
 
   // Simulation Context
   const [activeClient, setActiveClient] = useState(() => {
@@ -1961,6 +1963,83 @@ function App() {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Enterprise AI Training Simulation */}
+              <div className="glass-card" style={{ padding: '2rem', border: '1px solid rgba(139, 92, 246, 0.3)', background: 'rgba(139, 92, 246, 0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <Cpu size={24} color="#a855f7" /> Custom AI Training Engine (Enterprise Only)
+                  </h3>
+                  <div className="status-badge" style={{ borderColor: '#a855f7', color: '#a855f7' }}>PREMIUM MODULE</div>
+                </div>
+                
+                {!isTraining && trainingProgress === 0 && (
+                  <div style={{ textAlign: 'center', padding: '2rem' }}>
+                    <div style={{ fontSize: '3rem', marginBottom: '1.5rem' }}>🧠</div>
+                    <h4 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '0.75rem' }}>Train AI for a Specific Agency</h4>
+                    <p style={{ color: 'var(--text-secondary)', maxWidth: '500px', margin: '0 auto 2rem' }}>
+                      Upload historical chat data (.csv or .json) to fine-tune the Smart Replies for a specific tone of voice and conversion strategy.
+                    </p>
+                    <button 
+                      onClick={() => {
+                        setIsTraining(true);
+                        let p = 0;
+                        const interval = setInterval(() => {
+                          p += 5;
+                          setTrainingProgress(prev => {
+                            if (prev >= 100) {
+                              clearInterval(interval);
+                              setIsTraining(false);
+                              return 100;
+                            }
+                            return prev + 5;
+                          });
+                        }, 200);
+                      }}
+                      className="action-btn" 
+                      style={{ width: 'auto', padding: '1rem 2.5rem', background: 'var(--accent-color)' }}
+                    >
+                      Upload Training Set & Start Fine-Tuning
+                    </button>
+                  </div>
+                )}
+
+                {(isTraining || (trainingProgress > 0 && trainingProgress < 100)) && (
+                  <div style={{ padding: '2rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', fontSize: '0.9rem', fontWeight: '700' }}>
+                      <span>Analyzing historical chat patterns...</span>
+                      <span>{trainingProgress}%</span>
+                    </div>
+                    <div style={{ width: '100%', height: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', overflow: 'hidden' }}>
+                      <div style={{ width: `${trainingProgress}%`, height: '100%', background: 'linear-gradient(to right, #6366f1, #a855f7)', transition: 'width 0.2s linear' }}></div>
+                    </div>
+                    <div style={{ marginTop: '1.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', gap: '1rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Check size={14} color="var(--success-color)" /> Data Validated</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Check size={14} color={trainingProgress > 40 ? 'var(--success-color)' : 'var(--text-secondary)'} /> Pattern Extraction</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Check size={14} color={trainingProgress > 80 ? 'var(--success-color)' : 'var(--text-secondary)'} /> Weight Optimization</div>
+                    </div>
+                  </div>
+                )}
+
+                {trainingProgress === 100 && !isTraining && (
+                  <div style={{ textAlign: 'center', padding: '2rem' }}>
+                    <div style={{ width: '60px', height: '60px', background: 'var(--success-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', boxShadow: '0 0 30px rgba(34, 197, 94, 0.4)' }}>
+                      <Check size={32} color="white" strokeWidth={4} />
+                    </div>
+                    <h4 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '0.5rem' }}>Model Optimization Complete!</h4>
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+                      The AI model for <strong>Elite Talent Management</strong> has been updated with personalized conversion weights.
+                    </p>
+                    <button 
+                      onClick={() => setTrainingProgress(0)}
+                      className="status-badge" 
+                      style={{ cursor: 'pointer', border: '1px solid var(--card-border)' }}
+                    >
+                      Reset Training Environment
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
