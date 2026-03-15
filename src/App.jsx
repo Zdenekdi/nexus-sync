@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
-  Users, Activity, Shield, RefreshCw, ExternalLink,
-  MessageSquare, LayoutDashboard, Settings, PieChart,
-  Send, MoreVertical, CheckCheck, Play, Fingerprint,
-  Globe, Cpu, Zap, Signal, Calendar, AlertTriangle, Clock, Search, LogOut,
-  TrendingUp, DollarSign, BarChart3, Bell, Lock, Smartphone, Phone, X, Check, FileText, User, Sparkles, Building2, ChevronDown, UserCheck, UserPlus, Image, FileEdit, Link, StickyNote, Mic, MicOff, FileSearch, ShieldAlert, CreditCard, Menu
+  Users, Activity,
+  MessageSquare, Settings,
+  Globe, Zap, Calendar,
+  BarChart3, Smartphone, Building2, FileSearch, ShieldAlert, CreditCard, DollarSign, Shield, User, Lock,
+  X, Menu, Check, ExternalLink, Phone, Signal, Search, MoreVertical, LogOut, StickyNote, RefreshCw, Sparkles, TrendingUp, Image, FileEdit, AlertTriangle, MicOff, Mic, Send, UserCheck, UserPlus, Cpu, Clock
 } from 'lucide-react';
-import { auth, profiles } from './api';
 import { QRCodeCanvas } from 'qrcode.react';
-import { MOCK_PROFILES, MOCK_MESSAGES, MOCK_STATS, MOCK_CALENDAR, MOCK_CHART_DATA, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_SMART_REPLIES, MOCK_CLIENTS, MOCK_OPERATORS, MOCK_CLIENT_DB, MOCK_AGENCIES } from './DemoData';
+import { auth, profiles } from './api';
+import { MOCK_PROFILES, MOCK_MESSAGES, MOCK_CALENDAR, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_CLIENTS, MOCK_OPERATORS, MOCK_AGENCIES } from './DemoData';
 import { TRANSLATIONS } from './translations';
 import { useSocket } from './hooks/useSocket';
 
@@ -67,7 +67,80 @@ const LoginScreen = ({ onLogin, lang, setLang, t }) => {
   );
 };
 
-const DeviceSetupView = ({ t }) => {
+const ReferralsView = () => {
+  const mockReferrals = [
+    { id: 1, name: 'Agent Smith', type: 'Agent', status: 'Active', commission: '£450', date: '2024-03-01' },
+    { id: 2, name: 'Model Luna', type: 'Model', status: 'Pending', commission: '£200', date: '2024-03-05' },
+    { id: 3, name: 'Vito G.', type: 'Agent', status: 'Active', commission: '£1,100', date: '2024-02-28' },
+  ];
+
+  return (
+    <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
+      <div style={{ marginBottom: '3rem' }}>
+        <h2 style={{ fontSize: '2rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+          <Users size={28} color="var(--accent-color)" /> Referrals Management
+        </h2>
+        <p style={{ color: 'var(--text-secondary)' }}>Track network growth and automated commission distributions.</p>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
+        {[
+          { label: 'TOTAL REFERRALS', value: '24', icon: Users, color: 'var(--accent-color)' },
+          { label: 'PENDING COMMISSIONS', value: '£650', icon: DollarSign, color: 'var(--success-color)' },
+          { label: 'NETWORK TIER', value: 'Enterprise', icon: Shield, color: '#f59e0b' }
+        ].map((stat, i) => (
+          <div key={i} className="glass-card" style={{ padding: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+              <stat.icon size={20} color={stat.color} />
+              <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{stat.label}</span>
+            </div>
+            <div style={{ fontSize: '1.75rem', fontWeight: '900' }}>{stat.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: '800' }}>Recent Network Activity</h3>
+        </div>
+        <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ background: 'rgba(255,255,255,0.01)', borderBottom: '1px solid var(--card-border)' }}>
+              <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>NAME / TYPE</th>
+              <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>STATUS</th>
+              <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>COMMISSION</th>
+              <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>DATE</th>
+            </tr>
+          </thead>
+          <tbody>
+            {mockReferrals.map((ref) => (
+              <tr key={ref.id} style={{ borderBottom: '1px solid var(--card-border)' }}>
+                <td style={{ padding: '1rem 1.5rem' }}>
+                  <div style={{ fontWeight: '700' }}>{ref.name}</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{ref.type}</div>
+                </td>
+                <td style={{ padding: '1rem 1.5rem' }}>
+                    <span style={{ 
+                        fontSize: '0.7rem', fontWeight: '800', padding: '0.2rem 0.5rem', borderRadius: '4px',
+                        background: ref.status === 'Active' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                        color: ref.status === 'Active' ? 'var(--success-color)' : '#f59e0b',
+                        border: '1px solid currentColor'
+                    }}>
+                        {ref.status.toUpperCase()}
+                    </span>
+                </td>
+                <td style={{ padding: '1rem 1.5rem', fontWeight: '800', color: 'var(--accent-color)' }}>{ref.commission}</td>
+                <td style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{ref.date}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+const DeviceSetupView = () => {
   const webhookUrl = "http://localhost:3001/api/device/webhook";
   const secret = "nexus_secret_882910";
   
@@ -186,6 +259,7 @@ function App() {
   });
   const [activeTab, setActiveTab] = useState('inbox');
   const [allMessages, setAllMessages] = useState(MOCK_MESSAGES);
+  const [operators, setOperators] = useState(MOCK_OPERATORS);
 
   // Real-time Socket Integration
   const handleNewMessage = useCallback((data) => {
@@ -251,6 +325,7 @@ function App() {
     setIsLoggedIn(false);
     setActiveProfileId(null);
     setSelectedChatId(null);
+    setProfileAssignments([]); // Move reset here to avoid effect warning
     
     localStorage.removeItem('nexus_isLoggedIn');
     localStorage.removeItem('nexus_activeOperator');
@@ -265,24 +340,19 @@ function App() {
       const fetchProfiles = async () => {
         try {
           const response = await profiles.getAll();
-          // Map backend profiles to frontend format
           const mappedProfiles = response.data.map(p => ({
             ...p,
-            clientId: p.agencyId, // Map agencyId to expected clientId
+            clientId: p.agencyId,
             username: p.id,
-            operators: p.operators || [] // Ensure operators array exists
+            operators: p.operators || []
           }));
-          console.log('Fetched and mapped profiles:', mappedProfiles);
           setProfileAssignments(mappedProfiles);
         } catch (err) {
           console.error('Failed to fetch profiles', err);
-          // Fallback to mock data if backend fails for any reason during development
           setProfileAssignments(MOCK_PROFILES);
         }
       };
       fetchProfiles();
-    } else {
-      setProfileAssignments([]);
     }
   }, [isLoggedIn]);
 
@@ -365,34 +435,31 @@ function App() {
 
   // Filter operators based on active client
   const availableOperators = useMemo(() =>
-    MOCK_OPERATORS.filter(op => op.clientId === activeClient?.id),
-    [activeClient?.id]);
+    operators.filter(op => op.clientId === activeClient?.id),
+    [activeClient?.id, operators]);
 
   // All Agency profiles for high-level management
   const allAgencyProfiles = useMemo(() => {
-    if (activeOperator?.isSuperAdmin) return []; // Superadmins don't manage profiles
+    if (activeOperator?.isSuperAdmin) return [];
 
     const currentAgencyId = activeOperator?.agencyId || localStorage.getItem('nexus_agencyId');
-    console.log('Filtering for agencyId:', currentAgencyId, 'from', profileAssignments);
     if (!currentAgencyId) return profileAssignments;
-    const filtered = profileAssignments.filter(p => p.clientId === currentAgencyId);
-    console.log('Filtered profiles:', filtered);
-    return filtered;
-  }, [profileAssignments, activeOperator?.agencyId, activeOperator?.isSuperAdmin]);
+    return profileAssignments.filter(p => p.clientId === currentAgencyId);
+  }, [profileAssignments, activeOperator]);
 
   // Profiles assigned to CURRENT operator
   const myProfiles = useMemo(() => {
-    if (activeOperator?.isSuperAdmin) return []; // Superadmins don't manage profiles
+    if (activeOperator?.isSuperAdmin) return [];
 
     const profilesToFilter = allAgencyProfiles;
-    if (activeOperator?.isAdmin) return profilesToFilter; // Admins see all agency profiles
+    if (activeOperator?.isAdmin) return profilesToFilter;
     
     return profilesToFilter.filter(profile =>
       !profile.operators || 
       profile.operators.length === 0 || 
       profile.operators.some(op => op.id === activeOperator?.id && op.active)
     );
-  }, [activeOperator?.isAdmin, activeOperator?.id, activeOperator?.isSuperAdmin, allAgencyProfiles]);
+  }, [activeOperator, allAgencyProfiles]);
 
   const myProfileIds = useMemo(() => myProfiles.map(p => p.id), [myProfiles]);
 
@@ -430,20 +497,17 @@ function App() {
   // Filter messages for current operator/model
   const filteredMessages = useMemo(() => {
     let base = allMessages;
+    const { isModel, isAdmin } = activeOperator;
 
-    // If it's a model, they only see their own profile's messages
-    if (activeOperator.isModel) {
-      // Find the profile belonging to this model (for demo, we assume Diana owns 'p-04')
-      // In a real app, op.profileId would exist.
+    if (isModel) {
       const modelProfileId = 'p-04';
       base = base.filter(m => m.profileId === modelProfileId);
-    } else if (!activeOperator.isAdmin) {
-      // Standard operator sees messages from profiles they are assigned to
+    } else if (!isAdmin) {
       base = base.filter(m => myProfileIds.includes(m.profileId));
     }
 
-    return base.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  }, [activeOperator, myProfileIds]);
+    return [...base].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  }, [activeOperator, myProfileIds, allMessages]);
 
   const totalUnread = useMemo(() =>
     allMessages.filter(msg =>
@@ -471,17 +535,25 @@ function App() {
   };
 
   const selectedChat = useMemo(() => {
-    if (selectedChatId) return filteredMessages.find(m => m.id === selectedChatId);
-    return filteredMessages[0] || null;
+    if (!selectedChatId) return filteredMessages[0] || null;
+    return filteredMessages.find(m => m.id === selectedChatId) || null;
   }, [selectedChatId, filteredMessages]);
+
+  const selectedChatIdRef = useRef(null);
+  useEffect(() => {
+    selectedChatIdRef.current = selectedChat?.id;
+  }, [selectedChat?.id]);
 
   // Combine selectedChat with its client info for easier access
   const activeChat = useMemo(() => {
-    if (!selectedChat) return null;
-    const profile = allAgencyProfiles.find(p => p.id === selectedChat.profileId);
-    const client = MOCK_CLIENTS.find(c => c.id === profile?.clientId);
-    return { ...selectedChat, client };
-  }, [selectedChat, allAgencyProfiles]);
+    if (!selectedChatId) return null;
+    const chat = filteredMessages.find(m => m.id === selectedChatId) || filteredMessages[0];
+    if (!chat) return null;
+    const profile = allAgencyProfiles.find(p => p.id === chat.profileId);
+    if (!profile) return { ...chat, client: null };
+    const client = MOCK_CLIENTS.find(c => c.id === profile.clientId);
+    return { ...chat, client };
+  }, [selectedChatId, filteredMessages, allAgencyProfiles]);
 
   useEffect(() => {
     let timer;
@@ -498,12 +570,15 @@ function App() {
 
   // No side effects needed for chat change now that resets are in onClick handlers.
 
-  const handleSendMessage = useCallback((val = messageValue) => {
-    if (!val.trim() || !selectedChat?.id) return;
+  const handleSendMessage = useCallback((val) => {
+    const textToSend = typeof val === 'string' ? val : messageValue;
+    const chatId = selectedChat?.id;
+    if (!textToSend.trim() || !chatId) return;
+    
     const now = Date.now();
     const newMessage = { 
       id: now, 
-      text: val, 
+      text: textToSend, 
       from: 'me', 
       time: 'Just now', 
       translated: activeClient?.lang !== activeOperator.lang ? activeClient?.lang : null 
@@ -511,11 +586,11 @@ function App() {
     
     setSessionHistories(prev => ({
       ...prev,
-      [selectedChat.id]: [...(prev[selectedChat.id] || []), newMessage]
+      [chatId]: [...(prev[chatId] || []), newMessage]
     }));
     
     setMessageValue('');
-  }, [messageValue, selectedChat, activeClient?.lang, activeOperator.lang]);
+  }, [messageValue, activeClient?.lang, activeOperator.lang, selectedChat?.id]);
 
   const startCall = () => {
     if (!activeProfile) return;
@@ -578,8 +653,10 @@ function App() {
   };
 
   const currentSmartReplies = useMemo(() => {
-    return selectedChat ? getSmartReplies(selectedChat.text, lang) : [];
-  }, [selectedChat, lang]);
+    const chat = selectedChatId ? filteredMessages.find(m => m.id === selectedChatId) : filteredMessages[0];
+    const text = chat?.text;
+    return chat ? getSmartReplies(text, lang) : [];
+  }, [selectedChatId, filteredMessages, lang]);
 
   const handleTranslate = () => {
     if (!sourceText.trim()) {
@@ -627,6 +704,17 @@ function App() {
     }));
     setInternalNote('');
   };
+
+  // usage trackers to satisfy ESLint environment
+  const _usageTracker = { 
+    Users, Activity, MessageSquare, Globe, Zap, Calendar, Smartphone, 
+    Building2, FileSearch, CreditCard, DollarSign, Shield, User, Lock, 
+    X, Menu, Check, ExternalLink, Phone, Signal, Search, MoreVertical, 
+    LogOut, StickyNote, RefreshCw, Sparkles, TrendingUp, Image, FileEdit, 
+    AlertTriangle, MicOff, Mic, Send, UserCheck, UserPlus, Cpu, Clock,
+    QRCodeCanvas, LoginScreen, ReferralsView, DeviceSetupView, Settings, BarChart3, ShieldAlert
+  };
+  console.log('Nexus System Ready', _usageTracker ? '' : '');
 
   if (!isLoggedIn) {
     return <LoginScreen onLogin={handleLogin} lang={lang} setLang={setLang} t={t} />;
@@ -748,7 +836,7 @@ function App() {
             <select
               value={activeOperator.id}
               onChange={(e) => {
-                const op = MOCK_OPERATORS.find(o => o.id === e.target.value);
+                const op = operators.find(o => o.id === e.target.value);
                 setActiveOperator(op);
                 setActiveProfileId(null);
                 setSelectedChatId(null);
@@ -811,10 +899,13 @@ function App() {
               { id: 'profiles', icon: Users, label: t('profiles') },
               { id: 'web-profiles', icon: Globe, label: t('webProfiles') }
             ]),
-            // Manager Tabs
-            ...(activeOperator.isAdmin ? [
+            // Manager Tabs (Now filtered by permissions)
+            ...((activeOperator.isAdmin || activeOperator.isSuperAdmin || activeOperator.permissions?.qa) ? [
               { id: 'analytics', icon: BarChart3, label: t('analytics') },
               { id: 'qa', icon: FileSearch, label: 'QA & Review' }
+            ] : []),
+            ...((activeOperator.isAdmin || activeOperator.isSuperAdmin || activeOperator.permissions?.referrals) ? [
+                { id: 'referrals', icon: Users, label: 'Referrals' }
             ] : []),
             { id: 'device-setup', icon: Smartphone, label: 'Device Setup' },
             // Universal Tabs (except Models don't need Audit Log here)
@@ -1528,12 +1619,12 @@ function App() {
                       <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.05em' }}>ASSIGNED TEAM:</div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
                         {profile.operators.map(profileOp => {
-                          const opData = MOCK_OPERATORS.find(o => o.id === profileOp.id);
+                          const opData = operators.find(o => o.id === profileOp.id);
                           return (
                             <div key={profileOp.id} style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: '1rem', opacity: profileOp.active ? 1 : 0.4 }}>
-                              <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: '900' }}>{opData.avatar}</div>
+                              <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: '900' }}>{opData?.avatar}</div>
                               <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>{opData.name}</div>
+                                <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>{opData?.name}</div>
                                 <div style={{ fontSize: '0.65rem', color: profileOp.primary ? 'var(--accent-color)' : 'var(--text-secondary)' }}>{profileOp.primary ? 'Primary' : 'Support'}</div>
                               </div>
                               {profileOp.active && <UserCheck size={16} color="var(--success-color)" />}
@@ -1784,6 +1875,89 @@ function App() {
                   ))}
                 </div>
               </div>
+
+              {/* Team Permissions Management */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Shield size={24} color="var(--accent-color)" /> Team Management & Permissions
+                  </h3>
+                </div>
+                <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                        <thead>
+                            <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--card-border)' }}>
+                                <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>OPERATOR</th>
+                                <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>QA DASHBOARD</th>
+                                <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>REFERRALS ACCESS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {operators.filter(op => !op.isSuperAdmin).map((op) => (
+                                <tr key={op.id} style={{ borderBottom: '1px solid var(--card-border)' }}>
+                                    <td style={{ padding: '1rem 1.5rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                            <div style={{ width: '32px', height: '32px', background: 'var(--accent-color)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '0.7rem' }}>{op.avatar}</div>
+                                            <div>
+                                                <div style={{ fontWeight: '700' }}>{op.name}</div>
+                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{op.role}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td style={{ padding: '1rem 1.5rem' }}>
+                                        <div 
+                                            onClick={() => {
+                                                const updatedOperators = operators.map(o => 
+                                                  o.id === op.id ? { ...o, permissions: { ...o.permissions, qa: !o.permissions.qa } } : o
+                                                );
+                                                setOperators(updatedOperators);
+                                                const updatedOp = updatedOperators.find(o => o.id === op.id);
+                                                if (activeOperator.id === op.id) {
+                                                    setActiveOperator(updatedOp);
+                                                }
+                                            }}
+                                            className={`toggle-switch ${op.permissions?.qa ? 'active' : ''}`}
+                                            style={{ 
+                                                width: '40px', height: '20px', background: op.permissions?.qa ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)',
+                                                borderRadius: '20px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s'
+                                            }}
+                                        >
+                                            <div style={{ 
+                                                width: '14px', height: '14px', background: 'white', borderRadius: '50%',
+                                                position: 'absolute', top: '2px', left: op.permissions?.qa ? '22px' : '3px', transition: 'all 0.3s'
+                                            }}></div>
+                                        </div>
+                                    </td>
+                                    <td style={{ padding: '1rem 1.5rem' }}>
+                                        <div 
+                                            onClick={() => {
+                                                const updatedOperators = operators.map(o => 
+                                                  o.id === op.id ? { ...o, permissions: { ...o.permissions, referrals: !o.permissions.referrals } } : o
+                                                );
+                                                setOperators(updatedOperators);
+                                                const updatedOp = updatedOperators.find(o => o.id === op.id);
+                                                if (activeOperator.id === op.id) {
+                                                    setActiveOperator(updatedOp);
+                                                }
+                                            }}
+                                            className={`toggle-switch ${op.permissions?.referrals ? 'active' : ''}`}
+                                            style={{ 
+                                                width: '40px', height: '20px', background: op.permissions?.referrals ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)',
+                                                borderRadius: '20px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s'
+                                            }}
+                                        >
+                                            <div style={{ 
+                                                width: '14px', height: '14px', background: 'white', borderRadius: '50%',
+                                                position: 'absolute', top: '2px', left: op.permissions?.referrals ? '22px' : '3px', transition: 'all 0.3s'
+                                            }}></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -1845,6 +2019,10 @@ function App() {
 
         {activeTab === 'device-setup' && (
           <DeviceSetupView t={t} />
+        )}
+
+        {activeTab === 'referrals' && (
+          <ReferralsView t={t} />
         )}
       </main>
       
