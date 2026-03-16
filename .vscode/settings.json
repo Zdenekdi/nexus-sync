@@ -10,7 +10,8 @@
   "java.project.resourceFilters": [
     "node_modules",
     ".git",
-    "dist"
+    "dist",
+    "**/node_modules/@capacitor/android/capacitor/**"
   ],
   "java.autobuild.enabled": false,
   "files.exclude": {
