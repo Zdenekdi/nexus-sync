@@ -6,86 +6,67 @@ import {
   Calendar, Inbox, MessageSquare, Briefcase, Hash, DollarSign,
   TrendingUp, Users, UserPlus, UserCheck, ShieldCheck, CreditCard,
   Zap, Building, LayoutDashboard, Database,
-  Phone, Server, Cpu, FileEdit, CheckCheck, FileSearch, Trash2,
-  Eye, Save, X, RotateCcw, Lock, Share2, Filter, Menu, UserCircle, Plus, Info, ChevronDown, ChevronLeft,
-  BarChart3, ShieldAlert, HardDrive, Gift, Trophy, RefreshCw, Bug, Copy, Signal, Mic, MicOff, Sparkles,
-  StickyNote, AlertTriangle, Image, Link, Star, CheckCircle
-} from 'lucide-react';
+    Phone, Server, Cpu, FileEdit, CheckCheck, FileSearch, Trash2,
+    Eye, Save, X, RotateCcw, Lock, Share2, Filter, Menu, UserCircle, Plus, Info, ChevronDown, ChevronLeft,
+    BarChart2 as BarChart3, Shield as ShieldAlert, HardDrive, Gift, Trophy, RefreshCw, Bug, Copy, Signal, Mic, MicOff, Sparkles,
+    StickyNote, AlertTriangle, Image, Link, Star, CheckCircle
+  } from 'lucide-react';
 import { MOCK_OPERATORS, MOCK_CLIENTS, MOCK_AGENCIES, MOCK_PROFILES, MOCK_MESSAGES, MOCK_STATS, MOCK_CALENDAR, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_CHART_DATA, MOCK_SMART_REPLIES, MOCK_PLANS, MOCK_REFERRALS, MOCK_PERMISSIONS } from './DemoData';
 import { TRANSLATIONS } from './translations';
 import { useSocket } from './hooks/useSocket';
 
-const QAView = () => {
-  const mockChecks = [
-    { id: 1, type: 'Chat Integrity', status: 'Passed', profile: 'Klara', operator: 'Sarah', score: '98%' },
-    { id: 2, type: 'Response Time', status: 'Warning', profile: 'Cameron', operator: 'Elena', score: '72%' },
-    { id: 3, type: 'English Proficiency', status: 'Passed', profile: 'Diana', operator: 'Alice', score: '95%' },
-  ];
-
+const QAView = ({ t, messages = [], clientNotes = {} }) => {
   return (
-    <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
-      <div style={{ marginBottom: '2.5rem' }}>
-        <h2 style={{ fontSize: '2rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <FileSearch size={28} color="var(--accent-color)" /> QA & Quality Control
-        </h2>
-        <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Monitor operator performance and Ensure high-quality client interactions.</p>
+    <div style={{ padding: '3rem', height: '100%', overflowY: 'auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+        <div>
+          <h2 style={{ fontSize: '2rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <FileSearch size={28} color="var(--accent-color)" /> {t('qa') || 'QA & Quality Review'}
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Review agency-wide client notes and interactions.</p>
+        </div>
       </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
-        {[
-          { label: 'AVG QUALITY SCORE', value: '91%', icon: Star, color: 'var(--warning-color)' },
-          { label: 'FLAGS RAISED', value: '3', icon: AlertTriangle, color: 'var(--error-color)' },
-          { label: 'SESSIONS REVIEWED', value: '142', icon: CheckCircle, color: 'var(--success-color)' }
-        ].map((stat, i) => (
-          <div key={i} className="glass-card" style={{ padding: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-              <stat.icon size={20} color={stat.color} />
-              <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{stat.label}</span>
+      
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        {messages.reduce((acc, msg) => {
+          if (!acc.find(m => m.from === msg.from)) acc.push(msg);
+          return acc;
+        }, []).map(clientMsg => (
+          <div key={clientMsg.from} className="glass-card" style={{ padding: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '1.2rem' }}>
+                  {clientMsg.from.slice(-2)}
+                </div>
+                <div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: '800' }}>{clientMsg.from}</div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Client History</div>
+                </div>
+              </div>
             </div>
-            <div style={{ fontSize: '1.75rem', fontWeight: '900' }}>{stat.value}</div>
+            
+            <div>
+              <h3 style={{ fontSize: '0.9rem', color: '#f59e0b', marginBottom: '1rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <StickyNote size={16} /> INTERNAL NOTES LOG
+              </h3>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {(clientNotes[clientMsg.from] || []).map(note => (
+                  <div key={note.id} style={{ background: 'rgba(245, 158, 11, 0.05)', borderLeft: '4px solid #f59e0b', padding: '1rem', borderRadius: '0 12px 12px 0' }}>
+                    <div style={{ fontSize: '1rem', color: 'white', marginBottom: '0.75rem', lineHeight: '1.5' }}>{note.text}</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                      <span>Logged by: <strong style={{ color: 'white' }}>{note.author}</strong></span>
+                      <span>{note.timestamp}</span>
+                    </div>
+                  </div>
+                ))}
+                {(!clientNotes[clientMsg.from] || clientNotes[clientMsg.from].length === 0) && (
+                  <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontStyle: 'italic', padding: '1rem' }}>No notes found for this client.</div>
+                )}
+              </div>
+            </div>
           </div>
         ))}
-      </div>
-
-      <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)' }}>
-          <h3 style={{ fontSize: '1rem', fontWeight: '800' }}>Recent Reviews</h3>
-        </div>
-        <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ background: 'rgba(255,255,255,0.01)', borderBottom: '1px solid var(--card-border)' }}>
-              <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>AUDIT TYPE</th>
-              <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>MODEL / OPERATOR</th>
-              <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>STATUS</th>
-              <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textAlign: 'right' }}>SCORE</th>
-            </tr>
-          </thead>
-          <tbody>
-            {mockChecks.map((check) => (
-              <tr key={check.id} style={{ borderBottom: '1px solid var(--card-border)' }}>
-                <td style={{ padding: '1rem 1.5rem' }}>
-                  <div style={{ fontWeight: '700' }}>{check.type}</div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Manual Review</div>
-                </td>
-                <td style={{ padding: '1rem 1.5rem' }}>
-                   <div style={{ fontWeight: '700' }}>{check.profile}</div>
-                   <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Reviewer: {check.operator}</div>
-                </td>
-                <td style={{ padding: '1rem 1.5rem' }}>
-                    <span style={{ 
-                        fontSize: '0.7rem', fontWeight: '800', padding: '0.2rem 0.5rem', borderRadius: '4px',
-                        background: check.status === 'Passed' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                        color: check.status === 'Passed' ? 'var(--success-color)' : '#f59e0b',
-                        border: '1px solid currentColor'
-                    }}>
-                        {check.status.toUpperCase()}
-                    </span>
-                </td>
-                <td style={{ padding: '1rem 1.5rem', textAlign: 'right', fontWeight: '900', color: 'var(--accent-color)' }}>{check.score}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
     </div>
   );
@@ -154,8 +135,8 @@ function App() {
         const parsed = JSON.parse(saved);
         if (parsed) return parsed;
       }
-      return MOCK_OPERATORS[0];
-    } catch { return MOCK_OPERATORS[0]; }
+      return MOCK_OPERATORS[0] || {};
+    } catch { return MOCK_OPERATORS[0] || {}; }
   });
   const [activeClient, setActiveClient] = useState(() => {
     try {
@@ -231,13 +212,50 @@ function App() {
     };
   }, [activeCall]);
 
+  // Handle Routing & Auth persistence
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#/', '');
+      if (isLoggedIn) {
+        if (hash === 'login' || !hash) {
+          window.location.hash = '#/inbox';
+          setActiveTab('inbox');
+        } else {
+          setActiveTab(hash);
+        }
+      } else {
+        if (hash !== 'login') {
+          window.location.hash = '#/login';
+        }
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    handleHashChange(); // Initial check
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [isLoggedIn]);
+
+  // Update URL hash when activeTab changes
+  useEffect(() => {
+    if (isLoggedIn && activeTab) {
+      if (window.location.hash !== `#/${activeTab}`) {
+        window.location.hash = `#/${activeTab}`;
+      }
+    }
+  }, [activeTab, isLoggedIn]);
+
   // Initialize Socket Connection
   useSocket(
     useCallback((newMsg) => setMessages(prev => [...prev, newMsg]), []),
     useCallback((updatedMsg) => setMessages(prev => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m)), [])
   );
 
-  const t = (key) => TRANSLATIONS[lang][key] || key;
+  const t = (key) => {
+    try {
+      return (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || key || '';
+    } catch {
+      return key || '';
+    }
+  };
 
   // Memoized Derived Data
   const availableOperators = useMemo(() =>
@@ -302,10 +320,10 @@ function App() {
   };
 
   const totalUnread = useMemo(() =>
-    messages.filter(msg =>
-      (activeOperator?.isModel ? msg.profileId === 'p-04' : myProfileIds.includes(msg.profileId)) &&
+    messages?.filter(msg =>
+      msg && (activeOperator?.isModel ? msg.profileId === 'p-04' : myProfileIds.includes(msg.profileId)) &&
       msg.status === 'unread'
-    ).length,
+    ).length || 0,
     [messages, myProfileIds, activeOperator]
   );
 
@@ -435,20 +453,21 @@ function App() {
     return <LoginScreen onLogin={handleLogin} lang={lang} setLang={setLang} t={t} />;
   }
 
+  // Debugging: Incremental re-enablement
   return (
-    <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: 'var(--bg-color)', color: 'white', position: 'relative' }}>
-      <style dangerouslySetInnerHTML={{ __html: `
-        @media (max-width: 768px) {
-          .desktop-sidebar {
-            position: fixed !important;
-            left: 0;
-            top: 0;
-            height: 100vh;
-            width: 280px;
-            z-index: 2000;
-            transform: translateX(-100%);
-            transition: transform 0.3s ease;
-          }
+      <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: 'var(--bg-color)', color: 'white', position: 'relative' }}>
+        <style dangerouslySetInnerHTML={{ __html: `
+          @media (max-width: 768px) {
+            .desktop-sidebar {
+              position: fixed !important;
+              left: 0;
+              top: 0;
+              height: 100vh;
+              width: 280px;
+              z-index: 2000;
+              transform: translateX(-100%);
+              transition: transform 0.3s ease;
+            }
           .desktop-sidebar.open {
             transform: translateX(0);
           }
@@ -565,7 +584,7 @@ function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <User size={14} color="var(--accent-color)" />
             <select
-              value={activeOperator.id}
+              value={activeOperator?.id}
               onChange={(e) => {
                 const op = MOCK_OPERATORS.find(o => o.id === e.target.value);
                 setActiveOperator(op);
@@ -659,7 +678,10 @@ function App() {
                 cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s ease'
               }}
             >
-              <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
+              {(() => {
+                const Icon = item.icon || Search;
+                return <Icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />;
+              })()}
               <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '700' : '500', fontSize: '1rem' }}>{item.label}</span>
               {item.badge > 0 && <div className="unread-badge">{item.badge}</div>}
             </button>
@@ -780,274 +802,142 @@ function App() {
             {/* Column 1: Inbox List */}
             {(!isMobile || mobileView === 'list') && (
               <div className={`inbox-panel ${!selectedChatId ? 'active' : ''}`} style={{ width: isMobile ? '100%' : '380px', flexShrink: 0, borderRight: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: '2rem 1.5rem', borderBottom: '1px solid var(--card-border)' }}>
-                <h2 style={{ fontSize: '1.5rem', marginBottom: '1.25rem' }}>{t('inbox')} ({activeProfile?.name || '...'})</h2>
-                <div style={{ position: 'relative' }}>
-                  <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                  <input type="text" placeholder={t('searchPlaceholder')} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.85rem 0.85rem 0.85rem 2.5rem', borderRadius: '12px', color: 'white' }} />
+                <div style={{ padding: '2rem 1.5rem', borderBottom: '1px solid var(--card-border)' }}>
+                  <h2 style={{ fontSize: '1.5rem', marginBottom: '1.25rem' }}>{t('inbox')} ({activeProfile?.name || '...'})</h2>
+                  <div style={{ position: 'relative' }}>
+                    <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                    <input type="text" placeholder={t('searchPlaceholder')} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.85rem 0.85rem 0.85rem 2.5rem', borderRadius: '12px', color: 'white' }} />
+                  </div>
+                </div>
+                <div style={{ overflowY: 'auto', flex: 1 }}>
+                  {filteredMessages.length > 0 ? filteredMessages.map(msg => (
+                    <div key={msg.id} onClick={() => { 
+                      setSelectedChatId(msg.id); 
+                      if (isMobile) setMobileView('chat');
+                      if (!isTranslating) {
+                        setSourceText("");
+                        setTranslatedText("");
+                      }
+                      setInternalNote("");
+                      if (msg.from && !clientNotes[msg.from]) {
+                        setClientNotes(prev => ({ ...prev, [msg.from]: [] }));
+                      }
+                    }}
+                      style={{ 
+                        padding: '1.5rem', 
+                        borderBottom: '1px solid var(--card-border)', 
+                        background: selectedChat?.id === msg.id ? 'rgba(59, 130, 246, 0.2)' : 'transparent', 
+                        cursor: 'pointer', 
+                        position: 'relative',
+                        borderLeft: selectedChat?.id === msg.id ? '6px solid var(--accent-color)' : '6px solid transparent',
+                        boxShadow: selectedChat?.id === msg.id ? 'inset 0 0 20px rgba(59, 130, 246, 0.1)' : 'none',
+                        transition: 'all 0.2s ease'
+                      }}>
+                      {msg.status === 'unread' && <div className="dot"></div>}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                        <span style={{ fontWeight: selectedChat?.id === msg.id ? '800' : '700', fontSize: '1.1rem', color: selectedChat?.id === msg.id ? 'white' : 'inherit' }}>{msg.from}</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{msg.time}</span>
+                      </div>
+                      <div className="truncate-text" style={{ opacity: selectedChat?.id === msg.id ? 1 : 0.7 }}>{msg.text}</div>
+                    </div>
+                  )) : <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>{t('noMessages')}</div>}
+                  <div style={{ height: isMobile ? '80px' : '0' }}></div>
                 </div>
               </div>
-              <div style={{ overflowY: 'auto', flex: 1 }}>
-                {filteredMessages.length > 0 ? filteredMessages.map(msg => (
-                  <div key={msg.id} onClick={() => { 
-                    setSelectedChatId(msg.id); 
-                    if (isMobile) setMobileView('chat');
-                    if (!isTranslating) {
-                      setSourceText("");
-                      setTranslatedText("");
-                    }
-                    setInternalNote("");
-                    // Initialize client notes entry if missing
-                    if (msg.from && !clientNotes[msg.from]) {
-                      setClientNotes(prev => ({ ...prev, [msg.from]: [] }));
-                    }
-                  }}
-                    style={{ 
-                      padding: '1.5rem', 
-                      borderBottom: '1px solid var(--card-border)', 
-                      background: selectedChat?.id === msg.id ? 'rgba(59, 130, 246, 0.2)' : 'transparent', 
-                      cursor: 'pointer', 
-                      position: 'relative',
-                      borderLeft: selectedChat?.id === msg.id ? '6px solid var(--accent-color)' : '6px solid transparent',
-                      boxShadow: selectedChat?.id === msg.id ? 'inset 0 0 20px rgba(59, 130, 246, 0.1)' : 'none',
-                      transition: 'all 0.2s ease'
-                    }}>
-                    {msg.status === 'unread' && <div className="dot"></div>}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                      <span style={{ fontWeight: selectedChat?.id === msg.id ? '800' : '700', fontSize: '1.1rem', color: selectedChat?.id === msg.id ? 'white' : 'inherit' }}>{msg.from}</span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{msg.time}</span>
-                    </div>
-                    <div className="truncate-text" style={{ opacity: selectedChat?.id === msg.id ? 1 : 0.7 }}>{msg.text}</div>
-                  </div>
-                )) : <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>{t('noMessages')}</div>}
-                <div style={{ height: isMobile ? '80px' : '0' }}></div>
-              </div>
-            </div>
             )}
 
+            {/* Column 2 & 3 Container */}
             {(!isMobile || mobileView !== 'list') && (
               <div className={`inbox-panel ${selectedChatId ? 'active' : ''} ${isMobile && !selectedChatId ? 'hidden-mobile' : ''}`} style={{ flex: 1, display: 'flex', flexDirection: isMobile ? 'column' : 'row', minWidth: 0, overflow: 'hidden' }}>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.1)', minWidth: 0 }}>
-                {selectedChat ? (
-                  <>
-                    <div style={{ padding: isMobile ? '1rem' : '1.5rem 2rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-color)', zIndex: 105 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '1rem' }}>
-                        {isMobile && (
-                          <button 
-                            onClick={() => setMobileView('list')}
-                            style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: '0.5rem' }}
-                          >
-                            <ChevronLeft size={24} />
-                          </button>
-                        )}
-                        <div className="avatar-circle"><Users color="var(--accent-color)" size={24} /></div>
-                        <div>
-                          <div style={{ fontWeight: '700', fontSize: isMobile ? '0.9rem' : '1.1rem' }}>{selectedChat.from}</div>
-                          <div style={{ fontSize: '0.7rem', color: 'var(--success-color)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Shield size={10} /> {isMobile ? 'Secure' : t('secureConnection')}</div>
+                  {/* Stable Debug Chat Detail */}
+                  {selectedChat ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+                      <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-color)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          {isMobile && <button onClick={() => setMobileView('list')} style={{ background: 'none', border: 'none', color: 'white' }}><ChevronLeft size={24} /></button>}
+                          <div style={{ fontWeight: '700', fontSize: '1.2rem' }}>{selectedChat.from}</div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                          <button onClick={startCall} className="status-badge" style={{ color: 'var(--accent-color)', cursor: 'pointer' }}><Signal size={16} /> CALL</button>
+                          <MoreVertical size={20} color="var(--text-secondary)" />
                         </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <button 
-                          onClick={() => {
-                            setBookingCollision(null);
-                            setIsBookingModalOpen(true);
-                          }} 
-                          className="status-badge" 
-                          style={{ fontWeight: '700', color: 'var(--warning-color)', cursor: 'pointer', border: '1px solid var(--warning-color)' }}
-                        >
-                          <Calendar size={16} /> {t('createBooking') || 'Book Session'}
-                        </button>
-                        <button onClick={startCall} className="status-badge pulse-call-btn" style={{ fontWeight: '700', color: 'var(--accent-color)', cursor: 'pointer' }}><Signal size={16} /> {t('voiceCall')}</button>
-                        <MoreVertical size={22} color="var(--text-secondary)" cursor="pointer" />
+                      <div style={{ flex: 1, padding: '2rem', overflowY: 'auto', background: 'rgba(0,0,0,0.2)' }}>
+                         <div className="message-bubble-in" style={{ marginBottom: '1rem' }}>{selectedChat.text}</div>
+                         <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)', border: '1px dashed var(--card-border)', borderRadius: '12px' }}>
+                            Chat history and tools are temporarily simplified for stability.
+                         </div>
+                      </div>
+                      <div style={{ padding: '1.5rem', borderTop: '1px solid var(--card-border)' }}>
+                         <div style={{ display: 'flex', gap: '1rem' }}>
+                            <input type="text" placeholder="Type a message..." style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '1rem', borderRadius: '12px', color: 'white' }} />
+                            <button style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '12px' }}>SEND</button>
+                         </div>
                       </div>
                     </div>
-
-                    <div style={{ flex: 1, padding: isMobile ? '1.5rem' : '2.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                      <div className="message-bubble-in">{selectedChat.text}</div>
-                      {(sessionHistories[selectedChat.id] || []).map(m => (
-                        <div key={m.id} style={{ alignSelf: 'flex-end', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                          <div className="message-bubble-out">{m.text}</div>
-                          {m.translated && (
-                            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                              <Globe size={10} color="var(--text-secondary)" /> {t('translatedTo')} {m.translated.toUpperCase()}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                      <div style={{ height: isMobile ? '80px' : '0' }}></div>
-                    </div>
-
-                    <div style={{ padding: '1.5rem 2rem', background: 'rgba(5,7,10,0.4)', borderTop: '1px solid var(--card-border)', marginBottom: '4rem' }}>
-                      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', fontSize: '0.75rem', fontWeight: '800', borderRight: '1px solid var(--card-border)', paddingRight: '1rem', whiteSpace: 'nowrap' }}><Sparkles size={14} /> {t('aiSuggestions')}</div>
-                        {currentSmartReplies.map((replyText, idx) => (
-                          <button key={idx} onClick={() => handleSendMessage(replyText)} className="suggestion-chip">{replyText}</button>
-                        ))}
+                  ) : (
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
+                      <div>
+                        <MessageSquare size={64} style={{ opacity: 0.2, marginBottom: '1.5rem' }} />
+                        <h3 style={{ color: 'var(--text-secondary)' }}>Select a conversation</h3>
                       </div>
-                      <div style={{ display: 'flex', gap: '1.25rem' }}>
-                        <input type="text" value={messageValue} onChange={(e) => setMessageValue(e.target.value)} placeholder={t('typeResponse')} style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '1.25rem', borderRadius: '16px', color: 'white' }} />
-                        <button onClick={() => handleSendMessage()} style={{ background: 'var(--accent-color)', border: 'none', width: '60px', height: '60px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 5px 15px var(--accent-glow)' }}><Send size={24} color="white" /></button>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ textAlign: 'center' }}>
-                      <MessageSquare size={64} style={{ marginBottom: '1.5rem', opacity: 0.2 }} />
-                      <h3 style={{ color: 'var(--text-secondary)' }}>Select a conversation</h3>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Permanent Right Panel Container (Phase 10: Conditional and Absolute on mobile) */}
-              {(!isMobile || mobileView === 'details') && (
-                <div className="notes-panel-container" style={{ 
-                  width: isMobile ? '100% ' : '400px', 
-                  flexShrink: 0, 
-                  borderLeft: isMobile ? 'none' : '1px solid var(--card-border)', 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  background: 'var(--bg-color)', 
-                  overflow: 'hidden',
-                  position: isMobile ? 'absolute' : 'static',
-                  top: 0, right: 0, bottom: 0, zIndex: 1100
-                }}>
-                  {isMobile && (
-                    <div style={{ padding: '1rem', borderBottom: '1px solid var(--card-border)' }}>
-                      <button onClick={() => setMobileView('chat')} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <ChevronLeft size={20} /> Back to Chat
-                      </button>
                     </div>
                   )}
-                {selectedChat ? (
-                  <div style={{ display: 'flex', flex: 1, flexDirection: 'column', overflow: 'hidden' }}>
-                    
-                    {/* Tabs for Translator / Note */}
-                    <div style={{ display: 'flex', borderBottom: '1px solid var(--card-border)', background: 'rgba(255, 255, 255, 0.02)' }}>
-                      <button
-                        onClick={() => setActiveContextTab('translator')}
-                        style={{
-                          flex: 1, padding: '0.75rem', border: 'none', background: 'transparent',
-                          color: activeContextTab === 'translator' ? 'var(--accent-color)' : 'var(--text-secondary)',
-                          borderBottom: activeContextTab === 'translator' ? '2px solid var(--accent-color)' : '2px solid transparent',
-                          fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
-                        }}
-                      >
-                        <Globe size={14} /> Translator
-                      </button>
-                      <button
-                        onClick={() => setActiveContextTab('note')}
-                        style={{
-                          flex: 1, padding: '0.75rem', border: 'none', background: 'transparent',
-                          color: activeContextTab === 'note' ? '#f59e0b' : 'var(--text-secondary)',
-                          borderBottom: activeContextTab === 'note' ? '2px solid #f59e0b' : '2px solid transparent',
-                          fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
-                        }}
-                      >
-                        <StickyNote size={14} /> Internal Note
-                      </button>
-                    </div>
+                </div>
 
-                    {/* Stable Content Area */}
-                    <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto' }} className="custom-scrollbar">
-                      {activeContextTab === 'translator' ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                          <textarea
-                            value={sourceText}
-                            onChange={(e) => setSourceText(e.target.value)}
-                            placeholder="Type text to translate..."
-                            style={{
-                              width: '100%', height: '100px', background: 'rgba(0, 0, 0, 0.2)', border: '1px solid var(--card-border)',
-                              borderRadius: '12px', padding: '1rem', color: 'white', resize: 'none', fontSize: '0.9rem'
-                            }}
-                          />
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <select
-                              value={targetLang}
-                              onChange={(e) => setTargetLang(e.target.value)}
-                              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', padding: '0.4rem 0.8rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '700', outline: 'none' }}
-                            >
-                              <option value="en" style={{ background: '#0a0a0a' }}>TO ENGLISH</option>
-                              <option value="cz" style={{ background: '#0a0a0a' }}>TO CZECH</option>
-                            </select>
-                            <button
-                              onClick={handleTranslate}
-                              disabled={isTranslating}
-                              style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                            >
-                              {isTranslating ? <RefreshCw size={14} className="spin-animation" /> : <Sparkles size={14} />}
-                              Translate
-                            </button>
-                          </div>
-                          {translatedText && (
-                            <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '12px', padding: '1rem', position: 'relative' }}>
-                              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--accent-color)', marginBottom: '0.5rem', letterSpacing: '0.1em' }}>TRANSLATED:</div>
-                              <div style={{ fontSize: '0.95rem', color: 'white' }}>{translatedText}</div>
+                {/* Column 3: Notes / Details */}
+                {(!isMobile || mobileView === 'details') && (
+                  <div className="notes-panel-container" style={{ 
+                    width: isMobile ? '100%' : '400px', 
+                    flexShrink: 0, 
+                    borderLeft: isMobile ? 'none' : '1px solid var(--card-border)', 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    background: 'var(--bg-color)', 
+                    overflow: 'hidden',
+                    position: isMobile ? 'absolute' : 'static',
+                    top: 0, right: 0, bottom: 0, zIndex: 1100
+                  }}>
+                    {isMobile && (
+                      <div style={{ padding: '1rem', borderBottom: '1px solid var(--card-border)' }}>
+                        <button onClick={() => setMobileView('chat')} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <ChevronLeft size={20} /> Back to Chat
+                        </button>
+                      </div>
+                    )}
+                    {selectedChat ? (
+                      <div style={{ display: 'flex', flex: 1, flexDirection: 'column', overflow: 'hidden' }}>
+                        <div style={{ display: 'flex', borderBottom: '1px solid var(--card-border)', background: 'rgba(255, 255, 255, 0.02)' }}>
+                          <button onClick={() => setActiveContextTab('translator')} style={{ flex: 1, padding: '0.75rem', border: 'none', background: 'transparent', color: activeContextTab === 'translator' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer' }}>Translator</button>
+                          <button onClick={() => setActiveContextTab('note')} style={{ flex: 1, padding: '0.75rem', border: 'none', background: 'transparent', color: activeContextTab === 'note' ? '#f59e0b' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer' }}>Internal Note</button>
+                        </div>
+                        <div style={{ padding: '1.5rem', flex: 1, overflowY: 'auto' }}>
+                          {activeContextTab === 'translator' ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                              <textarea value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder="Type text to translate..." style={{ width: '100%', height: '100px', background: 'rgba(0, 0, 0, 0.2)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem', color: 'white', resize: 'none' }} />
+                              <button onClick={handleTranslate} disabled={isTranslating} style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}>Translate</button>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                              <textarea value={internalNote} onChange={(e) => setInternalNote(e.target.value)} placeholder="Add internal note..." style={{ width: '100%', minHeight: '100px', background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.2)', borderRadius: '12px', padding: '1rem', color: '#f59e0b' }} />
+                              <button onClick={handleSaveNote} disabled={!internalNote.trim()} style={{ alignSelf: 'flex-end', background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.4)', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: '700' }}>Save Note</button>
                             </div>
                           )}
                         </div>
-                      ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
-                          <textarea
-                            value={internalNote}
-                            onChange={(e) => setInternalNote(e.target.value)}
-                            placeholder="Add a new internal note for this client..."
-                            style={{
-                              width: '100%', minHeight: '100px', background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.2)',
-                              borderRadius: '12px', padding: '1rem', color: '#f59e0b', resize: 'vertical', fontSize: '0.9rem'
-                            }}
-                          />
-                          <button
-                            onClick={handleSaveNote}
-                            disabled={!internalNote.trim()}
-                            style={{
-                              alignSelf: 'flex-end', background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.4)',
-                              padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '700', cursor: internalNote.trim() ? 'pointer' : 'not-allowed',
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            Save Note
-                          </button>
-                          
-                          {/* Saved Notes List */}
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.5rem' }}>
-                            {activeChat?.from && (clientNotes[activeChat.from] || []).map(note => (
-                              <div key={note.id} style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px', borderLeft: '3px solid #f59e0b' }}>
-                                <div style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.9)', marginBottom: '0.5rem', whiteSpace: 'pre-wrap' }}>{note.text}</div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                                  <span>{note.author}</span>
-                                  <span>{note.timestamp}</span>
-                                </div>
-                              </div>
-                            ))}
-                            {(!activeChat?.from || !clientNotes[activeChat.from] || clientNotes[activeChat.from].length === 0) && (
-                              <div style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)', fontStyle: 'italic', padding: '2rem 0' }}>
-                                No internal notes saved yet.
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
-                    <div>
-                      <StickyNote size={48} style={{ opacity: 0.1, marginBottom: '1.5rem' }} />
-                      <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: '500' }}>
-                        Select a conversation to view translator and internal notes.
                       </div>
-                    </div>
+                    ) : (
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Select a conversation to view translator and notes.</div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             )}
           </div>
         )}
-      </div>
-    )}
-
+   
         {activeTab === 'calendar' && (
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, display: 'flex', flexDirection: 'column' }} className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
@@ -1316,7 +1206,7 @@ function App() {
             <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>Overview of operators and their assigned model distribution.</p>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              {MOCK_OPERATORS.filter(op => op.clientId === activeOperator.clientId && !op.isAdmin && !op.isSuperAdmin).map(op => {
+              {MOCK_OPERATORS.filter(op => op?.clientId === activeOperator?.clientId && !op?.isAdmin && !op?.isSuperAdmin).map(op => {
                 const assignedModels = MOCK_PROFILES.filter(p => p.operators.some(o => o.id === op.id && o.active));
                 return (
                   <div key={op.id} className="glass-card" style={{ padding: '2rem' }}>
@@ -1376,17 +1266,17 @@ function App() {
           <div style={{ padding: isMobile ? '1.5rem' : '3rem', height: '100%', overflowY: 'auto', paddingBottom: '8rem' }} className="fade-in custom-scrollbar">
             <div style={{ marginBottom: '3rem' }}>
               <h2 style={{ fontSize: isMobile ? '1.8rem' : '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #f59e0b, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                {t('referralProgram') || 'Referral Program'}
+                {t('referralProgram')}
               </h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Share Nexus Hub with other agencies and earn recurring rewards.</p>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
               {[
-                { label: 'CLICKS', value: MOCK_REFERRALS[activeOperator.id]?.stats.clicks || 0, icon: Activity, color: '#3b82f6' },
-                { label: 'SIGNUPS', value: MOCK_REFERRALS[activeOperator.id]?.stats.signups || 0, icon: UserPlus, color: '#10b981' },
-                { label: 'EARNED', value: MOCK_REFERRALS[activeOperator.id]?.stats.earned || '£0', icon: Trophy, color: '#f59e0b' },
-                { label: 'PENDING', value: MOCK_REFERRALS[activeOperator.id]?.stats.pending || '£0', icon: Clock, color: 'var(--text-secondary)' }
+                { label: (t('clicks') || '').toUpperCase(), value: MOCK_REFERRALS[activeOperator?.id]?.stats?.clicks || 0, icon: Activity, color: '#3b82f6' },
+                { label: (t('signups') || '').toUpperCase(), value: MOCK_REFERRALS[activeOperator?.id]?.stats?.signups || 0, icon: UserPlus, color: '#10b981' },
+                { label: (t('earned') || '').toUpperCase(), value: MOCK_REFERRALS[activeOperator?.id]?.stats?.earned || '£0', icon: Trophy, color: '#f59e0b' },
+                { label: (t('pending') || '').toUpperCase(), value: MOCK_REFERRALS[activeOperator?.id]?.stats?.pending || '£0', icon: Clock, color: 'var(--text-secondary)' }
               ].map((stat, i) => (
                 <div key={i} className="glass-card" style={{ padding: '1.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
@@ -1408,7 +1298,7 @@ function App() {
                 </p>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <div style={{ flex: 1, background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--card-border)', fontFamily: 'monospace', fontSize: '0.9rem', color: '#f59e0b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {MOCK_REFERRALS[activeOperator.id]?.link || 'https://nexus.sync/ref/default'}
+                    {MOCK_REFERRALS[activeOperator?.id]?.link || 'https://nexus.sync/ref/default'}
                   </div>
                   <button className="action-btn" style={{ width: 'auto', padding: '0 1.5rem', marginTop: 0, background: 'var(--accent-color)' }}>
                     <Copy size={18} />
@@ -1449,29 +1339,40 @@ function App() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                   <thead>
                     <tr style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>
-                      <th style={{ padding: '1.25rem 1rem' }}>AGENCY / ENTITY</th>
-                      <th style={{ padding: '1.25rem 1rem' }}>DATE</th>
-                      <th style={{ padding: '1.25rem 1rem' }}>STATUS</th>
-                      <th style={{ padding: '1.25rem 1rem', textAlign: 'right' }}>REWARD</th>
+                      <th style={{ padding: '1.25rem 1rem' }}>{t('entity').toUpperCase()}</th>
+                      <th style={{ padding: '1.25rem 1rem' }}>{t('date').toUpperCase()}</th>
+                      <th style={{ padding: '1.25rem 1rem' }}>{t('status').toUpperCase()}</th>
+                      <th style={{ padding: '1.25rem 1rem', textAlign: 'right' }}>{t('reward').toUpperCase()}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {(MOCK_REFERRALS[activeOperator.id]?.history || []).map((item) => (
                       <tr key={item.id} style={{ borderTop: '1px solid var(--card-border)' }}>
-                        <td style={{ padding: '1.25rem 1rem', fontWeight: '700' }}>{item.entity}</td>
-                        <td style={{ padding: '1.25rem 1rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{item.date}</td>
                         <td style={{ padding: '1.25rem 1rem' }}>
-                          <span className="status-badge-small" style={{ borderColor: item.status === 'Active' ? '#10b981' : '#f59e0b', color: item.status === 'Active' ? '#10b981' : '#f59e0b' }}>
+                          <div style={{ fontWeight: '700' }}>{item.entity}</div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>ID: REF-{item.id}00X</div>
+                        </td>
+                        <td style={{ padding: '1.25rem 1rem', fontSize: '0.85rem' }}>{item.date}</td>
+                        <td style={{ padding: '1.25rem 1rem' }}>
+                          <span style={{ 
+                            padding: '0.25rem 0.6rem', 
+                            borderRadius: '6px', 
+                            fontSize: '0.7rem', 
+                            fontWeight: '800',
+                            background: item.status === 'Active' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                            color: item.status === 'Active' ? '#10b981' : '#f59e0b',
+                            border: `1px solid ${item.status === 'Active' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)'}`
+                          }}>
                             {item.status.toUpperCase()}
                           </span>
                         </td>
-                        <td style={{ padding: '1.25rem 1rem', textAlign: 'right', fontWeight: '800', color: '#10b981' }}>{item.reward}</td>
+                        <td style={{ padding: '1.25rem 1rem', textAlign: 'right', fontWeight: '800', color: '#f59e0b' }}>{item.reward}</td>
                       </tr>
                     ))}
-                    {(!MOCK_REFERRALS[activeOperator.id]?.history || MOCK_REFERRALS[activeOperator.id].history.length === 0) && (
+                    {(!MOCK_REFERRALS[activeOperator?.id]?.history || MOCK_REFERRALS[activeOperator?.id]?.history?.length === 0) && (
                       <tr>
-                        <td colSpan="4" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                          No referrals yet. Start sharing your link to earn rewards!
+                        <td colSpan="4" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                          No referral activity yet. Share your link to start earning.
                         </td>
                       </tr>
                     )}
@@ -1726,7 +1627,7 @@ function App() {
               <div className="glass-card" style={{ padding: '2rem', marginTop: '3rem' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '2rem' }}>Operator Daily Performance</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {MOCK_OPERATORS.filter(op => op.clientId === activeOperator.clientId && !op.isAdmin && !op.isSuperAdmin).map(op => (
+                  {MOCK_OPERATORS.filter(op => op?.clientId === activeOperator?.clientId && !op?.isAdmin && !op?.isSuperAdmin).map(op => (
                     <div key={op.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <div style={{ width: '40px', height: '40px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: 'var(--accent-color)' }}>{op.avatar}</div>
@@ -1757,7 +1658,7 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'qa' && <QAView t={t} />}
+        {activeTab === 'qa' && <QAView t={t} messages={messages} clientNotes={clientNotes} />}
 
         {activeTab === 'infra' && activeOperator?.isSuperAdmin && (
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
@@ -2265,60 +2166,7 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'qa' && (activeOperator?.isAdmin || activeOperator?.isSuperAdmin) && (
-          <div style={{ padding: '3rem', height: '100%', overflowY: 'auto' }} className="fade-in">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-              <div>
-                <h2 style={{ fontSize: '2rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <FileSearch size={28} color="var(--accent-color)" /> QA & Quality Review
-                </h2>
-                <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Review agency-wide client notes and interactions.</p>
-              </div>
-            </div>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              {MOCK_MESSAGES.reduce((acc, msg) => {
-                if (!acc.find(m => m.from === msg.from)) acc.push(msg);
-                return acc;
-              }, []).map(clientMsg => (
-                <div key={clientMsg.from} className="glass-card" style={{ padding: '2rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '1.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                      <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '1.2rem' }}>
-                        {clientMsg.from.slice(-2)}
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '1.25rem', fontWeight: '800' }}>{clientMsg.from}</div>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Client History</div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 style={{ fontSize: '0.9rem', color: '#f59e0b', marginBottom: '1rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <StickyNote size={16} /> INTERNAL NOTES LOG
-                    </h3>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      {(clientNotes[clientMsg.from] || []).map(note => (
-                        <div key={note.id} style={{ background: 'rgba(245, 158, 11, 0.05)', borderLeft: '4px solid #f59e0b', padding: '1rem', borderRadius: '0 12px 12px 0' }}>
-                          <div style={{ fontSize: '1rem', color: 'white', marginBottom: '0.75rem', lineHeight: '1.5' }}>{note.text}</div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                            <span>Logged by: <strong style={{ color: 'white' }}>{note.author}</strong></span>
-                            <span>{note.timestamp}</span>
-                          </div>
-                        </div>
-                      ))}
-                      {(!clientNotes[clientMsg.from] || clientNotes[clientMsg.from].length === 0) && (
-                        <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontStyle: 'italic', padding: '1rem' }}>No notes found for this client.</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Removed redundant QA Hub block */}
       </main>
       
       {/* Booking Modal */}
