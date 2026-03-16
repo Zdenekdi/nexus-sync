@@ -129,3 +129,48 @@ exports.handleMobileSms = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
+// Handle Incoming Call Notification
+// Expected JSON: { "from": "+420...", "to": "+420...", "state": "RINGING", "secret": "..." }
+exports.handleMobileCall = async (req, res) => {
+  try {
+    const { from, to, state, secret } = req.body;
+
+    if (process.env.DEVICE_SECRET && secret !== process.env.DEVICE_SECRET) {
+      return res.status(401).json({ message: 'Unauthorized device' });
+    }
+
+    if (!from || !to || !state) {
+      return res.status(400).json({ message: 'Missing from, to, or state' });
+    }
+
+    const profile = await prisma.profile.findFirst({
+      where: { phoneNumber: to }
+    });
+
+    if (!profile) {
+      return res.status(404).json({ message: 'Profile not found' });
+    }
+
+    console.log(`Incoming call notification: From ${from} to profile ${profile.name} (State: ${state})`);
+
+    // In a real app, we would emit a socket event here to show a popup in the UI
+    const { getIO } = require('../services/socket');
+    try {
+      const io = getIO();
+      io.emit('incoming_call', {
+        from,
+        profileName: profile.name,
+        profileId: profile.id,
+        state
+      });
+    } catch (e) {
+      console.warn('Socket.io not available for call notification');
+    }
+
+    res.json({ status: 'success' });
+  } catch (error) {
+    console.error('Call Webhook Error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
