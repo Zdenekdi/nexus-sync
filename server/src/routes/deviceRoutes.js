@@ -7,5 +7,6 @@ router.post('/goip/sms', express.urlencoded({ extended: true }), deviceControlle
 
 // Mobile apps usually use JSON
 router.post('/mobile/sms', express.json(), deviceController.handleMobileSms);
+router.post('/mobile/call', express.json(), deviceController.handleMobileCall);
 
 module.exports = router;
