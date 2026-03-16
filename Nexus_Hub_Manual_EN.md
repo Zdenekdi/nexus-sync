@@ -4,49 +4,67 @@ Welcome to the **Nexus Hub (AW Nexus)** – the central point for profile manage
 
 ---
 
-### 1. Login Screen
+### 1. Role-Specific Dashboards
+Upon logging in, the system automatically detects your role and displays a customized home page (Dashboard):
 
-The demo starts with a premium login screen.
+- **Super Admin**: Global network overview, total revenue, number of active nodes, and infrastructure health.
+- **Agency Manager**: Agency portfolio metrics, team activity, and individual profile performance.
+- **Operator (Senior/Regular)**: Personal workspace with statistics on handled messages, calls, and commissions.
+- **Model (Profile)**: Daily agenda, bookings overview, reviews, and cumulative earnings.
 
-- The system supports multiple operator roles.
-- Login simulates secure access to agency-level data.
+*Tip: Click the NEXUS logo at any time to return to your dashboard.*
+
+---
+
+### 2. Authentication (Login Screen)
+The demo begins with a premium login screen featuring simulated security authentication.
 
 #### Demo Credentials
 
 | Role | Email | Password |
 | :--- | :--- | :--- |
 | **Super Admin** | `admin@nexus.ai` | `password123` |
-| **Regional Manager (Admin)** | `mark@nexus.sync` | `password123` |
+| **Agency Manager** | `mark@nexus.sync` | `password123` |
 | **Senior Operator** | `alice@nexus.sync` | `password123` |
-| **US Specialist (Operator)** | `sarah@nexus.sync` | `password123` |
-| **Night Shift (Operator)** | `elena@nexus.sync` | `password123` |
+| **Operator** | `sarah@nexus.sync` | `password123` |
 | **Model** | `diana@nexus.sync` | `password123` |
 
-### 2. Inbox and AI Suggestions
+---
+
+### 3. Inbox & AI Suggestions
 The primary module for client communication.
-- **Unified Inbox:** All messages from AdultWork, SMS, and Telegram in one place.
-- **AI Smart Replies:** The system analyzes message context (e.g., rate inquiries or availability) and suggests quick replies in both Czech and English.
-- **Automatic Translation:** Messages are automatically translated into the client's language (e.g., CZ -> EN).
 
-### 3. Voice Call Simulation (Voice Relay)
-Nexus Hub allows handling calls directly within the browser.
-- **Incoming Calls:** The demo simulates an incoming call from a UK mobile number (+44), showing the operator exactly which profile (e.g., Klara, Cameron) the client is calling.
-- **Security:** All calls are routed through a secure VoIP gateway to protect location and identity.
+- **Unified Inbox**: All messages from AdultWork, SMS, and Telegram in one place.
+- **AI Smart Replies**: The system analyzes message context and suggests quick replies in both English and Czech.
+- **Automatic Translation**: Messages are automatically translated into the operator's/client's language.
 
-### 4. Web Profiles Sync
-This section replaces manual advertisement editing.
-- **Synchronization:** Change photos or biography in Nexus Hub and push updates to all connected platforms (AdultWork, EuroGirlsEscort, etc.) with one click.
-- **Gallery:** Support for both public and VIP (private) galleries.
-- **Proxy Gateway:** The system utilizes residential proxy gates (e.g., UK-London) to simulate real browser behavior, eliminating the risk of scraping bans.
+---
 
-### 5. Audit Trail
-Every operator action is logged for maximum transparency.
-- Track who sent a message, who changed settings, or when a synchronization occurred.
-- Each entry features a unique hash to ensure data integrity.
+### 4. Device Activation (Device Setup)
+Nexus Hub allows connection to a real Android phone for data synchronization.
 
-### 6. Team Collaboration (Operator Seats)
-- Profiles can be shared among multiple operators.
-- The dashboard shows in real-time which team members are currently active and which "seat" they are occupies.
+- **SMS Forwarding**: We recommend the **SMS Forwarder (by Enstone)** app from Google Play. It forwards SMS messages directly to the system via Webhook.
+- **Call Notifications**: Using apps like **Automate** or **Tasker**, you can set up instant browser notifications for incoming calls.
+
+---
+
+### 5. Quality Control & QA Hub
+A tool for quality assurance and client note management.
+- **QA Hub**: Overview of all operator notes and client interaction history across the entire agency.
+- **Audit Trail**: Every action (message sent, setting changed) is logged and secured with a cryptographic hash for total transparency.
+
+---
+
+### 6. Referral Program
+Built-in system for referring new agencies or models.
+- Unique referral links.
+- Real-time tracking of clicks, sign-ups, and pending rewards.
+
+---
+
+### 7. Web Profiles Sync
+- **Synchronization**: Change photos or biographies and push updates to all connected platforms (AdultWork, EuroGirlsEscort, etc.) with one click.
+- **Proxy Gateway**: The system utilizes residential proxy nodes to eliminate the risk of scraping bans.
 
 ---
 **Nexus Hub** – Your tool for absolute control and automation in adult management.
