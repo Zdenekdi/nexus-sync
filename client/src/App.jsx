@@ -72,16 +72,20 @@ const QAView = ({ t, messages = [], clientNotes = {} }) => {
   );
 };
 
-const LoginScreen = ({ onLogin, lang, setLang, t }) => {
+const LoginScreen = ({ onLogin, onResetRequired, operators, lang, setLang, t }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const user = MOCK_OPERATORS.find(op => op.email === email && op.password === password);
+    const user = operators.find(op => op.email === email && op.password === password);
     if (user) {
-      onLogin(user);
+      if (user.mustResetPassword) {
+        onResetRequired(user);
+      } else {
+        onLogin(user);
+      }
     } else {
       setError(true);
       setTimeout(() => setError(false), 3000);
@@ -124,7 +128,59 @@ const LoginScreen = ({ onLogin, lang, setLang, t }) => {
   );
 };
 
+const ResetPasswordView = ({ onComplete, t }) => {
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleReset = (e) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      setError(t('passwordMismatch'));
+      return;
+    }
+    if (newPassword.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    onComplete(newPassword);
+  };
+
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--bg-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '40%', height: '40%', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)', filter: 'blur(60px)' }}></div>
+      <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '450px', padding: '3rem', position: 'relative', zIndex: 1, textAlign: 'center' }}>
+        <div style={{ marginBottom: '2.5rem' }}>
+          <div style={{ width: '64px', height: '64px', background: 'var(--accent-color)', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', boxShadow: '0 0 30px var(--accent-glow)' }}><ShieldCheck color="white" size={32} /></div>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: '900', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('resetPasswordTitle')}</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t('resetPasswordSubtitle')}</p>
+        </div>
+        <form onSubmit={handleReset} style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('newPasswordLabel').toUpperCase()}</label>
+            <div style={{ position: 'relative' }}>
+              <Lock size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
+              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" required style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '1rem 1rem 1rem 3rem', borderRadius: '12px', color: 'white' }} />
+            </div>
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('confirmPasswordLabel').toUpperCase()}</label>
+            <div style={{ position: 'relative' }}>
+              <Lock size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
+              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" required style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '1rem 1rem 1rem 3rem', borderRadius: '12px', color: 'white' }} />
+            </div>
+          </div>
+          {error && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', fontWeight: '700', textAlign: 'center' }}>{error}</div>}
+          <button type="submit" className="action-btn" style={{ background: 'var(--accent-color)', color: 'white', padding: '1.1rem', fontSize: '1rem', fontWeight: '800', boxShadow: '0 10px 25px var(--accent-glow)', marginTop: '1rem' }}>{t('resetButton')}</button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 function App() {
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [tempUser, setTempUser] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem('nexus_isLoggedIn') === 'true';
   });
@@ -308,12 +364,18 @@ function App() {
       avatar: newOperatorData.name.split(' ').map(n => n[0]).join('').toUpperCase(),
       email: newOperatorData.email,
       password: finalPassword,
+      mustResetPassword: true,
       metrics: { messages: 0, calls: 0, conversion: '0%' },
       permissions: { qa: true, referrals: false }
     };
     setOperators(prev => [...prev, newOp]);
     setIsAddOperatorModalOpen(false);
-    alert(`Member added successfully!\nTemporary Password: ${finalPassword}\nPlease share this with the team member.`);
+    
+    // Simulate Email Notification
+    const emailPayload = `Subject: Welcome to Nexus Sync! \n\nHello ${newOp.name},\nYour account has been created. \nTemporary Password: ${finalPassword}\nPlease log in to change your password.`;
+    console.log("%c [EMAIL SIMULATION] Sending registration email...", "color: #3b82f6; font-weight: bold;", emailPayload);
+    alert(`${t('emailSentNotification')} ${newOp.email}\n\nTemp Password: ${finalPassword}`);
+
     setNewOperatorData({ name: '', role: 'Operator', email: '', password: 'password123' });
   };
 
@@ -514,6 +576,28 @@ function App() {
     }
   };
 
+  const handleResetRequired = (user) => {
+    setTempUser(user);
+    setShowResetPassword(true);
+  };
+
+  const handleResetComplete = (newPassword) => {
+    if (!tempUser) return;
+    
+    // Update operators state with new password and clear flag
+    const updatedOperators = operators.map(op => 
+      op.id === tempUser.id ? { ...op, password: newPassword, mustResetPassword: false } : op
+    );
+    setOperators(updatedOperators);
+    
+    // Auto login after reset
+    const updatedUser = updatedOperators.find(op => op.id === tempUser.id);
+    handleLogin(updatedUser);
+    
+    setShowResetPassword(false);
+    setTempUser(null);
+  };
+
   const handleLogout = () => {
     setIsLoggedIn(false);
     setActiveProfileId(null);
@@ -524,7 +608,19 @@ function App() {
   };
 
   if (!isLoggedIn) {
-    return <LoginScreen onLogin={handleLogin} lang={lang} setLang={setLang} t={t} />;
+    if (showResetPassword) {
+      return <ResetPasswordView onComplete={handleResetComplete} t={t} />;
+    }
+    return (
+      <LoginScreen 
+        onLogin={handleLogin} 
+        onResetRequired={handleResetRequired}
+        operators={operators}
+        lang={lang} 
+        setLang={setLang} 
+        t={t} 
+      />
+    );
   }
 
   // Debugging: Incremental re-enablement

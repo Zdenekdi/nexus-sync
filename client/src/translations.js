@@ -95,6 +95,13 @@ export const TRANSLATIONS = {
         reviewer: 'Reviewer',
         createBooking: 'Create Booking',
         confirmBooking: 'Confirm Reservation',
+        resetPasswordTitle: 'Security Update Required',
+        resetPasswordSubtitle: 'Please set a permanent password for your account.',
+        newPasswordLabel: 'New Password',
+        confirmPasswordLabel: 'Confirm New Password',
+        resetButton: 'Update Password & Login',
+        passwordMismatch: 'Passwords do not match.',
+        emailSentNotification: 'Registration email sent to',
     },
     cz: {
         logo: 'NEXUS',
@@ -192,5 +199,12 @@ export const TRANSLATIONS = {
         reviewer: 'Recenzent',
         createBooking: 'Nová rezervace',
         confirmBooking: 'Potvrdit rezervaci',
+        resetPasswordTitle: 'Vyžadována změna hesla',
+        resetPasswordSubtitle: 'Prosím nastavte si trvalé heslo pro váš účet.',
+        newPasswordLabel: 'Nové heslo',
+        confirmPasswordLabel: 'Potvrdit nové heslo',
+        resetButton: 'Aktualizovat a přihlásit',
+        passwordMismatch: 'Hesla se neshodují.',
+        emailSentNotification: 'Registrační email odeslán na adresu',
     }
 };
