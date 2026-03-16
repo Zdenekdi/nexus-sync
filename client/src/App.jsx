@@ -657,9 +657,9 @@ function App() {
 
   const startCall = useCallback(() => {
     if (!activeProfile) return;
-    setActiveCall({ status: 'connecting', startTime: Date.now(), caller: selectedChat?.from || activeProfile.name });
+    setActiveCall({ status: 'connecting', startTime: Date.now(), caller: selectedChat?.from || activeProfile?.name || 'Unknown' });
     setTimeout(() => {
-      setActiveCall({ status: 'active', startTime: Date.now(), caller: selectedChat?.from || activeProfile.name });
+      setActiveCall({ status: 'active', startTime: Date.now(), caller: selectedChat?.from || activeProfile?.name || 'Unknown' });
     }, 2000);
   }, [activeProfile, selectedChat]);
 
@@ -1558,7 +1558,7 @@ function App() {
                     {[1, 2, 3, 4, 5].map(step => (
                       <div key={step} style={{ display: 'flex', gap: '0.75rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                         <div style={{ minWidth: '18px', height: '18px', background: 'rgba(59, 130, 246, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: '800', color: '#3b82f6' }}>{step}</div>
-                        <div>{t(`smsStep${step}`).substring(3)}</div>
+                        <div>{(t(`smsStep${step}`) || '').toString().substring(3)}</div>
                       </div>
                     ))}
                   </div>
@@ -1643,13 +1643,13 @@ function App() {
                       {assignedModels.map(model => (
                         <div key={model.id} style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
                           <div style={{ width: '40px', height: '40px', background: 'var(--accent-color)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '0.8rem' }}>
-                            {model.username.substring(0,2).toUpperCase()}
+                            {model.username?.substring(0,2).toUpperCase() || '??'}
                           </div>
                           <div style={{ flex: 1 }}>
                             <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{model.name}</div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                               <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: model.status === 'online' ? 'var(--success-color)' : 'var(--text-secondary)' }} />
-                              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t(model.status).toUpperCase()}</span>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{(t(model.status) || '').toString().toUpperCase()}</span>
                             </div>
                           </div>
                           <div style={{ textAlign: 'right' }}>
@@ -1750,7 +1750,7 @@ function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {(MOCK_REFERRALS[activeOperator.id]?.history || []).map((item) => (
+                    {(MOCK_REFERRALS[activeOperator?.id]?.history || []).map((item) => (
                       <tr key={item.id} style={{ borderTop: '1px solid var(--card-border)' }}>
                         <td style={{ padding: '1.25rem 1rem' }}>
                           <div style={{ fontWeight: '700' }}>{item.entity}</div>
@@ -2019,7 +2019,7 @@ function App() {
                 </div>
               </div>
 
-              {!activeOperator.isSuperAdmin && (
+              {!activeOperator?.isSuperAdmin && (
                 <div className="settings-section">
                   <h3 style={{ marginBottom: '1.5rem' }}>{t('simulationTools')}</h3>
                   <button onClick={simulateIncomingCall} className="action-btn" style={{ maxWidth: '300px' }}><Phone size={16} /> {t('simulateCall')}</button>
@@ -2560,7 +2560,7 @@ function App() {
                       </div>
                     </div>
                     
-                    {activeOperator.isSuperAdmin ? (
+                    {activeOperator?.isSuperAdmin ? (
                       <button 
                         onClick={() => {}} // Simulation only
                         style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
@@ -2620,7 +2620,7 @@ function App() {
                 <div style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', display: 'flex', gap: '1rem' }}>
                    <div style={{ fontWeight: '700' }}>{selectedChat?.from || 'Unknown Client'}</div>
                    <div style={{ color: 'var(--text-secondary)' }}>→</div>
-                   <div style={{ fontWeight: '700', color: 'var(--accent-color)' }}>{activeProfile?.name || 'Unknown Profile'}</div>
+                   <div style={{ fontWeight: '700', color: 'var(--accent-color)' }}>{activeProfile?.name || '...'}</div>
                 </div>
               </div>
 
