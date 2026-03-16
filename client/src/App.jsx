@@ -72,6 +72,200 @@ const QAView = ({ t, messages = [], clientNotes = {} }) => {
   );
 };
 
+const DashboardHome = ({ user, t, stats = {}, agencies = [], operators = [], profiles = [], calendar = [] }) => {
+  const isMobile = window.innerWidth < 768;
+  
+  const renderSuperAdmin = () => (
+    <div className="fade-in">
+      <div style={{ marginBottom: '2.5rem' }}>
+        <h2 style={{ fontSize: '2rem', fontWeight: '900', letterSpacing: '0.05em' }}>{t('globalOverview').toUpperCase()}</h2>
+        <p style={{ color: 'var(--text-secondary)' }}>Live system health and global network performance.</p>
+      </div>
+      
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
+        {[
+          { label: t('totalRevenue'), value: '$842,500', icon: <DollarSign color="#10b981" />, growth: '+12.5%' },
+          { label: 'TOTAL AGENCIES', value: agencies.length, icon: <Building2 color="#3b82f6" />, growth: '+2' },
+          { label: 'ACTIVE NODES', value: '14', icon: <Zap color="#f59e0b" />, growth: 'HEALTHY' },
+          { label: 'GLOBAL TRAFFIC', value: '2.4M', icon: <Activity color="#8b5cf6" />, growth: '85% LOAD' }
+        ].map((stat, i) => (
+          <div key={i} className="glass-card" style={{ padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {stat.icon}
+              </div>
+              <span style={{ fontSize: '0.75rem', fontWeight: '800', color: stat.growth.startsWith('+') ? 'var(--success-color)' : 'var(--text-secondary)' }}>{stat.growth}</span>
+            </div>
+            <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>{stat.label}</div>
+            <div style={{ fontSize: '1.75rem', fontWeight: '900' }}>{stat.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="glass-card" style={{ padding: '2rem' }}>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem' }}>INFRASTRUCTURE TOPOLOGY</h3>
+        <div style={{ height: '200px', background: 'rgba(0,0,0,0.2)', borderRadius: '15px', border: '1px dashed var(--card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+           [ Global Relay Map Visualization ]
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderManager = () => (
+    <div className="fade-in">
+      <div style={{ marginBottom: '2.5rem' }}>
+        <h2 style={{ fontSize: '2rem', fontWeight: '900' }}>{t('agencyOverview').toUpperCase()}</h2>
+        <p style={{ color: 'var(--text-secondary)' }}>Daily team activity and revenue highlights.</p>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
+        <div className="glass-card" style={{ padding: '1.5rem', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), transparent)' }}>
+          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--accent-color)', marginBottom: '0.5rem' }}>AGENCY REVENUE (MTD)</div>
+          <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>$42,850</div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--success-color)', fontWeight: '700', marginTop: '0.5rem' }}>↑ 18% vs Last Month</div>
+        </div>
+        <div className="glass-card" style={{ padding: '1.5rem' }}>
+          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>ACTIVE OPERATORS</div>
+          <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>8 / 12</div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>4 Currently Offline</div>
+        </div>
+        <div className="glass-card" style={{ padding: '1.5rem' }}>
+          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>AVG. CONVERSION</div>
+          <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>24%</div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--success-color)', fontWeight: '700', marginTop: '0.5rem' }}>Optimal Range</div>
+        </div>
+      </div>
+
+      <div className="glass-card" style={{ padding: '2rem' }}>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem' }}>RECENT REVIEWS & QA</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {[1, 2, 3].map(i => (
+            <div key={i} style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between' }}>
+               <div>
+                 <div style={{ fontWeight: '700' }}>Profile Review: Sophie</div>
+                 <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>"Great communication, very professional."</div>
+               </div>
+               <div style={{ color: '#f59e0b', fontWeight: '900' }}>5.0 ★</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderOperator = () => (
+    <div className="fade-in">
+      <div style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div>
+          <h2 style={{ fontSize: '2rem', fontWeight: '900' }}>{t('personalWorkspace').toUpperCase()}</h2>
+          <p style={{ color: 'var(--text-secondary)' }}>{t('welcomeBack')}, {user.name}. Here's your shift summary.</p>
+        </div>
+        <div style={{ padding: '0.6rem 1.25rem', background: 'rgba(34, 197, 94, 0.1)', color: 'var(--success-color)', borderRadius: '10px', fontSize: '0.85rem', fontWeight: '800', border: '1px solid currentColor' }}>
+          SHIFT ACTIVE
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '2rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
+            <div className="glass-card" style={{ padding: '1.5rem', textAlign: 'center' }}>
+               <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>MESSAGES</div>
+               <div style={{ fontSize: '2rem', fontWeight: '900' }}>142</div>
+            </div>
+            <div className="glass-card" style={{ padding: '1.5rem', textAlign: 'center' }}>
+               <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>CALLS</div>
+               <div style={{ fontSize: '2rem', fontWeight: '900' }}>18</div>
+            </div>
+            <div className="glass-card" style={{ padding: '1.5rem', textAlign: 'center', border: '1px solid var(--accent-color)' }}>
+               <div style={{ color: 'var(--accent-color)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>COMMISSION</div>
+               <div style={{ fontSize: '2rem', fontWeight: '900' }}>$185</div>
+            </div>
+          </div>
+
+          <div className="glass-card" style={{ padding: '2rem' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.5rem' }}>MY ASSIGNED PROFILES</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '1rem' }}>
+               {profiles.slice(0, 4).map(p => (
+                 <div key={p.id} className="glass-card" style={{ padding: '1rem', textAlign: 'center', cursor: 'pointer', transition: 'transform 0.2s' }}>
+                   <div style={{ width: '40px', height: '40px', background: 'var(--accent-color)', borderRadius: '10px', margin: '0 auto 0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900' }}>{p.name[0]}</div>
+                   <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>{p.name}</div>
+                 </div>
+               ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="glass-card" style={{ padding: '1.5rem' }}>
+           <h3 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '1.5rem' }}>SYNC STATUS</h3>
+           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+             {['AdultWork', 'ErosGuide', 'ThePunter'].map(platform => (
+               <div key={platform} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                 <div style={{ fontSize: '0.9rem', fontWeight: '600' }}>{platform}</div>
+                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success-color)', boxShadow: '0 0 10px var(--success-color)' }}></div>
+               </div>
+             ))}
+           </div>
+           <button style={{ width: '100%', marginTop: '2rem', padding: '0.85rem', background: 'var(--accent-color)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '800', cursor: 'pointer' }}>SYNC ALL NOW</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderModel = () => (
+    <div className="fade-in">
+      <div style={{ marginBottom: '2.5rem' }}>
+        <h2 style={{ fontSize: '2rem', fontWeight: '900' }}>{t('dailyAgenda').toUpperCase()}</h2>
+        <p style={{ color: 'var(--text-secondary)' }}>Your schedule is fully synchronized. 4 bookings today.</p>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr', gap: '2rem' }}>
+        <div className="glass-card" style={{ padding: '2rem' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.5rem' }}>TODAY'S BOOKINGS</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {calendar.map((event, i) => (
+              <div key={i} style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: '15px', borderLeft: `4px solid ${event.status === 'confirmed' ? 'var(--success-color)' : 'var(--accent-color)'}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontWeight: '800', fontSize: '1rem' }}>{event.time}</div>
+                  <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{event.title}</div>
+                </div>
+                <div style={{ fontSize: '0.75rem', fontWeight: '900', color: 'var(--text-secondary)' }}>{event.duration}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div className="glass-card" style={{ padding: '2rem', background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), transparent)' }}>
+             <div style={{ color: '#f59e0b', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>EARNINGS THIS WEEK</div>
+             <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>$2,140</div>
+             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Goal: $3,000</div>
+             <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', marginTop: '1rem', overflow: 'hidden' }}>
+                <div style={{ width: '71%', height: '100%', background: '#f59e0b' }}></div>
+             </div>
+          </div>
+
+          <div className="glass-card" style={{ padding: '1.5rem' }}>
+             <h3 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '1.25rem' }}>LATEST REVIEW</h3>
+             <div style={{ fontStyle: 'italic', color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6', marginBottom: '1rem' }}>
+               "Absolutely professional and amazing session. Highly recommended for everyone looking for quality."
+             </div>
+             <div style={{ textAlign: 'right', fontWeight: '800', color: 'var(--accent-color)' }}>- James W.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (!user) return null;
+  const isAdminOrManager = user.isAdmin || user.role === 'Agency Manager' || user.role === 'Regional Manager' || user.role === 'Manager' || user.role === 'Admin';
+
+  return (
+    <div style={{ padding: '3rem', paddingBottom: '8rem', maxWidth: '1400px', margin: '0 auto' }}>
+      {user.isSuperAdmin ? renderSuperAdmin() : (isAdminOrManager ? renderManager() : (user.isModel || user.role === 'Model' ? renderModel() : renderOperator()))}
+    </div>
+  );
+};
+
 const LoginScreen = ({ onLogin, onResetRequired, operators, lang, setLang, t }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -209,7 +403,7 @@ function App() {
   const [profiles, setProfiles] = useState(MOCK_PROFILES);
   const [agencies, setAgencies] = useState(MOCK_AGENCIES);
   const [operators, setOperators] = useState(MOCK_OPERATORS);
-  const [activeTab, setActiveTab] = useState('inbox');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [activeProfileId, setActiveProfileId] = useState(MOCK_PROFILES[0].id);
   const [selectedChatId, setSelectedChatId] = useState(null);
   const [lang, setLang] = useState('en');
@@ -283,8 +477,8 @@ function App() {
       const hash = window.location.hash.replace('#/', '');
       if (isLoggedIn) {
         if (hash === 'login' || !hash) {
-          window.location.hash = '#/inbox';
-          setActiveTab('inbox');
+          window.location.hash = '#/dashboard';
+          setActiveTab('dashboard');
         } else {
           setActiveTab(hash);
         }
@@ -569,11 +763,7 @@ function App() {
       localStorage.setItem('nexus_activeClient', JSON.stringify(client));
     }
 
-    if (user.isSuperAdmin) {
-      setActiveTab('agencies');
-    } else {
-      setActiveTab('inbox');
-    }
+    setActiveTab('dashboard');
   };
 
   const handleResetRequired = (user) => {
@@ -636,7 +826,10 @@ function App() {
               width: 280px;
               z-index: 2000;
               transform: translateX(-100%);
-              transition: transform 0.3s ease;
+              transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+              background: rgba(5, 7, 10, 0.95) !important;
+              backdrop-filter: blur(20px) !important;
+              box-shadow: 15px 0 40px rgba(0,0,0,0.6);
             }
           .desktop-sidebar.open {
             transform: translateX(0);
@@ -796,7 +989,12 @@ function App() {
         zIndex: 10
       }}>
         <div style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div 
+            onClick={() => setActiveTab('dashboard')}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', transition: 'opacity 0.2s' }}
+            onMouseOver={e => e.currentTarget.style.opacity = '0.8'}
+            onMouseOut={e => e.currentTarget.style.opacity = '1'}
+          >
             <div style={{ width: '42px', height: '42px', background: 'var(--accent-color)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 15px var(--accent-glow)' }}>
               <Zap color="white" fill="white" size={22} />
             </div>
@@ -967,6 +1165,18 @@ function App() {
         overflow: 'hidden',
         paddingTop: isMobile ? '60px' : 0
       }}>
+        {activeTab === 'dashboard' && (
+          <DashboardHome 
+            user={activeOperator} 
+            t={t} 
+            stats={MOCK_STATS} 
+            agencies={agencies} 
+            operators={operators} 
+            profiles={profiles}
+            calendar={bookingSchedule}
+          />
+        )}
+
         {activeTab === 'inbox' && (
           <div style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden', position: 'relative' }} className="fade-in inbox-grid">
             {/* Column 1: Inbox List */}
@@ -1323,7 +1533,7 @@ function App() {
                   <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>1. Synchronizace SMS</h3>
                 </div>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
-                  Doporučujeme aplikaci <strong>SMS to URL</strong>. Je spolehlivá a nevyžaduje žádné složité nastavování.
+                  Doporučujeme aplikaci <a href="https://play.google.com/store/apps/details?id=com.frisbe.sms_to_url" target="_blank" rel="noreferrer" style={{ color: '#3b82f6', fontWeight: '700', textDecoration: 'underline' }}>SMS to URL</a>. Je spolehlivá a nevyžaduje žádné složité nastavování.
                 </p>
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                   <a href="https://play.google.com/store/apps/details?id=com.frisbe.sms_to_url" target="_blank" rel="noreferrer" className="action-btn" style={{ flex: 1, textDecoration: 'none', textAlign: 'center', background: '#3b82f6', color: 'white' }}>
@@ -1345,7 +1555,7 @@ function App() {
                   <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>2. Notifikace hovorů</h3>
                 </div>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
-                  Pro logování hovorů použijte <strong>Automate</strong> nebo <strong>Tasker</strong>. Stačí nastavit HTTP požadavek při změně stavu hovoru.
+                  Pro logování hovorů použijte <a href="https://play.google.com/store/apps/details?id=com.llamalab.automate" target="_blank" rel="noreferrer" style={{ color: '#10b981', fontWeight: '700', textDecoration: 'underline' }}>Automate</a> nebo <a href="https://play.google.com/store/apps/details?id=net.dinglisch.android.taskerm" target="_blank" rel="noreferrer" style={{ color: '#10b981', fontWeight: '700', textDecoration: 'underline' }}>Tasker</a>. Stačí nastavit HTTP požadavek při změně stavu hovoru.
                 </p>
                 <div style={{ display: 'flex', gap: '1rem' }}>
                   <a href="https://play.google.com/store/apps/details?id=com.llamalab.automate" target="_blank" rel="noreferrer" className="action-btn" style={{ flex: 1, textDecoration: 'none', textAlign: 'center', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--card-border)' }}>
