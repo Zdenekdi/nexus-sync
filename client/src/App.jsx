@@ -23,7 +23,7 @@ const QAView = ({ t, messages = [], clientNotes = {} }) => {
           <h2 style={{ fontSize: '2rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <FileSearch size={28} color="var(--accent-color)" /> {t('qa') || 'QA & Quality Review'}
           </h2>
-          <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Review agency-wide client notes and interactions.</p>
+          <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('qaSubtitle') || 'Review agency-wide client notes and interactions.'}</p>
         </div>
       </div>
       
@@ -79,7 +79,7 @@ const DashboardHome = ({ user, t, stats = {}, agencies = [], operators = [], pro
     <div className="fade-in">
       <div style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontSize: '2rem', fontWeight: '900', letterSpacing: '0.05em' }}>{t('globalOverview').toUpperCase()}</h2>
-        <p style={{ color: 'var(--text-secondary)' }}>Live system health and global network performance.</p>
+        <p style={{ color: 'var(--text-secondary)' }}>{t('globalHealthDesc') || 'Live system health and global network performance.'}</p>
       </div>
       
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
@@ -115,7 +115,7 @@ const DashboardHome = ({ user, t, stats = {}, agencies = [], operators = [], pro
     <div className="fade-in">
       <div style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontSize: '2rem', fontWeight: '900' }}>{t('agencyOverview').toUpperCase()}</h2>
-        <p style={{ color: 'var(--text-secondary)' }}>Daily team activity and revenue highlights.</p>
+        <p style={{ color: 'var(--text-secondary)' }}>{t('agencyOverviewDesc') || 'Daily team activity and revenue highlights.'}</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
@@ -158,10 +158,10 @@ const DashboardHome = ({ user, t, stats = {}, agencies = [], operators = [], pro
       <div style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
           <h2 style={{ fontSize: '2rem', fontWeight: '900' }}>{t('personalWorkspace').toUpperCase()}</h2>
-          <p style={{ color: 'var(--text-secondary)' }}>{t('welcomeBack')}, {user.name}. Here's your shift summary.</p>
+          <p style={{ color: 'var(--text-secondary)' }}>{t('welcomeBack')}, {user.name}. {t('shiftSummaryDesc') || "Here's your shift summary."}</p>
         </div>
         <div style={{ padding: '0.6rem 1.25rem', background: 'rgba(34, 197, 94, 0.1)', color: 'var(--success-color)', borderRadius: '10px', fontSize: '0.85rem', fontWeight: '800', border: '1px solid currentColor' }}>
-          SHIFT ACTIVE
+          {t('shiftActive') || 'SHIFT ACTIVE'}
         </div>
       </div>
 
@@ -215,7 +215,7 @@ const DashboardHome = ({ user, t, stats = {}, agencies = [], operators = [], pro
     <div className="fade-in">
       <div style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontSize: '2rem', fontWeight: '900' }}>{t('dailyAgenda').toUpperCase()}</h2>
-        <p style={{ color: 'var(--text-secondary)' }}>Your schedule is fully synchronized. 4 bookings today.</p>
+        <p style={{ color: 'var(--text-secondary)' }}>{t('dailyAgendaDesc') || 'Your schedule is fully synchronized. 4 bookings today.'}</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr', gap: '2rem' }}>
@@ -1505,7 +1505,7 @@ function App() {
 
                 <div style={{ marginTop: '1.5rem', fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'flex', gap: '0.5rem', alignItems: 'flex-start', background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '12px' }}>
                   <Link size={14} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
-                  Systém naváže spojení přes proxy bránu uk-london-res-12 a simuluje reálný prohlížeč pro aktualizaci dat bez rizika banu za scrapování.
+                  {t('proxyNote')}
                 </div>
               </div>
             </div>
@@ -1519,7 +1519,7 @@ function App() {
                 <h2 style={{ fontSize: '2rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <Smartphone size={28} color="var(--accent-color)" /> {t('deviceSetup') || 'Device Setup Guide'}
                 </h2>
-                <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Propojte svůj Android telefon pomocí aplikací z Google Play pro synchronizaci SMS a hovorů.</p>
+                <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('deviceSetupDesc')}</p>
               </div>
             </div>
 
@@ -1530,18 +1530,18 @@ function App() {
                   <div style={{ width: '48px', height: '48px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <MessageSquare size={24} color="#3b82f6" />
                   </div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>1. Synchronizace SMS</h3>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>{t('smsSync')}</h3>
                 </div>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
-                  Doporučujeme aplikaci <a href="https://play.google.com/store/apps/details?id=com.frisbe.sms_to_url" target="_blank" rel="noreferrer" style={{ color: '#3b82f6', fontWeight: '700', textDecoration: 'underline' }}>SMS to URL</a>. Je spolehlivá a nevyžaduje žádné složité nastavování.
+                  {t('smsSyncDesc')}
                 </p>
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <a href="https://play.google.com/store/apps/details?id=com.frisbe.sms_to_url" target="_blank" rel="noreferrer" className="action-btn" style={{ flex: 1, textDecoration: 'none', textAlign: 'center', background: '#3b82f6', color: 'white' }}>
-                    Google Play
+                  <a href="https://play.google.com/store/apps/details?id=com.httpsms.app" target="_blank" rel="noreferrer" className="action-btn" style={{ flex: 1, textDecoration: 'none', textAlign: 'center', background: '#3b82f6', color: 'white' }}>
+                    Google Play (httpSMS)
                   </a>
                 </div>
                 <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#3b82f6', marginBottom: '0.5rem' }}>NASTAVENÍ URL (WEBHOOK)</div>
+                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#3b82f6', marginBottom: '0.5rem' }}>{t('webhookLabel')}</div>
                   <code style={{ fontSize: '0.8rem', wordBreak: 'break-all' }}>http://78.141.202.139:3001/api/device/mobile/sms</code>
                 </div>
               </div>
@@ -1552,10 +1552,10 @@ function App() {
                   <div style={{ width: '48px', height: '48px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Phone size={24} color="#10b981" />
                   </div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>2. Notifikace hovorů</h3>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>{t('callSync')}</h3>
                 </div>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
-                  Pro logování hovorů použijte <a href="https://play.google.com/store/apps/details?id=com.llamalab.automate" target="_blank" rel="noreferrer" style={{ color: '#10b981', fontWeight: '700', textDecoration: 'underline' }}>Automate</a> nebo <a href="https://play.google.com/store/apps/details?id=net.dinglisch.android.taskerm" target="_blank" rel="noreferrer" style={{ color: '#10b981', fontWeight: '700', textDecoration: 'underline' }}>Tasker</a>. Stačí nastavit HTTP požadavek při změně stavu hovoru.
+                  {t('callSyncDesc')}
                 </p>
                 <div style={{ display: 'flex', gap: '1rem' }}>
                   <a href="https://play.google.com/store/apps/details?id=com.llamalab.automate" target="_blank" rel="noreferrer" className="action-btn" style={{ flex: 1, textDecoration: 'none', textAlign: 'center', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--card-border)' }}>
@@ -1566,7 +1566,7 @@ function App() {
                   </a>
                 </div>
                 <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#10b981', marginBottom: '0.5rem' }}>NASTAVENÍ URL (WEBHOOK)</div>
+                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#10b981', marginBottom: '0.5rem' }}>{t('webhookLabel')}</div>
                   <code style={{ fontSize: '0.8rem', wordBreak: 'break-all' }}>http://78.141.202.139:3001/api/device/mobile/call</code>
                 </div>
               </div>
@@ -1574,12 +1574,12 @@ function App() {
 
             <div className="glass-card" style={{ marginTop: '2rem', padding: '2rem' }}>
               <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <Zap size={20} color="var(--accent-color)" /> Proč tyto aplikace?
+                <Zap size={20} color="var(--accent-color)" /> {t('whyTheseApps')}
               </h3>
               <ul style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.8', paddingLeft: '1.5rem' }}>
-                <li><strong>Bezpečnost:</strong> Žádná z těchto aplikací neřeší explicitní obsah, jsou to čistě technické nástroje pro přenos dat.</li>
-                <li><strong>Stabilita:</strong> Fungují na pozadí a automaticky se spouští po restartu telefonu.</li>
-                <li><strong>Flexibilita:</strong> Můžete si nastavit přesně, která čísla se mají synchronizovat a která ne.</li>
+                <li><strong>{t('safetyLabel') || 'Security'}:</strong> {t('safetyReason')}</li>
+                <li><strong>{t('stabilityLabel') || 'Stability'}:</strong> {t('stabilityReason')}</li>
+                <li><strong>{t('flexibilityLabel') || 'Flexibility'}:</strong> {t('flexibilityReason')}</li>
               </ul>
             </div>
           </div>
