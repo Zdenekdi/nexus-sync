@@ -40,14 +40,14 @@ const QAView = ({ t, messages = [], clientNotes = {} }) => {
                 </div>
                 <div>
                   <div style={{ fontSize: '1.25rem', fontWeight: '800' }}>{clientMsg.from}</div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Client History</div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t('clientHistory') || 'Client History'}</div>
                 </div>
               </div>
             </div>
             
             <div>
               <h3 style={{ fontSize: '0.9rem', color: '#f59e0b', marginBottom: '1rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <StickyNote size={16} /> INTERNAL NOTES LOG
+                <StickyNote size={16} /> {t('internalNotesLog') || 'INTERNAL NOTES LOG'}
               </h3>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -55,13 +55,13 @@ const QAView = ({ t, messages = [], clientNotes = {} }) => {
                   <div key={note.id} style={{ background: 'rgba(245, 158, 11, 0.05)', borderLeft: '4px solid #f59e0b', padding: '1rem', borderRadius: '0 12px 12px 0' }}>
                     <div style={{ fontSize: '1rem', color: 'white', marginBottom: '0.75rem', lineHeight: '1.5' }}>{note.text}</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                      <span>Logged by: <strong style={{ color: 'white' }}>{note.author}</strong></span>
+                      <span>{t('loggedBy') || 'Logged by'}: <strong style={{ color: 'white' }}>{note.author}</strong></span>
                       <span>{note.timestamp}</span>
                     </div>
                   </div>
                 ))}
                 {(!clientNotes[clientMsg.from] || clientNotes[clientMsg.from].length === 0) && (
-                  <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontStyle: 'italic', padding: '1rem' }}>No notes found for this client.</div>
+                  <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontStyle: 'italic', padding: '1rem' }}>{t('noNotes') || 'No notes found for this client.'}</div>
                 )}
               </div>
             </div>
@@ -103,9 +103,9 @@ const DashboardHome = ({ user, t, stats = {}, agencies = [], operators = [], pro
       </div>
 
       <div className="glass-card" style={{ padding: '2rem' }}>
-        <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem' }}>INFRASTRUCTURE TOPOLOGY</h3>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem' }}>{t('infraTopology') || 'INFRASTRUCTURE TOPOLOGY'}</h3>
         <div style={{ height: '200px', background: 'rgba(0,0,0,0.2)', borderRadius: '15px', border: '1px dashed var(--card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-           [ Global Relay Map Visualization ]
+           {t('mapViz') || '[ Global Relay Map Visualization ]'}
         </div>
       </div>
     </div>
@@ -120,29 +120,29 @@ const DashboardHome = ({ user, t, stats = {}, agencies = [], operators = [], pro
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
         <div className="glass-card" style={{ padding: '1.5rem', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), transparent)' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--accent-color)', marginBottom: '0.5rem' }}>AGENCY REVENUE (MTD)</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--accent-color)', marginBottom: '0.5rem' }}>{t('revenueMtd') || 'AGENCY REVENUE (MTD)'}</div>
           <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>$42,850</div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--success-color)', fontWeight: '700', marginTop: '0.5rem' }}>↑ 18% vs Last Month</div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--success-color)', fontWeight: '700', marginTop: '0.5rem' }}>↑ 18% {t('vsLastMonth') || 'vs Last Month'}</div>
         </div>
         <div className="glass-card" style={{ padding: '1.5rem' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>ACTIVE OPERATORS</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('activeOps') || 'ACTIVE OPERATORS'}</div>
           <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>8 / 12</div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>4 Currently Offline</div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>4 {t('currentlyOffline') || 'Currently Offline'}</div>
         </div>
         <div className="glass-card" style={{ padding: '1.5rem' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>AVG. CONVERSION</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('avgConversion') || 'AVG. CONVERSION'}</div>
           <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>24%</div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--success-color)', fontWeight: '700', marginTop: '0.5rem' }}>Optimal Range</div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--success-color)', fontWeight: '700', marginTop: '0.5rem' }}>{t('optimalRange') || 'Optimal Range'}</div>
         </div>
       </div>
 
       <div className="glass-card" style={{ padding: '2rem' }}>
-        <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem' }}>RECENT REVIEWS & QA</h3>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem' }}>{t('recentReviewsQA') || 'RECENT REVIEWS & QA'}</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {[1, 2, 3].map(i => (
             <div key={i} style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between' }}>
                <div>
-                 <div style={{ fontWeight: '700' }}>Profile Review: Sophie</div>
+                 <div style={{ fontWeight: '700' }}>{t('profileReview') || 'Profile Review'}: Sophie</div>
                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>"Great communication, very professional."</div>
                </div>
                <div style={{ color: '#f59e0b', fontWeight: '900' }}>5.0 ★</div>
