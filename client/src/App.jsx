@@ -21,9 +21,9 @@ const QAView = ({ t, messages = [], clientNotes = {} }) => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
         <div>
           <h2 style={{ fontSize: '2rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <FileSearch size={28} color="var(--accent-color)" /> {t('qa') || 'QA & Quality Review'}
+            <FileSearch size={28} color="var(--accent-color)" /> {t('qa')}
           </h2>
-          <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('qaSubtitle') || 'Review agency-wide client notes and interactions.'}</p>
+          <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('qaSubtitle')}</p>
         </div>
       </div>
       
@@ -40,14 +40,14 @@ const QAView = ({ t, messages = [], clientNotes = {} }) => {
                 </div>
                 <div>
                   <div style={{ fontSize: '1.25rem', fontWeight: '800' }}>{clientMsg.from}</div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t('clientHistory') || 'Client History'}</div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t('clientHistory')}</div>
                 </div>
               </div>
             </div>
             
             <div>
               <h3 style={{ fontSize: '0.9rem', color: '#f59e0b', marginBottom: '1rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <StickyNote size={16} /> {t('internalNotesLog') || 'INTERNAL NOTES LOG'}
+                <StickyNote size={16} /> {t('internalNotesLog')}
               </h3>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -55,13 +55,13 @@ const QAView = ({ t, messages = [], clientNotes = {} }) => {
                   <div key={note.id} style={{ background: 'rgba(245, 158, 11, 0.05)', borderLeft: '4px solid #f59e0b', padding: '1rem', borderRadius: '0 12px 12px 0' }}>
                     <div style={{ fontSize: '1rem', color: 'white', marginBottom: '0.75rem', lineHeight: '1.5' }}>{note.text}</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                      <span>{t('loggedBy') || 'Logged by'}: <strong style={{ color: 'white' }}>{note.author}</strong></span>
+                      <span>{t('loggedBy')}: <strong style={{ color: 'white' }}>{note.author}</strong></span>
                       <span>{note.timestamp}</span>
                     </div>
                   </div>
                 ))}
                 {(!clientNotes[clientMsg.from] || clientNotes[clientMsg.from].length === 0) && (
-                  <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontStyle: 'italic', padding: '1rem' }}>{t('noNotes') || 'No notes found for this client.'}</div>
+                  <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontStyle: 'italic', padding: '1rem' }}>{t('noNotes')}</div>
                 )}
               </div>
             </div>
@@ -79,15 +79,15 @@ const DashboardHome = ({ user, t, stats = {}, agencies = [], operators = [], pro
     <div className="fade-in">
       <div style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontSize: '2rem', fontWeight: '900', letterSpacing: '0.05em' }}>{t('globalOverview').toUpperCase()}</h2>
-        <p style={{ color: 'var(--text-secondary)' }}>{t('globalHealthDesc') || 'Live system health and global network performance.'}</p>
+        <p style={{ color: 'var(--text-secondary)' }}>{t('globalHealthDesc')}</p>
       </div>
       
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
         {[
           { label: t('totalRevenue'), value: '$842,500', icon: <DollarSign color="#10b981" />, growth: '+12.5%' },
-          { label: 'TOTAL AGENCIES', value: agencies.length, icon: <Building2 color="#3b82f6" />, growth: '+2' },
-          { label: 'ACTIVE NODES', value: '14', icon: <Zap color="#f59e0b" />, growth: 'HEALTHY' },
-          { label: 'GLOBAL TRAFFIC', value: '2.4M', icon: <Activity color="#8b5cf6" />, growth: '85% LOAD' }
+          { label: t('agencies').toUpperCase(), value: agencies.length, icon: <Building2 color="#3b82f6" />, growth: '+2' },
+          { label: t('activeNodes').toUpperCase(), value: '14', icon: <Zap color="#f59e0b" />, growth: 'HEALTHY' },
+          { label: t('globalTraffic') || 'GLOBAL TRAFFIC', value: '2.4M', icon: <Activity color="#8b5cf6" />, growth: '85% LOAD' }
         ].map((stat, i) => (
           <div key={i} className="glass-card" style={{ padding: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
@@ -103,9 +103,9 @@ const DashboardHome = ({ user, t, stats = {}, agencies = [], operators = [], pro
       </div>
 
       <div className="glass-card" style={{ padding: '2rem' }}>
-        <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem' }}>{t('infraTopology') || 'INFRASTRUCTURE TOPOLOGY'}</h3>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem' }}>{t('infraTopology')}</h3>
         <div style={{ height: '200px', background: 'rgba(0,0,0,0.2)', borderRadius: '15px', border: '1px dashed var(--card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-           {t('mapViz') || '[ Global Relay Map Visualization ]'}
+           {t('mapViz')}
         </div>
       </div>
     </div>
@@ -115,34 +115,34 @@ const DashboardHome = ({ user, t, stats = {}, agencies = [], operators = [], pro
     <div className="fade-in">
       <div style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontSize: '2rem', fontWeight: '900' }}>{t('agencyOverview').toUpperCase()}</h2>
-        <p style={{ color: 'var(--text-secondary)' }}>{t('agencyOverviewDesc') || 'Daily team activity and revenue highlights.'}</p>
+        <p style={{ color: 'var(--text-secondary)' }}>{t('agencyOverviewDesc')}</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
         <div className="glass-card" style={{ padding: '1.5rem', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), transparent)' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--accent-color)', marginBottom: '0.5rem' }}>{t('revenueMtd') || 'AGENCY REVENUE (MTD)'}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--accent-color)', marginBottom: '0.5rem' }}>{t('revenueMtd')}</div>
           <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>$42,850</div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--success-color)', fontWeight: '700', marginTop: '0.5rem' }}>↑ 18% {t('vsLastMonth') || 'vs Last Month'}</div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--success-color)', fontWeight: '700', marginTop: '0.5rem' }}>↑ 18% {t('vsLastMonth')}</div>
         </div>
         <div className="glass-card" style={{ padding: '1.5rem' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('activeOps') || 'ACTIVE OPERATORS'}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('activeOps')}</div>
           <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>8 / 12</div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>4 {t('currentlyOffline') || 'Currently Offline'}</div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>4 {t('currentlyOffline')}</div>
         </div>
         <div className="glass-card" style={{ padding: '1.5rem' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('avgConversion') || 'AVG. CONVERSION'}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('avgConversion')}</div>
           <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>24%</div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--success-color)', fontWeight: '700', marginTop: '0.5rem' }}>{t('optimalRange') || 'Optimal Range'}</div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--success-color)', fontWeight: '700', marginTop: '0.5rem' }}>{t('optimalRange')}</div>
         </div>
       </div>
 
       <div className="glass-card" style={{ padding: '2rem' }}>
-        <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem' }}>{t('recentReviewsQA') || 'RECENT REVIEWS & QA'}</h3>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem' }}>{t('recentReviewsQA')}</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {[1, 2, 3].map(i => (
             <div key={i} style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between' }}>
                <div>
-                 <div style={{ fontWeight: '700' }}>{t('profileReview') || 'Profile Review'}: Sophie</div>
+                 <div style={{ fontWeight: '700' }}>{t('profileReview')}: Sophie</div>
                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>"Great communication, very professional."</div>
                </div>
                <div style={{ color: '#f59e0b', fontWeight: '900' }}>5.0 ★</div>
@@ -157,11 +157,11 @@ const DashboardHome = ({ user, t, stats = {}, agencies = [], operators = [], pro
     <div className="fade-in">
       <div style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
-          <h2 style={{ fontSize: '2rem', fontWeight: '900' }}>{t('personalWorkspace').toUpperCase()}</h2>
-          <p style={{ color: 'var(--text-secondary)' }}>{t('welcomeBack')}, {user.name}. {t('shiftSummaryDesc') || "Here's your shift summary."}</p>
+          <h2 style={{ fontSize: '2rem', fontWeight: '900' }}>{t('personalWorkspace')}</h2>
+          <p style={{ color: 'var(--text-secondary)' }}>{t('welcomeBack')}, {user.name}. {t('shiftSummaryDesc')}</p>
         </div>
         <div style={{ padding: '0.6rem 1.25rem', background: 'rgba(34, 197, 94, 0.1)', color: 'var(--success-color)', borderRadius: '10px', fontSize: '0.85rem', fontWeight: '800', border: '1px solid currentColor' }}>
-          {t('shiftActive') || 'SHIFT ACTIVE'}
+          {t('shiftActive')}
         </div>
       </div>
 
@@ -169,21 +169,21 @@ const DashboardHome = ({ user, t, stats = {}, agencies = [], operators = [], pro
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
             <div className="glass-card" style={{ padding: '1.5rem', textAlign: 'center' }}>
-               <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>MESSAGES</div>
+               <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('messages')}</div>
                <div style={{ fontSize: '2rem', fontWeight: '900' }}>142</div>
             </div>
             <div className="glass-card" style={{ padding: '1.5rem', textAlign: 'center' }}>
-               <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>CALLS</div>
+               <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('calls')}</div>
                <div style={{ fontSize: '2rem', fontWeight: '900' }}>18</div>
             </div>
             <div className="glass-card" style={{ padding: '1.5rem', textAlign: 'center', border: '1px solid var(--accent-color)' }}>
-               <div style={{ color: 'var(--accent-color)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>COMMISSION</div>
+               <div style={{ color: 'var(--accent-color)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('commission')}</div>
                <div style={{ fontSize: '2rem', fontWeight: '900' }}>$185</div>
             </div>
           </div>
 
           <div className="glass-card" style={{ padding: '2rem' }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.5rem' }}>MY ASSIGNED PROFILES</h3>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.5rem' }}>{t('assignedProfiles')}</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '1rem' }}>
                {profiles.slice(0, 4).map(p => (
                  <div key={p.id} className="glass-card" style={{ padding: '1rem', textAlign: 'center', cursor: 'pointer', transition: 'transform 0.2s' }}>
@@ -196,7 +196,7 @@ const DashboardHome = ({ user, t, stats = {}, agencies = [], operators = [], pro
         </div>
 
         <div className="glass-card" style={{ padding: '1.5rem' }}>
-           <h3 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '1.5rem' }}>SYNC STATUS</h3>
+           <h3 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '1.5rem' }}>{t('syncStatusCap')}</h3>
            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
              {['AdultWork', 'ErosGuide', 'ThePunter'].map(platform => (
                <div key={platform} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -205,7 +205,7 @@ const DashboardHome = ({ user, t, stats = {}, agencies = [], operators = [], pro
                </div>
              ))}
            </div>
-           <button style={{ width: '100%', marginTop: '2rem', padding: '0.85rem', background: 'var(--accent-color)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '800', cursor: 'pointer' }}>SYNC ALL NOW</button>
+           <button style={{ width: '100%', marginTop: '2rem', padding: '0.85rem', background: 'var(--accent-color)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '800', cursor: 'pointer' }}>{t('syncAllNow')}</button>
         </div>
       </div>
     </div>
@@ -214,13 +214,13 @@ const DashboardHome = ({ user, t, stats = {}, agencies = [], operators = [], pro
   const renderModel = () => (
     <div className="fade-in">
       <div style={{ marginBottom: '2.5rem' }}>
-        <h2 style={{ fontSize: '2rem', fontWeight: '900' }}>{t('dailyAgenda').toUpperCase()}</h2>
-        <p style={{ color: 'var(--text-secondary)' }}>{t('dailyAgendaDesc') || 'Your schedule is fully synchronized. 4 bookings today.'}</p>
+        <h2 style={{ fontSize: '2rem', fontWeight: '900' }}>{t('dailyAgenda')}</h2>
+        <p style={{ color: 'var(--text-secondary)' }}>{t('dailyAgendaDesc')}</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr', gap: '2rem' }}>
         <div className="glass-card" style={{ padding: '2rem' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.5rem' }}>TODAY'S BOOKINGS</h3>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.5rem' }}>{t('todaysBookings')}</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {calendar.map((event, i) => (
               <div key={i} style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: '15px', borderLeft: `4px solid ${event.status === 'confirmed' ? 'var(--success-color)' : 'var(--accent-color)'}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -236,16 +236,16 @@ const DashboardHome = ({ user, t, stats = {}, agencies = [], operators = [], pro
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div className="glass-card" style={{ padding: '2rem', background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), transparent)' }}>
-             <div style={{ color: '#f59e0b', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>EARNINGS THIS WEEK</div>
+             <div style={{ color: '#f59e0b', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('earningsWeek')}</div>
              <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>$2,140</div>
-             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Goal: $3,000</div>
+             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('goal')}: $3,000</div>
              <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', marginTop: '1rem', overflow: 'hidden' }}>
                 <div style={{ width: '71%', height: '100%', background: '#f59e0b' }}></div>
              </div>
           </div>
 
           <div className="glass-card" style={{ padding: '1.5rem' }}>
-             <h3 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '1.25rem' }}>LATEST REVIEW</h3>
+             <h3 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '1.25rem' }}>{t('latestReview')}</h3>
              <div style={{ fontStyle: 'italic', color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6', marginBottom: '1rem' }}>
                "Absolutely professional and amazing session. Highly recommended for everyone looking for quality."
              </div>
@@ -1025,16 +1025,16 @@ function App() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2.5rem' }}>
           {[
             ...(activeOperator?.isSuperAdmin ? [
-              { id: 'infra', icon: HardDrive, label: 'Infrastructure' },
-              { id: 'agencies', icon: Building2, label: 'Agencies' },
-              { id: 'permissions', icon: Shield, label: 'Permissions' },
-              { id: 'plans', icon: CreditCard, label: 'Subscriptions' },
-              { id: 'features', icon: Zap, label: 'Global Features' }
+              { id: 'infra', icon: HardDrive, label: t('infra') },
+              { id: 'agencies', icon: Building2, label: t('agencies') },
+              { id: 'permissions', icon: Shield, label: t('permissions') },
+              { id: 'plans', icon: CreditCard, label: t('plans') },
+              { id: 'features', icon: Zap, label: t('featuresCap') }
             ] : [
               ...(activeOperator?.isAdmin ? [
-                { id: 'hierarchy', icon: Users, label: 'Hierarchy' },
-                { id: 'plans', icon: CreditCard, label: 'Subscriptions' },
-                { id: 'analytics', icon: BarChart3, label: 'Reports' }
+                { id: 'hierarchy', icon: Users, label: t('hierarchy') },
+                { id: 'plans', icon: CreditCard, label: t('plans') },
+                { id: 'analytics', icon: BarChart3, label: t('analytics') }
               ] : [
                 { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator?.isModel ? 0 : totalUnread },
                 { id: 'calendar', icon: Calendar, label: t('schedule') },
@@ -1042,11 +1042,11 @@ function App() {
                   { id: 'profiles', icon: Users, label: t('profiles') },
                   { id: 'web-profiles', icon: Globe, label: t('webProfiles') }
                 ]),
-                { id: 'device-setup', icon: Smartphone, label: 'Device Setup' },
+                { id: 'device-setup', icon: Smartphone, label: t('deviceSetup') },
                 ...(activeOperator?.isModel ? [] : [{ id: 'activity', icon: Activity, label: t('auditLog') }])
               ]),
-              { id: 'referrals', icon: Gift, label: t('referrals') || 'Doporučení' },
-              { id: 'qa', icon: FileSearch, label: 'QA & Review' }
+              { id: 'referrals', icon: Gift, label: t('referrals') },
+              { id: 'qa', icon: FileSearch, label: t('qa') }
             ]),
               { id: 'settings', icon: Settings, label: t('settings') },
           ].map(item => (
@@ -1075,9 +1075,9 @@ function App() {
         {!activeOperator?.isModel && !activeOperator?.isSuperAdmin && !activeOperator?.isAdmin && (
           <div style={{ marginTop: '2.5rem', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>MY ASSIGNED GIRLS</div>
+              <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>{t('myAssignedGirls')}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{ fontSize: '0.7rem', fontWeight: '800', color: showOnlyOnline ? 'var(--success-color)' : 'var(--text-secondary)', transition: 'color 0.2s' }}>ONLINE</span>
+                <span style={{ fontSize: '0.7rem', fontWeight: '800', color: showOnlyOnline ? 'var(--success-color)' : 'var(--text-secondary)', transition: 'color 0.2s' }}>{t('online').toUpperCase()}</span>
                 <div 
                   onClick={() => setShowOnlyOnline(!showOnlyOnline)}
                   className={`toggle-switch ${showOnlyOnline ? 'active' : ''}`}
@@ -1297,7 +1297,7 @@ function App() {
                     {isMobile && (
                       <div style={{ padding: '1rem', borderBottom: '1px solid var(--card-border)' }}>
                         <button onClick={() => setMobileView('chat')} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <ChevronLeft size={20} /> Back to Chat
+                          <ChevronLeft size={20} /> {t('backToChat')}
                         </button>
                       </div>
                     )}
@@ -1348,7 +1348,7 @@ function App() {
                       </div>
                     ) : (
                       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
-                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Select a conversation to view translator and notes.</div>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t('selectConversationDesc')}</div>
                       </div>
                     )}
                   </div>
@@ -1362,12 +1362,12 @@ function App() {
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, display: 'flex', flexDirection: 'column' }} className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
               <div>
-                <h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('schedule') || 'Rozvrh Rezervací'} - {activeProfile?.name || '...'}</h2>
-                <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Správa schůzek a dostupnosti pro vybraný profil.</p>
+                <h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('bookingSchedule')} - {activeProfile?.name || '...'}</h2>
+                <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('bookingScheduleDesc')}</p>
               </div>
               <div style={{ display: 'flex', gap: '1rem' }}>
                  <div className="status-badge" style={{ borderColor: 'var(--accent-color)', color: 'var(--accent-color)' }}>
-                   <Activity size={16} /> {bookingSchedule.length} UDÁLOSTÍ
+                   <Activity size={16} /> {bookingSchedule.length} {t('events')}
                  </div>
               </div>
             </div>
@@ -1415,7 +1415,7 @@ function App() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                 <div className="glass-card" style={{ padding: '1.5rem' }}>
                   <h3 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Clock size={18} color="var(--warning-color)" /> DOPORUČENÉ SLOTY
+                    <Clock size={18} color="var(--warning-color)" /> {t('recommendedSlots')}
                   </h3>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
                     {MOCK_CALENDAR.suggestions.map(s => (
@@ -1425,9 +1425,9 @@ function App() {
                 </div>
 
                 <div className="glass-card" style={{ padding: '1.5rem', background: 'rgba(59, 130, 246, 0.05)', border: '1px dashed var(--accent-color)' }}>
-                  <h3 style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '1rem' }}>TIP PRO OPERÁTORA</h3>
+                  <h3 style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '1rem' }}>{t('operatorTip')}</h3>
                   <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-                    Vždy potvrďte rezervaci klientovi i v chatu. Systém po potvrzení v popupu pošle automatickou zprávu za vás.
+                    {t('operatorTipDesc')}
                   </p>
                 </div>
               </div>
@@ -1441,7 +1441,7 @@ function App() {
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               <div>
                 <h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('webProfiles')} - {activeProfile?.name || '...'}</h2>
-                <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Zde můžete upravovat texty a fotky, které se následně rozešlou na připojené inzertní weby.</p>
+                <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('webProfilesDesc')}</p>
               </div>
 
               <div className="glass-card" style={{ padding: '2rem' }}>
@@ -1452,7 +1452,7 @@ function App() {
 
                 <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem' }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-secondary)' }}>{t('publicGallery').toUpperCase()}</div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-secondary)' }}>{t('publicGalleryCap')}</div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '1rem' }}>
                       <div className="placeholder-img" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200)' }}></div>
                       <div className="placeholder-img" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=200)' }}></div>
@@ -1461,7 +1461,7 @@ function App() {
                   </div>
                   <div style={{ width: '1px', background: 'var(--card-border)' }}></div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-secondary)' }}>{t('privateGallery').toUpperCase()} (VIP)</div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-secondary)' }}>{t('privateGalleryCap')} (VIP)</div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '1rem' }}>
                       <div className="placeholder-img" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=200)' }}></div>
                     </div>
@@ -1480,11 +1480,11 @@ function App() {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Motto / Headline</label>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('mottoLabel')}</label>
                     <input type="text" defaultValue={activeProfile?.bio || ''} className="note-input" />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Full Biography</label>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('fullBioLabel')}</label>
                     <textarea className="note-input" style={{ height: '150px' }} defaultValue="Hi, I am available in the city center. VIP companion offering GFE, outcalls and incalls. Very friendly and open minded..."></textarea>
                   </div>
                   <button className="action-btn" style={{ width: 'fit-content' }}>{t('saveChanges')}</button>
@@ -1501,7 +1501,7 @@ function App() {
                   <div className="sync-platform-row">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                       <div className="platform-icon">AW</div>
-                      <div><div style={{ fontWeight: '700', fontSize: '0.9rem' }}>AdultWork.com</div><div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>UK Primary</div></div>
+                      <div><div style={{ fontWeight: '700', fontSize: '0.9rem' }}>AdultWork.com</div><div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{t('ukPrimary')}</div></div>
                     </div>
                     <div className={`sync-badge ${syncStatus.aw}`}>
                       {syncStatus.aw === 'syncing' ? <RefreshCw size={12} className="spin-animation" /> : (syncStatus.aw === 'synced' ? <Check size={12} /> : <X size={12} />)}
@@ -1512,7 +1512,7 @@ function App() {
                   <div className="sync-platform-row">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                       <div className="platform-icon">EG</div>
-                      <div><div style={{ fontWeight: '700', fontSize: '0.9rem' }}>EuroGirlsEscort</div><div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>EU Wide</div></div>
+                      <div><div style={{ fontWeight: '700', fontSize: '0.9rem' }}>EuroGirlsEscort</div><div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{t('euWide')}</div></div>
                     </div>
                     <div className={`sync-badge ${syncStatus.ege}`}>
                       {syncStatus.ege === 'syncing' ? <RefreshCw size={12} className="spin-animation" /> : (syncStatus.ege === 'synced' ? <Check size={12} /> : <X size={12} />)}
@@ -1523,7 +1523,7 @@ function App() {
                   <div className="sync-platform-row">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                       <div className="platform-icon">TP</div>
-                      <div><div style={{ fontWeight: '700', fontSize: '0.9rem' }}>ThePuntersB...</div><div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Review sync</div></div>
+                      <div><div style={{ fontWeight: '700', fontSize: '0.9rem' }}>ThePuntersB...</div><div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{t('reviewSync')}</div></div>
                     </div>
                     <div className={`sync-badge ${syncStatus.tpb}`}>
                       {syncStatus.tpb === 'syncing' ? <RefreshCw size={12} className="spin-animation" /> : (syncStatus.tpb === 'synced' ? <Check size={12} /> : <AlertTriangle size={12} />)}
@@ -1534,7 +1534,7 @@ function App() {
 
                 {isSyncing ? (
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.5rem', fontWeight: '700' }}><span>Syncing Profile Data...</span><span>{syncProgress}%</span></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.5rem', fontWeight: '700' }}><span>{t('syncingProfileData')}</span><span>{syncProgress}%</span></div>
                     <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
                       <div style={{ width: `${syncProgress}%`, height: '100%', background: 'var(--accent-color)', transition: 'width 0.2s ease' }}></div>
                     </div>
@@ -1557,7 +1557,7 @@ function App() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
               <div>
                 <h2 style={{ fontSize: '2rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <Smartphone size={28} color="var(--accent-color)" /> {t('deviceSetup') || 'Device Setup Guide'}
+                  <Smartphone size={28} color="var(--accent-color)" /> {t('deviceSetup')}
                 </h2>
                 <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('deviceSetupDesc')}</p>
               </div>
@@ -1577,7 +1577,7 @@ function App() {
                 </p>
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                   <a href="https://play.google.com/store/apps/details?id=enstone.smsfw.app" target="_blank" rel="noreferrer" className="action-btn" style={{ flex: 1, textDecoration: 'none', textAlign: 'center', background: '#3b82f6', color: 'white' }}>
-                    Google Play (SMS Forwarder)
+                    Google Play ({t('smsSync')})
                   </a>
                 </div>
                 <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
@@ -1617,9 +1617,9 @@ function App() {
                 <Zap size={20} color="var(--accent-color)" /> {t('whyTheseApps')}
               </h3>
               <ul style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.8', paddingLeft: '1.5rem' }}>
-                <li><strong>{t('safetyLabel') || 'Security'}:</strong> {t('safetyReason')}</li>
-                <li><strong>{t('stabilityLabel') || 'Stability'}:</strong> {t('stabilityReason')}</li>
-                <li><strong>{t('flexibilityLabel') || 'Flexibility'}:</strong> {t('flexibilityReason')}</li>
+                <li><strong>{t('safetyLabel')}:</strong> {t('safetyReason')}</li>
+                <li><strong>{t('stabilityLabel')}:</strong> {t('stabilityReason')}</li>
+                <li><strong>{t('flexibilityLabel')}:</strong> {t('flexibilityReason')}</li>
               </ul>
             </div>
           </div>
@@ -1627,8 +1627,8 @@ function App() {
 
         {activeTab === 'hierarchy' && activeOperator?.isAdmin && (
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
-            <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Team Hierarchy</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>Overview of operators and their assigned model distribution.</p>
+            <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('teamHierarchy')}</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>{t('teamHierarchyDesc')}</p>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               {MOCK_OPERATORS.filter(op => op?.clientId === activeOperator?.clientId && !op?.isAdmin && !op?.isSuperAdmin).map(op => {
@@ -1642,19 +1642,19 @@ function App() {
                         </div>
                         <div>
                           <h3 style={{ fontSize: '1.5rem', fontWeight: '800' }}>{op.name}</h3>
-                          <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{op.role} • {assignedModels.length} Assigned Models</div>
+                          <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{op.role === 'Night Shift' ? t('nightShift') : op.role} • {assignedModels.length} {t('assignedModels')}</div>
                         </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem', letterSpacing: '0.1em' }}>TODAY'S PERFORMANCE</div>
+                        <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem', letterSpacing: '0.1em' }}>{t('todaysPerformance')}</div>
                         <div style={{ display: 'flex', gap: '1.5rem' }}>
                           <div>
                             <div style={{ fontSize: '1.1rem', fontWeight: '800' }}>{op.metrics?.messages || 0}</div>
-                            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>MESSAGES</div>
+                            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{t('messages')}</div>
                           </div>
                           <div>
                             <div style={{ fontSize: '1.1rem', fontWeight: '800' }}>{op.metrics?.conversion || '0%'}</div>
-                            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>CONVERSION</div>
+                            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{t('conversion').toUpperCase()}</div>
                           </div>
                         </div>
                       </div>
@@ -1670,12 +1670,12 @@ function App() {
                             <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{model.name}</div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                               <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: model.status === 'online' ? 'var(--success-color)' : 'var(--text-secondary)' }} />
-                              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{model.status.toUpperCase()}</span>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t(model.status).toUpperCase()}</span>
                             </div>
                           </div>
                           <div style={{ textAlign: 'right' }}>
                             <div style={{ fontSize: '0.85rem', fontWeight: '800' }}>{model.unreadCount}</div>
-                            <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>UNREAD</div>
+                            <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{t('unread').toUpperCase()}</div>
                           </div>
                         </div>
                       ))}
@@ -1693,7 +1693,7 @@ function App() {
               <h2 style={{ fontSize: isMobile ? '1.8rem' : '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #f59e0b, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 {t('referralProgram')}
               </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Share Nexus Hub with other agencies and earn recurring rewards.</p>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>{t('referralsSubtitle')}</p>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
@@ -1716,10 +1716,10 @@ function App() {
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '2rem', marginBottom: '3rem' }}>
               <div className="glass-card" style={{ flex: 1, padding: '2rem', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
                 <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Link size={20} color="#f59e0b" /> YOUR REFERRAL LINK
+                  <Link size={20} color="#f59e0b" /> {t('referralLinkHeader')}
                 </h3>
                 <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-                  Send this link to owners of other agencies. When they sign up for a Professional or Enterprise plan, you get 10% of their subscription fee for the first 12 months.
+                  {t('referralLinkDesc')}
                 </p>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <div style={{ flex: 1, background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--card-border)', fontFamily: 'monospace', fontSize: '0.9rem', color: '#f59e0b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -1732,15 +1732,15 @@ function App() {
               </div>
 
               <div className="glass-card" style={{ width: isMobile ? '100%' : '400px', padding: '2rem' }}>
-                <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '1.5rem' }}>WHY REFER?</h3>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '1.5rem' }}>{t('whyRefer')}</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                   <div style={{ display: 'flex', gap: '1rem' }}>
                     <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <Check size={18} color="#10b981" />
                     </div>
                     <div>
-                      <div style={{ fontWeight: '700', fontSize: '0.95rem' }}>Recurring Commission</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Get paid every month they stay subscribed.</div>
+                      <div style={{ fontWeight: '700', fontSize: '0.95rem' }}>{t('recurringCommission')}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('recurringCommissionDesc')}</div>
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '1rem' }}>
@@ -1748,8 +1748,8 @@ function App() {
                       <Zap size={18} color="#3b82f6" />
                     </div>
                     <div>
-                      <div style={{ fontWeight: '700', fontSize: '0.95rem' }}>Instant Credits</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Use your earnings to upgrade your own agency plan.</div>
+                      <div style={{ fontWeight: '700', fontSize: '0.95rem' }}>{t('instantCredits')}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('instantCreditsDesc')}</div>
                     </div>
                   </div>
                 </div>
@@ -1758,7 +1758,7 @@ function App() {
 
             <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
               <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)' }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: '800' }}>Active Referrals & History</h3>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: '800' }}>{t('activeReferralsHistory')}</h3>
               </div>
               <div style={{ padding: '0 1rem' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -1797,7 +1797,7 @@ function App() {
                     {(!MOCK_REFERRALS[activeOperator?.id]?.history || MOCK_REFERRALS[activeOperator?.id]?.history?.length === 0) && (
                       <tr>
                         <td colSpan="4" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                          No referral activity yet. Share your link to start earning.
+                          {t('noReferralActivity')}
                         </td>
                       </tr>
                     )}
@@ -2050,7 +2050,7 @@ function App() {
 
             {activeOperator?.isAdmin && !activeOperator?.isSuperAdmin && (
               <div className="glass-card" style={{ padding: '2rem', marginTop: '3rem' }}>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '2rem' }}>Operator Daily Performance</h3>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '2rem' }}>{t('operatorPerformance')}</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   {MOCK_OPERATORS.filter(op => op?.clientId === activeOperator?.clientId && !op?.isAdmin && !op?.isSuperAdmin).map(op => (
                     <div key={op.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -2058,21 +2058,21 @@ function App() {
                         <div style={{ width: '40px', height: '40px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: 'var(--accent-color)' }}>{op.avatar}</div>
                         <div>
                           <div style={{ fontWeight: '700' }}>{op.name}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{op.role}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{op.role === 'Night Shift' ? t('nightShift') : op.role}</div>
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '3rem', textAlign: 'right' }}>
                         <div>
                           <div style={{ fontSize: '1rem', fontWeight: '800' }}>{op.metrics?.messages || 0}</div>
-                          <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>MESSAGES</div>
+                          <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{(t('messages') || 'MESSAGES').toUpperCase()}</div>
                         </div>
                         <div>
                           <div style={{ fontSize: '1rem', fontWeight: '800' }}>{op.metrics?.calls || 0}</div>
-                          <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>CALLS</div>
+                          <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{(t('calls') || 'CALLS').toUpperCase()}</div>
                         </div>
                         <div>
                           <div style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--success-color)' }}>{op.metrics?.conversion || '0%'}</div>
-                          <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>CONV. RATE</div>
+                          <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{(t('convRate') || 'CONV. RATE').toUpperCase()}</div>
                         </div>
                       </div>
                     </div>

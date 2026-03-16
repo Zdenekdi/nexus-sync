@@ -4,7 +4,7 @@ Welcome to the **Nexus Hub (AW Nexus)** – the central point for profile manage
 
 ---
 
-### 1. Role-Specific Dashboards
+## 1. Role-Specific Dashboards
 Upon logging in, the system automatically detects your role and displays a customized home page (Dashboard):
 
 - **Super Admin**: Global network overview, total revenue, number of active nodes, and infrastructure health.
@@ -16,7 +16,7 @@ Upon logging in, the system automatically detects your role and displays a custo
 
 ---
 
-### 2. Authentication (Login Screen)
+## 2. Authentication (Login Screen)
 The demo begins with a premium login screen featuring simulated security authentication.
 
 #### Demo Credentials
@@ -31,7 +31,7 @@ The demo begins with a premium login screen featuring simulated security authent
 
 ---
 
-### 3. Inbox & AI Suggestions
+## 3. Inbox & AI Suggestions
 The primary module for client communication.
 
 - **Unified Inbox**: All messages from AdultWork, SMS, and Telegram in one place.
@@ -40,7 +40,7 @@ The primary module for client communication.
 
 ---
 
-### 4. Device Activation (Device Setup)
+## 4. Device Activation (Device Setup)
 Nexus Hub allows connection to a real Android phone for data synchronization.
 
 - **SMS Forwarding**: We recommend the **SMS Forwarder (by Enstone)** app from Google Play. It forwards SMS messages directly to the system via Webhook.
@@ -48,21 +48,26 @@ Nexus Hub allows connection to a real Android phone for data synchronization.
 
 ---
 
-### 5. Quality Control & QA Hub
+## 5. Quality Control & QA Hub
+
 A tool for quality assurance and client note management.
+
 - **QA Hub**: Overview of all operator notes and client interaction history across the entire agency.
 - **Audit Trail**: Every action (message sent, setting changed) is logged and secured with a cryptographic hash for total transparency.
 
 ---
 
-### 6. Referral Program
+## 6. Referral Program
+
 Built-in system for referring new agencies or models.
+
 - Unique referral links.
 - Real-time tracking of clicks, sign-ups, and pending rewards.
 
 ---
 
-### 7. Web Profiles Sync
+## 7. Web Profiles Sync
+
 - **Synchronization**: Change photos or biographies and push updates to all connected platforms (AdultWork, EuroGirlsEscort, etc.) with one click.
 - **Proxy Gateway**: The system utilizes residential proxy nodes to eliminate the risk of scraping bans.
 
