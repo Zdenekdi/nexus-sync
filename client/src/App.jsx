@@ -285,8 +285,21 @@ function App() {
     setNewAgencyData({ name: '', region: 'UK/Europe', tier: 'Professional' });
   };
 
+  const deleteAgency = (id) => {
+    if (window.confirm('Are you sure you want to PERMANENTLY delete this agency and all its team members? This action cannot be undone.')) {
+      setAgencies(prev => prev.filter(a => a.id !== id));
+      setOperators(prev => prev.filter(o => o.clientId !== id));
+      setProfiles(prev => prev.filter(p => p.clientId !== id));
+    }
+  };
+
   const addOperator = () => {
     if (!newOperatorData.name || !newOperatorData.email || !targetAgencyId) return;
+    
+    // Auto-generate password if not manually provided
+    const autoPassword = `Nexus_${Math.floor(1000 + Math.random() * 9000)}`;
+    const finalPassword = (newOperatorData.password && newOperatorData.password !== 'password123') ? newOperatorData.password : autoPassword;
+
     const newOp = {
       id: `op-${Date.now()}`,
       name: newOperatorData.name,
@@ -294,13 +307,20 @@ function App() {
       clientId: targetAgencyId,
       avatar: newOperatorData.name.split(' ').map(n => n[0]).join('').toUpperCase(),
       email: newOperatorData.email,
-      password: newOperatorData.password,
+      password: finalPassword,
       metrics: { messages: 0, calls: 0, conversion: '0%' },
       permissions: { qa: true, referrals: false }
     };
     setOperators(prev => [...prev, newOp]);
     setIsAddOperatorModalOpen(false);
+    alert(`Member added successfully!\nTemporary Password: ${finalPassword}\nPlease share this with the team member.`);
     setNewOperatorData({ name: '', role: 'Operator', email: '', password: 'password123' });
+  };
+
+  const deleteOperator = (id) => {
+    if (window.confirm('Remove this team member?')) {
+      setOperators(prev => prev.filter(o => o.id !== id));
+    }
   };
 
   const t = (key) => {
@@ -1840,8 +1860,17 @@ function App() {
                                       return acc;
                                     }, {})
                                 ).map(([role, count]) => (
-                                  <span key={role} style={{ background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--card-border)' }}>
+                                  <span key={role} style={{ background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                     <strong>{count}</strong> {role}
+                                    <Trash2 
+                                      size={10} 
+                                      style={{ cursor: 'pointer', color: '#ef4444' }} 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        const opToDelete = agencyOps.find(o => o.role === role);
+                                        if (opToDelete) deleteOperator(opToDelete.id);
+                                      }}
+                                    />
                                   </span>
                                 ))}
                                 {agencyOpsCount === 0 && <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>No operators</span>}
@@ -1906,7 +1935,25 @@ function App() {
                                   ))}
                                 </div>
                                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', borderTop: '1px solid var(--card-border)', paddingTop: '0.5rem' }}>
-                                  <button className="status-badge" style={{ fontSize: '0.7rem', color: 'var(--accent-color)', cursor: 'pointer' }}>Impersonate</button>
+                                  <button 
+                                    onClick={() => deleteAgency(agency.id)}
+                                    className="status-badge" 
+                                    style={{ fontSize: '0.7rem', color: '#ef4444', borderColor: '#ef4444', cursor: 'pointer' }}
+                                  >
+                                    DELETE
+                                  </button>
+                                  <button 
+                                    className="status-badge" 
+                                    style={{ fontSize: '0.7rem', color: 'var(--accent-color)', cursor: 'pointer' }}
+                                    onClick={() => {
+                                      setActiveClient(agency);
+                                      const clientOp = operators.find(o => o.clientId === agency.id) || operators.find(o => o.id === 'op-1');
+                                      setActiveOperator(clientOp);
+                                      setActiveTab('dashboard');
+                                    }}
+                                  >
+                                    Impersonate
+                                  </button>
                                 </div>
                               </div>
                             </td>
