@@ -102,6 +102,14 @@ export const TRANSLATIONS = {
         resetButton: 'Update Password & Login',
         passwordMismatch: 'Passwords do not match.',
         emailSentNotification: 'Registration email sent to',
+        dashboardTitle: 'System Dashboard',
+        globalOverview: 'Global Network Health',
+        agencyOverview: 'Agency Portfolio Metrics',
+        personalWorkspace: 'Operator Workspace',
+        dailyAgenda: 'Daily Agenda & Bookings',
+        totalRevenue: 'Total Revenue',
+        activeNodes: 'Active Relay Nodes',
+        welcomeBack: 'Welcome back',
     },
     cz: {
         logo: 'NEXUS',
@@ -206,5 +214,13 @@ export const TRANSLATIONS = {
         resetButton: 'Aktualizovat a přihlásit',
         passwordMismatch: 'Hesla se neshodují.',
         emailSentNotification: 'Registrační email odeslán na adresu',
+        dashboardTitle: 'Hlavní Dashboard',
+        globalOverview: 'Globální stav sítě',
+        agencyOverview: 'Metriky portfolia agentur',
+        personalWorkspace: 'Pracovní plocha operátora',
+        dailyAgenda: 'Denní agenda a rezervace',
+        totalRevenue: 'Celkové příjmy',
+        activeNodes: 'Aktivní Relay uzly',
+        welcomeBack: 'Vítejte zpět',
     }
 };
