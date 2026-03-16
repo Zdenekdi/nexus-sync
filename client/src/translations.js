@@ -144,6 +144,10 @@ export const TRANSLATIONS = {
         profileReview: 'Profile Review',
         vsLastMonth: 'vs Last Month',
         optimalRange: 'Optimal Range',
+        aiTranslator: 'Nexus AI Translator',
+        poweredByAi: 'POWERED BY NEXUS AI',
+        translating: 'Translating...',
+        smartSuggestions: 'AI SMART SUGGESTIONS',
     },
     cz: {
         logo: 'NEXUS',
@@ -290,6 +294,10 @@ export const TRANSLATIONS = {
         profileReview: 'Recenze profilu',
         vsLastMonth: 'oproti minulému měsíci',
         optimalRange: 'Optimální rozmezí',
+        aiTranslator: 'Nexus AI Překladač',
+        poweredByAi: 'POHÁNĚNO NEXUS AI',
+        translating: 'Překládám...',
+        smartSuggestions: 'AI CHYTRÉ NÁVRHY',
         qaSubtitle: 'Kontrola poznámek a interakcí s klienty v rámci celé agentury.',
     }
 };

@@ -734,9 +734,9 @@ function App() {
     if (!sourceText.trim()) return;
     setIsTranslating(true);
     setTimeout(() => {
-      setTranslatedText(`[Translated to ${targetLang.toUpperCase()}]: ${sourceText}`);
+      setTranslatedText(`[${t('poweredByAi')}]: ${sourceText}`);
       setIsTranslating(false);
-    }, 700);
+    }, 1200);
   };
 
   const handleConfirmBooking = () => {
@@ -1303,15 +1303,40 @@ function App() {
                     )}
                     {selectedChat ? (
                       <div style={{ display: 'flex', flex: 1, flexDirection: 'column', overflow: 'hidden' }}>
-                        <div style={{ display: 'flex', borderBottom: '1px solid var(--card-border)', background: 'rgba(255, 255, 255, 0.02)' }}>
-                          <button onClick={() => setActiveContextTab('translator')} style={{ flex: 1, padding: '0.75rem', border: 'none', background: 'transparent', color: activeContextTab === 'translator' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer' }}>Translator</button>
-                          <button onClick={() => setActiveContextTab('note')} style={{ flex: 1, padding: '0.75rem', border: 'none', background: 'transparent', color: activeContextTab === 'note' ? '#f59e0b' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer' }}>Internal Note</button>
-                        </div>
+                         <div style={{ display: 'flex', borderBottom: '1px solid var(--card-border)', background: 'rgba(255, 255, 255, 0.02)' }}>
+                           <button onClick={() => setActiveContextTab('translator')} style={{ flex: 1, padding: '0.75rem', border: 'none', background: 'transparent', color: activeContextTab === 'translator' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                             <Languages size={16} /> {t('aiTranslator') || 'AI Translator'}
+                           </button>
+                           <button onClick={() => setActiveContextTab('note')} style={{ flex: 1, padding: '0.75rem', border: 'none', background: 'transparent', color: activeContextTab === 'note' ? '#f59e0b' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                             <StickyNote size={16} /> {t('internalNote') || 'Internal Note'}
+                           </button>
+                         </div>
                         <div style={{ padding: '1.5rem', flex: 1, overflowY: 'auto' }}>
                           {activeContextTab === 'translator' ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                              <textarea value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder="Type text to translate..." style={{ width: '100%', height: '100px', background: 'rgba(0, 0, 0, 0.2)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem', color: 'white', resize: 'none' }} />
-                              <button onClick={handleTranslate} disabled={isTranslating} style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}>Translate</button>
+                              <textarea value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder={t('typeResponse')} style={{ width: '100%', height: '100px', background: 'rgba(0, 0, 0, 0.2)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem', color: 'white', resize: 'none' }} />
+                              <button onClick={handleTranslate} disabled={isTranslating} style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0.75rem 1rem', borderRadius: '12px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.2s' }}>
+                                {isTranslating ? (
+                                  <>
+                                    <div className="loader-dots" style={{ display: 'flex', gap: '4px' }}>
+                                      <span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span>
+                                      <span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span>
+                                      <span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span>
+                                    </div>
+                                    {t('translating')}
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles size={16} /> {lang === 'cz' ? 'PŘELOŽIT PŘES AI' : 'TRANSLATE VIA AI'}
+                                  </>
+                                )}
+                              </button>
+                              {translatedText && (
+                                <div className="fade-in" style={{ padding: '1rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '12px', position: 'relative' }}>
+                                  <div style={{ position: 'absolute', top: '-8px', right: '12px', background: 'var(--accent-color)', color: 'white', fontSize: '0.6rem', fontWeight: '900', padding: '2px 8px', borderRadius: '4px' }}>{t('poweredByAi')}</div>
+                                  <div style={{ fontSize: '0.9rem', color: 'white', lineHeight: '1.5' }}>{translatedText}</div>
+                                </div>
+                              )}
                             </div>
                           ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
