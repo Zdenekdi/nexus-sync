@@ -1536,8 +1536,8 @@ function App() {
                   {t('smsSyncDesc')}
                 </p>
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <a href="https://play.google.com/store/apps/details?id=com.httpsms.app" target="_blank" rel="noreferrer" className="action-btn" style={{ flex: 1, textDecoration: 'none', textAlign: 'center', background: '#3b82f6', color: 'white' }}>
-                    Google Play (httpSMS)
+                  <a href="https://play.google.com/store/apps/details?id=enstone.smsfw.app" target="_blank" rel="noreferrer" className="action-btn" style={{ flex: 1, textDecoration: 'none', textAlign: 'center', background: '#3b82f6', color: 'white' }}>
+                    Google Play (SMS Forwarder)
                   </a>
                 </div>
                 <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
