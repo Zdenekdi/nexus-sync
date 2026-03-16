@@ -7,19 +7,29 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-.env
+# Dependencies
+node_modules/
+**/node_modules/
 
-# Editor directories and files
+# Build and IDE
+dist/
+dist-ssr/
+build/
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# Project specifics
+lint_output.txt
+.firebase/
+.dart_tool/
+
+# Environment
+.env
+*.local

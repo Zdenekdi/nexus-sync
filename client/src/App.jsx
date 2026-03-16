@@ -5,14 +5,91 @@ import {
   AlertCircle, ChevronRight, User, Settings, LogOut, Layout,
   Calendar, Inbox, MessageSquare, Briefcase, Hash, DollarSign,
   TrendingUp, Users, UserPlus, UserCheck, ShieldCheck, CreditCard,
-  Zap, Building, LayoutDashboard, Database, SmartphoneIcon,
+  Zap, Building, LayoutDashboard, Database,
   Phone, Server, Cpu, FileEdit, CheckCheck, FileSearch, Trash2,
   Eye, Save, X, RotateCcw, Lock, Share2, Filter, Menu, UserCircle, Plus, Info, ChevronDown, ChevronLeft,
-  BarChart3, ShieldAlert, HardDrive, Gift, Trophy, RefreshCw, Bug, Copy, Signal, Mic, MicOff, Sparkles
+  BarChart3, ShieldAlert, HardDrive, Gift, Trophy, RefreshCw, Bug, Copy, Signal, Mic, MicOff, Sparkles,
+  StickyNote, AlertTriangle, Image, Link, Star, CheckCircle
 } from 'lucide-react';
 import { MOCK_OPERATORS, MOCK_CLIENTS, MOCK_AGENCIES, MOCK_PROFILES, MOCK_MESSAGES, MOCK_STATS, MOCK_CALENDAR, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_CHART_DATA, MOCK_SMART_REPLIES, MOCK_PLANS, MOCK_REFERRALS, MOCK_PERMISSIONS } from './DemoData';
 import { TRANSLATIONS } from './translations';
 import { useSocket } from './hooks/useSocket';
+
+const QAView = () => {
+  const mockChecks = [
+    { id: 1, type: 'Chat Integrity', status: 'Passed', profile: 'Klara', operator: 'Sarah', score: '98%' },
+    { id: 2, type: 'Response Time', status: 'Warning', profile: 'Cameron', operator: 'Elena', score: '72%' },
+    { id: 3, type: 'English Proficiency', status: 'Passed', profile: 'Diana', operator: 'Alice', score: '95%' },
+  ];
+
+  return (
+    <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
+      <div style={{ marginBottom: '2.5rem' }}>
+        <h2 style={{ fontSize: '2rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <FileSearch size={28} color="var(--accent-color)" /> QA & Quality Control
+        </h2>
+        <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Monitor operator performance and Ensure high-quality client interactions.</p>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
+        {[
+          { label: 'AVG QUALITY SCORE', value: '91%', icon: Star, color: 'var(--warning-color)' },
+          { label: 'FLAGS RAISED', value: '3', icon: AlertTriangle, color: 'var(--error-color)' },
+          { label: 'SESSIONS REVIEWED', value: '142', icon: CheckCircle, color: 'var(--success-color)' }
+        ].map((stat, i) => (
+          <div key={i} className="glass-card" style={{ padding: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+              <stat.icon size={20} color={stat.color} />
+              <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{stat.label}</span>
+            </div>
+            <div style={{ fontSize: '1.75rem', fontWeight: '900' }}>{stat.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: '800' }}>Recent Reviews</h3>
+        </div>
+        <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ background: 'rgba(255,255,255,0.01)', borderBottom: '1px solid var(--card-border)' }}>
+              <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>AUDIT TYPE</th>
+              <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>MODEL / OPERATOR</th>
+              <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>STATUS</th>
+              <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textAlign: 'right' }}>SCORE</th>
+            </tr>
+          </thead>
+          <tbody>
+            {mockChecks.map((check) => (
+              <tr key={check.id} style={{ borderBottom: '1px solid var(--card-border)' }}>
+                <td style={{ padding: '1rem 1.5rem' }}>
+                  <div style={{ fontWeight: '700' }}>{check.type}</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Manual Review</div>
+                </td>
+                <td style={{ padding: '1rem 1.5rem' }}>
+                   <div style={{ fontWeight: '700' }}>{check.profile}</div>
+                   <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Reviewer: {check.operator}</div>
+                </td>
+                <td style={{ padding: '1rem 1.5rem' }}>
+                    <span style={{ 
+                        fontSize: '0.7rem', fontWeight: '800', padding: '0.2rem 0.5rem', borderRadius: '4px',
+                        background: check.status === 'Passed' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                        color: check.status === 'Passed' ? 'var(--success-color)' : '#f59e0b',
+                        border: '1px solid currentColor'
+                    }}>
+                        {check.status.toUpperCase()}
+                    </span>
+                </td>
+                <td style={{ padding: '1rem 1.5rem', textAlign: 'right', fontWeight: '900', color: 'var(--accent-color)' }}>{check.score}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
 
 const LoginScreen = ({ onLogin, lang, setLang, t }) => {
   const [email, setEmail] = useState('');
@@ -156,20 +233,20 @@ function App() {
 
   // Memoized Derived Data
   const availableOperators = useMemo(() =>
-    activeOperator.isSuperAdmin ? MOCK_OPERATORS : MOCK_OPERATORS.filter(op => op.clientId === activeOperator.clientId),
-    [activeOperator.clientId, activeOperator.isSuperAdmin]
+    activeOperator?.isSuperAdmin ? MOCK_OPERATORS : MOCK_OPERATORS.filter(op => op.clientId === activeOperator?.clientId),
+    [activeOperator?.clientId, activeOperator?.isSuperAdmin]
   );
 
   const myProfiles = useMemo(() =>
-    profiles.filter(p => p.operators.some(op => op.id === activeOperator.id && op.active)),
-    [profiles, activeOperator.id]
+    profiles.filter(p => p.operators.some(op => op.id === activeOperator?.id && op.active)),
+    [profiles, activeOperator?.id]
   );
 
   const myProfileIds = useMemo(() => myProfiles.map(p => p.id), [myProfiles]);
 
   const allAgencyProfiles = useMemo(() =>
-    activeOperator.isSuperAdmin ? profiles : profiles.filter(p => p.clientId === activeOperator.clientId),
-    [profiles, activeOperator.clientId, activeOperator.isSuperAdmin]
+    activeOperator?.isSuperAdmin ? profiles : profiles.filter(p => p.clientId === activeOperator?.clientId),
+    [profiles, activeOperator?.clientId, activeOperator?.isSuperAdmin]
   );
 
   const activeProfile = useMemo(() =>
@@ -210,7 +287,7 @@ function App() {
       ...prev,
       [selectedChat.from]: [
         ...(prev[selectedChat.from] || []),
-        { id: Date.now(), text: internalNote, author: activeOperator.name, timestamp: new Date().toLocaleString() }
+        { id: Date.now(), text: internalNote, author: activeOperator?.name || 'Operator', timestamp: new Date().toLocaleString() }
       ]
     }));
     setInternalNote('');
@@ -218,7 +295,7 @@ function App() {
 
   const totalUnread = useMemo(() =>
     messages.filter(msg =>
-      (activeOperator.isModel ? msg.profileId === 'p-04' : myProfileIds.includes(msg.profileId)) &&
+      (activeOperator?.isModel ? msg.profileId === 'p-04' : myProfileIds.includes(msg.profileId)) &&
       msg.status === 'unread'
     ).length,
     [messages, myProfileIds, activeOperator]
@@ -492,7 +569,7 @@ function App() {
               {availableOperators.map(o => <option key={o.id} value={o.id} style={{ background: '#0a0a0a' }}>{o.name}</option>)}
             </select>
           </div>
-          {!activeOperator.isAdmin && !activeOperator.isSuperAdmin && (
+          {!activeOperator?.isAdmin && !activeOperator?.isSuperAdmin && (
             <>
               <div style={{ height: '32px', width: '1px', background: 'var(--card-border)' }} />
               <button
@@ -537,26 +614,26 @@ function App() {
         <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1.5rem', marginRight: '-0.5rem', paddingRight: '0.5rem' }} className="custom-scrollbar">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2.5rem' }}>
           {[
-            ...(activeOperator.isSuperAdmin ? [
+            ...(activeOperator?.isSuperAdmin ? [
               { id: 'infra', icon: HardDrive, label: 'Infrastructure' },
               { id: 'agencies', icon: Building2, label: 'Agencies' },
               { id: 'permissions', icon: Shield, label: 'Permissions' },
               { id: 'plans', icon: CreditCard, label: 'Subscriptions' },
               { id: 'features', icon: Zap, label: 'Global Features' }
             ] : [
-              ...(activeOperator.isAdmin ? [
+              ...(activeOperator?.isAdmin ? [
                 { id: 'hierarchy', icon: Users, label: 'Hierarchy' },
                 { id: 'plans', icon: CreditCard, label: 'Subscriptions' },
                 { id: 'analytics', icon: BarChart3, label: 'Reports' }
               ] : [
-                { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator.isModel ? 0 : totalUnread },
+                { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator?.isModel ? 0 : totalUnread },
                 { id: 'calendar', icon: Calendar, label: t('schedule') },
-                ...(activeOperator.isModel ? [] : [
+                ...(activeOperator?.isModel ? [] : [
                   { id: 'profiles', icon: Users, label: t('profiles') },
                   { id: 'web-profiles', icon: Globe, label: t('webProfiles') }
                 ]),
-                { id: 'device-setup', icon: SmartphoneIcon, label: 'Device Setup' },
-                ...(activeOperator.isModel ? [] : [{ id: 'activity', icon: Activity, label: t('auditLog') }])
+                { id: 'device-setup', icon: Smartphone, label: 'Device Setup' },
+                ...(activeOperator?.isModel ? [] : [{ id: 'activity', icon: Activity, label: t('auditLog') }])
               ]),
               { id: 'referrals', icon: Gift, label: t('referrals') || 'Doporučení' },
               { id: 'qa', icon: FileSearch, label: 'QA & Review' }
@@ -582,7 +659,7 @@ function App() {
         </div>
 
         {/* Profile (Girl) Switcher - Hidden for Models, Super Admin, AND Regional Managers/Admins */}
-        {!activeOperator.isModel && !activeOperator.isSuperAdmin && !activeOperator.isAdmin && (
+        {!activeOperator?.isModel && !activeOperator?.isSuperAdmin && !activeOperator?.isAdmin && (
           <div style={{ marginTop: '2.5rem', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>MY ASSIGNED GIRLS</div>
@@ -649,10 +726,10 @@ function App() {
         <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div className="glass-card" style={{ padding: '0.85rem', background: 'rgba(255,255,255,0.02)', borderColor: 'var(--card-border)', borderRadius: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{ width: '36px', height: '36px', background: 'rgba(59, 130, 246, 0.2)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'var(--accent-color)', fontSize: '0.7rem' }}>{activeOperator.avatar}</div>
+              <div style={{ width: '36px', height: '36px', background: 'rgba(59, 130, 246, 0.2)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'var(--accent-color)', fontSize: '0.7rem' }}>{activeOperator?.avatar}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activeOperator.name}</div>
-                <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{activeOperator.role}</div>
+                <div style={{ fontSize: '0.75rem', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activeOperator?.name}</div>
+                <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{activeOperator?.role}</div>
               </div>
               <div style={{ width: '6px', height: '6px', background: 'var(--success-color)', borderRadius: '50%' }}></div>
             </div>
@@ -1162,7 +1239,7 @@ function App() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
               <div>
                 <h2 style={{ fontSize: '2rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <SmartphoneIcon size={28} color="var(--accent-color)" /> {t('deviceSetup') || 'Device Setup Guide'}
+                  <Smartphone size={28} color="var(--accent-color)" /> {t('deviceSetup') || 'Device Setup Guide'}
                 </h2>
                 <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Propojte svůj telefon s platformou pro automatickou synchronizaci SMS a hovorů.</p>
               </div>
@@ -1225,7 +1302,7 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'hierarchy' && activeOperator.isAdmin && (
+        {activeTab === 'hierarchy' && activeOperator?.isAdmin && (
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
             <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Team Hierarchy</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>Overview of operators and their assigned model distribution.</p>
@@ -1397,7 +1474,7 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'analytics' && activeOperator.isAdmin && (
+        {activeTab === 'analytics' && activeOperator?.isAdmin && (
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1 }} className="fade-in">
             <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '2.5rem' }}>{t('agencyOverview')}</h2>
             
@@ -1523,7 +1600,7 @@ function App() {
                         </div>
                       </div>
                       <button
-                        onClick={() => toggleOperatorStatus(profile.id, activeOperator.id)}
+                        onClick={() => toggleOperatorStatus(profile.id, activeOperator?.id)}
                         className={`action-btn ${isMyProfile ? 'active' : ''}`}
                         style={{ background: isMyProfile ? 'rgba(239, 68, 68, 0.2)' : 'var(--accent-color)', color: isMyProfile ? 'var(--error-color)' : 'white' }}
                       >
@@ -1671,6 +1748,8 @@ function App() {
             )}
           </div>
         )}
+
+        {activeTab === 'qa' && <QAView t={t} />}
 
         {activeTab === 'infra' && activeOperator.isSuperAdmin && (
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
@@ -2178,7 +2257,7 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'qa' && activeOperator.isAdmin && (
+        {activeTab === 'qa' && (activeOperator.isAdmin || activeOperator.isSuperAdmin) && (
           <div style={{ padding: '3rem', height: '100%', overflowY: 'auto' }} className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
               <div>
@@ -2438,8 +2517,8 @@ function App() {
 
             <button 
               onClick={() => {
-                const title = encodeURIComponent(`[BUG] Issue reported by ${activeOperator.name}`);
-                const body = encodeURIComponent(`Operator: ${activeOperator.name}\nRole: ${activeOperator.role}\nClient: ${activeClient?.name || 'Super Admin'}\n\nDescription:\n${bugDescription}`);
+                const title = encodeURIComponent(`[BUG] Issue reported by ${activeOperator?.name || 'Unknown'}`);
+                const body = encodeURIComponent(`Operator: ${activeOperator?.name || 'Unknown'}\nRole: ${activeOperator?.role || 'Unknown'}\nClient: ${activeClient?.name || 'Super Admin'}\n\nDescription:\n${bugDescription}`);
                 window.open(`https://github.com/Zdenekdi/nexus-sync/issues/new?title=${title}&body=${body}`, '_blank');
                 setIsBugReportOpen(false);
                 setBugDescription('');
