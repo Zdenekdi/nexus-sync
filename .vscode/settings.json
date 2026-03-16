@@ -4,7 +4,8 @@
     "**/.git/**",
     "**/dist/**",
     "**/capacitor-android/**",
-    "**/node_modules/@capacitor/android/capacitor/**"
+    "**/node_modules/@capacitor/android/capacitor/**",
+    "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/node_modules/@capacitor/android/capacitor/**"
   ],
   "java.project.resourceFilters": [
     "node_modules",
