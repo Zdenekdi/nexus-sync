@@ -151,6 +151,8 @@ function App() {
 
   const [messages, setMessages] = useState(MOCK_MESSAGES);
   const [profiles, setProfiles] = useState(MOCK_PROFILES);
+  const [agencies, setAgencies] = useState(MOCK_AGENCIES);
+  const [operators, setOperators] = useState(MOCK_OPERATORS);
   const [activeTab, setActiveTab] = useState('inbox');
   const [activeProfileId, setActiveProfileId] = useState(MOCK_PROFILES[0].id);
   const [selectedChatId, setSelectedChatId] = useState(null);
@@ -192,6 +194,13 @@ function App() {
   const [sessionHistories] = useState({});
   const [isBugReportOpen, setIsBugReportOpen] = useState(false);
   const [bugDescription, setBugDescription] = useState('');
+
+  // Agency Management States
+  const [isAddAgencyModalOpen, setIsAddAgencyModalOpen] = useState(false);
+  const [newAgencyData, setNewAgencyData] = useState({ name: '', region: 'UK/Europe', tier: 'Professional' });
+  const [isAddOperatorModalOpen, setIsAddOperatorModalOpen] = useState(false);
+  const [targetAgencyId, setTargetAgencyId] = useState(null);
+  const [newOperatorData, setNewOperatorData] = useState({ name: '', role: 'Operator', email: '', password: 'password123' });
 
   // Handle Window Resize
   useEffect(() => {
@@ -249,6 +258,51 @@ function App() {
     useCallback((updatedMsg) => setMessages(prev => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m)), [])
   );
 
+  const addAgency = () => {
+    if (!newAgencyData.name) return;
+    const newAgency = {
+      id: `agency-${Date.now()}`,
+      name: newAgencyData.name,
+      region: newAgencyData.region,
+      tier: newAgencyData.tier,
+      status: 'active',
+      subscription: {
+        plan: newAgencyData.tier,
+        status: 'active',
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      },
+      features: {
+        ai_relay: true,
+        analytics: true,
+        enterprise_proxies: newAgencyData.tier === 'Enterprise',
+        multiUser: true,
+        customReports: newAgencyData.tier === 'Enterprise'
+      }
+    };
+    setAgencies(prev => [...prev, newAgency]);
+    setIsAddAgencyModalOpen(false);
+    setNewAgencyData({ name: '', region: 'UK/Europe', tier: 'Professional' });
+  };
+
+  const addOperator = () => {
+    if (!newOperatorData.name || !newOperatorData.email || !targetAgencyId) return;
+    const newOp = {
+      id: `op-${Date.now()}`,
+      name: newOperatorData.name,
+      role: newOperatorData.role,
+      clientId: targetAgencyId,
+      avatar: newOperatorData.name.split(' ').map(n => n[0]).join('').toUpperCase(),
+      email: newOperatorData.email,
+      password: newOperatorData.password,
+      metrics: { messages: 0, calls: 0, conversion: '0%' },
+      permissions: { qa: true, referrals: false }
+    };
+    setOperators(prev => [...prev, newOp]);
+    setIsAddOperatorModalOpen(false);
+    setNewOperatorData({ name: '', role: 'Operator', email: '', password: 'password123' });
+  };
+
   const t = (key) => {
     try {
       return (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || key || '';
@@ -259,8 +313,8 @@ function App() {
 
   // Memoized Derived Data
   const availableOperators = useMemo(() =>
-    activeOperator?.isSuperAdmin ? MOCK_OPERATORS : MOCK_OPERATORS.filter(op => op.clientId === activeOperator?.clientId),
-    [activeOperator?.clientId, activeOperator?.isSuperAdmin]
+    activeOperator?.isSuperAdmin ? operators : operators.filter(op => op.clientId === activeOperator?.clientId),
+    [activeOperator?.clientId, activeOperator?.isSuperAdmin, operators]
   );
 
   const myProfiles = useMemo(() =>
@@ -291,7 +345,7 @@ function App() {
   );
 
   const currentSmartReplies = useMemo(() => MOCK_SMART_REPLIES[lang] || [], [lang]);
-  const currentAgency = useMemo(() => activeClient || MOCK_AGENCIES[0], [activeClient]);
+  const currentAgency = useMemo(() => agencies.find(a => a.id === activeClient?.id) || agencies[0], [activeClient, agencies]);
 
   const toggleOperatorStatus = (profileId, operatorId) => {
     setProfiles(prev => prev.map(p => {
@@ -1139,63 +1193,68 @@ function App() {
                 <h2 style={{ fontSize: '2rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <Smartphone size={28} color="var(--accent-color)" /> {t('deviceSetup') || 'Device Setup Guide'}
                 </h2>
-                <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Propojte svůj telefon s platformou pro automatickou synchronizaci SMS a hovorů.</p>
+                <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Propojte svůj Android telefon pomocí aplikací z Google Play pro synchronizaci SMS a hovorů.</p>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 400px', gap: '2rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <div className="glass-card" style={{ padding: '2rem' }}>
-                  <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '1.5rem' }}>1. Instalace Aplikace</h3>
-                  <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', fontSize: '0.9rem' }}>
-                    Stáhněte si <strong>Nexus Connect</strong> pro Android z našeho privátního repozitáře. Aplikace vyžaduje oprávnění ke čtení SMS a správě hovorů pro správné fungování relé brány.
-                  </p>
-                  <button className="action-btn" style={{ width: 'auto', padding: '0.75rem 1.5rem', background: 'var(--accent-color)', color: 'white', fontWeight: '700', borderRadius: '12px', cursor: 'pointer', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1.5rem' }}>
-                    <HardDrive size={18} /> Stáhnout APK (v2.4.1)
-                  </button>
-                </div>
-
-                <div className="glass-card" style={{ padding: '2rem' }}>
-                  <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '1.5rem' }}>2. Konfigurace Zařízení</h3>
-                  <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-                    Zkopírujte tento konfigurační klíč do nastavení aplikace na vašem zařízení. Tento klíč je unikátní pro vaši agenturu a šifruje veškerou komunikaci.
-                  </p>
-                  <div style={{ position: 'relative' }}>
-                    <pre style={{ background: 'rgba(0,0,0,0.3)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--card-border)', color: 'var(--accent-color)', fontSize: '0.8rem', overflowX: 'auto' }}>
-                      {JSON.stringify({
-                        agencyId: activeOperator.clientId,
-                        operatorId: activeOperator.id,
-                        endpoint: "wss://relay.nexus.sync/v2",
-                        token: "eyJhY3RpdmUiOnRydWUsICJleHAiOiAxNzQxODU2MDAwfQ..."
-                      }, null, 2)}
-                    </pre>
-                    <button style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', padding: '0.4rem', borderRadius: '8px', cursor: 'pointer' }}>
-                      <Copy size={14} />
-                    </button>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '2rem' }}>
+              {/* SMS Setup */}
+              <div className="glass-card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{ width: '48px', height: '48px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <MessageSquare size={24} color="#3b82f6" />
                   </div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>1. Synchronizace SMS</h3>
+                </div>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
+                  Doporučujeme aplikaci <strong>SMS to URL</strong>. Je spolehlivá a nevyžaduje žádné složité nastavování.
+                </p>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <a href="https://play.google.com/store/apps/details?id=com.frisbe.sms_to_url" target="_blank" rel="noreferrer" className="action-btn" style={{ flex: 1, textDecoration: 'none', textAlign: 'center', background: '#3b82f6', color: 'white' }}>
+                    Google Play
+                  </a>
+                </div>
+                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#3b82f6', marginBottom: '0.5rem' }}>NASTAVENÍ URL (WEBHOOK)</div>
+                  <code style={{ fontSize: '0.8rem', wordBreak: 'break-all' }}>http://78.141.202.139:3001/api/device/mobile/sms</code>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <div className="glass-card" style={{ padding: '2rem', textAlign: 'center' }}>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '2rem' }}>RYCHLÉ PÁROVÁNÍ</h3>
-                  <div style={{ width: '200px', height: '200px', background: 'white', margin: '0 auto 1.5rem', padding: '15px', borderRadius: '12px' }}>
-                    {/* Mock QR Code */}
-                    <div style={{ width: '100%', height: '100%', background: 'repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 50% / 20px 20px' }}></div>
+              {/* Call Setup */}
+              <div className="glass-card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{ width: '48px', height: '48px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Phone size={24} color="#10b981" />
                   </div>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Naskenujte QR kód v aplikaci Nexus Connect pro okamžité nastavení.</p>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>2. Notifikace hovorů</h3>
                 </div>
-
-                <div className="glass-card" style={{ padding: '1.5rem', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                    <CheckCheck size={20} color="var(--success-color)" style={{ flexShrink: 0 }} />
-                    <div>
-                      <div style={{ fontWeight: '800', fontSize: '0.9rem', color: 'var(--success-color)', marginBottom: '0.4rem' }}>STATUS PŘIPOJENÍ</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Všechna relé jsou v pořádku. Latence: 24ms</div>
-                    </div>
-                  </div>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
+                  Pro logování hovorů použijte <strong>Automate</strong> nebo <strong>Tasker</strong>. Stačí nastavit HTTP požadavek při změně stavu hovoru.
+                </p>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <a href="https://play.google.com/store/apps/details?id=com.llamalab.automate" target="_blank" rel="noreferrer" className="action-btn" style={{ flex: 1, textDecoration: 'none', textAlign: 'center', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--card-border)' }}>
+                    Automate
+                  </a>
+                  <a href="https://play.google.com/store/apps/details?id=net.dinglisch.android.taskerm" target="_blank" rel="noreferrer" className="action-btn" style={{ flex: 1, textDecoration: 'none', textAlign: 'center', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--card-border)' }}>
+                    Tasker
+                  </a>
+                </div>
+                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#10b981', marginBottom: '0.5rem' }}>NASTAVENÍ URL (WEBHOOK)</div>
+                  <code style={{ fontSize: '0.8rem', wordBreak: 'break-all' }}>http://78.141.202.139:3001/api/device/mobile/call</code>
                 </div>
               </div>
+            </div>
+
+            <div className="glass-card" style={{ marginTop: '2rem', padding: '2rem' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <Zap size={20} color="var(--accent-color)" /> Proč tyto aplikace?
+              </h3>
+              <ul style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.8', paddingLeft: '1.5rem' }}>
+                <li><strong>Bezpečnost:</strong> Žádná z těchto aplikací neřeší explicitní obsah, jsou to čistě technické nástroje pro přenos dat.</li>
+                <li><strong>Stabilita:</strong> Fungují na pozadí a automaticky se spouští po restartu telefonu.</li>
+                <li><strong>Flexibilita:</strong> Můžete si nastavit přesně, která čísla se mají synchronizovat a která ne.</li>
+              </ul>
             </div>
           </div>
         )}
@@ -1736,7 +1795,13 @@ function App() {
                   <h3 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Building2 size={24} color="#8b5cf6" /> Portfolio & Subscription Manager
                   </h3>
-                  <button className="action-btn" style={{ width: 'auto', padding: '0.6rem 1.25rem' }}>+ Provision New Agency</button>
+                  <button 
+                    onClick={() => setIsAddAgencyModalOpen(true)}
+                    className="action-btn" 
+                    style={{ width: 'auto', padding: '0.6rem 1.25rem' }}
+                  >
+                    + Provision New Agency
+                  </button>
                 </div>
                 <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -1750,11 +1815,12 @@ function App() {
                       </tr>
                     </thead>
                     <tbody>
-                      {MOCK_AGENCIES.map((agency, i) => {
-                        const agencyProfilesCount = MOCK_PROFILES.filter(p => p.clientId === agency.id).length;
-                        const agencyOpsCount = MOCK_OPERATORS.filter(o => o.clientId === agency.id).length;
+                      {agencies.map((agency, i) => {
+                        const agencyProfilesCount = profiles.filter(p => p.clientId === agency.id).length;
+                        const agencyOps = operators.filter(o => o.clientId === agency.id);
+                        const agencyOpsCount = agencyOps.length;
                         return (
-                          <tr key={agency.id} style={{ borderBottom: i < MOCK_AGENCIES.length - 1 ? '1px solid var(--card-border)' : 'none' }}>
+                          <tr key={agency.id} style={{ borderBottom: i < agencies.length - 1 ? '1px solid var(--card-border)' : 'none' }}>
                             <td style={{ padding: '1.25rem 1.5rem' }}>
                               <div style={{ fontWeight: '700', fontSize: '1rem' }}>{agency.name}</div>
                               <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Region: {agency.region}</div>
@@ -1769,9 +1835,7 @@ function App() {
                             <td style={{ padding: '1.25rem 1.5rem' }}>
                               <div style={{ fontSize: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                                 {Object.entries(
-                                  MOCK_OPERATORS
-                                    .filter(o => o.clientId === agency.id)
-                                    .reduce((acc, current) => {
+                                  agencyOps.reduce((acc, current) => {
                                       acc[current.role] = (acc[current.role] || 0) + 1;
                                       return acc;
                                     }, {})
@@ -1781,6 +1845,15 @@ function App() {
                                   </span>
                                 ))}
                                 {agencyOpsCount === 0 && <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>No operators</span>}
+                                <button 
+                                  onClick={() => {
+                                    setTargetAgencyId(agency.id);
+                                    setIsAddOperatorModalOpen(true);
+                                  }}
+                                  style={{ background: 'transparent', border: 'none', color: 'var(--accent-color)', cursor: 'pointer', padding: 0 }}
+                                >
+                                  <Plus size={14} />
+                                </button>
                               </div>
                             </td>
                             <td style={{ padding: '1.25rem 1.5rem' }}>
@@ -1798,32 +1871,21 @@ function App() {
                               <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{agency.subscription.plan} Plan</div>
                               <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Next renewal: {agency.subscription.endDate}</div>
                             </td>
-                            <td style={{ padding: '1.25rem 1.5rem' }}>
-                              <div style={{ fontSize: '0.85rem' }}>{agencyOpsCount} Operator Seats</div>
-                              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.4rem' }}>
-                                <Shield size={14} color={agency.features.analytics ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)'} strokeWidth={3} />
-                                <Users size={14} color={agency.features.multiUser ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)'} strokeWidth={3} />
-                                <Globe size={14} color={agency.features.customReports ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)'} strokeWidth={3} />
-                              </div>
-                            </td>
                             <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <span style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)' }}>ACCESS</span>
-                                  <div 
-                                    onClick={() => {}} 
-                                    className={`toggle-switch ${agency.status !== 'suspended' ? 'active' : ''}`}
-                                    style={{ 
-                                      width: '32px', height: '16px', background: agency.status !== 'suspended' ? 'var(--success-color)' : 'rgba(239, 68, 68, 0.2)',
-                                      borderRadius: '20px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s'
-                                    }}
-                                  >
-                                    <div style={{ 
-                                      width: '10px', height: '10px', background: 'white', borderRadius: '50%',
-                                      position: 'absolute', top: '3px', left: agency.status !== 'suspended' ? '19px' : '3px', transition: 'all 0.3s'
-                                    }}></div>
-                                  </div>
-                                </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <button 
+                                  onClick={() => {
+                                    setAgencies(prev => prev.map(a => a.id === agency.id ? { ...a, status: a.status === 'suspended' ? 'active' : 'suspended' } : a));
+                                  }}
+                                  className="status-badge" 
+                                  style={{ 
+                                    background: agency.status !== 'suspended' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                    color: agency.status !== 'suspended' ? 'var(--success-color)' : 'var(--error-color)',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  {agency.status === 'suspended' ? 'UNSUSPEND' : 'SUSPEND'}
+                                </button>
                                 <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                                   {['ai_relay', 'enterprise_proxies', 'analytics'].map(f => (
                                     <button 
@@ -2384,6 +2446,109 @@ function App() {
             >
               Report to GitHub
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Provision New Agency Modal */}
+      {isAddAgencyModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', padding: '1rem' }}>
+          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: '900' }}>Provision Agency</h3>
+              <button onClick={() => setIsAddAgencyModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>AGENCY NAME</label>
+                <input 
+                  type="text" 
+                  value={newAgencyData.name} 
+                  onChange={e => setNewAgencyData({...newAgencyData, name: e.target.value})}
+                  placeholder="e.g. Diamond Stars UK"
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>REGION</label>
+                <select 
+                  value={newAgencyData.region} 
+                  onChange={e => setNewAgencyData({...newAgencyData, region: e.target.value})}
+                  style={{ width: '100%', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
+                >
+                  <option value="UK/Europe">UK/Europe</option>
+                  <option value="International">International</option>
+                  <option value="US/North America">US/North America</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>SUBSCRIPTION TIER</label>
+                <select 
+                  value={newAgencyData.tier} 
+                  onChange={e => setNewAgencyData({...newAgencyData, tier: e.target.value})}
+                  style={{ width: '100%', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
+                >
+                  <option value="Standard">Standard</option>
+                  <option value="Professional">Professional</option>
+                  <option value="Enterprise">Enterprise</option>
+                </select>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '2.5rem' }}>
+              <button onClick={() => setIsAddAgencyModalOpen(false)} style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid var(--card-border)', color: 'white', borderRadius: '12px', fontWeight: '700' }}>Cancel</button>
+              <button onClick={addAgency} className="action-btn" style={{ flex: 1, background: 'var(--accent-color)', color: 'white', fontWeight: '800' }}>Provision</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Operator Modal */}
+      {isAddOperatorModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', padding: '1rem' }}>
+          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: '900' }}>Add Team Member</h3>
+              <button onClick={() => setIsAddOperatorModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>FULL NAME</label>
+                <input 
+                  type="text" 
+                  value={newOperatorData.name} 
+                  onChange={e => setNewOperatorData({...newOperatorData, name: e.target.value})}
+                  placeholder="e.g. John Doe"
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>EMAIL ADDRESS</label>
+                <input 
+                  type="email" 
+                  value={newOperatorData.email} 
+                  onChange={e => setNewOperatorData({...newOperatorData, email: e.target.value})}
+                  placeholder="operator@nexus.sync"
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>ASSIGN ROLE</label>
+                <select 
+                  value={newOperatorData.role} 
+                  onChange={e => setNewOperatorData({...newOperatorData, role: e.target.value})}
+                  style={{ width: '100%', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
+                >
+                  <option value="Operator">Operator</option>
+                  <option value="Senior Operator">Senior Operator</option>
+                  <option value="Manager">Regional Manager</option>
+                  <option value="Admin">Agency Admin</option>
+                </select>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '2.5rem' }}>
+              <button onClick={() => setIsAddOperatorModalOpen(false)} style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid var(--card-border)', color: 'white', borderRadius: '12px', fontWeight: '700' }}>Cancel</button>
+              <button onClick={addOperator} className="action-btn" style={{ flex: 1, background: 'var(--accent-color)', color: 'white', fontWeight: '800' }}>Add to Team</button>
+            </div>
           </div>
         </div>
       )}
