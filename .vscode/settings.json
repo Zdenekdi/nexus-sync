@@ -1,0 +1,25 @@
+{
+  "java.import.exclusions": [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/dist/**",
+    "**/capacitor-android/**",
+    "**/node_modules/@capacitor/android/capacitor/**"
+  ],
+  "java.project.resourceFilters": [
+    "node_modules",
+    ".git",
+    "dist"
+  ],
+  "java.autobuild.enabled": false,
+  "files.exclude": {
+    "**/node_modules/@capacitor/android/capacitor": true,
+    "**/node_modules": true,
+    "**/.project": true,
+    "**/.settings": true,
+    "**/.classpath": true
+  },
+  "search.exclude": {
+    "**/node_modules": true
+  }
+}
