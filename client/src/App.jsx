@@ -824,18 +824,19 @@ function App() {
               top: 0;
               height: 100vh;
               width: 280px;
-              z-index: 2000;
+              z-index: 9500 !important;
               transform: translateX(-100%);
               transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-              background: rgba(5, 7, 10, 0.95) !important;
-              backdrop-filter: blur(20px) !important;
-              box-shadow: 15px 0 40px rgba(0,0,0,0.6);
+              background: rgba(5, 7, 10, 0.98) !important;
+              backdrop-filter: blur(25px) !important;
+              box-shadow: 15px 0 50px rgba(0,0,0,0.8);
             }
           .desktop-sidebar.open {
             transform: translateX(0);
           }
           .main-content {
             margin-left: 0 !important;
+            padding-top: 60px !important;
           }
           .mobile-header {
             display: flex !important;
@@ -878,10 +879,10 @@ function App() {
         left: 0, 
         right: 0, 
         height: '60px', 
-        background: 'rgba(5,7,10,0.8)', 
+        background: 'rgba(5,7,10,0.95)', 
         backdropFilter: 'blur(20px)', 
         borderBottom: '1px solid var(--card-border)', 
-        zIndex: 1500,
+        zIndex: 9000,
         alignItems: 'center',
         padding: '0 1.5rem',
         justifyContent: 'space-between'
@@ -902,7 +903,7 @@ function App() {
       {isMobile && isMobileMenuOpen && (
         <div 
           onClick={() => setIsMobileMenuOpen(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1999 }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9499 }}
         />
       )}
 
