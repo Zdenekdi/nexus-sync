@@ -815,7 +815,7 @@ function App() {
 
   // Debugging: Incremental re-enablement
   return (
-      <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: 'var(--bg-color)', color: 'white', position: 'relative' }}>
+      <div className="mobile-container" style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: 'var(--bg-color)', color: 'white', position: 'relative' }}>
         <style dangerouslySetInnerHTML={{ __html: `
           @media (max-width: 768px) {
             .desktop-sidebar {
@@ -837,6 +837,20 @@ function App() {
           .main-content {
             margin-left: 0 !important;
             padding-top: 60px !important;
+            height: auto !important;
+            min-height: calc(100vh - 60px);
+            overflow-y: visible !important;
+          }
+          body, html, #root {
+            overflow-x: hidden !important;
+            height: auto !important;
+            min-height: 100%;
+          }
+          .mobile-container {
+            height: auto !important;
+            min-height: 100vh;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
           }
           .mobile-header {
             display: flex !important;
@@ -1161,9 +1175,9 @@ function App() {
         flex: 1, 
         display: 'flex', 
         flexDirection: 'column', 
-        height: '100vh', 
+        height: isMobile ? 'auto' : '100vh', 
         minWidth: 0, 
-        overflow: 'hidden',
+        overflow: isMobile ? 'visible' : 'hidden',
         paddingTop: isMobile ? '60px' : 0
       }}>
         {activeTab === 'dashboard' && (
