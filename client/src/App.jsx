@@ -150,13 +150,21 @@ function App() {
   const [activeOperator, setActiveOperator] = useState(() => {
     try {
       const saved = localStorage.getItem('nexus_activeOperator');
-      return (saved && saved !== 'undefined') ? JSON.parse(saved) : MOCK_OPERATORS[0];
+      if (saved && saved !== 'undefined' && saved !== 'null') {
+        const parsed = JSON.parse(saved);
+        if (parsed) return parsed;
+      }
+      return MOCK_OPERATORS[0];
     } catch { return MOCK_OPERATORS[0]; }
   });
   const [activeClient, setActiveClient] = useState(() => {
     try {
       const saved = localStorage.getItem('nexus_activeClient');
-      return (saved && saved !== 'undefined') ? JSON.parse(saved) : MOCK_CLIENTS[0];
+      if (saved && saved !== 'undefined' && saved !== 'null') {
+        const parsed = JSON.parse(saved);
+        if (parsed) return parsed;
+      }
+      return MOCK_CLIENTS[0];
     } catch { return MOCK_CLIENTS[0]; }
   });
 
@@ -569,7 +577,7 @@ function App() {
               {availableOperators.map(o => <option key={o.id} value={o.id} style={{ background: '#0a0a0a' }}>{o.name}</option>)}
             </select>
           </div>
-          {!activeOperator?.isAdmin && !activeOperator?.isSuperAdmin && (
+          {activeOperator?.isAdmin || activeOperator?.isSuperAdmin ? null : (
             <>
               <div style={{ height: '32px', width: '1px', background: 'var(--card-border)' }} />
               <button
@@ -1714,7 +1722,7 @@ function App() {
               )}
             </div>
 
-            {activeOperator.isAdmin && !activeOperator.isSuperAdmin && (
+            {activeOperator?.isAdmin && !activeOperator?.isSuperAdmin && (
               <div className="glass-card" style={{ padding: '2rem', marginTop: '3rem' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '2rem' }}>Operator Daily Performance</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -1751,7 +1759,7 @@ function App() {
 
         {activeTab === 'qa' && <QAView t={t} />}
 
-        {activeTab === 'infra' && activeOperator.isSuperAdmin && (
+        {activeTab === 'infra' && activeOperator?.isSuperAdmin && (
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
             <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Infrastructure Control</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>Global oversight of system health and core service stability.</p>
@@ -1815,7 +1823,7 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'agencies' && activeOperator.isSuperAdmin && (
+        {activeTab === 'agencies' && activeOperator?.isSuperAdmin && (
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
             <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #8b5cf6, #d946ef)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Agency Management</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>Portfolio oversight, subscription management, and agency access controls.</p>
@@ -1950,7 +1958,7 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'features' && activeOperator.isSuperAdmin && (
+        {activeTab === 'features' && activeOperator?.isSuperAdmin && (
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
             <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #f59e0b, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Global Feature Provisioning</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>Master control for system capabilities and enterprise-wide modules.</p>
@@ -2073,7 +2081,7 @@ function App() {
         )}
 
         {/* Permissions Dashboard (Phase 3) */}
-        {activeTab === 'permissions' && activeOperator.isSuperAdmin && (
+        {activeTab === 'permissions' && activeOperator?.isSuperAdmin && (
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
             <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #3b82f6, #10b981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Role Permissions</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>Manage granular access levels and capabilities for each system role.</p>
@@ -2132,7 +2140,7 @@ function App() {
         )}
 
         {/* Subscription Plans (Phase 4/9) */}
-        {activeTab === 'plans' && (activeOperator.isSuperAdmin || activeOperator.isAdmin) && (
+        {activeTab === 'plans' && (activeOperator?.isSuperAdmin || activeOperator?.isAdmin) && (
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem' }}>
               <div>
@@ -2257,7 +2265,7 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'qa' && (activeOperator.isAdmin || activeOperator.isSuperAdmin) && (
+        {activeTab === 'qa' && (activeOperator?.isAdmin || activeOperator?.isSuperAdmin) && (
           <div style={{ padding: '3rem', height: '100%', overflowY: 'auto' }} className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
               <div>
@@ -2328,9 +2336,9 @@ function App() {
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>CLIENT / GIRL</label>
                 <div style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', display: 'flex', gap: '1rem' }}>
-                   <div style={{ fontWeight: '700' }}>{selectedChat.from}</div>
+                   <div style={{ fontWeight: '700' }}>{selectedChat?.from || 'Unknown Client'}</div>
                    <div style={{ color: 'var(--text-secondary)' }}>→</div>
-                   <div style={{ fontWeight: '700', color: 'var(--accent-color)' }}>{activeProfile?.name}</div>
+                   <div style={{ fontWeight: '700', color: 'var(--accent-color)' }}>{activeProfile?.name || 'Unknown Profile'}</div>
                 </div>
               </div>
 
