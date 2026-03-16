@@ -5,6 +5,7 @@ Welcome to the **Nexus Hub (AW Nexus)** – the central point for profile manage
 ---
 
 ## 1. Role-Specific Dashboards
+
 Upon logging in, the system automatically detects your role and displays a customized home page (Dashboard):
 
 - **Super Admin**: Global network overview, total revenue, number of active nodes, and infrastructure health.
@@ -17,9 +18,10 @@ Upon logging in, the system automatically detects your role and displays a custo
 ---
 
 ## 2. Authentication (Login Screen)
+
 The demo begins with a premium login screen featuring simulated security authentication.
 
-#### Demo Credentials
+### Demo Credentials
 
 | Role | Email | Password |
 | :--- | :--- | :--- |
@@ -32,6 +34,7 @@ The demo begins with a premium login screen featuring simulated security authent
 ---
 
 ## 3. Inbox & AI Suggestions
+
 The primary module for client communication.
 
 - **Unified Inbox**: All messages from AdultWork, SMS, and Telegram in one place.
@@ -41,6 +44,7 @@ The primary module for client communication.
 ---
 
 ## 4. Device Activation (Device Setup)
+
 Nexus Hub allows connection to a real Android phone for data synchronization.
 
 - **SMS Forwarding**: We recommend the **SMS Forwarder (by Enstone)** app from Google Play. It forwards SMS messages directly to the system via Webhook.
