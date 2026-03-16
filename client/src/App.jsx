@@ -72,7 +72,7 @@ const QAView = ({ t, messages = [], clientNotes = {} }) => {
   );
 };
 
-const DashboardHome = ({ user, t, stats = {}, agencies = [], operators = [], profiles = [], calendar = [] }) => {
+const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [] }) => {
   const isMobile = window.innerWidth < 768;
   
   const renderSuperAdmin = () => (
@@ -428,11 +428,6 @@ function App() {
   });
   const [bookingSchedule, setBookingSchedule] = useState(MOCK_CALENDAR.events);
   const [bookingCollision, setBookingCollision] = useState(null);
-  const [rolePermissions, setRolePermissions] = useState(MOCK_PERMISSIONS);
-  const [subscriptionPlans] = useState(MOCK_PLANS);
-  const [activeMarket, setActiveMarket] = useState('EU');
-  const [showOnlyOnline, setShowOnlyOnline] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
   const [internalNote, setInternalNote] = useState('');
   const [clientNotes, setClientNotes] = useState({});
   const [activeContextTab, setActiveContextTab] = useState('note');
@@ -508,7 +503,7 @@ function App() {
     useCallback((updatedMsg) => setMessages(prev => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m)), [])
   );
 
-  const addAgency = () => {
+  const addAgency = useCallback(() => {
     if (!newAgencyData.name) return;
     const newAgency = {
       id: `agency-${Date.now()}`,
@@ -533,7 +528,7 @@ function App() {
     setAgencies(prev => [...prev, newAgency]);
     setIsAddAgencyModalOpen(false);
     setNewAgencyData({ name: '', region: 'UK/Europe', tier: 'Professional' });
-  };
+  }, [newAgencyData]);
 
   const deleteAgency = (id) => {
     if (window.confirm('Are you sure you want to PERMANENTLY delete this agency and all its team members? This action cannot be undone.')) {
@@ -543,7 +538,7 @@ function App() {
     }
   };
 
-  const addOperator = () => {
+  const addOperator = useCallback(() => {
     if (!newOperatorData.name || !newOperatorData.email || !targetAgencyId) return;
     
     // Auto-generate password if not manually provided
@@ -571,7 +566,7 @@ function App() {
     alert(`${t('emailSentNotification')} ${newOp.email}\n\nTemp Password: ${finalPassword}`);
 
     setNewOperatorData({ name: '', role: 'Operator', email: '', password: 'password123' });
-  };
+  }, [newOperatorData, targetAgencyId, t]);
 
   const deleteOperator = (id) => {
     if (window.confirm('Remove this team member?')) {
@@ -620,7 +615,6 @@ function App() {
     [filteredMessages, selectedChatId]
   );
 
-  const currentSmartReplies = useMemo(() => MOCK_SMART_REPLIES[lang] || [], [lang]);
   const currentAgency = useMemo(() => agencies.find(a => a.id === activeClient?.id) || agencies[0], [activeClient, agencies]);
 
   const toggleOperatorStatus = (profileId, operatorId) => {
@@ -637,7 +631,7 @@ function App() {
     }));
   };
 
-  const handleSaveNote = () => {
+  const handleSaveNote = useCallback(() => {
     if (!internalNote.trim() || !selectedChat?.from) return;
     setClientNotes(prev => ({
       ...prev,
@@ -647,7 +641,7 @@ function App() {
       ]
     }));
     setInternalNote('');
-  };
+  }, [internalNote, selectedChat, activeOperator]);
 
   const totalUnread = useMemo(() =>
     messages?.filter(msg =>
@@ -661,40 +655,33 @@ function App() {
     return messages.filter(msg => msg.profileId === profileId && msg.status === 'unread').length;
   };
 
-  const activeChat = useMemo(() => {
-    if (!selectedChat) return null;
-    const profile = allAgencyProfiles.find(p => p.id === selectedChat.profileId);
-    const client = MOCK_CLIENTS.find(c => c.id === profile?.clientId);
-    return { ...selectedChat, client };
-  }, [selectedChat, allAgencyProfiles]);
-
-  const startCall = () => {
+  const startCall = useCallback(() => {
     if (!activeProfile) return;
     setActiveCall({ status: 'connecting', startTime: Date.now(), caller: selectedChat?.from || activeProfile.name });
     setTimeout(() => {
       setActiveCall({ status: 'active', startTime: Date.now(), caller: selectedChat?.from || activeProfile.name });
     }, 2000);
-  };
+  }, [activeProfile, selectedChat]);
 
-  const simulateIncomingCall = () => {
+  const simulateIncomingCall = useCallback(() => {
     const randomProfile = myProfiles[Math.floor(Math.random() * myProfiles.length)] || profiles[0];
     setIncomingCall({
       profileId: randomProfile.id,
       profileName: randomProfile.name,
       caller: '+44 7700 900' + Math.floor(100 + Math.random() * 900)
     });
-  };
+  }, [myProfiles, profiles]);
 
-  const acceptCall = () => {
+  const acceptCall = useCallback(() => {
     const caller = incomingCall.caller;
     setIncomingCall(null);
     setActiveCall({ status: 'active', startTime: Date.now(), caller });
-  };
+  }, [incomingCall]);
 
-  const endCall = () => setActiveCall(null);
+  const endCall = useCallback(() => setActiveCall(null), []);
   const formatTime = (s) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 
-  const handleSyncAll = () => {
+  const handleSyncAll = useCallback(() => {
     setIsSyncing(true);
     setSyncProgress(0);
     setSyncStatus({ aw: 'syncing', ege: 'syncing', tpb: 'syncing' });
@@ -710,36 +697,18 @@ function App() {
         setSyncStatus({ aw: 'synced', ege: 'synced', tpb: 'synced' });
       }
     }, 150);
-  };
+  }, []);
 
-  const handleSendMessage = useCallback((val) => {
-    const text = typeof val === 'string' ? val : messageValue;
-    if (!text.trim() || !selectedChat?.id) return;
-    const newMessage = {
-      id: Date.now(),
-      text: text,
-      from: 'me',
-      time: 'Just now',
-      profileId: activeProfileId
-    };
-    setMessages(prev => [...prev, newMessage]);
-    if (typeof val === 'string') {
-      // automated reply etc
-    } else {
-      setMessageValue('');
-    }
-  }, [selectedChat?.id, activeProfileId, messageValue]);
-
-  const handleTranslate = () => {
+  const handleTranslate = useCallback(() => {
     if (!sourceText.trim()) return;
     setIsTranslating(true);
     setTimeout(() => {
       setTranslatedText(`[${t('poweredByAi')}]: ${sourceText}`);
       setIsTranslating(false);
     }, 1200);
-  };
+  }, [sourceText, t]);
 
-  const handleConfirmBooking = () => {
+  const handleConfirmBooking = useCallback(() => {
     const newEvent = {
         time: `${bookingDetails.time} ${parseInt(bookingDetails.time) >= 12 ? 'PM' : 'AM'}`,
         duration: `${parseInt(bookingDetails.duration) / 60}h`,
@@ -747,11 +716,11 @@ function App() {
         status: 'busy',
         type: bookingDetails.type
     };
-    setBookingSchedule([...bookingSchedule, newEvent]);
+    setBookingSchedule(prev => [...prev, newEvent]);
     setIsBookingModalOpen(false);
-  };
+  }, [bookingDetails, selectedChat, bookingSchedule]);
 
-  const handleLogin = (user) => {
+  const handleLogin = useCallback((user) => {
     const client = MOCK_CLIENTS.find(c => c.id === user.clientId) || null;
     setActiveOperator(user);
     setActiveClient(client);
@@ -764,14 +733,14 @@ function App() {
     }
 
     setActiveTab('dashboard');
-  };
+  }, []);
 
-  const handleResetRequired = (user) => {
+  const handleResetRequired = useCallback((user) => {
     setTempUser(user);
     setShowResetPassword(true);
-  };
+  }, []);
 
-  const handleResetComplete = (newPassword) => {
+  const handleResetComplete = useCallback((newPassword) => {
     if (!tempUser) return;
     
     // Update operators state with new password and clear flag
@@ -786,16 +755,16 @@ function App() {
     
     setShowResetPassword(false);
     setTempUser(null);
-  };
+  }, [tempUser, operators, handleLogin]);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     setIsLoggedIn(false);
     setActiveProfileId(null);
     setSelectedChatId(null);
     localStorage.removeItem('nexus_isLoggedIn');
     localStorage.removeItem('nexus_activeOperator');
     localStorage.removeItem('nexus_activeClient');
-  };
+  }, []);
 
   if (!isLoggedIn) {
     if (showResetPassword) {
@@ -1184,9 +1153,7 @@ function App() {
           <DashboardHome 
             user={activeOperator} 
             t={t} 
-            stats={MOCK_STATS} 
             agencies={agencies} 
-            operators={operators} 
             profiles={profiles}
             calendar={bookingSchedule}
           />
