@@ -247,6 +247,12 @@ export const TRANSLATIONS = {
         operatorPerformance: 'Operator Daily Performance',
         calls: 'Calls',
         convRate: 'Conv. Rate',
+        smsGuideTitle: 'SMS Forwarding Setup Guide',
+        smsStep1: '1. Install "SMS Forwarder" from Google Play Store.',
+        smsStep2: '2. Create a new "Filter" in the app for incoming messages.',
+        smsStep3: '3. Add a "Recipient" of type "Webhook / HTTP request".',
+        smsStep4: '4. Paste the Webhook URL into the Target URL field.',
+        smsStep5: '5. Save and send a test message to verify the link.',
     },
     cz: {
         logo: 'NEXUS',
@@ -494,5 +500,11 @@ export const TRANSLATIONS = {
         operatorPerformance: 'Denní výkon operátora',
         calls: 'Hovory',
         convRate: 'Míra konv.',
+        smsGuideTitle: 'Podrobný návod k nastavení SMS',
+        smsStep1: '1. Nainstalujte si "SMS Forwarder" z Google Play.',
+        smsStep2: '2. Vytvořte v aplikaci nový "Filtr" pro příchozí zprávy.',
+        smsStep3: '3. Přidejte "Příjemce" typu "Webhook / HTTP request".',
+        smsStep4: '4. Vložte Webhook URL do pole pro cílovou adresu.',
+        smsStep5: '5. Uložte a odešlete testovací zprávu pro ověření.',
     }
 };

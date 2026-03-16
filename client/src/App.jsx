@@ -1584,6 +1584,18 @@ function App() {
                   <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#3b82f6', marginBottom: '0.5rem' }}>{t('webhookLabel')}</div>
                   <code style={{ fontSize: '0.8rem', wordBreak: 'break-all' }}>http://78.141.202.139:3001/api/device/mobile/sms</code>
                 </div>
+
+                <div style={{ marginTop: '0.5rem', borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem' }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: '800', marginBottom: '1rem', color: 'var(--accent-color)' }}>{t('smsGuideTitle')}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {[1, 2, 3, 4, 5].map(step => (
+                      <div key={step} style={{ display: 'flex', gap: '0.75rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        <div style={{ minWidth: '18px', height: '18px', background: 'rgba(59, 130, 246, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: '800', color: '#3b82f6' }}>{step}</div>
+                        <div>{t(`smsStep${step}`).substring(3)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               {/* Call Setup */}
