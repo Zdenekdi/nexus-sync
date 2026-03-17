@@ -128,6 +128,8 @@ function App() {
   const [targetLang, setTargetLang] = useState('en');
   const [messageValue, setMessageValue] = useState('');
   const [sessionHistories] = useState({});
+  const [isBugReportOpen, setIsBugReportOpen] = useState(false);
+  const [bugDescription, setBugDescription] = useState('');
   const [showOnlyOnline, setShowOnlyOnline] = useState(false);
 
   // Agency Management States
@@ -2386,6 +2388,66 @@ function App() {
         .toggle-switch.active { box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
         .toggle-switch:hover { border-color: var(--accent-color) !important; }
       `}</style>
+      
+      {/* Floating Bug Button */}
+      {!isBugReportOpen && (
+        <button 
+          onClick={() => setIsBugReportOpen(true)}
+          style={{ 
+            position: 'fixed', bottom: '2rem', right: '2rem', width: '50px', height: '50px', 
+            borderRadius: '50%', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 1000,
+            boxShadow: '0 10px 30px rgba(239, 68, 68, 0.3)', transition: 'all 0.3s'
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'; }}
+        >
+          <Bug size={ 24 } color="#ef4444" />
+        </button>
+      )}
+
+      {/* Bug Report Modal */}
+      {isBugReportOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '500px', padding: '2.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <Bug size={24} color="#ef4444" /> {t('reportBugTitle')}
+              </h2>
+              <button onClick={() => setIsBugReportOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={24} /></button>
+            </div>
+            
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+              {t('bugReportSubtitle')}
+            </p>
+
+            <textarea 
+              value={bugDescription}
+              onChange={(e) => setBugDescription(e.target.value)}
+              placeholder={t('bugPlaceholder')}
+              style={{ 
+                width: '100%', height: '150px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)',
+                borderRadius: '12px', padding: '1rem', color: 'white', fontSize: '0.9rem', resize: 'none', marginBottom: '1.5rem',
+                outline: 'none'
+              }}
+            />
+
+            <button 
+              onClick={() => {
+                const title = encodeURIComponent(`[BUG] Issue reported by ${activeOperator?.name || 'Unknown'}`);
+                const body = encodeURIComponent(`Operator: ${activeOperator?.name || 'Unknown'}\nRole: ${activeOperator?.role || 'Unknown'}\nClient: ${activeClient?.name || 'Super Admin'}\n\nDescription:\n${bugDescription}`);
+                window.open(`https://github.com/Zdenekdi/nexus-sync/issues/new?title=${title}&body=${body}`, '_blank');
+                setIsBugReportOpen(false);
+                setBugDescription('');
+              }}
+              className="action-btn"
+              style={{ background: 'var(--accent-color)', color: 'white', fontWeight: '800' }}
+            >
+              {t('reportToGithub')}
+            </button>
+          </div>
+        </div>
+      )}
       
 
       {/* Provision New Agency Modal */}
