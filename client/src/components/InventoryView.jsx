@@ -10,13 +10,24 @@ import {
   CheckCircle2, 
   XCircle,
   RefreshCw,
-  MoreVertical
+  MoreVertical,
+  Minus,
+  Check,
+  X
 } from 'lucide-react';
 
 const InventoryView = ({ t }) => {
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAddingLocation, setIsAddingLocation] = useState(false);
+  const [newLocationName, setNewLocationName] = useState('');
   
+  // Locations State
+  const [locations, setLocations] = useState([
+    { id: 'warehouse', labelKey: 'warehouse' },
+    { id: 'officeMain', labelKey: 'officeMain' }
+  ]);
+
   // Mock Data
   const [inventoryItems, setInventoryItems] = useState([
     { id: 1, name: 'SIM Card - UK EE', quantity: 150, threshold: 50, location: 'warehouse', lastUpdated: '2024-03-15' },
@@ -25,6 +36,15 @@ const InventoryView = ({ t }) => {
     { id: 4, name: 'Phone - Samsung A54', quantity: 3, threshold: 5, location: 'officeMain', lastUpdated: '2024-03-17' },
     { id: 5, name: 'SIM Card - FR Orange', quantity: 0, threshold: 20, location: 'officeMain', lastUpdated: '2024-03-17' },
   ]);
+
+  const handleAddLocation = () => {
+    if (newLocationName.trim()) {
+      const newId = newLocationName.toLowerCase().replace(/\s+/g, '-');
+      setLocations(prev => [...prev, { id: newId, label: newLocationName }]);
+      setNewLocationName('');
+      setIsAddingLocation(false);
+    }
+  };
 
   const filteredItems = useMemo(() => {
     return inventoryItems.filter(item => {
@@ -56,6 +76,11 @@ const InventoryView = ({ t }) => {
     return t.inStock;
   };
 
+  const getLocLabel = (loc) => {
+    if (loc.labelKey) return t[loc.labelKey];
+    return loc.label;
+  };
+
   return (
     <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
       {/* Header */}
@@ -68,32 +93,62 @@ const InventoryView = ({ t }) => {
         </div>
         
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <div style={{ position: 'relative' }}>
-            <MapPin size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-            <select
-              value={selectedLocation}
-              onChange={(e) => setSelectedLocation(e.target.value)}
-              style={{
-                padding: '0.6rem 2.5rem 0.6rem 2.5rem',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid var(--card-border)',
-                borderRadius: '10px',
-                color: 'white',
-                fontSize: '0.9rem',
-                appearance: 'none',
-                cursor: 'pointer',
-                minWidth: '180px'
-              }}
-            >
-              <option value="all">{t.allLocations}</option>
-              <option value="warehouse">{t.warehouse}</option>
-              <option value="officeMain">{t.officeMain}</option>
-            </select>
-            <ChevronDown size={14} color="var(--text-secondary)" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-          </div>
+          {isAddingLocation ? (
+            <div className="glass-card" style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', animation: 'fadeIn 0.2s ease' }}>
+              <input
+                type="text"
+                autoFocus
+                placeholder={t.locationNamePlaceholder}
+                value={newLocationName}
+                onChange={(e) => setNewLocationName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddLocation()}
+                style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '0.85rem', outline: 'none', width: '150px' }}
+              />
+              <button onClick={handleAddLocation} style={{ background: 'var(--success-color)', border: 'none', borderRadius: '4px', color: 'white', padding: '2px', cursor: 'pointer' }}>
+                <Check size={14} />
+              </button>
+              <button onClick={() => setIsAddingLocation(false)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '4px', color: 'white', padding: '2px', cursor: 'pointer' }}>
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ position: 'relative' }}>
+                <MapPin size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                <select
+                  value={selectedLocation}
+                  onChange={(e) => setSelectedLocation(e.target.value)}
+                  style={{
+                    padding: '0.6rem 2.5rem 0.6rem 2.5rem',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid var(--card-border)',
+                    borderRadius: '10px',
+                    color: 'white',
+                    fontSize: '0.9rem',
+                    appearance: 'none',
+                    cursor: 'pointer',
+                    minWidth: '180px'
+                  }}
+                >
+                  <option value="all">{t.allLocations}</option>
+                  {locations.map(loc => (
+                    <option key={loc.id} value={loc.id}>{getLocLabel(loc)}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} color="var(--text-secondary)" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+              </div>
+              <button 
+                onClick={() => setIsAddingLocation(true)}
+                title={t.addLocation}
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.6rem', borderRadius: '10px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Plus size={18} />
+              </button>
+            </div>
+          )}
           
-          <button className="action-btn" style={{ marginTop: 0, width: 'auto', padding: '0.6rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Plus size={18} /> {t.addStockItem}
+          <button className="action-btn" style={{ marginTop: 0, width: 'auto', padding: '0.6rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--accent-color)', borderRadius: '10px', fontWeight: '700' }}>
+            <Plus size={18} style={{ strokeWidth: 3 }} /> {t.addStockItem}
           </button>
         </div>
       </div>
@@ -197,7 +252,10 @@ const InventoryView = ({ t }) => {
                   <td style={{ padding: '1.25rem 1.5rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                       <MapPin size={14} />
-                      {t[item.location]}
+                      {(() => {
+                        const loc = locations.find(l => l.id === item.location);
+                        return loc ? getLocLabel(loc) : item.location;
+                      })()}
                     </div>
                   </td>
                   <td style={{ padding: '1.25rem 1.5rem', textAlign: 'center' }}>
@@ -253,6 +311,10 @@ const InventoryView = ({ t }) => {
       <style>{`
         .table-row-hover:hover {
           background: rgba(255,255,255,0.03) !important;
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-5px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </div>

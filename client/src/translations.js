@@ -359,7 +359,11 @@ export const TRANSLATIONS = {
         lowStockItems: 'Low Stock Items',
         outOfStockItems: 'Out of Stock Items',
         lastUpdated: 'Last Updated',
-        updateStock: 'Update Stock'
+        updateStock: 'Update Stock',
+        addLocation: 'Add Location',
+        locationNamePlaceholder: 'Enter location name...',
+        save: 'Save',
+        cancel: 'Cancel'
     },
     cz: {
         logo: 'NEXUS',
@@ -716,6 +720,10 @@ export const TRANSLATIONS = {
         lowStockItems: 'Docházející položky',
         outOfStockItems: 'Vyprodané položky',
         lastUpdated: 'Naposledy aktualizováno',
-        updateStock: 'Aktualizovat stav'
+        updateStock: 'Aktualizovat stav',
+        addLocation: 'Přidat sklad',
+        locationNamePlaceholder: 'Zadejte název skladu...',
+        save: 'Uložit',
+        cancel: 'Zrušit'
     }
 };
