@@ -117,6 +117,8 @@ function App() {
   const [stats] = useState(MOCK_STATS);
   const [auditLogs] = useState(MOCK_AUDIT_LOG);
   const [sessions] = useState(MOCK_SESSIONS);
+  const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
+  const [editingProfileData, setEditingProfileData] = useState(null);
 
 
 
@@ -297,6 +299,20 @@ function App() {
       return p;
     }));
   };
+
+  const handleEditProfile = (profile) => {
+    setEditingProfileData({ ...profile });
+    setIsEditProfileModalOpen(true);
+  };
+
+  const handleSaveProfile = useCallback(() => {
+    if (!editingProfileData) return;
+    setProfiles(prev => prev.map(p => 
+      p.id === editingProfileData.id ? { ...p, ...editingProfileData } : p
+    ));
+    setIsEditProfileModalOpen(false);
+    setEditingProfileData(null);
+  }, [editingProfileData]);
 
   const handleSaveNote = useCallback(() => {
     if (!internalNote.trim() || !selectedChat?.from) return;
@@ -1585,6 +1601,12 @@ function App() {
                         {isMyProfile ? t('deactivateMySeat') : t('activateMySeat')}
                       </button>
                       <button
+                        onClick={() => handleEditProfile(profile)}
+                        style={{ width: '100%', marginTop: '0.75rem', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--accent-color)', background: 'rgba(59, 130, 246, 0.1)', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                      >
+                        <Settings size={16} /> {t('editProfile')}
+                      </button>
+                      <button
                         onClick={() => {
                           setActiveProfileId(profile.id);
                           setActiveTab('inbox');
@@ -2375,6 +2397,59 @@ function App() {
             <div style={{ display: 'flex', gap: '1rem', marginTop: '2.5rem' }}>
               <button onClick={() => setIsAddAgencyModalOpen(false)} style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid var(--card-border)', color: 'white', borderRadius: '12px', fontWeight: '700' }}>{t('cancel')}</button>
               <button onClick={addAgency} className="action-btn" style={{ flex: 1, background: 'var(--accent-color)', color: 'white', fontWeight: '800' }}>{t('provision')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Profile Modal */}
+      {isEditProfileModalOpen && editingProfileData && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', padding: '1rem' }}>
+          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: '900' }}>{t('editProfile')}</h3>
+              <button 
+                onClick={() => {
+                  setIsEditProfileModalOpen(false);
+                  setEditingProfileData(null);
+                }} 
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('profileName').toUpperCase()}</label>
+                <input 
+                  type="text" 
+                  value={editingProfileData.name} 
+                  onChange={e => setEditingProfileData({...editingProfileData, name: e.target.value})}
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('phoneNumber').toUpperCase()}</label>
+                <input 
+                  type="text" 
+                  value={editingProfileData.phoneNumber || ''} 
+                  onChange={e => setEditingProfileData({...editingProfileData, phoneNumber: e.target.value})}
+                  placeholder="+44 ..."
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
+                />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '2.5rem' }}>
+              <button 
+                onClick={() => {
+                  setIsEditProfileModalOpen(false);
+                  setEditingProfileData(null);
+                }} 
+                style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid var(--card-border)', color: 'white', borderRadius: '12px', fontWeight: '700' }}
+              >
+                {t('cancel')}
+              </button>
+              <button onClick={handleSaveProfile} className="action-btn" style={{ flex: 1, background: 'var(--accent-color)', color: 'white', fontWeight: '800' }}>{t('saveProfileChanges')}</button>
             </div>
           </div>
         </div>

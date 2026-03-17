@@ -330,6 +330,10 @@ export const TRANSLATIONS = {
         modelOptimizationComplete: 'Model Optimization Complete!',
         aiModelUpdated: 'The AI model for {agency} has been updated with personalized conversion weights.',
         resetTrainingEnv: 'Reset Training Environment',
+        editProfile: 'Edit Profile',
+        profileName: 'Profile Name',
+        phoneNumber: 'Phone Number',
+        saveProfileChanges: 'Save Changes',
     },
     cz: {
         logo: 'NEXUS',
@@ -660,5 +664,9 @@ export const TRANSLATIONS = {
         modelOptimizationComplete: 'Optimalizace modelu dokončena!',
         aiModelUpdated: 'AI model pro {agency} byl aktualizován s personalizovanými konverzními vahami.',
         resetTrainingEnv: 'Resetovat tréninkové prostředí',
+        editProfile: 'Upravit profil',
+        profileName: 'Jméno profilu',
+        phoneNumber: 'Telefonní číslo',
+        saveProfileChanges: 'Uložit změny',
     }
 };
