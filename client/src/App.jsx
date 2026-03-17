@@ -678,28 +678,29 @@ function App() {
 
         <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1.5rem', marginRight: '-0.5rem', paddingRight: '0.5rem' }} className="custom-scrollbar">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2.5rem' }}>
-            ...((activeOperator?.isSuperAdmin || activeOperator?.isAdmin) ? [
-              { id: 'infra', icon: HardDrive, label: t('infra') },
-              { id: 'agencies', icon: Building2, label: t('agencies') },
-              { id: 'permissions', icon: Shield, label: t('permissions') },
-              { id: 'plans', icon: CreditCard, label: t('plans') },
-              { id: 'features', icon: Zap, label: t('featuresCap') },
-              { id: 'hierarchy', icon: Users, label: t('hierarchy') },
-              { id: 'analytics', icon: BarChart3, label: t('analytics') }
-            ] : [
-              { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator?.isModel ? 0 : totalUnread },
-              { id: 'calendar', icon: Calendar, label: t('schedule') },
-              ...(activeOperator?.isModel ? [] : [
-                { id: 'profiles', icon: Users, label: t('profiles') },
-                { id: 'web-profiles', icon: Globe, label: t('webProfiles') }
+            {[
+              ...((activeOperator?.isSuperAdmin || activeOperator?.isAdmin) ? [
+                { id: 'infra', icon: HardDrive, label: t('infra') },
+                { id: 'agencies', icon: Building2, label: t('agencies') },
+                { id: 'permissions', icon: Shield, label: t('permissions') },
+                { id: 'plans', icon: CreditCard, label: t('plans') },
+                { id: 'features', icon: Zap, label: t('featuresCap') },
+                { id: 'hierarchy', icon: Users, label: t('hierarchy') },
+                { id: 'analytics', icon: BarChart3, label: t('analytics') }
+              ] : [
+                { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator?.isModel ? 0 : totalUnread },
+                { id: 'calendar', icon: Calendar, label: t('schedule') },
+                ...(activeOperator?.isModel ? [] : [
+                  { id: 'profiles', icon: Users, label: t('profiles') },
+                  { id: 'web-profiles', icon: Globe, label: t('webProfiles') }
+                ]),
+                { id: 'device-setup', icon: Smartphone, label: t('deviceSetup') },
+                ...(activeOperator?.isModel ? [] : [{ id: 'activity', icon: Activity, label: t('auditLog') }])
               ]),
-              { id: 'device-setup', icon: Smartphone, label: t('deviceSetup') },
-              ...(activeOperator?.isModel ? [] : [{ id: 'activity', icon: Activity, label: t('auditLog') }])
-            ]),
-            { id: 'referrals', icon: Gift, label: t('referrals') },
-            { id: 'qa', icon: FileSearch, label: t('qa') },
-            { id: 'settings', icon: Settings, label: t('settings') },
-          ].map(item => (
+              { id: 'referrals', icon: Gift, label: t('referrals') },
+              { id: 'qa', icon: FileSearch, label: t('qa') },
+              { id: 'settings', icon: Settings, label: t('settings') },
+            ].map(item => (
             <button key={item.id} 
               onClick={() => {
                 setActiveTab(item.id);
