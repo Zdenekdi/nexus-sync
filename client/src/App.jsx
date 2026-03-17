@@ -1217,33 +1217,46 @@ function App() {
                 </div>
               </div>
 
-              <div className="glass-card" style={{ padding: '2rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FileEdit size={20} color="var(--accent-color)" /> {t('biography')} & {t('services')}</h3>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button style={{ padding: '4px 8px', border: '1px solid var(--accent-color)', background: 'rgba(59, 130, 246, 0.2)', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700' }}>EN</button>
-                    <button style={{ padding: '4px 8px', border: '1px solid var(--card-border)', background: 'transparent', color: 'var(--text-secondary)', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700' }}>CZ</button>
+              <div className="glass-card" style={{ padding: '2.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+                  <h3 style={{ fontSize: '1.5rem', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'linear-gradient(to right, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                    <FileEdit size={24} color="var(--accent-color)" /> {t('biography')} & {t('services')}
+                  </h3>
+                  <div style={{ display: 'flex', gap: '0.4rem', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '10px', border: '1px solid var(--card-border)' }}>
+                    <button style={{ padding: '6px 12px', border: 'none', background: 'var(--accent-color)', color: 'white', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer' }}>EN</button>
+                    <button style={{ padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-secondary)', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer' }}>CZ</button>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('mottoLabel')}</label>
-                    <input type="text" defaultValue={activeProfile?.bio || ''} className="note-input" />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                  <div className="input-group-premium">
+                    <label className="input-label-premium">{t('mottoLabel')}</label>
+                    <input 
+                      type="text" 
+                      defaultValue={activeProfile?.bio || ''} 
+                      className="note-input" 
+                      style={{ fontSize: '1.25rem', fontWeight: '700', letterSpacing: '-0.01em' }}
+                      placeholder="Enter a catchy headline..."
+                    />
                   </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.05em' }}>{t('fullBioLabel').toUpperCase()}</label>
+                  
+                  <div className="input-group-premium">
+                    <label className="input-label-premium">{t('fullBioLabel')}</label>
                     <textarea 
                       className="note-input" 
-                      style={{ height: '250px', lineHeight: '1.6', fontSize: '1rem', padding: '1.25rem', border: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)' }} 
+                      style={{ height: '300px', lineHeight: '1.7', fontSize: '1.1rem' }} 
                       defaultValue="Hi, I am available in the city center. VIP companion offering GFE, outcalls and incalls. Very friendly and open minded..."
                       placeholder={t('bioPlaceholder')}
                     ></textarea>
-                    <div style={{ marginTop: '0.5rem', fontSize: '0.7rem', color: 'var(--text-secondary)', textAlign: 'right' }}>
-                      {t('bioFormattingNote')}
+                    <div style={{ marginTop: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', fontWeight: '600' }}>
+                      <span>{t('bioFormattingNote')}</span>
+                      <span style={{ color: 'var(--accent-color)' }}>128 / 2000</span>
                     </div>
                   </div>
-                  <button className="action-btn" style={{ width: 'fit-content' }}>{t('saveChanges')}</button>
+                  
+                  <button className="action-btn" style={{ width: 'fit-content', padding: '1rem 2.5rem', fontSize: '1rem', marginTop: '1rem', boxShadow: '0 10px 20px rgba(59, 130, 246, 0.2)' }}>
+                    {t('saveChanges')}
+                  </button>
                 </div>
               </div>
             </div>
