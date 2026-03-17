@@ -14,549 +14,14 @@ import {
 import { MOCK_OPERATORS, MOCK_CLIENTS, MOCK_AGENCIES, MOCK_PROFILES, MOCK_MESSAGES, MOCK_STATS, MOCK_CALENDAR, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_CHART_DATA, MOCK_SMART_REPLIES, MOCK_PLANS, MOCK_REFERRALS, MOCK_PERMISSIONS } from './DemoData';
 import { TRANSLATIONS } from './translations';
 import { useSocket } from './hooks/useSocket';
+import QAView from './components/QAView';
+import PermissionsDashboard from './components/PermissionsDashboard';
+import PlansDashboard from './components/PlansDashboard';
+import DashboardHome from './components/DashboardHome';
+import LoginScreen from './components/LoginScreen';
+import ResetPasswordView from './components/ResetPasswordView';
 
-const QAView = ({ t, messages = [], clientNotes = {} }) => {
-  return (
-    <div style={{ padding: '3rem', height: '100%', overflowY: 'auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-        <div>
-          <h2 style={{ fontSize: '2rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <FileSearch size={28} color="var(--accent-color)" /> {t('qa')}
-          </h2>
-          <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('qaSubtitle')}</p>
-        </div>
-      </div>
-      
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-        {messages.reduce((acc, msg) => {
-          if (!acc.find(m => m.from === msg.from)) acc.push(msg);
-          return acc;
-        }, []).map(clientMsg => (
-          <div key={clientMsg.from} className="glass-card" style={{ padding: '2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '1.2rem' }}>
-                  {clientMsg.from ? clientMsg.from.slice(-2) : '??'}
-                </div>
-                <div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: '800' }}>{clientMsg.from || 'Unknown'}</div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t('clientHistory')}</div>
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <h3 style={{ fontSize: '0.9rem', color: '#f59e0b', marginBottom: '1rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <StickyNote size={16} /> {t('internalNotesLog')}
-              </h3>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {(clientNotes[clientMsg.from] || []).map(note => (
-                  <div key={note.id} style={{ background: 'rgba(245, 158, 11, 0.05)', borderLeft: '4px solid #f59e0b', padding: '1rem', borderRadius: '0 12px 12px 0' }}>
-                    <div style={{ fontSize: '1rem', color: 'white', marginBottom: '0.75rem', lineHeight: '1.5' }}>{note.text}</div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                      <span>{t('loggedBy')}: <strong style={{ color: 'white' }}>{note.author}</strong></span>
-                      <span>{note.timestamp}</span>
-                    </div>
-                  </div>
-                ))}
-                {(!clientNotes[clientMsg.from] || clientNotes[clientMsg.from].length === 0) && (
-                  <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontStyle: 'italic', padding: '1rem' }}>{t('noNotes')}</div>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
 
-const PermissionsDashboard = ({ t, rolePermissions, setRolePermissions, activeOperator }) => {
-  return (
-    <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
-      <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #3b82f6, #10b981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Role Permissions</h2>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>Manage granular access levels and capabilities for each system role.</p>
-      
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '2rem' }}>
-        {Object.entries(rolePermissions).map(([role, perms]) => (
-          <div key={role} className="glass-card" style={{ padding: '2rem', height: 'fit-content' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ width: '40px', height: '40px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Shield size={20} color="var(--accent-color)" />
-                </div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>{role}</h3>
-              </div>
-              <div className="status-badge-small" style={{ borderColor: 'var(--accent-color)', color: 'var(--accent-color)', fontWeight: '700' }}>
-                {Object.values(perms).filter(v => v).length} Enabled
-              </div>
-            </div>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              {Object.entries(perms).map(([permKey, isEnabled]) => (
-                <div key={permKey} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                  <span style={{ fontSize: '0.9rem', color: isEnabled ? 'white' : 'var(--text-secondary)', fontWeight: '600' }}>
-                    {permKey.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                  </span>
-                  {role !== 'System Owner' ? (
-                    <div 
-                      onClick={() => {
-                        setRolePermissions(prev => ({
-                          ...prev,
-                          [role]: { ...prev[role], [permKey]: !isEnabled }
-                        }));
-                      }}
-                      className={`toggle-switch ${isEnabled ? 'active' : ''}`}
-                      style={{ 
-                        width: '34px', height: '18px', background: isEnabled ? 'var(--accent-color)' : 'rgba(255,255,255,0.05)',
-                        borderRadius: '20px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s',
-                        border: '1px solid var(--card-border)'
-                      }}
-                    >
-                      <div style={{ 
-                        width: '12px', height: '12px', background: 'white', borderRadius: '50%',
-                        position: 'absolute', top: '2px', left: isEnabled ? '18px' : '3px', transition: 'all 0.3s'
-                      }}></div>
-                    </div>
-                  ) : (
-                    <div style={{ color: 'var(--success-color)', fontSize: '0.7rem', fontWeight: '800' }}>MASTER ACCESS</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const PlansDashboard = ({ t, subscriptionPlans, activeMarket, setActiveMarket, activeOperator, currentAgency }) => {
-  return (
-    <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem' }}>
-        <div>
-          <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #6366f1, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Subscription Plans</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', margin: 0 }}>Configure platform tiers, pricing, and feature availability.</p>
-        </div>
-        
-        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '0.5rem', display: 'flex', gap: '0.25rem' }}>
-          {['EU', 'UK', 'CZ'].map(market => (
-            <button
-              key={market}
-              onClick={() => setActiveMarket(market)}
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '8px',
-                background: activeMarket === market ? 'var(--accent-color)' : 'transparent',
-                color: activeMarket === market ? 'white' : 'var(--text-secondary)',
-                border: 'none',
-                fontSize: '0.8rem',
-                fontWeight: '700',
-                cursor: 'pointer',
-                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
-              }}
-            >
-              {market === 'CZ' ? 'CZ (Kč)' : market === 'UK' ? 'UK (£)' : 'EU (€)'}
-            </button>
-          ))}
-        </div>
-      </div>
-      
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '2rem' }}>
-        {(subscriptionPlans || []).map((plan) => {
-          const isActive = currentAgency?.tier?.toLowerCase() === plan.id;
-          
-          return (
-            <div 
-              key={plan.id} 
-              className="glass-card" 
-              style={{ 
-                padding: '2rem', 
-                border: isActive ? '2px solid var(--accent-color)' : '1px solid rgba(139, 92, 246, 0.2)',
-                position: 'relative',
-                transform: isActive ? 'scale(1.02)' : 'none',
-                zIndex: isActive ? 1 : 0,
-                boxShadow: isActive ? '0 0 30px rgba(99, 102, 241, 0.2)' : 'none'
-              }}
-            >
-              {isActive && (
-                <div style={{ 
-                  position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)',
-                  background: 'var(--accent-color)', color: 'white', padding: '0.25rem 0.75rem',
-                  borderRadius: '20px', fontSize: '0.65rem', fontWeight: '900', letterSpacing: '0.05em'
-                }}>
-                  CURRENT PLAN
-                </div>
-              )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-                <div>
-                  <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.5rem' }}>{plan.name}</h3>
-                  <div style={{ fontSize: '1.25rem', color: 'var(--accent-color)', fontWeight: '700' }}>{plan.prices ? plan.prices[activeMarket] : 'N/A'}</div>
-                </div>
-                <div style={{ width: '48px', height: '48px', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CreditCard size={24} color="#6366f1" />
-                </div>
-              </div>
-              
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: '1.6' }}>{plan.description}</p>
-              
-              <div style={{ marginBottom: '2rem' }}>
-                <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.1em' }}>INCLUDED FEATURES</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {(plan.features || []).map((feat, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.85rem' }}>
-                      <Check size={14} color="var(--success-color)" />
-                      <span>{feat}</span>
-                    </div>
-                  ))}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.85rem' }}>
-                    <Users size={14} color="var(--accent-color)" />
-                    <span>Up to <strong>{plan.profilesLimit}</strong> Profiles</span>
-                  </div>
-                </div>
-              </div>
-              
-              {activeOperator?.isSuperAdmin ? (
-                <button 
-                  onClick={() => {}} // Simulation only
-                  style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                >
-                  <FileEdit size={16} /> Edit Plan Details
-                </button>
-              ) : (
-                <button 
-                  onClick={() => {}} // Simulation only
-                  disabled={isActive}
-                  style={{ 
-                    width: '100%', padding: '0.8rem', 
-                    background: isActive ? 'rgba(16, 185, 129, 0.1)' : 'var(--accent-color)', 
-                    border: isActive ? '1px solid var(--success-color)' : 'none', 
-                    borderRadius: '10px', color: 'white', fontWeight: '800', 
-                    cursor: isActive ? 'default' : 'pointer', display: 'flex', alignItems: 'center', 
-                    justifyContent: 'center', gap: '0.5rem',
-                    boxShadow: isActive ? 'none' : '0 10px 20px var(--accent-glow)'
-                  }}
-                >
-                  {isActive ? (
-                    <>
-                      <CheckCheck size={16} color="var(--success-color)" /> Active
-                    </>
-                  ) : (
-                    <>
-                      <Zap size={16} fill="white" /> Upgrade Now
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [] }) => {
-  const isMobile = window.innerWidth < 768;
-  
-  const renderSuperAdmin = () => (
-    <div className="fade-in">
-      <div style={{ marginBottom: '2.5rem' }}>
-        <h2 style={{ fontSize: '2rem', fontWeight: '900', letterSpacing: '0.05em' }}>{t('globalOverview').toUpperCase()}</h2>
-        <p style={{ color: 'var(--text-secondary)' }}>{t('globalHealthDesc')}</p>
-      </div>
-      
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
-        {[
-          { label: t('totalRevenue'), value: '$842,500', icon: <DollarSign color="#10b981" />, growth: '+12.5%' },
-          { label: (t('agencies') || 'Agencies').toUpperCase(), value: (agencies || []).length, icon: <Building2 color="#3b82f6" />, growth: '+2' },
-          { label: (t('activeNodes') || 'Active Nodes').toUpperCase(), value: '14', icon: <Zap color="#f59e0b" />, growth: 'HEALTHY' },
-          { label: t('globalTraffic') || 'GLOBAL TRAFFIC', value: '2.4M', icon: <Activity color="#8b5cf6" />, growth: '85% LOAD' }
-        ].map((stat, i) => (
-          <div key={i} className="glass-card" style={{ padding: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {stat.icon}
-              </div>
-              <span style={{ fontSize: '0.75rem', fontWeight: '800', color: (stat.growth || '').startsWith('+') ? 'var(--success-color)' : 'var(--text-secondary)' }}>{stat.growth}</span>
-            </div>
-            <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>{stat.label}</div>
-            <div style={{ fontSize: '1.75rem', fontWeight: '900' }}>{stat.value}</div>
-          </div>
-        ))}
-      </div>
-
-      <div className="glass-card" style={{ padding: '2rem' }}>
-        <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem' }}>{t('infraTopology')}</h3>
-        <div style={{ height: '200px', background: 'rgba(0,0,0,0.2)', borderRadius: '15px', border: '1px dashed var(--card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-           {t('mapViz')}
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderManager = () => (
-    <div className="fade-in">
-      <div style={{ marginBottom: '2.5rem' }}>
-        <h2 style={{ fontSize: '2rem', fontWeight: '900' }}>{t('agencyOverview').toUpperCase()}</h2>
-        <p style={{ color: 'var(--text-secondary)' }}>{t('agencyOverviewDesc')}</p>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
-        <div className="glass-card" style={{ padding: '1.5rem', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), transparent)' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--accent-color)', marginBottom: '0.5rem' }}>{t('revenueMtd')}</div>
-          <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>$42,850</div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--success-color)', fontWeight: '700', marginTop: '0.5rem' }}>↑ 18% {t('vsLastMonth')}</div>
-        </div>
-        <div className="glass-card" style={{ padding: '1.5rem' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('activeOps')}</div>
-          <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>8 / 12</div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>4 {t('currentlyOffline')}</div>
-        </div>
-        <div className="glass-card" style={{ padding: '1.5rem' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('avgConversion')}</div>
-          <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>24%</div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--success-color)', fontWeight: '700', marginTop: '0.5rem' }}>{t('optimalRange')}</div>
-        </div>
-      </div>
-
-      <div className="glass-card" style={{ padding: '2rem' }}>
-        <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem' }}>{t('recentReviewsQA')}</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {[1, 2, 3].map(i => (
-            <div key={i} style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between' }}>
-               <div>
-                 <div style={{ fontWeight: '700' }}>{t('profileReview')}: Sophie</div>
-                 <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>"Great communication, very professional."</div>
-               </div>
-               <div style={{ color: '#f59e0b', fontWeight: '900' }}>5.0 ★</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderOperator = () => (
-    <div className="fade-in">
-      <div style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <div>
-          <h2 style={{ fontSize: '2rem', fontWeight: '900' }}>{t('personalWorkspace')}</h2>
-          <p style={{ color: 'var(--text-secondary)' }}>{t('welcomeBack')}, {user.name}. {t('shiftSummaryDesc')}</p>
-        </div>
-        <div style={{ padding: '0.6rem 1.25rem', background: 'rgba(34, 197, 94, 0.1)', color: 'var(--success-color)', borderRadius: '10px', fontSize: '0.85rem', fontWeight: '800', border: '1px solid currentColor' }}>
-          {t('shiftActive')}
-        </div>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '2rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
-            <div className="glass-card" style={{ padding: '1.5rem', textAlign: 'center' }}>
-               <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('messages')}</div>
-               <div style={{ fontSize: '2rem', fontWeight: '900' }}>142</div>
-            </div>
-            <div className="glass-card" style={{ padding: '1.5rem', textAlign: 'center' }}>
-               <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('calls')}</div>
-               <div style={{ fontSize: '2rem', fontWeight: '900' }}>18</div>
-            </div>
-            <div className="glass-card" style={{ padding: '1.5rem', textAlign: 'center', border: '1px solid var(--accent-color)' }}>
-               <div style={{ color: 'var(--accent-color)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('commission')}</div>
-               <div style={{ fontSize: '2rem', fontWeight: '900' }}>$185</div>
-            </div>
-          </div>
-
-          <div className="glass-card" style={{ padding: '2rem' }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.5rem' }}>{t('assignedProfiles')}</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '1rem' }}>
-               {profiles.slice(0, 4).map(p => (
-                 <div key={p.id} className="glass-card" style={{ padding: '1rem', textAlign: 'center', cursor: 'pointer', transition: 'transform 0.2s' }}>
-                   <div style={{ width: '40px', height: '40px', background: 'var(--accent-color)', borderRadius: '10px', margin: '0 auto 0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900' }}>{p.name[0]}</div>
-                   <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>{p.name}</div>
-                 </div>
-               ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="glass-card" style={{ padding: '1.5rem' }}>
-           <h3 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '1.5rem' }}>{t('syncStatusCap')}</h3>
-           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-             {['AdultWork', 'ErosGuide', 'ThePunter'].map(platform => (
-               <div key={platform} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                 <div style={{ fontSize: '0.9rem', fontWeight: '600' }}>{platform}</div>
-                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success-color)', boxShadow: '0 0 10px var(--success-color)' }}></div>
-               </div>
-             ))}
-           </div>
-           <button style={{ width: '100%', marginTop: '2rem', padding: '0.85rem', background: 'var(--accent-color)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '800', cursor: 'pointer' }}>{t('syncAllNow')}</button>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderModel = () => (
-    <div className="fade-in">
-      <div style={{ marginBottom: '2.5rem' }}>
-        <h2 style={{ fontSize: '2rem', fontWeight: '900' }}>{t('dailyAgenda')}</h2>
-        <p style={{ color: 'var(--text-secondary)' }}>{t('dailyAgendaDesc')}</p>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr', gap: '2rem' }}>
-        <div className="glass-card" style={{ padding: '2rem' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.5rem' }}>{t('todaysBookings')}</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {calendar.map((event, i) => (
-              <div key={i} style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: '15px', borderLeft: `4px solid ${event.status === 'confirmed' ? 'var(--success-color)' : 'var(--accent-color)'}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontWeight: '800', fontSize: '1rem' }}>{event.time}</div>
-                  <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{event.title}</div>
-                </div>
-                <div style={{ fontSize: '0.75rem', fontWeight: '900', color: 'var(--text-secondary)' }}>{event.duration}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div className="glass-card" style={{ padding: '2rem', background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), transparent)' }}>
-             <div style={{ color: '#f59e0b', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('earningsWeek')}</div>
-             <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>$2,140</div>
-             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('goal')}: $3,000</div>
-             <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', marginTop: '1rem', overflow: 'hidden' }}>
-                <div style={{ width: '71%', height: '100%', background: '#f59e0b' }}></div>
-             </div>
-          </div>
-
-          <div className="glass-card" style={{ padding: '1.5rem' }}>
-             <h3 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '1.25rem' }}>{t('latestReview')}</h3>
-             <div style={{ fontStyle: 'italic', color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6', marginBottom: '1rem' }}>
-               "Absolutely professional and amazing session. Highly recommended for everyone looking for quality."
-             </div>
-             <div style={{ textAlign: 'right', fontWeight: '800', color: 'var(--accent-color)' }}>- James W.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  if (!user) return null;
-  const isAdminOrManager = user.isAdmin || user.role === 'Agency Manager' || user.role === 'Regional Manager' || user.role === 'Manager' || user.role === 'Admin';
-
-  return (
-    <div style={{ padding: '3rem', paddingBottom: '8rem', maxWidth: '1400px', margin: '0 auto' }}>
-      {user.isSuperAdmin ? renderSuperAdmin() : (isAdminOrManager ? renderManager() : (user.isModel || user.role === 'Model' ? renderModel() : renderOperator()))}
-    </div>
-  );
-};
-
-const LoginScreen = ({ onLogin, onResetRequired, operators, lang, setLang, t }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState(false);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const user = operators.find(op => op.email === email && op.password === password);
-    if (user) {
-      if (user.mustResetPassword) {
-        onResetRequired(user);
-      } else {
-        onLogin(user);
-      }
-    } else {
-      setError(true);
-      setTimeout(() => setError(false), 3000);
-    }
-  };
-
-  return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '40%', height: '40%', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)', filter: 'blur(60px)' }}></div>
-      <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '450px', padding: '3rem', position: 'relative', zIndex: 1, textAlign: 'center' }}>
-        <div style={{ marginBottom: '2.5rem' }}>
-          <div style={{ width: '64px', height: '64px', background: 'var(--accent-color)', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', boxShadow: '0 0 30px var(--accent-glow)' }}><Zap color="white" fill="white" size={32} /></div>
-          <h1 style={{ fontSize: '2rem', fontWeight: '900', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('logo')} SYNC</h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t('loginSubtitle')}</p>
-        </div>
-        <form onSubmit={handleSubmit} style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('emailLabel').toUpperCase()}</label>
-            <div style={{ position: 'relative' }}>
-              <User size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="operator@nexus.sync" required style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '1rem 1rem 1rem 3rem', borderRadius: '12px', color: 'white' }} />
-            </div>
-          </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('passwordLabel').toUpperCase()}</label>
-            <div style={{ position: 'relative' }}>
-              <Lock size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '1rem 1rem 1rem 3rem', borderRadius: '12px', color: 'white' }} />
-            </div>
-          </div>
-          {error && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', fontWeight: '700', textAlign: 'center' }}>{t('loginError')}</div>}
-          <button type="submit" className="action-btn" style={{ background: 'var(--accent-color)', color: 'white', padding: '1.1rem', fontSize: '1rem', fontWeight: '800', boxShadow: '0 10px 25px var(--accent-glow)', marginTop: '1rem' }}>{t('loginButton')}</button>
-        </form>
-        <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.03)', padding: '6px', borderRadius: '10px', border: '1px solid var(--card-border)', width: 'fit-content', margin: '2rem auto 0' }}>
-          <button onClick={() => setLang('cz')} style={{ padding: '6px 12px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer' }}>CZ</button>
-          <button onClick={() => setLang('en')} style={{ padding: '6px 12px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer' }}>EN</button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const ResetPasswordView = ({ onComplete, t }) => {
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-
-  const handleReset = (e) => {
-    e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      setError(t('passwordMismatch'));
-      return;
-    }
-    if (newPassword.length < 6) {
-      setError('Password must be at least 6 characters.');
-      return;
-    }
-    onComplete(newPassword);
-  };
-
-  return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '40%', height: '40%', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)', filter: 'blur(60px)' }}></div>
-      <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '450px', padding: '3rem', position: 'relative', zIndex: 1, textAlign: 'center' }}>
-        <div style={{ marginBottom: '2.5rem' }}>
-          <div style={{ width: '64px', height: '64px', background: 'var(--accent-color)', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', boxShadow: '0 0 30px var(--accent-glow)' }}><ShieldCheck color="white" size={32} /></div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: '900', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('resetPasswordTitle')}</h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t('resetPasswordSubtitle')}</p>
-        </div>
-        <form onSubmit={handleReset} style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('newPasswordLabel').toUpperCase()}</label>
-            <div style={{ position: 'relative' }}>
-              <Lock size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
-              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" required style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '1rem 1rem 1rem 3rem', borderRadius: '12px', color: 'white' }} />
-            </div>
-          </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('confirmPasswordLabel').toUpperCase()}</label>
-            <div style={{ position: 'relative' }}>
-              <Lock size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
-              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" required style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '1rem 1rem 1rem 3rem', borderRadius: '12px', color: 'white' }} />
-            </div>
-          </div>
-          {error && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', fontWeight: '700', textAlign: 'center' }}>{error}</div>}
-          <button type="submit" className="action-btn" style={{ background: 'var(--accent-color)', color: 'white', padding: '1.1rem', fontSize: '1rem', fontWeight: '800', boxShadow: '0 10px 25px var(--accent-glow)', marginTop: '1rem' }}>{t('resetButton')}</button>
-        </form>
-      </div>
-    </div>
-  );
-};
 
 function App() {
   const [showResetPassword, setShowResetPassword] = useState(false);
@@ -597,9 +62,13 @@ function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mobileView, setMobileView] = useState('sidebar');
 
-  const t = (key) => {
+  const t = (key, data = {}) => {
     try {
-      return (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || key || '';
+      let str = (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || key || '';
+      Object.keys(data).forEach(k => {
+        str = str.replace(`{${k}}`, data[k]);
+      });
+      return str;
     } catch {
       return key || '';
     }
@@ -1995,7 +1464,7 @@ function App() {
                   <span style={{ fontSize: '0.8rem', fontWeight: '700', letterSpacing: '0.05em' }}>{t('totalRevenue').toUpperCase()}</span>
                 </div>
                 <div style={{ fontSize: '2rem', fontWeight: '900' }}>£15,490</div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--success-color)', marginTop: '0.5rem', fontWeight: '700' }}>+12.4% vs last week</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--success-color)', marginTop: '0.5rem', fontWeight: '700' }}>+12.4% {t('vsLastWeek')}</div>
               </div>
               
               <div className="glass-card" style={{ padding: '1.5rem' }}>
@@ -2004,7 +1473,7 @@ function App() {
                   <span style={{ fontSize: '0.8rem', fontWeight: '700', letterSpacing: '0.05em' }}>{t('activeBookings').toUpperCase()}</span>
                 </div>
                 <div style={{ fontSize: '2rem', fontWeight: '900' }}>89</div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--success-color)', marginTop: '0.5rem', fontWeight: '700' }}>+5 this week</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--success-color)', marginTop: '0.5rem', fontWeight: '700' }}>+5 {t('thisWeek')}</div>
               </div>
 
               <div className="glass-card" style={{ padding: '1.5rem' }}>
@@ -2013,7 +1482,7 @@ function App() {
                   <span style={{ fontSize: '0.8rem', fontWeight: '700', letterSpacing: '0.05em' }}>{t('totalMessages').toUpperCase()}</span>
                 </div>
                 <div style={{ fontSize: '2rem', fontWeight: '900' }}>2,148</div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Across all profiles</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('acrossAllProfiles')}</div>
               </div>
 
               <div className="glass-card" style={{ padding: '1.5rem' }}>
@@ -2022,7 +1491,7 @@ function App() {
                   <span style={{ fontSize: '0.8rem', fontWeight: '700', letterSpacing: '0.05em' }}>{t('conversionRate').toUpperCase()}</span>
                 </div>
                 <div style={{ fontSize: '2rem', fontWeight: '900' }}>11.5%</div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--success-color)', marginTop: '0.5rem', fontWeight: '700' }}>+1.2% trend</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--success-color)', marginTop: '0.5rem', fontWeight: '700' }}>+1.2% {t('trend')}</div>
               </div>
             </div>
 
@@ -2046,7 +1515,7 @@ function App() {
                       {allAgencyProfiles.sort((a,b) => parseInt(b.earnings.replace(/\D/g,'')) - parseInt(a.earnings.replace(/\D/g,''))).map((p) => (
                         <tr key={p.id} style={{ borderBottom: '1px solid var(--card-border)' }}>
                           <td style={{ padding: '1rem', fontWeight: '700' }}>{p.name}</td>
-                          <td style={{ padding: '1rem' }}><div className="status-badge-small" style={{ borderColor: 'var(--success-color)', color: 'var(--success-color)' }}>Top {p.rank}</div></td>
+                          <td style={{ padding: '1rem' }}><div className="status-badge-small" style={{ borderColor: 'var(--success-color)', color: 'var(--success-color)' }}>{t('topRank', { rank: p.rank })}</div></td>
                           <td style={{ padding: '1rem', color: 'white' }}>{p.bookings}</td>
                           <td style={{ padding: '1rem', textAlign: 'right', fontWeight: '800', color: 'var(--accent-color)' }}>{p.earnings}</td>
                         </tr>
@@ -2105,7 +1574,7 @@ function App() {
                       <div style={{ fontSize: '1.75rem', fontWeight: '900', marginBottom: '0.5rem' }}>{profile.name}</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.5rem' }}>
                         <div style={{ padding: '0.2rem 0.6rem', borderRadius: '4px', background: activeCount > 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: activeCount > 0 ? 'var(--success-color)' : 'var(--error-color)', fontSize: '0.7rem', fontWeight: '900', border: '1px solid currentColor' }}>
-                          {activeCount > 0 ? `${activeCount} OPERATORS ACTIVE` : 'NO COVERAGE'}
+                          {activeCount > 0 ? `${activeCount} ${t('operatorsActive')}` : t('noCoverage')}
                         </div>
                       </div>
                       <button
@@ -2113,7 +1582,7 @@ function App() {
                         className={`action-btn ${isMyProfile ? 'active' : ''}`}
                         style={{ background: isMyProfile ? 'rgba(239, 68, 68, 0.2)' : 'var(--accent-color)', color: isMyProfile ? 'var(--error-color)' : 'white' }}
                       >
-                        {isMyProfile ? 'DEACTIVATE MY SEAT' : 'ACTIVATE MY SEAT'}
+                        {isMyProfile ? t('deactivateMySeat') : t('activateMySeat')}
                       </button>
                       <button
                         onClick={() => {
@@ -2122,13 +1591,13 @@ function App() {
                         }}
                         style={{ width: '100%', marginTop: '0.75rem', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--card-border)', background: 'transparent', color: 'white', fontWeight: '700', cursor: 'pointer' }}
                       >
-                        OPEN CONTEXT
+                        {t('openContext')}
                       </button>
 
                     </div>
 
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.05em' }}>ASSIGNED TEAM:</div>
+                      <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.05em' }}>{t('assignedTeam')}</div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
                         {profile.operators.map(profileOp => {
                           const opData = MOCK_OPERATORS.find(o => o.id === profileOp.id);
@@ -2137,15 +1606,15 @@ function App() {
                               <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: '900' }}>{opData.avatar}</div>
                               <div style={{ flex: 1 }}>
                                 <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>{opData.name}</div>
-                                <div style={{ fontSize: '0.65rem', color: profileOp.primary ? 'var(--accent-color)' : 'var(--text-secondary)' }}>{profileOp.primary ? 'Primary' : 'Support'}</div>
+                                <div style={{ fontSize: '0.65rem', color: profileOp.primary ? 'var(--accent-color)' : 'var(--text-secondary)' }}>{profileOp.primary ? t('primary') : t('support')}</div>
                               </div>
                               {profileOp.active && <UserCheck size={16} color="var(--success-color)" />}
                             </div>
                           );
                         })}
                         <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.01)', borderRadius: '15px', border: '1px dashed var(--card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>
-                          <UserPlus size={16} /> <span style={{ fontSize: '0.8rem', fontWeight: '700' }}>Add</span>
-                        </div>
+                           <UserPlus size={16} /> <span style={{ fontSize: '0.8rem', fontWeight: '700' }}>{t('add')}</span>
+                         </div>
                       </div>
                     </div>
                   </div>
@@ -2158,7 +1627,7 @@ function App() {
         {activeTab === 'activity' && (
           <div style={{ padding: '3rem', paddingBottom: '8rem' }} className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-              <div><h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('auditTrail')} - {activeClient?.name || 'System'}</h2><p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('auditSubtitle')}</p></div>
+              <div><h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('auditTrail')} - {activeClient?.name || t('system')}</h2><p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('auditSubtitle')}</p></div>
               <div className="status-badge" style={{ borderColor: 'var(--accent-color)', color: 'var(--accent-color)' }}><Shield size={16} /> {t('encryptedLog')}</div>
             </div>
             <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -2187,15 +1656,15 @@ function App() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem', maxWidth: '800px' }}>
               <div className="settings-section">
-                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Building2 size={20} color="var(--accent-color)" /> Agency Insight: {activeClient?.name || 'Global'}</h3>
+                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Building2 size={20} color="var(--accent-color)" /> {t('agencyInsight')}: {activeClient?.name || t('global')}</h3>
                 <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                   <div className="glass-card" style={{ padding: '1.5rem' }}>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '0.5rem' }}>TEAM SEATS</div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('teamSeats')}</div>
                     <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{availableOperators.length} / 10</div>
                   </div>
                   <div className="glass-card" style={{ padding: '1.5rem' }}>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '0.5rem' }}>REGIONAL REACH</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{activeClient?.region || 'Global'}</div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('regionalReach')}</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{activeClient?.region || t('global')}</div>
                   </div>
                 </div>
               </div>
@@ -2262,22 +1731,26 @@ function App() {
 
         {activeTab === 'infra' && activeOperator?.isSuperAdmin && (
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
-            <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Infrastructure Control</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>Global oversight of system health and core service stability.</p>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '3rem' }}>
+              <div style={{ flex: 1 }}>
+                <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #3b82f6, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('infraTitle')}</h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>{t('infraSubtitle')}</p>
+              </div>
+            </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
               {/* Stats Overview */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
                 {[
-                  { label: 'TOTAL AGENCIES', value: MOCK_AGENCIES.length, icon: Building2, color: '#3b82f6', trend: '+2 this month' },
-                  { label: 'ACTIVE PROFILES', value: MOCK_PROFILES.length, icon: Users, color: '#8b5cf6', trend: 'Global Reach' },
-                  { label: 'MONTHLY REVENUE', value: '$12,450', icon: CreditCard, color: '#10b981', trend: '+12% growth' },
-                  { label: 'SYSTEM UPTIME', value: '99.98%', icon: Activity, color: '#f59e0b', trend: 'All nodes active' }
+                  { label: t('totalAgencies'), value: agencies.length, icon: <Building2 size={20} />, color: '#3b82f6', trend: `+2 ${t('thisMonth')}` },
+                  { label: t('activeProfiles'), value: profiles.length, icon: <Users size={20} />, color: '#8b5cf6', trend: t('globalReach') },
+                  { label: t('monthlyRevenue'), value: '$1.2M', icon: <CreditCard size={20} />, color: '#10b981', trend: `+12% ${t('growth')}` },
+                  { label: t('systemUptime'), value: '99.98%', icon: <Activity size={20} />, color: '#f59e0b', trend: t('allNodesActive') }
                 ].map((stat, i) => (
                   <div key={i} className="glass-card" style={{ padding: '1.5rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                       <div style={{ background: `${stat.color}20`, padding: '0.5rem', borderRadius: '10px' }}>
-                        <stat.icon size={20} color={stat.color} />
+                        {stat.icon}
                       </div>
                       <div style={{ fontSize: '0.65rem', color: stat.color, fontWeight: '800' }}>{stat.trend}</div>
                     </div>
@@ -2291,10 +1764,10 @@ function App() {
               <div className="glass-card" style={{ padding: '2rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                   <h3 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Cpu size={24} color="var(--accent-color)" /> Global Node Status & Load
+                    <Server size={24} color="var(--accent-color)" /> {t('nodeStatus')}
                   </h3>
                   <div className="status-badge" style={{ borderColor: 'var(--success-color)', color: 'var(--success-color)' }}>
-                    SECURE PROXY TUNNEL ACTIVE
+                    <ShieldCheck size={14} /> {t('proxyActive')}
                   </div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}>
@@ -2310,8 +1783,8 @@ function App() {
                       </div>
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>{node.location}</div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: '700' }}>
-                        <span>Latency: <span style={{ color: 'var(--accent-color)' }}>{node.latency}</span></span>
-                        <span>Load: {node.load}</span>
+                        <span>{t('latency')}: <span style={{ color: 'var(--accent-color)' }}>{node.latency}</span></span>
+                        <span>{t('load')}: {node.load}</span>
                       </div>
                       <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', marginTop: '0.75rem', overflow: 'hidden' }}>
                         <div style={{ width: node.load, height: '100%', background: 'var(--accent-color)' }}></div>
@@ -2326,33 +1799,33 @@ function App() {
 
         {activeTab === 'agencies' && activeOperator?.isSuperAdmin && (
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
-            <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #8b5cf6, #d946ef)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Agency Management</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>Portfolio oversight, subscription management, and agency access controls.</p>
+            <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #8b5cf6, #d946ef)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('agencyMgmtTitle')}</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>{t('agencyMgmtSubtitle')}</p>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
               {/* Agency Manager */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                   <h3 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Building2 size={24} color="#8b5cf6" /> Portfolio & Subscription Manager
+                    <Building2 size={24} color="#8b5cf6" /> {t('portfolioManager')}
                   </h3>
                   <button 
                     onClick={() => setIsAddAgencyModalOpen(true)}
                     className="action-btn" 
                     style={{ width: 'auto', padding: '0.6rem 1.25rem' }}
                   >
-                    + Provision New Agency
+                    {t('provisionNew')}
                   </button>
                 </div>
                 <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead>
                       <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--card-border)' }}>
-                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>AGENCY / REGION</th>
-                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>STATUS</th>
-                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>BILLING TIER</th>
-                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>EQUIPMENT</th>
-                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textAlign: 'right' }}>ACTIONS</th>
+                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>{t('agencyRegion')}</th>
+                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>{t('status')}</th>
+                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>{t('billingTier')}</th>
+                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>{t('equipment')}</th>
+                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textAlign: 'right' }}>{t('actions')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2364,13 +1837,13 @@ function App() {
                           <tr key={agency.id} style={{ borderBottom: i < agencies.length - 1 ? '1px solid var(--card-border)' : 'none' }}>
                             <td style={{ padding: '1.25rem 1.5rem' }}>
                               <div style={{ fontWeight: '700', fontSize: '1rem' }}>{agency.name}</div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Region: {agency.region}</div>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('regionLabel')}: {agency.region}</div>
                             </td>
                             <td style={{ padding: '1.25rem 1.5rem' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 <Users size={14} color="var(--accent-color)" />
                                 <span style={{ fontWeight: '700' }}>{agencyProfilesCount}</span>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Profiles</span>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('profilesCount')}</span>
                               </div>
                             </td>
                             <td style={{ padding: '1.25rem 1.5rem' }}>
@@ -2394,7 +1867,7 @@ function App() {
                                     />
                                   </span>
                                 ))}
-                                {agencyOpsCount === 0 && <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>No operators</span>}
+                                {agencyOpsCount === 0 && <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>{t('noOperators')}</span>}
                                 <button 
                                   onClick={() => {
                                     setTargetAgencyId(agency.id);
@@ -2418,8 +1891,8 @@ function App() {
                               </div>
                             </td>
                             <td style={{ padding: '1.25rem 1.5rem' }}>
-                              <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{agency.subscription.plan} Plan</div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Next renewal: {agency.subscription.endDate}</div>
+                              <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{agency.subscription.plan} {t('planLabel')}</div>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('nextRenewal')}: {agency.subscription.endDate}</div>
                             </td>
                             <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -2434,7 +1907,7 @@ function App() {
                                     cursor: 'pointer'
                                   }}
                                 >
-                                  {agency.status === 'suspended' ? 'UNSUSPEND' : 'SUSPEND'}
+                                  {agency.status === 'suspended' ? t('unsuspend').toUpperCase() : t('suspend').toUpperCase()}
                                 </button>
                                 <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                                   {['ai_relay', 'enterprise_proxies', 'analytics'].map(f => (
@@ -2461,7 +1934,7 @@ function App() {
                                     className="status-badge" 
                                     style={{ fontSize: '0.7rem', color: '#ef4444', borderColor: '#ef4444', cursor: 'pointer' }}
                                   >
-                                    DELETE
+                                    {t('delete').toUpperCase()}
                                   </button>
                                   <button 
                                     className="status-badge" 
@@ -2473,7 +1946,7 @@ function App() {
                                       setActiveTab('dashboard');
                                     }}
                                   >
-                                    Impersonate
+                                    {t('impersonate')}
                                   </button>
                                 </div>
                               </div>
@@ -2491,17 +1964,17 @@ function App() {
 
         {activeTab === 'features' && activeOperator?.isSuperAdmin && (
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
-            <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #f59e0b, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Global Feature Provisioning</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>Master control for system capabilities and enterprise-wide modules.</p>
+            <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #f59e0b, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('featuresTitle')}</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>{t('featuresSubtitle')}</p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
               {/* Global Feature Provisioning */}
               <div className="glass-card" style={{ padding: '2rem', background: 'rgba(5,7,10,0.4)', border: '1px dashed var(--accent-color)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                   <h3 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Zap size={24} color="#f59e0b" /> Master Feature Provisioning
+                    <Zap size={24} color="#f59e0b" /> {t('masterFeatureProvisioning')}
                   </h3>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '700' }}>SYSTEM CAPABILITIES TOGGLES</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '700' }}>{t('systemCapabilities').toUpperCase()}</div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2rem' }}>
                   {[
@@ -2537,17 +2010,17 @@ function App() {
               <div className="glass-card" style={{ padding: '2rem', border: '1px solid rgba(139, 92, 246, 0.3)', background: 'rgba(139, 92, 246, 0.05)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                   <h3 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <Cpu size={24} color="#a855f7" /> Custom AI Training Engine (Enterprise Only)
+                    <Cpu size={24} color="#a855f7" /> {t('aiTrainingEngine')}
                   </h3>
-                  <div className="status-badge" style={{ borderColor: '#a855f7', color: '#a855f7' }}>PREMIUM MODULE</div>
+                  <div className="status-badge" style={{ borderColor: '#a855f7', color: '#a855f7' }}>{t('premiumModule').toUpperCase()}</div>
                 </div>
                 
                 {!isTraining && trainingProgress === 0 && (
                   <div style={{ textAlign: 'center', padding: '2rem' }}>
                     <div style={{ fontSize: '3rem', marginBottom: '1.5rem' }}>🧠</div>
-                    <h4 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '0.75rem' }}>Train AI for a Specific Agency</h4>
+                    <h4 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '0.75rem' }}>{t('trainAiTitle')}</h4>
                     <p style={{ color: 'var(--text-secondary)', maxWidth: '500px', margin: '0 auto 2rem' }}>
-                      Upload historical chat data (.csv or .json) to fine-tune the Smart Replies for a specific tone of voice and conversion strategy.
+                      {t('trainAiDesc')}
                     </p>
                     <button 
                       onClick={() => {
@@ -2566,7 +2039,7 @@ function App() {
                       className="action-btn" 
                       style={{ width: 'auto', padding: '1rem 2.5rem', background: 'var(--accent-color)' }}
                     >
-                      Upload Training Set & Start Fine-Tuning
+                      {t('uploadTrainingSet')}
                     </button>
                   </div>
                 )}
@@ -2574,16 +2047,16 @@ function App() {
                 {(isTraining || (trainingProgress > 0 && trainingProgress < 100)) && (
                   <div style={{ padding: '2rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', fontSize: '0.9rem', fontWeight: '700' }}>
-                      <span>Analyzing historical chat patterns...</span>
+                      <span>{t('analyzingPatterns')}</span>
                       <span>{trainingProgress}%</span>
                     </div>
                     <div style={{ width: '100%', height: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', overflow: 'hidden' }}>
                       <div style={{ width: `${trainingProgress}%`, height: '100%', background: 'linear-gradient(to right, #6366f1, #a855f7)', transition: 'width 0.2s linear' }}></div>
                     </div>
                     <div style={{ marginTop: '1.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', gap: '1rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Check size={14} color="var(--success-color)" /> Data Validated</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Check size={14} color={trainingProgress > 40 ? 'var(--success-color)' : 'var(--text-secondary)'} /> Pattern Extraction</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Check size={14} color={trainingProgress > 80 ? 'var(--success-color)' : 'var(--text-secondary)'} /> Weight Optimization</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Check size={14} color="var(--success-color)" /> {t('dataValidated')}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Check size={14} color={trainingProgress > 40 ? 'var(--success-color)' : 'var(--text-secondary)'} /> {t('patternExtraction')}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Check size={14} color={trainingProgress > 80 ? 'var(--success-color)' : 'var(--text-secondary)'} /> {t('weightOptimization')}</div>
                     </div>
                   </div>
                 )}
@@ -2593,16 +2066,16 @@ function App() {
                     <div style={{ width: '60px', height: '60px', background: 'var(--success-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', boxShadow: '0 0 30px rgba(34, 197, 94, 0.4)' }}>
                       <Check size={32} color="white" strokeWidth={4} />
                     </div>
-                    <h4 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '0.5rem' }}>Model Optimization Complete!</h4>
+                    <h4 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('modelOptimizationComplete')}</h4>
                     <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-                      The AI model for <strong>Elite Talent Management</strong> has been updated with personalized conversion weights.
+                      {t('aiModelUpdated', { agency: 'Elite Talent Management' })}
                     </p>
                     <button 
                       onClick={() => setTrainingProgress(0)}
                       className="status-badge" 
                       style={{ cursor: 'pointer', border: '1px solid var(--card-border)' }}
                     >
-                      Reset Training Environment
+                      {t('resetTrainingEnv')}
                     </button>
                   </div>
                 )}
@@ -2642,14 +2115,14 @@ function App() {
           <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '500px', padding: '2.5rem', border: '1px solid var(--accent-color)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
               <h2 style={{ fontSize: '1.5rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <Calendar size={28} color="var(--accent-color)" /> {t('createBooking') || 'Nova Rezervace'}
+                <Calendar size={28} color="var(--accent-color)" /> {t('createBooking')}
               </h2>
               <X size={24} color="var(--text-secondary)" cursor="pointer" onClick={() => setIsBookingModalOpen(false)} />
             </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>CLIENT / GIRL</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('clientAndGirl').toUpperCase()}</label>
                 <div style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', display: 'flex', gap: '1rem' }}>
                    <div style={{ fontWeight: '700' }}>{selectedChat?.from || 'Unknown Client'}</div>
                    <div style={{ color: 'var(--text-secondary)' }}>→</div>
@@ -2659,17 +2132,17 @@ function App() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>DATE</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('date').toUpperCase()}</label>
                   <input type="date" value={bookingDetails.date} onChange={(e) => setBookingDetails({...bookingDetails, date: e.target.value})} style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.75rem', borderRadius: '12px', color: 'white' }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>TIME</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('time').toUpperCase()}</label>
                   <input type="time" value={bookingDetails.time} onChange={(e) => setBookingDetails({...bookingDetails, time: e.target.value})} style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.75rem', borderRadius: '12px', color: 'white' }} />
                 </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>DURATION</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('duration').toUpperCase()}</label>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   {['30', '60', '90', '120'].map(mins => (
                     <button key={mins} onClick={() => setBookingDetails({...bookingDetails, duration: mins})} style={{ flex: 1, padding: '0.6rem', borderRadius: '10px', border: '1px solid', borderColor: bookingDetails.duration === mins ? 'var(--accent-color)' : 'var(--card-border)', background: bookingDetails.duration === mins ? 'rgba(59, 130, 246, 0.1)' : 'transparent', color: bookingDetails.duration === mins ? 'white' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer' }}>{mins}m</button>
@@ -2681,8 +2154,8 @@ function App() {
                 <div style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--error-color)', borderRadius: '12px', display: 'flex', gap: '0.75rem' }}>
                   <AlertTriangle size={20} color="var(--error-color)" style={{ flexShrink: 0 }} />
                   <div>
-                    <div style={{ color: 'var(--error-color)', fontWeight: '800', fontSize: '0.85rem', marginBottom: '0.25rem' }}>COLLISION DETECTED</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Overlaps with: <strong>{bookingCollision.title} ({bookingCollision.time})</strong></div>
+                    <div style={{ color: 'var(--error-color)', fontWeight: '800', fontSize: '0.85rem', marginBottom: '0.25rem' }}>{t('collisionDetected').toUpperCase()}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('overlapsWith')}: <strong>{bookingCollision.title} ({bookingCollision.time})</strong></div>
                     <button 
                       onClick={() => {
                         // Simple logic for next slot: exact end of collision
@@ -2712,7 +2185,7 @@ function App() {
                 style={{ background: bookingCollision ? 'rgba(255,255,255,0.1)' : 'var(--accent-color)', color: 'white', marginTop: '1rem', opacity: bookingCollision ? 0.5 : 1 }}
                 disabled={!!bookingCollision}
               >
-                {t('confirmBooking') || 'CONFIRM RESERVATION'}
+                {t('confirmBooking').toUpperCase()}
               </button>
             </div>
           </div>
@@ -2818,19 +2291,19 @@ function App() {
           <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '500px', padding: '2.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
               <h2 style={{ fontSize: '1.5rem', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <Bug size={24} color="#ef4444" /> Report a System Bug
+                <Bug size={24} color="#ef4444" /> {t('reportBugTitle')}
               </h2>
               <button onClick={() => setIsBugReportOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={24} /></button>
             </div>
             
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-              Report issues directly to our GitHub project board. Please describe what happened.
+              {t('bugReportSubtitle')}
             </p>
 
             <textarea 
               value={bugDescription}
               onChange={(e) => setBugDescription(e.target.value)}
-              placeholder="What went wrong? E.g., 'Sidebar doesn't scroll on tablet'..."
+              placeholder={t('bugPlaceholder')}
               style={{ 
                 width: '100%', height: '150px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)',
                 borderRadius: '12px', padding: '1rem', color: 'white', fontSize: '0.9rem', resize: 'none', marginBottom: '1.5rem',
@@ -2849,7 +2322,7 @@ function App() {
               className="action-btn"
               style={{ background: 'var(--accent-color)', color: 'white', fontWeight: '800' }}
             >
-              Report to GitHub
+              {t('reportToGithub')}
             </button>
           </div>
         </div>
@@ -2860,12 +2333,12 @@ function App() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', padding: '1rem' }}>
           <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: '900' }}>Provision Agency</h3>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: '900' }}>{t('provisionAgency')}</h3>
               <button onClick={() => setIsAddAgencyModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={20} /></button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>AGENCY NAME</label>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('agencyName').toUpperCase()}</label>
                 <input 
                   type="text" 
                   value={newAgencyData.name} 
@@ -2875,7 +2348,7 @@ function App() {
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>REGION</label>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('region').toUpperCase()}</label>
                 <select 
                   value={newAgencyData.region} 
                   onChange={e => setNewAgencyData({...newAgencyData, region: e.target.value})}
@@ -2887,7 +2360,7 @@ function App() {
                 </select>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>SUBSCRIPTION TIER</label>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('subscriptionTier').toUpperCase()}</label>
                 <select 
                   value={newAgencyData.tier} 
                   onChange={e => setNewAgencyData({...newAgencyData, tier: e.target.value})}
@@ -2900,8 +2373,8 @@ function App() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: '1rem', marginTop: '2.5rem' }}>
-              <button onClick={() => setIsAddAgencyModalOpen(false)} style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid var(--card-border)', color: 'white', borderRadius: '12px', fontWeight: '700' }}>Cancel</button>
-              <button onClick={addAgency} className="action-btn" style={{ flex: 1, background: 'var(--accent-color)', color: 'white', fontWeight: '800' }}>Provision</button>
+              <button onClick={() => setIsAddAgencyModalOpen(false)} style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid var(--card-border)', color: 'white', borderRadius: '12px', fontWeight: '700' }}>{t('cancel')}</button>
+              <button onClick={addAgency} className="action-btn" style={{ flex: 1, background: 'var(--accent-color)', color: 'white', fontWeight: '800' }}>{t('provision')}</button>
             </div>
           </div>
         </div>
@@ -2912,12 +2385,12 @@ function App() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', padding: '1rem' }}>
           <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: '900' }}>Add Team Member</h3>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: '900' }}>{t('addTeamMember')}</h3>
               <button onClick={() => setIsAddOperatorModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={20} /></button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>FULL NAME</label>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('fullName').toUpperCase()}</label>
                 <input 
                   type="text" 
                   value={newOperatorData.name} 
@@ -2927,7 +2400,7 @@ function App() {
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>EMAIL ADDRESS</label>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('emailAddress').toUpperCase()}</label>
                 <input 
                   type="email" 
                   value={newOperatorData.email} 
@@ -2937,7 +2410,7 @@ function App() {
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>ASSIGN ROLE</label>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('assignRole').toUpperCase()}</label>
                 <select 
                   value={newOperatorData.role} 
                   onChange={e => setNewOperatorData({...newOperatorData, role: e.target.value})}
@@ -2951,8 +2424,8 @@ function App() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: '1rem', marginTop: '2.5rem' }}>
-              <button onClick={() => setIsAddOperatorModalOpen(false)} style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid var(--card-border)', color: 'white', borderRadius: '12px', fontWeight: '700' }}>Cancel</button>
-              <button onClick={addOperator} className="action-btn" style={{ flex: 1, background: 'var(--accent-color)', color: 'white', fontWeight: '800' }}>Add to Team</button>
+              <button onClick={() => setIsAddOperatorModalOpen(false)} style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid var(--card-border)', color: 'white', borderRadius: '12px', fontWeight: '700' }}>{t('cancel')}</button>
+              <button onClick={addOperator} className="action-btn" style={{ flex: 1, background: 'var(--accent-color)', color: 'white', fontWeight: '800' }}>{t('addToTeam')}</button>
             </div>
           </div>
         </div>
