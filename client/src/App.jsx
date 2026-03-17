@@ -75,6 +75,56 @@ function App() {
     }
   };
 
+  const renderNotifications = () => (
+    <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: '10px', pointerEvents: 'none' }}>
+      {notifications.map(n => (
+        <div key={n.id} className="glass-card fade-in" style={{ 
+          padding: '1rem 1.5rem', 
+          background: 'rgba(5, 7, 10, 0.8)', 
+          borderColor: 'var(--accent-color)', 
+          borderLeft: '4px solid var(--accent-color)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+          pointerEvents: 'auto'
+        }}>
+          <MessageCircle size={18} color="var(--accent-color)" />
+          <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>{n.msg}</div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const playNotificationSound = useCallback((type = 'info') => {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      if (type === 'emergency') {
+        oscillator.type = 'sawtooth';
+        oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+      } else {
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(type === 'success' ? 880 : 660, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      }
+
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.5);
+    } catch (e) {
+      console.warn('Audio feedback blocked by browser policies or not supported');
+    }
+  }, []);
+
   const [activeCall, setActiveCall] = useState(null);
   const [incomingCall, setIncomingCall] = useState(null);
   const [callTime, setCallTime] = useState(0);
@@ -148,6 +198,88 @@ function App() {
   const [stats] = useState(MOCK_STATS);
   const [auditLogs] = useState(MOCK_AUDIT_LOG);
   const [sessions] = useState(MOCK_SESSIONS);
+  const [typingProfiles, setTypingProfiles] = useState({});
+  const [notifications, setNotifications] = useState(() => {
+    const saved = localStorage.getItem('nexus_notifications');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [notificationPanelOpen, setNotificationPanelOpen] = useState(false);
+  const [isSimulating, setIsSimulating] = useState(true);
+
+  useEffect(() => {
+    localStorage.setItem('nexus_notifications', JSON.stringify(notifications.slice(0, 50)));
+  }, [notifications]);
+
+  const addNotification = useCallback((msg, type = 'info') => {
+    const id = Date.now();
+    const newNotification = { id, msg, type, read: false, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+    setNotifications(prev => [newNotification, ...prev]);
+    playNotificationSound(type);
+    
+    // Auto-dismiss logic for temporary toast remains, but item stays in history
+    setTimeout(() => {
+      // We don't remove from notifications state, just let the UI handle what's a 'toast' vs 'history'
+    }, 4000);
+  }, [playNotificationSound]);
+
+  // Real-time message simulation logic
+  useEffect(() => {
+    if (!isLoggedIn || !isSimulating) return;
+
+    const interval = setInterval(() => {
+      // ~10-15% chance of a new event
+      if (Math.random() > 0.85) {
+        const availableProfiles = profiles.filter(p => !typingProfiles[p.id]);
+        if (availableProfiles.length === 0) return;
+
+        const randomProfile = availableProfiles[Math.floor(Math.random() * availableProfiles.length)];
+        const randomClient = ["+44 7700 900" + Math.floor(Math.random() * 899 + 100), "+1 212 555 0" + Math.floor(Math.random() * 89 + 10)][Math.floor(Math.random() * 2)];
+        
+        // Start Typing
+        setTypingProfiles(prev => ({ ...prev, [randomProfile.id]: randomClient }));
+        
+        // Message arrives after short delay
+        setTimeout(() => {
+          const newMessage = {
+            id: Date.now(),
+            profileId: randomProfile.id,
+            from: randomClient,
+            text: [
+              "Are you available for a callback?",
+              "I'm interested in your services for tonight.",
+              "Can we meet in central London?",
+              "What's your availability for the weekend?",
+              "Hi there! Just saw your profile.",
+              "Hello, are you online?",
+              "I'd like to book a session."
+            ][Math.floor(Math.random() * 7)],
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          };
+          
+          setMessages(prev => [newMessage, ...prev]);
+          addNotification(`${t('newInboxMessage') || 'New message on'} ${randomProfile.name}`, 'info');
+          
+          // Randomly trigger other notification types for demo
+          const rand = Math.random();
+          if (rand > 0.85) {
+            setTimeout(() => addNotification(t('newBooking') || 'New Booking', 'success'), 2000);
+          } else if (rand > 0.75) {
+            setTimeout(() => addNotification(t('incomingCall') || 'Incoming Call', 'emergency'), 3000);
+          } else if (rand > 0.65) {
+            setTimeout(() => addNotification('System: Session sync warning', 'warning'), 1500);
+          }
+
+          setTypingProfiles(prev => {
+            const next = { ...prev };
+            delete next[randomProfile.id];
+            return next;
+          });
+        }, 4000);
+      }
+    }, 12000);
+
+    return () => clearInterval(interval);
+  }, [isLoggedIn, profiles, typingProfiles]);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [editingProfileData, setEditingProfileData] = useState(null);
 
@@ -206,8 +338,24 @@ function App() {
 
   // Initialize Socket Connection
   useSocket(
-    useCallback((newMsg) => setMessages(prev => [...prev, newMsg]), []),
-    useCallback((updatedMsg) => setMessages(prev => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m)), [])
+    useCallback((newMsg) => {
+      setMessages(prev => [newMsg, ...prev]);
+      
+      // Find profile for notification
+      const profile = profiles.find(p => p.id === newMsg.profileId);
+      if (profile) {
+        addNotification(`${t('newInboxMessage') || 'New message on'} ${profile.name}`, 'info');
+      }
+    }, [profiles, t, addNotification]),
+    useCallback((updatedMsg) => {
+      setMessages(prev => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m));
+    }, []),
+    useCallback((callData) => {
+      // Find profile for notification
+      const profile = profiles.find(p => p.id === callData.profileId);
+      const name = profile ? profile.name : callData.profileName || 'Unknown';
+      addNotification(`${t('incomingCall') || 'Incoming Call'} for ${name} - ${callData.from}`, 'emergency');
+    }, [profiles, t, addNotification])
   );
 
   const addAgency = useCallback(() => {
@@ -513,6 +661,71 @@ function App() {
   }, []);
 
   // Main UI logic
+  const renderNotificationPanel = () => {
+    if (!notificationPanelOpen) return null;
+    return (
+      <div style={{ position: 'fixed', right: 0, top: 0, bottom: 0, width: '400px', background: 'rgba(5, 7, 10, 0.95)', borderLeft: '1px solid var(--card-border)', zIndex: 1200, display: 'flex', flexDirection: 'column', backdropFilter: 'blur(30px)', animation: 'slideInRight 0.3s cubic-bezier(0, 0, 0.2, 1)' }}>
+        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>{t('notifications')}</h3>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <button onClick={() => setNotifications([])} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}>{t('clearAll')}</button>
+            <button onClick={() => setNotificationPanelOpen(false)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={20} /></button>
+          </div>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }} className="custom-scrollbar">
+          {notifications.length === 0 ? (
+            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+              {t('noNotifications')}
+            </div>
+          ) : (
+            notifications.map(n => (
+              <div key={n.id} style={{ 
+                padding: '1.25rem', 
+                borderRadius: '16px', 
+                background: n.read ? 'transparent' : 'rgba(59, 130, 246, 0.05)', 
+                border: '1px solid var(--card-border)', 
+                marginBottom: '1rem',
+                position: 'relative',
+                borderLeft: `4px solid ${
+                  n.type === 'emergency' ? 'var(--error-color)' : 
+                  n.type === 'success' ? 'var(--success-color)' : 
+                  n.type === 'warning' ? 'var(--warning-color)' : 'var(--accent-color)'
+                }`
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)' }}>{n.timestamp}</span>
+                  {!n.read && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-color)' }}></div>}
+                </div>
+                <div style={{ fontSize: '0.9rem', fontWeight: '600', color: 'white' }}>{n.msg}</div>
+              </div>
+            ))
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800' }}>
+               <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--success-color)', animation: 'pulse 2s infinite' }}></div>
+               78.141.202.139:3001
+             </div>
+             <button 
+               onClick={() => setIsSimulating(!isSimulating)}
+               style={{ 
+                 padding: '4px 10px', 
+                 borderRadius: '6px', 
+                 border: '1px solid var(--card-border)', 
+                 background: isSimulating ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+                 color: isSimulating ? 'var(--accent-color)' : 'var(--text-secondary)',
+                 fontSize: '0.65rem',
+                 fontWeight: '800',
+                 cursor: 'pointer'
+               }}
+             >
+               {isSimulating ? 'SIMULATION: ON' : 'SIMULATION: OFF'}
+             </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderContent = () => {
     if (!isLoggedIn) {
       if (showResetPassword) {
@@ -680,9 +893,24 @@ function App() {
               </button>
             )}
           </div>
-          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '8px', border: '1px solid var(--card-border)' }}>
-            <button onClick={() => setLang('cz')} style={{ flex: 1, padding: '4px 8px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}>CZ</button>
-            <button onClick={() => setLang('en')} style={{ flex: 1, padding: '4px 8px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}>EN</button>
+          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '12px', border: '1px solid var(--card-border)', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', padding: '4px', borderRadius: '8px', flex: 1 }}>
+              <button onClick={() => setLang('cz')} style={{ flex: 1, padding: '4px 8px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}>CZ</button>
+              <button onClick={() => setLang('en')} style={{ flex: 1, padding: '4px 8px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}>EN</button>
+            </div>
+            <button 
+              onClick={() => {
+                setNotificationPanelOpen(true);
+                // Mark all as read when opening panel for this demo
+                setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+              }} 
+              style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
+            >
+              <Bell size={16} />
+              {notifications.some(n => !n.read) && (
+                <div style={{ position: 'absolute', top: '-1px', right: '-1px', width: '10px', height: '10px', background: 'var(--error-color)', borderRadius: '50%', border: '2px solid var(--bg-color)', animation: 'ping 1.5s infinite' }}></div>
+              )}
+            </button>
           </div>
         </div>
 
@@ -795,8 +1023,13 @@ function App() {
                       position: 'relative'
                     }}
                   >
-                    <div style={{ width: '8px', height: '8px', background: p.status === 'online' ? 'var(--success-color)' : 'var(--text-secondary)', borderRadius: '50%' }}></div>
-                    <span style={{ fontSize: '0.85rem', fontWeight: activeProfile?.id === p.id ? '700' : '500', color: activeProfile?.id === p.id ? 'white' : 'var(--text-secondary)' }}>{p.name}</span>
+                    <div style={{ width: '8px', height: '8px', background: p.status === 'online' ? 'var(--success-color)' : 'var(--text-secondary)', borderRadius: '50%', position: 'relative' }}>
+                      {typingProfiles[p.id] && <div className="typing-pulse" style={{ position: 'absolute', inset: -2, border: '2px solid var(--success-color)', borderRadius: '50%', animation: 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite' }}></div>}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '0.85rem', fontWeight: activeProfile?.id === p.id ? '700' : '500', color: activeProfile?.id === p.id ? 'white' : 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                      {typingProfiles[p.id] && <div style={{ fontSize: '0.6rem', color: 'var(--success-color)', fontWeight: '800' }}>{t('typing').toUpperCase()}</div>}
+                    </div>
                     {unread > 0 && <div style={{ marginLeft: 'auto', background: 'var(--error-color)', color: 'white', fontSize: '0.6rem', padding: '1px 5px', borderRadius: '4px', fontWeight: '900' }}>{unread}</div>}
                   </button>
                 );
@@ -941,6 +1174,15 @@ function App() {
                       </div>
                       <div style={{ flex: 1, padding: '2rem', overflowY: 'auto', background: 'rgba(0,0,0,0.2)' }}>
                          <div className="message-bubble-in" style={{ marginBottom: '1rem' }}>{selectedChat.text}</div>
+                         
+                         {typingProfiles[activeProfileId] === selectedChat.from && (
+                           <div className="message-bubble-in fade-in" style={{ marginBottom: '1rem', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '8px', width: 'fit-content' }}>
+                             <div className="typing-dot" style={{ width: '6px', height: '6px', background: 'var(--accent-color)', borderRadius: '50%', animation: 'bounce 0.6s infinite alternate' }}></div>
+                             <div className="typing-dot" style={{ width: '6px', height: '6px', background: 'var(--accent-color)', borderRadius: '50%', animation: 'bounce 0.6s infinite alternate 0.2s' }}></div>
+                             <div className="typing-dot" style={{ width: '6px', height: '6px', background: 'var(--accent-color)', borderRadius: '50%', animation: 'bounce 0.6s infinite alternate 0.4s' }}></div>
+                           </div>
+                         )}
+
                          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)', border: '1px dashed var(--card-border)', borderRadius: '12px' }}>
                             Chat history and tools are temporarily simplified for stability.
                          </div>
@@ -1458,7 +1700,7 @@ function App() {
                 <div style={{ marginTop: '0.5rem', borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem' }}>
                   <div style={{ fontSize: '0.85rem', fontWeight: '800', marginBottom: '1rem', color: 'var(--accent-color)' }}>{t('smsGuideTitle')}</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {[1, 2, 3, 4, 5].map(step => (
+                    {[1, 2, 3, 4, 5, 6].map(step => (
                       <div key={step} style={{ display: 'flex', gap: '0.75rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                         <div style={{ minWidth: '18px', height: '18px', background: 'rgba(59, 130, 246, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: '800', color: '#3b82f6' }}>{step}</div>
                         <div>{(t(`smsStep${step}`) || '').toString().substring(3)}</div>
@@ -1490,6 +1732,30 @@ function App() {
                 <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
                   <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#10b981', marginBottom: '0.5rem' }}>{t('webhookLabel')}</div>
                   <code style={{ fontSize: '0.8rem', wordBreak: 'break-all' }}>http://78.141.202.139:3001/api/device/mobile/call</code>
+                </div>
+
+                <div style={{ marginTop: '0.5rem', borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem' }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: '800', marginBottom: '1rem', color: '#10b981' }}>{t('callForwardingTitle')}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {[1, 2, 3].map(step => (
+                      <div key={step} style={{ display: 'flex', gap: '0.75rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        <div style={{ minWidth: '18px', height: '18px', background: 'rgba(16, 185, 129, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: '800', color: '#10b981' }}>{step}</div>
+                        <div>{(t(`callForwardingStep${step}`) || '').toString().substring(3)}</div>
+                      </div>
+                    ))}
+                    <div style={{ 
+                      marginTop: '0.5rem', 
+                      padding: '0.75rem', 
+                      background: 'rgba(16, 185, 129, 0.1)', 
+                      borderRadius: '8px', 
+                      fontSize: '0.75rem', 
+                      color: '#10b981', 
+                      fontStyle: 'italic',
+                      border: '1px dashed rgba(16, 185, 129, 0.3)'
+                    }}>
+                      {t('callForwardingNote')}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2806,6 +3072,8 @@ function App() {
           </div>
         </div>
       )}
+      {renderNotifications()}
+      {renderNotificationPanel()}
     </div>
     );
   };
