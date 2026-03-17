@@ -122,8 +122,8 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [] })
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
         {[
           { label: t('totalRevenue'), value: '$842,500', icon: <DollarSign color="#10b981" />, growth: '+12.5%' },
-          { label: t('agencies').toUpperCase(), value: (agencies || []).length, icon: <Building2 color="#3b82f6" />, growth: '+2' },
-          { label: t('activeNodes').toUpperCase(), value: '14', icon: <Zap color="#f59e0b" />, growth: 'HEALTHY' },
+          { label: (t('agencies') || 'Agencies').toUpperCase(), value: (agencies || []).length, icon: <Building2 color="#3b82f6" />, growth: '+2' },
+          { label: (t('activeNodes') || 'Active Nodes').toUpperCase(), value: '14', icon: <Zap color="#f59e0b" />, growth: 'HEALTHY' },
           { label: t('globalTraffic') || 'GLOBAL TRAFFIC', value: '2.4M', icon: <Activity color="#8b5cf6" />, growth: '85% LOAD' }
         ].map((stat, i) => (
           <div key={i} className="glass-card" style={{ padding: '1.5rem' }}>
@@ -804,12 +804,13 @@ function App() {
     localStorage.removeItem('nexus_activeClient');
   }, []);
 
-  if (!isLoggedIn) {
-    if (showResetPassword) {
-      return <ResetPasswordView onComplete={handleResetComplete} t={t} />;
-    }
-    return (
-      <ErrorBoundary>
+  // Main UI logic
+  const renderContent = () => {
+    if (!isLoggedIn) {
+      if (showResetPassword) {
+        return <ResetPasswordView onComplete={handleResetComplete} t={t} />;
+      }
+      return (
         <LoginScreen 
           onLogin={handleLogin} 
           onResetRequired={handleResetRequired}
@@ -818,14 +819,13 @@ function App() {
           setLang={setLang} 
           t={t} 
         />
-      </ErrorBoundary>
-    );
-  }
-
-  // Main UI
-  return (
-    <ErrorBoundary>
+      );
+    }
+    
+    // Authenticated UI
+    return (
       <div className="mobile-container" style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: 'var(--bg-color)', color: 'white', position: 'relative' }}>
+        {/* ... child content remains here, we just moved the return into this function ... */}
         <style dangerouslySetInnerHTML={{ __html: `
           @media (max-width: 768px) {
             .desktop-sidebar {
@@ -1058,7 +1058,7 @@ function App() {
               { id: 'referrals', icon: Gift, label: t('referrals') },
               { id: 'qa', icon: FileSearch, label: t('qa') }
             ]),
-              { id: 'settings', icon: Settings, label: t('settings') },
+                { id: 'settings', icon: Settings, label: t('settings') },
           ].map(item => (
             <button key={item.id} 
               onClick={() => {
@@ -1075,7 +1075,7 @@ function App() {
                 const Icon = item.icon || Search;
                 return <Icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />;
               })()}
-              <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '700' : '500', fontSize: '1rem' }}>{item.label}</span>
+              <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '700' : '500', fontSize: '1rem' }}>{item.label || item.id}</span>
               {item.badge > 0 && <div className="unread-badge">{item.badge}</div>}
             </button>
           ))}
