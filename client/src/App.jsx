@@ -1155,10 +1155,10 @@ function App() {
                 </div>
               </div>
 
-              <div className="glass-card" style={{ padding: '2.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-                  <h3 style={{ fontSize: '1.5rem', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'linear-gradient(to right, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                    <FileEdit size={24} color="var(--accent-color)" /> {t('biography')} & {t('services')}
+              <div className="glass-card" style={{ padding: '2rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '0.6rem', background: 'linear-gradient(to right, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                    <FileEdit size={20} color="var(--accent-color)" /> {t('biography')} & {t('services')}
                   </h3>
                   <div style={{ display: 'flex', gap: '0.4rem', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '10px', border: '1px solid var(--card-border)' }}>
                     <button style={{ padding: '6px 12px', border: 'none', background: 'var(--accent-color)', color: 'white', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer' }}>EN</button>
@@ -1186,12 +1186,13 @@ function App() {
                   <div className="input-group-premium">
                     <label className="input-label-premium">{t('fullBioLabel')}</label>
                     <textarea 
-                      className="note-input" 
+                      className="note-input custom-scrollbar" 
                       style={{ 
-                        height: '300px', 
-                        lineHeight: '1.7', 
-                        fontSize: '1.1rem',
-                        borderBottom: '2px solid rgba(255, 255, 255, 0.1)'
+                        height: '220px', 
+                        lineHeight: '1.6', 
+                        fontSize: '1rem',
+                        borderBottom: '2px solid rgba(59, 130, 246, 0.3)',
+                        paddingBottom: '1rem'
                       }} 
                       defaultValue="Hi, I am available in the city center. VIP companion offering GFE, outcalls and incalls. Very friendly and open minded..."
                       placeholder={t('bioPlaceholder')}
