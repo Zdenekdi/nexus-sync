@@ -82,6 +82,7 @@ function App() {
   const [sessionHistories] = useState({});
   const [isBugReportOpen, setIsBugReportOpen] = useState(false);
   const [bugDescription, setBugDescription] = useState('');
+  const [showOnlyOnline, setShowOnlyOnline] = useState(false);
 
   // Agency Management States
   const [isAddAgencyModalOpen, setIsAddAgencyModalOpen] = useState(false);
