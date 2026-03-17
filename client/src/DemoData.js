@@ -451,6 +451,25 @@ export const MOCK_REFERRALS = {
             { id: 1, date: '2024-01-20', entity: 'Northern Lights Agency', status: 'Active', reward: '£150' }
         ]
     },
+    'op-03': {
+        link: 'https://nexus.sync/ref/sarah-k',
+        stats: { clicks: 89, signups: 5, earned: '£300', pending: '£50' },
+        history: [
+            { id: 1, date: '2024-03-05', entity: 'US Top Stars', status: 'Active', reward: '£300' }
+        ]
+    },
+    'op-04': {
+        link: 'https://nexus.sync/ref/elena-b',
+        stats: { clicks: 34, signups: 1, earned: '£100', pending: '£0' },
+        history: [
+            { id: 1, date: '2024-02-28', entity: 'Night Shift Partners', status: 'Active', reward: '£100' }
+        ]
+    },
+    'op-05': { // Model
+        link: 'https://nexus.sync/ref/diana',
+        stats: { clicks: 12, signups: 0, earned: '£0', pending: '£0' },
+        history: []
+    },
     'op-06': { // Super Admin
         link: 'https://nexus.sync/ref/owner',
         stats: { clicks: 1240, signups: 45, earned: '£12,500', pending: '£2,400' },
