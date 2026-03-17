@@ -2966,6 +2966,12 @@ function App() {
         </div>
       )}
     </div>
+    );
+  };
+
+  return (
+    <ErrorBoundary>
+      {renderContent()}
     </ErrorBoundary>
   );
 }
