@@ -527,3 +527,26 @@ h1 {
   border-color: var(--error-color);
   background: rgba(239, 68, 68, 0.1);
 }
+
+.unread-badge {
+  background: var(--accent-color);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-left: auto;
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.unread-count-mini {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 10px;
+  height: 10px;
+  background: var(--accent-color);
+  border-radius: 50%;
+  border: 2px solid var(--bg-color);
+  box-shadow: 0 0 5px var(--accent-glow);
+}
