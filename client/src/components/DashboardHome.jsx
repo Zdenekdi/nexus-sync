@@ -1,7 +1,7 @@
 import React from 'react';
 import { DollarSign, Building2, Zap, Activity } from 'lucide-react';
 
-const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [] }) => {
+const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], isShiftActive, setIsShiftActive }) => {
   const isMobile = window.innerWidth < 768;
   
   const renderSuperAdmin = () => (
@@ -89,9 +89,22 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [] })
           <h2 style={{ fontSize: '2rem', fontWeight: '900' }}>{t('personalWorkspace')}</h2>
           <p style={{ color: 'var(--text-secondary)' }}>{t('welcomeBack')}, {user.name}. {t('shiftSummaryDesc')}</p>
         </div>
-        <div style={{ padding: '0.6rem 1.25rem', background: 'rgba(34, 197, 94, 0.1)', color: 'var(--success-color)', borderRadius: '10px', fontSize: '0.85rem', fontWeight: '800', border: '1px solid currentColor' }}>
-          {t('shiftActive')}
-        </div>
+        <button 
+          onClick={() => setIsShiftActive?.(!isShiftActive)}
+          style={{ 
+            padding: '0.6rem 1.25rem', 
+            background: isShiftActive ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)', 
+            color: isShiftActive ? 'var(--success-color)' : '#ef4444', 
+            borderRadius: '10px', 
+            fontSize: '0.85rem', 
+            fontWeight: '800', 
+            border: '1px solid currentColor',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          {isShiftActive ? t('shiftActive') : t('shiftOffline')}
+        </button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '2rem' }}>
