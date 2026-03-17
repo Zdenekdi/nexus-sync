@@ -128,8 +128,6 @@ function App() {
   const [targetLang, setTargetLang] = useState('en');
   const [messageValue, setMessageValue] = useState('');
   const [sessionHistories] = useState({});
-  const [isBugReportOpen, setIsBugReportOpen] = useState(false);
-  const [bugDescription, setBugDescription] = useState('');
   const [showOnlyOnline, setShowOnlyOnline] = useState(false);
 
   // Agency Management States
@@ -604,72 +602,6 @@ function App() {
         />
       )}
 
-      {/* Simulation Toolbar (Footer Optimization) (Phase 7/10) */}
-      <div className="demo-controls" style={{ 
-        position: 'fixed', 
-        bottom: isMobile ? '10px' : '2rem', 
-        left: isMobile ? '10px' : '50%', 
-        right: isMobile ? '10px' : 'auto',
-        transform: isMobile ? 'none' : 'translateX(-50%)', 
-        background: 'rgba(5,7,10,0.85)', 
-        backdropFilter: 'blur(20px)', 
-        padding: isMobile ? '0.6rem 1rem' : '0.75rem 2rem', 
-        borderRadius: '50px', 
-        border: '1px solid var(--accent-color)', 
-        zIndex: 1000, 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: isMobile ? '1rem' : '2rem', 
-        boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
-        maxWidth: isMobile ? 'calc(100% - 20px)' : 'none'
-      }}>
-        {!isMobile && <div className="demo-controls-label" style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--accent-color)', letterSpacing: '0.1em' }}>DEMO SIMULATION CONTROLS:</div>}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Building2 size={14} color="var(--text-secondary)" />
-            <select
-              value={activeClient?.id || ''}
-              onChange={(e) => {
-                const client = MOCK_CLIENTS.find(c => c.id === e.target.value);
-                setActiveClient(client);
-                const firstOp = MOCK_OPERATORS.find(op => op.clientId === client.id);
-                setActiveOperator(firstOp);
-                setActiveProfileId(null);
-                setSelectedChatId(null);
-              }}
-              style={{ background: 'transparent', border: 'none', color: 'white', fontSize: isMobile ? '0.7rem' : '0.8rem', fontWeight: '700', outline: 'none', maxWidth: isMobile ? '80px' : 'none' }}
-            >
-              {MOCK_CLIENTS.map(c => <option key={c.id} value={c.id} style={{ background: '#0a0a0a' }}>{c.name}</option>)}
-            </select>
-          </div>
-          <div style={{ width: '1px', height: '20px', background: 'var(--card-border)' }}></div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <User size={14} color="var(--accent-color)" />
-            <select
-              value={activeOperator?.id}
-              onChange={(e) => {
-                const op = MOCK_OPERATORS.find(o => o.id === e.target.value);
-                setActiveOperator(op);
-                setActiveProfileId(null);
-                setSelectedChatId(null);
-              }}
-              style={{ background: 'transparent', border: 'none', color: 'white', fontSize: isMobile ? '0.7rem' : '0.8rem', fontWeight: '700', outline: 'none', maxWidth: isMobile ? '80px' : 'none' }}
-            >
-              {availableOperators.map(o => <option key={o.id} value={o.id} style={{ background: '#0a0a0a' }}>{o.name}</option>)}
-            </select>
-          </div>
-          {activeOperator?.isAdmin || activeOperator?.isSuperAdmin ? null : (
-            <>
-              <div style={{ height: '32px', width: '1px', background: 'var(--card-border)' }} />
-              <button
-                onClick={simulateIncomingCall}
-                className="action-btn pulse-animation"
-                style={{ background: 'var(--accent-color)', color: 'white', width: 'auto', padding: isMobile ? '0.4rem 0.8rem' : '0.5rem 1rem', marginTop: 0, fontSize: isMobile ? '0.65rem' : '0.75rem' }}
-              >
-                <Phone size={14} /> {isMobile ? 'Call' : 'Simulovat hovor'}
-              </button>
-            </>
-          )}
-      </div>
 
       {/* Sidebar */}
       <nav className={`desktop-sidebar ${isMobileMenuOpen ? 'open' : ''}`} style={{
@@ -1184,12 +1116,16 @@ function App() {
         )}
 
         {activeTab === 'web-profiles' && (
-          <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto', display: 'flex', gap: '2rem' }} className="fade-in">
+          <div style={{ padding: '2rem', flex: 1, overflowY: 'auto', display: 'flex', gap: '1.5rem', maxHeight: '100%' }} className="fade-in custom-scrollbar">
             {/* Left Content Area (Gallery & Bio) */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              <div>
-                <h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('webProfiles')} - {activeProfile?.name || '...'}</h2>
-                <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('webProfilesDesc')}</p>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.5rem' }}>
+                <div>
+                  <h2 style={{ fontSize: '1.75rem', fontWeight: '900', background: 'linear-gradient(to right, #fff, var(--accent-color))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                    {activeProfile?.name || '...'}
+                  </h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t('webProfilesDesc')}</p>
+                </div>
               </div>
 
               <div className="glass-card" style={{ padding: '2rem' }}>
@@ -1272,40 +1208,51 @@ function App() {
             </div>
 
             {/* Right Sync Area */}
-            <div style={{ width: '380px', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              <div className="glass-card" style={{ padding: '2rem', background: 'rgba(5,7,10,0.6)' }}>
-                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}><RefreshCw size={20} color="var(--success-color)" className={isSyncing ? "spin-animation" : ""} /> {t('syncStatus')}</h3>
+            <div style={{ width: '300px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div className="glass-card" style={{ padding: '1.5rem', background: 'rgba(5,7,10,0.6)' }}>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '1.1rem' }}>
+                  <RefreshCw size={18} color="var(--success-color)" className={isSyncing ? "spin-animation" : ""} /> {t('syncStatus')}
+                </h3>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
-                  <div className="sync-platform-row">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <div className="platform-icon">AW</div>
-                      <div><div style={{ fontWeight: '700', fontSize: '0.9rem' }}>AdultWork.com</div><div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{t('ukPrimary')}</div></div>
+                  <div className="sync-platform-row" style={{ padding: '0.75rem', borderRadius: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div className="platform-icon" style={{ width: '28px', height: '28px', fontSize: '0.6rem' }}>AW</div>
+                      <div>
+                        <div style={{ fontWeight: '700', fontSize: '0.8rem' }}>AdultWork.com</div>
+                        <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{t('ukPrimary')}</div>
+                      </div>
                     </div>
-                    <div className={`sync-badge ${syncStatus.aw}`}>
-                      {syncStatus.aw === 'syncing' ? <RefreshCw size={12} className="spin-animation" /> : (syncStatus.aw === 'synced' ? <Check size={12} /> : <X size={12} />)}
+                    <div className={`sync-badge ${syncStatus.aw}`} style={{ fontSize: '0.6rem', padding: '2px 6px' }}>
+                      {syncStatus.aw === 'syncing' ? <RefreshCw size={10} className="spin-animation" /> : (syncStatus.aw === 'synced' ? <Check size={10} /> : <X size={10} />)}
                       {syncStatus.aw.toUpperCase()}
                     </div>
                   </div>
 
-                  <div className="sync-platform-row">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <div className="platform-icon">EG</div>
-                      <div><div style={{ fontWeight: '700', fontSize: '0.9rem' }}>EuroGirlsEscort</div><div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{t('euWide')}</div></div>
+                  <div className="sync-platform-row" style={{ padding: '0.75rem', borderRadius: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div className="platform-icon" style={{ width: '28px', height: '28px', fontSize: '0.6rem' }}>EG</div>
+                      <div>
+                        <div style={{ fontWeight: '700', fontSize: '0.8rem' }}>EuroGirlsEscort</div>
+                        <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{t('euWide')}</div>
+                      </div>
                     </div>
-                    <div className={`sync-badge ${syncStatus.ege}`}>
-                      {syncStatus.ege === 'syncing' ? <RefreshCw size={12} className="spin-animation" /> : (syncStatus.ege === 'synced' ? <Check size={12} /> : <X size={12} />)}
+                    <div className={`sync-badge ${syncStatus.ege}`} style={{ fontSize: '0.6rem', padding: '2px 6px' }}>
+                      {syncStatus.ege === 'syncing' ? <RefreshCw size={10} className="spin-animation" /> : (syncStatus.ege === 'synced' ? <Check size={10} /> : <X size={10} />)}
                       {syncStatus.ege.toUpperCase()}
                     </div>
                   </div>
 
-                  <div className="sync-platform-row">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <div className="platform-icon">TP</div>
-                      <div><div style={{ fontWeight: '700', fontSize: '0.9rem' }}>ThePuntersB...</div><div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{t('reviewSync')}</div></div>
+                  <div className="sync-platform-row" style={{ padding: '0.75rem', borderRadius: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div className="platform-icon" style={{ width: '28px', height: '28px', fontSize: '0.6rem' }}>TP</div>
+                      <div>
+                        <div style={{ fontWeight: '700', fontSize: '0.8rem' }}>ThePuntersB...</div>
+                        <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{t('reviewSync')}</div>
+                      </div>
                     </div>
-                    <div className={`sync-badge ${syncStatus.tpb}`}>
-                      {syncStatus.tpb === 'syncing' ? <RefreshCw size={12} className="spin-animation" /> : (syncStatus.tpb === 'synced' ? <Check size={12} /> : <AlertTriangle size={12} />)}
+                    <div className={`sync-badge ${syncStatus.tpb}`} style={{ fontSize: '0.6rem', padding: '2px 6px' }}>
+                      {syncStatus.tpb === 'syncing' ? <RefreshCw size={10} className="spin-animation" /> : (syncStatus.tpb === 'synced' ? <Check size={10} /> : <AlertTriangle size={10} />)}
                       {syncStatus.tpb.toUpperCase()}
                     </div>
                   </div>
@@ -1332,7 +1279,7 @@ function App() {
         )}
 
         {activeTab === 'device-setup' && (
-          <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
+          <div style={{ padding: '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
               <div>
                 <h2 style={{ fontSize: '2rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -1417,7 +1364,7 @@ function App() {
         )}
 
         {activeTab === 'hierarchy' && activeOperator?.isAdmin && (
-          <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
+          <div style={{ padding: '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
             <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('teamHierarchy')}</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>{t('teamHierarchyDesc')}</p>
             
@@ -2440,65 +2387,6 @@ function App() {
         .toggle-switch:hover { border-color: var(--accent-color) !important; }
       `}</style>
       
-      {/* Floating Bug Button */}
-      {!isBugReportOpen && (
-        <button 
-          onClick={() => setIsBugReportOpen(true)}
-          style={{ 
-            position: 'fixed', bottom: '2rem', right: '2rem', width: '50px', height: '50px', 
-            borderRadius: '50%', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 1000,
-            boxShadow: '0 10px 30px rgba(239, 68, 68, 0.3)', transition: 'all 0.3s'
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'; }}
-        >
-          <Bug size={ 24 } color="#ef4444" />
-        </button>
-      )}
-
-      {/* Bug Report Modal */}
-      {isBugReportOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '500px', padding: '2.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <Bug size={24} color="#ef4444" /> {t('reportBugTitle')}
-              </h2>
-              <button onClick={() => setIsBugReportOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={24} /></button>
-            </div>
-            
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-              {t('bugReportSubtitle')}
-            </p>
-
-            <textarea 
-              value={bugDescription}
-              onChange={(e) => setBugDescription(e.target.value)}
-              placeholder={t('bugPlaceholder')}
-              style={{ 
-                width: '100%', height: '150px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)',
-                borderRadius: '12px', padding: '1rem', color: 'white', fontSize: '0.9rem', resize: 'none', marginBottom: '1.5rem',
-                outline: 'none'
-              }}
-            />
-
-            <button 
-              onClick={() => {
-                const title = encodeURIComponent(`[BUG] Issue reported by ${activeOperator?.name || 'Unknown'}`);
-                const body = encodeURIComponent(`Operator: ${activeOperator?.name || 'Unknown'}\nRole: ${activeOperator?.role || 'Unknown'}\nClient: ${activeClient?.name || 'Super Admin'}\n\nDescription:\n${bugDescription}`);
-                window.open(`https://github.com/Zdenekdi/nexus-sync/issues/new?title=${title}&body=${body}`, '_blank');
-                setIsBugReportOpen(false);
-                setBugDescription('');
-              }}
-              className="action-btn"
-              style={{ background: 'var(--accent-color)', color: 'white', fontWeight: '800' }}
-            >
-              {t('reportToGithub')}
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Provision New Agency Modal */}
       {isAddAgencyModalOpen && (
