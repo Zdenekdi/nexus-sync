@@ -334,6 +334,11 @@ export const TRANSLATIONS = {
         profileName: 'Profile Name',
         phoneNumber: 'Phone Number',
         saveProfileChanges: 'Save Changes',
+        quickReplies: 'Quick Replies',
+        addQuickReply: 'Add Quick Reply',
+        replyLabel: 'Label (e.g. Services)',
+        replyText: 'Message Text',
+        useReply: 'Use'
     },
     cz: {
         logo: 'NEXUS',
@@ -668,5 +673,10 @@ export const TRANSLATIONS = {
         profileName: 'Jméno profilu',
         phoneNumber: 'Telefonní číslo',
         saveProfileChanges: 'Uložit změny',
+        quickReplies: 'Rychlé odpovědi',
+        addQuickReply: 'Přidat odpověď',
+        replyLabel: 'Štítek (např. Služby)',
+        replyText: 'Text zprávy',
+        useReply: 'Použít'
     }
 };

@@ -914,9 +914,48 @@ function App() {
                          </div>
                       </div>
                       <div style={{ padding: '1.5rem', borderTop: '1px solid var(--card-border)' }}>
+                         {selectedChat && activeProfile?.quickReplies?.length > 0 && (
+                           <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', overflowX: 'auto', paddingBottom: '0.5rem' }} className="custom-scrollbar">
+                             {activeProfile.quickReplies.map((reply) => (
+                               <button
+                                 key={reply.id}
+                                 onClick={() => setMessageValue(reply.text)}
+                                 style={{ 
+                                   whiteSpace: 'nowrap',
+                                   background: 'rgba(59, 130, 246, 0.1)',
+                                   border: '1px solid rgba(59, 130, 246, 0.3)',
+                                   color: 'var(--accent-color)',
+                                   padding: '0.4rem 0.8rem',
+                                   borderRadius: '8px',
+                                   fontSize: '0.75rem',
+                                   fontWeight: '700',
+                                   cursor: 'pointer'
+                                 }}
+                               >
+                                 {reply.label}
+                               </button>
+                             ))}
+                           </div>
+                         )}
                          <div style={{ display: 'flex', gap: '1rem' }}>
-                            <input type="text" placeholder="Type a message..." style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '1rem', borderRadius: '12px', color: 'white' }} />
-                            <button style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '12px' }}>SEND</button>
+                            <input 
+                              type="text" 
+                              value={messageValue}
+                              onChange={(e) => setMessageValue(e.target.value)}
+                              placeholder="Type a message..." 
+                              style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '1rem', borderRadius: '12px', color: 'white' }} 
+                            />
+                            <button 
+                              onClick={() => {
+                                if (messageValue.trim()) {
+                                  // Simplified send logic for demo
+                                  setMessageValue('');
+                                }
+                              }}
+                              style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '12px', fontWeight: '800' }}
+                            >
+                              SEND
+                            </button>
                          </div>
                       </div>
                     </div>
@@ -2406,7 +2445,7 @@ function App() {
       {/* Edit Profile Modal */}
       {isEditProfileModalOpen && editingProfileData && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', padding: '1rem' }}>
-          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem' }}>
+          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '600px', padding: '2.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
               <h3 style={{ fontSize: '1.5rem', fontWeight: '900' }}>{t('editProfile')}</h3>
               <button 
@@ -2420,24 +2459,83 @@ function App() {
               </button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('profileName').toUpperCase()}</label>
-                <input 
-                  type="text" 
-                  value={editingProfileData.name} 
-                  onChange={e => setEditingProfileData({...editingProfileData, name: e.target.value})}
-                  style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
-                />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('profileName').toUpperCase()}</label>
+                  <input 
+                    type="text" 
+                    value={editingProfileData.name} 
+                    onChange={e => setEditingProfileData({...editingProfileData, name: e.target.value})}
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('phoneNumber').toUpperCase()}</label>
+                  <input 
+                    type="text" 
+                    value={editingProfileData.phoneNumber || ''} 
+                    onChange={e => setEditingProfileData({...editingProfileData, phoneNumber: e.target.value})}
+                    placeholder="+44 ..."
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
+                  />
+                </div>
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('phoneNumber').toUpperCase()}</label>
-                <input 
-                  type="text" 
-                  value={editingProfileData.phoneNumber || ''} 
-                  onChange={e => setEditingProfileData({...editingProfileData, phoneNumber: e.target.value})}
-                  placeholder="+44 ..."
-                  style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
-                />
+
+              <div style={{ borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>{t('quickReplies').toUpperCase()}</label>
+                  <button 
+                    onClick={() => {
+                      const newReply = { id: `q-${Date.now()}`, label: 'New Reply', text: '' };
+                      setEditingProfileData({
+                        ...editingProfileData,
+                        quickReplies: [...(editingProfileData.quickReplies || []), newReply]
+                      });
+                    }}
+                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', padding: '0.4rem 0.8rem', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}
+                  >
+                    + {t('addQuickReply')}
+                  </button>
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {(editingProfileData.quickReplies || []).map((reply, index) => (
+                    <div key={reply.id} style={{ background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
+                      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                        <input 
+                          type="text" 
+                          placeholder={t('replyLabel')}
+                          value={reply.label}
+                          onChange={e => {
+                            const newReplies = [...editingProfileData.quickReplies];
+                            newReplies[index].label = e.target.value;
+                            setEditingProfileData({ ...editingProfileData, quickReplies: newReplies });
+                          }}
+                          style={{ flex: 1, background: 'rgba(0,0,0,0.2)', border: '1px solid var(--card-border)', padding: '0.5rem', borderRadius: '6px', color: 'white', fontSize: '0.8rem' }}
+                        />
+                        <button 
+                          onClick={() => {
+                            const newReplies = editingProfileData.quickReplies.filter((_, i) => i !== index);
+                            setEditingProfileData({ ...editingProfileData, quickReplies: newReplies });
+                          }}
+                          style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '0.5rem', borderRadius: '6px', cursor: 'pointer' }}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                      <textarea 
+                        placeholder={t('replyText')}
+                        value={reply.text}
+                        onChange={e => {
+                          const newReplies = [...editingProfileData.quickReplies];
+                          newReplies[index].text = e.target.value;
+                          setEditingProfileData({ ...editingProfileData, quickReplies: newReplies });
+                        }}
+                        style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--card-border)', padding: '0.5rem', borderRadius: '6px', color: 'white', fontSize: '0.8rem', minHeight: '60px', resize: 'vertical' }}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
             <div style={{ display: 'flex', gap: '1rem', marginTop: '2.5rem' }}>

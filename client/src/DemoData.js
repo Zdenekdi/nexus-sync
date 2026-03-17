@@ -74,6 +74,10 @@ export const MOCK_PROFILES = [
             { id: 'op-01', active: true, primary: true },
             { id: 'op-02', active: true, primary: false },
             { id: 'op-04', active: false, primary: false }
+        ],
+        quickReplies: [
+            { id: 'q1', label: 'Services', text: 'I offer GFE, massage and companion services. 1h/£150, 2h/£250.' },
+            { id: 'q2', label: 'Location', text: 'I am located in Central London, near Victoria station.' }
         ]
     },
     {
@@ -93,6 +97,10 @@ export const MOCK_PROFILES = [
         operators: [
             { id: 'op-01', active: true, primary: true },
             { id: 'op-04', active: true, primary: false }
+        ],
+        quickReplies: [
+            { id: 'q1', label: 'Rates', text: 'My rates are £200 per hour. Minimum 2 hours for outcalls.' },
+            { id: 'q2', label: 'Services', text: 'GFE, dinner dates and weekend trips available.' }
         ]
     },
     {
