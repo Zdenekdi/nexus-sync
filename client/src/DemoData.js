@@ -78,7 +78,8 @@ export const MOCK_PROFILES = [
         quickReplies: [
             { id: 'q1', label: 'Services', text: 'I offer GFE, massage and companion services. 1h/£150, 2h/£250.' },
             { id: 'q2', label: 'Location', text: 'I am located in Central London, near Victoria station.' }
-        ]
+        ],
+        phoneNumber: '+44 7700 900123'
     },
     {
         id: 'manc-05',
@@ -101,7 +102,8 @@ export const MOCK_PROFILES = [
         quickReplies: [
             { id: 'q1', label: 'Rates', text: 'My rates are £200 per hour. Minimum 2 hours for outcalls.' },
             { id: 'q2', label: 'Services', text: 'GFE, dinner dates and weekend trips available.' }
-        ]
+        ],
+        phoneNumber: '+44 7700 900456'
     },
     {
         id: 'birm-02',
@@ -120,7 +122,8 @@ export const MOCK_PROFILES = [
         operators: [
             { id: 'op-02', active: true, primary: true },
             { id: 'op-01', active: false, primary: false }
-        ]
+        ],
+        phoneNumber: '+44 7700 900789'
     },
     {
         id: 'nyc-01',
@@ -138,7 +141,8 @@ export const MOCK_PROFILES = [
         bio: 'NYC premium management.',
         operators: [
             { id: 'op-03', active: true, primary: true }
-        ]
+        ],
+        phoneNumber: '+1 212 555 0101'
     },
     {
         id: 'leeds-01',
@@ -156,7 +160,8 @@ export const MOCK_PROFILES = [
         bio: 'Leeds companion.',
         operators: [
             { id: 'op-01', active: true, primary: true }
-        ]
+        ],
+        phoneNumber: '+44 7700 900888'
     },
     {
         id: 'newc-03',
@@ -174,7 +179,8 @@ export const MOCK_PROFILES = [
         bio: 'Newcastle exclusive.',
         operators: [
             { id: 'op-01', active: true, primary: true }
-        ]
+        ],
+        phoneNumber: '+44 7700 900999'
     },
     {
         id: 'bris-02',
@@ -192,7 +198,8 @@ export const MOCK_PROFILES = [
         bio: 'Bristol visits.',
         operators: [
             { id: 'op-01', active: true, primary: true }
-        ]
+        ],
+        phoneNumber: '+44 7700 900777'
     },
     {
         id: 'card-01',
@@ -210,7 +217,8 @@ export const MOCK_PROFILES = [
         bio: 'Cardiff sensation.',
         operators: [
             { id: 'op-01', active: true, primary: true }
-        ]
+        ],
+        phoneNumber: '+44 7700 900666'
     }
 ];
 
