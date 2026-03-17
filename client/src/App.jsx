@@ -672,10 +672,10 @@ function App() {
 
       {/* Sidebar */}
       <nav className={`desktop-sidebar ${isMobileMenuOpen ? 'open' : ''}`} style={{
-        width: isSidebarCollapsed && !isMobile ? '80px' : '280px',
+        width: '280px',
         flexShrink: 0,
         borderRight: '1px solid var(--card-border)',
-        padding: isSidebarCollapsed && !isMobile ? '1.5rem 0.75rem' : '2rem 1.5rem',
+        padding: '2rem 1.5rem',
         background: 'rgba(5, 7, 10, 0.4)',
         backdropFilter: 'blur(30px)',
         display: 'flex',
@@ -698,27 +698,26 @@ function App() {
               <div style={{ width: '42px', height: '42px', background: 'var(--accent-color)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 15px var(--accent-glow)', flexShrink: 0 }}>
                 <Zap color="white" fill="white" size={22} />
               </div>
-              {(!isSidebarCollapsed || isMobile) && <span style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '0.05em' }}>{t('logo')}</span>}
+              <span style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '0.05em' }}>{t('logo')}</span>
             </div>
             {!isMobile && (
               <button 
                 onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
                 style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', padding: '0.4rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                title={isSidebarCollapsed ? "Show All Navigation" : "Collapse Navigation"}
               >
-                {isSidebarCollapsed ? <Menu size={16} /> : <X size={16} />}
+                {isSidebarCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
               </button>
             )}
           </div>
-          {(!isSidebarCollapsed || isMobile) && (
-            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '8px', border: '1px solid var(--card-border)' }}>
-              <button onClick={() => setLang('cz')} style={{ flex: 1, padding: '4px 8px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}>CZ</button>
-              <button onClick={() => setLang('en')} style={{ flex: 1, padding: '4px 8px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}>EN</button>
-            </div>
-          )}
+          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '8px', border: '1px solid var(--card-border)' }}>
+            <button onClick={() => setLang('cz')} style={{ flex: 1, padding: '4px 8px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}>CZ</button>
+            <button onClick={() => setLang('en')} style={{ flex: 1, padding: '4px 8px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}>EN</button>
+          </div>
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1.5rem', marginRight: '-0.5rem', paddingRight: '0.5rem' }} className="custom-scrollbar">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2.5rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
             {[
               ...((activeOperator?.isSuperAdmin || activeOperator?.isAdmin) ? [
                 { id: 'infra', icon: HardDrive, label: t('infra') },
@@ -743,6 +742,7 @@ function App() {
               { id: 'settings', icon: Settings, label: t('settings') },
             ].filter(item => {
               if (isSidebarCollapsed && !isMobile) {
+                // Persistent core items
                 return item.id === 'inbox' || item.id === 'calendar';
               }
               return true;
@@ -753,30 +753,26 @@ function App() {
                 if (isMobile) setIsMobileMenuOpen(false);
               }}
               style={{
-                display: 'flex', alignItems: 'center', gap: isSidebarCollapsed && !isMobile ? '0' : '1.25rem', padding: '1rem', border: 'none', borderRadius: '12px',
+                display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1rem', border: 'none', borderRadius: '12px',
                 background: activeTab === item.id ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
                 cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s ease',
-                justifyContent: isSidebarCollapsed && !isMobile ? 'center' : 'flex-start',
                 position: 'relative'
               }}
-              title={isSidebarCollapsed ? item.label : ''}
             >
               {(() => {
                 const Icon = item.icon || Search;
                 return <Icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} style={{ flexShrink: 0 }} />;
               })()}
-              {(!isSidebarCollapsed || isMobile) && (
-                <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '700' : '500', fontSize: '1rem', whiteSpace: 'nowrap' }}>
-                  {item.label || item.id}
-                </span>
-              )}
-              {item.badge > 0 && <div className={isSidebarCollapsed && !isMobile ? "unread-count-mini" : "unread-badge"}>{item.badge}</div>}
+              <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '700' : '500', fontSize: '1rem', whiteSpace: 'nowrap' }}>
+                {item.label || item.id}
+              </span>
+              {item.badge > 0 && <div className="unread-badge">{item.badge}</div>}
             </button>
           ))}
-        </div>
+          </div>
 
-        {/* Profile Switcher - Hidden in minimal mode */}
-        {(!isSidebarCollapsed || isMobile) && !activeOperator?.isModel && !activeOperator?.isSuperAdmin && !activeOperator?.isAdmin && (
+          {/* Profile Switcher - Only hidden if operator is a Model or Super/Global Admin */}
+          {!activeOperator?.isModel && !activeOperator?.isSuperAdmin && !activeOperator?.isAdmin && (
           <div style={{ marginTop: '2.5rem', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>{t('myAssignedGirls')}</div>
