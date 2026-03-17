@@ -131,6 +131,7 @@ function App() {
   const [isBugReportOpen, setIsBugReportOpen] = useState(false);
   const [bugDescription, setBugDescription] = useState('');
   const [showOnlyOnline, setShowOnlyOnline] = useState(false);
+  const [isShiftActive, setIsShiftActive] = useState(true);
 
   // Agency Management States
   const [isAddAgencyModalOpen, setIsAddAgencyModalOpen] = useState(false);
@@ -822,6 +823,8 @@ function App() {
             agencies={agencies} 
             profiles={profiles}
             calendar={bookingSchedule}
+            isShiftActive={isShiftActive}
+            setIsShiftActive={setIsShiftActive}
           />
         )}
 
