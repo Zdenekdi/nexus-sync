@@ -1315,14 +1315,11 @@ function App() {
                   <button onClick={handleSyncAll} className="action-btn" style={{ background: 'var(--success-color)', boxShadow: '0 5px 15px rgba(16, 185, 129, 0.3)' }}><RefreshCw size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.5rem' }} /> {t('syncAll')}</button>
                 )}
 
-                <div style={{ marginTop: '1.5rem', fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'flex', gap: '0.5rem', alignItems: 'flex-start', background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '12px' }}>
-                  <Link size={14} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
-                  {t('proxyNote')}
-                </div>
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
         {activeTab === 'device-setup' && (
           <div style={{ padding: '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
