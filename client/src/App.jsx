@@ -15,6 +15,43 @@ import { MOCK_OPERATORS, MOCK_CLIENTS, MOCK_AGENCIES, MOCK_PROFILES, MOCK_MESSAG
 import { TRANSLATIONS } from './translations';
 import { useSocket } from './hooks/useSocket';
 
+// --- Error Boundary Component ---
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error("Critical Runtime Error:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ height: '100vh', width: '100vw', background: '#05070a', color: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
+          <div style={{ width: '80px', height: '80px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '2rem', border: '1px solid #ef4444' }}>
+            <AlertTriangle color="#ef4444" size={40} />
+          </div>
+          <h1 style={{ fontSize: '2rem', fontWeight: '900', marginBottom: '1rem' }}>Sakra, něco se pokazilo!</h1>
+          <p style={{ color: 'var(--text-secondary)', maxWidth: '500px', lineHeight: '1.6', marginBottom: '2rem' }}>
+            Aplikace narazila na chybu, kterou nešlo obejít. Klikni na tlačítko níže pro restartování, nebo nahlas chybu na GitHub.
+          </p>
+          <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '12px', width: '100%', maxWidth: '600px', textAlign: 'left', marginBottom: '2rem', border: '1px solid var(--card-border)', overflowX: 'auto' }}>
+            <code style={{ color: '#f87171', fontSize: '0.9rem' }}>{this.state.error?.toString()}</code>
+          </div>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <button onClick={() => window.location.href = '/'} className="action-btn" style={{ background: 'var(--accent-color)', color: 'white', padding: '1rem 2rem' }}>Restartovat aplikaci</button>
+            <button onClick={() => window.open('https://github.com/Zdenekdi/nexus-sync/issues/new', '_blank')} className="action-btn" style={{ background: 'transparent', border: '1px solid var(--card-border)', color: 'white', padding: '1rem 2rem' }}>Nahlásit na GitHub</button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const QAView = ({ t, messages = [], clientNotes = {} }) => {
   return (
     <div style={{ padding: '3rem', height: '100%', overflowY: 'auto' }}>
@@ -36,10 +73,10 @@ const QAView = ({ t, messages = [], clientNotes = {} }) => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
                 <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '1.2rem' }}>
-                  {clientMsg.from.slice(-2)}
+                  {clientMsg.from ? clientMsg.from.slice(-2) : '??'}
                 </div>
                 <div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: '800' }}>{clientMsg.from}</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: '800' }}>{clientMsg.from || 'Unknown'}</div>
                   <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t('clientHistory')}</div>
                 </div>
               </div>
@@ -85,7 +122,7 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [] })
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
         {[
           { label: t('totalRevenue'), value: '$842,500', icon: <DollarSign color="#10b981" />, growth: '+12.5%' },
-          { label: t('agencies').toUpperCase(), value: agencies.length, icon: <Building2 color="#3b82f6" />, growth: '+2' },
+          { label: t('agencies').toUpperCase(), value: (agencies || []).length, icon: <Building2 color="#3b82f6" />, growth: '+2' },
           { label: t('activeNodes').toUpperCase(), value: '14', icon: <Zap color="#f59e0b" />, growth: 'HEALTHY' },
           { label: t('globalTraffic') || 'GLOBAL TRAFFIC', value: '2.4M', icon: <Activity color="#8b5cf6" />, growth: '85% LOAD' }
         ].map((stat, i) => (
@@ -94,7 +131,7 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [] })
               <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {stat.icon}
               </div>
-              <span style={{ fontSize: '0.75rem', fontWeight: '800', color: stat.growth.startsWith('+') ? 'var(--success-color)' : 'var(--text-secondary)' }}>{stat.growth}</span>
+              <span style={{ fontSize: '0.75rem', fontWeight: '800', color: (stat.growth || '').startsWith('+') ? 'var(--success-color)' : 'var(--text-secondary)' }}>{stat.growth}</span>
             </div>
             <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>{stat.label}</div>
             <div style={{ fontSize: '1.75rem', fontWeight: '900' }}>{stat.value}</div>
@@ -404,7 +441,7 @@ function App() {
   const [agencies, setAgencies] = useState(MOCK_AGENCIES);
   const [operators, setOperators] = useState(MOCK_OPERATORS);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [activeProfileId, setActiveProfileId] = useState(MOCK_PROFILES[0].id);
+  const [activeProfileId, setActiveProfileId] = useState(MOCK_PROFILES[0]?.id);
   const [selectedChatId, setSelectedChatId] = useState(null);
   const [lang, setLang] = useState('en');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -466,33 +503,34 @@ function App() {
     };
   }, [activeCall]);
 
-  // Handle Routing & Auth persistence
+  // Handle Routing & Auth persistence (Clean URLs)
   useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.replace('#/', '');
+    const handlePathChange = () => {
+      const path = window.location.pathname.replace(/^\//, '') || 'dashboard';
       if (isLoggedIn) {
-        if (hash === 'login' || !hash) {
-          window.location.hash = '#/dashboard';
+        if (path === 'login' || path === '') {
+          window.history.replaceState(null, '', '/dashboard');
           setActiveTab('dashboard');
         } else {
-          setActiveTab(hash);
+          setActiveTab(path);
         }
       } else {
-        if (hash !== 'login') {
-          window.location.hash = '#/login';
+        if (path !== 'login') {
+          window.history.replaceState(null, '', '/login');
         }
       }
     };
-    window.addEventListener('hashchange', handleHashChange);
-    handleHashChange(); // Initial check
-    return () => window.removeEventListener('hashchange', handleHashChange);
+
+    window.addEventListener('popstate', handlePathChange);
+    handlePathChange(); // Initial check
+    return () => window.removeEventListener('popstate', handlePathChange);
   }, [isLoggedIn]);
 
-  // Update URL hash when activeTab changes
+  // Update URL pathname when activeTab changes
   useEffect(() => {
     if (isLoggedIn && activeTab) {
-      if (window.location.hash !== `#/${activeTab}`) {
-        window.location.hash = `#/${activeTab}`;
+      if (window.location.pathname !== `/${activeTab}`) {
+        window.history.pushState(null, '', `/${activeTab}`);
       }
     }
   }, [activeTab, isLoggedIn]);
@@ -771,19 +809,22 @@ function App() {
       return <ResetPasswordView onComplete={handleResetComplete} t={t} />;
     }
     return (
-      <LoginScreen 
-        onLogin={handleLogin} 
-        onResetRequired={handleResetRequired}
-        operators={operators}
-        lang={lang} 
-        setLang={setLang} 
-        t={t} 
-      />
+      <ErrorBoundary>
+        <LoginScreen 
+          onLogin={handleLogin} 
+          onResetRequired={handleResetRequired}
+          operators={operators}
+          lang={lang} 
+          setLang={setLang} 
+          t={t} 
+        />
+      </ErrorBoundary>
     );
   }
 
-  // Debugging: Incremental re-enablement
+  // Main UI
   return (
+    <ErrorBoundary>
       <div className="mobile-container" style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: 'var(--bg-color)', color: 'white', position: 'relative' }}>
         <style dangerouslySetInnerHTML={{ __html: `
           @media (max-width: 768px) {
@@ -2925,6 +2966,7 @@ function App() {
         </div>
       )}
     </div>
+    </ErrorBoundary>
   );
 }
 
