@@ -7,7 +7,7 @@ import {
   TrendingUp, Users, UserPlus, UserCheck, ShieldCheck, CreditCard,
   Zap, Building, LayoutDashboard, Database,
     Phone, Server, Cpu, FileEdit, CheckCheck, FileSearch, Trash2,
-    Eye, Save, X, RotateCcw, Lock, Share2, Filter, Menu, UserCircle, Plus, Info, ChevronDown, ChevronLeft,
+    Eye, Save, X, RotateCcw, Lock, Share2, Filter, Menu, UserCircle, Plus, Info, ChevronDown, ChevronUp, ChevronLeft,
     BarChart2 as BarChart3, Shield as ShieldAlert, HardDrive, Gift, Trophy, RefreshCw, Bug, Copy, Signal, Mic, MicOff, Sparkles,
     StickyNote, AlertTriangle, Image, Link, Star, CheckCircle, Languages
   } from 'lucide-react';
