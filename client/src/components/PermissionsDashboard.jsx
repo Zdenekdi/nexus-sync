@@ -3,7 +3,7 @@ import { Shield } from 'lucide-react';
 
 const PermissionsDashboard = ({ t, rolePermissions, setRolePermissions, activeOperator }) => {
   return (
-    <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
+    <div style={{ padding: '2rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
       <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #3b82f6, #10b981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('rolePermissions')}</h2>
       <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>{t('rolePermissionsDesc')}</p>
       
