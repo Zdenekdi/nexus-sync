@@ -1118,9 +1118,52 @@ function App() {
         )}
 
         {activeTab === 'web-profiles' && (
-          <div style={{ padding: '2rem', flex: 1, overflowY: 'auto', display: 'flex', gap: '1.5rem', maxHeight: '100%' }} className="fade-in custom-scrollbar">
-            {/* Left Content Area (Gallery & Bio) */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div style={{ padding: '2rem', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem', maxHeight: '100%' }} className="fade-in custom-scrollbar">
+            {/* Profile Switcher Row */}
+            <div style={{
+              display: 'flex',
+              gap: '0.75rem',
+              marginBottom: '1rem',
+              overflowX: 'auto',
+              paddingBottom: '0.75rem',
+              borderBottom: '1px solid var(--card-border)',
+              flexShrink: 0
+            }} className="custom-scrollbar">
+              {(activeOperator?.role === 'System Owner' ? profiles : allAgencyProfiles).map(profile => (
+                <button
+                  key={profile.id}
+                  onClick={() => setActiveProfileId(profile.id)}
+                  style={{
+                    padding: '0.6rem 1.25rem',
+                    borderRadius: '12px',
+                    background: activeProfileId === profile.id ? 'var(--accent-color)' : 'rgba(255,255,255,0.02)',
+                    color: activeProfileId === profile.id ? 'white' : 'var(--text-secondary)',
+                    border: '1px solid',
+                    borderColor: activeProfileId === profile.id ? 'var(--accent-color)' : 'var(--card-border)',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                >
+                  <div style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    background: activeProfileId === profile.id ? 'white' : 'transparent',
+                    border: activeProfileId === profile.id ? 'none' : '1px solid var(--text-secondary)'
+                  }}></div>
+                  {profile.name}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', gap: '1.5rem', flex: 1 }}>
+              {/* Left Content Area (Gallery & Bio) */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.5rem' }}>
                 <div>
                   <h2 style={{ fontSize: '1.75rem', fontWeight: '900', background: 'linear-gradient(to right, #fff, var(--accent-color))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
