@@ -9,7 +9,7 @@ import {
     Phone, Server, Cpu, FileEdit, CheckCheck, FileSearch, Trash2,
     Eye, Save, X, RotateCcw, Lock, Share2, Filter, Menu, UserCircle, Plus, Info, ChevronDown, ChevronUp, ChevronLeft,
     BarChart2 as BarChart3, Shield as ShieldAlert, HardDrive, Gift, Trophy, RefreshCw, Bug, Copy, Signal, Mic, MicOff, Sparkles,
-    StickyNote, AlertTriangle, Image, Link, Star, CheckCircle, Languages
+    StickyNote, AlertTriangle, Image, Link, Star, CheckCircle, Languages, Package
   } from 'lucide-react';
 import { MOCK_OPERATORS, MOCK_CLIENTS, MOCK_AGENCIES, MOCK_PROFILES, MOCK_MESSAGES, MOCK_STATS, MOCK_CALENDAR, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_CHART_DATA, MOCK_SMART_REPLIES, MOCK_PLANS, MOCK_REFERRALS, MOCK_PERMISSIONS } from './DemoData';
 import { TRANSLATIONS } from './translations';
@@ -20,6 +20,7 @@ import PlansDashboard from './components/PlansDashboard';
 import DashboardHome from './components/DashboardHome';
 import LoginScreen from './components/LoginScreen';
 import ResetPasswordView from './components/ResetPasswordView';
+import InventoryView from './components/InventoryView';
 
 
 
@@ -738,6 +739,7 @@ function App() {
                 ...(activeOperator?.isModel ? [] : [{ id: 'activity', icon: Activity, label: t('auditLog') }])
               ]),
               { id: 'referrals', icon: Gift, label: t('referrals') },
+              { id: 'inventory', icon: Package, label: t('inventory') },
               { id: 'qa', icon: FileSearch, label: t('qa') },
               { id: 'settings', icon: Settings, label: t('settings') },
             ].filter(item => {
@@ -1368,7 +1370,7 @@ function App() {
                   <a href="https://play.google.com/store/apps/details?id=com.llamalab.automate" target="_blank" rel="noreferrer" className="action-btn" style={{ flex: 1, textDecoration: 'none', textAlign: 'center', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--card-border)' }}>
                     Automate
                   </a>
-                  <a href="https://play.google.com/store/apps/details?id=net.dinglisch.android.taskerm" target="_blank" rel="noreferrer" className="action-btn" style={{ flex: 1, textDecoration: 'none', textAlign: 'center', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--card-border)' }}>
+                  <a href="https://play.google.com/store/apps/details?id=net.dinglisch.android.tasker" target="_blank" rel="noreferrer" className="action-btn" style={{ flex: 1, textDecoration: 'none', textAlign: 'center', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--card-border)' }}>
                     Tasker
                   </a>
                 </div>
@@ -1864,6 +1866,10 @@ function App() {
             clientNames={clientNames}
             updateClientName={updateClientName}
           />
+        )}
+
+        {activeTab === 'inventory' && (
+          <InventoryView t={TRANSLATIONS[lang]} />
         )}
 
         {activeTab === 'infra' && activeOperator?.isSuperAdmin && (
