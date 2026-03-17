@@ -380,7 +380,11 @@ export const TRANSLATIONS = {
         addLocation: 'Add Location',
         locationNamePlaceholder: 'Enter location name...',
         save: 'Save',
-        cancel: 'Cancel'
+        cancel: 'Cancel',
+        exportCalendar: 'Export (.ics)',
+        syncCalendar: 'External Sync',
+        selectProfile: 'Select Profile',
+        syncDesc: 'Connect external calendars like Google or iCal.'
     },
     cz: {
         logo: 'NEXUSSYNC',
@@ -758,6 +762,10 @@ export const TRANSLATIONS = {
         addLocation: 'Přidat sklad',
         locationNamePlaceholder: 'Zadejte název skladu...',
         save: 'Uložit',
-        cancel: 'Zrušit'
+        cancel: 'Zrušit',
+        exportCalendar: 'Exportovat (.ics)',
+        syncCalendar: 'Externí synchronizace',
+        selectProfile: 'Vybrat profil',
+        syncDesc: 'Připojte externí kalendáře jako Google nebo iCal.'
     }
 };

@@ -92,6 +92,8 @@ function App() {
   });
   const [bookingSchedule, setBookingSchedule] = useState(MOCK_CALENDAR.events);
   const [bookingCollision, setBookingCollision] = useState(null);
+  const [isCalendarSyncOpen, setIsCalendarSyncOpen] = useState(false);
+  const [calendarSyncUrl, setCalendarSyncUrl] = useState('');
   const [internalNote, setInternalNote] = useState('');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     return localStorage.getItem('nexus_sidebar_collapsed') === 'true';
@@ -431,6 +433,38 @@ function App() {
     setBookingSchedule(prev => [...prev, newEvent]);
     setIsBookingModalOpen(false);
   }, [bookingDetails, selectedChat, bookingSchedule]);
+
+  const handleExportICS = useCallback(() => {
+    const events = bookingSchedule.map(event => {
+      // Basic ICS format construction
+      const now = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      const start = new Date().toISOString().split('T')[0].replace(/-/g, '') + 'T' + event.time.replace(/[:\s]/g, '') + '00';
+      return [
+        'BEGIN:VEVENT',
+        `DTSTAMP:${now}`,
+        `DTSTART:${start}`,
+        `SUMMARY:${event.title}`,
+        `DESCRIPTION:${event.duration} session`,
+        'END:VEVENT'
+      ].join('\r\n');
+    }).join('\r\n');
+
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//NexusSync Systems//Calendar//EN',
+      events,
+      'END:VCALENDAR'
+    ].join('\r\n');
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.setAttribute('download', `schedule_${activeProfile?.name || 'nexus'}.ics`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [bookingSchedule, activeProfile]);
 
   const handleLogin = useCallback((user) => {
     const client = MOCK_CLIENTS.find(c => c.id === user.clientId) || null;
@@ -1045,18 +1079,81 @@ function App() {
         )}
    
         {activeTab === 'calendar' && (
-          <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }} className="fade-in">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+          <div style={{ padding: isMobile ? '1rem' : '3rem', paddingBottom: '8rem', flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }} className="fade-in">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '2.5rem', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : '0' }}>
               <div>
-                <h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('bookingSchedule')} - {activeProfile?.name || '...'}</h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                  <h2 style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '800' }}>{t('bookingSchedule')}</h2>
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>•</span>
+                    <select 
+                      value={activeProfileId} 
+                      onChange={(e) => setActiveProfileId(e.target.value)}
+                      style={{ 
+                        background: 'rgba(255,255,255,0.05)', 
+                        border: '1px solid var(--card-border)', 
+                        color: 'var(--accent-color)', 
+                        padding: '0.4rem 1rem', 
+                        borderRadius: '8px', 
+                        fontSize: '0.9rem', 
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        outline: 'none'
+                      }}
+                    >
+                      {(activeOperator?.role === 'Owner' || activeOperator?.role === 'Manager' || activeOperator?.isSuperAdmin ? allAgencyProfiles : myProfiles).map(p => (
+                        <option key={p.id} value={p.id} style={{ background: '#0a0c10', color: 'white' }}>{p.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
                 <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('bookingScheduleDesc')}</p>
               </div>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                 <div className="status-badge" style={{ borderColor: 'var(--accent-color)', color: 'var(--accent-color)' }}>
-                   <Activity size={16} /> {bookingSchedule.length} {t('events')}
-                 </div>
+              <div style={{ display: 'flex', gap: '0.75rem', width: isMobile ? '100%' : 'auto' }}>
+                 <button 
+                   onClick={handleExportICS}
+                   className="glass-card" 
+                   style={{ padding: '0.6rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'white', border: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}
+                 >
+                   <Share2 size={16} /> <span className="hide-on-mobile">{t('exportCalendar')}</span>
+                 </button>
+                 <button 
+                   onClick={() => setIsCalendarSyncOpen(!isCalendarSyncOpen)}
+                   className="glass-card" 
+                   style={{ padding: '0.6rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--accent-color)', border: '1px solid var(--accent-color)', background: 'rgba(59,130,246,0.1)', borderRadius: '12px' }}
+                 >
+                   <Link size={16} /> <span className="hide-on-mobile">{t('syncCalendar')}</span>
+                 </button>
               </div>
             </div>
+
+            {isCalendarSyncOpen && (
+              <div className="glass-card fade-in" style={{ padding: '2rem', marginBottom: '2rem', background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.2)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <RefreshCw size={18} /> {t('syncCalendar')}
+                    </h3>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>{t('syncDesc')}</p>
+                    
+                    <div style={{ display: 'flex', gap: '1rem', maxWidth: '600px', flexDirection: isMobile ? 'column' : 'row' }}>
+                      <input 
+                        type="text" 
+                        placeholder="https://calendar.google.com/calendar/ical/..." 
+                        value={calendarSyncUrl}
+                        onChange={(e) => setCalendarSyncUrl(e.target.value)}
+                        style={{ flex: 1, padding: '0.75rem 1.25rem' }} 
+                        className="glass-input" 
+                      />
+                      <button className="action-btn" style={{ whiteSpace: 'nowrap' }}>{t('add')}</button>
+                    </div>
+                  </div>
+                  <button onClick={() => setIsCalendarSyncOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem', flex: 1, minHeight: 0 }}>
               <div className="glass-card" style={{ padding: '2rem', overflowY: 'auto' }}>
