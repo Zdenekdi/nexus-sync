@@ -342,7 +342,14 @@ export const TRANSLATIONS = {
         addQuickReply: 'Add Quick Reply',
         replyLabel: 'Label (e.g. Services)',
         replyText: 'Message Text',
-        useReply: 'Use'
+        useReply: 'Use',
+        unnamedClient: 'Unnamed Client',
+        noResults: 'No clients found matching your search.',
+        internalNotesLog: 'INTERNAL NOTES LOG',
+        loggedBy: 'Logged by',
+        noNotes: 'No internal notes found for this client.',
+        recentCommunicationHistory: 'RECENT COMMUNICATION HISTORY',
+        selectClientToViewQA: 'Select a client from the list to view their history and notes.'
     },
     cz: {
         logo: 'NEXUS',
@@ -481,6 +488,10 @@ export const TRANSLATIONS = {
         internalNotesLog: 'LOG INTERNÍCH POZNÁMEK',
         loggedBy: 'Zaznamenal',
         noNotes: 'Pro tohoto klienta nebyly nalezeny žádné poznámky.',
+        unnamedClient: 'Nepojmenovaný klient',
+        noResults: 'Nenalezeni žádní klienti odpovídající hledání.',
+        recentCommunicationHistory: 'NEDÁVNÁ HISTORIE KOMUNIKACE',
+        selectClientToViewQA: 'Vyberte klienta ze seznamu pro zobrazení jeho historie a poznámek.',
         infraTopology: 'TOPOLOGIE INFRASTRUKTURY',
         mapViz: '[ Vizualizace globální relay mapy ]',
         revenueMtd: 'PŘÍJMY AGENTURY (MTD)',

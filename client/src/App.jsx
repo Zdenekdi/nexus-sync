@@ -938,6 +938,7 @@ function App() {
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{msg.time}</span>
                       </div>
                       <div className="truncate-text" style={{ opacity: selectedChat?.id === msg.id ? 1 : 0.7 }}>{msg.text}</div>
+                    </div>
                   )) : <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>{t('noMessages')}</div>}
                   <div style={{ height: isMobile ? '80px' : '0' }}></div>
                 </div>
