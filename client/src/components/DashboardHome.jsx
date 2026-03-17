@@ -1,8 +1,7 @@
 import React from 'react';
 import { DollarSign, Building2, Zap, Activity } from 'lucide-react';
 
-const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], isShiftActive, setIsShiftActive }) => {
-  const isMobile = window.innerWidth < 768;
+const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], isShiftActive, setIsShiftActive, isMobile }) => {
   
   const renderSuperAdmin = () => (
     <div className="fade-in">
@@ -84,10 +83,10 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
 
   const renderOperator = () => (
     <div className="fade-in">
-      <div style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <div>
-          <h2 style={{ fontSize: '2rem', fontWeight: '900' }}>{t('personalWorkspace')}</h2>
-          <p style={{ color: 'var(--text-secondary)' }}>{t('welcomeBack')}, {user.name}. {t('shiftSummaryDesc')}</p>
+      <div style={{ marginBottom: isMobile ? '1.5rem' : '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'center' : 'flex-end', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : 0 }}>
+        <div style={{ textAlign: isMobile ? 'center' : 'left' }}>
+          <h2 style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>{t('personalWorkspace')}</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.85rem' : '1rem' }}>{t('welcomeBack')}, {user.name}.</p>
         </div>
         <button 
           onClick={() => setIsShiftActive?.(!isShiftActive)}
@@ -107,26 +106,26 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '2rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
-            <div className="glass-card" style={{ padding: '1.5rem', textAlign: 'center' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: isMobile ? '1rem' : '2rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '1rem' : '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: isMobile ? '1rem' : '1.5rem' }}>
+            <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center' }}>
                <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('messages')}</div>
-               <div style={{ fontSize: '2rem', fontWeight: '900' }}>142</div>
+               <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>142</div>
             </div>
-            <div className="glass-card" style={{ padding: '1.5rem', textAlign: 'center' }}>
+            <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center' }}>
                <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('calls')}</div>
-               <div style={{ fontSize: '2rem', fontWeight: '900' }}>18</div>
+               <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>18</div>
             </div>
-            <div className="glass-card" style={{ padding: '1.5rem', textAlign: 'center', border: '1px solid var(--accent-color)' }}>
+            <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center', border: '1px solid var(--accent-color)', gridColumn: isMobile ? 'span 2' : 'auto' }}>
                <div style={{ color: 'var(--accent-color)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('commission')}</div>
-               <div style={{ fontSize: '2rem', fontWeight: '900' }}>$185</div>
+               <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>$185</div>
             </div>
           </div>
 
-          <div className="glass-card" style={{ padding: '2rem' }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.5rem' }}>{t('assignedProfiles')}</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '1rem' }}>
+          <div className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2rem' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.5rem', textAlign: isMobile ? 'center' : 'left' }}>{t('assignedProfiles')}</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(150px, 1fr))', gap: '1rem' }}>
                {profiles.slice(0, 4).map(p => (
                  <div key={p.id} className="glass-card" style={{ padding: '1rem', textAlign: 'center', cursor: 'pointer', transition: 'transform 0.2s' }}>
                    <div style={{ width: '40px', height: '40px', background: 'var(--accent-color)', borderRadius: '10px', margin: '0 auto 0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900' }}>{p.name[0]}</div>
@@ -202,7 +201,7 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
   const isAdminOrManager = user.isAdmin || user.role === 'Agency Manager' || user.role === 'Regional Manager' || user.role === 'Manager' || user.role === 'Admin';
 
   return (
-    <div style={{ padding: '3rem', paddingBottom: '8rem', maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ padding: isMobile ? '1rem' : '3rem', maxWidth: '1400px', margin: '0 auto' }}>
       {user.isSuperAdmin ? renderSuperAdmin() : (isAdminOrManager ? renderManager() : (user.isModel || user.role === 'Model' ? renderModel() : renderOperator()))}
     </div>
   );

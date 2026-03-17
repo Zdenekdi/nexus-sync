@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { FileSearch, StickyNote, User, Phone, Edit2, Check, X, Search } from 'lucide-react';
 
 const QAView = ({ t, messages = [], clientNotes = {}, clientNames = {}, updateClientName }) => {
+  const isMobile = window.innerWidth < 768;
+  const [mobileView, setMobileView] = useState('list'); // 'list' or 'detail'
   const [selectedClient, setSelectedClient] = useState(null);
   const [editingName, setEditingName] = useState(null);
   const [tempName, setTempName] = useState('');
@@ -42,9 +44,16 @@ const QAView = ({ t, messages = [], clientNotes = {}, clientNames = {}, updateCl
   };
 
   return (
-    <div style={{ display: 'flex', height: '100%', background: 'rgba(0,0,0,0.2)' }}>
+    <div style={{ display: 'flex', height: '100%', background: 'rgba(0,0,0,0.2)', position: 'relative', overflow: 'hidden' }}>
       {/* Left Sidebar - Client List */}
-      <div style={{ width: '350px', borderRight: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.02)' }}>
+      <div style={{ 
+        width: isMobile ? '100%' : '350px', 
+        borderRight: isMobile ? 'none' : '1px solid var(--card-border)', 
+        display: (isMobile && mobileView !== 'list') ? 'none' : 'flex', 
+        flexDirection: 'column', 
+        background: 'rgba(255,255,255,0.02)',
+        height: '100%'
+      }}>
         <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--card-border)' }}>
           <h2 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
             <FileSearch size={20} color="var(--accent-color)" /> {t('qa')}
@@ -65,7 +74,10 @@ const QAView = ({ t, messages = [], clientNotes = {}, clientNames = {}, updateCl
           {filteredClients.map(client => (
             <button
               key={client.phoneNumber}
-              onClick={() => setSelectedClient(client.phoneNumber)}
+              onClick={() => {
+                setSelectedClient(client.phoneNumber);
+                if (isMobile) setMobileView('detail');
+              }}
               style={{ 
                 width: '100%', 
                 padding: '1.25rem', 
@@ -113,13 +125,29 @@ const QAView = ({ t, messages = [], clientNotes = {}, clientNames = {}, updateCl
       </div>
 
       {/* Main Content - Client Detail */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.1)' }}>
+      <div style={{ 
+        flex: 1, 
+        display: (isMobile && mobileView !== 'detail') ? 'none' : 'flex', 
+        flexDirection: 'column', 
+        background: 'rgba(0,0,0,0.1)',
+        height: '100%'
+      }}>
         {currentClientData ? (
           <>
-            <div style={{ padding: '2rem', borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.01)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                  <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '1.5rem', boxShadow: '0 10px 20px rgba(59, 130, 246, 0.2)' }}>
+            <div style={{ padding: isMobile ? '1rem' : '2rem', borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.01)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMobile ? '1rem' : 0 }}>
+                {isMobile && (
+                  <button 
+                    onClick={() => setMobileView('list')}
+                    style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '8px', color: 'white', padding: '0.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                  >
+                    <Search size={20} style={{ transform: 'rotate(180deg)', display: 'none' }} />
+                    <span style={{ fontSize: '0.85rem', fontWeight: '800' }}>← {t('backToChat')}</span>
+                  </button>
+                )}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '1rem' : '1.5rem' }}>
+                <div style={{ width: isMobile ? '48px' : '64px', height: isMobile ? '48px' : '64px', borderRadius: isMobile ? '12px' : '16px', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: isMobile ? '1.25rem' : '1.5rem', boxShadow: '0 10px 20px rgba(59, 130, 246, 0.2)' }}>
                     {currentClientData.name ? currentClientData.name.charAt(0).toUpperCase() : '??'}
                   </div>
                   <div>
@@ -138,7 +166,7 @@ const QAView = ({ t, messages = [], clientNotes = {}, clientNames = {}, updateCl
                       </div>
                     ) : (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <h2 style={{ fontSize: '1.75rem', fontWeight: '900' }}>{currentClientData.name || t('unnamedClient')}</h2>
+                        <h2 style={{ fontSize: isMobile ? '1.25rem' : '1.75rem', fontWeight: '900' }}>{currentClientData.name || t('unnamedClient')}</h2>
                         <button onClick={() => handleStartEdit(currentClientData)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.5rem' }}><Edit2 size={18} /></button>
                       </div>
                     )}
@@ -150,7 +178,7 @@ const QAView = ({ t, messages = [], clientNotes = {}, clientNames = {}, updateCl
               </div>
             </div>
 
-            <div style={{ flex: 1, padding: '2rem', overflowY: 'auto' }} className="custom-scrollbar">
+            <div style={{ flex: 1, padding: isMobile ? '1rem' : '2rem', overflowY: 'auto' }} className="custom-scrollbar">
               <div style={{ maxWidth: '800px' }}>
                 <h3 style={{ fontSize: '1rem', color: '#f59e0b', marginBottom: '1.5rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   <StickyNote size={18} /> {t('internalNotesLog')}

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 
 const InventoryView = ({ t }) => {
+  const isMobile = window.innerWidth < 768;
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddingLocation, setIsAddingLocation] = useState(false);
@@ -82,128 +83,127 @@ const InventoryView = ({ t }) => {
   };
 
   return (
-    <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
+    <div style={{ padding: isMobile ? '1rem' : '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
         <div>
-          <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '0.5rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <Package size={32} color="var(--accent-color)" /> {t.stockCard}
+          <h2 style={{ fontSize: isMobile ? '1.75rem' : '2.5rem', fontWeight: '900', marginBottom: '0.5rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Package size={isMobile ? 24 : 32} color="var(--accent-color)" /> {t.stockCard}
           </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Manage physical assets across your agency nodes.</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1.1rem' }}>Manage physical assets across your agency nodes.</p>
         </div>
         
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          {isAddingLocation ? (
-            <div className="glass-card" style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', animation: 'fadeIn 0.2s ease' }}>
-              <input
-                type="text"
-                autoFocus
-                placeholder={t.locationNamePlaceholder}
-                value={newLocationName}
-                onChange={(e) => setNewLocationName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAddLocation()}
-                style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '0.85rem', outline: 'none', width: '150px' }}
-              />
-              <button onClick={handleAddLocation} style={{ background: 'var(--success-color)', border: 'none', borderRadius: '4px', color: 'white', padding: '2px', cursor: 'pointer' }}>
-                <Check size={14} />
-              </button>
-              <button onClick={() => setIsAddingLocation(false)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '4px', color: 'white', padding: '2px', cursor: 'pointer' }}>
-                <X size={14} />
-              </button>
-            </div>
-          ) : (
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <div style={{ position: 'relative' }}>
-                <MapPin size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                <select
-                  value={selectedLocation}
-                  onChange={(e) => setSelectedLocation(e.target.value)}
-                  style={{
-                    padding: '0.6rem 2.5rem 0.6rem 2.5rem',
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid var(--card-border)',
-                    borderRadius: '10px',
-                    color: 'white',
-                    fontSize: '0.9rem',
-                    appearance: 'none',
-                    cursor: 'pointer',
-                    minWidth: '180px'
-                  }}
-                >
-                  <option value="all">{t.allLocations}</option>
-                  {locations.map(loc => (
-                    <option key={loc.id} value={loc.id}>{getLocLabel(loc)}</option>
-                  ))}
-                </select>
-                <ChevronDown size={14} color="var(--text-secondary)" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexDirection: isMobile ? 'column' : 'row', width: isMobile ? '100%' : 'auto' }}>
+          <div style={{ display: isMobile ? 'none' : 'flex', gap: '1rem', alignItems: 'center' }}>
+            {/* Keeping existing flow for desktop, will simplify for mobile below */}
+            {isAddingLocation ? (
+              <div className="glass-card" style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', animation: 'fadeIn 0.2s ease' }}>
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder={t.locationNamePlaceholder}
+                  value={newLocationName}
+                  onChange={(e) => setNewLocationName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddLocation()}
+                  style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '0.85rem', outline: 'none', width: '150px' }}
+                />
+                <button onClick={handleAddLocation} style={{ background: 'var(--success-color)', border: 'none', borderRadius: '4px', color: 'white', padding: '2px', cursor: 'pointer' }}>
+                  <Check size={14} />
+                </button>
+                <button onClick={() => setIsAddingLocation(false)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '4px', color: 'white', padding: '2px', cursor: 'pointer' }}>
+                  <X size={14} />
+                </button>
               </div>
-              <button 
-                onClick={() => setIsAddingLocation(true)}
-                title={t.addLocation}
-                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.6rem', borderRadius: '10px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <Plus size={18} />
-              </button>
-            </div>
-          )}
+            ) : (
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ position: 'relative' }}>
+                  <MapPin size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                  <select
+                    value={selectedLocation}
+                    onChange={(e) => setSelectedLocation(e.target.value)}
+                    style={{
+                      padding: '0.6rem 2.5rem 0.6rem 2.5rem',
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid var(--card-border)',
+                      borderRadius: '10px',
+                      color: 'white',
+                      fontSize: '0.9rem',
+                      appearance: 'none',
+                      cursor: 'pointer',
+                      minWidth: '180px'
+                    }}
+                  >
+                    <option value="all">{t.allLocations}</option>
+                    {locations.map(loc => (
+                      <option key={loc.id} value={loc.id}>{getLocLabel(loc)}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={14} color="var(--text-secondary)" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                </div>
+                <button 
+                  onClick={() => setIsAddingLocation(true)}
+                  title={t.addLocation}
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.6rem', borderRadius: '10px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Plus size={18} />
+                </button>
+              </div>
+            )}
+          </div>
           
-          <button className="action-btn" style={{ marginTop: 0, width: 'auto', padding: '0.6rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--accent-color)', borderRadius: '10px', fontWeight: '700' }}>
+          <button className="action-btn" style={{ marginTop: 0, width: isMobile ? '100%' : 'auto', padding: '0.6rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', background: 'var(--accent-color)', borderRadius: '10px', fontWeight: '700' }}>
             <Plus size={18} style={{ strokeWidth: 3 }} /> {t.addStockItem}
           </button>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
-        <div className="glass-card" style={{ padding: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '1rem' : '1.5rem', marginBottom: '3rem' }}>
+        <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '10px' }}>
               <Package size={20} color="var(--accent-color)" />
             </div>
-            <div style={{ fontSize: '0.65rem', color: 'var(--accent-color)', fontWeight: '800' }}>HEALTHY</div>
           </div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>{t.itemsInStock.toUpperCase()}</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{stats.inStock}</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.6rem', fontWeight: '800', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>{t.itemsInStock.toUpperCase()}</div>
+          <div style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: '900' }}>{stats.inStock}</div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1.5rem' }}>
+        <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <div style={{ background: 'rgba(245, 158, 11, 0.1)', padding: '0.5rem', borderRadius: '10px' }}>
               <AlertTriangle size={20} color="var(--warning-color)" />
             </div>
-            <div style={{ fontSize: '0.65rem', color: 'var(--warning-color)', fontWeight: '800' }}>ACTION NEEDED</div>
           </div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>{t.lowStockItems.toUpperCase()}</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{stats.lowStock}</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.6rem', fontWeight: '800', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>{t.lowStockItems.toUpperCase()}</div>
+          <div style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: '900' }}>{stats.lowStock}</div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1.5rem' }}>
+        <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '0.5rem', borderRadius: '10px' }}>
               <XCircle size={20} color="var(--error-color)" />
             </div>
-            <div style={{ fontSize: '0.65rem', color: 'var(--error-color)', fontWeight: '800' }}>CRITICAL</div>
           </div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>{t.outOfStockItems.toUpperCase()}</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{stats.outOfStock}</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.6rem', fontWeight: '800', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>{t.outOfStockItems.toUpperCase()}</div>
+          <div style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: '900' }}>{stats.outOfStock}</div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1.5rem' }}>
+        <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '0.5rem', borderRadius: '10px' }}>
               <RefreshCw size={20} color="var(--success-color)" />
             </div>
-            <div style={{ fontSize: '0.65rem', color: 'var(--success-color)', fontWeight: '800' }}>LIVE</div>
           </div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>SYNC STATUS</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>REAL-TIME</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.6rem', fontWeight: '800', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>SYNC</div>
+          <div style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: '900' }}>LIVE</div>
         </div>
       </div>
 
       {/* Main Table Content */}
       <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.01)' }}>
-          <div style={{ position: 'relative', width: '400px' }}>
+        <div style={{ padding: isMobile ? '1rem' : '1.5rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.01)', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : 0 }}>
+          <div style={{ position: 'relative', width: isMobile ? '100%' : '400px' }}>
             <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
             <input 
               type="text" 
@@ -213,13 +213,39 @@ const InventoryView = ({ t }) => {
               style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.85rem 0.85rem 0.85rem 2.5rem', borderRadius: '12px', color: 'white' }} 
             />
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.6rem', borderRadius: '10px', color: 'white', cursor: 'pointer' }}>
-              <Filter size={18} />
-            </button>
-            <button style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.6rem', borderRadius: '10px', color: 'white', cursor: 'pointer' }}>
-              <RefreshCw size={18} />
-            </button>
+          <div style={{ display: 'flex', gap: '0.5rem', width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'space-between' : 'flex-end' }}>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.6rem', borderRadius: '10px', color: 'white', cursor: 'pointer' }}>
+                <Filter size={18} />
+              </button>
+              <button style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.6rem', borderRadius: '10px', color: 'white', cursor: 'pointer' }}>
+                <RefreshCw size={18} />
+              </button>
+            </div>
+            {isMobile && (
+              <div style={{ position: 'relative' }}>
+                <select
+                  value={selectedLocation}
+                  onChange={(e) => setSelectedLocation(e.target.value)}
+                  style={{
+                    padding: '0.6rem 2rem 0.6rem 0.75rem',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid var(--card-border)',
+                    borderRadius: '10px',
+                    color: 'white',
+                    fontSize: '0.85rem',
+                    appearance: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="all">{t.allLocations}</option>
+                  {locations.map(loc => (
+                    <option key={loc.id} value={loc.id}>{getLocLabel(loc)}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} color="var(--text-secondary)" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+              </div>
+            )}
           </div>
         </div>
 
