@@ -1085,7 +1085,7 @@ function App() {
         )}
 
         {activeTab === 'web-profiles' && (
-          <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, display: 'flex', gap: '2rem' }} className="fade-in">
+          <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto', display: 'flex', gap: '2rem' }} className="fade-in">
             {/* Left Content Area (Gallery & Bio) */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               <div>
@@ -1470,7 +1470,7 @@ function App() {
         )}
 
         {activeTab === 'analytics' && activeOperator?.isAdmin && (
-          <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1 }} className="fade-in">
+          <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in">
             <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '2.5rem' }}>{t('agencyOverview')}</h2>
             
             {/* Top Metric Cards */}
@@ -1577,7 +1577,7 @@ function App() {
           </div>
         )}
         {activeTab === 'profiles' && (
-          <div style={{ padding: '3rem', paddingBottom: '8rem' }} className="fade-in">
+          <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in">
             <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '2rem' }}>{t('managedProfiles')}</h2>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -1648,7 +1648,7 @@ function App() {
         )}
 
         {activeTab === 'activity' && (
-          <div style={{ padding: '3rem', paddingBottom: '8rem' }} className="fade-in">
+          <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
               <div><h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('auditTrail')} - {activeClient?.name || t('system')}</h2><p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('auditSubtitle')}</p></div>
               <div className="status-badge" style={{ borderColor: 'var(--accent-color)', color: 'var(--accent-color)' }}><Shield size={16} /> {t('encryptedLog')}</div>
