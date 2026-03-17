@@ -15,7 +15,80 @@ import { MOCK_OPERATORS, MOCK_CLIENTS, MOCK_AGENCIES, MOCK_PROFILES, MOCK_MESSAG
 import { TRANSLATIONS } from './translations';
 import { useSocket } from './hooks/useSocket';
 
-import { useSocket } from './hooks/useSocket';
+function App() {
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [tempUser, setTempUser] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return localStorage.getItem('nexus_isLoggedIn') === 'true';
+  });
+  const [activeOperator, setActiveOperator] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nexus_activeOperator');
+      if (saved && saved !== 'undefined' && saved !== 'null') {
+        const parsed = JSON.parse(saved);
+        if (parsed) return parsed;
+      }
+      return MOCK_OPERATORS[0] || {};
+    } catch { return MOCK_OPERATORS[0] || {}; }
+  });
+  const [activeClient, setActiveClient] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nexus_activeClient');
+      if (saved && saved !== 'undefined' && saved !== 'null') {
+        const parsed = JSON.parse(saved);
+        if (parsed) return parsed;
+      }
+      return MOCK_CLIENTS[0];
+    } catch { return MOCK_CLIENTS[0]; }
+  });
+
+  const [messages, setMessages] = useState(MOCK_MESSAGES);
+  const [profiles, setProfiles] = useState(MOCK_PROFILES);
+  const [agencies, setAgencies] = useState(MOCK_AGENCIES);
+  const [operators, setOperators] = useState(MOCK_OPERATORS);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeProfileId, setActiveProfileId] = useState(MOCK_PROFILES[0]?.id);
+  const [selectedChatId, setSelectedChatId] = useState(null);
+  const [lang, setLang] = useState('en');
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mobileView, setMobileView] = useState('sidebar');
+
+  const [activeCall, setActiveCall] = useState(null);
+  const [incomingCall, setIncomingCall] = useState(null);
+  const [callTime, setCallTime] = useState(0);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState(0);
+  const [syncStatus, setSyncStatus] = useState({ aw: 'idle', ege: 'idle', tpb: 'idle' });
+  const [isTraining, setIsTraining] = useState(false);
+  const [trainingProgress, setTrainingProgress] = useState(0);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [bookingDetails, setBookingDetails] = useState({
+    date: new Date().toISOString().split('T')[0],
+    time: '14:00',
+    duration: '60',
+    type: 'work'
+  });
+  const [bookingSchedule, setBookingSchedule] = useState(MOCK_CALENDAR.events);
+  const [bookingCollision, setBookingCollision] = useState(null);
+  const [internalNote, setInternalNote] = useState('');
+  const [clientNotes, setClientNotes] = useState({});
+  const [activeContextTab, setActiveContextTab] = useState('note');
+  const [sourceText, setSourceText] = useState('');
+  const [translatedText, setTranslatedText] = useState('');
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [targetLang, setTargetLang] = useState('en');
+  const [messageValue, setMessageValue] = useState('');
+  const [sessionHistories] = useState({});
+  const [isBugReportOpen, setIsBugReportOpen] = useState(false);
+  const [bugDescription, setBugDescription] = useState('');
+
+  // Agency Management States
+  const [isAddAgencyModalOpen, setIsAddAgencyModalOpen] = useState(false);
+  const [newAgencyData, setNewAgencyData] = useState({ name: '', region: 'UK/Europe', tier: 'Professional' });
+  const [isAddOperatorModalOpen, setIsAddOperatorModalOpen] = useState(false);
+  const [targetAgencyId, setTargetAgencyId] = useState(null);
+  const [newOperatorData, setNewOperatorData] = useState({ name: '', role: 'Operator', email: '', password: 'password123' });
 
 const QAView = ({ t, messages = [], clientNotes = {} }) => {
   return (
@@ -374,80 +447,6 @@ const ResetPasswordView = ({ onComplete, t }) => {
   );
 };
 
-function App() {
-  const [showResetPassword, setShowResetPassword] = useState(false);
-  const [tempUser, setTempUser] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return localStorage.getItem('nexus_isLoggedIn') === 'true';
-  });
-  const [activeOperator, setActiveOperator] = useState(() => {
-    try {
-      const saved = localStorage.getItem('nexus_activeOperator');
-      if (saved && saved !== 'undefined' && saved !== 'null') {
-        const parsed = JSON.parse(saved);
-        if (parsed) return parsed;
-      }
-      return MOCK_OPERATORS[0] || {};
-    } catch { return MOCK_OPERATORS[0] || {}; }
-  });
-  const [activeClient, setActiveClient] = useState(() => {
-    try {
-      const saved = localStorage.getItem('nexus_activeClient');
-      if (saved && saved !== 'undefined' && saved !== 'null') {
-        const parsed = JSON.parse(saved);
-        if (parsed) return parsed;
-      }
-      return MOCK_CLIENTS[0];
-    } catch { return MOCK_CLIENTS[0]; }
-  });
-
-  const [messages, setMessages] = useState(MOCK_MESSAGES);
-  const [profiles, setProfiles] = useState(MOCK_PROFILES);
-  const [agencies, setAgencies] = useState(MOCK_AGENCIES);
-  const [operators, setOperators] = useState(MOCK_OPERATORS);
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [activeProfileId, setActiveProfileId] = useState(MOCK_PROFILES[0]?.id);
-  const [selectedChatId, setSelectedChatId] = useState(null);
-  const [lang, setLang] = useState('en');
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [mobileView, setMobileView] = useState('sidebar');
-
-  const [activeCall, setActiveCall] = useState(null);
-  const [incomingCall, setIncomingCall] = useState(null);
-  const [callTime, setCallTime] = useState(0);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncProgress, setSyncProgress] = useState(0);
-  const [syncStatus, setSyncStatus] = useState({ aw: 'idle', ege: 'idle', tpb: 'idle' });
-  const [isTraining, setIsTraining] = useState(false);
-  const [trainingProgress, setTrainingProgress] = useState(0);
-  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
-  const [bookingDetails, setBookingDetails] = useState({
-    date: new Date().toISOString().split('T')[0],
-    time: '14:00',
-    duration: '60',
-    type: 'work'
-  });
-  const [bookingSchedule, setBookingSchedule] = useState(MOCK_CALENDAR.events);
-  const [bookingCollision, setBookingCollision] = useState(null);
-  const [internalNote, setInternalNote] = useState('');
-  const [clientNotes, setClientNotes] = useState({});
-  const [activeContextTab, setActiveContextTab] = useState('note');
-  const [sourceText, setSourceText] = useState('');
-  const [translatedText, setTranslatedText] = useState('');
-  const [isTranslating, setIsTranslating] = useState(false);
-  const [targetLang, setTargetLang] = useState('en');
-  const [messageValue, setMessageValue] = useState('');
-  const [sessionHistories] = useState({});
-  const [isBugReportOpen, setIsBugReportOpen] = useState(false);
-  const [bugDescription, setBugDescription] = useState('');
-
-  // Agency Management States
-  const [isAddAgencyModalOpen, setIsAddAgencyModalOpen] = useState(false);
-  const [newAgencyData, setNewAgencyData] = useState({ name: '', region: 'UK/Europe', tier: 'Professional' });
-  const [isAddOperatorModalOpen, setIsAddOperatorModalOpen] = useState(false);
-  const [targetAgencyId, setTargetAgencyId] = useState(null);
-  const [newOperatorData, setNewOperatorData] = useState({ name: '', role: 'Operator', email: '', password: 'password123' });
 
   // Handle Window Resize
   useEffect(() => {
