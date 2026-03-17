@@ -45,9 +45,9 @@ const InventoryView = ({ t }) => {
   }, [inventoryItems, selectedLocation]);
 
   const getStatusColor = (quantity, threshold) => {
-    if (quantity === 0) return 'text-red-500 bg-red-500/10';
-    if (quantity <= threshold) return 'text-amber-500 bg-amber-500/10';
-    return 'text-emerald-500 bg-emerald-500/10';
+    if (quantity === 0) return 'var(--error-color)';
+    if (quantity <= threshold) return 'var(--warning-color)';
+    return 'var(--success-color)';
   };
 
   const getStatusText = (quantity, threshold) => {
@@ -57,155 +57,181 @@ const InventoryView = ({ t }) => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Package className="w-8 h-8 text-blue-500" />
-            {t.stockCard}
-          </h1>
-          <p className="text-zinc-400 text-sm mt-1">Manage physical assets across your agency nodes.</p>
+          <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '0.5rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Package size={32} color="var(--accent-color)" /> {t.stockCard}
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Manage physical assets across your agency nodes.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+        
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <div style={{ position: 'relative' }}>
+            <MapPin size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
             <select
               value={selectedLocation}
               onChange={(e) => setSelectedLocation(e.target.value)}
-              className="pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 appearance-none min-w-[180px]"
+              style={{
+                padding: '0.6rem 2.5rem 0.6rem 2.5rem',
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid var(--card-border)',
+                borderRadius: '10px',
+                color: 'white',
+                fontSize: '0.9rem',
+                appearance: 'none',
+                cursor: 'pointer',
+                minWidth: '180px'
+              }}
             >
               <option value="all">{t.allLocations}</option>
               <option value="warehouse">{t.warehouse}</option>
               <option value="officeMain">{t.officeMain}</option>
             </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
+            <ChevronDown size={14} color="var(--text-secondary)" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium transition-colors shadow-lg shadow-blue-500/20">
-            <Plus className="w-4 h-4" />
-            {t.addStockItem}
+          
+          <button className="action-btn" style={{ marginTop: 0, width: 'auto', padding: '0.6rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Plus size={18} /> {t.addStockItem}
           </button>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 p-4 rounded-2xl">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-500/10 rounded-lg">
-              <Package className="w-5 h-5 text-blue-500" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
+        <div className="glass-card" style={{ padding: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '10px' }}>
+              <Package size={20} color="var(--accent-color)" />
             </div>
-            <span className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">{t.itemsInStock}</span>
+            <div style={{ fontSize: '0.65rem', color: 'var(--accent-color)', fontWeight: '800' }}>HEALTHY</div>
           </div>
-          <div className="text-2xl font-bold text-white">{stats.inStock}</div>
-        </div>
-        
-        <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 p-4 rounded-2xl">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-amber-500/10 rounded-lg">
-              <AlertTriangle className="w-5 h-5 text-amber-500" />
-            </div>
-            <span className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">{t.lowStockItems}</span>
-          </div>
-          <div className="text-2xl font-bold text-white">{stats.lowStock}</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>{t.itemsInStock.toUpperCase()}</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{stats.inStock}</div>
         </div>
 
-        <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 p-4 rounded-2xl">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-red-500/10 rounded-lg">
-              <XCircle className="w-5 h-5 text-red-500" />
+        <div className="glass-card" style={{ padding: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div style={{ background: 'rgba(245, 158, 11, 0.1)', padding: '0.5rem', borderRadius: '10px' }}>
+              <AlertTriangle size={20} color="var(--warning-color)" />
             </div>
-            <span className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">{t.outOfStockItems}</span>
+            <div style={{ fontSize: '0.65rem', color: 'var(--warning-color)', fontWeight: '800' }}>ACTION NEEDED</div>
           </div>
-          <div className="text-2xl font-bold text-white">{stats.outOfStock}</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>{t.lowStockItems.toUpperCase()}</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{stats.lowStock}</div>
         </div>
 
-        <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 p-4 rounded-2xl">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-emerald-500/10 rounded-lg">
-              <RefreshCw className="w-5 h-5 text-emerald-500" />
+        <div className="glass-card" style={{ padding: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '0.5rem', borderRadius: '10px' }}>
+              <XCircle size={20} color="var(--error-color)" />
             </div>
-            <span className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">SYNC STATUS</span>
+            <div style={{ fontSize: '0.65rem', color: 'var(--error-color)', fontWeight: '800' }}>CRITICAL</div>
           </div>
-          <div className="text-sm font-semibold text-emerald-500">REAL-TIME</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>{t.outOfStockItems.toUpperCase()}</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{stats.outOfStock}</div>
+        </div>
+
+        <div className="glass-card" style={{ padding: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '0.5rem', borderRadius: '10px' }}>
+              <RefreshCw size={20} color="var(--success-color)" />
+            </div>
+            <div style={{ fontSize: '0.65rem', color: 'var(--success-color)', fontWeight: '800' }}>LIVE</div>
+          </div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>SYNC STATUS</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>REAL-TIME</div>
         </div>
       </div>
 
-      {/* Controls & Table */}
-      <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-3xl overflow-hidden">
-        <div className="p-4 border-b border-zinc-800 flex flex-col sm:flex-row gap-4 justify-between items-center">
-          <div className="relative w-full sm:w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-            <input
-              type="text"
-              placeholder="Search items..."
+      {/* Main Table Content */}
+      <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.01)' }}>
+          <div style={{ position: 'relative', width: '400px' }}>
+            <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+            <input 
+              type="text" 
+              placeholder="Search items..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.85rem 0.85rem 0.85rem 2.5rem', borderRadius: '12px', color: 'white' }} 
             />
           </div>
-          <div className="flex items-center gap-2">
-            <button className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors">
-              <Filter className="w-5 h-5" />
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.6rem', borderRadius: '10px', color: 'white', cursor: 'pointer' }}>
+              <Filter size={18} />
             </button>
-            <button className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors">
-              <RefreshCw className="w-5 h-5" />
+            <button style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.6rem', borderRadius: '10px', color: 'white', cursor: 'pointer' }}>
+              <RefreshCw size={18} />
             </button>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
-              <tr className="bg-zinc-800/30">
-                <th className="px-6 py-4 text-zinc-400 text-xs font-semibold uppercase tracking-wider">{t.itemName}</th>
-                <th className="px-6 py-4 text-zinc-400 text-xs font-semibold uppercase tracking-wider">{t.location}</th>
-                <th className="px-6 py-4 text-zinc-400 text-xs font-semibold uppercase tracking-wider text-center">{t.quantity}</th>
-                <th className="px-6 py-4 text-zinc-400 text-xs font-semibold uppercase tracking-wider text-center">{t.alertThreshold}</th>
-                <th className="px-6 py-4 text-zinc-400 text-xs font-semibold uppercase tracking-wider">{t.status}</th>
-                <th className="px-6 py-4 text-zinc-400 text-xs font-semibold uppercase tracking-wider text-right">{t.actions}</th>
+              <tr style={{ borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)' }}>
+                <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t.itemName}</th>
+                <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t.location}</th>
+                <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>{t.quantity}</th>
+                <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>{t.alertThreshold}</th>
+                <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t.status}</th>
+                <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>{t.actions}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800">
+            <tbody>
               {filteredItems.map(item => (
-                <tr key={item.id} className="hover:bg-zinc-800/30 transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center">
-                        <Package className="w-5 h-5 text-zinc-500" />
+                <tr key={item.id} style={{ borderBottom: '1px solid var(--card-border)', transition: 'background 0.2s' }} className="table-row-hover">
+                  <td style={{ padding: '1.25rem 1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <div style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Package size={20} color="var(--text-secondary)" />
                       </div>
                       <div>
-                        <div className="text-white font-medium">{item.name}</div>
-                        <div className="text-zinc-500 text-xs">{t.lastUpdated}: {item.lastUpdated}</div>
+                        <div style={{ fontWeight: '700', fontSize: '1rem' }}>{item.name}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t.lastUpdated}: {item.lastUpdated}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1.5 text-zinc-300">
-                      <MapPin className="w-3.5 h-3.5 text-zinc-500" />
-                      <span className="text-sm">{t[item.location]}</span>
+                  <td style={{ padding: '1.25rem 1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                      <MapPin size={14} />
+                      {t[item.location]}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className={`text-sm font-bold ${item.quantity <= item.threshold ? 'text-amber-500' : 'text-white'}`}>
+                  <td style={{ padding: '1.25rem 1.5rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '1.1rem', fontWeight: '800', color: item.quantity <= item.threshold ? 'var(--warning-color)' : 'white' }}>
                       {item.quantity}
-                    </span>
+                    </div>
                   </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="text-sm text-zinc-500">{item.threshold}</span>
+                  <td style={{ padding: '1.25rem 1.5rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{item.threshold}</div>
                   </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${getStatusColor(item.quantity, item.threshold)}`}>
-                      {getStatusText(item.quantity, item.threshold)}
-                    </span>
+                  <td style={{ padding: '1.25rem 1.5rem' }}>
+                    <div style={{ 
+                      display: 'inline-flex', 
+                      alignItems: 'center', 
+                      gap: '0.5rem', 
+                      padding: '0.4rem 0.8rem', 
+                      borderRadius: '8px', 
+                      fontSize: '0.75rem', 
+                      fontWeight: '800',
+                      background: `${getStatusColor(item.quantity, item.threshold)}15`,
+                      color: getStatusColor(item.quantity, item.threshold),
+                      border: `1px solid ${getStatusColor(item.quantity, item.threshold)}30`
+                    }}>
+                      <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: getStatusColor(item.quantity, item.threshold) }}></div>
+                      {getStatusText(item.quantity, item.threshold).toUpperCase()}
+                    </div>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium rounded-lg transition-colors border border-zinc-700">
+                  <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                      <button style={{ padding: '0.4rem 0.8rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '8px', color: 'white', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer' }}>
                         {t.updateStock}
                       </button>
-                      <button className="p-1.5 text-zinc-500 hover:text-white transition-colors">
-                        <MoreVertical className="w-4 h-4" />
+                      <button style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                        <MoreVertical size={18} />
                       </button>
                     </div>
                   </td>
@@ -213,9 +239,9 @@ const InventoryView = ({ t }) => {
               ))}
               {filteredItems.length === 0 && (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-zinc-500">
-                    <Package className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                    <p>No stock items found for this criteria.</p>
+                  <td colSpan="6" style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                    <Package size={48} style={{ opacity: 0.1, marginBottom: '1rem' }} />
+                    <div>No inventory items found.</div>
                   </td>
                 </tr>
               )}
@@ -223,6 +249,12 @@ const InventoryView = ({ t }) => {
           </table>
         </div>
       </div>
+      
+      <style>{`
+        .table-row-hover:hover {
+          background: rgba(255,255,255,0.03) !important;
+        }
+      `}</style>
     </div>
   );
 };
