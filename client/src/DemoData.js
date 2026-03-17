@@ -322,13 +322,27 @@ export const MOCK_STATS = {
 };
 
 export const MOCK_CHART_DATA = [
-    { day: 'Mon', revenue: 850, messages: 120 },
-    { day: 'Tue', revenue: 940, messages: 145 },
-    { day: 'Wed', revenue: 1100, messages: 160 },
-    { day: 'Thu', revenue: 980, messages: 130 },
-    { day: 'Fri', revenue: 1250, messages: 190 },
-    { day: 'Sat', revenue: 1500, messages: 210 },
-    { day: 'Sun', revenue: 1300, messages: 180 },
+    { day: '01 Mar', revenue: 850, messages: 120 },
+    { day: '02 Mar', revenue: 940, messages: 145 },
+    { day: '03 Mar', revenue: 1100, messages: 160 },
+    { day: '04 Mar', revenue: 980, messages: 130 },
+    { day: '05 Mar', revenue: 1250, messages: 190 },
+    { day: '06 Mar', revenue: 1500, messages: 210 },
+    { day: '07 Mar', revenue: 1300, messages: 180 },
+    { day: '08 Mar', revenue: 1400, messages: 195 },
+    { day: '09 Mar', revenue: 1650, messages: 220 },
+    { day: '10 Mar', revenue: 1800, messages: 250 },
+    { day: '11 Mar', revenue: 1550, messages: 210 },
+    { day: '12 Mar', revenue: 1900, messages: 280 },
+    { day: '13 Mar', revenue: 2100, messages: 310 },
+    { day: '14 Mar', revenue: 2450, messages: 340 },
+];
+
+export const MOCK_CONVERSION_DATA = [
+    { name: 'Direct Chat', value: 45, color: 'var(--accent-color)' },
+    { name: 'Referral Link', value: 25, color: '#a855f7' },
+    { name: 'Organic Search', value: 20, color: '#f59e0b' },
+    { name: 'External Platforms', value: 10, color: 'var(--success-color)' }
 ];
 
 export const MOCK_SESSIONS = [
