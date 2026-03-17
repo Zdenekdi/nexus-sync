@@ -1576,7 +1576,7 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'analytics' && activeOperator?.isAdmin && (
+        {activeTab === 'analytics' && rolePermissions[activeOperator?.role]?.analytics && (
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in">
             <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '2.5rem' }}>{t('agencyOverview')}</h2>
             
@@ -1814,7 +1814,7 @@ function App() {
                 </div>
               </div>
 
-              {!activeOperator?.isSuperAdmin && (
+              {rolePermissions[activeOperator?.role]?.global_features && (
                 <div className="settings-section">
                   <h3 style={{ marginBottom: '1.5rem' }}>{t('simulationTools')}</h3>
                   <button onClick={simulateIncomingCall} className="action-btn" style={{ maxWidth: '300px' }}><Phone size={16} /> {t('simulateCall')}</button>
