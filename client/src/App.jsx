@@ -92,7 +92,26 @@ function App() {
   const [bookingSchedule, setBookingSchedule] = useState(MOCK_CALENDAR.events);
   const [bookingCollision, setBookingCollision] = useState(null);
   const [internalNote, setInternalNote] = useState('');
-  const [clientNotes, setClientNotes] = useState({});
+  const [clientNotes, setClientNotes] = useState(() => {
+    const saved = localStorage.getItem('nexus_client_notes');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  const [clientNames, setClientNames] = useState(() => {
+    const saved = localStorage.getItem('nexus_client_names');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  useEffect(() => {
+    localStorage.setItem('nexus_client_names', JSON.stringify(clientNames));
+  }, [clientNames]);
+
+  const updateClientName = useCallback((phoneNumber, name) => {
+    setClientNames(prev => ({
+      ...prev,
+      [phoneNumber]: name
+    }));
+  }, []);
   const [activeContextTab, setActiveContextTab] = useState('note');
   const [sourceText, setSourceText] = useState('');
   const [translatedText, setTranslatedText] = useState('');
@@ -879,11 +898,12 @@ function App() {
                       }}>
                       {msg.status === 'unread' && <div className="dot"></div>}
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                        <span style={{ fontWeight: selectedChat?.id === msg.id ? '800' : '700', fontSize: '1.1rem', color: selectedChat?.id === msg.id ? 'white' : 'inherit' }}>{msg.from}</span>
+                        <span style={{ fontWeight: selectedChat?.id === msg.id ? '800' : '700', fontSize: '1.1rem', color: selectedChat?.id === msg.id ? 'white' : 'inherit' }}>
+                          {clientNames[msg.from] || msg.from}
+                        </span>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{msg.time}</span>
                       </div>
                       <div className="truncate-text" style={{ opacity: selectedChat?.id === msg.id ? 1 : 0.7 }}>{msg.text}</div>
-                    </div>
                   )) : <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>{t('noMessages')}</div>}
                   <div style={{ height: isMobile ? '80px' : '0' }}></div>
                 </div>
@@ -900,7 +920,15 @@ function App() {
                       <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-color)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                           {isMobile && <button onClick={() => setMobileView('list')} style={{ background: 'none', border: 'none', color: 'white' }}><ChevronLeft size={24} /></button>}
-                          <div style={{ fontWeight: '700', fontSize: '1.2rem' }}>{selectedChat.from}</div>
+                          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.9rem' }}>
+                            {(clientNames[selectedChat.from] || selectedChat.from).slice(-2)}
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: '800', fontSize: '1.2rem' }}>{clientNames[selectedChat.from] || selectedChat.from}</div>
+                            {clientNames[selectedChat.from] && (
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{selectedChat.from}</div>
+                            )}
+                          </div>
                         </div>
                         <div style={{ display: 'flex', gap: '1rem' }}>
                           <button onClick={startCall} className="status-badge" style={{ color: 'var(--accent-color)', cursor: 'pointer' }}><Signal size={16} /> CALL</button>
@@ -1172,8 +1200,16 @@ function App() {
                     <input type="text" defaultValue={activeProfile?.bio || ''} className="note-input" />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('fullBioLabel')}</label>
-                    <textarea className="note-input" style={{ height: '150px' }} defaultValue="Hi, I am available in the city center. VIP companion offering GFE, outcalls and incalls. Very friendly and open minded..."></textarea>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.05em' }}>{t('fullBioLabel').toUpperCase()}</label>
+                    <textarea 
+                      className="note-input" 
+                      style={{ height: '250px', lineHeight: '1.6', fontSize: '1rem', padding: '1.25rem', border: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)' }} 
+                      defaultValue="Hi, I am available in the city center. VIP companion offering GFE, outcalls and incalls. Very friendly and open minded..."
+                      placeholder={t('bioPlaceholder')}
+                    ></textarea>
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.7rem', color: 'var(--text-secondary)', textAlign: 'right' }}>
+                      {t('bioFormattingNote')}
+                    </div>
                   </div>
                   <button className="action-btn" style={{ width: 'fit-content' }}>{t('saveChanges')}</button>
                 </div>
@@ -1789,7 +1825,15 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'qa' && <QAView t={t} messages={messages} clientNotes={clientNotes} />}
+        {activeTab === 'qa' && (
+          <QAView 
+            t={t} 
+            messages={messages} 
+            clientNotes={clientNotes} 
+            clientNames={clientNames}
+            updateClientName={updateClientName}
+          />
+        )}
 
         {activeTab === 'infra' && activeOperator?.isSuperAdmin && (
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
