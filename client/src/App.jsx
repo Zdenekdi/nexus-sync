@@ -455,6 +455,8 @@ function App() {
   const [isAddOperatorModalOpen, setIsAddOperatorModalOpen] = useState(false);
   const [targetAgencyId, setTargetAgencyId] = useState(null);
   const [newOperatorData, setNewOperatorData] = useState({ name: '', role: 'Operator', email: '', password: 'password123' });
+  const [rolePermissions, setRolePermissions] = useState(MOCK_PERMISSIONS);
+  const [activeMarket, setActiveMarket] = useState('EU');
 
 
 
