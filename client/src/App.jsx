@@ -1047,7 +1047,7 @@ function App() {
         )}
    
         {activeTab === 'calendar' && (
-          <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, display: 'flex', flexDirection: 'column' }} className="fade-in">
+          <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }} className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
               <div>
                 <h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('bookingSchedule')} - {activeProfile?.name || '...'}</h2>
