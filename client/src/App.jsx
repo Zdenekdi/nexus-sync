@@ -1007,32 +1007,27 @@ function App() {
 
         <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1.5rem', marginRight: '-0.5rem', paddingRight: '0.5rem' }} className="custom-scrollbar">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2.5rem' }}>
-          {[
-            ...(activeOperator?.isSuperAdmin ? [
+            ...((activeOperator?.isSuperAdmin || activeOperator?.isAdmin) ? [
               { id: 'infra', icon: HardDrive, label: t('infra') },
               { id: 'agencies', icon: Building2, label: t('agencies') },
               { id: 'permissions', icon: Shield, label: t('permissions') },
               { id: 'plans', icon: CreditCard, label: t('plans') },
-              { id: 'features', icon: Zap, label: t('featuresCap') }
+              { id: 'features', icon: Zap, label: t('featuresCap') },
+              { id: 'hierarchy', icon: Users, label: t('hierarchy') },
+              { id: 'analytics', icon: BarChart3, label: t('analytics') }
             ] : [
-              ...(activeOperator?.isAdmin ? [
-                { id: 'hierarchy', icon: Users, label: t('hierarchy') },
-                { id: 'plans', icon: CreditCard, label: t('plans') },
-                { id: 'analytics', icon: BarChart3, label: t('analytics') }
-              ] : [
-                { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator?.isModel ? 0 : totalUnread },
-                { id: 'calendar', icon: Calendar, label: t('schedule') },
-                ...(activeOperator?.isModel ? [] : [
-                  { id: 'profiles', icon: Users, label: t('profiles') },
-                  { id: 'web-profiles', icon: Globe, label: t('webProfiles') }
-                ]),
-                { id: 'device-setup', icon: Smartphone, label: t('deviceSetup') },
-                ...(activeOperator?.isModel ? [] : [{ id: 'activity', icon: Activity, label: t('auditLog') }])
+              { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator?.isModel ? 0 : totalUnread },
+              { id: 'calendar', icon: Calendar, label: t('schedule') },
+              ...(activeOperator?.isModel ? [] : [
+                { id: 'profiles', icon: Users, label: t('profiles') },
+                { id: 'web-profiles', icon: Globe, label: t('webProfiles') }
               ]),
-              { id: 'referrals', icon: Gift, label: t('referrals') },
-              { id: 'qa', icon: FileSearch, label: t('qa') }
+              { id: 'device-setup', icon: Smartphone, label: t('deviceSetup') },
+              ...(activeOperator?.isModel ? [] : [{ id: 'activity', icon: Activity, label: t('auditLog') }])
             ]),
-                { id: 'settings', icon: Settings, label: t('settings') },
+            { id: 'referrals', icon: Gift, label: t('referrals') },
+            { id: 'qa', icon: FileSearch, label: t('qa') },
+            { id: 'settings', icon: Settings, label: t('settings') },
           ].map(item => (
             <button key={item.id} 
               onClick={() => {
@@ -2431,7 +2426,7 @@ function App() {
         )}
 
         {/* Permissions Dashboard (Phase 3) */}
-        {activeTab === 'permissions' && activeOperator?.isSuperAdmin && (
+        {activeTab === 'permissions' && (activeOperator?.isSuperAdmin || activeOperator?.isAdmin) && (
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
             <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #3b82f6, #10b981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Role Permissions</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>Manage granular access levels and capabilities for each system role.</p>
