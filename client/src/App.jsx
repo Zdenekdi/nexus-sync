@@ -54,6 +54,14 @@ function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mobileView, setMobileView] = useState('sidebar');
 
+  const t = (key) => {
+    try {
+      return (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || key || '';
+    } catch {
+      return key || '';
+    }
+  };
+
   const [activeCall, setActiveCall] = useState(null);
   const [incomingCall, setIncomingCall] = useState(null);
   const [callTime, setCallTime] = useState(0);
@@ -577,13 +585,6 @@ const ResetPasswordView = ({ onComplete, t }) => {
     }
   };
 
-  const t = (key) => {
-    try {
-      return (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || key || '';
-    } catch {
-      return key || '';
-    }
-  };
 
   // Memoized Derived Data
   const availableOperators = useMemo(() =>
