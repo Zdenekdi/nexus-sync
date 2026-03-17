@@ -2,12 +2,13 @@ import React from 'react';
 import { Shield } from 'lucide-react';
 
 const PermissionsDashboard = ({ t, rolePermissions, setRolePermissions, activeOperator }) => {
+  const isMobile = window.innerWidth < 768;
   return (
-    <div style={{ padding: '2rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
-      <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #3b82f6, #10b981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('rolePermissions')}</h2>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>{t('rolePermissionsDesc')}</p>
+    <div style={{ padding: isMobile ? '1rem' : '2rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
+      <h2 style={{ fontSize: isMobile ? '1.75rem' : '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #3b82f6, #10b981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('rolePermissions')}</h2>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: isMobile ? '1.5rem' : '3rem', fontSize: isMobile ? '1rem' : '1.1rem' }}>{t('rolePermissionsDesc')}</p>
       
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(380px, 1fr))', gap: isMobile ? '1rem' : '2rem' }}>
         {Object.entries(rolePermissions).map(([role, perms]) => (
           <div key={role} className="glass-card" style={{ padding: '2rem', height: 'fit-content' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>

@@ -825,6 +825,7 @@ function App() {
             calendar={bookingSchedule}
             isShiftActive={isShiftActive}
             setIsShiftActive={setIsShiftActive}
+            isMobile={isMobile}
           />
         )}
 
@@ -1121,7 +1122,7 @@ function App() {
         )}
 
         {activeTab === 'web-profiles' && (
-          <div style={{ padding: '2rem', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem', maxHeight: '100%' }} className="fade-in custom-scrollbar">
+          <div style={{ padding: isMobile ? '1rem' : '2rem', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem', maxHeight: '100%' }} className="fade-in custom-scrollbar">
             {/* Profile Switcher Row */}
             <div style={{
               display: 'flex',
@@ -1325,7 +1326,7 @@ function App() {
       )}
 
         {activeTab === 'device-setup' && (
-          <div style={{ padding: '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
+          <div style={{ padding: isMobile ? '1rem' : '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
               <div>
                 <h2 style={{ fontSize: '2rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
