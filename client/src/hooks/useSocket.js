@@ -3,14 +3,14 @@ import { io } from 'socket.io-client';
 
 const SOCKET_URL = 'http://78.141.202.139:3001';
 
-export const useSocket = (onNewMessage, onMessageUpdated) => {
+export const useSocket = (onNewMessage, onMessageUpdated, onIncomingCall) => {
   const socketRef = useRef(null);
-  const handlersRef = useRef({ onNewMessage, onMessageUpdated });
+  const handlersRef = useRef({ onNewMessage, onMessageUpdated, onIncomingCall });
 
   // Update refs when handlers change without re-triggering the socket effect
   useEffect(() => {
-    handlersRef.current = { onNewMessage, onMessageUpdated };
-  }, [onNewMessage, onMessageUpdated]);
+    handlersRef.current = { onNewMessage, onMessageUpdated, onIncomingCall };
+  }, [onNewMessage, onMessageUpdated, onIncomingCall]);
 
   useEffect(() => {
     // Initialize socket connection if it doesn't exist
@@ -36,6 +36,13 @@ export const useSocket = (onNewMessage, onMessageUpdated) => {
         console.log('Received message_updated:', data);
         if (handlersRef.current.onMessageUpdated) {
           handlersRef.current.onMessageUpdated(data);
+        }
+      });
+
+      socketRef.current.on('incoming_call', (data) => {
+        console.log('Received incoming_call:', data);
+        if (handlersRef.current.onIncomingCall) {
+          handlersRef.current.onIncomingCall(data);
         }
       });
 
