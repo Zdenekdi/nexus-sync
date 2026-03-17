@@ -720,35 +720,34 @@ function App() {
         <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1.5rem', marginRight: '-0.5rem', paddingRight: '0.5rem' }} className="custom-scrollbar">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
             {[
-              ...((activeOperator?.isSuperAdmin || activeOperator?.isAdmin) ? [
-                { id: 'infra', icon: HardDrive, label: t('infra') },
-                { id: 'agencies', icon: Building2, label: t('agencies') },
-                { id: 'permissions', icon: Shield, label: t('permissions') },
-                { id: 'plans', icon: CreditCard, label: t('plans') },
-                { id: 'features', icon: Zap, label: t('featuresCap') },
-                { id: 'hierarchy', icon: Users, label: t('hierarchy') },
-                { id: 'analytics', icon: BarChart3, label: t('analytics') }
-              ] : [
-                { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator?.isModel ? 0 : totalUnread },
-                { id: 'calendar', icon: Calendar, label: t('schedule') },
-                ...(activeOperator?.isModel ? [] : [
-                  { id: 'profiles', icon: Users, label: t('profiles') },
-                  { id: 'web-profiles', icon: Globe, label: t('webProfiles') }
-                ]),
-                { id: 'device-setup', icon: Smartphone, label: t('deviceSetup') },
-                ...(activeOperator?.isModel ? [] : [{ id: 'activity', icon: Activity, label: t('auditLog') }])
-              ]),
-              { id: 'referrals', icon: Gift, label: t('referrals') },
-              { id: 'inventory', icon: Package, label: t('inventory') },
-              { id: 'qa', icon: FileSearch, label: t('qa') },
-              { id: 'settings', icon: Settings, label: t('settings') },
+                { id: 'infra', icon: HardDrive, label: t('infra'), perm: 'infrastructure' },
+                { id: 'agencies', icon: Building2, label: t('agencies'), perm: 'agencies' },
+                { id: 'permissions', icon: Shield, label: t('permissions'), perm: 'permissions' },
+                { id: 'plans', icon: CreditCard, label: t('plans'), perm: 'plans' },
+                { id: 'features', icon: Zap, label: t('featuresCap'), perm: 'global_features' },
+                { id: 'hierarchy', icon: Users, label: t('hierarchy'), perm: 'hierarchy' },
+                { id: 'analytics', icon: BarChart3, label: t('analytics'), perm: 'analytics' },
+                { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator?.isModel ? 0 : totalUnread, perm: 'messaging' },
+                { id: 'calendar', icon: Calendar, label: t('schedule'), perm: 'calendar' },
+                { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
+                { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles' },
+                { id: 'device-setup', icon: Smartphone, label: t('deviceSetup'), perm: 'device_setup' },
+                { id: 'activity', icon: Activity, label: t('auditLog'), perm: 'audit_logs' },
+                { id: 'referrals', icon: Gift, label: t('referrals'), perm: 'referrals' },
+                { id: 'inventory', icon: Package, label: t('inventory'), perm: 'inventory' },
+                { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub' },
+                { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
             ].filter(item => {
               if (isSidebarCollapsed && !isMobile) {
                 // Persistent core items
                 return item.id === 'inbox' || item.id === 'calendar';
               }
-              return true;
-            }).map(item => (
+              // Role-based permission check
+              const operatorRole = activeOperator?.role || 'Operator';
+              const perms = rolePermissions[operatorRole] || {};
+              return perms[item.perm];
+            })
+.map(item => (
             <button key={item.id} 
               onClick={() => {
                 setActiveTab(item.id);
@@ -1823,7 +1822,7 @@ function App() {
               )}
             </div>
 
-            {activeOperator?.isAdmin && !activeOperator?.isSuperAdmin && (
+            {rolePermissions[activeOperator?.role]?.analytics && !rolePermissions[activeOperator?.role]?.infrastructure && (
               <div className="glass-card" style={{ padding: '2rem', marginTop: '3rem' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '2rem' }}>{t('operatorPerformance')}</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -1857,6 +1856,13 @@ function App() {
             )}
           </div>
         )}
+        {activeTab === 'hierarchy' && rolePermissions[activeOperator?.role]?.hierarchy && (
+           <div style={{ padding: '3rem', flex: 1, overflowY: 'auto' }} className="fade-in">
+             <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem' }}>{t('teamHierarchy')}</h2>
+             <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem' }}>{t('teamHierarchyDesc')}</p>
+             {/* ... existing hierarchy content ... */}
+           </div>
+        )}
 
         {activeTab === 'qa' && (
           <QAView 
@@ -1872,7 +1878,7 @@ function App() {
           <InventoryView t={TRANSLATIONS[lang]} />
         )}
 
-        {activeTab === 'infra' && activeOperator?.isSuperAdmin && (
+        {activeTab === 'infra' && rolePermissions[activeOperator?.role]?.infrastructure && (
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '3rem' }}>
               <div style={{ flex: 1 }}>
@@ -1940,7 +1946,7 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'agencies' && activeOperator?.isSuperAdmin && (
+        {activeTab === 'agencies' && rolePermissions[activeOperator?.role]?.agencies && (
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
             <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #8b5cf6, #d946ef)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('agencyMgmtTitle')}</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>{t('agencyMgmtSubtitle')}</p>
@@ -2105,7 +2111,7 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'features' && activeOperator?.isSuperAdmin && (
+        {activeTab === 'features' && rolePermissions[activeOperator?.role]?.global_features && (
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
             <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #f59e0b, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('featuresTitle')}</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>{t('featuresSubtitle')}</p>
@@ -2228,7 +2234,7 @@ function App() {
         )}
 
         {/* Permissions Dashboard (Phase 3) */}
-        {activeTab === 'permissions' && (activeOperator?.isSuperAdmin || activeOperator?.isAdmin) && (
+        {activeTab === 'permissions' && rolePermissions[activeOperator?.role]?.permissions && (
           <PermissionsDashboard 
             t={t}
             rolePermissions={rolePermissions} 
@@ -2238,7 +2244,7 @@ function App() {
         )}
 
         {/* Subscription Plans (Phase 4/9) */}
-        {activeTab === 'plans' && (activeOperator?.isSuperAdmin || activeOperator?.isAdmin) && (
+        {activeTab === 'plans' && rolePermissions[activeOperator?.role]?.plans && (
           <PlansDashboard 
             t={t}
             subscriptionPlans={subscriptionPlans}
