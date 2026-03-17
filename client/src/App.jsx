@@ -457,6 +457,11 @@ function App() {
   const [newOperatorData, setNewOperatorData] = useState({ name: '', role: 'Operator', email: '', password: 'password123' });
   const [rolePermissions, setRolePermissions] = useState(MOCK_PERMISSIONS);
   const [activeMarket, setActiveMarket] = useState('EU');
+  const [subscriptionPlans] = useState(MOCK_PLANS);
+  const [smartReplies] = useState(MOCK_SMART_REPLIES);
+  const [stats] = useState(MOCK_STATS);
+  const [auditLogs] = useState(MOCK_AUDIT_LOG);
+  const [sessions] = useState(MOCK_SESSIONS);
 
 
 
