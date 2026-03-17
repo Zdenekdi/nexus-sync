@@ -1244,7 +1244,12 @@ function App() {
                     <label className="input-label-premium">{t('fullBioLabel')}</label>
                     <textarea 
                       className="note-input" 
-                      style={{ height: '300px', lineHeight: '1.7', fontSize: '1.1rem' }} 
+                      style={{ 
+                        height: '300px', 
+                        lineHeight: '1.7', 
+                        fontSize: '1.1rem',
+                        borderBottom: '2px solid rgba(255, 255, 255, 0.1)'
+                      }} 
                       defaultValue="Hi, I am available in the city center. VIP companion offering GFE, outcalls and incalls. Very friendly and open minded..."
                       placeholder={t('bioPlaceholder')}
                     ></textarea>
