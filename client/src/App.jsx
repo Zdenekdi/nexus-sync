@@ -1235,7 +1235,12 @@ function App() {
                       type="text" 
                       defaultValue={activeProfile?.bio || ''} 
                       className="note-input" 
-                      style={{ fontSize: '1.25rem', fontWeight: '700', letterSpacing: '-0.01em' }}
+                      style={{ 
+                        fontSize: '1.25rem', 
+                        fontWeight: '700', 
+                        letterSpacing: '-0.01em',
+                        borderBottom: '2px solid rgba(255, 255, 255, 0.1)'
+                      }}
                       placeholder="Enter a catchy headline..."
                     />
                   </div>
