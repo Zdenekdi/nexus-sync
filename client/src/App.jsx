@@ -336,6 +336,63 @@ function App() {
     }
   }, [activeTab, isLoggedIn]);
 
+  // Real API Sync Effect – hydrates profiles from the live backend when logged in
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const token = localStorage.getItem('nexus_token');
+    if (!token) return;
+
+    const fetchServerData = async () => {
+      try {
+        const res = await fetch('http://78.141.202.139:3001/api/profiles', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            setProfiles(data);
+          }
+        }
+      } catch (err) {
+        console.warn('[API] Could not fetch profiles from server, using mock data.', err);
+      }
+    };
+
+    fetchServerData();
+  }, [isLoggedIn]);
+
+  // Login handler – tries real API first, falls back to DemoData
+  const handleLogin = async (email, password) => {
+    try {
+      const res = await fetch('http://78.141.202.139:3001/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem('nexus_token', data.token);
+        setActiveOperator(data.user);
+        setIsLoggedIn(true);
+        window.history.replaceState(null, '', '/dashboard');
+        return;
+      }
+    } catch (err) {
+      console.warn('[API] Real login unavailable, using mock fallback.', err);
+    }
+
+    // Fallback: DemoData mock login
+    const operator = MOCK_OPERATORS.find(op => op.email === email && op.password === password);
+    if (operator) {
+      setActiveOperator(operator);
+      setIsLoggedIn(true);
+      window.history.replaceState(null, '', '/dashboard');
+    } else {
+      alert(t('loginError') || 'Invalid credentials');
+    }
+  };
+
   // Initialize Socket Connection
   useSocket(
     useCallback((newMsg) => {
@@ -614,20 +671,7 @@ function App() {
     document.body.removeChild(link);
   }, [bookingSchedule, activeProfile]);
 
-  const handleLogin = useCallback((user) => {
-    const client = MOCK_CLIENTS.find(c => c.id === user.clientId) || null;
-    setActiveOperator(user);
-    setActiveClient(client);
-    setIsLoggedIn(true);
-    
-    localStorage.setItem('nexus_isLoggedIn', 'true');
-    localStorage.setItem('nexus_activeOperator', JSON.stringify(user));
-    if (client) {
-      localStorage.setItem('nexus_activeClient', JSON.stringify(client));
-    }
 
-    setActiveTab('dashboard');
-  }, []);
 
   const handleResetRequired = useCallback((user) => {
     setTempUser(user);
