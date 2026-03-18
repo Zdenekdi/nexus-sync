@@ -25,3 +25,22 @@ process.on('uncaughtException', (err) => {
 server.listen(PORT, () => {
   logger.info(`Server is running on port ${PORT}`);
 });
+
+// Graceful Shutdown
+const shutdown = () => {
+  logger.info('Gracefully shutting down...');
+  server.close(() => {
+    logger.info('HTTP server closed.');
+    // If you had a db client pool, close it here
+    process.exit(0);
+  });
+
+  // Force close after 10s
+  setTimeout(() => {
+    logger.error('Could not close connections in time, forcefully shutting down');
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
