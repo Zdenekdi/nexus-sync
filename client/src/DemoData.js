@@ -52,7 +52,7 @@ export const MOCK_OPERATORS = [
     { id: 'op-03', name: 'Sarah K.', role: 'US Specialist', clientId: 'agency-02', avatar: 'SK', email: 'sarah@nexus.sync', password: 'password123', metrics: { messages: 530, calls: 22, conversion: '15%' }, permissions: { qa: true, referrals: true } },
     { id: 'op-04', name: 'Elena B.', role: 'Night Shift', clientId: 'agency-01', avatar: 'EB', email: 'elena@nexus.sync', password: 'password123', metrics: { messages: 620, calls: 14, conversion: '9%' }, permissions: { qa: true, referrals: false } },
     { id: 'op-05', name: 'Diana', role: 'Model', avatar: 'D', email: 'diana@nexus.sync', password: 'password123', isModel: true, profileId: 'ldn-01', permissions: { qa: false, referrals: false } },
-    { id: 'op-06', name: 'Super Admin', role: 'System Owner', clientId: null, avatar: 'SA', email: 'admin@nexus.ai', password: 'password123', isSuperAdmin: true, permissions: { qa: true, referrals: true } }
+    { id: 'op-06', name: 'App Owner', role: 'App Owner', clientId: null, avatar: 'AO', email: 'admin@nexus.ai', password: 'password123', isSuperAdmin: true, permissions: { qa: true, referrals: true } }
 ];
 
 export const MOCK_PROFILES = [
@@ -373,7 +373,7 @@ export const MOCK_SMART_REPLIES = {
 };
 
 export const MOCK_PERMISSIONS = {
-    'System Owner': {
+    'App Owner': {
         infrastructure: true,
         agencies: true,
         permissions: true,

@@ -35,11 +35,16 @@ function App() {
     try {
       const saved = localStorage.getItem('nexus_activeOperator');
       if (saved && saved !== 'undefined' && saved !== 'null') {
-        const parsed = JSON.parse(saved);
-        if (parsed) return parsed;
+        let parsed = JSON.parse(saved);
+        // Safety migration for role name changes
+        if (parsed.role === 'System Owner' || parsed.role === 'Super Admin') {
+          parsed.role = 'App Owner';
+          parsed.name = 'App Owner';
+        }
+        return parsed;
       }
-      return MOCK_OPERATORS[0] || {};
-    } catch { return MOCK_OPERATORS[0] || {}; }
+      return MOCK_OPERATORS[5] || {}; // Default to App Owner for safety if possible
+    } catch { return MOCK_OPERATORS[5] || {}; }
   });
   const [activeClient, setActiveClient] = useState(() => {
     try {
@@ -183,9 +188,9 @@ function App() {
     localStorage.setItem('nexus_sidebar_collapsed', isSidebarCollapsed);
   }, [isSidebarCollapsed]);
 
-  // Proactive check: Ensure Super Admins start with expanded sidebar for clarity
+  // Proactive check: Ensure App Owners start with expanded sidebar for clarity
   useEffect(() => {
-    if (activeOperator?.isSuperAdmin || activeOperator?.role === 'System Owner' || activeOperator?.role === 'Super Admin') {
+    if (activeOperator?.isSuperAdmin || activeOperator?.role === 'App Owner') {
       setIsSidebarCollapsed(false);
     }
   }, [activeOperator]);
@@ -249,9 +254,9 @@ function App() {
   }, [notifications]);
 
   const addNotification = useCallback((msg, type = 'info', profileId = null) => {
-    // Silencing operational notifications for System Owner as they are ballast for this role
-    const isSystemOwner = activeOperator?.role === 'System Owner' || activeOperator?.isSuperAdmin;
-    if (isSystemOwner && type !== 'emergency') {
+    // Silencing operational notifications for App Owner as they are ballast for this role
+    const isAppOwner = activeOperator?.role === 'App Owner' || activeOperator?.isSuperAdmin;
+    if (isAppOwner && type !== 'emergency') {
       return;
     }
 
@@ -1117,7 +1122,7 @@ function App() {
                 { id: 'agencies', icon: Building2, label: t('agencies'), perm: 'agencies' },
                 { id: 'permissions', icon: Shield, label: t('permissions'), perm: 'permissions' },
                 { id: 'plans', icon: CreditCard, label: t('plans'), perm: 'plans' },
-                { id: 'features', icon: Zap, label: t('featuresCap'), perm: 'global_features' },
+                { id: 'features', icon: Zap, label: t('features'), perm: 'global_features' },
                 { id: 'hierarchy', icon: Users, label: t('hierarchy'), perm: 'hierarchy' },
                 { id: 'analytics', icon: BarChart3, label: t('analytics'), perm: 'analytics' },
                 { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator?.isModel ? 0 : totalUnread, perm: 'messaging' },
@@ -1133,7 +1138,8 @@ function App() {
             ].filter(item => {
               // Show all permitted items regardless of collapse state
               const role = activeOperator?.role || 'Operator';
-              const operatorRole = role === 'Super Admin' ? 'System Owner' : role;
+              // 'App Owner' is the new unified administrative role
+              const operatorRole = (role === 'Super Admin' || role === 'System Owner' || role === 'App Owner') ? 'App Owner' : role;
               const perms = rolePermissions[operatorRole] || {};
               return perms[item.perm];
             })
@@ -1678,7 +1684,7 @@ function App() {
               borderBottom: '1px solid var(--card-border)',
               flexShrink: 0
             }} className="custom-scrollbar">
-              {(activeOperator?.role === 'System Owner' ? profiles : allAgencyProfiles).map(profile => (
+              {(activeOperator?.role === 'App Owner' ? profiles : allAgencyProfiles).map(profile => (
                 <button
                   key={profile.id}
                   onClick={() => setActiveProfileId(profile.id)}
@@ -3049,7 +3055,7 @@ function App() {
             <button 
               onClick={() => {
                 const title = encodeURIComponent(`[BUG] Issue reported by ${activeOperator?.name || 'Unknown'}`);
-                const body = encodeURIComponent(`Operator: ${activeOperator?.name || 'Unknown'}\nRole: ${activeOperator?.role || 'Unknown'}\nClient: ${activeClient?.name || 'Super Admin'}\n\nDescription:\n${bugDescription}`);
+                const body = encodeURIComponent(`Operator: ${activeOperator?.name || 'Unknown'}\nRole: ${activeOperator?.role || 'Unknown'}\nClient: ${activeClient?.name || 'App Owner'}\n\nDescription:\n${bugDescription}`);
                 window.open(`https://github.com/Zdenekdi/nexus-sync/issues/new?title=${title}&body=${body}`, '_blank');
                 setIsBugReportOpen(false);
                 setBugDescription('');
