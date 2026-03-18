@@ -255,13 +255,18 @@ function App() {
 
   const addNotification = useCallback((msg, type = 'info', profileId = null) => {
     // Silencing operational notifications for App Owner as they are ballast for this role
-    const isAppOwner = activeOperator?.role === 'App Owner' || activeOperator?.isSuperAdmin;
-    if (isAppOwner && type !== 'emergency') {
+    if (activeRole === 'App Owner' && type !== 'emergency') {
+      return;
+    }
+
+    // New Booking notifications are only necessary for Models
+    const isBookingMsg = msg === t('newBooking') || msg === 'New Booking' || msg === 'Nová rezervace';
+    if (isBookingMsg && activeRole !== 'Model') {
       return;
     }
 
     // Filter notification for models - they should only see their own
-    if (activeOperator?.isModel && profileId && profileId !== activeOperator.profileId) {
+    if (activeRole === 'Model' && profileId && profileId !== activeOperator?.profileId) {
       return;
     }
 
@@ -325,7 +330,7 @@ function App() {
           
           // Randomly trigger other notification types for demo
           const rand = Math.random();
-          if (rand > 0.85) {
+          if (rand > 0.85 && activeRole === 'Model') {
             setTimeout(() => addNotification(t('newBooking') || 'New Booking', 'success'), 2000);
           } else if (rand > 0.75) {
             setTimeout(() => addNotification(t('incomingCall') || 'Incoming Call', 'emergency'), 3000);
