@@ -588,6 +588,14 @@ function App() {
     [profiles, activeProfileId, allAgencyProfiles]
   );
 
+  const assignedProfiles = useMemo(() => {
+    if (activeRole === 'App Owner') return profiles;
+    // For Agency Manager, show all profiles in the agency
+    if (activeRole === 'Agency Manager') return profiles.filter(p => p.clientId === activeOperator?.clientId);
+    // For operators, show only their assigned models
+    return profiles.filter(p => p.operators?.some(o => o.id === activeOperator?.id));
+  }, [profiles, activeRole, activeOperator]);
+
   const filteredMessages = useMemo(() => {
     let base = messages.filter(m => m.profileId === activeProfileId);
     return base.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -1327,7 +1335,35 @@ function App() {
             {(!isMobile || mobileView === 'list') && (
               <div className={`inbox-panel ${!selectedChatId ? 'active' : ''}`} style={{ width: isMobile ? '100%' : '380px', flexShrink: 0, borderRight: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column' }}>
                 <div style={{ padding: '2rem 1.5rem', borderBottom: '1px solid var(--card-border)' }}>
-                  <h2 style={{ fontSize: '1.5rem', marginBottom: '1.25rem' }}>{t('inbox')} ({activeProfile?.name || '...'})</h2>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', gap: '1rem' }}>
+                    <h2 style={{ fontSize: '1.5rem', whiteSpace: 'nowrap' }}>{t('inbox')}</h2>
+                    <div style={{ position: 'relative', flex: 1, maxWidth: '200px' }}>
+                      <select 
+                        value={activeProfileId} 
+                        onChange={(e) => {
+                          setActiveProfileId(Number(e.target.value));
+                          setSelectedChatId(null); // Reset selection when switching model
+                        }}
+                        style={{ 
+                          width: '100%',
+                          background: 'rgba(255,255,255,0.05)', 
+                          border: '1px solid var(--card-border)', 
+                          padding: '0.4rem 2rem 0.4rem 0.85rem', 
+                          borderRadius: '10px', 
+                          color: 'white',
+                          fontSize: '0.8rem',
+                          fontWeight: '800',
+                          appearance: 'none',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {assignedProfiles.map(p => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </select>
+                      <ChevronDown size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-secondary)' }} />
+                    </div>
+                  </div>
                   <div style={{ position: 'relative' }}>
                     <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
                     <input type="text" placeholder={t('searchPlaceholder')} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.85rem 0.85rem 0.85rem 2.5rem', borderRadius: '12px', color: 'white' }} />
