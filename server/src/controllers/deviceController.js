@@ -60,6 +60,25 @@ exports.handleGoIP = async (req, res) => {
       data: { lastMessageAt: new Date() }
     });
 
+    // 5. Emit real-time socket event to frontend
+    try {
+      const { getIO } = require('../services/socket');
+      const io = getIO();
+      // Emitting the message object that the frontend expects
+      io.emit('new_message', {
+        id: Date.now(),
+        profileId: profile.id,
+        from: src,
+        text: msg,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        status: 'delivered',
+        direction: 'inbound'
+      });
+      console.log(`Socket.io emitted 'new_message' from ${src}`);
+    } catch (e) {
+      console.warn('Socket.io not available or failed to emit', e);
+    }
+
     res.status(200).send('RECEIVE OK'); // GoIP expects this response
   } catch (error) {
     console.error('GoIP Webhook Error:', error);
@@ -122,6 +141,25 @@ exports.handleMobileSms = async (req, res) => {
       where: { id: chat.id },
       data: { lastMessageAt: new Date() }
     });
+
+    // 5. Emit real-time socket event to frontend
+    try {
+      const { getIO } = require('../services/socket');
+      const io = getIO();
+      // Emitting the message object that the frontend expects
+      io.emit('new_message', {
+        id: Date.now(),
+        profileId: profile.id,
+        from,
+        text,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        status: 'delivered',
+        direction: 'inbound'
+      });
+      console.log(`Socket.io emitted 'new_message' from ${from}`);
+    } catch (e) {
+      console.warn('Socket.io not available or failed to emit', e);
+    }
 
     res.json({ status: 'success' });
   } catch (error) {
