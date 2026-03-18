@@ -596,6 +596,17 @@ function App() {
 
   const currentAgency = useMemo(() => agencies.find(a => a.id === activeClient?.id) || agencies[0], [activeClient, agencies]);
 
+  // Normalize legacy role names to the current 'App Owner' role for permission lookups.
+  // This makes the app backward-compatible with stale browser sessions that still have
+  // 'Super Admin' or 'System Owner' stored in localStorage.
+  const normalizeRole = useCallback((role) => {
+    if (!role) return role;
+    if (role === 'Super Admin' || role === 'System Owner') return 'App Owner';
+    return role;
+  }, []);
+
+  const activeRole = normalizeRole(activeOperator?.role);
+
   const toggleOperatorStatus = (profileId, operatorId) => {
     setProfiles(prev => prev.map(p => {
       if (p.id === profileId) {
@@ -1136,11 +1147,7 @@ function App() {
                 { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub' },
                 { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
             ].filter(item => {
-              // Show all permitted items regardless of collapse state
-              const role = activeOperator?.role || 'Operator';
-              // 'App Owner' is the new unified administrative role
-              const operatorRole = (role === 'Super Admin' || role === 'System Owner' || role === 'App Owner') ? 'App Owner' : role;
-              const perms = rolePermissions[operatorRole] || {};
+              const perms = rolePermissions[activeRole] || {};
               return perms[item.perm];
             })
 .map(item => (
@@ -2168,7 +2175,7 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'analytics' && rolePermissions[activeOperator?.role]?.analytics && (
+        {activeTab === 'analytics' && rolePermissions[activeRole]?.analytics && (
           <div style={{ padding: '2rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
             <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '2.5rem' }}>{t('agencyOverview')}</h2>
             
@@ -2406,7 +2413,7 @@ function App() {
                 </div>
               </div>
 
-              {rolePermissions[activeOperator?.role]?.global_features && (
+              {rolePermissions[activeRole]?.global_features && (
                 <div className="settings-section">
                   <h3 style={{ marginBottom: '1.5rem' }}>{t('simulationTools')}</h3>
                   <button onClick={simulateIncomingCall} className="action-btn" style={{ maxWidth: '300px' }}><Phone size={16} /> {t('simulateCall')}</button>
@@ -2414,7 +2421,7 @@ function App() {
               )}
             </div>
 
-            {rolePermissions[activeOperator?.role]?.analytics && !rolePermissions[activeOperator?.role]?.infrastructure && (
+            {rolePermissions[activeRole]?.analytics && !rolePermissions[activeRole]?.infrastructure && (
               <div className="glass-card" style={{ padding: '2rem', marginTop: '3rem' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '2rem' }}>{t('operatorPerformance')}</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -2448,7 +2455,7 @@ function App() {
             )}
           </div>
         )}
-        {activeTab === 'hierarchy' && rolePermissions[activeOperator?.role]?.hierarchy && (
+        {activeTab === 'hierarchy' && rolePermissions[activeRole]?.hierarchy && (
            <div style={{ padding: '3rem', flex: 1, overflowY: 'auto' }} className="fade-in">
              <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem' }}>{t('teamHierarchy')}</h2>
              <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem' }}>{t('teamHierarchyDesc')}</p>
@@ -2470,7 +2477,7 @@ function App() {
           <InventoryView t={TRANSLATIONS[lang]} />
         )}
 
-        {activeTab === 'infra' && rolePermissions[activeOperator?.role]?.infrastructure && (
+        {activeTab === 'infra' && rolePermissions[activeRole]?.infrastructure && (
           <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '3rem' }}>
               <div style={{ flex: 1 }}>
@@ -2538,7 +2545,7 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'agencies' && rolePermissions[activeOperator?.role]?.agencies && (
+        {activeTab === 'agencies' && rolePermissions[activeRole]?.agencies && (
           <div style={{ padding: '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
             <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #8b5cf6, #d946ef)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('agencyMgmtTitle')}</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>{t('agencyMgmtSubtitle')}</p>
@@ -2703,7 +2710,7 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'features' && rolePermissions[activeOperator?.role]?.global_features && (
+        {activeTab === 'features' && rolePermissions[activeRole]?.global_features && (
           <div style={{ padding: '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
             <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #f59e0b, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('featuresTitle')}</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>{t('featuresSubtitle')}</p>
@@ -2826,7 +2833,7 @@ function App() {
         )}
 
         {/* Permissions Dashboard (Phase 3) */}
-        {activeTab === 'permissions' && rolePermissions[activeOperator?.role]?.permissions && (
+        {activeTab === 'permissions' && rolePermissions[activeRole]?.permissions && (
           <PermissionsDashboard 
             t={t}
             rolePermissions={rolePermissions} 
@@ -2836,7 +2843,7 @@ function App() {
         )}
 
         {/* Subscription Plans (Phase 4/9) */}
-        {activeTab === 'plans' && rolePermissions[activeOperator?.role]?.plans && (
+        {activeTab === 'plans' && rolePermissions[activeRole]?.plans && (
           <PlansDashboard 
             t={t}
             subscriptionPlans={subscriptionPlans}
