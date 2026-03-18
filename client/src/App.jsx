@@ -246,7 +246,7 @@ function App() {
     addNotification({ id: Date.now(), title: 'Safety Guard Deactivated', message: 'Checkout successful.', priority: 'success', timestamp: new Date().toLocaleTimeString(), read: false });
   };
 
-  const formatTime = (seconds) => {
+  const formatSafetyTime = (seconds) => {
     const absSec = Math.abs(seconds);
     const h = Math.floor(absSec / 3600);
     const m = Math.floor((absSec % 3600) / 60);
@@ -1851,7 +1851,7 @@ function App() {
                         </div>
                         <div style={{ textAlign: 'right' }}>
                           <div style={{ fontSize: '1.5rem', fontWeight: '900', color: timeLeft <= 0 ? '#ef4444' : 'white', fontFamily: 'monospace' }}>
-                            {formatTime(timeLeft)}
+                            {formatSafetyTime(timeLeft)}
                           </div>
                           <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{timeLeft <= 0 ? 'OVERTIME' : 'TIME REMAINING'}</div>
                         </div>
