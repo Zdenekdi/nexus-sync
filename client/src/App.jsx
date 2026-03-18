@@ -1034,11 +1034,11 @@ function App() {
 
 
       {/* Sidebar */}
-      <nav className={`desktop-sidebar ${isMobileMenuOpen ? 'open' : ''}`} style={{
-        width: '280px',
+      <nav className={`desktop-sidebar ${isMobileMenuOpen ? 'open' : ''} ${isSidebarCollapsed ? 'collapsed' : ''}`} style={{
+        width: isSidebarCollapsed ? '80px' : '280px',
         flexShrink: 0,
         borderRight: '1px solid var(--card-border)',
-        padding: '2rem 1.5rem',
+        padding: isSidebarCollapsed ? '2rem 1rem' : '2rem 1.5rem',
         background: 'rgba(5, 7, 10, 0.4)',
         backdropFilter: 'blur(30px)',
         display: 'flex',
@@ -1050,8 +1050,8 @@ function App() {
         zIndex: 10,
         overflow: 'hidden'
       }}>
-        <div style={{ marginBottom: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+        <div style={{ marginBottom: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: isSidebarCollapsed ? 'center' : 'stretch' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: isSidebarCollapsed ? 'center' : 'space-between', width: '100%' }}>
             <div 
               onClick={() => setActiveTab('dashboard')}
               style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', transition: 'opacity 0.2s' }}
@@ -1061,7 +1061,7 @@ function App() {
               <div style={{ width: '42px', height: '42px', background: 'var(--accent-color)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 15px var(--accent-glow)', flexShrink: 0 }}>
                 <Zap color="white" fill="white" size={22} />
               </div>
-              <span style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '0.05em' }}>{t('logo')}</span>
+              {!isSidebarCollapsed && <span style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '0.05em' }}>{t('logo')}</span>}
             </div>
             {!isMobile && (
               <button 
@@ -1123,11 +1123,13 @@ function App() {
                 { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
             ].filter(item => {
               if (isSidebarCollapsed && !isMobile) {
-                // Persistent core items
+                // Persistent core items when collapsed
                 return item.id === 'inbox' || item.id === 'calendar';
               }
               // Role-based permission check
-              const operatorRole = activeOperator?.role || 'Operator';
+              const role = activeOperator?.role || 'Operator';
+              // Map 'Super Admin' to 'System Owner' permissions if not explicitly defined
+              const operatorRole = role === 'Super Admin' ? 'System Owner' : role;
               const perms = rolePermissions[operatorRole] || {};
               return perms[item.perm];
             })
