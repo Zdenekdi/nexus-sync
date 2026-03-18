@@ -2474,6 +2474,9 @@ function App() {
             clientNotes={clientNotes} 
             clientNames={clientNames}
             updateClientName={updateClientName}
+            activeOperator={activeOperator}
+            profiles={profiles}
+            operators={operators}
           />
         )}
 
