@@ -47,8 +47,10 @@ The primary module for client communication.
 
 Nexus Hub allows connection to a real Android phone for data synchronization.
 
-- **SMS Forwarding**: We recommend the **SMS Forwarder (by Enstone)** app from Google Play. It forwards SMS messages directly to the system via Webhook.
-- **Call Notifications**: Using apps like **Automate** or **Tasker**, you can set up instant browser notifications for incoming calls.
+- **SMS Forwarding**: We recommend the **SMS Forwarder (by Enstone)** app from Google Play. Set the Webhook URL to:
+  - `https://nexus-api.myvnc.com/api/device/mobile/sms`
+- **Call Notifications**: Using apps like **Automate** or **Tasker**, you can set up instant browser notifications for incoming calls. Use the URL:
+  - `https://nexus-api.myvnc.com/api/device/mobile/call`
 
 ---
 

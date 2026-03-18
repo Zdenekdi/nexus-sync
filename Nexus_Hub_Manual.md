@@ -43,8 +43,10 @@ Hlavní modul pro komunikaci se zákazníky.
 ### 4. Aktivace Zařízení (Device Setup)
 Nexus Hub umožňuje propojení s reálným Android telefonem pro synchronizaci dat.
 
-- **SMS Forwarding**: Doporučujeme aplikaci **SMS Forwarder (od Enstone)** z Google Play. Ta přeposílá SMS zprávy přímo do systému přes Webhook.
-- **Notifikace hovorů**: Pomocí aplikací **Automate** nebo **Tasker** lze nastavit okamžité upozornění na příchozí hovory v prohlížeči.
+- **SMS Forwarding**: Doporučujeme aplikaci **SMS Forwarder (od Enstone)** z Google Play. Nastavte Webhook URL na:
+  - `https://nexus-api.myvnc.com/api/device/mobile/sms`
+- **Notifikace hovorů**: Pomocí aplikací **Automate** nebo **Tasker** lze nastavit okamžité upozornění na příchozí hovory. Použijte URL:
+  - `https://nexus-api.myvnc.com/api/device/mobile/call`
 
 ---
 
