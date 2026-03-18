@@ -792,68 +792,69 @@ function App() {
             </div>
           </div>
           <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }} className="custom-scrollbar">
-          {(() => {
-            const filteredNotifications = notifications.filter(n => {
-              if (activeOperator?.isModel) {
-                return n.profileId === activeOperator.profileId;
+            {(() => {
+              const filteredNotifications = notifications.filter(n => {
+                if (activeOperator?.isModel) {
+                  return n.profileId === activeOperator.profileId;
+                }
+                return true;
+              });
+
+              if (filteredNotifications.length === 0) {
+                return (
+                  <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                    {t('noNotifications')}
+                  </div>
+                );
               }
-              return true;
-            });
 
-            if (filteredNotifications.length === 0) {
-              return (
-                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                  {t('noNotifications')}
+              return filteredNotifications.map(n => (
+                <div key={n.id} style={{ 
+                  padding: '1.25rem', 
+                  borderRadius: '16px', 
+                  background: n.read ? 'transparent' : 'rgba(59, 130, 246, 0.05)', 
+                  border: '1px solid var(--card-border)', 
+                  marginBottom: '1rem',
+                  position: 'relative',
+                  borderLeft: `4px solid ${
+                    n.type === 'emergency' ? 'var(--error-color)' : 
+                    n.type === 'success' ? 'var(--success-color)' : 
+                    n.type === 'warning' ? 'var(--warning-color)' : 'var(--accent-color)'
+                  }`
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <span style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)' }}>{n.timestamp}</span>
+                    {!n.read && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-color)' }}></div>}
+                  </div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: '600', color: 'white' }}>{n.msg}</div>
                 </div>
-              );
-            }
-
-            return filteredNotifications.map(n => (
-              <div key={n.id} style={{ 
-                padding: '1.25rem', 
-                borderRadius: '16px', 
-                background: n.read ? 'transparent' : 'rgba(59, 130, 246, 0.05)', 
-                border: '1px solid var(--card-border)', 
-                marginBottom: '1rem',
-                position: 'relative',
-                borderLeft: `4px solid ${
-                  n.type === 'emergency' ? 'var(--error-color)' : 
-                  n.type === 'success' ? 'var(--success-color)' : 
-                  n.type === 'warning' ? 'var(--warning-color)' : 'var(--accent-color)'
-                }`
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)' }}>{n.timestamp}</span>
-                  {!n.read && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-color)' }}></div>}
-                </div>
-                <div style={{ fontSize: '0.9rem', fontWeight: '600', color: 'white' }}>{n.msg}</div>
-              </div>
-            ))
-          )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800' }}>
-               <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--success-color)', animation: 'pulse 2s infinite' }}></div>
-               78.141.202.139:3001
-             </div>
-             <button 
-               onClick={() => setIsSimulating(!isSimulating)}
-               style={{ 
-                 padding: '4px 10px', 
-                 borderRadius: '6px', 
-                 border: '1px solid var(--card-border)', 
-                 background: isSimulating ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
-                 color: isSimulating ? 'var(--accent-color)' : 'var(--text-secondary)',
-                 fontSize: '0.65rem',
-                 fontWeight: '800',
-                 cursor: 'pointer'
-               }}
-             >
-               {isSimulating ? 'SIMULATION: ON' : 'SIMULATION: OFF'}
-             </button>
+              ));
+            })()}
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', borderTop: '1px solid var(--card-border)' }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800' }}>
+                 <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--success-color)', animation: 'pulse 2s infinite' }}></div>
+                 78.141.202.139:3001
+               </div>
+               <button 
+                 onClick={() => setIsSimulating(!isSimulating)}
+                 style={{ 
+                   padding: '4px 10px', 
+                   borderRadius: '6px', 
+                   border: '1px solid var(--card-border)', 
+                   background: isSimulating ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+                   color: isSimulating ? 'var(--accent-color)' : 'var(--text-secondary)',
+                   fontSize: '0.65rem',
+                   fontWeight: '800',
+                   cursor: 'pointer'
+                 }}
+               >
+                 {isSimulating ? 'SIMULATION: ON' : 'SIMULATION: OFF'}
+               </button>
+            </div>
           </div>
         </div>
-      </div>
-    </>
+      </>
   );
 };
 
