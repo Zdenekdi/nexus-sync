@@ -1258,10 +1258,10 @@ function App() {
             <div style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '0.75rem', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
               <div style={{ width: '36px', height: '36px', background: 'rgba(59, 130, 246, 0.2)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'var(--accent-color)', fontSize: '0.7rem', flexShrink: 0 }}>{activeOperator?.avatar}</div>
               {!isSidebarCollapsed && (
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activeRole === 'App Owner' ? 'App Owner' : activeOperator?.name}</div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {activeRole === 'App Owner' ? 'App Owner' : `${activeOperator?.name} (${MOCK_AGENCIES.find(a => a.id === activeOperator?.clientId)?.name || ''})`}
+                  </div>
                   <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{activeRole}</div>
-                </div>
               )}
               {!isSidebarCollapsed && <div style={{ width: '6px', height: '6px', background: 'var(--success-color)', borderRadius: '50%' }}></div>}
             </div>
@@ -1996,14 +1996,18 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'hierarchy' && activeOperator?.isAdmin && (
+        {activeTab === 'hierarchy' && (rolePermissions[activeRole]?.hierarchy || activeOperator?.isAdmin) && (
           <div style={{ padding: '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
             <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('teamHierarchy')}</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>{t('teamHierarchyDesc')}</p>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              {MOCK_OPERATORS.filter(op => op?.clientId === activeOperator?.clientId && !op?.isAdmin && !op?.isSuperAdmin).map(op => {
+              {MOCK_OPERATORS.filter(op => {
+                if (activeRole === 'App Owner') return !op.isSuperAdmin && !op.isModel;
+                return op.clientId === activeOperator?.clientId && !op.isAdmin && !op.isSuperAdmin;
+              }).map(op => {
                 const assignedModels = MOCK_PROFILES.filter(p => p.operators.some(o => o.id === op.id && o.active));
+                const agency = MOCK_AGENCIES.find(a => a.id === op.clientId);
                 return (
                   <div key={op.id} className="glass-card" style={{ padding: '2rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
@@ -2012,7 +2016,14 @@ function App() {
                           {op.avatar}
                         </div>
                         <div>
-                          <h3 style={{ fontSize: '1.5rem', fontWeight: '800' }}>{op.name}</h3>
+                          <h3 style={{ fontSize: '1.5rem', fontWeight: '800' }}>
+                            {op.name}
+                            {activeRole === 'App Owner' && agency && (
+                              <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: '400', marginLeft: '0.5rem' }}>
+                                ({agency.name})
+                              </span>
+                            )}
+                          </h3>
                           <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{op.role === 'Night Shift' ? t('nightShift') : op.role} • {assignedModels.length} {t('assignedModels')}</div>
                         </div>
                       </div>
@@ -2025,7 +2036,7 @@ function App() {
                           </div>
                           <div>
                             <div style={{ fontSize: '1.1rem', fontWeight: '800' }}>{op.metrics?.conversion || '0%'}</div>
-                            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{t('conversion').toUpperCase()}</div>
+                            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{(t('conversion') || 'CONV.').toUpperCase()}</div>
                           </div>
                         </div>
                       </div>
@@ -2046,7 +2057,7 @@ function App() {
                           </div>
                           <div style={{ textAlign: 'right' }}>
                             <div style={{ fontSize: '0.85rem', fontWeight: '800' }}>{model.unreadCount}</div>
-                            <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{t('unread').toUpperCase()}</div>
+                            <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{(t('unread') || 'UNREAD').toUpperCase()}</div>
                           </div>
                         </div>
                       ))}
@@ -2458,13 +2469,6 @@ function App() {
               </div>
             )}
           </div>
-        )}
-        {activeTab === 'hierarchy' && rolePermissions[activeRole]?.hierarchy && (
-           <div style={{ padding: '3rem', flex: 1, overflowY: 'auto' }} className="fade-in">
-             <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem' }}>{t('teamHierarchy')}</h2>
-             <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem' }}>{t('teamHierarchyDesc')}</p>
-             {/* ... existing hierarchy content ... */}
-           </div>
         )}
 
         {activeTab === 'qa' && (
