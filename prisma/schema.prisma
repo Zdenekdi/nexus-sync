@@ -27,7 +27,7 @@ model Role {
   description String?
   permissions String   // JSON string
   isSuperAdmin Boolean  @default(false)
-  agencyId    String?  // NULL for global roles
+  agencyId    String?
   agency      Agency?  @relation(fields: [agencyId], references: [id])
   
   users       User[]
@@ -54,20 +54,20 @@ model User {
 model Profile {
   id          String    @id @default(cuid())
   name        String
-  phoneNumber String?   // Real SIM card number for routing
+  phoneNumber String?
   status      String    @default("offline")
-  agencyId  String
-  agency    Agency    @relation(fields: [agencyId], references: [id])
-  data      String?   // JSON string
-  chats     Chat[]
-  callLogs  CallLog[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  agencyId    String
+  agency      Agency    @relation(fields: [agencyId], references: [id])
+  data        String?
+  chats       Chat[]
+  callLogs    CallLog[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Chat {
   id            String    @id @default(cuid())
-  externalId    String    // Phone number or external identifier
+  externalId    String
   profileId     String
   profile       Profile   @relation(fields: [profileId], references: [id])
   agencyId      String
@@ -84,10 +84,10 @@ model Message {
   id        String   @id @default(cuid())
   chatId    String
   chat      Chat     @relation(fields: [chatId], references: [id])
-  direction String   // "INBOUND" or "OUTBOUND"
+  direction String
   text      String
-  status    String   @default("sent") // "sent", "delivered", "read"
-  senderId  String?  // Optional: User who sent the message (if OUTBOUND)
+  status    String   @default("sent")
+  senderId  String?
   sender    User?    @relation(fields: [senderId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -97,9 +97,9 @@ model CallLog {
   id        String   @id @default(cuid())
   profileId String
   profile   Profile  @relation(fields: [profileId], references: [id])
-  from      String   // Customer phone number
-  duration  Int      @default(0) // Seconds
-  status    String   // "answered", "missed", "rejected"
+  from      String
+  duration  Int      @default(0)
+  status    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
