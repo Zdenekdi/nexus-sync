@@ -176,7 +176,6 @@ const QAView = ({ t, messages = [], clientNotes = {}, clientNames = {}, updateCl
                   </div>
                 </div>
               </div>
-            </div>
 
             <div style={{ flex: 1, padding: isMobile ? '1rem' : '2rem', overflowY: 'auto' }} className="custom-scrollbar">
               <div style={{ maxWidth: '800px' }}>
