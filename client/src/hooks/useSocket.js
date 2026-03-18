@@ -3,7 +3,7 @@ import { io } from 'socket.io-client';
 
 const SOCKET_URL = 'https://nexus-api.myvnc.com';
 
-export const useSocket = (onNewMessage, onMessageUpdated, onIncomingCall) => {
+export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall) => {
   const socketRef = useRef(null);
   const handlersRef = useRef({ onNewMessage, onMessageUpdated, onIncomingCall });
 
@@ -13,9 +13,19 @@ export const useSocket = (onNewMessage, onMessageUpdated, onIncomingCall) => {
   }, [onNewMessage, onMessageUpdated, onIncomingCall]);
 
   useEffect(() => {
-    // Initialize socket connection if it doesn't exist
+    // If no token, don't connect or disconnect if already connected
+    if (!token) {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+      return;
+    }
+
+    // Initialize socket connection if it doesn't exist or token changed
     if (!socketRef.current) {
       socketRef.current = io(SOCKET_URL, {
+        auth: { token },
         withCredentials: true,
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
@@ -56,11 +66,11 @@ export const useSocket = (onNewMessage, onMessageUpdated, onIncomingCall) => {
     }
 
     return () => {
-      // Disconnect on unmount to prevent leaks
+      // Disconnect on unmount or token change to prevent leaks
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
       }
     };
-  }, []); // Run only once on mount
+  }, [token]); // Run when token changes
 };

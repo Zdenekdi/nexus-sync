@@ -30,6 +30,7 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem('nexus_isLoggedIn') === 'true';
   });
+  const [token, setToken] = useState(() => localStorage.getItem('nexus_token'));
   const [activeOperator, setActiveOperator] = useState(() => {
     try {
       const saved = localStorage.getItem('nexus_activeOperator');
@@ -373,6 +374,7 @@ function App() {
       if (res.ok) {
         const data = await res.json();
         localStorage.setItem('nexus_token', data.token);
+        setToken(data.token);
         setActiveOperator(data.user);
         setIsLoggedIn(true);
         window.history.replaceState(null, '', '/dashboard');
@@ -395,6 +397,7 @@ function App() {
 
   // Initialize Socket Connection
   useSocket(
+    token,
     useCallback((newMsg) => {
       setMessages(prev => [newMsg, ...prev]);
       
@@ -702,6 +705,8 @@ function App() {
     localStorage.removeItem('nexus_isLoggedIn');
     localStorage.removeItem('nexus_activeOperator');
     localStorage.removeItem('nexus_activeClient');
+    localStorage.removeItem('nexus_token');
+    setToken(null);
   }, []);
 
   // Main UI logic
