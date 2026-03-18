@@ -237,6 +237,20 @@ function App() {
   }, [notifications]);
 
   const addNotification = useCallback((msg, type = 'info') => {
+    // Silencing operational notifications for System Owner as they are ballast for this role
+    const isSystemOwner = activeOperator?.role === 'System Owner' || activeOperator?.isSuperAdmin;
+    if (isSystemOwner && type !== 'emergency') {
+      return;
+    }
+
+    const operatorRole = activeOperator?.role || 'Operator';
+    const perms = rolePermissions[operatorRole] || {};
+    
+    // Fallback permission check
+    if (!perms.messaging && type !== 'emergency') {
+      return;
+    }
+
     const id = Date.now();
     const newNotification = { id, msg, type, read: false, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
     
@@ -248,7 +262,7 @@ function App() {
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
     }, 5000);
-  }, [playNotificationSound]);
+  }, [activeOperator, rolePermissions, playNotificationSound]);
 
   // Real-time message simulation logic
   useEffect(() => {
