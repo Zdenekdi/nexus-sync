@@ -56,8 +56,22 @@ function App() {
   const [profiles, setProfiles] = useState(MOCK_PROFILES);
   const [agencies, setAgencies] = useState(MOCK_AGENCIES);
   const [operators, setOperators] = useState(MOCK_OPERATORS);
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [activeProfileId, setActiveProfileId] = useState(MOCK_PROFILES[0]?.id);
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('nexus_activeTab') || 'dashboard');
+  const [activeProfileId, setActiveProfileId] = useState(() => {
+    const saved = localStorage.getItem('nexus_activeProfileId');
+    return (saved && saved !== 'undefined') ? Number(saved) : (MOCK_PROFILES[0]?.id);
+  });
+
+  // State Persistence Effects
+  useEffect(() => {
+    localStorage.setItem('nexus_activeTab', activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeProfileId) {
+      localStorage.setItem('nexus_activeProfileId', activeProfileId);
+    }
+  }, [activeProfileId]);
   const [selectedChatId, setSelectedChatId] = useState(null);
   const [lang, setLang] = useState('en');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -775,6 +789,52 @@ function App() {
     );
   };
 
+  const handleRegisterAgency = async (data) => {
+    try {
+      const res = await fetch('https://nexus-api.myvnc.com/api/auth/register-agency', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) return true;
+      const err = await res.json();
+      throw new Error(err.message);
+    } catch (err) {
+      console.error('[Auth] Registration failed:', err);
+      throw err;
+    }
+  };
+
+  const handleRegisterUser = async (data) => {
+    try {
+      const res = await fetch('https://nexus-api.myvnc.com/api/auth/register-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) return true;
+      const err = await res.json();
+      throw new Error(err.message);
+    } catch (err) {
+      console.error('[Auth] User registration failed:', err);
+      throw err;
+    }
+  };
+
+  const handleResetRequest = async (email) => {
+    try {
+      await fetch('https://nexus-api.myvnc.com/api/auth/reset-password-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      return true;
+    } catch (err) {
+      console.error('[Auth] Reset request failed:', err);
+      return false;
+    }
+  };
+
   const renderContent = () => {
     if (!isLoggedIn) {
       if (showResetPassword) {
@@ -783,7 +843,9 @@ function App() {
       return (
         <LoginScreen 
           onLogin={handleLogin} 
-          onResetRequired={handleResetRequired}
+          onRegisterAgency={handleRegisterAgency}
+          onRegisterUser={handleRegisterUser}
+          onResetRequest={handleResetRequest}
           operators={operators}
           lang={lang} 
           setLang={setLang} 

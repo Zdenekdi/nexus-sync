@@ -12,6 +12,7 @@ model Agency {
   name      String
   region    String
   plan      String   @default("Standard")
+  inviteCode String?  @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
