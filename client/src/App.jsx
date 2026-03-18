@@ -2098,8 +2098,9 @@ function App() {
                   </div>
                   
                   <a 
-                    href="/nexus-hub.apk" 
-                    download="NexusHub-v0.1.apk"
+                    href="https://google.com" 
+                    target="_blank"
+                    rel="noreferrer"
                     className="action-btn" 
                     style={{ 
                       display: 'flex', 
