@@ -578,9 +578,20 @@ function App() {
 
   const myProfileIds = useMemo(() => myProfiles.map(p => p.id), [myProfiles]);
 
+  // Normalize legacy role names to the current 'App Owner' role for permission lookups.
+  // This makes the app backward-compatible with stale browser sessions that still have
+  // 'Super Admin' or 'System Owner' stored in localStorage.
+  const normalizeRole = useCallback((role) => {
+    if (!role) return role;
+    if (role === 'Super Admin' || role === 'System Owner') return 'App Owner';
+    return role;
+  }, []);
+
+  const activeRole = normalizeRole(activeOperator?.role);
+
   const allAgencyProfiles = useMemo(() =>
-    activeOperator?.isSuperAdmin ? profiles : profiles.filter(p => p.clientId === activeOperator?.clientId),
-    [profiles, activeOperator?.clientId, activeOperator?.isSuperAdmin]
+    activeRole === 'App Owner' ? profiles : profiles.filter(p => p.clientId === activeOperator?.clientId),
+    [profiles, activeOperator?.clientId, activeRole]
   );
 
   const activeProfile = useMemo(() =>
@@ -589,9 +600,10 @@ function App() {
   );
 
   const assignedProfiles = useMemo(() => {
-    if (activeRole === 'App Owner') return profiles;
     // For Agency Manager, show all profiles in the agency
-    if (activeRole === 'Agency Manager') return profiles.filter(p => p.clientId === activeOperator?.clientId);
+    if (activeRole === 'Agency Manager' || activeRole === 'Agency Admin') {
+      return profiles.filter(p => p.clientId === activeOperator?.clientId);
+    }
     // For operators, show only their assigned models
     return profiles.filter(p => p.operators?.some(o => o.id === activeOperator?.id));
   }, [profiles, activeRole, activeOperator]);
@@ -608,16 +620,6 @@ function App() {
 
   const currentAgency = useMemo(() => agencies.find(a => a.id === activeClient?.id) || agencies[0], [activeClient, agencies]);
 
-  // Normalize legacy role names to the current 'App Owner' role for permission lookups.
-  // This makes the app backward-compatible with stale browser sessions that still have
-  // 'Super Admin' or 'System Owner' stored in localStorage.
-  const normalizeRole = useCallback((role) => {
-    if (!role) return role;
-    if (role === 'Super Admin' || role === 'System Owner') return 'App Owner';
-    return role;
-  }, []);
-
-  const activeRole = normalizeRole(activeOperator?.role);
 
   const toggleOperatorStatus = (profileId, operatorId) => {
     setProfiles(prev => prev.map(p => {
