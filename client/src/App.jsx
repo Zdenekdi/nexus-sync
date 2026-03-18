@@ -344,7 +344,7 @@ function App() {
 
     const fetchServerData = async () => {
       try {
-        const res = await fetch('http://78.141.202.139:3001/api/profiles', {
+        const res = await fetch('https://nexus-api.myvnc.com/api/profiles', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
@@ -364,7 +364,7 @@ function App() {
   // Login handler – tries real API first, falls back to DemoData
   const handleLogin = async (email, password) => {
     try {
-      const res = await fetch('http://78.141.202.139:3001/api/auth/login', {
+      const res = await fetch('https://nexus-api.myvnc.com/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -1738,7 +1738,7 @@ function App() {
                 </div>
                 <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
                   <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#3b82f6', marginBottom: '0.5rem' }}>{t('webhookLabel')}</div>
-                  <code style={{ fontSize: '0.8rem', wordBreak: 'break-all' }}>http://78.141.202.139:3001/api/device/mobile/sms</code>
+                  <code style={{ fontSize: '0.8rem', wordBreak: 'break-all' }}>https://nexus-api.myvnc.com/api/device/mobile/sms</code>
                 </div>
 
                 <div style={{ marginTop: '0.5rem', borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem' }}>
@@ -1775,7 +1775,7 @@ function App() {
                 </div>
                 <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
                   <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#10b981', marginBottom: '0.5rem' }}>{t('webhookLabel')}</div>
-                  <code style={{ fontSize: '0.8rem', wordBreak: 'break-all' }}>http://78.141.202.139:3001/api/device/mobile/call</code>
+                  <code style={{ fontSize: '0.8rem', wordBreak: 'break-all' }}>https://nexus-api.myvnc.com/api/device/mobile/call</code>
                 </div>
 
                 <div style={{ marginTop: '0.5rem', borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem' }}>
