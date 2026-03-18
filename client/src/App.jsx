@@ -1255,8 +1255,8 @@ function App() {
               <div style={{ width: '36px', height: '36px', background: 'rgba(59, 130, 246, 0.2)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'var(--accent-color)', fontSize: '0.7rem', flexShrink: 0 }}>{activeOperator?.avatar}</div>
               {!isSidebarCollapsed && (
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activeOperator?.name}</div>
-                  <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{activeOperator?.role}</div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activeRole === 'App Owner' ? 'App Owner' : activeOperator?.name}</div>
+                  <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{activeRole}</div>
                 </div>
               )}
               {!isSidebarCollapsed && <div style={{ width: '6px', height: '6px', background: 'var(--success-color)', borderRadius: '50%' }}></div>}
