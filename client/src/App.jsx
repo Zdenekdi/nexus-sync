@@ -9,7 +9,7 @@ import {
     Phone, Server, Cpu, FileEdit, CheckCheck, FileSearch, Trash2,
     Eye, Save, X, RotateCcw, Lock, Share2, Filter, Menu, UserCircle, Plus, Info, ChevronDown, ChevronUp, ChevronLeft,
     BarChart2 as BarChart3, Shield as ShieldAlert, HardDrive, Gift, Trophy, RefreshCw, Bug, Copy, Signal, Mic, MicOff, Sparkles,
-    StickyNote, AlertTriangle, Image, Link, Star, CheckCircle, Languages, Package
+    StickyNote, AlertTriangle, Image, Link, Star, CheckCircle, Languages, Package, Bell
   } from 'lucide-react';
 import { MOCK_OPERATORS, MOCK_CLIENTS, MOCK_AGENCIES, MOCK_PROFILES, MOCK_MESSAGES, MOCK_STATS, MOCK_CALENDAR, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_CHART_DATA, MOCK_SMART_REPLIES, MOCK_PLANS, MOCK_REFERRALS, MOCK_PERMISSIONS } from './DemoData';
 import { TRANSLATIONS } from './translations';
