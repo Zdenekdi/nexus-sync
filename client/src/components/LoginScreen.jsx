@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Zap, User, Lock, Building, UserPlus, ChevronLeft, Globe, ArrowRight, ShieldCheck, Mail } from 'lucide-react';
+import { Zap, User, Lock, Building, UserPlus, ChevronLeft, Globe, ArrowRight, ShieldCheck, Mail, Eye, EyeOff } from 'lucide-react';
 
-const LoginScreen = ({ onLogin, onRegisterAgency, onRegisterUser, onResetRequest, onBackToLanding, operators, lang, setLang, t }) => {
+const LoginScreen = ({ onLogin, onRegisterAgency, onRegisterUser, onResetRequest, onBackToLanding, operators, lang, setLang, t, isMobile }) => {
   const [mode, setMode] = useState('login'); // login, register_agency, register_user, reset
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -11,6 +11,8 @@ const LoginScreen = ({ onLogin, onRegisterAgency, onRegisterUser, onResetRequest
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,25 +46,23 @@ const LoginScreen = ({ onLogin, onRegisterAgency, onRegisterUser, onResetRequest
   };
 
   const renderHeader = () => (
-    <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-      <div style={{ position: 'relative', width: '80px', height: '80px', margin: '0 auto 1.5rem' }}>
-        <div style={{ position: 'absolute', inset: -15, background: 'var(--accent-color)', opacity: 0.2, filter: 'blur(25px)', borderRadius: '50%' }}></div>
-        <div style={{ position: 'relative', width: '100%', height: '100%', background: 'linear-gradient(135deg, var(--accent-color), #60a5fa)', borderRadius: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 30px var(--accent-glow)' }}>
-          <Zap color="white" fill="white" size={40} />
-        </div>
+    <div style={{ textAlign: 'center', marginBottom: isMobile ? '1.5rem' : '2.5rem' }}>
+      <div style={{ position: 'relative', width: isMobile ? '60px' : '80px', height: isMobile ? '60px' : '80px', margin: '0 auto 1.25rem' }}>
+        <div style={{ position: 'absolute', inset: -12, background: 'var(--accent-color)', opacity: 0.2, filter: 'blur(20px)', borderRadius: '50%' }}></div>
+        <img src="/nexus_icon.png" alt="Nexus" style={{ position: 'relative', width: '100%', height: '100%', borderRadius: isMobile ? '18px' : '22px', boxShadow: '0 10px 30px var(--accent-glow)' }} />
       </div>
-      <h1 style={{ fontSize: '2.4rem', fontWeight: '900', letterSpacing: '-0.02em', marginBottom: '0.25rem', background: 'linear-gradient(to bottom, #ffffff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>NEXUS SYNC</h1>
-      <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: '500', letterSpacing: '0.05em' }}>NEXUS S.R.O. • PREMIUM ENGINE</p>
+      <h1 style={{ fontSize: isMobile ? '1.8rem' : '2.4rem', fontWeight: '900', letterSpacing: '-0.02em', marginBottom: '0.25rem', background: 'linear-gradient(to bottom, #ffffff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>NEXUS SYNC</h1>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: '500', letterSpacing: '0.05em' }}>NEXUS S.R.O. • PREMIUM ENGINE</p>
     </div>
   );
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0b14', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ minHeight: '100vh', background: '#0a0b14', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '1rem' : '1.5rem', position: 'relative', overflow: 'hidden' }}>
       {/* Cinematic Background Elements */}
       <div style={{ position: 'absolute', top: '10%', left: '10%', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%)', filter: 'blur(80px)' }}></div>
       <div style={{ position: 'absolute', bottom: '10%', right: '10%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)', filter: 'blur(100px)' }}></div>
       
-      <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '480px', padding: '3.5rem', position: 'relative', zIndex: 1, border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+      <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '480px', padding: isMobile ? '2rem' : '3.5rem', position: 'relative', zIndex: 1, border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
         
         {mode === 'login' && (
           <button onClick={onBackToLanding} style={{ position: 'absolute', top: '2.5rem', left: '2.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer', transition: 'color 0.2s' }}>
@@ -113,7 +113,22 @@ const LoginScreen = ({ onLogin, onRegisterAgency, onRegisterUser, onResetRequest
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.05em' }}>{t('passwordLabel').toUpperCase()}</label>
               <div style={{ position: 'relative' }}>
                 <Lock size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required className="glass-input" style={{ width: '100%', paddingLeft: '3rem' }} />
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
+                  placeholder="••••••••" 
+                  required 
+                  className="glass-input" 
+                  style={{ width: '100%', paddingLeft: '3rem', paddingRight: '3rem' }} 
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
             </div>
           )}

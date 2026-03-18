@@ -40,10 +40,16 @@ Hlavní modul pro komunikaci se zákazníky.
 
 ---
 
-### 4. Aktivace Zařízení (Nexus Relay)
-Nexus Hub obsahuje vlastní bránu (gateway app) pro 24/7 synchronizaci bez nutnosti používat nástroje třetích stran.
+### 4. Nastavení zařízení (Nexus Relay)
 
-- **Stáhnout APK**: [Nexus Relay (Google Disk)](https://drive.google.com/drive/folders/1YtiDQsZUTGB8RAD-VajIGGgt6Fs_24MD?usp=share_link) *(Doporučený způsob pro stabilitu)*
+<div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+  <img src="/nexus_relay_icon.png" width="60" style="border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);" />
+  <div style="font-size: 1.25rem; font-weight: 800; color: #10b981;">NEXUS RELAY APP</div>
+</div>
+
+Aplikace Nexus Relay slouží jako most mezi vašimi zařízeními a cloudovým systémem Nexus Hub. Pro správné fungování je nutné aplikaci nainstalovat na stabilní zařízení Android.
+
+- **Stáhnout APK**: [Nexus Relay (Vlastní server)](https://nexus-api.myvnc.com/downloads/nexus-relay.apk) *(Doporučený způsob pro stabilitu)*
 - **Vlastnosti**: 
   - Integrované zachytávání SMS
   - Real-time notifikace stavu hovorů

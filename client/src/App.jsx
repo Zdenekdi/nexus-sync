@@ -81,7 +81,13 @@ function App() {
     }
   }, [activeProfileId]);
   const [selectedChatId, setSelectedChatId] = useState(null);
-  const [lang, setLang] = useState('en');
+  const [lang, setLang] = useState(() => localStorage.getItem('nexus_language') || 'en');
+  
+  // Sync language to persistence
+  useEffect(() => {
+    localStorage.setItem('nexus_language', lang);
+  }, [lang]);
+
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mobileView, setMobileView] = useState('sidebar');
@@ -314,7 +320,12 @@ function App() {
   const [targetAgencyId, setTargetAgencyId] = useState(null);
   const [newOperatorData, setNewOperatorData] = useState({ name: '', role: 'Operator', email: '', password: 'password123' });
   const [rolePermissions, setRolePermissions] = useState(MOCK_PERMISSIONS);
-  const [activeMarket, setActiveMarket] = useState('EU');
+  const [activeMarket, setActiveMarket] = useState(() => localStorage.getItem('nexus_activeMarket') || 'EU');
+  
+  useEffect(() => {
+    localStorage.setItem('nexus_activeMarket', activeMarket);
+  }, [activeMarket]);
+
   const [subscriptionPlans] = useState(MOCK_PLANS);
   const [smartReplies] = useState(MOCK_SMART_REPLIES);
   const [stats] = useState(MOCK_STATS);
@@ -1033,7 +1044,14 @@ function App() {
     }
     if (!isLoggedIn) {
       if (showLanding) {
-        return <LandingPage onLoginClick={() => setShowLanding(false)} />;
+        return (
+          <LandingPage 
+            onLoginClick={() => setShowLanding(false)} 
+            lang={lang} 
+            setLang={setLang} 
+            isMobile={isMobile}
+          />
+        );
       }
       if (showResetPassword) {
         return <ResetPasswordView onComplete={handleResetComplete} t={t} />;
@@ -1049,6 +1067,7 @@ function App() {
           lang={lang} 
           setLang={setLang} 
           t={t} 
+          isMobile={isMobile}
         />
       );
     }
@@ -1128,7 +1147,7 @@ function App() {
 
       {/* Mobile Top Bar */}
       <div className="mobile-header" style={{ 
-        display: 'none', 
+        display: isMobile ? 'flex' : 'none', 
         position: 'fixed', 
         top: 0, 
         left: 0, 
@@ -1143,7 +1162,7 @@ function App() {
         justifyContent: 'space-between'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <Zap color="var(--accent-color)" size={20} />
+          <img src="/nexus_icon.png" alt="Nexus" style={{ width: '28px', height: '28px', borderRadius: '7px' }} />
           <span style={{ fontWeight: '900', fontSize: '1.1rem' }}>NEXUS</span>
         </div>
         <button 
@@ -1188,8 +1207,8 @@ function App() {
               onMouseOver={e => e.currentTarget.style.opacity = '0.8'}
               onMouseOut={e => e.currentTarget.style.opacity = '1'}
             >
-              <div style={{ width: '42px', height: '42px', background: 'var(--accent-color)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 15px var(--accent-glow)', flexShrink: 0 }}>
-                <Zap color="white" fill="white" size={22} />
+              <div style={{ width: '42px', height: '42px', flexShrink: 0 }}>
+                <img src="/nexus_icon.png" alt="Nexus" style={{ width: '100%', height: '100%', borderRadius: '12px', boxShadow: '0 0 15px var(--accent-glow)' }} />
               </div>
               {!isSidebarCollapsed && <span style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '0.05em' }}>{t('logo')}</span>}
             </div>
@@ -1371,6 +1390,7 @@ function App() {
               {!isSidebarCollapsed && <div style={{ width: '6px', height: '6px', background: 'var(--success-color)', borderRadius: '50%' }}></div>}
             </div>
           </div>
+          
           
           <button
             onClick={() => setIsRelayMode(true)}
@@ -2098,7 +2118,7 @@ function App() {
                   </div>
                   
                   <a 
-                    href="https://drive.google.com/drive/folders/1YtiDQsZUTGB8RAD-VajIGGgt6Fs_24MD?usp=share_link" 
+                    href="https://nexus-api.myvnc.com/downloads/nexus-relay.apk" 
                     target="_blank"
                     rel="noreferrer"
                     className="action-btn" 
@@ -3014,6 +3034,7 @@ function App() {
         {/* Subscription Plans (Phase 4/9) */}
         {activeTab === 'plans' && rolePermissions[activeRole]?.plans && (
           <PlansDashboard 
+            lang={lang}
             t={t}
             subscriptionPlans={subscriptionPlans}
             activeMarket={activeMarket}

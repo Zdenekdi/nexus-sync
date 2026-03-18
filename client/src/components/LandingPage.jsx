@@ -11,8 +11,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 
-const LandingPage = ({ onLoginClick }) => {
-  const [lang, setLang] = useState('cz');
+const LandingPage = ({ onLoginClick, lang, setLang, isMobile }) => {
 
   const content = {
     cz: {
@@ -126,11 +125,11 @@ const LandingPage = ({ onLoginClick }) => {
         borderBottom: '1px solid var(--card-border)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: '32px', height: '32px', background: 'var(--accent-color)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'white' }}>N</div>
+          <img src="/nexus_icon.png" alt="Nexus" style={{ width: '30px', height: '30px', borderRadius: '8px' }} />
           <span style={{ fontWeight: '900', fontSize: '1.3rem', letterSpacing: '0.1em' }}>NEXUS</span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '1.5rem' }}>
           <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '20px', padding: '3px', border: '1px solid var(--card-border)' }}>
             <button 
               onClick={() => setLang('cz')}
@@ -144,7 +143,7 @@ const LandingPage = ({ onLoginClick }) => {
           <button 
             onClick={onLoginClick}
             className="premium-button"
-            style={{ padding: '0.75rem 1.5rem', borderRadius: '12px', border: 'none', background: 'var(--accent-color)', color: 'white', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)' }}
+            style={{ padding: isMobile ? '0.6rem 1rem' : '0.75rem 1.5rem', borderRadius: '12px', border: 'none', background: 'var(--accent-color)', color: 'white', fontWeight: '800', fontSize: isMobile ? '0.75rem' : '0.85rem', cursor: 'pointer', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)' }}
           >
             {t.enterBtn}
           </button>
@@ -152,27 +151,27 @@ const LandingPage = ({ onLoginClick }) => {
       </nav>
 
       {/* Hero Section */}
-      <section style={{ padding: '8rem 5% 4rem', textAlign: 'center', position: 'relative', zIndex: 1 }}>
-        <div className="glass-card fade-in-up" style={{ display: 'inline-block', padding: '0.5rem 1.5rem', borderRadius: '30px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', color: 'var(--accent-color)', fontWeight: '800', fontSize: '0.75rem', letterSpacing: '0.1em', marginBottom: '2rem' }}>
+      <section style={{ padding: isMobile ? '5rem 5% 3rem' : '8rem 5% 4rem', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+        <div className="glass-card fade-in-up" style={{ display: 'inline-block', padding: '0.5rem 1.5rem', borderRadius: '30px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', color: 'var(--accent-color)', fontWeight: '800', fontSize: isMobile ? '0.65rem' : '0.75rem', letterSpacing: '0.1em', marginBottom: '2rem' }}>
           {t.tagline.toUpperCase()}
         </div>
-        <h1 className="fade-in-up" style={{ fontSize: 'clamp(2.5rem, 8vw, 5rem)', fontWeight: '900', lineHeight: 1.1, marginBottom: '2rem', letterSpacing: '-0.02em', background: 'linear-gradient(to bottom, #fff 30%, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+        <h1 className="fade-in-up" style={{ fontSize: isMobile ? '2.5rem' : 'clamp(2.5rem, 8vw, 5rem)', fontWeight: '900', lineHeight: 1.1, marginBottom: '2rem', letterSpacing: '-0.02em', background: 'linear-gradient(to bottom, #fff 30%, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
           {t.title}
         </h1>
-        <p className="fade-in-up" style={{ fontSize: 'clamp(1.1rem, 2vw, 1.4rem)', color: 'var(--text-secondary)', maxWidth: '800px', margin: '0 auto 3rem', lineHeight: 1.6 }}>
+        <p className="fade-in-up" style={{ fontSize: isMobile ? '1rem' : 'clamp(1.1rem, 2vw, 1.4rem)', color: 'var(--text-secondary)', maxWidth: '800px', margin: '0 auto 3rem', lineHeight: 1.6 }}>
           {t.heroDesc}
         </p>
         <button 
           onClick={onLoginClick}
           className="premium-button-lg fade-in-up"
           style={{ 
-            padding: '1.25rem 3rem', 
+            padding: isMobile ? '1rem 2rem' : '1.25rem 3rem', 
             borderRadius: '16px', 
             border: 'none', 
             background: 'var(--accent-color)', 
             color: 'white', 
             fontWeight: '900', 
-            fontSize: '1.1rem', 
+            fontSize: isMobile ? '1rem' : '1.1rem', 
             cursor: 'pointer', 
             display: 'inline-flex', 
             alignItems: 'center', 
@@ -186,9 +185,9 @@ const LandingPage = ({ onLoginClick }) => {
       </section>
 
       {/* Pillars Section */}
-      <section style={{ padding: '6rem 5%', position: 'relative', zIndex: 1 }}>
-        <h2 style={{ textAlign: 'center', fontSize: '2rem', fontWeight: '900', marginBottom: '4rem' }}>{t.pillarsTitle}</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+      <section style={{ padding: isMobile ? '3rem 5%' : '6rem 5%', position: 'relative', zIndex: 1 }}>
+        <h2 style={{ textAlign: 'center', fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900', marginBottom: isMobile ? '2rem' : '4rem' }}>{t.pillarsTitle}</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', maxWidth: '1200px', margin: '0 auto' }}>
           {t.pillars.map((p, i) => (
             <div key={i} className="glass-card hover-glow" style={{ padding: '2.5rem', borderRadius: '24px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--card-border)', transition: 'all 0.3s ease' }}>
               <div style={{ width: '50px', height: '50px', background: 'rgba(59,130,246,0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-color)', marginBottom: '1.5rem' }}>
@@ -202,10 +201,10 @@ const LandingPage = ({ onLoginClick }) => {
       </section>
 
       {/* Features Section */}
-      <section style={{ padding: '6rem 5%', background: 'rgba(59, 130, 246, 0.03)', borderY: '1px solid var(--card-border)', position: 'relative', zIndex: 1 }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '3rem' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <h2 style={{ fontSize: '2.5rem', fontWeight: '900', lineHeight: 1.2, marginBottom: '2rem' }}>{t.featuresTitle}</h2>
+      <section style={{ padding: isMobile ? '3rem 5%' : '6rem 5%', background: 'rgba(59, 130, 246, 0.03)', borderY: '1px solid var(--card-border)', position: 'relative', zIndex: 1 }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))', gap: isMobile ? '2rem' : '3rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', textAlign: isMobile ? 'center' : 'left' }}>
+            <h2 style={{ fontSize: isMobile ? '1.8rem' : '2.5rem', fontWeight: '900', lineHeight: 1.2, marginBottom: '1.5rem' }}>{t.featuresTitle}</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', marginBottom: '2rem' }}>
               Nexus Hub není jen nástroj, je to váš strategický partner pro nekonečný růst a absolutní kontrolu.
             </p>
@@ -227,7 +226,7 @@ const LandingPage = ({ onLoginClick }) => {
       {/* Footer */}
       <footer style={{ padding: '4rem 5%', textAlign: 'center', borderTop: '1px solid var(--card-border)', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-          <div style={{ width: '24px', height: '24px', background: 'rgba(255,255,255,0.1)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'white', fontSize: '0.7rem' }}>N</div>
+          <img src="/nexus_icon.png" alt="Nexus" style={{ width: '24px', height: '24px', borderRadius: '6px' }} />
           <span style={{ fontWeight: '900', letterSpacing: '0.1em', color: 'white' }}>NEXUS HUB</span>
         </div>
         <p>{t.footer}</p>
