@@ -92,7 +92,12 @@ function App() {
 
   const renderNotifications = () => (
     <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: '10px', pointerEvents: 'none' }}>
-      {toasts.map(n => (
+      {toasts.filter(n => {
+        if (activeOperator?.isModel) {
+          return n.profileId === activeOperator.profileId;
+        }
+        return true;
+      }).map(n => (
         <div key={n.id} className="glass-card fade-in" style={{ 
           padding: '1rem 1.5rem', 
           background: 'rgba(5, 7, 10, 0.9)', 
@@ -236,10 +241,15 @@ function App() {
     localStorage.setItem('nexus_notifications', JSON.stringify(notifications.slice(0, 50)));
   }, [notifications]);
 
-  const addNotification = useCallback((msg, type = 'info') => {
+  const addNotification = useCallback((msg, type = 'info', profileId = null) => {
     // Silencing operational notifications for System Owner as they are ballast for this role
     const isSystemOwner = activeOperator?.role === 'System Owner' || activeOperator?.isSuperAdmin;
     if (isSystemOwner && type !== 'emergency') {
+      return;
+    }
+
+    // Filter notification for models - they should only see their own
+    if (activeOperator?.isModel && profileId && profileId !== activeOperator.profileId) {
       return;
     }
 
@@ -252,7 +262,7 @@ function App() {
     }
 
     const id = Date.now();
-    const newNotification = { id, msg, type, read: false, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+    const newNotification = { id, msg, type, profileId, read: false, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
     
     setNotifications(prev => [newNotification, ...prev]);
     setToasts(prev => [newNotification, ...prev]);
@@ -445,7 +455,7 @@ function App() {
       // Find profile for notification
       const profile = profiles.find(p => p.id === newMsg.profileId);
       if (profile) {
-        addNotification(`${t('newInboxMessage') || 'New message on'} ${profile.name}`, 'info');
+        addNotification(`${t('newInboxMessage') || 'New message on'} ${profile.name}`, 'info', profile.id);
       }
     }, [profiles, t, addNotification]),
     useCallback((updatedMsg) => {
@@ -454,10 +464,18 @@ function App() {
     useCallback((callData) => {
       // Find profile for notification
       const profile = profiles.find(p => p.id === callData.profileId);
-      const name = profile ? profile.name : callData.profileName || 'Unknown';
-      addNotification(`${t('incomingCall') || 'Incoming Call'} for ${name} - ${callData.from}`, 'emergency');
+      if (profile) {
+        addNotification(`${t('incomingCall') || 'Incoming Call'} from ${callData.from}`, 'emergency', callData.profileId);
+      }
     }, [profiles, t, addNotification])
   );
+
+  // Model Profile Locking Effect
+  useEffect(() => {
+    if (activeOperator?.isModel && activeOperator.profileId) {
+      setActiveProfileId(activeOperator.profileId);
+    }
+  }, [activeOperator]);
 
   const addAgency = useCallback(() => {
     if (!newAgencyData.name) return;
@@ -774,12 +792,23 @@ function App() {
             </div>
           </div>
           <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }} className="custom-scrollbar">
-          {notifications.length === 0 ? (
-            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-              {t('noNotifications')}
-            </div>
-          ) : (
-            notifications.map(n => (
+          {(() => {
+            const filteredNotifications = notifications.filter(n => {
+              if (activeOperator?.isModel) {
+                return n.profileId === activeOperator.profileId;
+              }
+              return true;
+            });
+
+            if (filteredNotifications.length === 0) {
+              return (
+                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                  {t('noNotifications')}
+                </div>
+              );
+            }
+
+            return filteredNotifications.map(n => (
               <div key={n.id} style={{ 
                 padding: '1.25rem', 
                 borderRadius: '16px', 
@@ -1231,14 +1260,15 @@ function App() {
       </nav>
 
       {/* Main Area */}
-      <main className="main-content" style={{ 
+      <main className="main-content custom-scrollbar" style={{ 
         flex: 1, 
         display: 'flex', 
         flexDirection: 'column', 
         height: isMobile ? 'auto' : '100vh', 
         minWidth: 0, 
-        overflow: isMobile ? 'visible' : 'hidden',
-        paddingTop: isMobile ? '60px' : 0
+        overflowY: isMobile ? 'visible' : 'auto',
+        paddingTop: isMobile ? '60px' : 0,
+        position: 'relative'
       }}>
         {activeTab === 'dashboard' && (
           <DashboardHome 
