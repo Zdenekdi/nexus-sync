@@ -565,7 +565,7 @@ h1 {
   box-shadow: 0 0 10px var(--accent-glow);
 }
 
-.unread-count-mini {
+.unread-badge-mini {
   position: absolute;
   top: 8px;
   right: 8px;

@@ -183,6 +183,13 @@ function App() {
     localStorage.setItem('nexus_sidebar_collapsed', isSidebarCollapsed);
   }, [isSidebarCollapsed]);
 
+  // Proactive check: Ensure Super Admins start with expanded sidebar for clarity
+  useEffect(() => {
+    if (activeOperator?.isSuperAdmin || activeOperator?.role === 'System Owner' || activeOperator?.role === 'Super Admin') {
+      setIsSidebarCollapsed(false);
+    }
+  }, [activeOperator]);
+
   const [clientNotes, setClientNotes] = useState(() => {
     const saved = localStorage.getItem('nexus_client_notes');
     return saved ? JSON.parse(saved) : {};
@@ -1073,32 +1080,34 @@ function App() {
               </button>
             )}
           </div>
-          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '12px', border: '1px solid var(--card-border)', gap: '0.5rem' }}>
-            <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', padding: '4px', borderRadius: '8px', flex: 1 }}>
-              <button onClick={() => setLang('cz')} style={{ flex: 1, padding: '4px 8px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}>CZ</button>
-              <button onClick={() => setLang('en')} style={{ flex: 1, padding: '4px 8px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}>EN</button>
+          {!isSidebarCollapsed && (
+            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '12px', border: '1px solid var(--card-border)', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', padding: '4px', borderRadius: '8px', flex: 1 }}>
+                <button onClick={() => setLang('cz')} style={{ flex: 1, padding: '4px 8px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}>CZ</button>
+                <button onClick={() => setLang('en')} style={{ flex: 1, padding: '4px 8px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}>EN</button>
+              </div>
+              {(() => {
+                const operatorRole = activeOperator?.role || 'Operator';
+                const perms = rolePermissions[operatorRole] || {};
+                if (!perms.messaging) return null;
+                
+                return (
+                  <button 
+                    onClick={() => {
+                      setNotificationPanelOpen(true);
+                      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                    }} 
+                    style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
+                  >
+                    <Bell size={16} />
+                    {notifications.some(n => !n.read) && (
+                      <div style={{ position: 'absolute', top: '-1px', right: '-1px', width: '10px', height: '10px', background: 'var(--error-color)', borderRadius: '50%', border: '2px solid var(--bg-color)', animation: 'ping 1.5s infinite' }}></div>
+                    )}
+                  </button>
+                );
+              })()}
             </div>
-            {(() => {
-              const operatorRole = activeOperator?.role || 'Operator';
-              const perms = rolePermissions[operatorRole] || {};
-              if (!perms.messaging) return null;
-              
-              return (
-                <button 
-                  onClick={() => {
-                    setNotificationPanelOpen(true);
-                    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-                  }} 
-                  style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
-                >
-                  <Bell size={16} />
-                  {notifications.some(n => !n.read) && (
-                    <div style={{ position: 'absolute', top: '-1px', right: '-1px', width: '10px', height: '10px', background: 'var(--error-color)', borderRadius: '50%', border: '2px solid var(--bg-color)', animation: 'ping 1.5s infinite' }}></div>
-                  )}
-                </button>
-              );
-            })()}
-          </div>
+          )}
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1.5rem', marginRight: '-0.5rem', paddingRight: '0.5rem' }} className="custom-scrollbar">
@@ -1122,13 +1131,8 @@ function App() {
                 { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub' },
                 { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
             ].filter(item => {
-              if (isSidebarCollapsed && !isMobile) {
-                // Persistent core items when collapsed
-                return item.id === 'inbox' || item.id === 'calendar';
-              }
-              // Role-based permission check
+              // Show all permitted items regardless of collapse state
               const role = activeOperator?.role || 'Operator';
-              // Map 'Super Admin' to 'System Owner' permissions if not explicitly defined
               const operatorRole = role === 'Super Admin' ? 'System Owner' : role;
               const perms = rolePermissions[operatorRole] || {};
               return perms[item.perm];
@@ -1140,26 +1144,30 @@ function App() {
                 if (isMobile) setIsMobileMenuOpen(false);
               }}
               style={{
-                display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1rem', border: 'none', borderRadius: '12px',
+                display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.25rem', padding: '1rem', border: 'none', borderRadius: '12px',
                 background: activeTab === item.id ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
                 cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s ease',
-                position: 'relative'
+                position: 'relative',
+                justifyContent: isSidebarCollapsed ? 'center' : 'flex-start'
               }}
+              title={isSidebarCollapsed ? item.label : ''}
             >
               {(() => {
                 const Icon = item.icon || Search;
                 return <Icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} style={{ flexShrink: 0 }} />;
               })()}
-              <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '700' : '500', fontSize: '1rem', whiteSpace: 'nowrap' }}>
-                {item.label || item.id}
-              </span>
-              {item.badge > 0 && <div className="unread-badge">{item.badge}</div>}
+              {!isSidebarCollapsed && (
+                <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '700' : '500', fontSize: '1rem', whiteSpace: 'nowrap' }}>
+                  {item.label || item.id}
+                </span>
+              )}
+              {item.badge > 0 && <div className={isSidebarCollapsed ? "unread-badge-mini" : "unread-badge"}>{item.badge}</div>}
             </button>
           ))}
           </div>
 
           {/* Profile Switcher - Only hidden if operator is a Model or Super/Global Admin */}
-          {!activeOperator?.isModel && !activeOperator?.isSuperAdmin && !activeOperator?.isAdmin && (
+          {!activeOperator?.isModel && !activeOperator?.isSuperAdmin && !activeOperator?.isAdmin && !isSidebarCollapsed && (
           <div style={{ marginTop: '2.5rem', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>{t('myAssignedGirls')}</div>
@@ -1229,14 +1237,16 @@ function App() {
         </div>
 
         <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div className="glass-card" style={{ padding: '0.85rem', background: 'rgba(255,255,255,0.02)', borderColor: 'var(--card-border)', borderRadius: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{ width: '36px', height: '36px', background: 'rgba(59, 130, 246, 0.2)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'var(--accent-color)', fontSize: '0.7rem' }}>{activeOperator?.avatar}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activeOperator?.name}</div>
-                <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{activeOperator?.role}</div>
-              </div>
-              <div style={{ width: '6px', height: '6px', background: 'var(--success-color)', borderRadius: '50%' }}></div>
+          <div className="glass-card" style={{ padding: isSidebarCollapsed ? '0.5rem' : '0.85rem', background: 'rgba(255,255,255,0.02)', borderColor: 'var(--card-border)', borderRadius: '12px', display: 'flex', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '0.75rem', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
+              <div style={{ width: '36px', height: '36px', background: 'rgba(59, 130, 246, 0.2)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'var(--accent-color)', fontSize: '0.7rem', flexShrink: 0 }}>{activeOperator?.avatar}</div>
+              {!isSidebarCollapsed && (
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activeOperator?.name}</div>
+                  <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{activeOperator?.role}</div>
+                </div>
+              )}
+              {!isSidebarCollapsed && <div style={{ width: '6px', height: '6px', background: 'var(--success-color)', borderRadius: '50%' }}></div>}
             </div>
           </div>
           <button
@@ -1244,20 +1254,26 @@ function App() {
             style={{ 
               display: 'flex', 
               alignItems: 'center', 
-              gap: '0.75rem', 
+              gap: isSidebarCollapsed ? '0' : '0.75rem', 
               padding: '0.75rem 1rem', 
               background: 'rgba(239, 68, 68, 0.1)', 
-              border: '1px solid rgba(239, 68, 68, 0.2)', 
-              borderRadius: '12px', 
-              color: 'var(--error-color)', 
-              fontSize: '0.8rem', 
-              fontWeight: '700', 
-              cursor: 'pointer', 
-              transition: 'all 0.2s',
-              justifyContent: 'center'
+              border: '1px solid rgba(239, 68, 68, 0.2)',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              justifyContent: isSidebarCollapsed ? 'center' : 'flex-start',
+              width: '100%',
+              color: 'var(--error-color)',
+              fontWeight: '800'
             }}
+            title={isSidebarCollapsed ? t('logout') : ''}
           >
-            <LogOut size={16} /> {t('logout')}
+            <LogOut size={18} />
+            {!isSidebarCollapsed && (
+              <span style={{ fontSize: '0.85rem', letterSpacing: '0.05em' }}>
+                {t('logout').toUpperCase()}
+              </span>
+            )}
           </button>
         </div>
       </nav>
