@@ -1,5 +1,43 @@
 apply plugin: 'com.android.application'
 
+def versionPropsFile = rootProject.file('version.properties')
+def versionProps = new Properties()
+
+if (versionPropsFile.exists()) {
+    versionPropsFile.withInputStream { versionProps.load(it) }
+}
+
+def majorVersion = (versionProps.getProperty('VERSION_MAJOR') ?: '0').toInteger()
+def minorVersion = (versionProps.getProperty('VERSION_MINOR') ?: '1').toInteger()
+
+def requestedTasks = gradle.startParameter.taskNames.collect { it.toLowerCase() }
+def isReleaseBuild = requestedTasks.any { it.contains('assemblerelease') || it.contains('bundlerelease') }
+def isMajorRelease = (project.findProperty('majorRelease')?.toString()?.toBoolean() ?: false)
+
+if (isReleaseBuild) {
+    if (isMajorRelease) {
+        majorVersion += 1
+        minorVersion = 0
+    } else {
+        minorVersion += 1
+    }
+
+    versionProps.setProperty('VERSION_MAJOR', majorVersion.toString())
+    versionProps.setProperty('VERSION_MINOR', minorVersion.toString())
+    versionPropsFile.withOutputStream {
+        versionProps.store(it, 'App version (major.minor)')
+    }
+}
+
+def appVersionName = "${majorVersion}.${minorVersion}"
+def appVersionCode = (majorVersion * 10000) + minorVersion
+def artifactBaseName = "Nexus-Relay"
+
+def artifactFileName = { String versionName, String buildTypeName, String extension ->
+    def debugSuffix = buildTypeName == "debug" ? "-debug" : ""
+    return "${artifactBaseName}-v${versionName}${debugSuffix}.${extension}"
+}
+
 android {
     namespace = "com.nexushub.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +45,8 @@ android {
         applicationId "com.nexushub.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "0.1"
+        versionCode appVersionCode
+        versionName appVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -19,23 +57,70 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
     
-    // Custom APK Naming
+    // Custom APK naming: Nexus-Relay-v<major.minor>[ -debug ].apk
     applicationVariants.all { variant ->
         variant.outputs.all {
-            outputFileName = "NexusHub-v${variant.versionName}.apk"
+            def vName = variant.versionName ?: android.defaultConfig.versionName ?: "0.0.0"
+            def buildTypeName = variant.buildType?.name ?: ""
+            outputFileName = artifactFileName(vName, buildTypeName, "apk")
         }
     }
 }
 
-repositories {
-    flatDir{
-        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+afterEvaluate {
+    android.applicationVariants.all { variant ->
+        def variantCap = variant.name.capitalize()
+        def bundleTaskName = "bundle${variantCap}"
+
+        tasks.matching { it.name == bundleTaskName }.configureEach {
+            doFirst {
+                def buildTypeName = variant.buildType?.name ?: ""
+                if (buildTypeName == "debug") {
+                    // Keep debug bundle output directory clean so only the latest debug artifact remains.
+                    def outputDir = file("${buildDir}/outputs/bundle/${variant.dirName}")
+                    if (outputDir.exists()) {
+                        outputDir.listFiles()?.findAll { it.name.startsWith("${artifactBaseName}-v") && it.name.endsWith("-debug.aab") }?.each { oldFile ->
+                            if (!oldFile.delete()) {
+                                logger.warn("Could not delete old debug bundle: ${oldFile.name}")
+                            }
+                        }
+                    }
+                }
+            }
+
+            doLast {
+                def vName = variant.versionName ?: android.defaultConfig.versionName ?: "0.0.0"
+                def buildTypeName = variant.buildType?.name ?: ""
+                def outputDir = file("${buildDir}/outputs/bundle/${variant.dirName}")
+                def defaultBundleFile = file("${outputDir}/app-${variant.name}.aab")
+
+                if (defaultBundleFile.exists()) {
+                    def targetBundleFile = file("${outputDir}/${artifactFileName(vName, buildTypeName, 'aab')}")
+                    if (targetBundleFile.exists()) {
+                        targetBundleFile.delete()
+                    }
+
+                    if (!defaultBundleFile.renameTo(targetBundleFile)) {
+                        throw new GradleException("Could not rename ${defaultBundleFile.name} to ${targetBundleFile.name}")
+                    }
+
+                    if (buildTypeName == "debug") {
+                        outputDir.listFiles()?.findAll { it.name.startsWith("${artifactBaseName}-v") && it.name.endsWith("-debug.aab") && it.name != targetBundleFile.name }?.each { oldFile ->
+                            if (!oldFile.delete()) {
+                                logger.warn("Could not delete old debug bundle: ${oldFile.name}")
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
+
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
@@ -56,6 +141,6 @@ try {
     if (servicesJSON.text) {
         apply plugin: 'com.google.gms.google-services'
     }
-} catch(Exception e) {
+} catch(Exception ignored) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
 }

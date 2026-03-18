@@ -1,7 +1,7 @@
 import React from 'react';
 import { CreditCard, Users, Check, FileEdit, CheckCheck, Zap } from 'lucide-react';
 
-const PlansDashboard = ({ t, subscriptionPlans, activeMarket, setActiveMarket, activeOperator, currentAgency }) => {
+const PlansDashboard = ({ t, lang, subscriptionPlans, activeMarket, setActiveMarket, activeOperator, currentAgency }) => {
   const isMobile = window.innerWidth < 768;
   return (
     <div style={{ padding: isMobile ? '1rem' : '2rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
@@ -12,7 +12,7 @@ const PlansDashboard = ({ t, subscriptionPlans, activeMarket, setActiveMarket, a
         </div>
         
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '0.5rem', display: 'flex', gap: '0.25rem', width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'center' : 'flex-start' }}>
-          {['EU', 'UK', 'CZ'].map(market => (
+          {(lang === 'cz' ? ['CZ', 'EU'] : ['EU', 'UK']).map(market => (
             <button
               key={market}
               onClick={() => setActiveMarket(market)}
@@ -63,7 +63,14 @@ const PlansDashboard = ({ t, subscriptionPlans, activeMarket, setActiveMarket, a
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                 <div>
                   <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.5rem' }}>{plan.name}</h3>
-                  <div style={{ fontSize: '1.25rem', color: 'var(--accent-color)', fontWeight: '700' }}>{plan.prices ? plan.prices[activeMarket] : 'N/A'}</div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+                    <div style={{ fontSize: '1.25rem', color: 'var(--accent-color)', fontWeight: '800' }}>
+                      {lang === 'cz' ? plan.prices.CZ : plan.prices.EU}
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
+                      / {lang === 'cz' ? plan.prices.EU : plan.prices.UK}
+                    </div>
+                  </div>
                 </div>
                 <div style={{ width: '48px', height: '48px', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <CreditCard size={24} color="#6366f1" />

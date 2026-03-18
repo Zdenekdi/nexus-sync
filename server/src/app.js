@@ -1,8 +1,25 @@
+const express = require('express');
+const helmet = require('helmet');
+const cors = require('cors');
+const path = require('path');
 const rateLimit = require('express-rate-limit');
 const logger = require('./services/logger');
 const { sendAlert } = require('./services/alertService');
 
+// Route imports
+const authRoutes = require('./routes/authRoutes');
+const profileRoutes = require('./routes/profileRoutes');
+const chatRoutes = require('./routes/chatRoutes');
+const messageRoutes = require('./routes/messageRoutes');
+const deviceRoutes = require('./routes/deviceRoutes');
+
 const app = express();
+
+// Static file serving for downloads with logging
+app.use('/downloads', (req, res, next) => {
+  console.log(`[Static] Request for: ${req.url}`);
+  next();
+}, express.static(path.join(__dirname, '..', 'public', 'downloads')));
 
 // Rate limiting: 100 requests per 15 minutes
 const limiter = rateLimit({

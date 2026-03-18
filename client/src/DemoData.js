@@ -494,24 +494,24 @@ export const MOCK_PLANS = [
         id: 'standard', 
         name: 'Standard', 
         prices: {
-            EU: '€49/mo',
-            UK: '£39/mo',
-            CZ: '1 190 Kč/mo'
+            EU: '€59/mo',
+            UK: '£49/mo',
+            CZ: '1 490 Kč/mo'
         },
         profilesLimit: 3, 
-        features: ['Unlimited Messaging', 'Standard Translation', 'Shared Proxy Nodes', 'Standard Support'],
-        description: 'Core functionality for single users managing small teams.'
+        features: ['Unlimited Messaging', 'Static Smart Templates', 'Shared Proxy Nodes', 'Standard Support'],
+        description: 'Core functionality for small teams with full privacy.'
     },
     { 
         id: 'professional', 
         name: 'Professional', 
         prices: {
-            EU: '€149/mo',
-            UK: '£129/mo',
-            CZ: '3 690 Kč/mo'
+            EU: '€199/mo',
+            UK: '£169/mo',
+            CZ: '4 990 Kč/mo'
         },
         profilesLimit: 10, 
-        features: ['AI Smart Replies', 'Team Access (Manager + Ops)', 'Dedicated Regional Proxy Pool', 'Priority Support'],
+        features: ['Private AI Translator', 'AI Smart Replies', 'Team Access (Manager + Ops)', 'Priority Support'],
         description: 'Productivity-focused features for growing agencies.'
     },
     { 
