@@ -1297,7 +1297,6 @@ function App() {
               {!isSidebarCollapsed && <div style={{ width: '6px', height: '6px', background: 'var(--success-color)', borderRadius: '50%' }}></div>}
             </div>
           </div>
-          </button>
           
           <button
             onClick={() => setIsRelayMode(true)}
