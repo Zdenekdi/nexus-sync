@@ -20,24 +20,24 @@ const LoginScreen = ({ onLogin, onRegisterAgency, onRegisterUser, onResetRequest
 
     try {
       if (mode === 'login') {
-        onLogin(email, password);
+        await onLogin(email, password);
       } else if (mode === 'register_agency') {
         const data = { agencyName, fullName, email, password };
-        if (onRegisterAgency) onRegisterAgency(data);
+        if (onRegisterAgency) await onRegisterAgency(data);
         setMessage(t('registrationSuccess'));
         setTimeout(() => setMode('login'), 2000);
       } else if (mode === 'register_user') {
         const data = { fullName, email, password, inviteCode };
-        if (onRegisterUser) onRegisterUser(data);
+        if (onRegisterUser) await onRegisterUser(data);
         setMessage(t('registrationSuccess'));
         setTimeout(() => setMode('login'), 2000);
       } else if (mode === 'reset') {
-        if (onResetRequest) onResetRequest(email);
+        if (onResetRequest) await onResetRequest(email);
         setMessage(t('resetSent'));
         setTimeout(() => setMode('login'), 3000);
       }
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      setError(err.message || t('loginError'));
     } finally {
       setLoading(false);
     }
