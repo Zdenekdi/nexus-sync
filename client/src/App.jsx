@@ -92,20 +92,30 @@ function App() {
 
   const renderNotifications = () => (
     <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: '10px', pointerEvents: 'none' }}>
-      {notifications.map(n => (
+      {toasts.map(n => (
         <div key={n.id} className="glass-card fade-in" style={{ 
           padding: '1rem 1.5rem', 
-          background: 'rgba(5, 7, 10, 0.8)', 
+          background: 'rgba(5, 7, 10, 0.9)', 
           borderColor: 'var(--accent-color)', 
           borderLeft: '4px solid var(--accent-color)',
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'space-between',
           gap: '1rem',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
-          pointerEvents: 'auto'
+          boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+          pointerEvents: 'auto',
+          minWidth: '280px'
         }}>
-          <MessageCircle size={18} color="var(--accent-color)" />
-          <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>{n.msg}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <MessageCircle size={18} color="var(--accent-color)" />
+            <div style={{ fontSize: '0.85rem', fontWeight: '700', color: 'white' }}>{n.msg}</div>
+          </div>
+          <button 
+            onClick={() => setToasts(prev => prev.filter(t => t.id !== n.id))}
+            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '0.2rem' }}
+          >
+            <X size={14} />
+          </button>
         </div>
       ))}
     </div>
@@ -218,6 +228,7 @@ function App() {
     const saved = localStorage.getItem('nexus_notifications');
     return saved ? JSON.parse(saved) : [];
   });
+  const [toasts, setToasts] = useState([]);
   const [notificationPanelOpen, setNotificationPanelOpen] = useState(false);
   const [isSimulating, setIsSimulating] = useState(true);
 
@@ -228,13 +239,15 @@ function App() {
   const addNotification = useCallback((msg, type = 'info') => {
     const id = Date.now();
     const newNotification = { id, msg, type, read: false, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+    
     setNotifications(prev => [newNotification, ...prev]);
+    setToasts(prev => [newNotification, ...prev]);
     playNotificationSound(type);
     
-    // Auto-dismiss logic for temporary toast remains, but item stays in history
+    // Auto-dismiss toast from screen after 5 seconds
     setTimeout(() => {
-      // We don't remove from notifications state, just let the UI handle what's a 'toast' vs 'history'
-    }, 4000);
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 5000);
   }, [playNotificationSound]);
 
   // Real-time message simulation logic
