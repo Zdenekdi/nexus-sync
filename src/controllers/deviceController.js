@@ -25,7 +25,7 @@ exports.handleGoIP = async (req, res) => {
 
     try {
       const { getIO } = require('../services/socket');
-      getIO().emit('new_message', {
+      getIO().to(`agency_${profile.agencyId}`).emit('new_message', {
         id: Date.now(), profileId: profile.id, from: src, text: msg,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         status: 'delivered', direction: 'inbound'
@@ -63,7 +63,7 @@ exports.handleMobileSms = async (req, res) => {
 
     try {
       const { getIO } = require('../services/socket');
-      getIO().emit('new_message', {
+      getIO().to(`agency_${profile.agencyId}`).emit('new_message', {
         id: Date.now(), profileId: profile.id, from, text,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         status: 'delivered', direction: 'inbound'
@@ -93,7 +93,7 @@ exports.handleMobileCall = async (req, res) => {
 
     try {
       const { getIO } = require('../services/socket');
-      getIO().emit('incoming_call', { from, profileName: profile.name, profileId: profile.id, state });
+      getIO().to(`agency_${profile.agencyId}`).emit('incoming_call', { from, profileName: profile.name, profileId: profile.id, state });
     } catch (e) { console.warn('Socket emit failed for call', e); }
 
     res.json({ status: 'success' });
