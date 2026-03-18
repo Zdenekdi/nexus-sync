@@ -43,7 +43,7 @@ Hlavní modul pro komunikaci se zákazníky.
 ### 4. Aktivace Zařízení (Nexus Relay)
 Nexus Hub obsahuje vlastní bránu (gateway app) pro 24/7 synchronizaci bez nutnosti používat nástroje třetích stran.
 
-- **Stáhnout APK**: [NexusHub-v0.1.apk](https://nexus-sync-8d50b.web.app/nexus-hub.apk)
+- **Stáhnout APK**: [Odkaz na Google Disk / Server](https://google.com) *(Doporučený způsob pro stabilitu)*
 - **Vlastnosti**: 
   - Integrované zachytávání SMS
   - Real-time notifikace stavu hovorů
