@@ -179,6 +179,80 @@ function App() {
     type: 'work'
   });
   const [bookingSchedule, setBookingSchedule] = useState(MOCK_CALENDAR.events);
+  const [activeTimerEvent, setActiveTimerEvent] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [isTimerActive, setIsTimerActive] = useState(false);
+  const [safetyAlarmTriggered, setSafetyAlarmTriggered] = useState(false);
+
+  // Safety Guard Timer Logic
+  useEffect(() => {
+    let interval = null;
+    if (isTimerActive && timeLeft > -660) {
+      interval = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+    } else if (timeLeft <= -660) {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [isTimerActive, timeLeft]);
+
+  useEffect(() => {
+    if (timeLeft === 0 && isTimerActive) {
+      addNotification({
+        id: Date.now(),
+        title: 'SAFETY GUARD: SESSION END',
+        message: 'Scheduled session time has ended. Please check out!',
+        priority: 'emergency',
+        timestamp: new Date().toLocaleTimeString(),
+        read: false
+      });
+      playNotificationSound('emergency');
+      setSafetyAlarmTriggered(true);
+    }
+    if (timeLeft === -600 && isTimerActive) {
+      addNotification({
+        id: Date.now() + 1,
+        title: 'EMERGENCY: NO CHECK-OUT',
+        message: 'Safety Guard escalating! Contacting agency manager...',
+        priority: 'emergency',
+        timestamp: new Date().toLocaleTimeString(),
+        read: false
+      });
+      playNotificationSound('emergency');
+    }
+  }, [timeLeft, isTimerActive]);
+
+  const handleCheckIn = (event) => {
+    setActiveTimerEvent(event);
+    const durationMatch = event.duration.match(/(\d+)h/);
+    const durationMinutes = durationMatch ? parseInt(durationMatch[1]) * 60 : 60;
+    setTimeLeft(durationMinutes * 60);
+    setIsTimerActive(true);
+    setSafetyAlarmTriggered(false);
+    addNotification({
+      id: Date.now(),
+      title: 'Safety Guard Active',
+      message: `Timer started for ${event.title}`,
+      priority: 'success',
+      timestamp: new Date().toLocaleTimeString(),
+      read: false
+    });
+  };
+
+  const handleCheckOut = () => {
+    setIsTimerActive(false);
+    setActiveTimerEvent(null);
+    setSafetyAlarmTriggered(false);
+    setTimeLeft(0);
+    addNotification({ id: Date.now(), title: 'Safety Guard Deactivated', message: 'Checkout successful.', priority: 'success', timestamp: new Date().toLocaleTimeString(), read: false });
+  };
+
+  const formatTime = (seconds) => {
+    const absSec = Math.abs(seconds);
+    const h = Math.floor(absSec / 3600);
+    const m = Math.floor((absSec % 3600) / 60);
+    const s = absSec % 60;
+    return `${seconds < 0 ? '-' : ''}${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
   const [showLanding, setShowLanding] = useState(!isLoggedIn);
   const [isRelayMode, setIsRelayMode] = useState(false);
   const [isLoginLoading, setIsLoginLoading] = useState(false);
@@ -1739,11 +1813,51 @@ function App() {
                           {event.status.toUpperCase()}
                         </div>
                       </div>
-                      <div style={{ opacity: 0.5 }}>
-                        <MoreVertical size={18} />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        {activeTimerEvent?.id === event.id ? (
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleCheckOut(); }}
+                            className="action-btn" 
+                            style={{ margin: 0, padding: '0.5rem 1rem', background: 'var(--success-color)', fontSize: '0.75rem' }}
+                          >
+                            CHECK-OUT
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleCheckIn(event); }}
+                            className="action-btn" 
+                            style={{ margin: 0, padding: '0.5rem 1rem', background: isTimerActive ? 'rgba(255,255,255,0.05)' : 'var(--accent-color)', fontSize: '0.75rem', opacity: isTimerActive ? 0.5 : 1 }}
+                            disabled={isTimerActive}
+                          >
+                            CHECK-IN
+                          </button>
+                        )}
+                        <div style={{ opacity: 0.5 }}>
+                          <MoreVertical size={18} />
+                        </div>
                       </div>
                     </div>
                   ))}
+                  
+                  {isTimerActive && (
+                    <div className="glass-card fade-in" style={{ marginTop: '2rem', padding: '1.5rem', background: timeLeft <= 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.05)', border: `1px solid ${timeLeft <= 0 ? '#ef4444' : '#10b981'}` }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <div className={`pulse-${timeLeft <= 0 ? 'red' : 'green'}`} style={{ width: '12px', height: '12px', borderRadius: '50%', background: timeLeft <= 0 ? '#ef4444' : '#10b981' }} />
+                          <div>
+                            <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Safety Guard Active</div>
+                            <div style={{ fontSize: '1.1rem', fontWeight: '800' }}>{activeTimerEvent?.title}</div>
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '1.5rem', fontWeight: '900', color: timeLeft <= 0 ? '#ef4444' : 'white', fontFamily: 'monospace' }}>
+                            {formatTime(timeLeft)}
+                          </div>
+                          <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{timeLeft <= 0 ? 'OVERTIME' : 'TIME REMAINING'}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1969,86 +2083,58 @@ function App() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '2rem' }}>
-              {/* SMS Setup */}
-              <div className="glass-card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{ width: '48px', height: '48px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <MessageSquare size={24} color="#3b82f6" />
-                  </div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>{t('smsSync')}</h3>
-                </div>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
-                  {t('smsSyncDesc')}
-                </p>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <a href="https://play.google.com/store/apps/details?id=enstone.smsfw.app" target="_blank" rel="noreferrer" className="action-btn" style={{ flex: 1, textDecoration: 'none', textAlign: 'center', background: '#3b82f6', color: 'white' }}>
-                    Google Play ({t('smsSync')})
-                  </a>
-                </div>
-                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#3b82f6', marginBottom: '0.5rem' }}>{t('webhookLabel')}</div>
-                  <code style={{ fontSize: '0.8rem', wordBreak: 'break-all' }}>https://nexus-api.myvnc.com/api/device/mobile/sms</code>
-                </div>
-
-                <div style={{ marginTop: '0.5rem', borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem' }}>
-                  <div style={{ fontSize: '0.85rem', fontWeight: '800', marginBottom: '1rem', color: 'var(--accent-color)' }}>{t('smsGuideTitle')}</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {[1, 2, 3, 4, 5, 6].map(step => (
-                      <div key={step} style={{ display: 'flex', gap: '0.75rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                        <div style={{ minWidth: '18px', height: '18px', background: 'rgba(59, 130, 246, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: '800', color: '#3b82f6' }}>{step}</div>
-                        <div>{(t(`smsStep${step}`) || '').toString().substring(3)}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Call Setup */}
-              <div className="glass-card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{ width: '48px', height: '48px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Phone size={24} color="#10b981" />
-                  </div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>{t('callSync')}</h3>
-                </div>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
-                  {t('callSyncDesc')}
-                </p>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <a href="https://play.google.com/store/apps/details?id=com.llamalab.automate" target="_blank" rel="noreferrer" className="action-btn" style={{ flex: 1, textDecoration: 'none', textAlign: 'center', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--card-border)' }}>
-                    Automate
-                  </a>
-                  <a href="https://play.google.com/store/apps/details?id=net.dinglisch.android.tasker" target="_blank" rel="noreferrer" className="action-btn" style={{ flex: 1, textDecoration: 'none', textAlign: 'center', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--card-border)' }}>
-                    Tasker
-                  </a>
-                </div>
-                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#10b981', marginBottom: '0.5rem' }}>{t('webhookLabel')}</div>
-                  <code style={{ fontSize: '0.8rem', wordBreak: 'break-all' }}>https://nexus-api.myvnc.com/api/device/mobile/call</code>
-                </div>
-
-                <div style={{ marginTop: '0.5rem', borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem' }}>
-                  <div style={{ fontSize: '0.85rem', fontWeight: '800', marginBottom: '1rem', color: '#10b981' }}>{t('callForwardingTitle')}</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    {[1, 2, 3].map(step => (
-                      <div key={step} style={{ display: 'flex', gap: '0.75rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                        <div style={{ minWidth: '18px', height: '18px', background: 'rgba(16, 185, 129, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: '800', color: '#10b981' }}>{step}</div>
-                        <div>{(t(`callForwardingStep${step}`) || '').toString().substring(3)}</div>
-                      </div>
-                    ))}
-                    <div style={{ 
-                      marginTop: '0.5rem', 
-                      padding: '0.75rem', 
-                      background: 'rgba(16, 185, 129, 0.1)', 
-                      borderRadius: '8px', 
-                      fontSize: '0.75rem', 
-                      color: '#10b981', 
-                      fontStyle: 'italic',
-                      border: '1px dashed rgba(16, 185, 129, 0.3)'
-                    }}>
-                      {t('callForwardingNote')}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
+              {/* Nexus Relay Setup */}
+              <div className="glass-card" style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ width: '64px', height: '64px', background: 'rgba(96, 165, 250, 0.1)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Smartphone size={32} color="#60a5fa" />
                     </div>
+                    <div>
+                      <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.25rem' }}>{t('nexusRelayTitle')}</h3>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>{t('nexusRelayDesc')}</p>
+                    </div>
+                  </div>
+                  
+                  <a 
+                    href="/nexus-hub.apk" 
+                    download="NexusHub-v0.1.apk"
+                    className="action-btn" 
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '0.75rem', 
+                      background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', 
+                      color: 'white', 
+                      padding: '1rem 2rem', 
+                      borderRadius: '12px',
+                      textDecoration: 'none',
+                      fontWeight: '800',
+                      boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)'
+                    }}
+                  >
+                    <Download size={20} /> {t('downloadApp')} (v0.1)
+                  </a>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '2rem', borderTop: '1px solid var(--card-border)', paddingTop: '2rem' }}>
+                   <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--card-border)' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#60a5fa', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('webhookLabel')}</div>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>{t('proxyNote')}</p>
+                    <code style={{ fontSize: '0.9rem', color: '#60a5fa', wordBreak: 'break-all', display: 'block', padding: '0.75rem', background: 'rgba(0,0,0,0.3)', borderRadius: '8px' }}>
+                      https://nexus-api.myvnc.com/api/device/relay
+                    </code>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '0.5rem', color: 'var(--accent-color)' }}>{t('relayGuideTitle')}</div>
+                    {[1, 2, 3, 4, 5, 6].map(step => (
+                      <div key={step} style={{ display: 'flex', gap: '1rem', alignItems: 'center', color: 'var(--text-secondary)' }}>
+                        <div style={{ minWidth: '24px', height: '24px', background: 'rgba(96, 165, 250, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: '800', color: '#60a5fa' }}>{step}</div>
+                        <div style={{ fontSize: '0.9rem' }}>{t(`relayStep${step}`)}</div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>

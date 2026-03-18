@@ -23,16 +23,71 @@ const RelayMode = ({ operator, t, onExit }) => {
   const [batteryLevel, setBatteryLevel] = useState(100);
   const [logs, setLogs] = useState([
     { id: 1, type: 'sms', from: '+44 7712 345678', content: 'New message from client...', time: '19:42', status: 'forwarded' },
-    { id: 2, type: 'call', from: '+420 731 222 333', content: 'Incoming Call (Ringing)', time: '19:35', status: 'logged' },
-    { id: 3, type: 'sms', from: 'AdultWork', content: 'Your verification code is 8812', time: '19:10', status: 'forwarded' },
-    { id: 4, type: 'sms', from: '+44 7890 123456', content: 'Are you available tonight?', time: '18:55', status: 'forwarded' }
+    { id: 2, type: 'call', from: '+420 731 222 333', content: 'Incoming Call (Ringing)', time: '19:35', status: 'logged' }
   ]);
+  const [lastForwardedId, setLastForwardedId] = useState(null);
 
-  // Simulate live updates
-  useEffect(() => {
+  const forwardData = async (type, from, content) => {
     if (!isActive) return;
+    
+    const newLog = {
+      id: Date.now(),
+      type,
+      from,
+      content,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      status: 'pending'
+    };
+
+    setLogs(prev => [newLog, ...prev.slice(0, 19)]);
+
+    try {
+      // Direct call to Nexus API
+      const response = await fetch('https://nexus-api.myvnc.com/api/device/relay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          deviceId: operator?.id || 'RELAY-01',
+          type,
+          from,
+          content,
+          timestamp: new Date().toISOString()
+        })
+      });
+
+      if (response.ok) {
+        setLogs(prev => prev.map(l => l.id === newLog.id ? { ...l, status: 'forwarded' } : l));
+        setLastForwardedId(newLog.id);
+      } else {
+        throw new Error('Failed to forward');
+      }
+    } catch (error) {
+      console.error('Relay Error:', error);
+      setLogs(prev => prev.map(l => l.id === newLog.id ? { ...l, status: 'failed' } : l));
+    }
+  };
+
+  // Listen for native events (if running in Capacitor with our custom plugin)
+  useEffect(() => {
+    if (window.Capacitor?.Plugins?.NexusRelay) {
+      const smsListener = window.Capacitor.Plugins.NexusRelay.addListener('onSmsReceived', (data) => {
+        forwardData('sms', data.from, data.body);
+      });
+      const callListener = window.Capacitor.Plugins.NexusRelay.addListener('onCallStateChanged', (data) => {
+        forwardData('call', data.from, `State: ${data.state}`);
+      });
+      return () => {
+        smsListener.remove();
+        callListener.remove();
+      };
+    }
+  }, [isActive, operator]);
+
+  // Simulate live updates for demo if not in native
+  useEffect(() => {
+    if (!isActive || window.Capacitor?.Plugins?.NexusRelay) return;
     const interval = setInterval(() => {
-      setBatteryLevel(prev => Math.min(100, prev + 0.1)); // Simulating charging
+      setBatteryLevel(prev => Math.min(100, prev + 0.1));
       setSignalStrength(prev => Math.max(70, Math.min(100, prev + (Math.random() * 10 - 5))));
     }, 5000);
     return () => clearInterval(interval);
