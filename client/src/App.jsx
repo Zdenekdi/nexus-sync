@@ -10,9 +10,10 @@ import {
     Eye, Save, X, RotateCcw, Lock, Share2, Filter, Menu, UserCircle, Plus, Info, ChevronDown, ChevronUp, ChevronLeft,
     BarChart2 as BarChart3, Shield as ShieldAlert, HardDrive, Gift, Trophy, RefreshCw, Bug, Copy, Signal, Mic, MicOff, Sparkles,
     StickyNote, AlertTriangle, Image, Link, Star, CheckCircle, Languages, Package, Bell,
-    History, Terminal, Mail, RefreshCcw, ArrowUpRight, PlusCircle, BarChart, PieChart, Download, EyeOff
+    History, Terminal, Mail, RefreshCcw, ArrowUpRight, PlusCircle, BarChart, PieChart, Download, EyeOff, Radio
   } from 'lucide-react';
 import LandingPage from './components/LandingPage';
+import RelayMode from './components/RelayMode';
 import { MOCK_OPERATORS, MOCK_CLIENTS, MOCK_AGENCIES, MOCK_PROFILES, MOCK_MESSAGES, MOCK_STATS, MOCK_CALENDAR, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_CHART_DATA, MOCK_SMART_REPLIES, MOCK_PLANS, MOCK_REFERRALS, MOCK_PERMISSIONS } from './DemoData';
 import { TRANSLATIONS } from './translations';
 import { useSocket } from './hooks/useSocket';
@@ -179,6 +180,7 @@ function App() {
   });
   const [bookingSchedule, setBookingSchedule] = useState(MOCK_CALENDAR.events);
   const [showLanding, setShowLanding] = useState(!isLoggedIn);
+  const [isRelayMode, setIsRelayMode] = useState(false);
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [bookingCollision, setBookingCollision] = useState(null);
   const [isCalendarSyncOpen, setIsCalendarSyncOpen] = useState(false);
@@ -952,6 +954,9 @@ function App() {
   };
 
   const renderContent = () => {
+    if (isRelayMode) {
+      return <RelayMode operator={activeOperator} t={t} onExit={() => setIsRelayMode(false)} />;
+    }
     if (!isLoggedIn) {
       if (showLanding) {
         return <LandingPage onLoginClick={() => setShowLanding(false)} />;
@@ -965,6 +970,7 @@ function App() {
           onRegisterAgency={handleRegisterAgency}
           onRegisterUser={handleRegisterUser}
           onResetRequest={handleResetRequest}
+          onBackToLanding={() => setShowLanding(true)}
           operators={operators}
           lang={lang} 
           setLang={setLang} 
@@ -1291,6 +1297,35 @@ function App() {
               {!isSidebarCollapsed && <div style={{ width: '6px', height: '6px', background: 'var(--success-color)', borderRadius: '50%' }}></div>}
             </div>
           </div>
+          </button>
+          
+          <button
+            onClick={() => setIsRelayMode(true)}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: isSidebarCollapsed ? '0' : '0.75rem', 
+              padding: '0.75rem 1rem', 
+              background: 'rgba(59, 132, 246, 0.1)', 
+              border: '1px solid rgba(59, 132, 246, 0.2)',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              justifyContent: isSidebarCollapsed ? 'center' : 'flex-start',
+              width: '100%',
+              color: 'var(--accent-color)',
+              fontWeight: '800'
+            }}
+            title={isSidebarCollapsed ? "Relay Mode" : ''}
+          >
+            <Radio size={18} />
+            {!isSidebarCollapsed && (
+              <span style={{ fontSize: '0.85rem', letterSpacing: '0.05em' }}>
+                NEXUS RELAY
+              </span>
+            )}
+          </button>
+
           <button
             onClick={handleLogout}
             style={{ 

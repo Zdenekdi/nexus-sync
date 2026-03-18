@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Zap, User, Lock, Building, UserPlus, ChevronLeft, Globe, ArrowRight, ShieldCheck, Mail } from 'lucide-react';
 
-const LoginScreen = ({ onLogin, onRegisterAgency, onRegisterUser, onResetRequest, operators, lang, setLang, t }) => {
+const LoginScreen = ({ onLogin, onRegisterAgency, onRegisterUser, onResetRequest, onBackToLanding, operators, lang, setLang, t }) => {
   const [mode, setMode] = useState('login'); // login, register_agency, register_user, reset
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -64,6 +64,12 @@ const LoginScreen = ({ onLogin, onRegisterAgency, onRegisterUser, onResetRequest
       
       <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '480px', padding: '3.5rem', position: 'relative', zIndex: 1, border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
         
+        {mode === 'login' && (
+          <button onClick={onBackToLanding} style={{ position: 'absolute', top: '2.5rem', left: '2.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer', transition: 'color 0.2s' }}>
+            <ChevronLeft size={16} /> {lang === 'cz' ? 'Zpět na představení' : 'Back to Presentation'}
+          </button>
+        )}
+
         {mode !== 'login' && (
           <button onClick={() => setMode('login')} style={{ position: 'absolute', top: '2.5rem', left: '2.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer', transition: 'color 0.2s' }}>
             <ChevronLeft size={16} /> {t('backToLogin')}
