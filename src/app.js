@@ -1,16 +1,17 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const authRoutes = require('./routes/authRoutes');
-const profileRoutes = require('./routes/profileRoutes');
-const chatRoutes = require('./routes/chatRoutes');
-const messageRoutes = require('./routes/messageRoutes');
-const deviceRoutes = require('./routes/deviceRoutes');
-
+const rateLimit = require('express-rate-limit');
 const logger = require('./services/logger');
 const { sendAlert } = require('./services/alertService');
 
 const app = express();
+
+// Rate limiting: 100 requests per 15 minutes
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many requests, please try again later.' }
+});
 
 app.use(helmet());
 app.use(cors({
@@ -18,6 +19,10 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+
+// Apply limiter to auth and device routes
+app.use('/api/auth', limiter);
+app.use('/api/device', limiter);
 
 // Request logging middleware
 app.use((req, res, next) => {
