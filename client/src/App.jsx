@@ -727,15 +727,26 @@ function App() {
   const renderNotificationPanel = () => {
     if (!notificationPanelOpen) return null;
     return (
-      <div style={{ position: 'fixed', right: 0, top: 0, bottom: 0, width: '400px', background: 'rgba(5, 7, 10, 0.95)', borderLeft: '1px solid var(--card-border)', zIndex: 1200, display: 'flex', flexDirection: 'column', backdropFilter: 'blur(30px)', animation: 'slideInRight 0.3s cubic-bezier(0, 0, 0.2, 1)' }}>
-        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>{t('notifications')}</h3>
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <button onClick={() => setNotifications([])} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}>{t('clearAll')}</button>
-            <button onClick={() => setNotificationPanelOpen(false)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={20} /></button>
+      <>
+        {/* Backdrop for closing */}
+        <div 
+          onClick={() => setNotificationPanelOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1199 }}
+        />
+        <div style={{ position: 'fixed', right: 0, top: 0, bottom: 0, width: '400px', background: 'rgba(5, 7, 10, 0.95)', borderLeft: '1px solid var(--card-border)', zIndex: 1200, display: 'flex', flexDirection: 'column', backdropFilter: 'blur(30px)', animation: 'slideInRight 0.3s cubic-bezier(0, 0, 0.2, 1)' }}>
+          <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>{t('notifications')}</h3>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button onClick={() => setNotifications([])} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}>{t('clearAll')}</button>
+              <button 
+                onClick={() => setNotificationPanelOpen(false)} 
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', padding: '0.4rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
           </div>
-        </div>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }} className="custom-scrollbar">
+          <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }} className="custom-scrollbar">
           {notifications.length === 0 ? (
             <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
               {t('noNotifications')}
@@ -1009,19 +1020,26 @@ function App() {
               <button onClick={() => setLang('cz')} style={{ flex: 1, padding: '4px 8px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}>CZ</button>
               <button onClick={() => setLang('en')} style={{ flex: 1, padding: '4px 8px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}>EN</button>
             </div>
-            <button 
-              onClick={() => {
-                setNotificationPanelOpen(true);
-                // Mark all as read when opening panel for this demo
-                setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-              }} 
-              style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
-            >
-              <Bell size={16} />
-              {notifications.some(n => !n.read) && (
-                <div style={{ position: 'absolute', top: '-1px', right: '-1px', width: '10px', height: '10px', background: 'var(--error-color)', borderRadius: '50%', border: '2px solid var(--bg-color)', animation: 'ping 1.5s infinite' }}></div>
-              )}
-            </button>
+            {(() => {
+              const operatorRole = activeOperator?.role || 'Operator';
+              const perms = rolePermissions[operatorRole] || {};
+              if (!perms.messaging) return null;
+              
+              return (
+                <button 
+                  onClick={() => {
+                    setNotificationPanelOpen(true);
+                    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                  }} 
+                  style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
+                >
+                  <Bell size={16} />
+                  {notifications.some(n => !n.read) && (
+                    <div style={{ position: 'absolute', top: '-1px', right: '-1px', width: '10px', height: '10px', background: 'var(--error-color)', borderRadius: '50%', border: '2px solid var(--bg-color)', animation: 'ping 1.5s infinite' }}></div>
+                  )}
+                </button>
+              );
+            })()}
           </div>
         </div>
 
