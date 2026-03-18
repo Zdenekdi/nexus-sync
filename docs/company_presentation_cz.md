@@ -11,20 +11,19 @@ Pomáháme agenturám přejít od manuálního "hašení požárů" k **absolutn
 
 ## 💎 Klíčové pilíře systému
 
-### 1. Maximální efektivita (AI Automation)
-*   **Jednotný Inbox**: Všechny zprávy z AdultWork, SMS a Telegramu na jedné obrazovce.
+### 1. Maximální efektivita (Pro operátorky)
 *   **AI Smart Replies**: Systém navrhuje odpovědi v CZ/AJ na základě kontextu, což zrychluje práci operátorek až o 70 %.
-*   **Automatický překlad**: Komunikujte s klienty z celého světa bez jazykových bariér.
+*   **Jednotný Inbox**: Všechny zprávy z AdultWork, SMS a Telegramu na jedné obrazovce. Už žádné překlikávání mezi prohlížečem a mobilem.
 
-### 2. Absolutní kontrola a škálování
-*   **Role-Based Dashboards**: Od Super Admina po modelku – každý vidí jen to, co potřebuje ke své práci.
-*   **QA Hub & Audit Trail**: Každý log, každá zpráva a každá poznámka je dohledatelná. Maximální transparentnost pro majitele agentury.
-*   **Hierarchy Management**: Správa neomezeného množství uzlů, poboček a profilů z jednoho místa.
-
-### 3. Bezpečnost a Real-time Sync
-*   **Nexus Relay**: Nativní Android aplikace, která nahrazuje cizí webhooky. Telefon se stává bezpečnou bránou pro data a hovory.
+### 2. Absolutní bezpečí (Pro modelky)
 *   **Safety Guard**: Unikátní systém bezpečnostních pojistek s GPS trackingem a automatickými alarmy pro ochranu modelek v terénu (Outcalls).
-*   **Proxy Gateway**: Ochrana proti banům a scraping blokacím pomocí residenčních proxy serverů.
+*   **Earnings & Schedule**: Živý přehled výdělků a rezervací přímo v mobilu. Modelka má vždy přehled o svém plánu bez nutnosti volat operátorce.
+*   **Check-in systém**: Jednoduché potvrzení příchodu klienta, které automaticky hlídá bezpečný čas schůzky.
+
+### 3. Kontrola a škálování (Pro manažery)
+*   **Hierarchy Management**: Správa neomezeného množství uzlů, poboček a profilů z jednoho místa.
+*   **QA Hub & Audit Trail**: Každý log, každá zpráva a každá poznámka je dohledatelná. Maximální transparentnost.
+*   **Proxy Gateway**: Ochrana proti banům pomocí residenčních proxy serverů.
 
 ---
 

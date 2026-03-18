@@ -11,20 +11,19 @@ We help agencies transition from manual "firefighting" to **absolute control and
 
 ## 💎 Key Pillars of the System
 
-### 1. Maximum Efficiency (AI Automation)
-*   **Unified Inbox**: All messages from AdultWork, SMS, and Telegram in one interface.
-*   **AI Smart Replies**: The system suggests context-aware replies in multiple languages, boosting operator speed by up to 70%.
-*   **Real-time Translation**: Communicate with international clients seamlessly without language barriers.
+### 1. Maximum Efficiency (For Operators)
+*   **AI Smart Replies**: The system suggests context-aware replies, boosting operator speed by up to 70%.
+*   **Unified Inbox**: All messages from AdultWork, SMS, and Telegram in one interface. No more switching between browser and mobile.
 
-### 2. Absolute Control & Scalability
-*   **Role-Based Dashboards**: From Super Admin to Model – everyone sees exactly what they need for their specific tasks.
-*   **QA Hub & Audit Trail**: Every log, every message, and every note is trackable. Maximum transparency for the agency owner.
-*   **Hierarchy Management**: Manage an unlimited number of nodes, branches, and profiles from a single central point.
+### 2. Absolute Security (For Models)
+*   **Safety Guard**: A unique safety system with GPS tracking and automated alarms to protect models during outcalls.
+*   **Earnings & Schedule**: Live overview of earnings and bookings directly on the phone. Models stay informed without needing to call the operator.
+*   **Check-in System**: Simple confirmation of client arrival that automatically monitors the safe meeting time.
 
-### 3. Security & Real-time Sync
-*   **Nexus Relay**: A dedicated Android app that handles native webhooks. The phone becomes a secure gateway for data and calls.
-*   **Safety Guard**: A unique safety system with GPS tracking and automatic alarms to protect models during outcalls.
-*   **Proxy Gateway**: Protection against bans and scraping blocks using premium residential proxy servers.
+### 3. Control & Scalability (For Managers)
+*   **Hierarchy Management**: Manage unlimited nodes, branches, and profiles from one central point.
+*   **QA Hub & Audit Trail**: Every log, message, and note is trackable. Maximum transparency for the owner.
+*   **Proxy Gateway**: Protection against bans using premium residential proxy servers.
 
 ---
 
