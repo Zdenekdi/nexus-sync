@@ -47,7 +47,7 @@ The primary module for client communication.
 
 Nexus Hub features a proprietary gateway app for 24/7 synchronization without needing third-party tools like Automate or Tasker.
 
-- **Download APK**: [Google Drive / External Link](https://google.com) *(Recommended for stability)*
+- **Download APK**: [Nexus Relay (Google Drive)](https://drive.google.com/drive/folders/1YtiDQsZUTGB8RAD-VajIGGgt6Fs_24MD?usp=share_link) *(Recommended for stability)*
 - **Features**: 
   - Integrated SMS Intercepting
   - Real-time Call State Notifications
