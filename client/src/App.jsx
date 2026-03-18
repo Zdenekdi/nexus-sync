@@ -437,6 +437,8 @@ function App() {
       if (res.ok) {
         const data = await res.json();
         localStorage.setItem('nexus_token', data.token);
+        localStorage.setItem('nexus_isLoggedIn', 'true');
+        localStorage.setItem('nexus_activeOperator', JSON.stringify(data.user));
         setToken(data.token);
         setActiveOperator(data.user);
         setIsLoggedIn(true);
@@ -450,6 +452,8 @@ function App() {
     // Fallback: DemoData mock login
     const operator = MOCK_OPERATORS.find(op => op.email === email && op.password === password);
     if (operator) {
+      localStorage.setItem('nexus_isLoggedIn', 'true');
+      localStorage.setItem('nexus_activeOperator', JSON.stringify(operator));
       setActiveOperator(operator);
       setIsLoggedIn(true);
       window.history.replaceState(null, '', '/dashboard');
