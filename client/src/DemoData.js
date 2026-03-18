@@ -51,7 +51,7 @@ export const MOCK_OPERATORS = [
     { id: 'op-02', name: 'Mark T.', role: 'Agency Manager', clientId: 'agency-01', avatar: 'MT', email: 'mark@nexus.sync', password: 'password123', isAdmin: true, metrics: { messages: 156, calls: 8, conversion: '8%' }, permissions: { qa: true, referrals: true } },
     { id: 'op-03', name: 'Sarah K.', role: 'US Specialist', clientId: 'agency-02', avatar: 'SK', email: 'sarah@nexus.sync', password: 'password123', metrics: { messages: 530, calls: 22, conversion: '15%' }, permissions: { qa: true, referrals: true } },
     { id: 'op-04', name: 'Elena B.', role: 'Night Shift', clientId: 'agency-01', avatar: 'EB', email: 'elena@nexus.sync', password: 'password123', metrics: { messages: 620, calls: 14, conversion: '9%' }, permissions: { qa: true, referrals: false } },
-    { id: 'op-05', name: 'Diana', role: 'Model', avatar: 'D', email: 'diana@nexus.sync', password: 'password123', isModel: true, permissions: { qa: false, referrals: false } },
+    { id: 'op-05', name: 'Diana', role: 'Model', avatar: 'D', email: 'diana@nexus.sync', password: 'password123', isModel: true, profileId: 'ldn-01', permissions: { qa: false, referrals: false } },
     { id: 'op-06', name: 'Super Admin', role: 'System Owner', clientId: null, avatar: 'SA', email: 'admin@nexus.ai', password: 'password123', isSuperAdmin: true, permissions: { qa: true, referrals: true } }
 ];
 
@@ -411,6 +411,25 @@ export const MOCK_PERMISSIONS = {
         qa_hub: true,
         settings: true
     },
+    'Agency Manager': {
+        infrastructure: false,
+        agencies: false,
+        permissions: false,
+        plans: false,
+        global_features: false,
+        hierarchy: true,
+        analytics: true,
+        messaging: true,
+        calendar: true,
+        profiles: true,
+        web_profiles: true,
+        device_setup: true,
+        audit_logs: false,
+        referrals: true,
+        inventory: true,
+        qa_hub: true,
+        settings: true
+    },
     'Senior Operator': {
         infrastructure: false,
         agencies: false,
@@ -466,7 +485,7 @@ export const MOCK_PERMISSIONS = {
         referrals: false,
         inventory: false,
         qa_hub: false,
-        settings: true
+        settings: false
     }
 };
 
