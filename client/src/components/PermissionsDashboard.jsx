@@ -29,29 +29,25 @@ const PermissionsDashboard = ({ t, rolePermissions, setRolePermissions, activeOp
                   <span style={{ fontSize: '0.9rem', color: isEnabled ? 'white' : 'var(--text-secondary)', fontWeight: '600' }}>
                     {t(permKey) || permKey.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                   </span>
-                  {role !== 'System Owner' ? (
-                    <div 
-                      onClick={() => {
-                        setRolePermissions(prev => ({
-                          ...prev,
-                          [role]: { ...prev[role], [permKey]: !isEnabled }
-                        }));
-                      }}
-                      className={`toggle-switch ${isEnabled ? 'active' : ''}`}
-                      style={{ 
-                        width: '34px', height: '18px', background: isEnabled ? 'var(--accent-color)' : 'rgba(255,255,255,0.05)',
-                        borderRadius: '20px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s',
-                        border: '1px solid var(--card-border)'
-                      }}
-                    >
-                      <div style={{ 
-                        width: '12px', height: '12px', background: 'white', borderRadius: '50%',
-                        position: 'absolute', top: '2px', left: isEnabled ? '18px' : '3px', transition: 'all 0.3s'
-                      }}></div>
-                    </div>
-                  ) : (
-                    <div style={{ color: 'var(--success-color)', fontSize: '0.7rem', fontWeight: '800' }}>{t('masterAccess')}</div>
-                  )}
+                  <div 
+                    onClick={() => {
+                      setRolePermissions(prev => ({
+                        ...prev,
+                        [role]: { ...prev[role], [permKey]: !isEnabled }
+                      }));
+                    }}
+                    className={`toggle-switch ${isEnabled ? 'active' : ''}`}
+                    style={{ 
+                      width: '34px', height: '18px', background: isEnabled ? 'var(--accent-color)' : 'rgba(255,255,255,0.05)',
+                      borderRadius: '20px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s',
+                      border: '1px solid var(--card-border)'
+                    }}
+                  >
+                    <div style={{ 
+                      width: '12px', height: '12px', background: 'white', borderRadius: '50%',
+                      position: 'absolute', top: '2px', left: isEnabled ? '18px' : '3px', transition: 'all 0.3s'
+                    }}></div>
+                  </div>
                 </div>
               ))}
             </div>
