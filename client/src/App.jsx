@@ -797,8 +797,9 @@ function App() {
           </div>
         </div>
       </div>
-    );
-  };
+    </>
+  );
+};
 
   const handleRegisterAgency = async (data) => {
     try {
