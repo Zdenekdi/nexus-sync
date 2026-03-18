@@ -38,11 +38,20 @@ const LandingPage = ({ onLoginClick }) => {
           desc: "Vlastní Android Relay a Safety Guard pro maximální ochranu týmu i dat."
         }
       ],
-      featuresTitle: "Proč zvolit Nexus Hub?",
+      featuresTitle: "Výhody pro váš tým",
       features: [
-        { title: "Růst zisků", desc: "Díky AI odbaví jedna operátorka násobně více profilů." },
-        { title: "Předvídatelnost", desc: "Pokročilá analytika vám přesně řekne, kde je prostor pro zlepšení." },
-        { title: "Klid majitele", desc: "Systém běží 24/7 a hlídá integritu dat i bezpečí vašich lidí." }
+        { 
+          title: "Pro Operátorky", 
+          desc: "AI Smart Replies odbaví chaty za vás. Unified Inbox zajistí, že vám žádná zpráva neuteče. Rychlejší a klidnější směny bez neustálého přepínání oken." 
+        },
+        { 
+          title: "Pro Modelky", 
+          desc: "Safety Guard a GPS tracking pro bezpečí v terénu. Živý přehled výdělků a rezervací přímo v mobilu. Snadný check-in přes tlačítko 'Klient dorazil'." 
+        },
+        { 
+          title: "Pro Manažery", 
+          desc: "Absolutní kontrola nad týmem, real-time analytika a automatické nouzové alerty. Škálování bez stresu z chaosu v datech." 
+        }
       ],
       footer: "Nexus Hub – Váš nástroj pro efektivní škálování."
     },
@@ -69,11 +78,20 @@ const LandingPage = ({ onLoginClick }) => {
           desc: "Native Android Relay and Safety Guard for maximum protection."
         }
       ],
-      featuresTitle: "Why choose Nexus Hub?",
+      featuresTitle: "Benefits for Your Team",
       features: [
-        { title: "Profit Growth", desc: "AI assistance allows one operator to handle multiple profiles with ease." },
-        { title: "Predictability", desc: "Advanced analytics show exactly where there is room for growth." },
-        { title: "Peace of Mind", desc: "System runs 24/7, monitoring data integrity and team safety." }
+        { 
+          title: "For Operators", 
+          desc: "AI Smart Replies handle the talking for you. Unified Inbox ensures no lead is lost. Faster, calmer shifts with everything in one place." 
+        },
+        { 
+          title: "For Models", 
+          desc: "Safety Guard and GPS tracking for field protection. Live earnings and booking tracker on your phone. Easy check-in with 'Client Arrived' button." 
+        },
+        { 
+          title: "For Managers", 
+          desc: "Absolute team oversight, real-time analytics, and automated emergency alerts. Scale without the stress of data chaos." 
+        }
       ],
       footer: "Nexus Hub – Your tool for efficient scaling."
     }
