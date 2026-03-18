@@ -1725,59 +1725,43 @@ function App() {
 
         {activeTab === 'web-profiles' && (
           <div style={{ padding: isMobile ? '1rem' : '2rem', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem', maxHeight: '100%' }} className="fade-in custom-scrollbar">
-            {/* Profile Switcher Row */}
-            <div style={{
-              display: 'flex',
-              gap: '0.75rem',
-              marginBottom: '1rem',
-              overflowX: 'auto',
-              paddingBottom: '0.75rem',
-              borderBottom: '1px solid var(--card-border)',
-              flexShrink: 0
-            }} className="custom-scrollbar">
-              {(activeOperator?.role === 'App Owner' ? profiles : allAgencyProfiles).map(profile => (
-                <button
-                  key={profile.id}
-                  onClick={() => setActiveProfileId(profile.id)}
-                  style={{
-                    padding: '0.6rem 1.25rem',
-                    borderRadius: '12px',
-                    background: activeProfileId === profile.id ? 'var(--accent-color)' : 'rgba(255,255,255,0.02)',
-                    color: activeProfileId === profile.id ? 'white' : 'var(--text-secondary)',
-                    border: '1px solid',
-                    borderColor: activeProfileId === profile.id ? 'var(--accent-color)' : 'var(--card-border)',
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '1.5rem', gap: '2rem' }}>
+              <div>
+                <h2 style={{ fontSize: '2rem', fontWeight: '900', background: 'linear-gradient(to right, #fff, var(--accent-color))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>
+                  {activeProfile?.name || '...'}
+                </h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>{t('webProfilesDesc')}</p>
+              </div>
+              
+              <div style={{ position: 'relative', width: '220px' }}>
+                <select 
+                  value={activeProfileId} 
+                  onChange={(e) => setActiveProfileId(Number(e.target.value))}
+                  style={{ 
+                    width: '100%',
+                    background: 'rgba(255,255,255,0.05)', 
+                    border: '1px solid var(--card-border)', 
+                    padding: '0.6rem 2.5rem 0.6rem 1rem', 
+                    borderRadius: '12px', 
+                    color: 'white',
+                    fontSize: '0.9rem',
                     fontWeight: '700',
+                    appearance: 'none',
                     cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
+                    transition: 'all 0.2s ease'
                   }}
                 >
-                  <div style={{
-                    width: '6px',
-                    height: '6px',
-                    borderRadius: '50%',
-                    background: activeProfileId === profile.id ? 'white' : 'transparent',
-                    border: activeProfileId === profile.id ? 'none' : '1px solid var(--text-secondary)'
-                  }}></div>
-                  {profile.name}
-                </button>
-              ))}
+                  {assignedProfiles.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                <ChevronDown size={18} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-secondary)' }} />
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: '1.5rem', flex: 1 }}>
               {/* Left Content Area (Gallery & Bio) */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.5rem' }}>
-                <div>
-                  <h2 style={{ fontSize: '1.75rem', fontWeight: '900', background: 'linear-gradient(to right, #fff, var(--accent-color))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                    {activeProfile?.name || '...'}
-                  </h2>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t('webProfilesDesc')}</p>
-                </div>
-              </div>
 
               <div className="glass-card" style={{ padding: '2rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
