@@ -32,7 +32,7 @@ exports.createMessage = async (req, res) => {
       include: { sender: { select: { id: true, name: true } } }
     });
     await prisma.chat.update({ where: { id: chatId }, data: { lastMessageAt: new Date() } });
-    try { getIO().emit('new_message', { chatId, message }); } catch (e) { /* Socket may not be ready */ }
+    try { getIO().to(`agency_${agencyId}`).emit('new_message', { chatId, message }); } catch (e) { /* Socket may not be ready */ }
     res.status(201).json(message);
   } catch (error) {
     console.error(error);
@@ -51,7 +51,7 @@ exports.simulateInbound = async (req, res) => {
     }
     const message = await prisma.message.create({ data: { chatId: chat.id, text, direction: 'INBOUND', status: 'received' } });
     await prisma.chat.update({ where: { id: chat.id }, data: { lastMessageAt: new Date() } });
-    try { getIO().emit('new_message', { chatId: chat.id, message }); } catch (e) { /* Socket may not be ready */ }
+    try { getIO().to(`agency_${profile.agencyId}`).emit('new_message', { chatId: chat.id, message }); } catch (e) { /* Socket may not be ready */ }
     res.status(201).json(message);
   } catch (error) {
     console.error(error);
@@ -67,7 +67,7 @@ exports.markAsRead = async (req, res) => {
     if (!message) return res.status(404).json({ message: 'Message not found' });
     if (!isSuperAdmin && message.chat.agencyId !== agencyId) return res.status(403).json({ message: 'Access denied' });
     const updated = await prisma.message.update({ where: { id: messageId }, data: { status: 'read' } });
-    try { getIO().emit('message_updated', { chatId: message.chatId, message: updated }); } catch (e) { /* Socket may not be ready */ }
+    try { getIO().to(`agency_${message.chat.agencyId}`).emit('message_updated', { chatId: message.chatId, message: updated }); } catch (e) { /* Socket may not be ready */ }
     res.json(updated);
   } catch (error) {
     console.error(error);
