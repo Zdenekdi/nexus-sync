@@ -2,7 +2,6 @@ const prisma = require('../services/db');
 
 exports.getProfiles = async (req, res) => {
   try {
-    // Superadmins do not manage profiles, they only handle system administration
     if (req.user.isSuperAdmin) {
       return res.json([]);
     }
@@ -12,7 +11,6 @@ exports.getProfiles = async (req, res) => {
       orderBy: { name: 'asc' }
     });
 
-    // Parse the 'data' JSON string for each profile if it exists
     const sanitizedProfiles = profiles.map(profile => ({
       ...profile,
       data: profile.data ? JSON.parse(profile.data) : {}

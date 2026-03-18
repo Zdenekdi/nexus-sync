@@ -1,89 +1,98 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
-
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Seed started...');
+  console.log('Starting seed...');
 
-  // 1. Create Default Agency
-  const nexusAgency = await prisma.agency.upsert({
-    where: { id: 'nexus-main' },
-    update: {},
-    create: {
-      id: 'nexus-main',
-      name: 'Nexus HQ',
-      region: 'UK',
+  // 1. Agencies
+  const agencies = [
+    {
+      id: 'agency-01',
+      name: 'Elite Talent Management',
+      region: 'UK/Europe',
       plan: 'Enterprise',
     },
-  });
-
-  // 2. Create Global Roles
-  const roles = [
-    { name: 'Super Admin', permissions: JSON.stringify(['all']), isSuperAdmin: true, agencyId: null },
-    { name: 'Regional Manager', permissions: JSON.stringify(['view_agency', 'manage_operators', 'view_stats']), isSuperAdmin: false, agencyId: null },
-    { name: 'Operator', permissions: JSON.stringify(['view_messages', 'send_messages', 'view_profiles']), isSuperAdmin: false, agencyId: null },
-    { name: 'Model', permissions: JSON.stringify(['view_profile']), isSuperAdmin: false, agencyId: null },
-  ];
-
-  for (const roleData of roles) {
-    const existing = await prisma.role.findFirst({
-      where: { name: roleData.name, agencyId: roleData.agencyId },
-    });
-    if (existing) {
-      await prisma.role.update({
-        where: { id: existing.id },
-        data: { permissions: roleData.permissions, isSuperAdmin: roleData.isSuperAdmin },
-      });
-    } else {
-      await prisma.role.create({ data: roleData });
+    {
+      id: 'agency-02',
+      name: 'Global Diamond Agency',
+      region: 'International',
+      plan: 'Professional',
     }
-  }
-
-  // 3. Create Super Admin User
-  const adminRole = await prisma.role.findFirst({ where: { name: 'Super Admin' } });
-  const hashedPassword = await bcrypt.hash('password123', 10);
-
-  await prisma.user.upsert({
-    where: { email: 'admin@nexus.ai' },
-    update: { password: hashedPassword, agencyId: null },
-    create: {
-      email: 'admin@nexus.ai',
-      password: hashedPassword,
-      name: 'Nexus Alpha',
-      roleId: adminRole.id,
-      agencyId: null, // Super Admin is global
-    },
-  });
-
-  // 4. Create Regular Operator User
-  const operatorRole = await prisma.role.findFirst({ where: { name: 'Operator' } });
-  await prisma.user.upsert({
-    where: { email: 'operator@nexus.ai' },
-    update: { password: hashedPassword },
-    create: {
-      email: 'operator@nexus.ai',
-      password: hashedPassword,
-      name: 'Standard Operator',
-      roleId: operatorRole.id,
-      agencyId: nexusAgency.id,
-    },
-  });
-
-  // 5. Create Demo Profiles for the Agency
-  const demoProfiles = [
-    { name: 'Diana', status: 'online', phoneNumber: '+1234567890', agencyId: nexusAgency.id, data: JSON.stringify({ age: 24, location: 'London', bio: 'Premium model' }) },
-    { name: 'Sophie', status: 'online', phoneNumber: '+1234567891', agencyId: nexusAgency.id, data: JSON.stringify({ age: 22, location: 'Manchester', bio: 'Rising star' }) },
-    { name: 'Elena', status: 'offline', phoneNumber: '+1234567892', agencyId: nexusAgency.id, data: JSON.stringify({ age: 26, location: 'Birmingham', bio: 'Sophisticated elegance' }) },
   ];
 
-  for (const profile of demoProfiles) {
-    await prisma.profile.upsert({
-      where: { id: profile.name.toLowerCase() }, // Simple ID for demo
-      update: profile,
-      create: { id: profile.name.toLowerCase(), ...profile },
+  for (const agency of agencies) {
+    await prisma.agency.upsert({
+      where: { id: agency.id },
+      update: {},
+      create: agency,
     });
   }
+  console.log('Agencies seeded.');
+
+  // 2. Roles
+  const roles = [
+    { name: 'System Owner', isSuperAdmin: true, permissions: JSON.stringify({ all: true }), agencyId: null },
+    { name: 'Agency Admin', isSuperAdmin: false, permissions: JSON.stringify({ manage: true }), agencyId: 'agency-01' },
+    { name: 'Senior Operator', isSuperAdmin: false, permissions: JSON.stringify({ operate: true }), agencyId: 'agency-01' },
+    { name: 'Operator', isSuperAdmin: false, permissions: JSON.stringify({ basic: true }), agencyId: 'agency-01' },
+    { name: 'Model', isSuperAdmin: false, permissions: JSON.stringify({ view: true }), agencyId: 'agency-01' },
+  ];
+
+  for (const role of roles) {
+    await prisma.role.upsert({
+      where: { name_agencyId: { name: role.name, agencyId: role.agencyId } },
+      update: {},
+      create: role,
+    });
+  }
+  console.log('Roles seeded.');
+
+  // Get real role IDs
+  const dbRoles = await prisma.role.findMany();
+  const getRoleId = (name, aId) => dbRoles.find(r => r.name === name && r.agencyId === aId)?.id;
+
+  // 3. Users (Operators)
+  const users = [
+    { id: 'op-01', email: 'alice@nexus.sync', name: 'Alice M.', password: 'password123', roleName: 'Senior Operator', agencyId: 'agency-01' },
+    { id: 'op-02', email: 'mark@nexus.sync', name: 'Mark T.', password: 'password123', roleName: 'Agency Admin', agencyId: 'agency-01' },
+    { id: 'op-03', email: 'sarah@nexus.sync', name: 'Sarah K.', password: 'password123', roleName: 'Senior Operator', agencyId: 'agency-02' },
+    { id: 'op-06', email: 'admin@nexus.ai', name: 'Super Admin', password: 'password123', roleName: 'System Owner', agencyId: null },
+  ];
+
+  for (const user of users) {
+    const hashedPassword = await bcrypt.hash(user.password, 10);
+    await prisma.user.upsert({
+      where: { email: user.email },
+      update: {},
+      create: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        password: hashedPassword,
+        roleId: getRoleId(user.roleName, user.agencyId),
+        agencyId: user.agencyId,
+      },
+    });
+  }
+  console.log('Users seeded.');
+
+  // 4. Profiles
+  const profiles = [
+    { id: 'ldn-01', name: 'Sophie (Central London)', phoneNumber: '+44 7700 900123', agencyId: 'agency-01' },
+    { id: 'manc-05', name: 'Bella (Manchester)', phoneNumber: '+44 7700 900456', agencyId: 'agency-01' },
+    { id: 'birm-02', name: 'Chloe (Birmingham)', phoneNumber: '+44 7700 900789', agencyId: 'agency-01' },
+    { id: 'nyc-01', name: 'Elena (New York City)', phoneNumber: '+1 212 555 0101', agencyId: 'agency-02' },
+  ];
+
+  for (const profile of profiles) {
+    await prisma.profile.upsert({
+      where: { id: profile.id },
+      update: {},
+      create: profile,
+    });
+  }
+  console.log('Profiles seeded.');
 
   console.log('Seed finished successfully.');
 }
