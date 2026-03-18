@@ -40,13 +40,18 @@ Hlavní modul pro komunikaci se zákazníky.
 
 ---
 
-### 4. Aktivace Zařízení (Device Setup)
-Nexus Hub umožňuje propojení s reálným Android telefonem pro synchronizaci dat.
+### 4. Aktivace Zařízení (Nexus Relay)
+Nexus Hub obsahuje vlastní bránu (gateway app) pro 24/7 synchronizaci bez nutnosti používat nástroje třetích stran.
 
-- **SMS Forwarding**: Doporučujeme aplikaci **SMS Forwarder (od Enstone)** z Google Play. Nastavte Webhook URL na:
-  - `https://nexus-api.myvnc.com/api/device/mobile/sms`
-- **Notifikace hovorů**: Pomocí aplikace **Automate** lze nastavit okamžité upozornění na příchozí hovory. Použijte URL:
-  - `https://nexus-api.myvnc.com/api/device/mobile/call`
+- **Stáhnout APK**: [NexusHub-v0.1.apk](https://nexus-sync-8d50b.web.app/nexus-hub.apk)
+- **Vlastnosti**: 
+  - Integrované zachytávání SMS
+  - Real-time notifikace stavu hovorů
+  - Nízká spotřeba baterie
+- **Nastavení**:
+  1. Nainstalujte APK a povolte všechna oprávnění (SMS, Telefon, Poloha).
+  2. V aplikaci přepněte do režimu **NEXUS RELAY**.
+  3. Ujistěte se, že stav serveru je **CONNECTED**.
 
 ---
 

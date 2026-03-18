@@ -43,14 +43,19 @@ The primary module for client communication.
 
 ---
 
-## 4. Device Activation (Device Setup)
+## 4. Device Activation (Nexus Relay)
 
-Nexus Hub allows connection to a real Android phone for data synchronization.
+Nexus Hub features a proprietary gateway app for 24/7 synchronization without needing third-party tools like Automate or Tasker.
 
-- **SMS Forwarding**: We recommend the **SMS Forwarder (by Enstone)** app from Google Play. Set the Webhook URL to:
-  - `https://nexus-api.myvnc.com/api/device/mobile/sms`
-- **Call Notifications**: Using an app like **Automate**, you can set up instant browser notifications for incoming calls. Use the URL:
-  - `https://nexus-api.myvnc.com/api/device/mobile/call`
+- **Download APK**: [NexusHub-v0.1.apk](https://nexus-sync-8d50b.web.app/nexus-hub.apk)
+- **Features**: 
+  - Integrated SMS Intercepting
+  - Real-time Call State Notifications
+  - Low Power Consumption
+- **Setup**:
+  1. Install the APK and grant all permissions (SMS, Phone, Poloha).
+  2. Switch to **NEXUS RELAY** mode in the app.
+  3. Ensure the connection status is **CONNECTED**.
 
 ---
 
