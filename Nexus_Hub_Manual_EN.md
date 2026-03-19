@@ -1,10 +1,14 @@
 # User Manual: Nexus Hub (Demo)
 
+<div style="text-align: center; margin-bottom: 30px;">
+  <img src="/nexus_icon.png" width="120" style="border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);" />
+</div>
+
 Welcome to the **Nexus Hub (AW Nexus)** – the central point for profile management, communications automation, and efficient agency scaling. This document serves as a guide to the features demonstrated in our interactive demo application.
 
 ---
 
-## 1. Role-Specific Dashboards
+### 1. Role-Specific Dashboards
 
 Upon logging in, the system automatically detects your role and displays a customized home page (Dashboard):
 
@@ -17,11 +21,11 @@ Upon logging in, the system automatically detects your role and displays a custo
 
 ---
 
-## 2. Authentication (Login Screen)
+### 2. Authentication (Login Screen)
 
 The demo begins with a premium login screen featuring simulated security authentication.
 
-### Demo Credentials
+#### Demo Credentials
 
 | Role | Email | Password |
 | :--- | :--- | :--- |
@@ -33,7 +37,7 @@ The demo begins with a premium login screen featuring simulated security authent
 
 ---
 
-## 3. Inbox & AI Suggestions
+### 3. Inbox & AI Suggestions
 
 The primary module for client communication.
 
@@ -43,7 +47,7 @@ The primary module for client communication.
 
 ---
 
-## 4. Device Setup (Nexus Relay)
+### 4. Device Setup (Nexus Relay)
 
 <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
   <img src="/nexus_relay_icon.png" width="60" style="border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);" />
@@ -65,16 +69,16 @@ Nexus Hub features a proprietary gateway app for 24/7 synchronization without ne
 
 ---
 
-## 5. Quality Control & QA Hub
+### 5. Quality Control & QA Hub
 
 A tool for quality assurance and client note management.
 
-- **QA Hub**: Overview of all operator notes and client interaction history across the entire agency.
-- **Audit Trail**: Every action (message sent, setting changed) is logged and secured with a cryptographic hash for total transparency.
+- **QA Hub (QA Centrum)**: Overview of all operator notes and client interaction history across the entire agency.
+- **Audit Trail (Auditní Log)**: Every action (message sent, setting changed) is logged and secured with a cryptographic hash for total transparency.
 
 ---
 
-## 6. Referral Program
+### 6. Referral Program (Referrals)
 
 Built-in system for referring new agencies or models.
 
@@ -83,7 +87,7 @@ Built-in system for referring new agencies or models.
 
 ---
 
-## 7. Web Profiles Sync
+### 7. Web Profiles Sync
 
 - **Synchronization**: Change photos or biographies and push updates to all connected platforms (AdultWork, EuroGirlsEscort, etc.) with one click.
 - **Proxy Gateway**: The system utilizes residential proxy nodes to eliminate the risk of scraping bans.

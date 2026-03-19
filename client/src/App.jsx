@@ -91,6 +91,7 @@ function App() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mobileView, setMobileView] = useState('sidebar');
+  const [isToolsExpanded, setIsToolsExpanded] = useState(false);
 
   const t = (key, data = {}) => {
     try {
@@ -912,7 +913,7 @@ function App() {
           onClick={() => setNotificationPanelOpen(false)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1199 }}
         />
-        <div style={{ position: 'fixed', right: 0, top: 0, bottom: 0, width: '400px', background: 'rgba(5, 7, 10, 0.95)', borderLeft: '1px solid var(--card-border)', zIndex: 1200, display: 'flex', flexDirection: 'column', backdropFilter: 'blur(30px)', animation: 'slideInRight 0.3s cubic-bezier(0, 0, 0.2, 1)' }}>
+        <div style={{ position: 'fixed', right: 0, top: 0, bottom: 0, width: isMobile ? 'min(400px, 100vw)' : '400px', maxWidth: '100vw', background: 'rgba(5, 7, 10, 0.95)', borderLeft: '1px solid var(--card-border)', zIndex: 1200, display: 'flex', flexDirection: 'column', backdropFilter: 'blur(30px)', animation: 'slideInRight 0.3s cubic-bezier(0, 0, 0.2, 1)' }}>
           <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>{t('notifications')}</h3>
             <div style={{ display: 'flex', gap: '1rem' }}>
@@ -1038,6 +1039,39 @@ function App() {
     }
   };
 
+  const renderMobileHeader = () => (
+    <div style={{ 
+      position: 'fixed', top: 0, left: 0, right: 0, height: '70px',
+      background: 'rgba(7, 10, 15, 0.85)', backdropFilter: 'blur(40px)',
+      zIndex: 9600, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '0 1.5rem', borderBottom: '1px solid var(--card-border)',
+      boxShadow: '0 4px 30px rgba(0, 0, 0, 0.4)'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <img src="/nexus_icon.png" alt="Nexus" style={{ width: '34px', height: '34px', borderRadius: '8px', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.2)' }} />
+        <span style={{ fontSize: '1.25rem', fontWeight: '950', letterSpacing: '0.05em' }}>{t('logo')}</span>
+      </div>
+      
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', padding: '2px', borderRadius: '8px', border: '1px solid var(--card-border)' }}>
+          <button onClick={() => setLang('cz')} style={{ padding: '4px 8px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.65rem', fontWeight: '850', cursor: 'pointer' }}>CZ</button>
+          <button onClick={() => setLang('en')} style={{ padding: '4px 8px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.65rem', fontWeight: '850', cursor: 'pointer' }}>EN</button>
+        </div>
+        <button 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          style={{ 
+            background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', 
+            color: 'white', width: '40px', height: '40px', borderRadius: '12px', 
+            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+            transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+          }}
+        >
+          {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
+      </div>
+    </div>
+  );
+
   const renderContent = () => {
     if (isRelayMode) {
       return <RelayMode operator={activeOperator} t={t} onExit={() => setIsRelayMode(false)} />;
@@ -1074,376 +1108,263 @@ function App() {
     
     // Authenticated UI
     return (
-      <div className="mobile-container" style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: 'var(--bg-color)', color: 'white', position: 'relative' }}>
+      <div className="mobile-container" style={{ display: 'flex', minHeight: '100dvh', height: '100vh', width: '100%', maxWidth: '100%', overflowX: 'hidden', overflowY: 'hidden', background: 'var(--bg-color)', color: 'white', position: 'relative' }}>
         {/* ... child content remains here, we just moved the return into this function ... */}
         <style dangerouslySetInnerHTML={{ __html: `
           @media (max-width: 768px) {
-            .desktop-sidebar {
-              position: fixed !important;
-              left: 0;
-              top: 0;
-              height: 100vh;
-              width: 280px;
-              z-index: 9500 !important;
-              transform: translateX(-100%);
-              transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-              background: rgba(5, 7, 10, 0.98) !important;
-              backdrop-filter: blur(25px) !important;
-              box-shadow: 15px 0 50px rgba(0,0,0,0.8);
-            }
+          .desktop-sidebar {
+            position: fixed !important;
+            left: 0;
+            top: 0;
+            height: 100dvh;
+            width: 280px;
+            z-index: 9500 !important;
+            transform: translateX(-100%);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            background: rgba(8, 10, 15, 0.98) !important;
+            backdrop-filter: blur(30px) !important;
+            box-shadow: 20px 0 60px rgba(0,0,0,0.9);
+          }
+          .mobile-container {
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+          }
           .desktop-sidebar.open {
             transform: translateX(0);
           }
           .main-content {
             margin-left: 0 !important;
-            padding-top: 60px !important;
+            padding-top: 70px !important;
             height: auto !important;
-            min-height: calc(100vh - 60px);
+            min-height: calc(100vh - 70px);
             overflow-y: visible !important;
-          }
-          body, html, #root {
-            overflow-x: hidden !important;
-            height: auto !important;
-            min-height: 100%;
-          }
-          .mobile-container {
-            height: auto !important;
-            min-height: 100vh;
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
           }
           .mobile-header {
             display: flex !important;
-          }
-          .hide-on-mobile {
-            display: none !important;
-          }
-          /* Stack columns in Inbox */
-          .inbox-grid {
-            grid-template-columns: 1fr !important;
-          }
-          .inbox-panel {
-            display: none;
-          }
-          .inbox-panel.active {
-            display: flex;
-            position: fixed;
-            inset: 0;
-            z-index: 100;
-            background: var(--bg-color);
+            height: 70px !important;
+            z-index: 9600 !important;
           }
           .demo-controls {
              bottom: 1rem !important;
-             padding: 0.5rem 1rem !important;
-             gap: 0.5rem !important;
              width: 90% !important;
-             overflow-x: auto;
-          }
-          .demo-controls-label {
-            display: none !important;
           }
         }
       ` }} />
 
-      {/* Mobile Top Bar */}
-      <div className="mobile-header" style={{ 
-        display: isMobile ? 'flex' : 'none', 
-        position: 'fixed', 
-        top: 0, 
-        left: 0, 
-        right: 0, 
-        height: '60px', 
-        background: 'rgba(5,7,10,0.95)', 
-        backdropFilter: 'blur(20px)', 
-        borderBottom: '1px solid var(--card-border)', 
-        zIndex: 9000,
-        alignItems: 'center',
-        padding: '0 1.5rem',
-        justifyContent: 'space-between'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <img src="/nexus_icon.png" alt="Nexus" style={{ width: '28px', height: '28px', borderRadius: '7px' }} />
-          <span style={{ fontWeight: '900', fontSize: '1.1rem' }}>NEXUS</span>
-        </div>
-        <button 
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}
-        >
-          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-      </div>
+      {isMobile && renderMobileHeader()}
 
       {/* Overlay for mobile sidebar */}
       {isMobile && isMobileMenuOpen && (
         <div 
           onClick={() => setIsMobileMenuOpen(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9499 }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 9499 }}
         />
       )}
 
-
-      {/* Sidebar */}
+      {/* Sidebar Navigation */}
       <nav className={`desktop-sidebar ${isMobileMenuOpen ? 'open' : ''} ${isSidebarCollapsed ? 'collapsed' : ''}`} style={{
         width: isSidebarCollapsed ? '80px' : '280px',
         flexShrink: 0,
         borderRight: '1px solid var(--card-border)',
-        padding: isSidebarCollapsed ? '2rem 1rem' : '2rem 1.5rem',
-        background: 'rgba(5, 7, 10, 0.4)',
-        backdropFilter: 'blur(30px)',
+        padding: isSidebarCollapsed ? '1.5rem 0.75rem' : '2.5rem 1.25rem',
+        background: 'rgba(7, 10, 15, 0.7)',
+        backdropFilter: 'blur(40px)',
         display: 'flex',
         flexDirection: 'column',
-        position: 'sticky',
+        position: isMobile ? 'fixed' : 'sticky',
         top: 0,
         height: '100vh',
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        zIndex: 10,
+        transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+        zIndex: 9500,
         overflow: 'hidden'
       }}>
-        <div style={{ marginBottom: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: isSidebarCollapsed ? 'center' : 'stretch' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: isSidebarCollapsed ? 'center' : 'space-between', width: '100%' }}>
+        <div style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: isSidebarCollapsed ? 'center' : 'stretch' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: isSidebarCollapsed ? 'center' : 'space-between', width: '100%', marginBottom: isSidebarCollapsed ? '1.5rem' : '0.5rem' }}>
             <div 
               onClick={() => setActiveTab('dashboard')}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', transition: 'opacity 0.2s' }}
-              onMouseOver={e => e.currentTarget.style.opacity = '0.8'}
-              onMouseOut={e => e.currentTarget.style.opacity = '1'}
+              style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', cursor: 'pointer' }}
             >
-              <div style={{ width: '42px', height: '42px', flexShrink: 0 }}>
-                <img src="/nexus_icon.png" alt="Nexus" style={{ width: '100%', height: '100%', borderRadius: '12px', boxShadow: '0 0 15px var(--accent-glow)' }} />
+              <div style={{ position: 'relative', width: isSidebarCollapsed ? '32px' : '42px', height: isSidebarCollapsed ? '32px' : '42px', transition: 'all 0.3s' }}>
+                <img src="/nexus_icon.png" alt="Nexus" style={{ width: '100%', height: '100%', borderRadius: '10px', boxShadow: '0 8px 25px rgba(59, 130, 246, 0.25)' }} />
               </div>
-              {!isSidebarCollapsed && <span style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '0.05em' }}>{t('logo')}</span>}
+              {!isSidebarCollapsed && (
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '1.4rem', fontWeight: '950', letterSpacing: '0.04em', lineHeight: 1 }}>{t('logo')}</span>
+                  <span style={{ fontSize: '0.65rem', color: 'var(--accent-color)', fontWeight: '800', letterSpacing: '0.22em' }}>NETWORK</span>
+                </div>
+              )}
             </div>
-            {!isMobile && (
-              <button 
-                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', padding: '0.4rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                title={isSidebarCollapsed ? "Show All Navigation" : "Collapse Navigation"}
-              >
-                {isSidebarCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
-              </button>
-            )}
           </div>
-          {!isSidebarCollapsed && (
-            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '12px', border: '1px solid var(--card-border)', gap: '0.5rem' }}>
-              <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', padding: '4px', borderRadius: '8px', flex: 1 }}>
-                <button onClick={() => setLang('cz')} style={{ flex: 1, padding: '4px 8px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}>CZ</button>
-                <button onClick={() => setLang('en')} style={{ flex: 1, padding: '4px 8px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}>EN</button>
+          
+          {!isSidebarCollapsed && !isMobile && (
+            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.02)', padding: '3px', borderRadius: '12px', border: '1px solid var(--card-border)', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', padding: '2px', borderRadius: '9px', flex: 1 }}>
+                <button onClick={() => setLang('cz')} style={{ flex: 1, padding: '5px 0', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '7px', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}>CZ</button>
+                <button onClick={() => setLang('en')} style={{ flex: 1, padding: '5px 0', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '7px', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}>EN</button>
               </div>
-              {(() => {
-                const operatorRole = activeOperator?.role || 'Operator';
-                const perms = rolePermissions[operatorRole] || {};
-                if (!perms.messaging) return null;
-                
-                return (
-                  <button 
-                    onClick={() => {
-                      setNotificationPanelOpen(true);
-                      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-                    }} 
-                    style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
-                  >
-                    <Bell size={16} />
-                    {notifications.some(n => !n.read) && (
-                      <div style={{ position: 'absolute', top: '-1px', right: '-1px', width: '10px', height: '10px', background: 'var(--error-color)', borderRadius: '50%', border: '2px solid var(--bg-color)', animation: 'ping 1.5s infinite' }}></div>
-                    )}
-                  </button>
-                );
-              })()}
+              <button 
+                onClick={() => setNotificationPanelOpen(true)} 
+                style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', color: 'white', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Bell size={16} />
+              </button>
             </div>
           )}
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1.5rem', marginRight: '-0.5rem', paddingRight: '0.5rem' }} className="custom-scrollbar">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
+        <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1.5rem', marginRight: '-0.75rem', paddingRight: '0.75rem' }} className="custom-scrollbar">
+          {/* Main Navigation */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '1.5rem' }}>
             {[
-                { id: 'infra', icon: HardDrive, label: t('infra'), perm: 'infrastructure' },
-                { id: 'agencies', icon: Building2, label: t('agencies'), perm: 'agencies' },
-                { id: 'permissions', icon: Shield, label: t('permissions'), perm: 'permissions' },
-                { id: 'plans', icon: CreditCard, label: t('plans'), perm: 'plans' },
-                { id: 'features', icon: Zap, label: t('features'), perm: 'global_features' },
-                { id: 'hierarchy', icon: Users, label: t('hierarchy'), perm: 'hierarchy' },
-                { id: 'analytics', icon: BarChart3, label: t('analytics'), perm: 'analytics' },
-                { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator?.isModel ? 0 : totalUnread, perm: 'messaging' },
-                { id: 'calendar', icon: Calendar, label: t('schedule'), perm: 'calendar' },
-                { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
-                { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles' },
-                { id: 'device-setup', icon: Smartphone, label: t('deviceSetup'), perm: 'device_setup' },
-                { id: 'activity', icon: Activity, label: t('auditLog'), perm: 'audit_logs' },
-                { id: 'referrals', icon: Gift, label: t('referrals'), perm: 'referrals' },
-                { id: 'inventory', icon: Package, label: t('inventory'), perm: 'inventory' },
-                { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub' },
-                { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
-            ].filter(item => {
-              const perms = rolePermissions[activeRole] || {};
-              return perms[item.perm];
-            })
-.map(item => (
-            <button key={item.id} 
-              onClick={() => {
-                setActiveTab(item.id);
-                if (isMobile) setIsMobileMenuOpen(false);
-              }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.25rem', padding: '1rem', border: 'none', borderRadius: '12px',
-                background: activeTab === item.id ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
-                cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s ease',
-                position: 'relative',
-                justifyContent: isSidebarCollapsed ? 'center' : 'flex-start'
-              }}
-              title={isSidebarCollapsed ? item.label : ''}
-            >
-              {(() => {
-                const Icon = item.icon || Search;
-                return <Icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} style={{ flexShrink: 0 }} />;
-              })()}
+              { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator?.isModel ? 0 : totalUnread, perm: 'messaging' },
+              { id: 'calendar', icon: Calendar, label: t('schedule'), perm: 'calendar' },
+            ].map(item => (
+              <button key={item.id} 
+                onClick={() => {
+                  setActiveTab(item.id);
+                  if (isMobile) setIsMobileMenuOpen(false);
+                }}
+                className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.85rem 1.15rem', borderRadius: '14px',
+                  background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
+                  cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s',
+                  justifyContent: isSidebarCollapsed ? 'center' : 'flex-start',
+                  border: activeTab === item.id ? '1px solid rgba(59, 130, 246, 0.15)' : '1px solid transparent'
+                }}
+              >
+                <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
+                {!isSidebarCollapsed && (
+                  <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '900' : '500', fontSize: '0.95rem' }}>
+                    {item.label}
+                  </span>
+                )}
+                {item.badge > 0 && !isSidebarCollapsed && (
+                  <div style={{ marginLeft: 'auto', background: 'var(--accent-color)', color: 'white', fontSize: '0.65rem', padding: '2px 8px', borderRadius: '20px', fontWeight: '950' }}>{item.badge}</div>
+                )}
+              </button>
+            ))}
+
+            {/* Collapsible System Tools */}
+            <div style={{ marginTop: '0.75rem' }}>
               {!isSidebarCollapsed && (
-                <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '700' : '500', fontSize: '1rem', whiteSpace: 'nowrap' }}>
-                  {item.label || item.id}
-                </span>
+                <button 
+                  onClick={() => setIsToolsExpanded(!isToolsExpanded)}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 1.15rem', background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '0.12em' }}
+                >
+                  {t('global_features').toUpperCase() || 'SYSTEM TOOLS'}
+                  {isToolsExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </button>
               )}
-              {item.badge > 0 && <div className={isSidebarCollapsed ? "unread-badge-mini" : "unread-badge"}>{item.badge}</div>}
-            </button>
-          ))}
+              
+              {(isToolsExpanded || isSidebarCollapsed) && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.25rem', paddingLeft: isSidebarCollapsed ? '0' : '0.5rem' }}>
+                  {[
+                    { id: 'infra', icon: HardDrive, label: t('infra'), perm: 'infrastructure' },
+                    { id: 'agencies', icon: Building2, label: t('agencies'), perm: 'agencies' },
+                    { id: 'permissions', icon: Shield, label: t('permissions'), perm: 'permissions' },
+                    { id: 'plans', icon: CreditCard, label: t('plans'), perm: 'plans' },
+                    { id: 'features', icon: Zap, label: t('features'), perm: 'global_features' },
+                    { id: 'analytics', icon: BarChart3, label: t('analytics'), perm: 'analytics' },
+                    { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
+                    { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles' },
+                    { id: 'device-setup', icon: Smartphone, label: t('deviceSetup'), perm: 'device_setup' },
+                    { id: 'activity', icon: Activity, label: t('auditLog'), perm: 'audit_logs' },
+                    { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub' },
+                    { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
+                  ].filter(item => (rolePermissions[activeRole] || {})[item.perm]).map(item => (
+                    <button key={item.id} 
+                      onClick={() => {
+                        setActiveTab(item.id);
+                        if (isMobile) setIsMobileMenuOpen(false);
+                      }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '0.95rem', padding: '0.7rem 1.15rem', border: 'none', borderRadius: '12px',
+                        background: activeTab === item.id ? 'rgba(255, 255, 255, 0.04)' : 'transparent',
+                        cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s',
+                        justifyContent: isSidebarCollapsed ? 'center' : 'flex-start'
+                      }}
+                      title={isSidebarCollapsed ? item.label : ''}
+                    >
+                      <item.icon size={19} color={activeTab === item.id ? 'var(--accent-color)' : 'rgba(255,255,255,0.45)'} />
+                      {!isSidebarCollapsed && (
+                        <span style={{ color: activeTab === item.id ? 'white' : 'rgba(255,255,255,0.45)', fontWeight: activeTab === item.id ? '700' : '500', fontSize: '0.88rem' }}>
+                          {item.label}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Profile Switcher - Only hidden if operator is a Model or Super/Global Admin */}
+          {/* Assigned Girls Section */}
           {!activeOperator?.isModel && !activeOperator?.isSuperAdmin && !activeOperator?.isAdmin && !isSidebarCollapsed && (
-          <div style={{ marginTop: '2.5rem', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>{t('myAssignedGirls')}</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{ fontSize: '0.7rem', fontWeight: '800', color: showOnlyOnline ? 'var(--success-color)' : 'var(--text-secondary)', transition: 'color 0.2s' }}>{t('online').toUpperCase()}</span>
-                <div 
-                  onClick={() => setShowOnlyOnline(!showOnlyOnline)}
-                  className={`toggle-switch ${showOnlyOnline ? 'active' : ''}`}
-                  style={{ 
-                    width: '40px', 
-                    height: '20px', 
-                    background: showOnlyOnline ? 'var(--success-color)' : 'rgba(255,255,255,0.1)',
-                    borderRadius: '20px',
-                    position: 'relative',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    border: '1px solid ' + (showOnlyOnline ? 'var(--success-color)' : 'var(--card-border)')
-                  }}
-                >
-                  <div style={{ 
-                    width: '14px', 
-                    height: '14px', 
-                    background: 'white', 
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    top: '2px',
-                    left: showOnlyOnline ? '22px' : '3px',
-                    transition: 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                  }}></div>
+            <div style={{ marginTop: '1.25rem', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem', padding: '0 0.85rem' }}>
+                <div style={{ fontSize: '0.65rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{t('myAssignedGirls').toUpperCase()}</div>
+                <div onClick={() => setShowOnlyOnline(!showOnlyOnline)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: showOnlyOnline ? 'var(--success-color)' : 'rgba(255,255,255,0.2)' }}></div>
+                  <span style={{ fontSize: '0.6rem', fontWeight: '900', color: showOnlyOnline ? 'var(--success-color)' : 'rgba(255,255,255,0.3)' }}>ONLINE</span>
                 </div>
               </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: '35vh', overflowY: 'auto' }} className="custom-scrollbar">
+                {myProfiles.filter(p => !showOnlyOnline || p.status === 'online').map(p => {
+                  const unread = getUnreadForProfile(p.id);
+                  const isActive = activeProfile?.id === p.id;
+                  return (
+                    <button key={p.id} onClick={() => { setActiveProfileId(p.id); setActiveTab('inbox'); setSelectedChatId(null); if (isMobile) setIsMobileMenuOpen(false); }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.7rem 0.85rem', border: '1px solid',
+                        borderRadius: '14px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                        background: isActive ? 'rgba(59, 130, 246, 0.08)' : 'rgba(255,255,255,0.02)',
+                        borderColor: isActive ? 'rgba(59, 130, 246, 0.25)' : 'transparent',
+                      }}
+                    >
+                      <div style={{ width: '8px', height: '8px', background: p.status === 'online' ? 'var(--success-color)' : 'rgba(255,255,255,0.1)', borderRadius: '50%', flexShrink: 0 }}></div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.88rem', fontWeight: isActive ? '800' : '600', color: isActive ? 'white' : 'rgba(255,255,255,0.6)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                      </div>
+                      {unread > 0 && <div style={{ background: 'var(--error-color)', color: 'white', fontSize: '0.62rem', minWidth: '18px', height: '18px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '950' }}>{unread}</div>}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: '40vh', overflowY: 'auto', paddingRight: '4px' }} className="custom-scrollbar">
-              {myProfiles.filter(p => !showOnlyOnline || p.status === 'online').map(p => {
-                const unread = getUnreadForProfile(p.id);
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => {
-                      setActiveProfileId(p.id);
-                      setActiveTab('inbox');
-                      setSelectedChatId(null);
-                    }}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', border: '1px solid',
-                      borderRadius: '10px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s',
-                      background: activeProfile?.id === p.id ? 'rgba(255,255,255,0.05)' : 'transparent',
-                      borderColor: activeProfile?.id === p.id ? 'var(--accent-color)' : 'transparent',
-                      position: 'relative'
-                    }}
-                  >
-                    <div style={{ width: '8px', height: '8px', background: p.status === 'online' ? 'var(--success-color)' : 'var(--text-secondary)', borderRadius: '50%', position: 'relative' }}>
-                      {typingProfiles[p.id] && <div className="typing-pulse" style={{ position: 'absolute', inset: -2, border: '2px solid var(--success-color)', borderRadius: '50%', animation: 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite' }}></div>}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '0.85rem', fontWeight: activeProfile?.id === p.id ? '700' : '500', color: activeProfile?.id === p.id ? 'white' : 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-                      {typingProfiles[p.id] && <div style={{ fontSize: '0.6rem', color: 'var(--success-color)', fontWeight: '800' }}>{t('typing').toUpperCase()}</div>}
-                    </div>
-                    {unread > 0 && <div style={{ marginLeft: 'auto', background: 'var(--error-color)', color: 'white', fontSize: '0.6rem', padding: '1px 5px', borderRadius: '4px', fontWeight: '900' }}>{unread}</div>}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+          )}
         </div>
 
-        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div className="glass-card" style={{ padding: isSidebarCollapsed ? '0.5rem' : '0.85rem', background: 'rgba(255,255,255,0.02)', borderColor: 'var(--card-border)', borderRadius: '12px', display: 'flex', justifyContent: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '0.75rem', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
-              <div style={{ width: '36px', height: '36px', background: 'rgba(59, 130, 246, 0.2)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'var(--accent-color)', fontSize: '0.7rem', flexShrink: 0 }}>{activeOperator?.avatar}</div>
-              {!isSidebarCollapsed && (
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {activeRole === 'App Owner' ? 'App Owner' : `${activeOperator?.name} (${MOCK_AGENCIES.find(a => a.id === activeOperator?.clientId)?.name || ''})`}
-                  </div>
-                  <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{activeRole}</div>
-                </div>
-              )}
-              {!isSidebarCollapsed && <div style={{ width: '6px', height: '6px', background: 'var(--success-color)', borderRadius: '50%' }}></div>}
-            </div>
+        {/* Bottom Section */}
+        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.85rem', borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem', marginBottom: isMobile ? '70px' : '0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: isSidebarCollapsed ? '0' : '0 0.5rem', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start', marginBottom: '0.5rem' }}>
+            <div style={{ width: '38px', height: '38px', background: 'linear-gradient(135deg, var(--accent-color) 0%, #1d4ed8 100%)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'white', fontSize: '0.85rem', flexShrink: 0, boxShadow: '0 6px 15px rgba(0,0,0,0.4)' }}>{activeOperator?.avatar}</div>
+            {!isSidebarCollapsed && (
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '0.88rem', fontWeight: '900', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'white' }}>{activeOperator?.name}</div>
+                <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', fontWeight: '800', letterSpacing: '0.05em' }}>{activeRole.toUpperCase()}</div>
+              </div>
+            )}
+            {!isSidebarCollapsed && (
+              <button 
+                onClick={handleLogout}
+                style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: 'var(--error-color)', width: '30px', height: '30px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <LogOut size={16} />
+              </button>
+            )}
           </div>
-          
           
           <button
             onClick={() => setIsRelayMode(true)}
             style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: isSidebarCollapsed ? '0' : '0.75rem', 
-              padding: '0.75rem 1rem', 
-              background: 'rgba(59, 132, 246, 0.1)', 
-              border: '1px solid rgba(59, 132, 246, 0.2)',
-              borderRadius: '12px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              justifyContent: isSidebarCollapsed ? 'center' : 'flex-start',
-              width: '100%',
-              color: 'var(--accent-color)',
-              fontWeight: '800'
+              display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '0.95rem', padding: '0.9rem 1rem', background: 'rgba(59, 130, 246, 0.15)', border: '1px solid rgba(59, 130, 246, 0.25)', borderRadius: '16px', cursor: 'pointer',
+              justifyContent: isSidebarCollapsed ? 'center' : 'flex-start', width: '100%', color: 'var(--accent-color)', fontWeight: '950', fontSize: '0.85rem'
             }}
-            title={isSidebarCollapsed ? "Relay Mode" : ''}
           >
-            <Radio size={18} />
-            {!isSidebarCollapsed && (
-              <span style={{ fontSize: '0.85rem', letterSpacing: '0.05em' }}>
-                NEXUS RELAY
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={handleLogout}
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: isSidebarCollapsed ? '0' : '0.75rem', 
-              padding: '0.75rem 1rem', 
-              background: 'rgba(239, 68, 68, 0.1)', 
-              border: '1px solid rgba(239, 68, 68, 0.2)',
-              borderRadius: '12px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              justifyContent: isSidebarCollapsed ? 'center' : 'flex-start',
-              width: '100%',
-              color: 'var(--error-color)',
-              fontWeight: '800'
-            }}
-            title={isSidebarCollapsed ? t('logout') : ''}
-          >
-            <LogOut size={18} />
-            {!isSidebarCollapsed && (
-              <span style={{ fontSize: '0.85rem', letterSpacing: '0.05em' }}>
-                {t('logout').toUpperCase()}
-              </span>
-            )}
+            <Radio size={20} />
+            {!isSidebarCollapsed && <span style={{ letterSpacing: '0.12em' }}>NEXUS RELAY</span>}
           </button>
         </div>
       </nav>
@@ -1455,9 +1376,12 @@ function App() {
         flexDirection: 'column', 
         height: isMobile ? 'auto' : '100vh', 
         minWidth: 0, 
+        width: '100%',
         overflowY: isMobile ? 'visible' : 'auto',
-        paddingTop: isMobile ? '60px' : 0,
-        position: 'relative'
+        overflowX: 'hidden',
+        paddingTop: isMobile ? '70px' : 0,
+        position: 'relative',
+        background: 'var(--bg-color)',
       }}>
         {activeTab === 'dashboard' && (
           <DashboardHome 

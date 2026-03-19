@@ -282,7 +282,13 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
   const isAdminOrManager = user.isAdmin || user.role === 'Agency Manager' || user.role === 'Regional Manager' || user.role === 'Manager' || user.role === 'Admin';
 
   return (
-    <div style={{ padding: isMobile ? '1rem' : '3rem', maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ 
+      padding: isMobile ? '1.25rem 1rem' : '3rem', 
+      maxWidth: '1400px', 
+      margin: '0 auto',
+      width: '100%',
+      overflowX: 'hidden'
+    }}>
       {user.isSuperAdmin ? renderSuperAdmin() : (isAdminOrManager ? renderManager() : (user.isModel || user.role === 'Model' ? renderModel() : renderOperator()))}
     </div>
   );

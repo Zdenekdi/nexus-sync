@@ -56,30 +56,35 @@ const LoginScreen = ({ onLogin, onRegisterAgency, onRegisterUser, onResetRequest
     </div>
   );
 
+  const topActionLabel = mode === 'login'
+    ? (lang === 'cz' ? 'Zpět na představení' : 'Back to Presentation')
+    : t('backToLogin');
+
+  const handleTopAction = () => {
+    if (mode === 'login') {
+      onBackToLanding();
+      return;
+    }
+    setMode('login');
+  };
+
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0b14', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '1rem' : '1.5rem', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ minHeight: '100dvh', background: '#0a0b14', display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'center', padding: isMobile ? '1rem 0.9rem 1.5rem' : '1.5rem', position: 'relative', overflowX: 'hidden', overflowY: 'auto' }}>
       {/* Cinematic Background Elements */}
       <div style={{ position: 'absolute', top: '10%', left: '10%', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%)', filter: 'blur(80px)' }}></div>
       <div style={{ position: 'absolute', bottom: '10%', right: '10%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)', filter: 'blur(100px)' }}></div>
       
-      <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '480px', padding: isMobile ? '2rem' : '3.5rem', position: 'relative', zIndex: 1, border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
-        
-        {mode === 'login' && (
-          <button onClick={onBackToLanding} style={{ position: 'absolute', top: '2.5rem', left: '2.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer', transition: 'color 0.2s' }}>
-            <ChevronLeft size={16} /> {lang === 'cz' ? 'Zpět na představení' : 'Back to Presentation'}
+      <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '480px', padding: isMobile ? '1.25rem' : '3.5rem', position: 'relative', zIndex: 1, border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', maxHeight: isMobile ? 'calc(100dvh - 2rem)' : 'none', overflowY: isMobile ? 'auto' : 'visible' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', marginBottom: isMobile ? '1rem' : '0.75rem' }}>
+          <button onClick={handleTopAction} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: isMobile ? '0.8rem' : '0.85rem', fontWeight: '600', cursor: 'pointer', transition: 'color 0.2s', padding: 0, textAlign: 'left' }}>
+            <ChevronLeft size={16} /> {topActionLabel}
           </button>
-        )}
-
-        {mode !== 'login' && (
-          <button onClick={() => setMode('login')} style={{ position: 'absolute', top: '2.5rem', left: '2.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer', transition: 'color 0.2s' }}>
-            <ChevronLeft size={16} /> {t('backToLogin')}
-          </button>
-        )}
+        </div>
 
         {renderHeader()}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '1rem' : '1.25rem' }}>
+
           {mode === 'register_agency' && (
             <div className="fade-in">
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.05em' }}>{t('agencyNameLabel').toUpperCase()}</label>
@@ -162,16 +167,16 @@ const LoginScreen = ({ onLogin, onRegisterAgency, onRegisterUser, onResetRequest
             <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
               <button type="button" onClick={() => setMode('reset')} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.85rem', cursor: 'pointer', fontWeight: '500' }}>{t('forgotPassword')}</button>
               <div style={{ height: '1px', background: 'var(--card-border)', margin: '0.5rem 0' }}></div>
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                <button type="button" onClick={() => setMode('register_agency')} style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '0.85rem', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Building size={14}/> {t('registerAgency')}</button>
-                <div style={{ width: '1px', background: 'var(--card-border)' }}></div>
-                <button type="button" onClick={() => setMode('register_user')} style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '0.85rem', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><UserPlus size={14}/> {t('registerUser')}</button>
+              <div style={{ display: 'flex', gap: isMobile ? '0.75rem' : '1rem', justifyContent: 'center', alignItems: 'center', flexDirection: isMobile ? 'column' : 'row' }}>
+                <button type="button" onClick={() => setMode('register_agency')} style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '0.85rem', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', flexWrap: 'wrap', textAlign: 'center' }}><Building size={14}/> {t('registerAgency')}</button>
+                <div style={{ width: isMobile ? '100%' : '1px', height: isMobile ? '1px' : 'auto', background: 'var(--card-border)', maxWidth: isMobile ? '180px' : 'none' }}></div>
+                <button type="button" onClick={() => setMode('register_user')} style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '0.85rem', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', flexWrap: 'wrap', textAlign: 'center' }}><UserPlus size={14}/> {t('registerUser')}</button>
               </div>
             </div>
           )}
         </form>
 
-        <div style={{ marginTop: '2.5rem', display: 'flex', justifyContent: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.03)', padding: '6px', borderRadius: '12px', border: '1px solid var(--card-border)', width: 'fit-content', margin: '2.5rem auto 0' }}>
+        <div style={{ marginTop: isMobile ? '1.5rem' : '2.5rem', display: 'flex', justifyContent: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.03)', padding: '6px', borderRadius: '12px', border: '1px solid var(--card-border)', width: 'fit-content', margin: `${isMobile ? '1.5rem' : '2.5rem'} auto 0` }}>
           <button onClick={() => setLang('cz')} style={{ padding: '8px 16px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}>CZ</button>
           <button onClick={() => setLang('en')} style={{ padding: '8px 16px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}>EN</button>
         </div>
