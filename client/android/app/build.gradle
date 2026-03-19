@@ -54,9 +54,31 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // Signing config - načítá se z env proměnných (hesla nikdy v kódu)
+    def keystorePath = System.getenv("NEXUS_KEYSTORE_PATH") ?: "${System.getProperty('user.home')}/.android/nexus-release-key.jks"
+    def keystorePassword = System.getenv("NEXUS_KEYSTORE_PASSWORD") ?: ""
+    def keyAlias = System.getenv("NEXUS_KEY_ALIAS") ?: "nexus-key"
+    def keyPassword = System.getenv("NEXUS_KEY_PASSWORD") ?: ""
+    def keystoreFile = file(keystorePath)
+
+    if (keystoreFile.exists() && keystorePassword) {
+        signingConfigs {
+            release {
+                storeFile keystoreFile
+                storePassword keystorePassword
+                keyAlias keyAlias
+                keyPassword keyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
-            minifyEnabled false
+            if (keystoreFile.exists() && keystorePassword) {
+                signingConfig signingConfigs.release
+            }
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
