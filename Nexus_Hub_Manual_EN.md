@@ -63,9 +63,10 @@ Nexus Hub features a proprietary gateway app for 24/7 synchronization without ne
   - Real-time Call State Notifications
   - Low Power Consumption
 - **Setup**:
-  1. Install the APK and grant all permissions (SMS, Phone, Poloha).
+  1. Install the APK and grant all permissions (SMS, Phone, Location).
   2. Switch to **NEXUS RELAY** mode in the app.
   3. Ensure the connection status is **CONNECTED**.
+  4. The app syncs with the server via the `/api/device/relay` endpoint.
 
 ---
 

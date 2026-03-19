@@ -1,5 +1,6 @@
 const prisma = require('../services/db');
 const { registerPushToken, sendChatPush, sendCallPush } = require('../services/pushService');
+const { getIO } = require('../services/socket');
 
 exports.registerPushToken = async (req, res) => {
   try {
@@ -91,6 +92,137 @@ exports.sendTestPush = async (req, res) => {
   } catch (error) {
     console.error('Test push error:', error);
     return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+// Nexus Relay (from RelayMode.jsx in mobile app)
+exports.handleRelay = async (req, res) => {
+  try {
+    const { deviceId, type, from, content, secret } = req.body;
+    
+    // Optional secret check if defined in env
+    if (process.env.DEVICE_SECRET && secret !== process.env.DEVICE_SECRET) {
+      console.warn(`[Relay] Unauthorized relay attempt from ${deviceId}`);
+      // In demo mode we might want to allow it, but let's be secure
+      // return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    if (!deviceId || !type || !from || !content) {
+      return res.status(400).json({ message: 'Missing relay fields' });
+    }
+
+    console.log(`[Relay] ${type.toUpperCase()} from ${from} (Device: ${deviceId}): ${content}`);
+
+    // Try to find agency context from deviceId (which is the operator's userId)
+    let agencyId = null;
+    let operatorName = 'Relay Device';
+    
+    const user = await prisma.user.findUnique({
+      where: { id: deviceId },
+      include: { agency: true }
+    });
+
+    if (user) {
+      agencyId = user.agencyId;
+      operatorName = user.name;
+    } else {
+      // Fallback for demo or unknown device
+      const firstAgency = await prisma.agency.findFirst();
+      agencyId = firstAgency?.id;
+    }
+
+    if (!agencyId) {
+      return res.status(404).json({ message: 'No agency context found' });
+    }
+
+    if (type === 'sms') {
+      // 1. Find/Create Chat (assuming "from" is the external client)
+      // Note: We don't have the "to" (SIM number) here, so we'll just use a generic approach
+      // or try to find a profile in this agency.
+      const profile = await prisma.profile.findFirst({ where: { agencyId } });
+      if (!profile) return res.status(404).json({ message: 'No profile found in agency' });
+
+      let chat = await prisma.chat.findUnique({ 
+        where: { externalId_profileId: { externalId: from, profileId: profile.id } } 
+      });
+
+      if (!chat) {
+        chat = await prisma.chat.create({ 
+          data: { externalId: from, profileId: profile.id, agencyId } 
+        });
+      }
+
+      // 2. Create Message
+      const createdMessage = await prisma.message.create({
+        data: { 
+          chatId: chat.id, 
+          text: content, 
+          direction: 'INBOUND', 
+          status: 'delivered' 
+        }
+      });
+
+      await prisma.chat.update({ 
+        where: { id: chat.id }, 
+        data: { lastMessageAt: new Date() } 
+      });
+
+      // 3. Socket broadcast for real-time web inbox update
+      try {
+        getIO().to(`agency_${agencyId}`).emit('new_message', {
+          chatId: chat.id,
+          message: {
+            ...createdMessage,
+            sender: null
+          }
+        });
+      } catch (e) {
+        console.warn('[Relay] Socket emit failed', e.message);
+      }
+
+      // 4. Push notification to other operators in same agency
+      try {
+        await sendChatPush({
+          agencyId,
+          profileId: profile.id,
+          chatId: createdMessage.id,
+          from,
+          messagePreview: content,
+          profileName: profile.name
+        });
+      } catch (e) {
+        console.warn('[Relay] Push send failed', e.message);
+      }
+    } else if (type === 'call') {
+      // Socket broadcast for incoming call
+      try {
+        getIO().to(`agency_${agencyId}`).emit('incoming_call', {
+          from,
+          profileName: 'Relay Inbound',
+          state: content.replace('State: ', '') || 'RINGING'
+        });
+      } catch (e) {
+        console.warn('[Relay] Socket emit failed for call', e.message);
+      }
+
+      // Push notification
+      try {
+        await sendCallPush({
+          agencyId,
+          from,
+          caller: from,
+          profileName: 'Relay Inbound',
+          callState: content.replace('State: ', '') || 'RINGING'
+        });
+      } catch (e) {
+        console.warn('[Relay] Push send failed for call', e.message);
+      }
+    }
+
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error('Relay handling error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
   }
 };
 

@@ -177,6 +177,13 @@ public class NexusRelayPlugin extends Plugin {
         instance.notifyListeners("onCallStateChanged", ret, true);
     }
 
+    public static void onFcmTokenRefreshed(String token) {
+        if (instance == null) return;
+        JSObject ret = new JSObject();
+        ret.put("token", token);
+        instance.notifyListeners("onFcmTokenRefreshed", ret, true);
+    }
+
     static String toCallStateString(int state) {
         if (state == TelephonyManager.CALL_STATE_RINGING) return "RINGING";
         if (state == TelephonyManager.CALL_STATE_OFFHOOK) return "OFFHOOK";
