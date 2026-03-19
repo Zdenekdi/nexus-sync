@@ -230,7 +230,7 @@ const LandingPage = ({ onLoginClick, lang, setLang, isMobile }) => {
           <span style={{ fontWeight: '900', letterSpacing: '0.1em', color: 'white' }}>NEXUS HUB</span>
         </div>
         <p>{t.footer}</p>
-        <div style={{ marginTop: '2rem' }}>© {new Date().getFullYear()} Zdenek Dias. All rights reserved.</div>
+        <div style={{ marginTop: '2rem' }}>© {new Date().getFullYear()} Nexus Hub. All rights reserved.</div>
       </footer>
     </div>
   );

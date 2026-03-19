@@ -8,7 +8,7 @@ import {
   Zap, Building, LayoutDashboard, Database,
     Phone, Server, Cpu, FileEdit, CheckCheck, FileSearch, Trash2,
     Eye, Save, X, RotateCcw, Lock, Share2, Filter, Menu, UserCircle, Plus, Info, ChevronDown, ChevronUp, ChevronLeft,
-    BarChart2 as BarChart3, Shield as ShieldAlert, HardDrive, Gift, Trophy, RefreshCw, Bug, Copy, Signal, Mic, MicOff, Sparkles,
+    BarChart2 as BarChart3, HardDrive, Gift, Trophy, RefreshCw, Bug, Copy, Signal, Mic, MicOff, Sparkles,
     StickyNote, AlertTriangle, Image, Link, Star, CheckCircle, Languages, Package, Bell,
     History, Terminal, Mail, RefreshCcw, ArrowUpRight, PlusCircle, BarChart, PieChart, Download, EyeOff, Radio
   } from 'lucide-react';
@@ -3175,9 +3175,9 @@ function App() {
 
             <button 
               onClick={() => {
-                const title = encodeURIComponent(`[BUG] Issue reported by ${activeOperator?.name || 'Unknown'}`);
+                const subject = encodeURIComponent(`[BUG] Issue reported by ${activeOperator?.name || 'Unknown'}`);
                 const body = encodeURIComponent(`Operator: ${activeOperator?.name || 'Unknown'}\nRole: ${activeOperator?.role || 'Unknown'}\nClient: ${activeClient?.name || 'App Owner'}\n\nDescription:\n${bugDescription}`);
-                window.open(`https://github.com/Zdenekdi/nexus-sync/issues/new?title=${title}&body=${body}`, '_blank');
+                window.location.href = `mailto:support@nexus-hub.ai?subject=${subject}&body=${body}`;
                 setIsBugReportOpen(false);
                 setBugDescription('');
               }}
