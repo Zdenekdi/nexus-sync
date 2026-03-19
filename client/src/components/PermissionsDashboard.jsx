@@ -4,10 +4,10 @@ import { Shield, Lock } from 'lucide-react';
 const PermissionsDashboard = ({ t, rolePermissions, setRolePermissions, activeOperator }) => {
   const isMobile = window.innerWidth < 768;
   return (
-    <div style={{ padding: isMobile ? '1rem' : '2rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
+    <div style={{ padding: isMobile ? 'calc(1rem + env(safe-area-inset-left)) 1rem calc(1rem + max(env(safe-area-inset-bottom), 1rem) + env(safe-area-inset-right))' : '2rem', flex: 1, overflowY: 'auto', maxHeight: isMobile ? 'calc(100dvh - max(env(safe-area-inset-top), 1rem) - 3rem)' : '100%' }} className="fade-in custom-scrollbar">
       <h2 style={{ fontSize: isMobile ? '1.75rem' : '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #3b82f6, #10b981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('rolePermissions')}</h2>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: isMobile ? '1.5rem' : '3rem', fontSize: isMobile ? '1rem' : '1.1rem' }}>{t('rolePermissionsDesc')}</p>
-      
+      <p style={{ color: 'var(--text-secondary)', marginBottom: isMobile ? '1.5rem' : '3rem', fontSize: isMobile ? '0.9rem' : '1.1rem' }}>{t('rolePermissionsDesc')}</p>
+
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(380px, 1fr))', gap: isMobile ? '1rem' : '2rem' }}>
         {Object.entries(rolePermissions).map(([role, perms]) => {
           const isAppOwner = role === 'App Owner';

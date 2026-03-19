@@ -69,13 +69,13 @@ const LoginScreen = ({ onLogin, onRegisterAgency, onRegisterUser, onResetRequest
   };
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#0a0b14', display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'center', padding: isMobile ? '1rem 0.9rem 1.5rem' : '1.5rem', position: 'relative', overflowX: 'hidden', overflowY: 'auto' }}>
+    <div style={{ minHeight: '100dvh', background: '#0a0b14', display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'center', padding: isMobile ? 'calc(max(1rem, env(safe-area-inset-top)) + 0.5rem) 0.9rem 1.5rem' : '1.5rem', position: 'relative', overflowX: 'hidden', overflowY: 'auto' }}>
       {/* Cinematic Background Elements */}
       <div style={{ position: 'absolute', top: '10%', left: '10%', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%)', filter: 'blur(80px)' }}></div>
       <div style={{ position: 'absolute', bottom: '10%', right: '10%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)', filter: 'blur(100px)' }}></div>
       
-      <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '480px', padding: isMobile ? '1.25rem' : '3.5rem', position: 'relative', zIndex: 1, border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', maxHeight: isMobile ? 'calc(100dvh - 2rem)' : 'none', overflowY: isMobile ? 'auto' : 'visible' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', marginBottom: isMobile ? '1rem' : '0.75rem' }}>
+      <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '480px', padding: isMobile ? '1.25rem' : '3.5rem', position: 'relative', zIndex: 1, border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', maxHeight: isMobile ? 'calc(100dvh - max(1rem, env(safe-area-inset-top)) - 2.5rem)' : 'none', overflowY: isMobile ? 'auto' : 'visible' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', marginBottom: isMobile ? '1rem' : '0.75rem', paddingRight: isMobile ? 'calc(0.5rem + env(safe-area-inset-right))' : '0', paddingLeft: isMobile ? 'calc(0.5rem + env(safe-area-inset-left))' : '0' }}>
           <button onClick={handleTopAction} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: isMobile ? '0.8rem' : '0.85rem', fontWeight: '600', cursor: 'pointer', transition: 'color 0.2s', padding: 0, textAlign: 'left' }}>
             <ChevronLeft size={16} /> {topActionLabel}
           </button>
@@ -176,7 +176,7 @@ const LoginScreen = ({ onLogin, onRegisterAgency, onRegisterUser, onResetRequest
           )}
         </form>
 
-        <div style={{ marginTop: isMobile ? '1.5rem' : '2.5rem', display: 'flex', justifyContent: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.03)', padding: '6px', borderRadius: '12px', border: '1px solid var(--card-border)', width: 'fit-content', margin: `${isMobile ? '1.5rem' : '2.5rem'} auto 0` }}>
+        <div style={{ marginTop: isMobile ? '1.5rem' : '2.5rem', display: 'flex', justifyContent: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.03)', padding: isMobile ? '6px 6px calc(6px + env(safe-area-inset-bottom))' : '6px', borderRadius: '12px', border: '1px solid var(--card-border)', width: 'fit-content', margin: `${isMobile ? '1.5rem' : '2.5rem'} auto calc(${isMobile ? '1.5rem' : '2.5rem'} + env(safe-area-inset-bottom))` }}>
           <button onClick={() => setLang('cz')} style={{ padding: '8px 16px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}>CZ</button>
           <button onClick={() => setLang('en')} style={{ padding: '8px 16px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}>EN</button>
         </div>
@@ -216,6 +216,13 @@ const LoginScreen = ({ onLogin, onRegisterAgency, onRegisterUser, onResetRequest
         }
         .fade-in {
           animation: fade-in 0.4s ease-out forwards;
+        }
+        @supports (padding: max(0px)) {
+          @media (max-width: 640px) {
+            .glass-card {
+              margin: 0 auto;
+            }
+          }
         }
       `}</style>
     </div>
