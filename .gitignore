@@ -32,6 +32,10 @@ build/
 lint_output.txt
 .firebase/
 .dart_tool/
+*.apk
+*.dm
+client/android/app/release/baselineProfiles/**/*.dm
+server/public/downloads/*.apk
 
 # Environment
 .env
