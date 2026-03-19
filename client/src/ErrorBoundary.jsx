@@ -28,7 +28,7 @@ class ErrorBoundary extends React.Component {
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
             <button onClick={() => window.location.href = '/'} style={{ background: '#3b82f6', color: 'white', padding: '1rem 2rem', border: 'none', borderRadius: '12px', fontWeight: '800', cursor: 'pointer' }}>Restartovat aplikaci</button>
-            <button onClick={() => window.open('https://github.com/Zdenekdi/nexus-sync/issues/new', '_blank')} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '1rem 2rem', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}>Nahlásit na GitHub</button>
+            <button onClick={() => window.location.href = 'mailto:support@nexus-hub.ai'} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '1rem 2rem', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}>Kontaktovat podporu</button>
           </div>
         </div>
       );
