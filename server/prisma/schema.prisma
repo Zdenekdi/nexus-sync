@@ -20,6 +20,7 @@ model Agency {
   roles     Role[]
   profiles  Profile[]
   chats     Chat[]
+  pushDevices PushDevice[]
 }
 
 model Role {
@@ -48,8 +49,26 @@ model User {
   agencyId  String?
   agency    Agency?  @relation(fields: [agencyId], references: [id])
   messages  Message[]
+  pushDevices PushDevice[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model PushDevice {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agencyId  String?
+  agency    Agency?  @relation(fields: [agencyId], references: [id], onDelete: SetNull)
+  token     String   @unique
+  platform  String   @default("android")
+  active    Boolean  @default(true)
+  lastSeenAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([agencyId])
+  @@index([userId])
 }
 
 model Profile {

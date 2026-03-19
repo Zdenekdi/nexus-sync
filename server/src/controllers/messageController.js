@@ -1,5 +1,6 @@
 const prisma = require('../services/db');
 const { getIO } = require('../services/socket');
+const { sendChatPush } = require('../services/pushService');
 
 exports.getMessages = async (req, res) => {
   try {
@@ -52,6 +53,16 @@ exports.simulateInbound = async (req, res) => {
     const message = await prisma.message.create({ data: { chatId: chat.id, text, direction: 'INBOUND', status: 'received' } });
     await prisma.chat.update({ where: { id: chat.id }, data: { lastMessageAt: new Date() } });
     try { getIO().to(`agency_${profile.agencyId}`).emit('new_message', { chatId: chat.id, message }); } catch (e) { /* Socket may not be ready */ }
+    try {
+      await sendChatPush({
+        agencyId: profile.agencyId,
+        profileId,
+        chatId: message.id,
+        from: externalId,
+        messagePreview: text,
+        profileName: profile.name
+      });
+    } catch (e) { /* Push may be unavailable */ }
     res.status(201).json(message);
   } catch (error) {
     console.error(error);

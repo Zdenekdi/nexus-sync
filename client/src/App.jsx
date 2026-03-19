@@ -24,6 +24,10 @@ import DashboardHome from './components/DashboardHome';
 import LoginScreen from './components/LoginScreen';
 import ResetPasswordView from './components/ResetPasswordView';
 import InventoryView from './components/InventoryView';
+import { Capacitor } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
+import { PushNotifications } from '@capacitor/push-notifications';
+
 
 
 
@@ -92,6 +96,20 @@ function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mobileView, setMobileView] = useState('sidebar');
   const [isToolsExpanded, setIsToolsExpanded] = useState(false);
+  const [isAppVisible, setIsAppVisible] = useState(() => typeof document === 'undefined' ? true : document.visibilityState === 'visible');
+
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return undefined;
+    }
+
+    const handleVisibilityChange = () => {
+      setIsAppVisible(document.visibilityState === 'visible');
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
 
   const t = (key, data = {}) => {
     try {
@@ -105,6 +123,18 @@ function App() {
     }
   };
 
+  // Normalize legacy role names to the current 'App Owner' role for permission lookups.
+  // This keeps the app backward-compatible with stale localStorage sessions.
+  const normalizeRole = useCallback((role) => {
+    if (!role) return role;
+    if (role === 'Super Admin' || role === 'System Owner') return 'App Owner';
+    return role;
+  }, []);
+
+  const activeRole = normalizeRole(activeOperator?.role);
+
+  const isNativeApp = Capacitor.isNativePlatform();
+
   const renderNotifications = () => (
     <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: '10px', pointerEvents: 'none' }}>
       {toasts.filter(n => {
@@ -112,32 +142,53 @@ function App() {
           return n.profileId === activeOperator.profileId;
         }
         return true;
-      }).map(n => (
-        <div key={n.id} className="glass-card fade-in" style={{ 
-          padding: '1rem 1.5rem', 
-          background: 'rgba(5, 7, 10, 0.9)', 
-          borderColor: 'var(--accent-color)', 
-          borderLeft: '4px solid var(--accent-color)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '1rem',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
-          pointerEvents: 'auto',
-          minWidth: '280px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <MessageCircle size={18} color="var(--accent-color)" />
-            <div style={{ fontSize: '0.85rem', fontWeight: '700', color: 'white' }}>{n.msg}</div>
-          </div>
-          <button 
-            onClick={() => setToasts(prev => prev.filter(t => t.id !== n.id))}
-            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '0.2rem' }}
+      }).map(n => {
+        const isInteractive = hasNotificationTarget(n);
+        return (
+          <div key={n.id} className="glass-card fade-in" style={{
+            padding: '1rem 1.5rem',
+            background: 'rgba(5, 7, 10, 0.9)',
+            borderColor: 'var(--accent-color)',
+            borderLeft: '4px solid var(--accent-color)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+            pointerEvents: 'auto',
+            minWidth: '280px',
+            cursor: isInteractive ? 'pointer' : 'default'
+          }}
+            onClick={isInteractive ? () => handleNotificationClick(n) : undefined}
+            onKeyDown={isInteractive ? (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                handleNotificationClick(n);
+              }
+            } : undefined}
+            role={isInteractive ? 'button' : undefined}
+            tabIndex={isInteractive ? 0 : undefined}
           >
-            <X size={14} />
-          </button>
-        </div>
-      ))}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <MessageCircle size={18} color="var(--accent-color)" />
+              <div>
+                {n.title && <div style={{ fontSize: '0.72rem', fontWeight: '900', color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.2rem' }}>{n.title}</div>}
+                <div style={{ fontSize: '0.85rem', fontWeight: '700', color: 'white' }}>{n.message || n.msg}</div>
+                {isInteractive && <div style={{ fontSize: '0.68rem', color: 'var(--accent-color)', marginTop: '0.35rem', fontWeight: '800' }}>Tap to open chat</div>}
+              </div>
+            </div>
+            <button
+              onClick={(event) => {
+                event.stopPropagation();
+                setToasts(prev => prev.filter(t => t.id !== n.id));
+              }}
+              style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '0.2rem' }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 
@@ -345,43 +396,362 @@ function App() {
     localStorage.setItem('nexus_notifications', JSON.stringify(notifications.slice(0, 50)));
   }, [notifications]);
 
-  const addNotification = useCallback((msg, type = 'info', profileId = null) => {
+  const markNotificationRead = useCallback((notificationId) => {
+    if (notificationId == null) return;
+    setNotifications(prev => prev.map(item => item.id === notificationId ? { ...item, read: true } : item));
+    setToasts(prev => prev.filter(item => item.id !== notificationId));
+  }, []);
+
+  const resolveNotificationTarget = useCallback((notification = {}) => {
+    const profileId = notification.profileId ?? null;
+
+    let matchingMessage = null;
+    if (notification.chatId != null) {
+      matchingMessage = messages.find(msg => msg.id === notification.chatId) || null;
+    }
+    if (!matchingMessage && notification.from) {
+      matchingMessage = messages.find(msg => (!profileId || msg.profileId === profileId) && msg.from === notification.from) || null;
+    }
+    if (!matchingMessage && profileId) {
+      matchingMessage = messages.find(msg => msg.profileId === profileId) || null;
+    }
+
+    return {
+      targetType: notification.targetType || (notification.callState ? 'call' : 'inbox'),
+      profileId: profileId ?? matchingMessage?.profileId ?? null,
+      chatId: matchingMessage?.id ?? notification.chatId ?? null,
+      from: notification.from ?? matchingMessage?.from ?? notification.caller ?? null,
+      caller: notification.caller ?? notification.from ?? matchingMessage?.from ?? null,
+      callState: notification.callState ?? null,
+    };
+  }, [messages]);
+
+  const hasNotificationTarget = useCallback((notification = {}) => {
+    const target = resolveNotificationTarget(notification);
+    return Boolean(target.profileId || target.chatId || target.from);
+  }, [resolveNotificationTarget]);
+
+  const openNotificationTarget = useCallback((notification = {}) => {
+    const target = resolveNotificationTarget(notification);
+
+    if (!target.profileId && !target.chatId && !target.from) {
+      return false;
+    }
+
+    if (target.profileId) {
+      setActiveProfileId(target.profileId);
+    }
+
+    setActiveTab('inbox');
+    setNotificationPanelOpen(false);
+
+    if (target.chatId) {
+      setSelectedChatId(target.chatId);
+      if (isMobile) {
+        setMobileView('chat');
+      }
+    } else {
+      setSelectedChatId(null);
+      if (isMobile) {
+        setMobileView('list');
+      }
+    }
+
+    if (target.from) {
+      setClientNotes(prev => prev[target.from] ? prev : { ...prev, [target.from]: [] });
+    }
+
+    if (target.targetType === 'call' && target.caller) {
+      const targetProfile = profiles.find(profile => profile.id === target.profileId);
+      setIncomingCall(prev => prev || {
+        profileId: target.profileId,
+        profileName: targetProfile?.name,
+        caller: target.caller,
+      });
+    }
+
+    if (notification.id != null) {
+      markNotificationRead(notification.id);
+    }
+
+    return true;
+  }, [isMobile, markNotificationRead, profiles, resolveNotificationTarget]);
+
+  const handleNotificationClick = useCallback((notification) => {
+    const opened = openNotificationTarget(notification);
+    if (!opened && notification?.id != null) {
+      markNotificationRead(notification.id);
+    }
+  }, [markNotificationRead, openNotificationTarget]);
+
+  const scheduleSystemNotification = useCallback(async (notification) => {
+    if (!isNativeApp || isAppVisible) {
+      return;
+    }
+
+    try {
+      const title = notification.title || (notification.callState ? (t('incomingCall') || 'Incoming Call') : (t('notifications') || 'Notification'));
+      const body = notification.message || notification.msg || title;
+
+      await LocalNotifications.schedule({
+        notifications: [{
+          id: Number(String(Date.now()).slice(-9)),
+          title,
+          body,
+          channelId: 'nexus-events',
+          schedule: { at: new Date(Date.now() + 50) },
+          extra: {
+            notificationId: notification.id,
+            profileId: notification.profileId ?? null,
+            chatId: notification.chatId ?? null,
+            from: notification.from ?? null,
+            caller: notification.caller ?? null,
+            callState: notification.callState ?? null,
+            targetType: notification.targetType ?? null,
+          },
+        }],
+      });
+    } catch (error) {
+      console.warn('[Notifications] Failed to schedule local notification', error);
+    }
+  }, [isAppVisible, isNativeApp, t]);
+
+  useEffect(() => {
+    if (!isNativeApp) {
+      return undefined;
+    }
+
+    let actionHandle = null;
+    let cancelled = false;
+
+    const setupLocalNotifications = async () => {
+      try {
+        const permissionStatus = await LocalNotifications.checkPermissions();
+        if (permissionStatus.display === 'prompt') {
+          await LocalNotifications.requestPermissions();
+        }
+        if (cancelled) return;
+
+        await LocalNotifications.createChannel({
+          id: 'nexus-events',
+          name: 'Nexus Events',
+          description: 'Interactive alerts for messages and calls',
+          importance: 5,
+          visibility: 1,
+        });
+        if (cancelled) return;
+
+        actionHandle = await LocalNotifications.addListener('localNotificationActionPerformed', (event) => {
+          const extra = event.notification?.extra || {};
+          openNotificationTarget({
+            id: extra.notificationId ?? null,
+            profileId: extra.profileId ?? null,
+            chatId: extra.chatId ?? null,
+            from: extra.from ?? null,
+            caller: extra.caller ?? null,
+            callState: extra.callState ?? null,
+            targetType: extra.targetType ?? null,
+          });
+        });
+      } catch (error) {
+        console.warn('[Notifications] Local notifications unavailable', error);
+      }
+    };
+
+    setupLocalNotifications();
+
+    return () => {
+      cancelled = true;
+      actionHandle?.remove?.();
+    };
+  }, [isNativeApp, openNotificationTarget]);
+
+  const addNotification = useCallback((input, type = 'info', profileId = null, options = {}) => {
+    const payload = typeof input === 'object' && input !== null
+      ? input
+      : { msg: input, type, profileId, ...options };
+
+    const resolvedType = payload.type || payload.priority || type;
+    const resolvedProfileId = payload.profileId ?? profileId ?? null;
+    const title = payload.title || null;
+    const message = payload.message || payload.msg || '';
+    const summary = payload.msg || [title, payload.message].filter(Boolean).join(' — ') || title || message;
+
     // Silencing operational notifications for App Owner as they are ballast for this role
-    if (activeRole === 'App Owner' && type !== 'emergency') {
+    if (activeRole === 'App Owner' && resolvedType !== 'emergency') {
       return;
     }
 
     // New Booking notifications are only necessary for Models
-    const isBookingMsg = msg === t('newBooking') || msg === 'New Booking' || msg === 'Nová rezervace';
+    const isBookingMsg = [summary, title, message].some(value => value === t('newBooking') || value === 'New Booking' || value === 'Nová rezervace');
     if (isBookingMsg && activeRole !== 'Model') {
       return;
     }
 
     // Filter notification for models - they should only see their own
-    if (activeRole === 'Model' && profileId && profileId !== activeOperator?.profileId) {
+    if (activeRole === 'Model' && resolvedProfileId && resolvedProfileId !== activeOperator?.profileId) {
       return;
     }
 
     const operatorRole = activeOperator?.role || 'Operator';
     const perms = rolePermissions[operatorRole] || {};
-    
+
     // Fallback permission check
-    if (!perms.messaging && type !== 'emergency') {
+    if (!perms.messaging && resolvedType !== 'emergency') {
       return;
     }
 
-    const id = Date.now();
-    const newNotification = { id, msg, type, profileId, read: false, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-    
+    const id = payload.id ?? Date.now();
+    const newNotification = {
+      ...payload,
+      id,
+      title,
+      message,
+      msg: summary,
+      type: resolvedType,
+      profileId: resolvedProfileId,
+      read: payload.read ?? false,
+      timestamp: payload.timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      chatId: payload.chatId ?? null,
+      from: payload.from ?? null,
+      caller: payload.caller ?? null,
+      callState: payload.callState ?? null,
+      targetType: payload.targetType ?? null,
+    };
+
     setNotifications(prev => [newNotification, ...prev]);
     setToasts(prev => [newNotification, ...prev]);
-    playNotificationSound(type);
-    
+    playNotificationSound(resolvedType);
+    void scheduleSystemNotification(newNotification);
+
     // Auto-dismiss toast from screen after 5 seconds
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
     }, 5000);
-  }, [activeOperator, rolePermissions, playNotificationSound]);
+  }, [activeOperator, activeRole, playNotificationSound, rolePermissions, scheduleSystemNotification, t]);
+
+  const parseChatId = useCallback((value) => {
+    if (value == null) return null;
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string' && /^\d+$/.test(value)) return Number(value);
+    return value;
+  }, []);
+
+  const mapPushPayloadToTarget = useCallback((payload = {}) => {
+    const data = payload?.data || {};
+    const profileId = data.profileId ?? payload.profileId ?? null;
+    const chatId = parseChatId(data.chatId ?? payload.chatId ?? null);
+    const from = data.from ?? payload.from ?? data.caller ?? payload.caller ?? null;
+    const caller = data.caller ?? payload.caller ?? from;
+    const targetType = data.targetType ?? payload.targetType ?? (data.callState || payload.callState ? 'call' : 'inbox');
+    const callState = data.callState ?? payload.callState ?? null;
+
+    return {
+      id: data.notificationId ?? payload.id ?? Date.now(),
+      title: payload.title || data.title || null,
+      message: payload.body || data.message || data.body || null,
+      type: data.type || (targetType === 'call' ? 'emergency' : 'info'),
+      profileId,
+      chatId,
+      from,
+      caller,
+      callState,
+      targetType,
+    };
+  }, [parseChatId]);
+
+  const isPushRegistrationEnabled = useMemo(() => {
+    try {
+      return localStorage.getItem('nexus_enable_push_registration') === 'true';
+    } catch {
+      return false;
+    }
+  }, []);
+
+  useEffect(() => {
+    // Guard against Android crash when Firebase is not configured (missing google-services setup).
+    if (!isNativeApp || !isLoggedIn || !isPushRegistrationEnabled) {
+      return undefined;
+    }
+
+    let registrationHandle = null;
+    let registrationErrorHandle = null;
+    let receivedHandle = null;
+    let actionHandle = null;
+    let cancelled = false;
+
+    const registerPushTokenOnBackend = async (pushToken) => {
+      try {
+        await fetch('https://nexus-api.myvnc.com/api/device/push-token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            token: pushToken,
+            platform: Capacitor.getPlatform(),
+            operatorId: activeOperator?.id || null,
+          }),
+        });
+      } catch (error) {
+        console.warn('[Push] Token registration endpoint is unavailable', error);
+      }
+    };
+
+    const setupPushNotifications = async () => {
+      try {
+        const permissionStatus = await PushNotifications.checkPermissions();
+        if (permissionStatus.receive === 'prompt') {
+          await PushNotifications.requestPermissions();
+        }
+
+        const afterRequest = await PushNotifications.checkPermissions();
+        if (afterRequest.receive !== 'granted') {
+          console.warn('[Push] Permission denied by user');
+          return;
+        }
+
+        if (cancelled) return;
+
+        registrationHandle = await PushNotifications.addListener('registration', async (tokenValue) => {
+          const pushToken = tokenValue?.value;
+          if (!pushToken) return;
+          localStorage.setItem('nexus_push_token', pushToken);
+          await registerPushTokenOnBackend(pushToken);
+        });
+
+        registrationErrorHandle = await PushNotifications.addListener('registrationError', (error) => {
+          console.warn('[Push] Registration error', error);
+        });
+
+        receivedHandle = await PushNotifications.addListener('pushNotificationReceived', (notification) => {
+          const mapped = mapPushPayloadToTarget(notification);
+          addNotification(mapped);
+        });
+
+        actionHandle = await PushNotifications.addListener('pushNotificationActionPerformed', (event) => {
+          const mapped = mapPushPayloadToTarget(event?.notification || {});
+          openNotificationTarget(mapped);
+        });
+
+        if (cancelled) return;
+        await PushNotifications.register();
+      } catch (error) {
+        console.warn('[Push] Setup failed', error);
+      }
+    };
+
+    setupPushNotifications();
+
+    return () => {
+      cancelled = true;
+      registrationHandle?.remove?.();
+      registrationErrorHandle?.remove?.();
+      receivedHandle?.remove?.();
+      actionHandle?.remove?.();
+    };
+  }, [activeOperator?.id, addNotification, isLoggedIn, isNativeApp, isPushRegistrationEnabled, mapPushPayloadToTarget, openNotificationTarget, token]);
 
   // Real-time message simulation logic
   useEffect(() => {
@@ -418,8 +788,16 @@ function App() {
           };
           
           setMessages(prev => [newMessage, ...prev]);
-          addNotification(`${t('newInboxMessage') || 'New message on'} ${randomProfile.name}`, 'info', randomProfile.id);
-          
+          addNotification({
+            title: t('newInboxMessage') || 'New message',
+            message: `${randomProfile.name}: ${newMessage.text}`,
+            type: 'info',
+            profileId: randomProfile.id,
+            chatId: newMessage.id,
+            from: newMessage.from,
+            targetType: 'inbox',
+          });
+
           // Randomly trigger other notification types for demo
           const rand = Math.random();
           if (rand > 0.85 && activeRole === 'Model') {
@@ -568,7 +946,15 @@ function App() {
       // Find profile for notification
       const profile = profiles.find(p => p.id === newMsg.profileId);
       if (profile) {
-        addNotification(`${t('newInboxMessage') || 'New message on'} ${profile.name}`, 'info', profile.id);
+        addNotification({
+          title: t('newInboxMessage') || 'New message',
+          message: `${profile.name}: ${newMsg.text || newMsg.body || newMsg.from || ''}`,
+          type: 'info',
+          profileId: profile.id,
+          chatId: newMsg.id,
+          from: newMsg.from,
+          targetType: 'inbox',
+        });
       }
     }, [profiles, t, addNotification]),
     useCallback((updatedMsg) => {
@@ -578,7 +964,21 @@ function App() {
       // Find profile for notification
       const profile = profiles.find(p => p.id === callData.profileId);
       if (profile) {
-        addNotification(`${t('incomingCall') || 'Incoming Call'} from ${callData.from}`, 'emergency', callData.profileId);
+        setIncomingCall({
+          profileId: callData.profileId,
+          profileName: profile.name,
+          caller: callData.from,
+        });
+        addNotification({
+          title: t('incomingCall') || 'Incoming Call',
+          message: `${profile.name} · ${callData.from || 'Unknown caller'}`,
+          type: 'emergency',
+          profileId: callData.profileId,
+          from: callData.from,
+          caller: callData.from,
+          callState: 'RINGING',
+          targetType: 'call',
+        });
       }
     }, [profiles, t, addNotification])
   );
@@ -675,16 +1075,6 @@ function App() {
 
   const myProfileIds = useMemo(() => myProfiles.map(p => p.id), [myProfiles]);
 
-  // Normalize legacy role names to the current 'App Owner' role for permission lookups.
-  // This makes the app backward-compatible with stale browser sessions that still have
-  // 'Super Admin' or 'System Owner' stored in localStorage.
-  const normalizeRole = useCallback((role) => {
-    if (!role) return role;
-    if (role === 'Super Admin' || role === 'System Owner') return 'App Owner';
-    return role;
-  }, []);
-
-  const activeRole = normalizeRole(activeOperator?.role);
 
   const allAgencyProfiles = useMemo(() =>
     activeRole === 'App Owner' ? profiles : profiles.filter(p => p.clientId === activeOperator?.clientId),
@@ -943,27 +1333,46 @@ function App() {
                 );
               }
 
-              return filteredNotifications.map(n => (
-                <div key={n.id} style={{ 
-                  padding: '1.25rem', 
-                  borderRadius: '16px', 
-                  background: n.read ? 'transparent' : 'rgba(59, 130, 246, 0.05)', 
-                  border: '1px solid var(--card-border)', 
+              return filteredNotifications.map(n => {
+                const isInteractive = hasNotificationTarget(n);
+                return (
+                <div key={n.id} style={{
+                  padding: '1.25rem',
+                  borderRadius: '16px',
+                  background: n.read ? 'transparent' : 'rgba(59, 130, 246, 0.05)',
+                  border: '1px solid var(--card-border)',
                   marginBottom: '1rem',
                   position: 'relative',
                   borderLeft: `4px solid ${
-                    n.type === 'emergency' ? 'var(--error-color)' : 
-                    n.type === 'success' ? 'var(--success-color)' : 
+                    n.type === 'emergency' ? 'var(--error-color)' :
+                    n.type === 'success' ? 'var(--success-color)' :
                     n.type === 'warning' ? 'var(--warning-color)' : 'var(--accent-color)'
-                  }`
-                }}>
+                  }`,
+                  cursor: isInteractive ? 'pointer' : 'default'
+                }}
+                  onClick={isInteractive ? () => handleNotificationClick(n) : () => markNotificationRead(n.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      if (isInteractive) {
+                        handleNotificationClick(n);
+                      } else {
+                        markNotificationRead(n.id);
+                      }
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                >
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                     <span style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)' }}>{n.timestamp}</span>
                     {!n.read && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-color)' }}></div>}
                   </div>
-                  <div style={{ fontSize: '0.9rem', fontWeight: '600', color: 'white' }}>{n.msg}</div>
+                  {n.title && <div style={{ fontSize: '0.72rem', fontWeight: '900', color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.35rem' }}>{n.title}</div>}
+                  <div style={{ fontSize: '0.9rem', fontWeight: '600', color: 'white' }}>{n.message || n.msg}</div>
+                  {isInteractive && <div style={{ marginTop: '0.55rem', fontSize: '0.72rem', color: 'var(--accent-color)', fontWeight: '800' }}>Open related chat</div>}
                 </div>
-              ));
+              )});
             })()}
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', borderTop: '1px solid var(--card-border)' }}>
@@ -1124,139 +1533,56 @@ function App() {
   };
 
   const renderMobileHeader = () => (
-    <header className="mobile-app-header">
-      <div className="mobile-app-header__inner">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', minWidth: 0 }}>
-          <img src="/nexus_icon.png" alt="Nexus" style={{ width: '34px', height: '34px', borderRadius: '10px', boxShadow: '0 8px 24px rgba(59, 130, 246, 0.22)', flexShrink: 0 }} />
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '1.05rem', fontWeight: '900', letterSpacing: '0.04em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Nexus Relay</div>
-            <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', letterSpacing: '0.12em', fontWeight: '800' }}>{activeRole?.toUpperCase?.() || 'APP'}</div>
-          </div>
+    <header className="mobile-app-header" style={{
+      paddingTop: 'calc(env(safe-area-inset-top, 30px) + 1.25rem)',
+      paddingBottom: '1.25rem',
+      paddingLeft: '1.25rem',
+      paddingRight: '1.25rem',
+      display: 'flex',
+      alignItems: 'center',
+      background: 'rgba(7, 10, 15, 0.95)',
+      backdropFilter: 'blur(25px)',
+      borderBottom: '1px solid rgba(255, 255, 255, 0.15)',
+      boxShadow: '0 4px 30px rgba(0, 0, 0, 0.5)',
+      position: 'sticky',
+      top: 0,
+      zIndex: 1000
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flex: 1, minWidth: 0 }}>
+        <img src="/nexus_icon.png" alt="Nexus" style={{ width: '32px', height: '32px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.25)' }} />
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: '1rem', fontWeight: '950', letterSpacing: '0.04em', color: 'white' }}>NEXUSSYNC</div>
+          <div style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em', fontWeight: '800' }}>{activeRole?.toUpperCase() || 'SYSTEM'}</div>
         </div>
+      </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
-          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', padding: '2px', borderRadius: '10px', border: '1px solid var(--card-border)' }}>
-            <button onClick={() => setLang('cz')} style={{ padding: '4px 8px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '8px', fontSize: '0.65rem', fontWeight: '850', cursor: 'pointer' }}>CZ</button>
-            <button onClick={() => setLang('en')} style={{ padding: '4px 8px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '8px', fontSize: '0.65rem', fontWeight: '850', cursor: 'pointer' }}>EN</button>
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsMobileMenuOpen(prev => !prev)}
-            aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
-            className="mobile-header-menu-button"
-            style={{ background: isMobileMenuOpen ? 'rgba(59, 130, 246, 0.18)' : 'rgba(255,255,255,0.04)' }}
-          >
-            {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', padding: '2px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <button onClick={() => setLang('cz')} style={{ padding: '4px 6px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.6rem', fontWeight: '900', cursor: 'pointer' }}>CZ</button>
+          <button onClick={() => setLang('en')} style={{ padding: '4px 6px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.6rem', fontWeight: '900', cursor: 'pointer' }}>EN</button>
         </div>
+        <button 
+          onClick={() => setIsMobileMenuOpen(true)}
+          style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.1)', border: 'none', color: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Menu size={20} />
+        </button>
       </div>
     </header>
   );
 
-  const renderMobileDrawer = () => (
-    <>
-      {isMobileMenuOpen && <div className="mobile-drawer-overlay" onClick={() => setIsMobileMenuOpen(false)} />}
-
-      <aside className={`mobile-drawer ${isMobileMenuOpen ? 'open' : ''}`} aria-hidden={!isMobileMenuOpen}>
-        <div className="mobile-drawer__body custom-scrollbar">
-          <section className="mobile-drawer__section">
-            <div className="mobile-drawer__section-label">NAVIGATION</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
-              {primaryNavItems.map(item => renderMobileDrawerButton(item))}
-            </div>
-          </section>
-
-          <section className="mobile-drawer__section">
-            <button
-              onClick={() => setIsToolsExpanded(prev => !prev)}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', color: 'rgba(255,255,255,0.55)', fontSize: '0.72rem', fontWeight: '900', letterSpacing: '0.14em', cursor: 'pointer', padding: 0, marginBottom: isToolsExpanded ? '0.9rem' : 0 }}
-            >
-              <span>{(t('global_features') || 'SYSTEM TOOLS').toUpperCase()}</span>
-              {isToolsExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
-
-            {isToolsExpanded && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
-                {toolNavItems.map(item => renderMobileDrawerButton(item, { nested: true }))}
-              </div>
-            )}
-          </section>
-
-          {shouldShowAssignedProfiles && myProfiles.length > 0 && (
-            <section className="mobile-drawer__section">
-              <div className="mobile-drawer__section-label">{(t('myAssignedGirls') || 'Assigned Profiles').toUpperCase()}</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
-                {myProfiles.slice(0, 8).map(profile => {
-                  const unread = getUnreadForProfile(profile.id);
-                  const isActive = activeProfile?.id === profile.id;
-
-                  return (
-                    <button
-                      key={profile.id}
-                      onClick={() => handleMobileProfileSelection(profile.id)}
-                      style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.75rem',
-                        padding: '0.85rem 0.95rem',
-                        borderRadius: '16px',
-                        border: isActive ? '1px solid rgba(59,130,246,0.35)' : '1px solid rgba(255,255,255,0.06)',
-                        background: isActive ? 'rgba(59,130,246,0.14)' : 'rgba(255,255,255,0.03)',
-                        color: 'white',
-                        cursor: 'pointer',
-                        textAlign: 'left'
-                      }}
-                    >
-                      <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: profile.status === 'online' ? 'var(--success-color)' : 'rgba(255,255,255,0.18)', flexShrink: 0 }} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '0.92rem', fontWeight: '800', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile.name}</div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{profile.status}</div>
-                      </div>
-                      {unread > 0 && <div style={{ minWidth: '22px', height: '22px', borderRadius: '999px', padding: '0 0.5rem', background: 'var(--error-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: '900' }}>{unread}</div>}
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          )}
-        </div>
-
-        <div className="mobile-drawer__footer">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '1rem', borderRadius: '18px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <div style={{ width: '42px', height: '42px', borderRadius: '14px', background: 'linear-gradient(135deg, var(--accent-color), #1d4ed8)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', fontWeight: '900', color: 'white', flexShrink: 0 }}>{activeOperator?.avatar}</div>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontWeight: '900', fontSize: '0.92rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{activeOperator?.name}</div>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '0.72rem', fontWeight: '800', letterSpacing: '0.08em' }}>{activeRole?.toUpperCase?.()}</div>
-            </div>
-          </div>
-
-          <button
-            onClick={() => {
-              setIsRelayMode(true);
-              setIsMobileMenuOpen(false);
-            }}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.7rem', padding: '0.95rem 1rem', borderRadius: '16px', background: 'rgba(59, 130, 246, 0.16)', border: '1px solid rgba(59, 130, 246, 0.28)', color: 'var(--accent-color)', fontWeight: '900', cursor: 'pointer' }}
-          >
-            <Radio size={18} />
-            <span>NEXUS RELAY</span>
-          </button>
-
-          <button
-            onClick={handleLogout}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.7rem', padding: '0.95rem 1rem', borderRadius: '16px', background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.24)', color: 'var(--error-color)', fontWeight: '900', cursor: 'pointer' }}
-          >
-            <LogOut size={18} />
-            <span>{t('logout') || 'Logout'}</span>
-          </button>
-        </div>
-      </aside>
-    </>
-  );
 
   const renderContent = () => {
     if (isRelayMode) {
-      return <RelayMode operator={activeOperator} t={t} onExit={() => setIsRelayMode(false)} />;
+      return (
+        <RelayMode 
+          operator={activeOperator} 
+          t={t} 
+          onExit={() => setIsRelayMode(false)}
+          syncPushToken={syncPushToken}
+          isSyncingPush={isSyncingPush}
+        />
+      );
     }
     if (!isLoggedIn) {
       if (showLanding) {
@@ -1290,30 +1616,37 @@ function App() {
     
     // Authenticated UI
     return (
-      <div className="mobile-container" style={{ display: 'flex', minHeight: '100dvh', height: '100vh', width: '100%', maxWidth: '100%', overflowX: 'hidden', overflowY: 'hidden', background: 'var(--bg-color)', color: 'white', position: 'relative' }}>
+      <div className="mobile-container" style={{ 
+        display: 'flex', 
+        flexDirection: isMobile ? 'column' : 'row',
+        minHeight: '100dvh', 
+        height: '100vh', 
+        width: '100%', 
+        maxWidth: '100%', 
+        overflowX: 'hidden', 
+        overflowY: 'hidden', 
+        background: 'var(--bg-color)', 
+        color: 'white', 
+        position: 'relative' 
+      }}>
         {/* ... child content remains here, we just moved the return into this function ... */}
         <style dangerouslySetInnerHTML={{ __html: `
           @media (max-width: 768px) {
           .desktop-sidebar {
             position: fixed !important;
             left: 0;
-            top: calc(70px + max(env(safe-area-inset-top), 0px));
-            height: calc(100dvh - 70px - max(env(safe-area-inset-top), 0px) - max(env(safe-area-inset-bottom), 0px));
-            width: 280px;
-            z-index: 9500 !important;
-            transform: translateX(-100%);
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            background: rgba(8, 10, 15, 0.98) !important;
-            backdrop-filter: blur(30px) !important;
-            box-shadow: 20px 0 60px rgba(0,0,0,0.9);
-          }
-          .mobile-container {
+            top: 0;
+            height: 100dvh;
             width: 100% !important;
             max-width: 100% !important;
-            overflow-x: hidden !important;
-          }
-          .desktop-sidebar.open {
-            transform: translateX(0);
+            z-index: 10000 !important;
+            background: rgba(8, 10, 15, 0.98) !important;
+            backdrop-filter: blur(50px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(50px) saturate(180%) !important;
+            padding: 0 !important;
+            display: flex;
+            flex-direction: column;
+            border-right: none !important;
           }
           .main-content {
             margin-left: 0 !important;
@@ -1348,222 +1681,360 @@ function App() {
       )}
 
       {/* Sidebar Navigation */}
-      <nav className={`desktop-sidebar ${isMobileMenuOpen ? 'open' : ''} ${isSidebarCollapsed ? 'collapsed' : ''}`} style={{
-        width: isSidebarCollapsed ? '80px' : '280px',
-        flexShrink: 0,
-        borderRight: '1px solid var(--card-border)',
-        padding: isSidebarCollapsed ? '1.5rem 0.75rem' : '2.5rem 1.25rem',
-        background: 'rgba(7, 10, 15, 0.7)',
-        backdropFilter: 'blur(40px)',
-        display: 'flex',
-        flexDirection: 'column',
-        position: isMobile ? 'fixed' : 'sticky',
-        top: 0,
-        height: '100vh',
-        transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-        zIndex: 9500,
-        overflow: 'hidden'
-      }}>
-        <div style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: isSidebarCollapsed ? 'center' : 'stretch' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: isSidebarCollapsed ? 'center' : 'space-between', width: '100%', marginBottom: isSidebarCollapsed ? '1.5rem' : '0.5rem' }}>
-            <div 
-              onClick={() => setActiveTab('dashboard')}
-              style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', cursor: 'pointer' }}
-            >
-              <div style={{ position: 'relative', width: isSidebarCollapsed ? '32px' : '42px', height: isSidebarCollapsed ? '32px' : '42px', transition: 'all 0.3s' }}>
-                <img src="/nexus_icon.png" alt="Nexus" style={{ width: '100%', height: '100%', borderRadius: '10px', boxShadow: '0 8px 25px rgba(59, 130, 246, 0.25)' }} />
-              </div>
-              {!isSidebarCollapsed && (
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '1.4rem', fontWeight: '950', letterSpacing: '0.04em', lineHeight: 1 }}>{t('logo')}</span>
-                  <span style={{ fontSize: '0.65rem', color: 'var(--accent-color)', fontWeight: '800', letterSpacing: '0.22em' }}>NETWORK</span>
+      {(!isMobile || isMobileMenuOpen) && (
+        <nav className={`desktop-sidebar ${isMobileMenuOpen ? 'open' : ''} ${isSidebarCollapsed ? 'collapsed' : ''}`} style={{
+          width: isMobile ? '100vw' : (isSidebarCollapsed ? '80px' : '280px'),
+          flexShrink: 0,
+          borderRight: isMobile ? 'none' : '1px solid var(--card-border)',
+          padding: isMobile ? '0' : (isSidebarCollapsed ? '1.5rem 0.75rem' : '2.5rem 1.25rem'),
+          background: isMobile ? 'rgba(7, 10, 15, 0.98)' : 'rgba(7, 10, 15, 0.7)',
+          backdropFilter: isMobile ? 'blur(20px)' : 'blur(40px)',
+          display: 'flex',
+          flexDirection: 'column',
+          position: isMobile ? 'fixed' : 'sticky',
+          top: 0,
+          left: 0,
+          height: '100dvh',
+          transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+          zIndex: 10000,
+          overflow: 'hidden'
+        }}>
+        {isMobile ? (
+          /* Full Screen Mobile Menu Content */
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            height: '100%', 
+            width: '100%',
+            padding: 'max(env(safe-area-inset-top), 2rem) 1.5rem max(env(safe-area-inset-bottom), 2rem)'
+          }}>
+            {/* Mobile Menu Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ width: '50px', height: '50px', background: 'linear-gradient(135deg, var(--accent-color) 0%, #1d4ed8 100%)', borderRadius: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'white', fontSize: '1.1rem', boxShadow: '0 10px 25px rgba(59, 130, 246, 0.3)' }}>{activeOperator?.avatar}</div>
+                <div>
+                  <div style={{ fontSize: '1.2rem', fontWeight: '900', color: 'white' }}>{activeOperator?.name}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', fontWeight: '800', letterSpacing: '0.05em' }}>{activeRole.toUpperCase()}</div>
                 </div>
-              )}
-            </div>
-          </div>
-          
-          {!isSidebarCollapsed && !isMobile && (
-            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.02)', padding: '3px', borderRadius: '12px', border: '1px solid var(--card-border)', gap: '0.5rem' }}>
-              <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', padding: '2px', borderRadius: '9px', flex: 1 }}>
-                <button onClick={() => setLang('cz')} style={{ flex: 1, padding: '5px 0', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '7px', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}>CZ</button>
-                <button onClick={() => setLang('en')} style={{ flex: 1, padding: '5px 0', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '7px', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}>EN</button>
               </div>
-              <button 
-                onClick={() => setNotificationPanelOpen(true)} 
-                style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', color: 'white', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <Bell size={16} />
+              <button onClick={() => setIsMobileMenuOpen(false)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', width: '44px', height: '44px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <X size={24} />
               </button>
             </div>
-          )}
-        </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1.5rem', marginRight: '-0.75rem', paddingRight: '0.75rem' }} className="custom-scrollbar">
-          {/* Main Navigation */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '1.5rem' }}>
-            {[
-              { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator?.isModel ? 0 : totalUnread, perm: 'messaging' },
-              { id: 'calendar', icon: Calendar, label: t('schedule'), perm: 'calendar' },
-            ].map(item => (
-              <button key={item.id} 
-                onClick={() => {
-                  setActiveTab(item.id);
-                  if (isMobile) setIsMobileMenuOpen(false);
-                }}
-                className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.85rem 1.15rem', borderRadius: '14px',
-                  background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
-                  cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s',
-                  justifyContent: isSidebarCollapsed ? 'center' : 'flex-start',
-                  border: activeTab === item.id ? '1px solid rgba(59, 130, 246, 0.15)' : '1px solid transparent'
-                }}
-              >
-                <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
-                {!isSidebarCollapsed && (
-                  <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '900' : '500', fontSize: '0.95rem' }}>
-                    {item.label}
-                  </span>
-                )}
-                {item.badge > 0 && !isSidebarCollapsed && (
-                  <div style={{ marginLeft: 'auto', background: 'var(--accent-color)', color: 'white', fontSize: '0.65rem', padding: '2px 8px', borderRadius: '20px', fontWeight: '950' }}>{item.badge}</div>
-                )}
-              </button>
-            ))}
-
-            {/* Collapsible System Tools */}
-            <div style={{ marginTop: '0.75rem' }}>
-              {!isSidebarCollapsed && (
-                <button 
-                  onClick={() => setIsToolsExpanded(!isToolsExpanded)}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 1.15rem', background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '0.12em' }}
-                >
-                  {t('global_features').toUpperCase() || 'SYSTEM TOOLS'}
-                  {isToolsExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                </button>
-              )}
-              
-              {(isToolsExpanded || isSidebarCollapsed) && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.25rem', paddingLeft: isSidebarCollapsed ? '0' : '0.5rem' }}>
-                  {[
-                    { id: 'infra', icon: HardDrive, label: t('infra'), perm: 'infrastructure' },
-                    { id: 'agencies', icon: Building2, label: t('agencies'), perm: 'agencies' },
-                    { id: 'permissions', icon: Shield, label: t('permissions'), perm: 'permissions' },
-                    { id: 'plans', icon: CreditCard, label: t('plans'), perm: 'plans' },
-                    { id: 'features', icon: Zap, label: t('features'), perm: 'global_features' },
-                    { id: 'analytics', icon: BarChart3, label: t('analytics'), perm: 'analytics' },
-                    { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
-                    { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles' },
-                    { id: 'device-setup', icon: Smartphone, label: t('deviceSetup'), perm: 'device_setup' },
-                    { id: 'activity', icon: Activity, label: t('auditLog'), perm: 'audit_logs' },
-                    { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub' },
-                    { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
-                  ].filter(item => (rolePermissions[activeRole] || {})[item.perm]).map(item => (
-                    <button key={item.id} 
-                      onClick={() => {
-                        setActiveTab(item.id);
-                        if (isMobile) setIsMobileMenuOpen(false);
-                      }}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '0.95rem', padding: '0.7rem 1.15rem', border: 'none', borderRadius: '12px',
-                        background: activeTab === item.id ? 'rgba(255, 255, 255, 0.04)' : 'transparent',
-                        cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s',
-                        justifyContent: isSidebarCollapsed ? 'center' : 'flex-start'
-                      }}
-                      title={isSidebarCollapsed ? item.label : ''}
-                    >
-                      <item.icon size={19} color={activeTab === item.id ? 'var(--accent-color)' : 'rgba(255,255,255,0.45)'} />
-                      {!isSidebarCollapsed && (
-                        <span style={{ color: activeTab === item.id ? 'white' : 'rgba(255,255,255,0.45)', fontWeight: activeTab === item.id ? '700' : '500', fontSize: '0.88rem' }}>
-                          {item.label}
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Assigned Girls Section */}
-          {!activeOperator?.isModel && !activeOperator?.isSuperAdmin && !activeOperator?.isAdmin && !isSidebarCollapsed && (
-            <div style={{ marginTop: '1.25rem', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem', padding: '0 0.85rem' }}>
-                <div style={{ fontSize: '0.65rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{t('myAssignedGirls').toUpperCase()}</div>
-                <div onClick={() => setShowOnlyOnline(!showOnlyOnline)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: showOnlyOnline ? 'var(--success-color)' : 'rgba(255,255,255,0.2)' }}></div>
-                  <span style={{ fontSize: '0.6rem', fontWeight: '900', color: showOnlyOnline ? 'var(--success-color)' : 'rgba(255,255,255,0.3)' }}>ONLINE</span>
-                </div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: '35vh', overflowY: 'auto' }} className="custom-scrollbar">
-                {myProfiles.filter(p => !showOnlyOnline || p.status === 'online').map(p => {
-                  const unread = getUnreadForProfile(p.id);
-                  const isActive = activeProfile?.id === p.id;
-                  return (
-                    <button key={p.id} onClick={() => { 
-                      setActiveProfileId(p.id); 
-                      setActiveTab('inbox'); 
-                      const firstUnread = messages.find(m => m.profileId === p.id && m.status === 'unread');
-                      if (firstUnread) {
-                        setSelectedChatId(firstUnread.id);
-                        if (isMobile) setMobileView('chat');
-                      } else {
-                        setSelectedChatId(null);
-                      }
-                      if (isMobile) setIsMobileMenuOpen(false); 
+            {/* Mobile Menu Grid */}
+            <div style={{ 
+              flex: 1, 
+              overflowY: 'auto', 
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '2rem',
+              paddingBottom: '2rem'
+            }} className="custom-scrollbar">
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(2, 1fr)', 
+                gap: '1rem'
+              }}>
+                {[
+                  { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard') },
+                  { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: totalUnread },
+                  { id: 'calendar', icon: Calendar, label: t('schedule') },
+                  { id: 'analytics', icon: BarChart3, label: t('analytics'), perm: 'analytics' },
+                  { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
+                  { id: 'agencies', icon: Building2, label: t('agencies'), perm: 'agencies' },
+                  { id: 'infra', icon: HardDrive, label: t('infra'), perm: 'infrastructure' },
+                  { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
+                ].filter(item => !item.perm || (rolePermissions[activeRole] || {})[item.perm]).map(item => (
+                  <button 
+                    key={item.id}
+                    onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
+                      padding: '1.25rem 1rem', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255,255,255,0.03)',
+                      border: activeTab === item.id ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(255,255,255,0.05)',
+                      borderRadius: '20px', cursor: 'pointer', transition: 'all 0.2s', position: 'relative'
                     }}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.7rem 0.85rem', border: '1px solid',
-                        borderRadius: '14px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                        background: isActive ? 'rgba(59, 130, 246, 0.08)' : 'rgba(255,255,255,0.02)',
-                        borderColor: isActive ? 'rgba(59, 130, 246, 0.25)' : 'transparent',
-                      }}
-                    >
-                      <div style={{ width: '8px', height: '8px', background: p.status === 'online' ? 'var(--success-color)' : 'rgba(255,255,255,0.1)', borderRadius: '50%', flexShrink: 0 }}></div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '0.88rem', fontWeight: isActive ? '800' : '600', color: isActive ? 'white' : 'rgba(255,255,255,0.6)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-                      </div>
-                      {unread > 0 && <div style={{ background: 'var(--error-color)', color: 'white', fontSize: '0.62rem', minWidth: '18px', height: '18px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '950' }}>{unread}</div>}
-                    </button>
-                  );
-                })}
+                  >
+                    <item.icon size={26} color={activeTab === item.id ? 'var(--accent-color)' : 'rgba(255,255,255,0.6)'} />
+                    <span style={{ fontSize: '0.8rem', fontWeight: '800', color: activeTab === item.id ? 'white' : 'rgba(255,255,255,0.6)', textAlign: 'center' }}>{item.label}</span>
+                    {item.badge > 0 && (
+                      <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'var(--error-color)', color: 'white', fontSize: '0.6rem', minWidth: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '950' }}>{item.badge}</div>
+                    )}
+                  </button>
+                ))}
               </div>
-            </div>
-          )}
-        </div>
 
-        {/* Bottom Section */}
-        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.85rem', borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem', marginBottom: isMobile ? '70px' : '0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: isSidebarCollapsed ? '0' : '0 0.5rem', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start', marginBottom: '0.5rem' }}>
-            <div style={{ width: '38px', height: '38px', background: 'linear-gradient(135deg, var(--accent-color) 0%, #1d4ed8 100%)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'white', fontSize: '0.85rem', flexShrink: 0, boxShadow: '0 6px 15px rgba(0,0,0,0.4)' }}>{activeOperator?.avatar}</div>
-            {!isSidebarCollapsed && (
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '0.88rem', fontWeight: '900', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'white' }}>{activeOperator?.name}</div>
-                <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', fontWeight: '800', letterSpacing: '0.05em' }}>{activeRole.toUpperCase()}</div>
-              </div>
-            )}
-            {!isSidebarCollapsed && (
+              {/* Assigned Profiles in Mobile Menu */}
+              {!activeOperator?.isModel && !activeOperator?.isSuperAdmin && !activeOperator?.isAdmin && myProfiles.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontSize: '0.7rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{t('myAssignedGirls').toUpperCase()}</div>
+                    <div onClick={() => setShowOnlyOnline(!showOnlyOnline)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: showOnlyOnline ? 'var(--success-color)' : 'rgba(255,255,255,0.2)' }}></div>
+                      <span style={{ fontSize: '0.62rem', fontWeight: '900', color: showOnlyOnline ? 'var(--success-color)' : 'rgba(255,255,255,0.3)' }}>ONLINE</span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {myProfiles.filter(p => !showOnlyOnline || p.status === 'online').slice(0, 10).map(p => {
+                      const unread = getUnreadForProfile(p.id);
+                      return (
+                        <button key={p.id} onClick={() => { 
+                          setActiveProfileId(p.id); 
+                          setActiveTab('inbox'); 
+                          const firstUnread = messages.find(m => m.profileId === p.id && m.status === 'unread');
+                          if (firstUnread) {
+                            setSelectedChatId(firstUnread.id);
+                            setMobileView('chat');
+                          }
+                          setIsMobileMenuOpen(false); 
+                        }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.85rem 1rem', border: '1px solid rgba(255,255,255,0.05)',
+                            borderRadius: '15px', cursor: 'pointer', background: 'rgba(255,255,255,0.02)', width: '100%', textAlign: 'left'
+                          }}
+                        >
+                          <div style={{ width: '8px', height: '8px', background: p.status === 'online' ? 'var(--success-color)' : 'rgba(255,255,255,0.1)', borderRadius: '50%' }}></div>
+                          <span style={{ flex: 1, fontSize: '0.9rem', fontWeight: '700', color: 'white' }}>{p.name}</span>
+                          {unread > 0 && <div style={{ background: 'var(--error-color)', color: 'white', fontSize: '0.6rem', minWidth: '18px', height: '18px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '950' }}>{unread}</div>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Relay Mode Button */}
+              <button
+                onClick={() => { setIsRelayMode(true); setIsMobileMenuOpen(false); }}
+                style={{ 
+                  display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.25rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '18px', cursor: 'pointer', width: '100%', color: 'var(--accent-color)', fontWeight: '950'
+                }}
+              >
+                <Radio size={22} />
+                <span>RELAY MODE</span>
+              </button>
+            </div>
+
+            {/* Mobile Menu Footer */}
+            <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', gap: '1rem' }}>
+              <button 
+                onClick={() => { setNotificationPanelOpen(true); setIsMobileMenuOpen(false); }}
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '15px', color: 'white', fontWeight: '800', fontSize: '0.9rem' }}
+              >
+                <Bell size={18} /> {t('notifications') || 'Alerts'}
+              </button>
               <button 
                 onClick={handleLogout}
-                style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: 'var(--error-color)', width: '30px', height: '30px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '15px', color: 'var(--error-color)', fontWeight: '800', fontSize: '0.9rem' }}
               >
-                <LogOut size={16} />
+                <LogOut size={18} /> {t('logout') || 'Exit'}
               </button>
-            )}
+            </div>
           </div>
-          
-          <button
-            onClick={() => setIsRelayMode(true)}
-            style={{ 
-              display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '0.95rem', padding: '0.9rem 1rem', background: 'rgba(59, 130, 246, 0.15)', border: '1px solid rgba(59, 130, 246, 0.25)', borderRadius: '16px', cursor: 'pointer',
-              justifyContent: isSidebarCollapsed ? 'center' : 'flex-start', width: '100%', color: 'var(--accent-color)', fontWeight: '950', fontSize: '0.85rem'
-            }}
-          >
-            <Radio size={20} />
-            {!isSidebarCollapsed && <span style={{ letterSpacing: '0.12em' }}>NEXUS RELAY</span>}
-          </button>
-        </div>
+        ) : (
+          /* Desktop Sidebar Content */
+          <>
+            <div style={{ 
+              marginTop: isMobile ? 'calc(env(safe-area-inset-top, 0px) + 1rem)' : 0,
+              marginBottom: '2rem', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '1rem', 
+              alignItems: isSidebarCollapsed ? 'center' : 'stretch' 
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: isSidebarCollapsed ? 'center' : 'space-between', width: '100%', marginBottom: isSidebarCollapsed ? '1.5rem' : '0.5rem' }}>
+                <div 
+                  onClick={() => setActiveTab('dashboard')}
+                  style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', cursor: 'pointer' }}
+                >
+                  <div style={{ position: 'relative', width: isSidebarCollapsed ? '32px' : '42px', height: isSidebarCollapsed ? '32px' : '42px', transition: 'all 0.3s' }}>
+                    <img src="/nexus_icon.png" alt="Nexus" style={{ width: '100%', height: '100%', borderRadius: '10px', boxShadow: '0 8px 25px rgba(59, 130, 246, 0.25)' }} />
+                  </div>
+                  {!isSidebarCollapsed && (
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: '1.4rem', fontWeight: '950', letterSpacing: '0.04em', lineHeight: 1 }}>{t('logo')}</span>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--accent-color)', fontWeight: '800', letterSpacing: '0.22em' }}>NETWORK</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {!isSidebarCollapsed && (
+                <div style={{ display: 'flex', background: 'rgba(255,255,255,0.02)', padding: '3px', borderRadius: '12px', border: '1px solid var(--card-border)', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', padding: '2px', borderRadius: '9px', flex: 1 }}>
+                    <button onClick={() => setLang('cz')} style={{ flex: 1, padding: '5px 0', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '7px', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}>CZ</button>
+                    <button onClick={() => setLang('en')} style={{ flex: 1, padding: '5px 0', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '7px', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}>EN</button>
+                  </div>
+                  <button 
+                    onClick={() => setNotificationPanelOpen(true)} 
+                    style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', color: 'white', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Bell size={16} />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1.5rem', marginRight: '-0.75rem', paddingRight: '0.75rem' }} className="custom-scrollbar">
+              {/* Main Navigation */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '1.5rem' }}>
+                {[
+                  { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard') },
+                  { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator?.isModel ? 0 : totalUnread, perm: 'messaging' },
+                  { id: 'calendar', icon: Calendar, label: t('schedule'), perm: 'calendar' },
+                  { id: 'analytics', icon: BarChart3, label: t('analytics'), perm: 'analytics' },
+                  { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
+                ].filter(item => !item.perm || (rolePermissions[activeRole] || {})[item.perm]).map(item => (
+                  <button key={item.id} 
+                    onClick={() => {
+                      setActiveTab(item.id);
+                      if (isMobile) setIsMobileMenuOpen(false);
+                    }}
+                    className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.85rem 1.15rem', borderRadius: '14px',
+                      background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
+                      cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s',
+                      justifyContent: isSidebarCollapsed ? 'center' : 'flex-start',
+                      border: activeTab === item.id ? '1px solid rgba(59, 130, 246, 0.15)' : '1px solid transparent'
+                    }}
+                  >
+                    <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
+                    {!isSidebarCollapsed && (
+                      <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '900' : '500', fontSize: '0.95rem' }}>
+                        {item.label}
+                      </span>
+                    )}
+                    {item.badge > 0 && !isSidebarCollapsed && (
+                      <div style={{ marginLeft: 'auto', background: 'var(--accent-color)', color: 'white', fontSize: '0.65rem', padding: '2px 8px', borderRadius: '20px', fontWeight: '950' }}>{item.badge}</div>
+                    )}
+                  </button>
+                ))}
+
+                {/* Collapsible System Tools */}
+                <div style={{ marginTop: '0.75rem' }}>
+                  {!isSidebarCollapsed && (
+                    <button 
+                      onClick={() => setIsToolsExpanded(!isToolsExpanded)}
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 1.15rem', background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '0.12em' }}
+                    >
+                      {t('global_features').toUpperCase() || 'SYSTEM TOOLS'}
+                      {isToolsExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    </button>
+                  )}
+                  
+                  {(isToolsExpanded || isSidebarCollapsed) && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.25rem', paddingLeft: isSidebarCollapsed ? '0' : '0.5rem' }}>
+                      {[
+                        { id: 'infra', icon: HardDrive, label: t('infra'), perm: 'infrastructure' },
+                        { id: 'agencies', icon: Building2, label: t('agencies'), perm: 'agencies' },
+                        { id: 'permissions', icon: Shield, label: t('permissions'), perm: 'permissions' },
+                        { id: 'plans', icon: CreditCard, label: t('plans'), perm: 'plans' },
+                        { id: 'features', icon: Zap, label: t('features'), perm: 'global_features' },
+                        { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles' },
+                        { id: 'device-setup', icon: Smartphone, label: t('deviceSetup'), perm: 'device_setup' },
+                        { id: 'activity', icon: Activity, label: t('auditLog'), perm: 'audit_logs' },
+                        { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub' },
+                        { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
+                      ].filter(item => (rolePermissions[activeRole] || {})[item.perm]).map(item => (
+                        <button key={item.id} 
+                          onClick={() => {
+                            setActiveTab(item.id);
+                            if (isMobile) setIsMobileMenuOpen(false);
+                          }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '0.95rem', padding: '0.7rem 1.15rem', border: 'none', borderRadius: '12px',
+                            background: activeTab === item.id ? 'rgba(255, 255, 255, 0.04)' : 'transparent',
+                            cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s',
+                            justifyContent: isSidebarCollapsed ? 'center' : 'flex-start'
+                          }}
+                          title={isSidebarCollapsed ? item.label : ''}
+                        >
+                          <item.icon size={19} color={activeTab === item.id ? 'var(--accent-color)' : 'rgba(255,255,255,0.45)'} />
+                          {!isSidebarCollapsed && (
+                            <span style={{ color: activeTab === item.id ? 'white' : 'rgba(255,255,255,0.45)', fontWeight: activeTab === item.id ? '700' : '500', fontSize: '0.88rem' }}>
+                              {item.label}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Assigned Girls Section */}
+              {!activeOperator?.isModel && !activeOperator?.isSuperAdmin && !activeOperator?.isAdmin && !isSidebarCollapsed && (
+                <div style={{ marginTop: '1.25rem', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem', padding: '0 0.85rem' }}>
+                    <div style={{ fontSize: '0.65rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{t('myAssignedGirls').toUpperCase()}</div>
+                    <div onClick={() => setShowOnlyOnline(!showOnlyOnline)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: showOnlyOnline ? 'var(--success-color)' : 'rgba(255,255,255,0.2)' }}></div>
+                      <span style={{ fontSize: '0.6rem', fontWeight: '900', color: showOnlyOnline ? 'var(--success-color)' : 'rgba(255,255,255,0.3)' }}>ONLINE</span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: '35vh', overflowY: 'auto' }} className="custom-scrollbar">
+                    {myProfiles.filter(p => !showOnlyOnline || p.status === 'online').map(p => {
+                      const unread = getUnreadForProfile(p.id);
+                      const isActive = activeProfile?.id === p.id;
+                      return (
+                        <button key={p.id} onClick={() => {
+                          setActiveProfileId(p.id);
+                          setActiveTab('inbox');
+                          const firstUnread = messages.find(m => m.profileId === p.id && m.status === 'unread');
+                          if (firstUnread) {
+                            setSelectedChatId(firstUnread.id);
+                            if (isMobile) setMobileView('chat');
+                          } else {
+                            setSelectedChatId(null);
+                          }
+                          if (isMobile) setIsMobileMenuOpen(false);
+                        }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.7rem 0.85rem', border: '1px solid',
+                            borderRadius: '14px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                            background: isActive ? 'rgba(59, 130, 246, 0.08)' : 'rgba(255,255,255,0.02)',
+                            borderColor: isActive ? 'rgba(59, 130, 246, 0.25)' : 'transparent',
+                          }}
+                        >
+                          <div style={{ width: '8px', height: '8px', background: p.status === 'online' ? 'var(--success-color)' : 'rgba(255,255,255,0.1)', borderRadius: '50%', flexShrink: 0 }}></div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: '0.88rem', fontWeight: isActive ? '800' : '600', color: isActive ? 'white' : 'rgba(255,255,255,0.6)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                          </div>
+                          {unread > 0 && <div style={{ background: 'var(--error-color)', color: 'white', fontSize: '0.62rem', minWidth: '18px', height: '18px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '950' }}>{unread}</div>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Section */}
+            <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.85rem', borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: isSidebarCollapsed ? '0' : '0 0.5rem', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start', marginBottom: '0.5rem' }}>
+                <div style={{ width: '38px', height: '38px', background: 'linear-gradient(135deg, var(--accent-color) 0%, #1d4ed8 100%)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'white', fontSize: '0.85rem', flexShrink: 0, boxShadow: '0 6px 15px rgba(0,0,0,0.4)' }}>{activeOperator?.avatar}</div>
+                {!isSidebarCollapsed && (
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '0.88rem', fontWeight: '900', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'white' }}>{activeOperator?.name}</div>
+                    <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', fontWeight: '800', letterSpacing: '0.05em' }}>{activeRole.toUpperCase()}</div>
+                  </div>
+                )}
+                {!isSidebarCollapsed && (
+                  <button 
+                    onClick={handleLogout}
+                    style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: 'var(--error-color)', width: '30px', height: '30px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <LogOut size={16} />
+                  </button>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </nav>
+      )}
 
       {/* Main Area */}
       <main className="main-content custom-scrollbar" style={{
@@ -1846,7 +2317,7 @@ function App() {
         )}
    
         {activeTab === 'calendar' && (
-          <div style={{ padding: isMobile ? '1rem' : '3rem', paddingBottom: '8rem', flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }} className="fade-in">
+          <div style={{ padding: isMobile ? '1.5rem 1rem' : '3rem', paddingBottom: '8rem', flex: 1, display: 'flex', flexDirection: 'column', overflowY: isMobile ? 'visible' : 'auto' }} className="fade-in custom-scrollbar">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '2.5rem', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : '0' }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
@@ -1876,20 +2347,20 @@ function App() {
                 </div>
                 <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('bookingScheduleDesc')}</p>
               </div>
-              <div style={{ display: 'flex', gap: '0.75rem', width: isMobile ? '100%' : 'auto' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', width: isMobile ? '100%' : 'auto', flexDirection: isMobile ? 'column' : 'row' }}>
                  <button 
                    onClick={handleExportICS}
                    className="glass-card" 
-                   style={{ padding: '0.6rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'white', border: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}
+                   style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '0.75rem', cursor: 'pointer', color: 'white', border: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', flex: isMobile ? 1 : 'none' }}
                  >
-                   <Share2 size={16} /> <span className="hide-on-mobile">{t('exportCalendar')}</span>
+                   <Share2 size={18} /> <span>{t('exportCalendar')}</span>
                  </button>
                  <button 
                    onClick={() => setIsCalendarSyncOpen(!isCalendarSyncOpen)}
                    className="glass-card" 
-                   style={{ padding: '0.6rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--accent-color)', border: '1px solid var(--accent-color)', background: 'rgba(59,130,246,0.1)', borderRadius: '12px' }}
+                   style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '0.75rem', cursor: 'pointer', color: 'var(--accent-color)', border: '1px solid var(--accent-color)', background: 'rgba(59,130,246,0.1)', borderRadius: '15px', flex: isMobile ? 1 : 'none' }}
                  >
-                   <Link size={16} /> <span className="hide-on-mobile">{t('syncCalendar')}</span>
+                   <Link size={18} /> <span>{t('syncCalendar')}</span>
                  </button>
               </div>
             </div>
@@ -1922,63 +2393,70 @@ function App() {
               </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem', flex: 1, minHeight: 0 }}>
-              <div className="glass-card" style={{ padding: '2rem', overflowY: 'auto' }}>
+            <div style={{ display: isMobile ? 'flex' : 'grid', flexDirection: isMobile ? 'column' : 'row', gridTemplateColumns: isMobile ? '1fr' : '1fr 350px', gap: '2rem', flex: 1, minHeight: 0 }}>
+              <div className="glass-card" style={{ padding: isMobile ? '1.25rem' : '2rem', overflowY: isMobile ? 'visible' : 'auto' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {bookingSchedule.sort((a,b) => {
-                    const timeToMins = (t) => {
-                      const [h, m] = t.split(' ')[0].split(':').map(Number);
-                      const isPm = t.includes('PM') && h !== 12;
-                      return (isPm ? h + 12 : (t.includes('AM') && h === 12 ? 0 : h)) * 60 + (m || 0);
-                    };
-                    return timeToMins(a.time) - timeToMins(b.time);
-                  }).map((event, idx) => (
-                    <div key={idx} style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '1.5rem', 
-                      padding: '1.25rem', 
-                      background: 'rgba(255,255,255,0.02)', 
-                      borderRadius: '16px', 
-                      border: '1px solid var(--card-border)',
-                      borderLeft: `4px solid ${event.type === 'work' ? 'var(--accent-color)' : 'var(--warning-color)'}`
-                    }}>
-                      <div style={{ width: '80px', flexShrink: 0 }}>
-                        <div style={{ fontWeight: '800', fontSize: '1.1rem' }}>{event.time}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{event.duration}</div>
+                    {bookingSchedule.length === 0 ? (
+                      <div style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                        <Calendar size={48} style={{ opacity: 0.1, marginBottom: '1rem' }} />
+                        <p>{t('noEventsToday') || 'No bookings scheduled for today.'}</p>
                       </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: '700', fontSize: '1rem', marginBottom: '0.2rem' }}>{event.title}</div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: event.status === 'busy' ? 'var(--error-color)' : 'var(--success-color)' }}></div>
-                          {event.status.toUpperCase()}
+                    ) : (
+                      bookingSchedule.sort((a,b) => {
+                        const timeToMins = (t) => {
+                          const [h, m] = t.split(' ')[0].split(':').map(Number);
+                          const isPm = t.includes('PM') && h !== 12;
+                          return (isPm ? h + 12 : (t.includes('AM') && h === 12 ? 0 : h)) * 60 + (m || 0);
+                        };
+                        return timeToMins(a.time) - timeToMins(b.time);
+                      }).map((event, idx) => (
+                        <div key={idx} style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: isMobile ? '1rem' : '1.5rem', 
+                          padding: isMobile ? '1rem' : '1.25rem', 
+                          background: 'rgba(255,255,255,0.02)', 
+                          borderRadius: '16px', 
+                          border: '1px solid var(--card-border)',
+                          borderLeft: `4px solid ${event.type === 'work' ? 'var(--accent-color)' : 'var(--warning-color)'}`
+                        }}>
+                          <div style={{ width: isMobile ? '70px' : '80px', flexShrink: 0 }}>
+                            <div style={{ fontWeight: '800', fontSize: isMobile ? '1rem' : '1.1rem' }}>{event.time}</div>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{event.duration}</div>
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: '700', fontSize: isMobile ? '0.9rem' : '1rem', marginBottom: '0.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.title}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: event.status === 'busy' ? 'var(--error-color)' : 'var(--success-color)' }}></div>
+                              {event.status.toUpperCase()}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '1rem' }}>
+                            {activeTimerEvent?.id === event.id ? (
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); handleCheckOut(); }}
+                                className="action-btn" 
+                                style={{ margin: 0, padding: isMobile ? '0.4rem 0.6rem' : '0.5rem 1rem', background: 'var(--success-color)', fontSize: '0.7rem' }}
+                              >
+                                {isMobile ? 'OUT' : 'CHECK-OUT'}
+                              </button>
+                            ) : (
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); handleCheckIn(event); }}
+                                className="action-btn" 
+                                style={{ margin: 0, padding: isMobile ? '0.4rem 0.6rem' : '0.5rem 1rem', background: isTimerActive ? 'rgba(255,255,255,0.05)' : 'var(--accent-color)', fontSize: '0.7rem', opacity: isTimerActive ? 0.5 : 1 }}
+                                disabled={isTimerActive}
+                              >
+                                {isMobile ? 'IN' : 'CHECK-IN'}
+                              </button>
+                            )}
+                            <div style={{ opacity: 0.5 }}>
+                              <MoreVertical size={16} />
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        {activeTimerEvent?.id === event.id ? (
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); handleCheckOut(); }}
-                            className="action-btn" 
-                            style={{ margin: 0, padding: '0.5rem 1rem', background: 'var(--success-color)', fontSize: '0.75rem' }}
-                          >
-                            CHECK-OUT
-                          </button>
-                        ) : (
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); handleCheckIn(event); }}
-                            className="action-btn" 
-                            style={{ margin: 0, padding: '0.5rem 1rem', background: isTimerActive ? 'rgba(255,255,255,0.05)' : 'var(--accent-color)', fontSize: '0.75rem', opacity: isTimerActive ? 0.5 : 1 }}
-                            disabled={isTimerActive}
-                          >
-                            CHECK-IN
-                          </button>
-                        )}
-                        <div style={{ opacity: 0.5 }}>
-                          <MoreVertical size={18} />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                      ))
+                    )}
                   
                   {isTimerActive && (
                     <div className="glass-card fade-in" style={{ marginTop: '2rem', padding: '1.5rem', background: timeLeft <= 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.05)', border: `1px solid ${timeLeft <= 0 ? '#ef4444' : '#10b981'}` }}>
@@ -2026,7 +2504,7 @@ function App() {
         )}
 
         {activeTab === 'web-profiles' && (
-          <div style={{ padding: isMobile ? '1rem' : '2rem', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem', maxHeight: '100%' }} className="fade-in custom-scrollbar">
+          <div style={{ padding: isMobile ? '1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem', maxHeight: '100%' }} className="fade-in custom-scrollbar">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '1.5rem', gap: '2rem' }}>
               <div>
                 <h2 style={{ fontSize: '2rem', fontWeight: '900', background: 'linear-gradient(to right, #fff, var(--accent-color))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>
@@ -2061,7 +2539,7 @@ function App() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '1.5rem', flex: 1 }}>
+            <div style={{ display: 'flex', gap: '1.5rem', flex: 1, flexDirection: isMobile ? 'column' : 'row' }}>
               {/* Left Content Area (Gallery & Bio) */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
@@ -2071,7 +2549,7 @@ function App() {
                   <button className="action-btn" style={{ width: 'auto', padding: '0.5rem 1rem', marginTop: 0, fontSize: '0.8rem' }}>+ {t('uploadPhoto')}</button>
                 </div>
 
-                <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem', flexDirection: isMobile ? 'column' : 'row' }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-secondary)' }}>{t('publicGalleryCap')}</div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '1rem' }}>
@@ -2080,7 +2558,7 @@ function App() {
                       <div className="placeholder-img" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=200)' }}></div>
                     </div>
                   </div>
-                  <div style={{ width: '1px', background: 'var(--card-border)' }}></div>
+                  {!isMobile && <div style={{ width: '1px', background: 'var(--card-border)' }}></div>}
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-secondary)' }}>{t('privateGalleryCap')} (VIP)</div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '1rem' }}>
@@ -2214,27 +2692,27 @@ function App() {
       )}
 
         {activeTab === 'device-setup' && (
-          <div style={{ padding: isMobile ? '1rem' : '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+          <div style={{ padding: isMobile ? '1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMobile ? '1.5rem' : '2.5rem' }}>
               <div>
-                <h2 style={{ fontSize: '2rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <Smartphone size={28} color="var(--accent-color)" /> {t('deviceSetup')}
+                <h2 style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <Smartphone size={isMobile ? 24 : 28} color="var(--accent-color)" /> {t('deviceSetup')}
                 </h2>
-                <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('deviceSetupDesc')}</p>
+                <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', fontSize: isMobile ? '0.85rem' : '1rem' }}>{t('deviceSetupDesc')}</p>
               </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
               {/* Nexus Relay Setup */}
-              <div className="glass-card" style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ width: '64px', height: '64px', background: 'rgba(96, 165, 250, 0.1)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Smartphone size={32} color="#60a5fa" />
+              <div className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2.5rem', display: 'flex', flexDirection: 'column', gap: isMobile ? '1.5rem' : '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: '200px' }}>
+                    <div style={{ width: isMobile ? '48px' : '64px', height: isMobile ? '48px' : '64px', background: 'rgba(96, 165, 250, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Smartphone size={isMobile ? 24 : 32} color="#60a5fa" />
                     </div>
                     <div>
-                      <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.25rem' }}>{t('nexusRelayTitle')}</h3>
-                      <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>{t('nexusRelayDesc')}</p>
+                      <h3 style={{ fontSize: isMobile ? '1.2rem' : '1.5rem', fontWeight: '800', marginBottom: '0.25rem' }}>{t('nexusRelayTitle')}</h3>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.85rem' : '1rem' }}>{t('nexusRelayDesc')}</p>
                     </div>
                   </div>
                   
@@ -2249,11 +2727,14 @@ function App() {
                       gap: '0.75rem', 
                       background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', 
                       color: 'white', 
-                      padding: '1rem 2rem', 
+                      padding: isMobile ? '0.75rem 1.25rem' : '1rem 2rem', 
                       borderRadius: '12px',
                       textDecoration: 'none',
                       fontWeight: '800',
-                      boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)'
+                      boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)',
+                      fontSize: isMobile ? '0.85rem' : '1rem',
+                      width: isMobile ? '100%' : 'auto',
+                      justifyContent: 'center'
                     }}
                   >
                     <Download size={20} /> {t('downloadApp')} (v0.1)
@@ -2296,10 +2777,10 @@ function App() {
         )}
 
         {activeTab === 'hierarchy' && (rolePermissions[activeRole]?.hierarchy || activeOperator?.isAdmin) && (
-          <div style={{ padding: '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
-            <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('teamHierarchy')}</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>{t('teamHierarchyDesc')}</p>
-            
+          <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
+            <h2 style={{ fontSize: isMobile ? '1.75rem' : '2.5rem', fontWeight: '900', marginBottom: '0.5rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('teamHierarchy')}</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: isMobile ? '1.5rem' : '3rem', fontSize: isMobile ? '0.9rem' : '1.1rem' }}>{t('teamHierarchyDesc')}</p>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               {MOCK_OPERATORS.filter(op => {
                 if (activeRole === 'App Owner') return !op.isSuperAdmin && !op.isModel;
@@ -2308,30 +2789,30 @@ function App() {
                 const assignedModels = MOCK_PROFILES.filter(p => p.operators.some(o => o.id === op.id && o.active));
                 const agency = MOCK_AGENCIES.find(a => a.id === op.clientId);
                 return (
-                  <div key={op.id} className="glass-card" style={{ padding: '2rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                  <div key={op.id} className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '2rem', flexDirection: isMobile ? 'column' : 'row', gap: '1.5rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                        <div style={{ width: '60px', height: '60px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: '800', color: 'var(--accent-color)' }}>
+                        <div style={{ width: isMobile ? '48px' : '60px', height: isMobile ? '48px' : '60px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isMobile ? '1.2rem' : '1.5rem', fontWeight: '800', color: 'var(--accent-color)' }}>
                           {op.avatar}
                         </div>
                         <div>
-                          <h3 style={{ fontSize: '1.5rem', fontWeight: '800' }}>
+                          <h3 style={{ fontSize: isMobile ? '1.2rem' : '1.5rem', fontWeight: '800' }}>
                             {op.name}
                             {activeRole === 'App Owner' && agency && (
-                              <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: '400', marginLeft: '0.5rem' }}>
+                              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '400', marginLeft: '0.5rem' }}>
                                 ({agency.name})
                               </span>
                             )}
                           </h3>
-                          <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{op.role === 'Night Shift' ? t('nightShift') : op.role} • {assignedModels.length} {t('assignedModels')}</div>
+                          <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{op.role === 'Night Shift' ? t('nightShift') : op.role} • {assignedModels.length} {t('assignedModels')}</div>
                         </div>
                       </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem', letterSpacing: '0.1em' }}>{t('todaysPerformance')}</div>
-                        <div style={{ display: 'flex', gap: '1.5rem' }}>
+                      <div style={{ textAlign: isMobile ? 'left' : 'right', width: isMobile ? '100%' : 'auto', paddingTop: isMobile ? '1rem' : 0, borderTop: isMobile ? '1px solid var(--card-border)' : 'none' }}>
+                        <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.75rem', letterSpacing: '0.1em' }}>{t('todaysPerformance')}</div>
+                        <div style={{ display: 'flex', gap: '2.5rem' }}>
                           <div>
                             <div style={{ fontSize: '1.1rem', fontWeight: '800' }}>{op.metrics?.messages || 0}</div>
-                            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{t('messages')}</div>
+                            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{t('messages').toUpperCase()}</div>
                           </div>
                           <div>
                             <div style={{ fontSize: '1.1rem', fontWeight: '800' }}>{op.metrics?.conversion || '0%'}</div>
@@ -2341,21 +2822,21 @@ function App() {
                       </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.85rem' }}>
                       {assignedModels.map(model => (
-                        <div key={model.id} style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                          <div style={{ width: '40px', height: '40px', background: 'var(--accent-color)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '0.8rem' }}>
-                            {model.username?.substring(0,2).toUpperCase() || '??'}
+                        <div key={model.id} style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <div style={{ width: '36px', height: '36px', background: 'var(--accent-color)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '0.75rem' }}>
+                            {model.username?.substring(0,2).toUpperCase() || model.name.substring(0,2).toUpperCase()}
                           </div>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{model.name}</div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: '700', fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{model.name}</div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: model.status === 'online' ? 'var(--success-color)' : 'var(--text-secondary)' }} />
-                              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{(t(model.status) || '').toString().toUpperCase()}</span>
+                              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: model.status === 'online' ? 'var(--success-color)' : 'var(--text-secondary)' }} />
+                              <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{(t(model.status) || 'OFFLINE').toString().toUpperCase()}</span>
                             </div>
                           </div>
                           <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: '0.85rem', fontWeight: '800' }}>{model.unreadCount}</div>
+                            <div style={{ fontSize: '0.85rem', fontWeight: '800' }}>{model.unreadCount || 0}</div>
                             <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{(t('unread') || 'UNREAD').toUpperCase()}</div>
                           </div>
                         </div>
@@ -2460,10 +2941,10 @@ function App() {
                         </td>
                         <td style={{ padding: '1.25rem 1rem', fontSize: '0.85rem' }}>{item.date}</td>
                         <td style={{ padding: '1.25rem 1rem' }}>
-                          <span style={{ 
-                            padding: '0.25rem 0.6rem', 
-                            borderRadius: '6px', 
-                            fontSize: '0.7rem', 
+                          <span style={{
+                            padding: '0.25rem 0.6rem',
+                            borderRadius: '6px',
+                            fontSize: '0.7rem',
                             fontWeight: '800',
                             background: item.status === 'Active' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
                             color: item.status === 'Active' ? '#10b981' : '#f59e0b',
@@ -2490,9 +2971,9 @@ function App() {
         )}
 
         {activeTab === 'analytics' && rolePermissions[activeRole]?.analytics && (
-          <div style={{ padding: '2rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
-            <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '2.5rem' }}>{t('agencyOverview')}</h2>
-            
+          <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
+            <h2 style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '800', marginBottom: isMobile ? '1.5rem' : '2.5rem' }}>{t('agencyOverview')}</h2>
+
             {/* Top Metric Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
               <div className="glass-card" style={{ padding: '1.5rem' }}>
@@ -2503,7 +2984,7 @@ function App() {
                 <div style={{ fontSize: '2rem', fontWeight: '900' }}>£15,490</div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--success-color)', marginTop: '0.5rem', fontWeight: '700' }}>+12.4% {t('vsLastWeek')}</div>
               </div>
-              
+
               <div className="glass-card" style={{ padding: '1.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: 'var(--text-secondary)' }}>
                   <Calendar size={20} color="var(--accent-color)" />
@@ -2532,38 +3013,72 @@ function App() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '2rem' }}>
+            <div style={{ display: 'flex', gap: '2rem', flexDirection: isMobile ? 'column' : 'row' }}>
               {/* Left Column: Profile Earnings */}
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <h3 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Users size={20} color="var(--accent-color)" /> {t('perfByProfile')}
                 </h3>
-                <div className="glass-card custom-scrollbar" style={{ padding: 0, overflowX: 'auto' }}>
-                  <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--card-border)' }}>
-                        <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>PROFILE</th>
-                        <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t('rank').toUpperCase()}</th>
-                        <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t('activeBookings').toUpperCase()}</th>
-                        <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem', textAlign: 'right' }}>{t('earnings').toUpperCase()}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {allAgencyProfiles.sort((a,b) => parseInt(b.earnings.replace(/\D/g,'')) - parseInt(a.earnings.replace(/\D/g,''))).map((p) => (
-                        <tr key={p.id} style={{ borderBottom: '1px solid var(--card-border)' }}>
-                          <td style={{ padding: '1rem', fontWeight: '700' }}>{p.name}</td>
-                          <td style={{ padding: '1rem' }}><div className="status-badge-small" style={{ borderColor: 'var(--success-color)', color: 'var(--success-color)' }}>{t('topRank', { rank: p.rank })}</div></td>
-                          <td style={{ padding: '1rem', color: 'white' }}>{p.bookings}</td>
-                          <td style={{ padding: '1rem', textAlign: 'right', fontWeight: '800', color: 'var(--accent-color)' }}>{p.earnings}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {isMobile ? agencies.flatMap(a => a.profiles || []).slice(0, 10).map((p, i) => (
+                    <div key={p.id || i} className="glass-card" style={{ padding: '1.25rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <div style={{ width: '32px', height: '32px', background: 'var(--accent-color)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '0.8rem' }}>{p.name[0]}</div>
+                          <span style={{ fontWeight: '800', color: 'white' }}>{p.name}</span>
+                        </div>
+                        <span style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-color)', borderRadius: '6px', fontWeight: '800' }}>#{i+1}</span>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div>
+                          <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '800' }}>BOOKINGS</div>
+                          <div style={{ fontWeight: '700', fontSize: '1rem' }}>{p.activeBookings || Math.floor(Math.random()*20)}</div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '800' }}>EARNINGS</div>
+                          <div style={{ fontWeight: '900', fontSize: '1rem', color: 'var(--success-color)' }}>{p.earnings || '£' + (Math.floor(Math.random()*5000) + 1000)}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="glass-card custom-scrollbar" style={{ padding: 0, overflowX: 'auto' }}>
+                      <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+                        <thead>
+                          <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--card-border)' }}>
+                            <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>PROFILE</th>
+                            <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t('rank').toUpperCase()}</th>
+                            <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t('activeBookings').toUpperCase()}</th>
+                            <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem', textAlign: 'right' }}>{t('earnings').toUpperCase()}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {allAgencyProfiles.sort((a,b) => parseInt(b.earnings.replace(/\D/g,'')) - parseInt(a.earnings.replace(/\D/g,''))).map((p, idx) => (
+                            <tr key={p.id} style={{ borderBottom: '1px solid var(--card-border)' }}>
+                              <td style={{ padding: '1rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                  <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '0.8rem', color: 'var(--accent-color)' }}>{p.name[0]}</div>
+                                  <span style={{ fontWeight: '700' }}>{p.name}</span>
+                                </div>
+                              </td>
+                              <td style={{ padding: '1rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                  <TrendingUp size={14} color="var(--success-color)" />
+                                  <span style={{ fontWeight: '700' }}>#{idx + 1}</span>
+                                </div>
+                              </td>
+                              <td style={{ padding: '1rem', fontWeight: '700' }}>{p.activeBookings || Math.floor(Math.random() * 15)}</td>
+                              <td style={{ padding: '1rem', textAlign: 'right', fontWeight: '900', color: 'var(--success-color)' }}>{p.earnings}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Right Column: Operator Activity */}
-              <div style={{ width: '450px' }}>
+              <div style={{ width: isMobile ? '100%' : '450px' }}>
                 <h3 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Activity size={20} color="var(--accent-color)" /> {t('perfByOperator')}
                 </h3>
@@ -2597,8 +3112,8 @@ function App() {
           </div>
         )}
         {activeTab === 'profiles' && (
-          <div style={{ padding: '2rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
-            <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '2rem' }}>{t('managedProfiles')}</h2>
+          <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto' }} className="fade-in custom-scrollbar">
+            <h2 style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '800', marginBottom: '2rem' }}>{t('managedProfiles')}</h2>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               {allAgencyProfiles.map((profile, i) => {
@@ -2606,8 +3121,8 @@ function App() {
                 const activeCount = profile.operators.filter(op => op.active).length;
 
                 return (
-                  <div key={i} className="glass-card" style={{ padding: '2rem', display: 'flex', gap: '2.5rem', borderColor: isMyProfile ? 'rgba(59, 130, 246, 0.4)' : 'var(--card-border)' }}>
-                    <div style={{ flex: '0 0 250px' }}>
+                  <div key={i} className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2rem', display: 'flex', gap: isMobile ? '1.5rem' : '2.5rem', borderColor: isMyProfile ? 'rgba(59, 130, 246, 0.4)' : 'var(--card-border)', flexDirection: isMobile ? 'column' : 'row' }}>
+                    <div style={{ flex: isMobile ? '1 1 auto' : '0 0 250px' }}>
                       <div style={{ fontSize: '1.75rem', fontWeight: '900', marginBottom: '0.5rem' }}>{profile.name}</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.5rem' }}>
                         <div style={{ padding: '0.2rem 0.6rem', borderRadius: '4px', background: activeCount > 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: activeCount > 0 ? 'var(--success-color)' : 'var(--error-color)', fontSize: '0.7rem', fontWeight: '900', border: '1px solid currentColor' }}>
@@ -2668,32 +3183,52 @@ function App() {
         )}
 
         {activeTab === 'activity' && (
-          <div style={{ padding: '2rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-              <div><h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('auditTrail')} - {activeClient?.name || t('system')}</h2><p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('auditSubtitle')}</p></div>
-              <div className="status-badge" style={{ borderColor: 'var(--accent-color)', color: 'var(--accent-color)' }}><Shield size={16} /> {t('encryptedLog')}</div>
+          <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto' }} className="fade-in custom-scrollbar">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '2.5rem', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : 0 }}>
+              <div><h2 style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '800' }}>{t('auditTrail')} - {activeClient?.name || t('system')}</h2><p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', fontSize: isMobile ? '0.85rem' : '1rem' }}>{t('auditSubtitle')}</p></div>
+              <div className="status-badge" style={{ borderColor: 'var(--accent-color)', color: 'var(--accent-color)' }}><Shield size={14} /> {t('encryptedLog')}</div>
             </div>
-            <div className="glass-card custom-scrollbar" style={{ padding: 0, overflowX: 'auto' }}>
-              <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
-                <thead><tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--card-border)' }}>
-                  {[t('timestamp'), t('event'), t('handledBy'), t('target'), t('hash')].map(h => <th key={h} style={{ padding: '1.25rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{h}</th>)}
-                </tr></thead>
-                <tbody>{MOCK_AUDIT_LOG.filter(log => availableOperators.some(op => op.name === log.operator)).map(log => (
-                  <tr key={log.id} style={{ borderBottom: '1px solid var(--card-border)' }}>
-                    <td style={{ padding: '1.25rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{log.timestamp}</td>
-                    <td style={{ padding: '1.25rem', fontWeight: '700' }}>{log.action}</td>
-                    <td style={{ padding: '1.25rem' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><User size={14} /> {log.operator}</div></td>
-                    <td style={{ padding: '1.25rem' }}>{log.profile !== 'N/A' ? <div className="status-badge-small">{log.profile}</div> : '-'}</td>
-                    <td style={{ padding: '1.25rem' }}><code className="hash-code">{log.hash}</code></td>
-                  </tr>
-                ))}</tbody>
-              </table>
-            </div>
+            {isMobile ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {MOCK_AUDIT_LOG.filter(log => availableOperators.some(op => op.name === log.operator)).map(log => (
+                  <div key={log.id} className="glass-card" style={{ padding: '1.25rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '700' }}>{log.timestamp}</span>
+                      <code className="hash-code" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>{log.hash}</code>
+                    </div>
+                    <div style={{ fontWeight: '800', fontSize: '1rem', marginBottom: '0.5rem' }}>{log.action}</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        <User size={12} /> {log.operator}
+                      </div>
+                      {log.profile !== 'N/A' && <div className="status-badge-small" style={{ fontSize: '0.65rem' }}>{log.profile}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="glass-card custom-scrollbar" style={{ padding: 0, overflowX: 'auto' }}>
+                <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+                  <thead><tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--card-border)' }}>
+                    {[t('timestamp'), t('event'), t('handledBy'), t('target'), t('hash')].map(h => <th key={h} style={{ padding: '1.25rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{h}</th>)}
+                  </tr></thead>
+                  <tbody>{MOCK_AUDIT_LOG.filter(log => availableOperators.some(op => op.name === log.operator)).map(log => (
+                    <tr key={log.id} style={{ borderBottom: '1px solid var(--card-border)' }}>
+                      <td style={{ padding: '1.25rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{log.timestamp}</td>
+                      <td style={{ padding: '1.25rem', fontWeight: '700' }}>{log.action}</td>
+                      <td style={{ padding: '1.25rem' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><User size={14} /> {log.operator}</div></td>
+                      <td style={{ padding: '1.25rem' }}>{log.profile !== 'N/A' ? <div className="status-badge-small">{log.profile}</div> : '-'}</td>
+                      <td style={{ padding: '1.25rem' }}><code className="hash-code">{log.hash}</code></td>
+                    </tr>
+                  ))}</tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === 'settings' && (
-          <div style={{ padding: '2rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
+          <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto' }} className="fade-in custom-scrollbar">
             <h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('controlCenter')}</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem' }}>{t('configSubtitle')}</p>
 
@@ -2771,10 +3306,10 @@ function App() {
         )}
 
         {activeTab === 'qa' && (
-          <QAView 
-            t={t} 
-            messages={messages} 
-            clientNotes={clientNotes} 
+          <QAView
+            t={t}
+            messages={messages}
+            clientNotes={clientNotes}
             clientNames={clientNames}
             updateClientName={updateClientName}
             activeOperator={activeOperator}
@@ -2788,17 +3323,21 @@ function App() {
         )}
 
         {activeTab === 'infra' && rolePermissions[activeRole]?.infrastructure && (
-          <div style={{ padding: '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '3rem' }}>
+          <div style={{ padding: isMobile ? '1.5rem 1rem' : '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: isMobile ? '1.5rem' : '3rem' }}>
               <div style={{ flex: 1 }}>
-                <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #3b82f6, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('infraTitle')}</h2>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>{t('infraSubtitle')}</p>
+                <h2 style={{ fontSize: isMobile ? '1.75rem' : '2.5rem', fontWeight: '900', marginBottom: '0.5rem', background: 'linear-gradient(to right, #3b82f6, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('infraTitle')}</h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1.1rem' }}>{t('infraSubtitle')}</p>
               </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
               {/* Stats Overview */}
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '1.5rem' }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? 'repeat(auto-fit, minmax(140px, 1fr))' : 'repeat(4, 1fr)',
+                gap: isMobile ? '0.75rem' : '1.5rem'
+              }}>
                 {[
                   { label: t('totalAgencies'), value: agencies.length, icon: <Building2 size={20} />, color: '#3b82f6', trend: `+2 ${t('thisMonth')}` },
                   { label: t('activeProfiles'), value: profiles.length, icon: <Users size={20} />, color: '#8b5cf6', trend: t('globalReach') },
@@ -2828,7 +3367,7 @@ function App() {
                     <ShieldCheck size={14} /> {t('proxyActive')}
                   </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '2rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '1rem' : '2rem' }}>
                   {[
                     { node: 'UK-LDN-01', location: 'London, UK', status: 'Optimal', latency: '42ms', load: '12%' },
                     { node: 'US-NYC-04', location: 'New York, USA', status: 'Optimal', latency: '115ms', load: '28%' },
@@ -2856,10 +3395,10 @@ function App() {
         )}
 
         {activeTab === 'agencies' && rolePermissions[activeRole]?.agencies && (
-          <div style={{ padding: '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
-            <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #8b5cf6, #d946ef)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('agencyMgmtTitle')}</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>{t('agencyMgmtSubtitle')}</p>
-            
+          <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
+            <h2 style={{ fontSize: isMobile ? '2rem' : '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #8b5cf6, #d946ef)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('agencyMgmtTitle')}</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: isMobile ? '1.5rem' : '3rem', fontSize: isMobile ? '0.95rem' : '1.1rem' }}>{t('agencyMgmtSubtitle')}</p>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
               {/* Agency Manager */}
               <div>
@@ -2867,135 +3406,153 @@ function App() {
                   <h3 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Building2 size={24} color="#8b5cf6" /> {t('portfolioManager')}
                   </h3>
-                  <button 
+                  <button
                     onClick={() => setIsAddAgencyModalOpen(true)}
-                    className="action-btn" 
+                    className="action-btn"
                     style={{ width: 'auto', padding: '0.6rem 1.25rem' }}
                   >
                     {t('provisionNew')}
                   </button>
                 </div>
-                <div className="glass-card custom-scrollbar" style={{ padding: 0, overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                    <thead>
-                      <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--card-border)' }}>
-                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>{t('agencyRegion')}</th>
-                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>{t('status')}</th>
-                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>{t('billingTier')}</th>
-                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>{t('equipment')}</th>
-                        <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textAlign: 'right' }}>{t('actions')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {agencies.map((agency, i) => {
-                        const agencyProfilesCount = profiles.filter(p => p.clientId === agency.id).length;
-                        const agencyOps = operators.filter(o => o.clientId === agency.id);
-                        const agencyOpsCount = agencyOps.length;
-                        return (
-                          <tr key={agency.id} style={{ borderBottom: i < agencies.length - 1 ? '1px solid var(--card-border)' : 'none' }}>
-                            <td style={{ padding: '1.25rem 1.5rem' }}>
-                              <div style={{ fontWeight: '700', fontSize: '1rem' }}>{agency.name}</div>
+
+                {isMobile ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {agencies.map((agency) => {
+                      const agencyProfilesCount = profiles.filter(p => p.clientId === agency.id).length;
+                      const agencyOps = operators.filter(o => o.clientId === agency.id);
+                      return (
+                        <div key={agency.id} className="glass-card" style={{ padding: '1.5rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                            <div>
+                              <div style={{ fontWeight: '800', fontSize: '1.1rem' }}>{agency.name}</div>
                               <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('regionLabel')}: {agency.region}</div>
-                            </td>
-                            <td style={{ padding: '1.25rem 1.5rem' }}>
+                            </div>
+                            <div style={{
+                              display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.2rem 0.6rem', borderRadius: '6px',
+                              background: agency.subscription.status === 'active' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                              color: agency.subscription.status === 'active' ? 'var(--success-color)' : 'var(--error-color)',
+                              fontSize: '0.7rem', fontWeight: '800'
+                            }}>
+                              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }}></div>
+                              {agency.subscription.status.toUpperCase()}
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.25rem' }}>
+                            <div style={{ display: 'flex', gap: '1.5rem' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <Users size={14} color="var(--accent-color)" />
-                                <span style={{ fontWeight: '700' }}>{agencyProfilesCount}</span>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('profilesCount')}</span>
-                              </div>
-                            </td>
-                            <td style={{ padding: '1.25rem 1.5rem' }}>
-                              <div style={{ fontSize: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                                {Object.entries(
-                                  agencyOps.reduce((acc, current) => {
-                                      acc[current.role] = (acc[current.role] || 0) + 1;
-                                      return acc;
-                                    }, {})
-                                ).map(([role, count]) => (
-                                  <span key={role} style={{ background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <strong>{count}</strong> {role}
-                                    <Trash2 
-                                      size={10} 
-                                      style={{ cursor: 'pointer', color: '#ef4444' }} 
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        const opToDelete = agencyOps.find(o => o.role === role);
-                                        if (opToDelete) deleteOperator(opToDelete.id);
-                                      }}
-                                    />
-                                  </span>
-                                ))}
-                                {agencyOpsCount === 0 && <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>{t('noOperators')}</span>}
-                                <button 
-                                  onClick={() => {
-                                    setTargetAgencyId(agency.id);
-                                    setIsAddOperatorModalOpen(true);
-                                  }}
-                                  style={{ background: 'transparent', border: 'none', color: 'var(--accent-color)', cursor: 'pointer', padding: 0 }}
-                                >
-                                  <Plus size={14} />
-                                </button>
-                              </div>
-                            </td>
-                            <td style={{ padding: '1.25rem 1.5rem' }}>
-                              <div style={{ 
-                                display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.2rem 0.6rem', borderRadius: '6px',
-                                background: agency.subscription.status === 'active' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                                color: agency.subscription.status === 'active' ? 'var(--success-color)' : 'var(--error-color)',
-                                fontSize: '0.7rem', fontWeight: '800'
-                              }}>
-                                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }}></div>
-                                {agency.subscription.status.toUpperCase()}
-                              </div>
-                            </td>
-                            <td style={{ padding: '1.25rem 1.5rem' }}>
-                              <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{agency.subscription.plan} {t('planLabel')}</div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('nextRenewal')}: {agency.subscription.endDate}</div>
-                            </td>
-                            <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                <button 
-                                  onClick={() => {
-                                    setAgencies(prev => prev.map(a => a.id === agency.id ? { ...a, status: a.status === 'suspended' ? 'active' : 'suspended' } : a));
-                                  }}
-                                  className="status-badge" 
-                                  style={{ 
-                                    background: agency.status !== 'suspended' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                                    color: agency.status !== 'suspended' ? 'var(--success-color)' : 'var(--error-color)',
-                                    cursor: 'pointer'
-                                  }}
-                                >
-                                  {agency.status === 'suspended' ? t('unsuspend').toUpperCase() : t('suspend').toUpperCase()}
-                                </button>
-                                <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                                  {['ai_relay', 'enterprise_proxies', 'analytics'].map(f => (
-                                    <button 
-                                      key={f} 
-                                      onClick={() => {}} 
-                                      className="status-badge" 
-                                      style={{ 
-                                        fontSize: '0.6rem', 
-                                        padding: '0.15rem 0.4rem', 
-                                        background: agency.features?.[f] ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255,255,255,0.02)', 
-                                        color: agency.features?.[f] ? 'var(--accent-color)' : 'var(--text-secondary)',
-                                        border: '1px solid currentColor',
-                                        cursor: 'pointer'
-                                      }}
-                                    >
-                                      {f.split('_')[0].toUpperCase()}
-                                    </button>
-                                  ))}
+                                <Users size={16} color="var(--accent-color)" />
+                                <div>
+                                  <div style={{ fontSize: '0.9rem', fontWeight: '700' }}>{agencyProfilesCount}</div>
+                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>PROFILES</div>
                                 </div>
-                                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', borderTop: '1px solid var(--card-border)', paddingTop: '0.5rem' }}>
-                                  <button 
-                                    onClick={() => deleteAgency(agency.id)}
-                                    className="status-badge" 
-                                    style={{ fontSize: '0.7rem', color: '#ef4444', borderColor: '#ef4444', cursor: 'pointer' }}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <ShieldCheck size={16} color="var(--accent-color)" />
+                                <div>
+                                  <div style={{ fontSize: '0.9rem', fontWeight: '700' }}>{agencyOps.length}</div>
+                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>STAFF</div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div>
+                              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{agency.subscription.plan.toUpperCase()} PLAN</div>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('nextRenewal')}: {agency.subscription.endDate}</div>
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingTop: '1rem', borderTop: '1px solid var(--card-border)' }}>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <button
+                                onClick={() => {
+                                  setAgencies(prev => prev.map(a => a.id === agency.id ? { ...a, status: a.status === 'suspended' ? 'active' : 'suspended' } : a));
+                                }}
+                                className="status-badge"
+                                style={{
+                                  flex: 1, padding: '0.6rem', background: agency.status !== 'suspended' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                  color: agency.status !== 'suspended' ? 'var(--success-color)' : 'var(--error-color)', border: 'none'
+                                }}
+                              >
+                                {agency.status === 'suspended' ? t('unsuspend') : t('suspend')}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setActiveClient(agency);
+                                  const clientOp = operators.find(o => o.clientId === agency.id) || operators.find(o => o.id === 'op-1');
+                                  setActiveOperator(clientOp);
+                                  setActiveTab('dashboard');
+                                }}
+                                className="status-badge"
+                                style={{ flex: 1, padding: '0.6rem', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-color)', border: 'none' }}
+                              >
+                                {t('impersonate')}
+                              </button>
+                            </div>
+                            <button
+                              onClick={() => deleteAgency(agency.id)}
+                              style={{ width: '100%', padding: '0.6rem', background: 'transparent', border: '1px solid rgba(239, 68, 68, 0.3)', color: 'var(--error-color)', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800' }}
+                            >
+                              {t('delete').toUpperCase()}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="glass-card custom-scrollbar" style={{ padding: 0, overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--card-border)' }}>
+                          <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>{t('agencyRegion')}</th>
+                          <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>{t('status')}</th>
+                          <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>{t('billingTier')}</th>
+                          <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textAlign: 'right' }}>{t('actions')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {agencies.map((agency, i) => {
+                          const agencyProfilesCount = profiles.filter(p => p.clientId === agency.id).length;
+                          const agencyOps = operators.filter(o => o.clientId === agency.id);
+                          return (
+                            <tr key={agency.id} style={{ borderBottom: i < agencies.length - 1 ? '1px solid var(--card-border)' : 'none' }}>
+                              <td style={{ padding: '1.25rem 1.5rem' }}>
+                                <div style={{ fontWeight: '700', fontSize: '1rem' }}>{agency.name}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('regionLabel')}: {agency.region}</div>
+                              </td>
+                              <td style={{ padding: '1.25rem 1.5rem' }}>
+                                <div style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.2rem 0.6rem', borderRadius: '6px',
+                                  background: agency.subscription.status === 'active' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                  color: agency.subscription.status === 'active' ? 'var(--success-color)' : 'var(--error-color)',
+                                  fontSize: '0.7rem', fontWeight: '800'
+                                }}>
+                                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }}></div>
+                                  {agency.subscription.status.toUpperCase()}
+                                </div>
+                              </td>
+                              <td style={{ padding: '1.25rem 1.5rem' }}>
+                                <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{agency.subscription.plan} {t('planLabel')}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('nextRenewal')}: {agency.subscription.endDate}</div>
+                              </td>
+                              <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                                  <button
+                                    onClick={() => {
+                                      setAgencies(prev => prev.map(a => a.id === agency.id ? { ...a, status: a.status === 'suspended' ? 'active' : 'suspended' } : a));
+                                    }}
+                                    className="status-badge"
+                                    style={{
+                                      background: agency.status !== 'suspended' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                      color: agency.status !== 'suspended' ? 'var(--success-color)' : 'var(--error-color)',
+                                      cursor: 'pointer'
+                                    }}
                                   >
-                                    {t('delete').toUpperCase()}
+                                    {agency.status === 'suspended' ? t('unsuspend').toUpperCase() : t('suspend').toUpperCase()}
                                   </button>
-                                  <button 
-                                    className="status-badge" 
+                                  <button
+                                    className="status-badge"
                                     style={{ fontSize: '0.7rem', color: 'var(--accent-color)', cursor: 'pointer' }}
                                     onClick={() => {
                                       setActiveClient(agency);
@@ -3006,15 +3563,22 @@ function App() {
                                   >
                                     {t('impersonate')}
                                   </button>
+                                  <button
+                                    onClick={() => deleteAgency(agency.id)}
+                                    className="status-badge"
+                                    style={{ fontSize: '0.7rem', color: '#ef4444', borderColor: '#ef4444', cursor: 'pointer' }}
+                                  >
+                                    {t('delete').toUpperCase()}
+                                  </button>
                                 </div>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -3046,15 +3610,15 @@ function App() {
                         <div style={{ fontWeight: '700', marginBottom: '0.25rem' }}>{feature.label}</div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{feature.desc}</div>
                       </div>
-                      <div 
+                      <div
                         onClick={() => {}} // Local simulation
                         className={`toggle-switch ${feature.active ? 'active' : ''}`}
-                        style={{ 
+                        style={{
                           width: '40px', height: '20px', background: feature.active ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)',
                           borderRadius: '20px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s'
                         }}
                       >
-                        <div style={{ 
+                        <div style={{
                           width: '14px', height: '14px', background: 'white', borderRadius: '50%',
                           position: 'absolute', top: '2px', left: feature.active ? '22px' : '3px', transition: 'all 0.3s'
                         }}></div>
@@ -3072,7 +3636,7 @@ function App() {
                   </h3>
                   <div className="status-badge" style={{ borderColor: '#a855f7', color: '#a855f7' }}>{t('premiumModule').toUpperCase()}</div>
                 </div>
-                
+
                 {!isTraining && trainingProgress === 0 && (
                   <div style={{ textAlign: 'center', padding: '2rem' }}>
                     <div style={{ fontSize: '3rem', marginBottom: '1.5rem' }}>🧠</div>
@@ -3080,7 +3644,7 @@ function App() {
                     <p style={{ color: 'var(--text-secondary)', maxWidth: '500px', margin: '0 auto 2rem' }}>
                       {t('trainAiDesc')}
                     </p>
-                    <button 
+                    <button
                       onClick={() => {
                         setIsTraining(true);
                         const interval = setInterval(() => {
@@ -3094,7 +3658,7 @@ function App() {
                           });
                         }, 200);
                       }}
-                      className="action-btn" 
+                      className="action-btn"
                       style={{ width: 'auto', padding: '1rem 2.5rem', background: 'var(--accent-color)' }}
                     >
                       {t('uploadTrainingSet')}
@@ -3128,9 +3692,9 @@ function App() {
                     <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
                       {t('aiModelUpdated', { agency: 'Elite Talent Management' })}
                     </p>
-                    <button 
+                    <button
                       onClick={() => setTrainingProgress(0)}
-                      className="status-badge" 
+                      className="status-badge"
                       style={{ cursor: 'pointer', border: '1px solid var(--card-border)' }}
                     >
                       {t('resetTrainingEnv')}
@@ -3144,9 +3708,9 @@ function App() {
 
         {/* Permissions Dashboard (Phase 3) */}
         {activeTab === 'permissions' && rolePermissions[activeRole]?.permissions && (
-          <PermissionsDashboard 
+          <PermissionsDashboard
             t={t}
-            rolePermissions={rolePermissions} 
+            rolePermissions={rolePermissions}
             setRolePermissions={setRolePermissions}
             activeOperator={activeOperator}
           />
@@ -3154,7 +3718,7 @@ function App() {
 
         {/* Subscription Plans (Phase 4/9) */}
         {activeTab === 'plans' && rolePermissions[activeRole]?.plans && (
-          <PlansDashboard 
+          <PlansDashboard
             lang={lang}
             t={t}
             subscriptionPlans={subscriptionPlans}
@@ -3167,7 +3731,7 @@ function App() {
 
         {/* Removed redundant QA Hub block */}
       </main>
-      
+
       {/* Booking Modal */}
       {isBookingModalOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
@@ -3178,7 +3742,7 @@ function App() {
               </h2>
               <X size={24} color="var(--text-secondary)" cursor="pointer" onClick={() => setIsBookingModalOpen(false)} />
             </div>
-            
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('clientAndGirl').toUpperCase()}</label>
@@ -3215,7 +3779,7 @@ function App() {
                   <div>
                     <div style={{ color: 'var(--error-color)', fontWeight: '800', fontSize: '0.85rem', marginBottom: '0.25rem' }}>{t('collisionDetected').toUpperCase()}</div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('overlapsWith')}: <strong>{bookingCollision.title} ({bookingCollision.time})</strong></div>
-                    <button 
+                    <button
                       onClick={() => {
                         // Simple logic for next slot: exact end of collision
                         const [h, m] = bookingCollision.time.split(' ')[0].split(':').map(Number);
@@ -3238,9 +3802,9 @@ function App() {
                 </div>
               )}
 
-              <button 
+              <button
                 onClick={handleConfirmBooking}
-                className="action-btn" 
+                className="action-btn"
                 style={{ background: bookingCollision ? 'rgba(255,255,255,0.1)' : 'var(--accent-color)', color: 'white', marginTop: '1rem', opacity: bookingCollision ? 0.5 : 1 }}
                 disabled={!!bookingCollision}
               >
@@ -3276,19 +3840,19 @@ function App() {
             </div>
             <h2 style={{ fontSize: '1.75rem', fontWeight: '800' }}>{activeCall.caller}</h2>
             <p style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.6)', marginBottom: '1.5rem' }}>{formatTime(callTime)}</p>
-            
+
             <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-              <button 
-                onClick={() => setIsMuted(!isMuted)} 
+              <button
+                onClick={() => setIsMuted(!isMuted)}
                 className={`call-btn ${isMuted ? 'muted' : ''}`}
-                style={{ 
+                style={{
                   width: '56px', height: '56px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s',
-                  background: isMuted ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255,255,255,0.1)', border: isMuted ? '1px solid var(--error-color)' : '1px solid rgba(255,255,255,0.2)' 
+                  background: isMuted ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255,255,255,0.1)', border: isMuted ? '1px solid var(--error-color)' : '1px solid rgba(255,255,255,0.2)'
                 }}
               >
                 {isMuted ? <MicOff size={24} color="var(--error-color)" /> : <Mic size={24} color="white" />}
               </button>
-              
+
               <button onClick={endCall} className="call-btn end">
                 <Phone size={24} style={{ transform: 'rotate(135deg)' }} />
               </button>
@@ -3317,21 +3881,21 @@ function App() {
         .circle-btn { width: 44px; height: 44px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .circle-btn.decline { background: var(--error-color); color: white; }
         .circle-btn.accept { background: var(--success-color); color: white; }
-        
+
         select::-ms-expand { display: none; }
         select { -webkit-appearance: none; appearance: none; }
-        
+
         .action-btn.active { background: rgba(239, 68, 68, 0.1) !important; color: var(--error-color) !important; border-color: var(--error-color) !important; }
-        
+
         .toggle-switch.active { box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
         .toggle-switch:hover { border-color: var(--accent-color) !important; }
       `}</style>
-      
-      {/* Floating Bug Button */}
-      {!isBugReportOpen && (
+
+      {/* Floating Bug Button - Desktop Only to prevent mobile overlap */}
+      {!isBugReportOpen && !isMobile && (
         <button
           onClick={() => setIsBugReportOpen(true)}
-          style={{ 
+          style={{
             position: 'fixed',
             bottom: isMobile ? 'max(1rem, calc(env(safe-area-inset-bottom) + 1rem))' : '2rem',
             right: isMobile ? 'max(1rem, calc(env(safe-area-inset-right) + 1rem))' : '2rem',
@@ -3357,23 +3921,23 @@ function App() {
               </h2>
               <button onClick={() => setIsBugReportOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={24} /></button>
             </div>
-            
+
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
               {t('bugReportSubtitle')}
             </p>
 
-            <textarea 
+            <textarea
               value={bugDescription}
               onChange={(e) => setBugDescription(e.target.value)}
               placeholder={t('bugPlaceholder')}
-              style={{ 
+              style={{
                 width: '100%', height: '150px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)',
                 borderRadius: '12px', padding: '1rem', color: 'white', fontSize: '0.9rem', resize: 'none', marginBottom: '1.5rem',
                 outline: 'none'
               }}
             />
 
-            <button 
+            <button
               onClick={() => {
                 const subject = encodeURIComponent(`[BUG] Issue reported by ${activeOperator?.name || 'Unknown'}`);
                 const body = encodeURIComponent(`Operator: ${activeOperator?.name || 'Unknown'}\nRole: ${activeOperator?.role || 'Unknown'}\nClient: ${activeClient?.name || 'App Owner'}\n\nDescription:\n${bugDescription}`);
@@ -3389,7 +3953,7 @@ function App() {
           </div>
         </div>
       )}
-      
+
 
       {/* Provision New Agency Modal */}
       {isAddAgencyModalOpen && (
@@ -3402,9 +3966,9 @@ function App() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('agencyName').toUpperCase()}</label>
-                <input 
-                  type="text" 
-                  value={newAgencyData.name} 
+                <input
+                  type="text"
+                  value={newAgencyData.name}
                   onChange={e => setNewAgencyData({...newAgencyData, name: e.target.value})}
                   placeholder="e.g. Diamond Stars UK"
                   style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
@@ -3412,8 +3976,8 @@ function App() {
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('region').toUpperCase()}</label>
-                <select 
-                  value={newAgencyData.region} 
+                <select
+                  value={newAgencyData.region}
                   onChange={e => setNewAgencyData({...newAgencyData, region: e.target.value})}
                   style={{ width: '100%', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
                 >
@@ -3424,8 +3988,8 @@ function App() {
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('subscriptionTier').toUpperCase()}</label>
-                <select 
-                  value={newAgencyData.tier} 
+                <select
+                  value={newAgencyData.tier}
                   onChange={e => setNewAgencyData({...newAgencyData, tier: e.target.value})}
                   style={{ width: '100%', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
                 >
@@ -3449,11 +4013,11 @@ function App() {
           <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '600px', padding: '2.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
               <h3 style={{ fontSize: '1.5rem', fontWeight: '900' }}>{t('editProfile')}</h3>
-              <button 
+              <button
                 onClick={() => {
                   setIsEditProfileModalOpen(false);
                   setEditingProfileData(null);
-                }} 
+                }}
                 style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
               >
                 <X size={20} />
@@ -3463,18 +4027,18 @@ function App() {
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1.5rem' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('profileName').toUpperCase()}</label>
-                  <input 
-                    type="text" 
-                    value={editingProfileData.name} 
+                  <input
+                    type="text"
+                    value={editingProfileData.name}
                     onChange={e => setEditingProfileData({...editingProfileData, name: e.target.value})}
                     style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
                   />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('phoneNumber').toUpperCase()}</label>
-                  <input 
-                    type="text" 
-                    value={editingProfileData.phoneNumber || ''} 
+                  <input
+                    type="text"
+                    value={editingProfileData.phoneNumber || ''}
                     onChange={e => setEditingProfileData({...editingProfileData, phoneNumber: e.target.value})}
                     placeholder="+44 ..."
                     style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
@@ -3485,7 +4049,7 @@ function App() {
               <div style={{ borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                   <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>{t('quickReplies').toUpperCase()}</label>
-                  <button 
+                  <button
                     onClick={() => {
                       const newReply = { id: `q-${Date.now()}`, label: 'New Reply', text: '' };
                       setEditingProfileData({
@@ -3498,13 +4062,13 @@ function App() {
                     + {t('addQuickReply')}
                   </button>
                 </div>
-                
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   {(editingProfileData.quickReplies || []).map((reply, index) => (
                     <div key={reply.id} style={{ background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
                       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           placeholder={t('replyLabel')}
                           value={reply.label}
                           onChange={e => {
@@ -3514,7 +4078,7 @@ function App() {
                           }}
                           style={{ flex: 1, background: 'rgba(0,0,0,0.2)', border: '1px solid var(--card-border)', padding: '0.5rem', borderRadius: '6px', color: 'white', fontSize: '0.8rem' }}
                         />
-                        <button 
+                        <button
                           onClick={() => {
                             const newReplies = editingProfileData.quickReplies.filter((_, i) => i !== index);
                             setEditingProfileData({ ...editingProfileData, quickReplies: newReplies });
@@ -3524,7 +4088,7 @@ function App() {
                           <X size={14} />
                         </button>
                       </div>
-                      <textarea 
+                      <textarea
                         placeholder={t('replyText')}
                         value={reply.text}
                         onChange={e => {
@@ -3540,11 +4104,11 @@ function App() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: '1rem', marginTop: '2.5rem' }}>
-              <button 
+              <button
                 onClick={() => {
                   setIsEditProfileModalOpen(false);
                   setEditingProfileData(null);
-                }} 
+                }}
                 style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid var(--card-border)', color: 'white', borderRadius: '12px', fontWeight: '700' }}
               >
                 {t('cancel')}
@@ -3566,9 +4130,9 @@ function App() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('fullName').toUpperCase()}</label>
-                <input 
-                  type="text" 
-                  value={newOperatorData.name} 
+                <input
+                  type="text"
+                  value={newOperatorData.name}
                   onChange={e => setNewOperatorData({...newOperatorData, name: e.target.value})}
                   placeholder="e.g. John Doe"
                   style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
@@ -3576,9 +4140,9 @@ function App() {
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('emailAddress').toUpperCase()}</label>
-                <input 
-                  type="email" 
-                  value={newOperatorData.email} 
+                <input
+                  type="email"
+                  value={newOperatorData.email}
                   onChange={e => setNewOperatorData({...newOperatorData, email: e.target.value})}
                   placeholder="operator@nexus.sync"
                   style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
@@ -3586,8 +4150,8 @@ function App() {
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('assignRole').toUpperCase()}</label>
-                <select 
-                  value={newOperatorData.role} 
+                <select
+                  value={newOperatorData.role}
                   onChange={e => setNewOperatorData({...newOperatorData, role: e.target.value})}
                   style={{ width: '100%', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
                 >
@@ -3615,3 +4179,4 @@ function App() {
 }
 
 export default App;
+
