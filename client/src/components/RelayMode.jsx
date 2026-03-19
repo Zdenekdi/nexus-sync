@@ -105,15 +105,15 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush }) => {
 
   return (
     <div className="relay-container fade-in" style={{ 
-      minHeight: '100dvh', 
+      minHeight: '100vh', 
       background: '#07080a', 
       color: 'white', 
-      padding: 'calc(env(safe-area-inset-top, 30px) + 1.5rem) 1.5rem 2rem',
+      padding: 'calc(env(safe-area-inset-top, 30px) + 1.5rem) 1.5rem calc(env(safe-area-inset-bottom, 20px) + 5rem)',
       display: 'flex',
       flexDirection: 'column',
       gap: '1.5rem',
-      overflowY: 'auto',
-      position: 'relative'
+      position: 'relative',
+      width: '100%'
     }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
