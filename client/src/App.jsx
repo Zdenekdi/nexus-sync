@@ -1039,37 +1039,219 @@ function App() {
     }
   };
 
+  const handleNavigation = useCallback((nextTab) => {
+    setActiveTab(nextTab);
+    if (isMobile && nextTab === 'inbox') {
+      setSelectedChatId(null);
+      setMobileView('list');
+    }
+    if (isMobile) {
+      setIsMobileMenuOpen(false);
+    }
+  }, [isMobile]);
+
+  const handleMobileProfileSelection = useCallback((profileId) => {
+    setActiveProfileId(profileId);
+    setActiveTab('inbox');
+    const firstUnread = messages.find(m => m.profileId === profileId && m.status === 'unread');
+    if (firstUnread) {
+      setSelectedChatId(firstUnread.id);
+      setMobileView('chat');
+    } else {
+      setSelectedChatId(null);
+      setMobileView('list');
+    }
+    setIsMobileMenuOpen(false);
+  }, [messages]);
+
+  const primaryNavItems = useMemo(() => ([
+    { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator?.isModel ? 0 : totalUnread },
+    { id: 'calendar', icon: Calendar, label: t('schedule'), badge: 0 },
+  ]), [t, activeOperator?.isModel, totalUnread]);
+
+  const toolNavItems = useMemo(() => ([
+    { id: 'infra', icon: HardDrive, label: t('infra'), perm: 'infrastructure' },
+    { id: 'agencies', icon: Building2, label: t('agencies'), perm: 'agencies' },
+    { id: 'permissions', icon: Shield, label: t('permissions'), perm: 'permissions' },
+    { id: 'plans', icon: CreditCard, label: t('plans'), perm: 'plans' },
+    { id: 'features', icon: Zap, label: t('features'), perm: 'global_features' },
+    { id: 'analytics', icon: BarChart3, label: t('analytics'), perm: 'analytics' },
+    { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
+    { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles' },
+    { id: 'device-setup', icon: Smartphone, label: t('deviceSetup'), perm: 'device_setup' },
+    { id: 'activity', icon: Activity, label: t('auditLog'), perm: 'audit_logs' },
+    { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub' },
+    { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
+  ].filter(item => (rolePermissions[activeRole] || {})[item.perm])), [t, rolePermissions, activeRole]);
+
+  const shouldShowAssignedProfiles = !activeOperator?.isModel && !activeOperator?.isSuperAdmin && !activeOperator?.isAdmin;
+
+  const renderMobileDrawerButton = (item, { nested = false } = {}) => {
+    const Icon = item.icon;
+    const isActive = activeTab === item.id;
+
+    return (
+      <button
+        key={item.id}
+        onClick={() => handleNavigation(item.id)}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '0.75rem',
+          padding: nested ? '0.8rem 1rem 0.8rem 1.15rem' : '0.95rem 1rem',
+          borderRadius: '16px',
+          border: isActive ? '1px solid rgba(59, 130, 246, 0.35)' : '1px solid rgba(255,255,255,0.06)',
+          background: isActive ? 'rgba(59, 130, 246, 0.14)' : 'rgba(255,255,255,0.03)',
+          color: 'white',
+          cursor: 'pointer',
+          textAlign: 'left',
+          transition: 'all 0.2s ease'
+        }}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', minWidth: 0 }}>
+          <Icon size={nested ? 18 : 20} color={isActive ? 'var(--accent-color)' : 'rgba(255,255,255,0.72)'} />
+          <span style={{ fontWeight: isActive ? '800' : '600', fontSize: nested ? '0.9rem' : '0.95rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.label}</span>
+        </span>
+        {!!item.badge && (
+          <span style={{ minWidth: '22px', height: '22px', borderRadius: '999px', padding: '0 0.5rem', background: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: '900' }}>
+            {item.badge}
+          </span>
+        )}
+      </button>
+    );
+  };
+
   const renderMobileHeader = () => (
-    <div style={{ 
-      position: 'fixed', top: 0, left: 0, right: 0, height: '70px',
-      background: 'rgba(7, 10, 15, 0.85)', backdropFilter: 'blur(40px)',
-      zIndex: 9600, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '0 1.5rem', borderBottom: '1px solid var(--card-border)',
-      boxShadow: '0 4px 30px rgba(0, 0, 0, 0.4)'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <img src="/nexus_icon.png" alt="Nexus" style={{ width: '34px', height: '34px', borderRadius: '8px', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.2)' }} />
-        <span style={{ fontSize: '1.25rem', fontWeight: '950', letterSpacing: '0.05em' }}>{t('logo')}</span>
-      </div>
-      
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', padding: '2px', borderRadius: '8px', border: '1px solid var(--card-border)' }}>
-          <button onClick={() => setLang('cz')} style={{ padding: '4px 8px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.65rem', fontWeight: '850', cursor: 'pointer' }}>CZ</button>
-          <button onClick={() => setLang('en')} style={{ padding: '4px 8px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.65rem', fontWeight: '850', cursor: 'pointer' }}>EN</button>
+    <header className="mobile-app-header">
+      <div className="mobile-app-header__inner">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', minWidth: 0 }}>
+          <img src="/nexus_icon.png" alt="Nexus" style={{ width: '34px', height: '34px', borderRadius: '10px', boxShadow: '0 8px 24px rgba(59, 130, 246, 0.22)', flexShrink: 0 }} />
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: '1.05rem', fontWeight: '900', letterSpacing: '0.04em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Nexus Relay</div>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', letterSpacing: '0.12em', fontWeight: '800' }}>{activeRole?.toUpperCase?.() || 'APP'}</div>
+          </div>
         </div>
-        <button 
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          style={{ 
-            background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', 
-            color: 'white', width: '40px', height: '40px', borderRadius: '12px', 
-            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-            transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
-          }}
-        >
-          {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-        </button>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
+          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', padding: '2px', borderRadius: '10px', border: '1px solid var(--card-border)' }}>
+            <button onClick={() => setLang('cz')} style={{ padding: '4px 8px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '8px', fontSize: '0.65rem', fontWeight: '850', cursor: 'pointer' }}>CZ</button>
+            <button onClick={() => setLang('en')} style={{ padding: '4px 8px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '8px', fontSize: '0.65rem', fontWeight: '850', cursor: 'pointer' }}>EN</button>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen(prev => !prev)}
+            aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+            className="mobile-header-menu-button"
+            style={{ background: isMobileMenuOpen ? 'rgba(59, 130, 246, 0.18)' : 'rgba(255,255,255,0.04)' }}
+          >
+            {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
       </div>
-    </div>
+    </header>
+  );
+
+  const renderMobileDrawer = () => (
+    <>
+      {isMobileMenuOpen && <div className="mobile-drawer-overlay" onClick={() => setIsMobileMenuOpen(false)} />}
+
+      <aside className={`mobile-drawer ${isMobileMenuOpen ? 'open' : ''}`} aria-hidden={!isMobileMenuOpen}>
+        <div className="mobile-drawer__body custom-scrollbar">
+          <section className="mobile-drawer__section">
+            <div className="mobile-drawer__section-label">NAVIGATION</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+              {primaryNavItems.map(item => renderMobileDrawerButton(item))}
+            </div>
+          </section>
+
+          <section className="mobile-drawer__section">
+            <button
+              onClick={() => setIsToolsExpanded(prev => !prev)}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', color: 'rgba(255,255,255,0.55)', fontSize: '0.72rem', fontWeight: '900', letterSpacing: '0.14em', cursor: 'pointer', padding: 0, marginBottom: isToolsExpanded ? '0.9rem' : 0 }}
+            >
+              <span>{(t('global_features') || 'SYSTEM TOOLS').toUpperCase()}</span>
+              {isToolsExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
+
+            {isToolsExpanded && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                {toolNavItems.map(item => renderMobileDrawerButton(item, { nested: true }))}
+              </div>
+            )}
+          </section>
+
+          {shouldShowAssignedProfiles && myProfiles.length > 0 && (
+            <section className="mobile-drawer__section">
+              <div className="mobile-drawer__section-label">{(t('myAssignedGirls') || 'Assigned Profiles').toUpperCase()}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                {myProfiles.slice(0, 8).map(profile => {
+                  const unread = getUnreadForProfile(profile.id);
+                  const isActive = activeProfile?.id === profile.id;
+
+                  return (
+                    <button
+                      key={profile.id}
+                      onClick={() => handleMobileProfileSelection(profile.id)}
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        padding: '0.85rem 0.95rem',
+                        borderRadius: '16px',
+                        border: isActive ? '1px solid rgba(59,130,246,0.35)' : '1px solid rgba(255,255,255,0.06)',
+                        background: isActive ? 'rgba(59,130,246,0.14)' : 'rgba(255,255,255,0.03)',
+                        color: 'white',
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                    >
+                      <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: profile.status === 'online' ? 'var(--success-color)' : 'rgba(255,255,255,0.18)', flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.92rem', fontWeight: '800', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile.name}</div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{profile.status}</div>
+                      </div>
+                      {unread > 0 && <div style={{ minWidth: '22px', height: '22px', borderRadius: '999px', padding: '0 0.5rem', background: 'var(--error-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: '900' }}>{unread}</div>}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+        </div>
+
+        <div className="mobile-drawer__footer">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '1rem', borderRadius: '18px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ width: '42px', height: '42px', borderRadius: '14px', background: 'linear-gradient(135deg, var(--accent-color), #1d4ed8)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', fontWeight: '900', color: 'white', flexShrink: 0 }}>{activeOperator?.avatar}</div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontWeight: '900', fontSize: '0.92rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{activeOperator?.name}</div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.72rem', fontWeight: '800', letterSpacing: '0.08em' }}>{activeRole?.toUpperCase?.()}</div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              setIsRelayMode(true);
+              setIsMobileMenuOpen(false);
+            }}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.7rem', padding: '0.95rem 1rem', borderRadius: '16px', background: 'rgba(59, 130, 246, 0.16)', border: '1px solid rgba(59, 130, 246, 0.28)', color: 'var(--accent-color)', fontWeight: '900', cursor: 'pointer' }}
+          >
+            <Radio size={18} />
+            <span>NEXUS RELAY</span>
+          </button>
+
+          <button
+            onClick={handleLogout}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.7rem', padding: '0.95rem 1rem', borderRadius: '16px', background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.24)', color: 'var(--error-color)', fontWeight: '900', cursor: 'pointer' }}
+          >
+            <LogOut size={18} />
+            <span>{t('logout') || 'Logout'}</span>
+          </button>
+        </div>
+      </aside>
+    </>
   );
 
   const renderContent = () => {
@@ -1115,8 +1297,8 @@ function App() {
           .desktop-sidebar {
             position: fixed !important;
             left: 0;
-            top: 0;
-            height: 100dvh;
+            top: calc(70px + max(env(safe-area-inset-top), 0px));
+            height: calc(100dvh - 70px - max(env(safe-area-inset-top), 0px) - max(env(safe-area-inset-bottom), 0px));
             width: 280px;
             z-index: 9500 !important;
             transform: translateX(-100%);
@@ -1135,18 +1317,21 @@ function App() {
           }
           .main-content {
             margin-left: 0 !important;
-            padding-top: 70px !important;
-            height: auto !important;
-            min-height: calc(100vh - 70px);
-            overflow-y: visible !important;
+            padding-top: 0 !important;
+            padding-bottom: max(1rem, env(safe-area-inset-bottom)) !important;
+            height: calc(100dvh - 70px - max(env(safe-area-inset-top), 0px)) !important;
+            min-height: calc(100dvh - 70px - max(env(safe-area-inset-top), 0px)) !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
           }
           .mobile-header {
             display: flex !important;
             height: 70px !important;
+            padding-top: max(env(safe-area-inset-top), 0px) !important;
             z-index: 9600 !important;
           }
           .demo-controls {
-             bottom: 1rem !important;
+             bottom: max(1rem, env(safe-area-inset-bottom)) !important;
              width: 90% !important;
           }
         }
@@ -1156,7 +1341,7 @@ function App() {
 
       {/* Overlay for mobile sidebar */}
       {isMobile && isMobileMenuOpen && (
-        <div 
+        <div
           onClick={() => setIsMobileMenuOpen(false)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 9499 }}
         />
@@ -1315,7 +1500,18 @@ function App() {
                   const unread = getUnreadForProfile(p.id);
                   const isActive = activeProfile?.id === p.id;
                   return (
-                    <button key={p.id} onClick={() => { setActiveProfileId(p.id); setActiveTab('inbox'); setSelectedChatId(null); if (isMobile) setIsMobileMenuOpen(false); }}
+                    <button key={p.id} onClick={() => { 
+                      setActiveProfileId(p.id); 
+                      setActiveTab('inbox'); 
+                      const firstUnread = messages.find(m => m.profileId === p.id && m.status === 'unread');
+                      if (firstUnread) {
+                        setSelectedChatId(firstUnread.id);
+                        if (isMobile) setMobileView('chat');
+                      } else {
+                        setSelectedChatId(null);
+                      }
+                      if (isMobile) setIsMobileMenuOpen(false); 
+                    }}
                       style={{
                         display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.7rem 0.85rem', border: '1px solid',
                         borderRadius: '14px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -1370,16 +1566,17 @@ function App() {
       </nav>
 
       {/* Main Area */}
-      <main className="main-content custom-scrollbar" style={{ 
-        flex: 1, 
+      <main className="main-content custom-scrollbar" style={{
+        flex: 1,
         display: 'flex', 
         flexDirection: 'column', 
-        height: isMobile ? 'auto' : '100vh', 
-        minWidth: 0, 
+        height: isMobile ? 'calc(100vh - 70px - max(env(safe-area-inset-top), 0px))' : '100vh',
+        minWidth: 0,
         width: '100%',
-        overflowY: isMobile ? 'visible' : 'auto',
+        overflowY: 'auto',
         overflowX: 'hidden',
-        paddingTop: isMobile ? '70px' : 0,
+        paddingTop: 0,
+        paddingBottom: isMobile ? 'max(1rem, env(safe-area-inset-bottom))' : '0',
         position: 'relative',
         background: 'var(--bg-color)',
       }}>
@@ -2240,7 +2437,7 @@ function App() {
               </div>
             </div>
 
-            <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="glass-card custom-scrollbar" style={{ padding: 0, overflowX: 'auto' }}>
               <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)' }}>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: '800' }}>{t('activeReferralsHistory')}</h3>
               </div>
@@ -2297,7 +2494,7 @@ function App() {
             <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '2.5rem' }}>{t('agencyOverview')}</h2>
             
             {/* Top Metric Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
               <div className="glass-card" style={{ padding: '1.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: 'var(--text-secondary)' }}>
                   <DollarSign size={20} color="var(--success-color)" />
@@ -2341,7 +2538,7 @@ function App() {
                 <h3 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Users size={20} color="var(--accent-color)" /> {t('perfByProfile')}
                 </h3>
-                <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div className="glass-card custom-scrollbar" style={{ padding: 0, overflowX: 'auto' }}>
                   <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
                     <thead>
                       <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--card-border)' }}>
@@ -2370,7 +2567,7 @@ function App() {
                 <h3 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Activity size={20} color="var(--accent-color)" /> {t('perfByOperator')}
                 </h3>
-                <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div className="glass-card custom-scrollbar" style={{ padding: 0, overflowX: 'auto' }}>
                   <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
                     <thead>
                       <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--card-border)' }}>
@@ -2476,7 +2673,7 @@ function App() {
               <div><h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('auditTrail')} - {activeClient?.name || t('system')}</h2><p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('auditSubtitle')}</p></div>
               <div className="status-badge" style={{ borderColor: 'var(--accent-color)', color: 'var(--accent-color)' }}><Shield size={16} /> {t('encryptedLog')}</div>
             </div>
-            <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="glass-card custom-scrollbar" style={{ padding: 0, overflowX: 'auto' }}>
               <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
                 <thead><tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--card-border)' }}>
                   {[t('timestamp'), t('event'), t('handledBy'), t('target'), t('hash')].map(h => <th key={h} style={{ padding: '1.25rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{h}</th>)}
@@ -2503,7 +2700,7 @@ function App() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem', maxWidth: '800px' }}>
               <div className="settings-section">
                 <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Building2 size={20} color="var(--accent-color)" /> {t('agencyInsight')}: {activeClient?.name || t('global')}</h3>
-                <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                <div className="grid" style={{ gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1.5rem' }}>
                   <div className="glass-card" style={{ padding: '1.5rem' }}>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('teamSeats')}</div>
                     <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{availableOperators.length} / 10</div>
@@ -2601,7 +2798,7 @@ function App() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
               {/* Stats Overview */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '1.5rem' }}>
                 {[
                   { label: t('totalAgencies'), value: agencies.length, icon: <Building2 size={20} />, color: '#3b82f6', trend: `+2 ${t('thisMonth')}` },
                   { label: t('activeProfiles'), value: profiles.length, icon: <Users size={20} />, color: '#8b5cf6', trend: t('globalReach') },
@@ -2631,7 +2828,7 @@ function App() {
                     <ShieldCheck size={14} /> {t('proxyActive')}
                   </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '2rem' }}>
                   {[
                     { node: 'UK-LDN-01', location: 'London, UK', status: 'Optimal', latency: '42ms', load: '12%' },
                     { node: 'US-NYC-04', location: 'New York, USA', status: 'Optimal', latency: '115ms', load: '28%' },
@@ -2678,7 +2875,7 @@ function App() {
                     {t('provisionNew')}
                   </button>
                 </div>
-                <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div className="glass-card custom-scrollbar" style={{ padding: 0, overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead>
                       <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--card-border)' }}>
@@ -2837,7 +3034,7 @@ function App() {
                   </h3>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '700' }}>{t('systemCapabilities').toUpperCase()}</div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '2rem' }}>
                   {[
                     { id: 'ai_trans', label: 'Global AI Voice Relay', desc: 'Auto-provision secure voice corridors for phone simulation.', active: true },
                     { id: 'vc_hub', label: 'Cross-Agency Analytics', desc: 'Allow managers to view performance trends across multiple regions.', active: true },
@@ -2992,7 +3189,7 @@ function App() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1rem' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('date').toUpperCase()}</label>
                   <input type="date" value={bookingDetails.date} onChange={(e) => setBookingDetails({...bookingDetails, date: e.target.value})} style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.75rem', borderRadius: '12px', color: 'white' }} />
@@ -3132,10 +3329,13 @@ function App() {
       
       {/* Floating Bug Button */}
       {!isBugReportOpen && (
-        <button 
+        <button
           onClick={() => setIsBugReportOpen(true)}
           style={{ 
-            position: 'fixed', bottom: '2rem', right: '2rem', width: '50px', height: '50px', 
+            position: 'fixed',
+            bottom: isMobile ? 'max(1rem, calc(env(safe-area-inset-bottom) + 1rem))' : '2rem',
+            right: isMobile ? 'max(1rem, calc(env(safe-area-inset-right) + 1rem))' : '2rem',
+            width: '50px', height: '50px',
             borderRadius: '50%', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 1000,
             boxShadow: '0 10px 30px rgba(239, 68, 68, 0.3)', transition: 'all 0.3s'
@@ -3260,7 +3460,7 @@ function App() {
               </button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1.5rem' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('profileName').toUpperCase()}</label>
                   <input 
