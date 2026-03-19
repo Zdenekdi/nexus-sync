@@ -37,14 +37,16 @@ async function main() {
     { name: 'Senior Operator', isSuperAdmin: false, permissions: JSON.stringify({ operate: true }), agencyId: 'agency-01' },
     { name: 'Operator', isSuperAdmin: false, permissions: JSON.stringify({ basic: true }), agencyId: 'agency-01' },
     { name: 'Model', isSuperAdmin: false, permissions: JSON.stringify({ view: true }), agencyId: 'agency-01' },
+    { name: 'Senior Operator', isSuperAdmin: false, permissions: JSON.stringify({ operate: true }), agencyId: 'agency-02' },
   ];
 
   for (const role of roles) {
-    await prisma.role.upsert({
-      where: { name_agencyId: { name: role.name, agencyId: role.agencyId } },
-      update: {},
-      create: role,
+    const existing = await prisma.role.findFirst({
+      where: { name: role.name, agencyId: role.agencyId }
     });
+    if (!existing) {
+      await prisma.role.create({ data: role });
+    }
   }
   console.log('Roles seeded.');
 

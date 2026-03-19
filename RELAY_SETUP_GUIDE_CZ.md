@@ -47,17 +47,17 @@ Pokud tento request nevidíš, zkontroluj v logu aplikace (Logcat v Android Stud
 
 Můžeš simulovat, že na telefon přišla SMS a otestovat, zda se zobrazí v Dashboardu.
 
-### Test SMS (simulace GoIP nebo Mobile Relay):
-Spusť tento příkaz v terminálu (nahraď URL svou adresou):
+### Test SMS (simulace Nexus Relay):
+Spusť tento příkaz v terminálu (nahraď URL svou adresou a deviceId platným ID operátora):
 
 ```bash
-curl -X POST https://nexus-api.myvnc.com/api/device/mobile/sms \
+curl -X POST https://nexus-api.myvnc.com/api/device/relay \
   -H "Content-Type: application/json" \
   -d '{
+    "deviceId": "op-01",
+    "type": "sms",
     "from": "+420123456789",
-    "to": "+420987654321",
-    "text": "Ahoj, toto je testovaci zprava skrze Relay!",
-    "secret": "tvoje-heslo-z-env"
+    "content": "Ahoj, toto je testovaci zprava skrze Nexus Relay!"
   }'
 ```
 
