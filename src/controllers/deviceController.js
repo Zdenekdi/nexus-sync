@@ -1,4 +1,98 @@
 const prisma = require('../services/db');
+const { registerPushToken, sendChatPush, sendCallPush } = require('../services/pushService');
+
+exports.registerPushToken = async (req, res) => {
+  try {
+    const { token, platform, operatorId } = req.body;
+    const userId = req.user?.userId;
+    const agencyId = req.user?.agencyId || null;
+
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ ok: false, message: 'Missing token' });
+    }
+
+    if (!userId) {
+      return res.status(401).json({ ok: false, message: 'Unauthorized' });
+    }
+
+    if (operatorId && operatorId !== userId) {
+      console.warn(`[Push] Ignoring mismatched operatorId ${operatorId} for user ${userId}`);
+    }
+
+    const result = await registerPushToken({
+      userId,
+      agencyId,
+      token,
+      platform: platform || 'android'
+    });
+
+    if (!result.ok) {
+      return res.status(500).json({ ok: false, message: result.message || 'Could not register push token' });
+    }
+
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error('Push token registration error:', error);
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+exports.sendTestPush = async (req, res) => {
+  try {
+    const { type = 'chat', agencyId: requestedAgencyId, profileId, from, messagePreview, callState } = req.body || {};
+    const user = req.user || {};
+
+    if (!user.userId) {
+      return res.status(401).json({ ok: false, message: 'Unauthorized' });
+    }
+
+    // Non-superadmin users can only target their own agency.
+    const targetAgencyId = user.isSuperAdmin ? (requestedAgencyId || user.agencyId) : user.agencyId;
+    if (!targetAgencyId) {
+      return res.status(400).json({ ok: false, message: 'Missing agencyId context' });
+    }
+
+    if (!user.isSuperAdmin && requestedAgencyId && requestedAgencyId !== user.agencyId) {
+      return res.status(403).json({ ok: false, message: 'Access denied for target agency' });
+    }
+
+    const testProfileId = profileId || 'test-profile';
+    const testFrom = from || '+420000000000';
+
+    let result;
+    if (type === 'call') {
+      result = await sendCallPush({
+        agencyId: targetAgencyId,
+        profileId: testProfileId,
+        from: testFrom,
+        caller: testFrom,
+        profileName: 'FCM Test Profile',
+        callState: callState || 'RINGING'
+      });
+    } else {
+      result = await sendChatPush({
+        agencyId: targetAgencyId,
+        profileId: testProfileId,
+        chatId: `test-${Date.now()}`,
+        from: testFrom,
+        messagePreview: messagePreview || 'This is a test push message from Nexus Hub backend.',
+        profileName: 'FCM Test Profile'
+      });
+    }
+
+    return res.json({
+      ok: true,
+      type,
+      agencyId: targetAgencyId,
+      sent: result.sent || 0,
+      failed: result.failed || 0,
+      details: result.details || null
+    });
+  } catch (error) {
+    console.error('Test push error:', error);
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
 
 // GoIP sends data as application/x-www-form-urlencoded
 // Expected fields: src (sender), dst (receiver/SIM), msg (text), time
@@ -20,7 +114,7 @@ exports.handleGoIP = async (req, res) => {
       chat = await prisma.chat.create({ data: { externalId: src, profileId: profile.id, agencyId: profile.agencyId } });
     }
 
-    await prisma.message.create({ data: { chatId: chat.id, text: msg, direction: 'INBOUND', status: 'delivered' } });
+    const createdMessage = await prisma.message.create({ data: { chatId: chat.id, text: msg, direction: 'INBOUND', status: 'delivered' } });
     await prisma.chat.update({ where: { id: chat.id }, data: { lastMessageAt: new Date() } });
 
     try {
@@ -31,6 +125,19 @@ exports.handleGoIP = async (req, res) => {
         status: 'delivered', direction: 'inbound'
       });
     } catch (e) { console.warn('Socket emit failed', e); }
+
+    try {
+      await sendChatPush({
+        agencyId: profile.agencyId,
+        profileId: profile.id,
+        chatId: createdMessage.id,
+        from: src,
+        messagePreview: msg,
+        profileName: profile.name
+      });
+    } catch (e) {
+      console.warn('Push send failed for SMS', e.message);
+    }
 
     res.status(200).send('RECEIVE OK');
   } catch (error) {
@@ -58,7 +165,7 @@ exports.handleMobileSms = async (req, res) => {
       chat = await prisma.chat.create({ data: { externalId: from, profileId: profile.id, agencyId: profile.agencyId } });
     }
 
-    await prisma.message.create({ data: { chatId: chat.id, text, direction: 'INBOUND', status: 'delivered' } });
+    const createdMessage = await prisma.message.create({ data: { chatId: chat.id, text, direction: 'INBOUND', status: 'delivered' } });
     await prisma.chat.update({ where: { id: chat.id }, data: { lastMessageAt: new Date() } });
 
     try {
@@ -69,6 +176,19 @@ exports.handleMobileSms = async (req, res) => {
         status: 'delivered', direction: 'inbound'
       });
     } catch (e) { console.warn('Socket emit failed', e); }
+
+    try {
+      await sendChatPush({
+        agencyId: profile.agencyId,
+        profileId: profile.id,
+        chatId: createdMessage.id,
+        from,
+        messagePreview: text,
+        profileName: profile.name
+      });
+    } catch (e) {
+      console.warn('Push send failed for mobile SMS', e.message);
+    }
 
     res.json({ status: 'success' });
   } catch (error) {
@@ -95,6 +215,19 @@ exports.handleMobileCall = async (req, res) => {
       const { getIO } = require('../services/socket');
       getIO().to(`agency_${profile.agencyId}`).emit('incoming_call', { from, profileName: profile.name, profileId: profile.id, state });
     } catch (e) { console.warn('Socket emit failed for call', e); }
+
+    try {
+      await sendCallPush({
+        agencyId: profile.agencyId,
+        profileId: profile.id,
+        from,
+        caller: from,
+        profileName: profile.name,
+        callState: state
+      });
+    } catch (e) {
+      console.warn('Push send failed for call', e.message);
+    }
 
     res.json({ status: 'success' });
   } catch (error) {
