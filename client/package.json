@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "cap:sync": "npx cap sync && node scripts/post-cap-sync.js",
+    "cap:sync": "node scripts/sync-android-assets.js && node scripts/post-cap-sync.js",
     "cap:open": "npx cap open android",
     "cap:build": "npm run build && npm run cap:sync && npx cap open android"
   },

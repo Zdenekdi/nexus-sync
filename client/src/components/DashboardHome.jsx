@@ -7,12 +7,12 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
   
   const renderSuperAdmin = () => (
     <div className="fade-in">
-      <div style={{ marginBottom: '2.5rem' }}>
-        <h2 style={{ fontSize: '2rem', fontWeight: '900', letterSpacing: '0.05em' }}>{t('globalOverview').toUpperCase()}</h2>
-        <p style={{ color: 'var(--text-secondary)' }}>{t('globalHealthDesc')}</p>
+      <div style={{ marginBottom: isMobile ? '1.5rem' : '2.5rem', paddingRight: isMobile ? 'calc(0.5rem + env(safe-area-inset-right))' : 0, paddingLeft: isMobile ? 'calc(0.5rem + env(safe-area-inset-left))' : 0 }}>
+        <h2 style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '900', letterSpacing: '0.05em' }}>{t('globalOverview').toUpperCase()}</h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1rem' }}>{t('globalHealthDesc')}</p>
       </div>
       
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: isMobile ? '1rem' : '1.5rem', marginBottom: isMobile ? '1.5rem' : '3rem' }}>
         {[
           { label: t('totalRevenue'), value: '$842,500', icon: <DollarSign color="#10b981" />, growth: '+12.5%', chart: MOCK_STATS.revenue.chart },
           { label: (t('agencies') || 'Agencies').toUpperCase(), value: (agencies || []).length, icon: <Building2 color="#3b82f6" />, growth: '+2', chart: [10, 12, 11, 13, 12, 14, 14] },
@@ -73,9 +73,9 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
 
   const renderManager = () => (
     <div className="fade-in">
-      <div style={{ marginBottom: '2.5rem' }}>
-        <h2 style={{ fontSize: '2rem', fontWeight: '900' }}>{t('agencyOverview').toUpperCase()}</h2>
-        <p style={{ color: 'var(--text-secondary)' }}>{t('agencyOverviewDesc')}</p>
+      <div style={{ marginBottom: isMobile ? '1.5rem' : '2.5rem', paddingRight: isMobile ? 'calc(0.5rem + env(safe-area-inset-right))' : 0, paddingLeft: isMobile ? 'calc(0.5rem + env(safe-area-inset-left))' : 0 }}>
+        <h2 style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '900' }}>{t('agencyOverview').toUpperCase()}</h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1rem' }}>{t('agencyOverviewDesc')}</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>

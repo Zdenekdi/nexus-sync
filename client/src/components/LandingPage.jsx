@@ -116,8 +116,8 @@ const LandingPage = ({ onLoginClick, lang, setLang, isMobile }) => {
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center', 
-        padding: '1.5rem 5%', 
-        position: 'sticky', 
+        padding: isMobile ? 'calc(1rem + env(safe-area-inset-top)) calc(0.5rem + env(safe-area-inset-left)) 1rem calc(0.5rem + env(safe-area-inset-right))' : '1.5rem 5%',
+        position: 'sticky',
         top: 0, 
         zIndex: 100, 
         backdropFilter: 'blur(10px)',
@@ -224,7 +224,7 @@ const LandingPage = ({ onLoginClick, lang, setLang, isMobile }) => {
       </section>
 
       {/* Footer */}
-      <footer style={{ padding: '4rem 5%', textAlign: 'center', borderTop: '1px solid var(--card-border)', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+      <footer style={{ padding: isMobile ? 'calc(2rem + env(safe-area-inset-left)) 5% calc(2rem + env(safe-area-inset-bottom) + env(safe-area-inset-right))' : '4rem 5%', textAlign: 'center', borderTop: '1px solid var(--card-border)', color: 'var(--text-secondary)', fontSize: isMobile ? '0.85rem' : '0.9rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
           <img src="/nexus_icon.png" alt="Nexus" style={{ width: '24px', height: '24px', borderRadius: '6px' }} />
           <span style={{ fontWeight: '900', letterSpacing: '0.1em', color: 'white' }}>NEXUS HUB</span>

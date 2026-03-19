@@ -86,7 +86,7 @@ const QAView = ({ t, messages = [], clientNotes = {}, clientNames = {}, updateCl
   }, [filterOperatorId, profiles, activeOperator]);
 
   return (
-    <div style={{ display: 'flex', height: '100%', background: 'rgba(0,0,0,0.2)', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', height: isMobile ? 'calc(100dvh - max(env(safe-area-inset-top), 1rem) - 3rem)' : '100%', background: 'rgba(0,0,0,0.2)', position: 'relative', overflow: 'hidden' }}>
       {/* Left Sidebar - Client List */}
       <div style={{
         width: isMobile ? '100%' : '350px',
@@ -94,7 +94,11 @@ const QAView = ({ t, messages = [], clientNotes = {}, clientNames = {}, updateCl
         display: (isMobile && mobileView !== 'list') ? 'none' : 'flex',
         flexDirection: 'column',
         background: 'rgba(255,255,255,0.02)',
-        height: '100%'
+        height: '100%',
+        paddingRight: isMobile ? `calc(env(safe-area-inset-right))` : 0,
+        paddingLeft: isMobile ? `calc(env(safe-area-inset-left))` : 0,
+        paddingTop: isMobile ? `calc(env(safe-area-inset-top))` : 0,
+        paddingBottom: isMobile ? `calc(max(env(safe-area-inset-bottom), 1rem))` : 0
       }}>
         <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--card-border)' }}>
           <h2 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
