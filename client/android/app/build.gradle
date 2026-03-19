@@ -33,7 +33,17 @@ def appVersionName = "${majorVersion}.${minorVersion}"
 def appVersionCode = (majorVersion * 10000) + minorVersion
 def artifactBaseName = "Nexus-Relay"
 def clientRootDir = rootDir.parentFile
-def npmExecutable = System.getProperty('os.name').toLowerCase().contains('windows') ? 'npm.cmd' : 'npm'
+def npmExecutable = {
+    def name = System.getProperty('os.name').toLowerCase().contains('windows') ? 'npm.cmd' : 'npm'
+    // Try to find full path on macOS if simple command fails
+    if (!System.getProperty('os.name').toLowerCase().contains('windows')) {
+        def brewPath = "/opt/homebrew/bin/npm"
+        def intelBrewPath = "/usr/local/bin/npm"
+        if (new File(brewPath).exists()) return brewPath
+        if (new File(intelBrewPath).exists()) return intelBrewPath
+    }
+    return name
+}()
 
 def artifactFileName = { String versionName, String buildTypeName, String extension ->
     def debugSuffix = buildTypeName == "debug" ? "-debug" : ""

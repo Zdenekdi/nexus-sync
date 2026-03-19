@@ -202,38 +202,39 @@ const InventoryView = ({ t }) => {
 
       {/* Main Table Content */}
       <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: isMobile ? '1rem' : '1.5rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.01)', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : 0 }}>
+        <div style={{ padding: isMobile ? '1rem' : '1.5rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.01)', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1.5rem' : 0 }}>
           <div style={{ position: 'relative', width: isMobile ? '100%' : '400px' }}>
             <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
             <input 
               type="text" 
-              placeholder="Search items..." 
+              placeholder={t.searchPlaceholder || "Search items..."} 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.85rem 0.85rem 0.85rem 2.5rem', borderRadius: '12px', color: 'white' }} 
             />
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem', width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'space-between' : 'flex-end' }}>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.6rem', borderRadius: '10px', color: 'white', cursor: 'pointer' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'space-between' : 'flex-end' }}>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.75rem', borderRadius: '10px', color: 'white', cursor: 'pointer' }}>
                 <Filter size={18} />
               </button>
-              <button style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.6rem', borderRadius: '10px', color: 'white', cursor: 'pointer' }}>
+              <button style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.75rem', borderRadius: '10px', color: 'white', cursor: 'pointer' }}>
                 <RefreshCw size={18} />
               </button>
             </div>
             {isMobile && (
-              <div style={{ position: 'relative' }}>
+              <div style={{ position: 'relative', flex: 1 }}>
                 <select
                   value={selectedLocation}
                   onChange={(e) => setSelectedLocation(e.target.value)}
                   style={{
-                    padding: '0.6rem 2rem 0.6rem 0.75rem',
+                    width: '100%',
+                    padding: '0.75rem 2.5rem 0.75rem 1rem',
                     background: 'rgba(255,255,255,0.05)',
                     border: '1px solid var(--card-border)',
-                    borderRadius: '10px',
+                    borderRadius: '12px',
                     color: 'white',
-                    fontSize: '0.85rem',
+                    fontSize: '0.9rem',
                     appearance: 'none',
                     cursor: 'pointer'
                   }}
@@ -243,95 +244,160 @@ const InventoryView = ({ t }) => {
                     <option key={loc.id} value={loc.id}>{getLocLabel(loc)}</option>
                   ))}
                 </select>
-                <ChevronDown size={14} color="var(--text-secondary)" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                <ChevronDown size={14} color="var(--text-secondary)" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
               </div>
             )}
           </div>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)' }}>
-                <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t.itemName}</th>
-                <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t.location}</th>
-                <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>{t.quantity}</th>
-                <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>{t.alertThreshold}</th>
-                <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t.status}</th>
-                <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>{t.actions}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredItems.map(item => (
-                <tr key={item.id} style={{ borderBottom: '1px solid var(--card-border)', transition: 'background 0.2s' }} className="table-row-hover">
-                  <td style={{ padding: '1.25rem 1.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                      <div style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Package size={20} color="var(--text-secondary)" />
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: '700', fontSize: '1rem' }}>{item.name}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t.lastUpdated}: {item.lastUpdated}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td style={{ padding: '1.25rem 1.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                      <MapPin size={14} />
+        {isMobile ? (
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {filteredItems.map((item, idx) => (
+              <div key={item.id} style={{ 
+                padding: '1.5rem', 
+                borderBottom: idx < filteredItems.length - 1 ? '1px solid var(--card-border)' : 'none',
+                background: 'rgba(255,255,255,0.01)'
+              }}>
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.25rem' }}>
+                  <div style={{ width: '44px', height: '44px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Package size={22} color="var(--text-secondary)" />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: '800', fontSize: '1.1rem', marginBottom: '0.25rem' }}>{item.name}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
+                      <MapPin size={12} />
                       {(() => {
                         const loc = locations.find(l => l.id === item.location);
                         return loc ? getLocLabel(loc) : item.location;
                       })()}
                     </div>
-                  </td>
-                  <td style={{ padding: '1.25rem 1.5rem', textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.1rem', fontWeight: '800', color: item.quantity <= item.threshold ? 'var(--warning-color)' : 'white' }}>
-                      {item.quantity}
-                    </div>
-                  </td>
-                  <td style={{ padding: '1.25rem 1.5rem', textAlign: 'center' }}>
-                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{item.threshold}</div>
-                  </td>
-                  <td style={{ padding: '1.25rem 1.5rem' }}>
-                    <div style={{ 
-                      display: 'inline-flex', 
-                      alignItems: 'center', 
-                      gap: '0.5rem', 
-                      padding: '0.4rem 0.8rem', 
-                      borderRadius: '8px', 
-                      fontSize: '0.75rem', 
-                      fontWeight: '800',
-                      background: `${getStatusColor(item.quantity, item.threshold)}15`,
-                      color: getStatusColor(item.quantity, item.threshold),
-                      border: `1px solid ${getStatusColor(item.quantity, item.threshold)}30`
-                    }}>
-                      <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: getStatusColor(item.quantity, item.threshold) }}></div>
-                      {getStatusText(item.quantity, item.threshold).toUpperCase()}
-                    </div>
-                  </td>
-                  <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                      <button style={{ padding: '0.4rem 0.8rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '8px', color: 'white', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer' }}>
-                        {t.updateStock}
-                      </button>
-                      <button style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                        <MoreVertical size={18} />
-                      </button>
-                    </div>
-                  </td>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem', background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '15px' }}>
+                  <div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>QUANTITY</div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: '900', color: item.quantity <= item.threshold ? 'var(--warning-color)' : 'white' }}>{item.quantity}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>THRESHOLD</div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: '900', color: 'rgba(255,255,255,0.2)' }}>{item.threshold}</div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ 
+                    display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.35rem 0.75rem', borderRadius: '8px', 
+                    fontSize: '0.7rem', fontWeight: '900', background: `${getStatusColor(item.quantity, item.threshold)}15`,
+                    color: getStatusColor(item.quantity, item.threshold), border: `1px solid ${getStatusColor(item.quantity, item.threshold)}30`
+                  }}>
+                    <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: getStatusColor(item.quantity, item.threshold) }}></div>
+                    {getStatusText(item.quantity, item.threshold).toUpperCase()}
+                  </div>
+                  
+                  <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <button style={{ padding: '0.6rem 1rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid var(--accent-color)', borderRadius: '10px', color: 'white', fontSize: '0.75rem', fontWeight: '800' }}>
+                      {t.updateStock}
+                    </button>
+                    <button style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.6rem', borderRadius: '10px', color: 'var(--text-secondary)' }}>
+                      <MoreVertical size={18} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {filteredItems.length === 0 && (
+              <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                <Package size={48} style={{ opacity: 0.1, marginBottom: '1rem' }} />
+                <div>No inventory items found.</div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)' }}>
+                  <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t.itemName}</th>
+                  <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t.location}</th>
+                  <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>{t.quantity}</th>
+                  <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>{t.alertThreshold}</th>
+                  <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t.status}</th>
+                  <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>{t.actions}</th>
                 </tr>
-              ))}
-              {filteredItems.length === 0 && (
-                <tr>
-                  <td colSpan="6" style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                    <Package size={48} style={{ opacity: 0.1, marginBottom: '1rem' }} />
-                    <div>No inventory items found.</div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filteredItems.map(item => (
+                  <tr key={item.id} style={{ borderBottom: '1px solid var(--card-border)', transition: 'background 0.2s' }} className="table-row-hover">
+                    <td style={{ padding: '1.25rem 1.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Package size={20} color="var(--text-secondary)" />
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: '700', fontSize: '1rem' }}>{item.name}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t.lastUpdated}: {item.lastUpdated}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ padding: '1.25rem 1.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                        <MapPin size={14} />
+                        {(() => {
+                          const loc = locations.find(l => l.id === item.location);
+                          return loc ? getLocLabel(loc) : item.location;
+                        })()}
+                      </div>
+                    </td>
+                    <td style={{ padding: '1.25rem 1.5rem', textAlign: 'center' }}>
+                      <div style={{ fontSize: '1.1rem', fontWeight: '800', color: item.quantity <= item.threshold ? 'var(--warning-color)' : 'white' }}>
+                        {item.quantity}
+                      </div>
+                    </td>
+                    <td style={{ padding: '1.25rem 1.5rem', textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{item.threshold}</div>
+                    </td>
+                    <td style={{ padding: '1.25rem 1.5rem' }}>
+                      <div style={{ 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        gap: '0.5rem', 
+                        padding: '0.4rem 0.8rem', 
+                        borderRadius: '8px', 
+                        fontSize: '0.75rem', 
+                        fontWeight: '800',
+                        background: `${getStatusColor(item.quantity, item.threshold)}15`,
+                        color: getStatusColor(item.quantity, item.threshold),
+                        border: `1px solid ${getStatusColor(item.quantity, item.threshold)}30`
+                      }}>
+                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: getStatusColor(item.quantity, item.threshold) }}></div>
+                        {getStatusText(item.quantity, item.threshold).toUpperCase()}
+                      </div>
+                    </td>
+                    <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                        <button style={{ padding: '0.4rem 0.8rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '8px', color: 'white', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer' }}>
+                          {t.updateStock}
+                        </button>
+                        <button style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                          <MoreVertical size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filteredItems.length === 0 && (
+                  <tr>
+                    <td colSpan="6" style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                      <Package size={48} style={{ opacity: 0.1, marginBottom: '1rem' }} />
+                      <div>No inventory items found.</div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
       
       <style>{`
