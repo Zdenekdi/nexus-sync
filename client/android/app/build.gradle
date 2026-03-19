@@ -32,10 +32,42 @@ if (isReleaseBuild) {
 def appVersionName = "${majorVersion}.${minorVersion}"
 def appVersionCode = (majorVersion * 10000) + minorVersion
 def artifactBaseName = "Nexus-Relay"
+def clientRootDir = rootDir.parentFile
+def npmExecutable = System.getProperty('os.name').toLowerCase().contains('windows') ? 'npm.cmd' : 'npm'
 
 def artifactFileName = { String versionName, String buildTypeName, String extension ->
     def debugSuffix = buildTypeName == "debug" ? "-debug" : ""
     return "${artifactBaseName}-v${versionName}${debugSuffix}.${extension}"
+}
+
+tasks.register("buildFrontendWeb", Exec) {
+    group = "build"
+    description = "Builds the Vite frontend from the client root."
+    workingDir clientRootDir
+    commandLine npmExecutable, "run", "build"
+
+    inputs.file(new File(clientRootDir, "package.json"))
+    inputs.file(new File(clientRootDir, "index.html"))
+    inputs.dir(new File(clientRootDir, "src"))
+    outputs.dir(new File(clientRootDir, "dist"))
+}
+
+tasks.register("syncFrontendToAndroid", Exec) {
+    group = "build"
+    description = "Syncs the latest web build into android/app/src/main/assets/public."
+    dependsOn("buildFrontendWeb")
+    workingDir clientRootDir
+    commandLine npmExecutable, "run", "cap:sync"
+
+    inputs.dir(new File(clientRootDir, "dist"))
+    inputs.file(new File(clientRootDir, "scripts/sync-android-assets.js"))
+    inputs.file(new File(clientRootDir, "scripts/post-cap-sync.js"))
+    outputs.dir(new File(projectDir, "src/main/assets/public"))
+    outputs.file(new File(projectDir, "src/main/assets/capacitor.config.json"))
+}
+
+tasks.matching { it.name == "preBuild" }.configureEach {
+    dependsOn("syncFrontendToAndroid")
 }
 
 android {

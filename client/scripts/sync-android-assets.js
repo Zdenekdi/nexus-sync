@@ -18,7 +18,7 @@ fs.cpSync(distDir, publicDir, { recursive: true });
 
 const capacitorConfig = {
   appId: 'com.nexushub.app',
-  appName: 'NexusHub',
+  appName: 'Nexus Relay',
   webDir: 'dist'
 };
 
