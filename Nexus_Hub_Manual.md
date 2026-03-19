@@ -1,5 +1,9 @@
 # Uživatelský Manuál: Nexus Hub (Demo)
 
+<div style="text-align: center; margin-bottom: 30px;">
+  <img src="/nexus_icon.png" width="120" style="border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);" />
+</div>
+
 Vítejte v systému **Nexus Hub (AW Nexus)** – centrálním bodu pro správu profilů, automatizaci komunikace a efektivní škálování vaší agentury. Tento dokument slouží jako průvodce funkcemi, které můžete vidět v naší interaktivní demo aplikaci.
 
 ---
