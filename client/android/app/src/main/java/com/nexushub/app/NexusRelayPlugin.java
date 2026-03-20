@@ -168,20 +168,100 @@ public class NexusRelayPlugin extends Plugin {
         }
     }
 
+    @PluginMethod
+    public void configureRelay(PluginCall call) {
+        String baseUrl = call.getString("baseUrl");
+        String deviceId = call.getString("deviceId");
+        Boolean isActive = call.getBoolean("isActive", false);
+
+        Context context = getContext();
+        android.content.SharedPreferences prefs = context.getSharedPreferences("NexusRelayPrefs", Context.MODE_PRIVATE);
+        android.content.SharedPreferences.Editor editor = prefs.edit();
+        
+        if (baseUrl != null) editor.putString("baseUrl", baseUrl);
+        if (deviceId != null) editor.putString("deviceId", deviceId);
+        editor.putBoolean("isActive", isActive != null && isActive);
+        editor.apply();
+
+        JSObject ret = buildStatus();
+        ret.put("configUpdated", true);
+        call.resolve(ret);
+    }
+
     public static void onMessageReceived(String from, String body) {
         if (instance == null) return;
+        
+        Context context = instance.getContext();
+        android.content.SharedPreferences prefs = context.getSharedPreferences("NexusRelayPrefs", Context.MODE_PRIVATE);
+        boolean isActive = prefs.getBoolean("isActive", false);
+        String baseUrl = prefs.getString("baseUrl", null);
+        String deviceId = prefs.getString("deviceId", "RELAY-DEVICE");
+
+        // 1. Notify JS (for UI logs if app is open)
         JSObject ret = new JSObject();
         ret.put("from", from);
         ret.put("body", body);
         instance.notifyListeners("onSmsReceived", ret, true);
+
+        // 2. Native Background Forwarding
+        if (isActive && baseUrl != null) {
+            forwardDataNative(baseUrl, deviceId, "sms", from, body);
+        }
     }
 
     public static void onCallStateChanged(String from, String state) {
         if (instance == null) return;
+
+        Context context = instance.getContext();
+        android.content.SharedPreferences prefs = context.getSharedPreferences("NexusRelayPrefs", Context.MODE_PRIVATE);
+        boolean isActive = prefs.getBoolean("isActive", false);
+        String baseUrl = prefs.getString("baseUrl", null);
+        String deviceId = prefs.getString("deviceId", "RELAY-DEVICE");
+
+        // 1. Notify JS
         JSObject ret = new JSObject();
         ret.put("from", from);
         ret.put("state", state);
         instance.notifyListeners("onCallStateChanged", ret, true);
+
+        // 2. Native Background Forwarding
+        if (isActive && baseUrl != null && state != null && !state.equals("IDLE")) {
+            forwardDataNative(baseUrl, deviceId, "call", from, "State: " + state);
+        }
+    }
+
+    private static void forwardDataNative(final String baseUrl, final String deviceId, final String type, final String from, final String content) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    java.net.URL url = new java.net.URL(baseUrl);
+                    java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                    conn.setRequestMethod("POST");
+                    conn.setRequestProperty("Content-Type", "application/json; utf-8");
+                    conn.setRequestProperty("Accept", "application/json");
+                    conn.setDoOutput(true);
+
+                    org.json.JSONObject jsonParam = new org.json.JSONObject();
+                    jsonParam.put("deviceId", deviceId);
+                    jsonParam.put("type", type);
+                    jsonParam.put("from", from);
+                    jsonParam.put("content", content);
+                    jsonParam.put("timestamp", new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).format(new java.util.Date()));
+
+                    try(java.io.OutputStream os = conn.getOutputStream()) {
+                        byte[] input = jsonParam.toString().getBytes("utf-8");
+                        os.write(input, 0, input.length);			
+                    }
+
+                    int code = conn.getResponseCode();
+                    android.util.Log.d("NexusRelay", "Native Forward Response Code: " + code);
+                    conn.disconnect();
+                } catch (Exception e) {
+                    android.util.Log.e("NexusRelay", "Native Forward Error", e);
+                }
+            }
+        }).start();
     }
 
     public static void onFcmTokenRefreshed(String token) {

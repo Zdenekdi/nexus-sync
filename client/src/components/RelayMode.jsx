@@ -80,6 +80,17 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
   };
 
   useEffect(() => {
+    // Sync relay status to native side for background forwarding
+    if (window.Capacitor?.Plugins?.NexusRelay) {
+      window.Capacitor.Plugins.NexusRelay.configureRelay({
+        baseUrl: 'https://nexus-api.myvnc.com/api/device/relay',
+        deviceId: operator?.id || 'RELAY-01',
+        isActive: isActive
+      });
+    }
+  }, [isActive, operator]);
+
+  useEffect(() => {
     if (window.Capacitor?.Plugins?.NexusRelay) {
       const smsListener = window.Capacitor.Plugins.NexusRelay.addListener('onSmsReceived', (data) => {
         forwardData('sms', data.from, data.body);
