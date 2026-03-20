@@ -51,8 +51,8 @@ const LoginScreen = ({ onLogin, onRegisterAgency, onRegisterUser, onResetRequest
         <div style={{ position: 'absolute', inset: -12, background: 'var(--accent-color)', opacity: 0.2, filter: 'blur(20px)', borderRadius: '50%' }}></div>
         <img src="/nexus_icon.png" alt="Nexus" style={{ position: 'relative', width: '100%', height: '100%', borderRadius: isMobile ? '18px' : '22px', boxShadow: '0 10px 30px var(--accent-glow)' }} />
       </div>
-      <h1 style={{ fontSize: isMobile ? '1.8rem' : '2.4rem', fontWeight: '900', letterSpacing: '-0.02em', marginBottom: '0.25rem', background: 'linear-gradient(to bottom, #ffffff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>NEXUS SYNC</h1>
-      <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: '500', letterSpacing: '0.05em' }}>NEXUS S.R.O. • PREMIUM ENGINE</p>
+      <h1 style={{ fontSize: isMobile ? '1.8rem' : '2.4rem', fontWeight: '900', letterSpacing: '-0.02em', marginBottom: '0.25rem', background: 'linear-gradient(to bottom, #ffffff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>NEXUS SYSTEMS</h1>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: '500', letterSpacing: '0.05em' }}>NEXUS SYSTEMS S.R.O. • PREMIUM ENGINE</p>
     </div>
   );
 

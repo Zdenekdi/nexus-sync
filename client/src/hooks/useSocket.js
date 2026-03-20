@@ -3,14 +3,14 @@ import { io } from 'socket.io-client';
 
 const SOCKET_URL = 'https://nexus-api.myvnc.com';
 
-export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall) => {
+export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert) => {
   const socketRef = useRef(null);
-  const handlersRef = useRef({ onNewMessage, onMessageUpdated, onIncomingCall });
+  const handlersRef = useRef({ onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert });
 
   // Update refs when handlers change without re-triggering the socket effect
   useEffect(() => {
-    handlersRef.current = { onNewMessage, onMessageUpdated, onIncomingCall };
-  }, [onNewMessage, onMessageUpdated, onIncomingCall]);
+    handlersRef.current = { onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert };
+  }, [onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert]);
 
   useEffect(() => {
     // If no token, don't connect or disconnect if already connected
@@ -53,6 +53,13 @@ export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall)
         console.log('Received incoming_call:', data);
         if (handlersRef.current.onIncomingCall) {
           handlersRef.current.onIncomingCall(data);
+        }
+      });
+
+      socketRef.current.on('emergency_alert', (data) => {
+        console.log('Received emergency_alert:', data);
+        if (handlersRef.current.onEmergencyAlert) {
+          handlersRef.current.onEmergencyAlert(data);
         }
       });
 

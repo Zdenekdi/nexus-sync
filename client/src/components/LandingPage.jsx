@@ -52,7 +52,7 @@ const LandingPage = ({ onLoginClick, lang, setLang, isMobile }) => {
           desc: "Absolutní kontrola nad týmem, real-time analytika a automatické nouzové alerty. Škálování bez stresu z chaosu v datech." 
         }
       ],
-      footer: "Nexus Hub – Váš nástroj pro efektivní škálování."
+      footer: "Nexus Systems – Váš nástroj pro efektivní škálování."
     },
     en: {
       title: "The Future of Agency Management",
@@ -92,7 +92,7 @@ const LandingPage = ({ onLoginClick, lang, setLang, isMobile }) => {
           desc: "Absolute team oversight, real-time analytics, and automated emergency alerts. Scale without the stress of data chaos." 
         }
       ],
-      footer: "Nexus Hub – Your tool for efficient scaling."
+      footer: "Nexus Systems – Your tool for efficient scaling."
     }
   };
 
@@ -227,10 +227,10 @@ const LandingPage = ({ onLoginClick, lang, setLang, isMobile }) => {
       <footer style={{ padding: isMobile ? 'calc(2rem + env(safe-area-inset-left)) 5% calc(2rem + env(safe-area-inset-bottom) + env(safe-area-inset-right))' : '4rem 5%', textAlign: 'center', borderTop: '1px solid var(--card-border)', color: 'var(--text-secondary)', fontSize: isMobile ? '0.85rem' : '0.9rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
           <img src="/nexus_icon.png" alt="Nexus" style={{ width: '24px', height: '24px', borderRadius: '6px' }} />
-          <span style={{ fontWeight: '900', letterSpacing: '0.1em', color: 'white' }}>NEXUS HUB</span>
+          <span style={{ fontWeight: '900', letterSpacing: '0.1em', color: 'white' }}>NEXUS SYSTEMS</span>
         </div>
         <p>{t.footer}</p>
-        <div style={{ marginTop: '2rem' }}>© {new Date().getFullYear()} NexusSync Systems s.r.o. All rights reserved.</div>
+        <div style={{ marginTop: '2rem' }}>© {new Date().getFullYear()} Nexus Systems s.r.o. All rights reserved.</div>
       </footer>
     </div>
   );

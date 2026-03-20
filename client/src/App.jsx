@@ -24,9 +24,11 @@ import DashboardHome from './components/DashboardHome';
 import LoginScreen from './components/LoginScreen';
 import ResetPasswordView from './components/ResetPasswordView';
 import InventoryView from './components/InventoryView';
+import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { PushNotifications } from '@capacitor/push-notifications';
+import { Geolocation } from '@capacitor/geolocation';
 
 
 
@@ -67,7 +69,9 @@ function App() {
   const [messages, setMessages] = useState(MOCK_MESSAGES);
   const [profiles, setProfiles] = useState(MOCK_PROFILES);
   const [agencies, setAgencies] = useState(MOCK_AGENCIES);
+  const [agencySettings, setAgencySettings] = useState({ safetyAlertMode: 'MANAGERS_AND_ASSIGNED' });
   const [operators, setOperators] = useState(MOCK_OPERATORS);
+  const [assigningProfile, setAssigningProfile] = useState(null);
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('nexus_activeTab') || 'dashboard');
   const [activeProfileId, setActiveProfileId] = useState(() => {
     const saved = localStorage.getItem('nexus_activeProfileId');
@@ -92,11 +96,41 @@ function App() {
     localStorage.setItem('nexus_language', lang);
   }, [lang]);
 
+  // Recover Safety Session on Load
+  useEffect(() => {
+    const recoverSession = async () => {
+      if (!isLoggedIn || !token) return;
+      try {
+        const res = await axios.get('http://localhost:3001/api/safety/sessions/active', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.data) {
+          setActiveSafetySession(res.data);
+          setIsTimerActive(true);
+          // Calculate remaining time
+          const endAt = new Date(res.data.plannedEndAt).getTime();
+          const now = Date.now();
+          setTimeLeft(Math.floor((endAt - now) / 1000));
+        }
+      } catch (err) {
+        console.warn('No active safety session found or error fetching.');
+      }
+    };
+    recoverSession();
+  }, [isLoggedIn, token]);
+
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mobileView, setMobileView] = useState('sidebar');
   const [isToolsExpanded, setIsToolsExpanded] = useState(false);
   const [isAppVisible, setIsAppVisible] = useState(() => typeof document === 'undefined' ? true : document.visibilityState === 'visible');
+  
+  // Safety Guard State
+  const [activeSafetySession, setActiveSafetySession] = useState(null);
+  const [isSafetyLoading, setIsSafetyLoading] = useState(false);
+  const [isEmergencyAckLoading, setIsEmergencyAckLoading] = useState(false);
+  const [showPanicConfirm, setShowPanicConfirm] = useState(false);
+  const [emergencyAlert, setEmergencyAlert] = useState(null);
 
   useEffect(() => {
     if (typeof document === 'undefined') {
@@ -279,29 +313,218 @@ function App() {
     }
   }, [timeLeft, isTimerActive]);
 
-  const handleCheckIn = (event) => {
-    setActiveTimerEvent(event);
-    const durationMatch = event.duration.match(/(\d+)h/);
-    const durationMinutes = durationMatch ? parseInt(durationMatch[1]) * 60 : 60;
-    setTimeLeft(durationMinutes * 60);
-    setIsTimerActive(true);
-    setSafetyAlarmTriggered(false);
+  // API Configuration
+  const API_BASE = 'http://localhost:3001/api';
+  
+  // Update handleCheckIn for real backend
+  const handleCheckIn = async (event) => {
+    try {
+      setIsSafetyLoading(true);
+      
+      // Calculate duration from mock string (e.g. "1h", "2h")
+      const durationMatch = event.duration.match(/(\d+)h/);
+      const graceMinutes = 10;
+      
+      const response = await axios.post(`${API_BASE}/safety/sessions`, {
+        profileId: activeProfileId,
+        bookingId: event.id,
+        plannedEndAt: new Date(Date.now() + (durationMatch ? parseInt(durationMatch[1]) : 1) * 3600000),
+        graceMinutes
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const session = response.data;
+      setActiveSafetySession(session);
+      setActiveTimerEvent(event);
+      
+      // Sync local timer
+      const durationSeconds = (durationMatch ? parseInt(durationMatch[1]) : 1) * 3600;
+      setTimeLeft(durationSeconds);
+      setIsTimerActive(true);
+      setSafetyAlarmTriggered(false);
+
+      addNotification({
+        id: Date.now(),
+        title: 'Safety Guard Active',
+        message: `Session started for ${event.title}. Security monitored.`,
+        priority: 'success',
+        timestamp: new Date().toLocaleTimeString(),
+        read: false
+      });
+    } catch (error) {
+      console.error('Safety Check-in failed:', error);
+      addNotification({
+        id: Date.now(),
+        title: 'Safety Error',
+        message: 'Could not start safety session. Please try again.',
+        priority: 'emergency',
+        timestamp: new Date().toLocaleTimeString(),
+        read: false
+      });
+    } finally {
+      setIsSafetyLoading(false);
+    }
+  };
+
+  const handleCheckOut = async () => {
+    if (!activeSafetySession) return;
+    
+    try {
+      setIsSafetyLoading(true);
+      await axios.post(`${API_BASE}/safety/sessions/${activeSafetySession.id}/check-out`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setIsTimerActive(false);
+      setActiveTimerEvent(null);
+      setActiveSafetySession(null);
+      setSafetyAlarmTriggered(false);
+      setTimeLeft(0);
+      
+      addNotification({ 
+        id: Date.now(), 
+        title: 'Safety Deactivated', 
+        message: 'Checkout successful. Go home safe!', 
+        priority: 'success', 
+        timestamp: new Date().toLocaleTimeString(), 
+        read: false 
+      });
+    } catch (error) {
+      console.error('Safety Check-out failed:', error);
+      addNotification({
+        id: Date.now(),
+        title: 'Network Error',
+        message: 'Could not complete checkout. Please contact manager.',
+        priority: 'emergency',
+        timestamp: new Date().toLocaleTimeString(),
+        read: false
+      });
+    } finally {
+      setIsSafetyLoading(false);
+    }
+  };
+
+  const handleSafetyImOk = async () => {
+    if (!activeSafetySession) return;
+
+    try {
+      setIsSafetyLoading(true);
+      await axios.post(`${API_BASE}/safety/sessions/${activeSafetySession.id}/ack`, {
+        extendMinutes: 10
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // Reset local timer window so model has another 10 minutes before escalation.
+      setTimeLeft(600);
+      setSafetyAlarmTriggered(false);
+
+      addNotification({
+        id: Date.now(),
+        title: 'Safety Acknowledged',
+        message: 'Manager delay acknowledged. Extra 10 minutes granted.',
+        priority: 'success',
+        timestamp: new Date().toLocaleTimeString(),
+        read: false,
+      });
+    } catch (error) {
+      console.error('Safety acknowledge failed:', error);
+      addNotification({
+        id: Date.now(),
+        title: 'Acknowledge Failed',
+        message: 'Could not confirm safety status. Please check out or contact manager.',
+        priority: 'emergency',
+        timestamp: new Date().toLocaleTimeString(),
+        read: false,
+      });
+    } finally {
+      setIsSafetyLoading(false);
+    }
+  };
+
+  const handleManagerEmergencyAcknowledge = async () => {
+    const sessionId = emergencyAlert?.sessionId;
+    if (!sessionId) {
+      addNotification({
+        id: Date.now(),
+        title: 'Acknowledge Failed',
+        message: 'Missing session ID in emergency alert.',
+        priority: 'emergency',
+        timestamp: new Date().toLocaleTimeString(),
+        read: false,
+      });
+      return;
+    }
+
+    try {
+      setIsEmergencyAckLoading(true);
+      await axios.post(`${API_BASE}/safety/sessions/${sessionId}/ack`, {
+        extendMinutes: 10,
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      addNotification({
+        id: Date.now(),
+        title: 'Emergency Acknowledged',
+        message: 'Session acknowledged and postponed by 10 minutes.',
+        priority: 'success',
+        timestamp: new Date().toLocaleTimeString(),
+        read: false,
+      });
+      setEmergencyAlert(null);
+    } catch (error) {
+      console.error('Manager emergency acknowledge failed:', error);
+      addNotification({
+        id: Date.now(),
+        title: 'Acknowledge Failed',
+        message: 'Could not update emergency session. Try again.',
+        priority: 'emergency',
+        timestamp: new Date().toLocaleTimeString(),
+        read: false,
+      });
+    } finally {
+      setIsEmergencyAckLoading(false);
+    }
+  };
+
+  const handlePanic = async () => {
+    if (!activeSafetySession) {
+      // Create a temporary ad-hoc session if none exists
+      try {
+        const res = await axios.post(`${API_BASE}/safety/sessions`, {
+          profileId: activeProfileId,
+          graceMinutes: 0
+        }, { headers: { Authorization: `Bearer ${token}` } });
+        
+        await axios.post(`${API_BASE}/safety/sessions/${res.data.id}/panic`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } catch (err) {
+         console.error('Emergency panic failed:', err);
+      }
+    } else {
+      try {
+        await axios.post(`${API_BASE}/safety/sessions/${activeSafetySession.id}/panic`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } catch (err) {
+        console.error('Emergency panic failed:', err);
+      }
+    }
+
+    setSafetyAlarmTriggered(true);
+    playNotificationSound('emergency');
+    
     addNotification({
       id: Date.now(),
-      title: 'Safety Guard Active',
-      message: `Timer started for ${event.title}`,
-      priority: 'success',
+      title: 'PANIC ALERT SENT',
+      message: 'Emergency signals dispatched to all agency managers.',
+      priority: 'emergency',
       timestamp: new Date().toLocaleTimeString(),
       read: false
     });
-  };
-
-  const handleCheckOut = () => {
-    setIsTimerActive(false);
-    setActiveTimerEvent(null);
-    setSafetyAlarmTriggered(false);
-    setTimeLeft(0);
-    addNotification({ id: Date.now(), title: 'Safety Guard Deactivated', message: 'Checkout successful.', priority: 'success', timestamp: new Date().toLocaleTimeString(), read: false });
   };
 
   const formatSafetyTime = (seconds) => {
@@ -346,6 +569,71 @@ function App() {
   useEffect(() => {
     localStorage.setItem('nexus_client_names', JSON.stringify(clientNames));
   }, [clientNames]);
+
+  const fetchAgencySettings = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await axios.get(`${API_BASE}/agency/settings`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAgencySettings(res.data);
+    } catch (err) {
+      console.error('Failed to fetch agency settings:', err);
+    }
+  }, [token, API_BASE]);
+
+  const updateAgencySettings = async (newData) => {
+    try {
+      const res = await axios.patch(`${API_BASE}/agency/settings`, newData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAgencySettings(res.data);
+      addNotification({ title: 'Settings Updated', message: 'Agency safety configuration saved.', priority: 'success', timestamp: new Date().toLocaleTimeString(), read: false });
+    } catch (err) {
+      console.error('Failed to update agency settings:', err);
+      addNotification({ title: 'Update Failed', message: 'Could not save agency settings.', priority: 'emergency', timestamp: new Date().toLocaleTimeString(), read: false });
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'settings') {
+      fetchAgencySettings();
+    }
+  }, [activeTab, fetchAgencySettings]);
+
+  const handleSaveAssignees = async (profileId, userIds) => {
+    try {
+      setIsSafetyLoading(true);
+      const res = await axios.patch(`${API_BASE}/profiles/${profileId}/assignees`, { userIds }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // Update local profiles state to reflect new assignees
+      setProfiles(prev => prev.map(p => 
+        p.id === profileId ? { ...p, assignees: res.data.assignees } : p
+      ));
+      
+      setAssigningProfile(null);
+      addNotification({ 
+        title: 'Team Updated', 
+        message: 'Profile assignees have been synchronized.', 
+        priority: 'success', 
+        timestamp: new Date().toLocaleTimeString(), 
+        read: false 
+      });
+    } catch (err) {
+      console.error('Failed to save assignees:', err);
+      addNotification({ 
+        title: 'Error', 
+        message: 'Failed to update profile team.', 
+        priority: 'emergency', 
+        timestamp: new Date().toLocaleTimeString(), 
+        read: false 
+      });
+    } finally {
+      setIsSafetyLoading(false);
+    }
+  };
 
   const updateClientName = useCallback((phoneNumber, name) => {
     setClientNames(prev => ({
@@ -394,6 +682,15 @@ function App() {
 
   useEffect(() => {
     localStorage.setItem('nexus_notifications', JSON.stringify(notifications.slice(0, 50)));
+  }, [notifications]);
+
+  const emergencySafetyAlerts = useMemo(() => {
+    const safetyPattern = /SAFETY GUARD|NO CHECK-OUT|PANIC/i;
+    return notifications.filter((item) => {
+      const title = item.title || '';
+      const message = item.message || item.msg || '';
+      return item.type === 'emergency' && (item.category === 'safety-guard' || safetyPattern.test(`${title} ${message}`));
+    });
   }, [notifications]);
 
   const markNotificationRead = useCallback((notificationId) => {
@@ -753,6 +1050,92 @@ function App() {
     };
   }, [activeOperator?.id, addNotification, isLoggedIn, isNativeApp, isPushRegistrationEnabled, mapPushPayloadToTarget, openNotificationTarget, token]);
 
+  // ── Push token sync for Relay ──────────────────────────────────────────────
+  const [isSyncingPush, setIsSyncingPush] = useState(false);
+
+  const syncPushToken = useCallback(async () => {
+    if (!isNativeApp) return;
+    setIsSyncingPush(true);
+    try {
+      const storedToken = localStorage.getItem('nexus_push_token');
+      if (storedToken && token) {
+        await fetch('https://nexus-api.myvnc.com/api/device/push-token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            token: storedToken,
+            platform: Capacitor.getPlatform(),
+            operatorId: activeOperator?.id || null,
+          }),
+        });
+      }
+    } catch (error) {
+      console.warn('[Relay] Push token sync failed', error);
+    } finally {
+      setIsSyncingPush(false);
+    }
+  }, [activeOperator?.id, isNativeApp, token]);
+
+  // ── Request Relay permissions (SMS + phone) via native plugin ─────────────
+  const requestRelayPermissions = useCallback(async () => {
+    if (!isNativeApp) return null;
+    try {
+      const plugin = window.Capacitor?.Plugins?.NexusRelay;
+      if (!plugin) return null;
+      const status = await plugin.ensureReady();
+      return status;
+    } catch (error) {
+      console.warn('[Relay] Permission request failed', error);
+      return null;
+    }
+  }, [isNativeApp]);
+
+  // ── Startup permission requests (SMS + phone + location) ──────────────────
+  // Fired once on app launch regardless of login state.
+  // Android will show each dialog only if the permission hasn't been granted yet.
+  useEffect(() => {
+    if (!isNativeApp) return;
+
+    let cancelled = false;
+
+    const requestStartupPermissions = async () => {
+      if (cancelled) return;
+
+      // 1. SMS + phone permissions via NexusRelay plugin
+      try {
+        const relayPlugin = window.Capacitor?.Plugins?.NexusRelay;
+        if (relayPlugin) {
+          await relayPlugin.ensureReady();
+        }
+      } catch (err) {
+        console.warn('[Permissions] Relay permission request failed', err);
+      }
+
+      if (cancelled) return;
+
+      // 2. Location permission via Geolocation plugin
+      try {
+        const locStatus = await Geolocation.checkPermissions();
+        if (locStatus.location === 'prompt' || locStatus.coarseLocation === 'prompt') {
+          await Geolocation.requestPermissions({ permissions: ['location', 'coarseLocation'] });
+        }
+      } catch (err) {
+        console.warn('[Permissions] Location permission request failed', err);
+      }
+    };
+
+    // 2 s delay so the splash/login screen is visible before dialogs appear
+    const timer = setTimeout(requestStartupPermissions, 2000);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNativeApp]);
+
   // Real-time message simulation logic
   useEffect(() => {
     if (!isLoggedIn || !isSimulating) return;
@@ -980,8 +1363,27 @@ function App() {
           targetType: 'call',
         });
       }
-    }, [profiles, t, addNotification])
+    }, [profiles, t, addNotification]),
+    useCallback((alertData) => {
+      console.log('🚨 EMERGENCY ALERT RECEIVED:', alertData);
+      setEmergencyAlert(alertData);
+      playNotificationSound('emergency');
+      
+      // Auto-switch to a dash or show overlay
+      addNotification({
+        title: `🚨 EMERGENCY: ${alertData.profileName}`,
+        message: `Type: ${alertData.type.toUpperCase()}. Active session ${alertData.sessionId}`,
+        priority: 'emergency',
+        timestamp: new Date().toLocaleTimeString(),
+        read: false
+      });
+    }, [addNotification, t])
   );
+
+  // Dynamic Document Title
+  useEffect(() => {
+    document.title = isLoggedIn ? 'Nexus Hub' : 'Nexus Systems';
+  }, [isLoggedIn]);
 
   // Model Profile Locking Effect
   useEffect(() => {
@@ -1581,6 +1983,7 @@ function App() {
           onExit={() => setIsRelayMode(false)}
           syncPushToken={syncPushToken}
           isSyncingPush={isSyncingPush}
+          requestRelayPermissions={requestRelayPermissions}
         />
       );
     }
@@ -1853,7 +2256,10 @@ function App() {
                   </div>
                   {!isSidebarCollapsed && (
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontSize: '1.4rem', fontWeight: '950', letterSpacing: '0.04em', lineHeight: 1 }}>{t('logo')}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                      <img src="/nexus_icon.png" alt="Icon" style={{ width: '32px', height: '32px', borderRadius: '8px', boxShadow: '0 0 15px rgba(59, 130, 246, 0.3)' }} />
+                      <img src="/nexus_systems_logo.png" alt="Nexus Systems" style={{ height: '24px', opacity: 0.9 }} />
+                    </div>
                       <span style={{ fontSize: '0.65rem', color: 'var(--accent-color)', fontWeight: '800', letterSpacing: '0.22em' }}>NETWORK</span>
                     </div>
                   )}
@@ -2475,6 +2881,42 @@ function App() {
                           <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{timeLeft <= 0 ? 'OVERTIME' : 'TIME REMAINING'}</div>
                         </div>
                       </div>
+                      {timeLeft <= 0 && (
+                        <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.6rem' }}>
+                          <button
+                            onClick={handleCheckOut}
+                            disabled={isSafetyLoading}
+                            className="action-btn"
+                            style={{
+                              margin: 0,
+                              padding: '0.55rem 0.9rem',
+                              fontSize: '0.72rem',
+                              background: 'rgba(239, 68, 68, 0.25)',
+                              border: '1px solid rgba(239, 68, 68, 0.55)',
+                              color: '#fecaca',
+                              opacity: isSafetyLoading ? 0.7 : 1,
+                            }}
+                          >
+                            {isSafetyLoading ? 'SAVING...' : 'CHECK-OUT NOW'}
+                          </button>
+                          <button
+                            onClick={handleSafetyImOk}
+                            disabled={isSafetyLoading}
+                            className="action-btn"
+                            style={{
+                              margin: 0,
+                              padding: '0.55rem 0.9rem',
+                              fontSize: '0.72rem',
+                              background: 'rgba(16, 185, 129, 0.2)',
+                              border: '1px solid rgba(16, 185, 129, 0.5)',
+                              color: '#86efac',
+                              opacity: isSafetyLoading ? 0.7 : 1,
+                            }}
+                          >
+                            {isSafetyLoading ? 'SAVING...' : "I'M OK (+10m)"}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -3155,26 +3597,82 @@ function App() {
                     </div>
 
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.05em' }}>{t('assignedTeam')}</div>
+                      <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.05em' }}>{t('assignedTeam') || 'PROTECTIVE TEAM / ASSIGNEES'}</div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
-                        {profile.operators.map(profileOp => {
-                          const opData = MOCK_OPERATORS.find(o => o.id === profileOp.id);
+                        {(profile.assignees || profile.operators || []).map(profileOp => {
+                          const opData = operators.find(o => o.id === profileOp.id);
+                          if (!opData) return null;
                           return (
-                            <div key={profileOp.id} style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: '1rem', opacity: profileOp.active ? 1 : 0.4 }}>
-                              <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: '900' }}>{opData.avatar}</div>
+                            <div key={profileOp.id} style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: '1rem', opacity: profileOp.active !== false ? 1 : 0.4 }}>
+                              <div style={{ width: '32px', height: '32px', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-color)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: '900' }}>{opData.avatar || opData.name?.substring(0,2).toUpperCase()}</div>
                               <div style={{ flex: 1 }}>
                                 <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>{opData.name}</div>
-                                <div style={{ fontSize: '0.65rem', color: profileOp.primary ? 'var(--accent-color)' : 'var(--text-secondary)' }}>{profileOp.primary ? t('primary') : t('support')}</div>
+                                <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{opData.role}</div>
                               </div>
-                              {profileOp.active && <UserCheck size={16} color="var(--success-color)" />}
+                              <ShieldCheck size={16} color="var(--accent-color)" />
                             </div>
                           );
                         })}
-                        <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.01)', borderRadius: '15px', border: '1px dashed var(--card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>
-                           <UserPlus size={16} /> <span style={{ fontSize: '0.8rem', fontWeight: '700' }}>{t('add')}</span>
+                        <div 
+                          onClick={() => setAssigningProfile(profile)}
+                          style={{ padding: '1rem', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '15px', border: '1px dashed var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--accent-color)' }}
+                        >
+                           <UserPlus size={16} /> <span style={{ fontSize: '0.8rem', fontWeight: '700' }}>{t('manageTeam') || 'Manage Team'}</span>
                          </div>
                       </div>
                     </div>
+
+                    {/* Simple Inline User Selection Modal (as a sibling for easier coding) */}
+                    {assigningProfile?.id === profile.id && (
+                        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+                            <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '500px', padding: '2rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                                    <h3 style={{ fontSize: '1.2rem', fontWeight: '800' }}>Assign Operators to {profile.name}</h3>
+                                    <button onClick={() => setAssigningProfile(null)} style={{ background: 'transparent', border: 'none', color: 'white' }}><X size={24} /></button>
+                                </div>
+                                <div style={{ maxHeight: '400px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem' }}>
+                                    {operators.filter(op => !op.isSuperAdmin && op.role !== 'Model').map(op => {
+                                        const isAssigned = profile.assignees?.some(a => a.id === op.id) || profile.operators?.some(o => o.id === op.id);
+                                        return (
+                                            <div 
+                                                key={op.id} 
+                                                onClick={() => {
+                                                    const current = profile.assignees?.map(a => a.id) || [];
+                                                    const next = current.includes(op.id) ? current.filter(id => id !== op.id) : [...current, op.id];
+                                                    handleSaveAssignees(profile.id, next);
+                                                }}
+                                                style={{ 
+                                                    padding: '1rem', 
+                                                    background: isAssigned ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255,255,255,0.03)', 
+                                                    borderRadius: '12px', 
+                                                    border: `1px solid ${isAssigned ? 'var(--accent-color)' : 'var(--card-border)'}`, 
+                                                    display: 'flex', 
+                                                    justifyContent: 'space-between',
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                    <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem' }}>{op.avatar}</div>
+                                                    <div>
+                                                        <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{op.name}</div>
+                                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{op.role}</div>
+                                                    </div>
+                                                </div>
+                                                {isAssigned ? <CheckCircle size={20} color="var(--accent-color)" /> : <PlusCircle size={20} color="var(--text-secondary)" />}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <button 
+                                    onClick={() => setAssigningProfile(null)}
+                                    className="action-btn" 
+                                    style={{ background: 'var(--accent-color)', color: 'white', width: '100%', margin: 0 }}
+                                >
+                                    DONE
+                                </button>
+                            </div>
+                        </div>
+                    )}
                   </div>
                 );
               })}
@@ -3259,6 +3757,27 @@ function App() {
                       <div className="status-badge">{s.current ? t('secure') : t('revoke')}</div>
                     </div>
                   ))}
+                </div>
+              </div>
+
+              <div className="settings-section">
+                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><ShieldCheck size={20} color="var(--accent-color)" /> {t('safetyGuardHeading') || 'Safety Guard Configuration'}</h3>
+                <div className="glass-card" style={{ padding: '1.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '1rem', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : '0' }}>
+                        <div>
+                            <div style={{ fontWeight: '700' }}>{t('safetyAlertMode') || 'Emergency Alert Routing'}</div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('safetyAlertModeDesc') || 'Choose who receives push notifications during a panic alert.'}</div>
+                        </div>
+                        <select 
+                            value={agencySettings?.safetyAlertMode || 'MANAGERS_AND_ASSIGNED'}
+                            onChange={(e) => updateAgencySettings({ safetyAlertMode: e.target.value })}
+                            className="glass-input"
+                            style={{ width: isMobile ? '100%' : 'auto', padding: '0.5rem 1rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid var(--accent-color)', color: 'white', fontWeight: '700' }}
+                        >
+                            <option value="MANAGERS_AND_ASSIGNED">{t('modeManagersAndAssigned') || 'Managers + Assigned Operators'}</option>
+                            <option value="ASSIGNED_ONLY">{t('modeAssignedOnly') || 'Strictly Assigned Operators Only'}</option>
+                        </select>
+                    </div>
                 </div>
               </div>
 
@@ -3891,7 +4410,97 @@ function App() {
         .toggle-switch:hover { border-color: var(--accent-color) !important; }
       `}</style>
 
-      {/* Floating Bug Button - Desktop Only to prevent mobile overlap */}
+      {/* Floating Panic Button - Models Only */}
+      {activeOperator?.isModel && !isRelayMode && (
+        <button
+          onContextMenu={(e) => { e.preventDefault(); handlePanic(); }} // Long press simulator for desktop
+          onClick={() => setShowPanicConfirm(true)}
+          className={`panic-btn-floating ${safetyAlarmTriggered ? 'active' : ''}`}
+          style={{
+            position: 'fixed',
+            bottom: isMobile ? 'max(6rem, calc(env(safe-area-inset-bottom) + 6rem))' : '6rem',
+            right: isMobile ? 'max(1rem, calc(env(safe-area-inset-right) + 1rem))' : '2rem',
+            width: '64px', height: '64px',
+            borderRadius: '50%', background: 'rgba(239, 68, 68, 0.15)', border: '2px solid rgba(239, 68, 68, 0.4)',
+            backdropFilter: 'blur(10px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 1001,
+            boxShadow: '0 0 20px rgba(239, 68, 68, 0.2)', transition: 'all 0.3s'
+          }}
+        >
+          <div className="panic-text" style={{ fontSize: '0.6rem', fontWeight: '900', color: '#ef4444', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', opacity: 0.2 }}>PANIC</div>
+          <Shield size={32} color="#ef4444" className={safetyAlarmTriggered ? 'pulse-red' : ''} />
+        </button>
+      )}
+
+      {/* Panic Confirmation Modal */}
+      {showPanicConfirm && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(239, 68, 68, 0.2)', backdropFilter: 'blur(20px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', textAlign: 'center', border: '2px solid #ef4444' }}>
+            <AlertTriangle size={64} color="#ef4444" style={{ marginBottom: '1.5rem', animation: 'bounce 1s infinite' }} />
+            <h2 style={{ fontSize: '1.8rem', fontWeight: '900', color: 'white', marginBottom: '1rem' }}>EMERGENCY ALERT?</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '2.5rem' }}>This will immediately dispatch emergency signals to all agency managers. Use only in real danger.</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <button 
+                onClick={() => setShowPanicConfirm(false)} 
+                className="glass-card" 
+                style={{ padding: '1rem', border: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.05)', color: 'white', fontWeight: '700' }}
+              >
+                CANCEL
+              </button>
+              <button 
+                onClick={() => { handlePanic(); setShowPanicConfirm(false); }} 
+                className="action-btn" 
+                style={{ background: '#ef4444', color: 'white', fontWeight: '900', margin: 0 }}
+              >
+                SEND SOS
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Emergency Alert Overlay for Operators/Managers */}
+      {emergencyAlert && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(20px)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+              <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '600px', padding: '3.5rem', textAlign: 'center', border: '5px solid #ef4444', background: 'rgba(239, 68, 68, 0.05)', boxShadow: '0 0 50px rgba(239, 68, 68, 0.5)' }}>
+                  <div className="pulse-red" style={{ margin: '0 auto 2.5rem', width: '120px', height: '120px', borderRadius: '50%', background: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <AlertTriangle size={70} color="white" />
+                  </div>
+                  
+                  <h1 style={{ fontSize: '3rem', fontWeight: '900', color: 'white', marginBottom: '1rem', letterSpacing: '-1px' }}>EMERGENCY</h1>
+                  <h2 style={{ fontSize: '1.8rem', fontWeight: '800', color: '#ef4444', marginBottom: '2rem' }}>{emergencyAlert.profileName}</h2>
+                  
+                  <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '20px', marginBottom: '3rem', textAlign: 'left' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>Event Type:</span>
+                          <span style={{ fontWeight: '800', color: 'white' }}>{emergencyAlert.type?.toUpperCase()}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>Session ID:</span>
+                          <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>#{emergencyAlert.sessionId}</span>
+                      </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
+                      <button
+                          onClick={handleManagerEmergencyAcknowledge}
+                          disabled={isEmergencyAckLoading}
+                          className="action-btn"
+                          style={{ background: 'rgba(16, 185, 129, 0.2)', border: '1px solid rgba(16, 185, 129, 0.55)', color: '#86efac', fontWeight: '900', fontSize: '1rem', padding: '1rem', margin: 0, opacity: isEmergencyAckLoading ? 0.7 : 1 }}
+                      >
+                          {isEmergencyAckLoading ? 'ACKNOWLEDGING...' : 'ACKNOWLEDGE SAFE (+10m)'}
+                      </button>
+                      <button
+                          onClick={() => setEmergencyAlert(null)}
+                          className="action-btn" 
+                          style={{ background: 'white', color: '#ef4444', fontWeight: '900', fontSize: '1.2rem', padding: '1.5rem', margin: 0 }}
+                      >
+                          ACKNOWLEDGE & DISMISS
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )}
       {!isBugReportOpen && !isMobile && (
         <button
           onClick={() => setIsBugReportOpen(true)}

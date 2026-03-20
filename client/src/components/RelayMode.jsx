@@ -16,7 +16,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 
-const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush }) => {
+const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestRelayPermissions }) => {
   const [isActive, setIsActive] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState('connected');
   const [signalStrength, setSignalStrength] = useState(85);
@@ -181,8 +181,19 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush }) => {
 
       {/* Permissions Check */}
       <div 
-        onClick={() => alert('All permissions verified. Background Service is running.')}
-        className="glass-card clickable" 
+        onClick={async () => {
+          if (typeof requestRelayPermissions !== 'function') {
+            alert('Relay permission prompt is unavailable on this platform.');
+            return;
+          }
+          const status = await requestRelayPermissions();
+          if (status?.ready) {
+            alert('SMS and phone permissions are granted.');
+            return;
+          }
+          alert('Please allow SMS and phone permissions to keep Relay monitoring active.');
+        }}
+        className="glass-card clickable"
         style={{ padding: '1.5rem', borderRadius: '20px', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)', cursor: 'pointer' }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
