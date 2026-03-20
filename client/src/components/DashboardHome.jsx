@@ -124,7 +124,7 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
             {[1, 2, 3].map(i => (
               <div key={i} style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between' }}>
                 <div>
-                  <div style={{ fontWeight: '700' }}>{t('profileReview')}: Sophie</div>
+                  <div style={{ fontWeight: '700' }}>{t('profileReview')}: Diana</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>"Great communication, very professional."</div>
                 </div>
                 <div style={{ color: '#f59e0b', fontWeight: '900' }}>5.0 ★</div>

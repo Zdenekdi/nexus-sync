@@ -59,8 +59,8 @@ export const MOCK_PROFILES = [
     {
         id: 'ldn-01',
         clientId: 'agency-01',
-        username: 'sophie_uk_24',
-        name: 'Sophie (Central London)',
+        username: 'diana_uk_24',
+        name: 'Diana (Central London)',
         status: 'online',
         rank: 1,
         proxy: 'UK-London-Residential',
@@ -223,12 +223,12 @@ export const MOCK_PROFILES = [
 ];
 
 export const MOCK_MESSAGES = [
-    // Sophie's Messages
+    // Diana's Messages
     {
         id: 1,
         profileId: 'ldn-01',
         from: '+44 7700 900123',
-        text: 'Hello Sophie, are you available tomorrow at 4 PM?',
+        text: 'Hello Diana, are you available tomorrow at 4 PM?',
         time: '2:32 PM',
         status: 'unread',
         conflict: true,
@@ -352,9 +352,9 @@ export const MOCK_SESSIONS = [
 ];
 
 export const MOCK_AUDIT_LOG = [
-    { id: 'ev-101', timestamp: '2024-03-10 08:22:15', action: 'Message Sent', operator: 'Alice M.', profile: 'Sophie (LDN)', recipient: '+44 7700 900123', hash: '8f2a...c91e' },
-    { id: 'ev-102', timestamp: '2024-03-10 08:15:02', action: 'Call Accepted', operator: 'Mark T.', profile: 'Sophie (LDN)', recipient: '+44 7700 900555', hash: '3d1b...a4db' },
-    { id: 'ev-103', timestamp: '2024-03-10 07:45:30', action: 'Profile Active', operator: 'Alice M.', profile: 'Sophie (LDN)', recipient: 'N/A', hash: 'e4ee...08c3' },
+    { id: 'ev-101', timestamp: '2024-03-10 08:22:15', action: 'Message Sent', operator: 'Alice M.', profile: 'Diana (LDN)', recipient: '+44 7700 900123', hash: '8f2a...c91e' },
+    { id: 'ev-102', timestamp: '2024-03-10 08:15:02', action: 'Call Accepted', operator: 'Mark T.', profile: 'Diana (LDN)', recipient: '+44 7700 900555', hash: '3d1b...a4db' },
+    { id: 'ev-103', timestamp: '2024-03-10 07:45:30', action: 'Profile Active', operator: 'Alice M.', profile: 'Diana (LDN)', recipient: 'N/A', hash: 'e4ee...08c3' },
     { id: 'ev-104', timestamp: '2024-03-10 07:12:10', action: 'Message Sent', operator: 'Sarah K.', profile: 'Elena (NYC)', recipient: '+1 212 555 0198', hash: '2e70...18c2' },
     { id: 'ev-105', timestamp: '2024-03-10 06:30:45', action: 'System Login', operator: 'Alice M.', profile: 'N/A', recipient: 'N/A', hash: '612a...7a8b' },
 ];
