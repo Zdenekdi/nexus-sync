@@ -170,11 +170,15 @@ exports.handleRelay = async (req, res) => {
       // 3. Socket broadcast for real-time web inbox update
       try {
         getIO().to(`agency_${agencyId}`).emit('new_message', {
+          id: createdMessage.id,
+          profileId: profile.id,
           chatId: chat.id,
-          message: {
-            ...createdMessage,
-            sender: null
-          }
+          from: from,
+          text: content,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          status: 'delivered',
+          direction: 'inbound',
+          sender: null
         });
       } catch (e) {
         console.warn('[Relay] Socket emit failed', e.message);
@@ -197,8 +201,9 @@ exports.handleRelay = async (req, res) => {
       // Socket broadcast for incoming call
       try {
         getIO().to(`agency_${agencyId}`).emit('incoming_call', {
+          profileId: profile.id,
           from,
-          profileName: 'Relay Inbound',
+          profileName: profile.name,
           state: content.replace('State: ', '') || 'RINGING'
         });
       } catch (e) {
