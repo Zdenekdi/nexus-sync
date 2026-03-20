@@ -43,7 +43,11 @@ class SafetyService {
                     state: 'ESCALATED',
                     escalatedAt: new Date()
                 },
-                include: { profile: true, agency: true }
+                include: { 
+                    profile: {
+                        include: { agency: true }
+                    }
+                }
             });
 
             const event = await prisma.emergencyEvent.create({
@@ -66,7 +70,7 @@ class SafetyService {
             // 2. Notify Admin via Telegram
             const message = `🚨 EMERGENCY: Safety Session ${sessionId} ESCALATED!
 Profile: ${session.profile.name} (${session.profile.id})
-Agency: ${session.agency.name}
+Agency: ${session.profile.agency.name}
 Type: ${type.toUpperCase()}`;
             
             await sendAlert(message, 'error');
