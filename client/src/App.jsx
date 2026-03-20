@@ -101,7 +101,7 @@ function App() {
     const recoverSession = async () => {
       if (!isLoggedIn || !token) return;
       try {
-        const res = await axios.get('http://localhost:3001/api/safety/sessions/active', {
+        const res = await axios.get('https://nexus-api.myvnc.com/api/safety/sessions/active', {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.data) {
@@ -314,7 +314,7 @@ function App() {
   }, [timeLeft, isTimerActive]);
 
   // API Configuration
-  const API_BASE = 'http://localhost:3001/api';
+  const API_BASE = 'https://nexus-api.myvnc.com/api';
   
   // Update handleCheckIn for real backend
   const handleCheckIn = async (event) => {
