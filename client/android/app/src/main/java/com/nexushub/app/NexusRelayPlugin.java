@@ -7,6 +7,7 @@ import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyCallback;
 import android.telephony.TelephonyManager;
 import androidx.annotation.RequiresApi;
+import java.nio.charset.StandardCharsets;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.PermissionState;
 import com.getcapacitor.Plugin;
@@ -240,6 +241,8 @@ public class NexusRelayPlugin extends Plugin {
                     conn.setRequestProperty("Content-Type", "application/json; utf-8");
                     conn.setRequestProperty("Accept", "application/json");
                     conn.setDoOutput(true);
+                    conn.setConnectTimeout(12000);
+                    conn.setReadTimeout(12000);
 
                     org.json.JSONObject jsonParam = new org.json.JSONObject();
                     jsonParam.put("deviceId", deviceId);
@@ -249,12 +252,25 @@ public class NexusRelayPlugin extends Plugin {
                     jsonParam.put("timestamp", new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).format(new java.util.Date()));
 
                     try(java.io.OutputStream os = conn.getOutputStream()) {
-                        byte[] input = jsonParam.toString().getBytes("utf-8");
+                        byte[] input = jsonParam.toString().getBytes(StandardCharsets.UTF_8);
                         os.write(input, 0, input.length);			
                     }
 
                     int code = conn.getResponseCode();
                     android.util.Log.d("NexusRelay", "Native Forward Response Code: " + code);
+                    if (code >= 400) {
+                        java.io.InputStream errorStream = conn.getErrorStream();
+                        if (errorStream != null) {
+                            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(errorStream, StandardCharsets.UTF_8));
+                            StringBuilder responseBuilder = new StringBuilder();
+                            String line;
+                            while ((line = reader.readLine()) != null) {
+                                responseBuilder.append(line);
+                            }
+                            reader.close();
+                            android.util.Log.e("NexusRelay", "Native Forward Error Body: " + responseBuilder);
+                        }
+                    }
                     conn.disconnect();
                 } catch (Exception e) {
                     android.util.Log.e("NexusRelay", "Native Forward Error", e);

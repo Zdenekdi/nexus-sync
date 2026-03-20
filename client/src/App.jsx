@@ -678,7 +678,7 @@ function App() {
   });
   const [toasts, setToasts] = useState([]);
   const [notificationPanelOpen, setNotificationPanelOpen] = useState(false);
-  const [isSimulating, setIsSimulating] = useState(true);
+  const [isSimulating, setIsSimulating] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('nexus_notifications', JSON.stringify(notifications.slice(0, 50)));
