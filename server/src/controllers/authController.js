@@ -19,8 +19,11 @@ exports.login = async (req, res) => {
       { 
         userId: user.id, 
         agencyId: user.agencyId, 
-        role: user.role.name,
-        isSuperAdmin: user.role.isSuperAdmin 
+        role: {
+          name: user.role.name,
+          isManager: user.role.isManager,
+          isSuperAdmin: user.role.isSuperAdmin
+        }
       },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
@@ -33,6 +36,7 @@ exports.login = async (req, res) => {
         email: user.email,
         name: user.name,
         role: user.role.name,
+        isManager: user.role.isManager,
         isSuperAdmin: user.role.isSuperAdmin,
         agencyId: user.agencyId,
         agencyName: user.agency?.name || 'System'
@@ -174,6 +178,7 @@ exports.getProfile = async (req, res) => {
       email: user.email,
       name: user.name,
       role: user.role.name,
+      isManager: user.role.isManager,
       isSuperAdmin: user.role.isSuperAdmin,
       agencyId: user.agencyId,
       agencyName: user.agency?.name || 'System'

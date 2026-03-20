@@ -4,5 +4,6 @@ const profileController = require('../controllers/profileController');
 const authMiddleware = require('../middleware/authMiddleware');
 
 router.get('/', authMiddleware, profileController.getProfiles);
+router.patch('/:id/assignees', authMiddleware, profileController.assignUsersToProfile);
 
 module.exports = router;
