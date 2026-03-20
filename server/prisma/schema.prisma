@@ -13,6 +13,7 @@ model Agency {
   region    String
   plan      String   @default("Standard")
   inviteCode String?  @unique
+  safetyAlertMode String @default("MANAGERS_AND_ASSIGNED") // MANAGERS_AND_ASSIGNED, ASSIGNED_ONLY
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
@@ -29,6 +30,7 @@ model Role {
   description String?
   permissions String   // JSON string
   isSuperAdmin Boolean  @default(false)
+  isManager   Boolean  @default(false)
   agencyId    String?
   agency      Agency?  @relation(fields: [agencyId], references: [id])
   
@@ -50,6 +52,7 @@ model User {
   agency    Agency?  @relation(fields: [agencyId], references: [id])
   messages  Message[]
   pushDevices PushDevice[]
+  assignedProfiles Profile[] @relation("ProfileAssignees")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -83,6 +86,7 @@ model Profile {
   callLogs    CallLog[]
   bookings    Booking[]
   sessions    SafetySession[]
+  assignees   User[]    @relation("ProfileAssignees")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
