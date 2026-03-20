@@ -17,6 +17,9 @@ const agencyRoutes = require('./routes/agencyRoutes');
 
 const app = express();
 
+// Enable trust proxy for express-rate-limit behind Vultr/Nginx proxy
+app.set('trust proxy', 1);
+
 // Static file serving for downloads with logging
 app.use('/downloads', (req, res, next) => {
   console.log(`[Static] Request for: ${req.url}`);
