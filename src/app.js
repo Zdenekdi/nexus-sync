@@ -13,6 +13,7 @@ const chatRoutes = require('./routes/chatRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const deviceRoutes = require('./routes/deviceRoutes');
 const safetyRoutes = require('./routes/safetyRoutes');
+const agencyRoutes = require('./routes/agencyRoutes');
 
 const app = express();
 
@@ -55,6 +56,7 @@ app.use('/api/chats', chatRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/device', deviceRoutes);
 app.use('/api/safety', safetyRoutes);
+app.use('/api/agency', agencyRoutes);
 
 // Basic health check
 app.get('/health', (req, res) => {

@@ -71,7 +71,7 @@ Type: ${type.toUpperCase()}`;
             
             await sendAlert(message, 'error');
 
-            // 3. Notify via FCM Push
+            // 3. Notify via Granular FCM Push
             await sendSafetyPush({
                 agencyId: session.agencyId,
                 sessionId: session.id,

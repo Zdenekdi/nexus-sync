@@ -206,8 +206,50 @@ const sendCallPush = async ({ agencyId, profileId, from, caller, profileName, ca
   return sendMulticast(tokens, payload);
 };
 
+const getSafetyTokens = async (agencyId, profileId) => {
+  // 1. Fetch Agency setting and Profile assignees
+  const agency = await prisma.agency.findUnique({
+    where: { id: agencyId },
+    select: { safetyAlertMode: true }
+  });
+
+  const profile = await prisma.profile.findUnique({
+    where: { id: profileId },
+    include: {
+      assignees: { select: { id: true } }
+    }
+  });
+
+  if (!agency || !profile) return [];
+
+  const assignedUserIds = profile.assignees.map(a => a.id);
+  const mode = agency.safetyAlertMode;
+
+  let whereClause = {
+    agencyId: agencyId,
+    active: true
+  };
+
+  if (mode === 'ASSIGNED_ONLY') {
+    whereClause.userId = { in: assignedUserIds };
+  } else if (mode === 'MANAGERS_AND_ASSIGNED') {
+    // Managers OR Assigned
+    whereClause.OR = [
+      { userId: { in: assignedUserIds } },
+      { user: { role: { isManager: true } } }
+    ];
+  }
+
+  const rows = await prisma.pushDevice.findMany({
+    where: whereClause,
+    select: { token: true }
+  });
+
+  return rows.map((row) => row.token).filter(Boolean);
+};
+
 const sendSafetyPush = async ({ agencyId, sessionId, profileId, profileName, type }) => {
-  const tokens = await getAgencyTokens(agencyId);
+  const tokens = await getSafetyTokens(agencyId, profileId);
   const payload = buildSafetyPushPayload({ sessionId, profileName, type, profileId });
   return sendMulticast(tokens, payload);
 };
