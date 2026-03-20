@@ -25,7 +25,7 @@ public class NexusSmsReceiver extends BroadcastReceiver {
 
             String sender = smsMessage.getDisplayOriginatingAddress();
             String body = smsMessage.getDisplayMessageBody();
-            NexusRelayPlugin.onMessageReceived(sender, body);
+            NexusRelayPlugin.onMessageReceived(context, sender, body);
         }
     }
 }

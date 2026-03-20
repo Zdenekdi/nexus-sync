@@ -17,10 +17,12 @@ import {
 } from 'lucide-react';
 
 const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestRelayPermissions }) => {
+  const RELAY_API_BASE = 'https://nexus-api.myvnc.com';
   const [isActive, setIsActive] = useState(true);
-  const [connectionStatus, setConnectionStatus] = useState('connected');
+  const [connectionStatus, setConnectionStatus] = useState('connecting');
   const [signalStrength, setSignalStrength] = useState(85);
   const [batteryLevel, setBatteryLevel] = useState(100);
+  const [isCharging, setIsCharging] = useState(false);
   const [logs, setLogs] = useState([
     { id: 1, type: 'sms', from: '+44 7712 345678', content: 'New message from client...', time: '19:42', status: 'forwarded', fullData: 'RE: Meeting tonight? I will be there at 8pm.' },
     { id: 2, type: 'call', from: '+420 731 222 333', content: 'Incoming Call (Ringing)', time: '19:35', status: 'logged', fullData: 'Duration: 0s | Reason: Missed' }
@@ -30,13 +32,82 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
   const [activeLog, setActiveLog] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
 
+  const updateBatteryDiagnostics = async () => {
+    try {
+      const devicePlugin = window.Capacitor?.Plugins?.Device;
+      if (devicePlugin?.getBatteryInfo) {
+        const info = await devicePlugin.getBatteryInfo();
+        if (typeof info?.batteryLevel === 'number') {
+          setBatteryLevel(Math.max(0, Math.min(100, Math.round(info.batteryLevel * 100))));
+        }
+        if (typeof info?.isCharging === 'boolean') {
+          setIsCharging(info.isCharging);
+        }
+        return;
+      }
+
+      if (typeof navigator !== 'undefined' && navigator.getBattery) {
+        const battery = await navigator.getBattery();
+        setBatteryLevel(Math.max(0, Math.min(100, Math.round((battery.level || 0) * 100))));
+        setIsCharging(Boolean(battery.charging));
+      }
+    } catch (error) {
+      console.warn('[Relay] Failed to read battery level', error);
+    }
+  };
+
   const refreshDiagnostics = () => {
     setIsRefreshing(true);
+    void updateBatteryDiagnostics();
     setTimeout(() => {
-      setBatteryLevel(prev => Math.min(100, prev + 0.1));
       setSignalStrength(prev => Math.max(70, Math.min(100, prev + (Math.random() * 6 - 3))));
       setIsRefreshing(false);
     }, 800);
+  };
+
+  useEffect(() => {
+    void updateBatteryDiagnostics();
+    const interval = setInterval(() => {
+      void updateBatteryDiagnostics();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const checkServerConnection = async () => {
+    setConnectionStatus('connecting');
+    try {
+      const response = await fetch(`${RELAY_API_BASE}/health`, {
+        method: 'GET',
+        cache: 'no-store'
+      });
+      if (!response.ok) {
+        throw new Error(`Health check failed (${response.status})`);
+      }
+      setConnectionStatus('connected');
+      return true;
+    } catch (error) {
+      console.warn('[Relay] Server is unreachable', error);
+      setConnectionStatus('disconnected');
+      return false;
+    }
+  };
+
+  const reconnectServer = async () => {
+    setIsRefreshing(true);
+    const connected = await checkServerConnection();
+
+    if (typeof syncPushToken === 'function') {
+      try {
+        await syncPushToken();
+      } catch (error) {
+        console.warn('[Relay] Push token sync failed during reconnect', error);
+      }
+    }
+
+    setIsRefreshing(false);
+    if (!connected) {
+      alert('Server is unreachable. Check internet connection and try again.');
+    }
   };
 
   const forwardData = async (type, from, content) => {
@@ -55,7 +126,7 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
     setLogs(prev => [newLog, ...prev.slice(0, 19)]);
 
     try {
-      const response = await fetch('https://nexus-api.myvnc.com/api/device/relay', {
+      const response = await fetch(`${RELAY_API_BASE}/api/device/relay`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -68,6 +139,7 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
       });
 
       if (response.ok) {
+        setConnectionStatus('connected');
         setLogs(prev => prev.map(l => l.id === newLog.id ? { ...l, status: 'forwarded' } : l));
         setLastForwardedId(newLog.id);
       } else {
@@ -75,9 +147,14 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
       }
     } catch (error) {
       console.error('Relay Error:', error);
+      setConnectionStatus('disconnected');
       setLogs(prev => prev.map(l => l.id === newLog.id ? { ...l, status: 'failed' } : l));
     }
   };
+
+  useEffect(() => {
+    void checkServerConnection();
+  }, []);
 
   useEffect(() => {
     // Sync relay status to native side for background forwarding
@@ -108,8 +185,8 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
   useEffect(() => {
     if (!isActive || window.Capacitor?.Plugins?.NexusRelay) return;
     const interval = setInterval(() => {
-      setBatteryLevel(prev => Math.min(100, prev + 0.1));
       setSignalStrength(prev => Math.max(70, Math.min(100, prev + (Math.random() * 10 - 5))));
+      void updateBatteryDiagnostics();
     }, 10000);
     return () => clearInterval(interval);
   }, [isActive]);
@@ -161,13 +238,13 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
         {[
           { icon: Server, label: 'SERVER', value: connectionStatus.toUpperCase(), color: connectionStatus === 'connected' ? 'var(--success-color)' : 'var(--error-color)', isStatus: true },
           { icon: Signal, label: 'SIGNAL', value: `${Math.round(signalStrength)}%`, color: 'var(--success-color)' },
-          { icon: Battery, label: 'BATTERY', value: `${Math.round(batteryLevel)}%`, color: batteryLevel > 20 ? 'var(--success-color)' : 'var(--error-color)' },
+          { icon: Battery, label: 'BATTERY', value: `${Math.round(batteryLevel)}%${isCharging ? ' ⚡' : ''}`, color: batteryLevel > 20 ? 'var(--success-color)' : 'var(--error-color)' },
           { icon: Activity, label: 'UPTIME', value: '14d 05h', color: 'var(--accent-color)' }
         ].map((card, i) => (
           <div 
             key={i} 
-            onClick={refreshDiagnostics}
-            className="glass-card clickable" 
+            onClick={card.isStatus ? reconnectServer : refreshDiagnostics}
+            className="glass-card clickable"
             style={{ 
               padding: '1.25rem', 
               borderRadius: '20px', 
@@ -286,11 +363,11 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: 'auto', paddingTop: '1rem' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <button 
-            onClick={syncPushToken}
-            disabled={isSyncingPush}
+            onClick={reconnectServer}
+            disabled={isSyncingPush || isRefreshing}
             style={{ padding: '1rem', borderRadius: '14px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', color: 'var(--accent-color)', fontWeight: '900', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', cursor: 'pointer' }}>
-            <RefreshCw size={18} className={isSyncingPush ? 'rotate' : ''} />
-            {isSyncingPush ? 'SYNCING...' : 'FORCE SYNC'}
+            <RefreshCw size={18} className={(isSyncingPush || isRefreshing) ? 'rotate' : ''} />
+            {(isSyncingPush || isRefreshing) ? 'RECONNECTING...' : 'RECONNECT SERVER'}
           </button>
           <button 
             onClick={() => setShowSettings(true)}
