@@ -169,6 +169,31 @@ const sendMulticast = async (tokens, payload) => {
   };
 };
 
+const buildSafetyPushPayload = ({ sessionId, profileName, type, profileId }) => ({
+  notification: {
+    title: '🚨 SAFETY ALERT',
+    body: `${profileName || 'Profile'}: Emergency ${type || 'Alert'} triggered!`
+  },
+  data: {
+    type: 'safety_alert',
+    targetType: 'safety',
+    sessionId: ensureString(sessionId),
+    profileId: ensureString(profileId),
+    profileName: ensureString(profileName),
+    alertType: ensureString(type),
+    notificationId: `safety-${ensureString(sessionId)}-${Date.now()}`,
+    timestamp: new Date().toISOString()
+  },
+  android: {
+    priority: 'high',
+    notification: {
+      channelId: 'nexus-emergency',
+      clickAction: 'OPEN_SAFETY_INCIDENT',
+      color: '#ef4444'
+    }
+  }
+});
+
 const sendChatPush = async ({ agencyId, profileId, chatId, from, messagePreview, profileName }) => {
   const tokens = await getAgencyTokens(agencyId);
   const payload = buildChatPushPayload({ profileId, chatId, from, messagePreview, profileName });
@@ -181,11 +206,19 @@ const sendCallPush = async ({ agencyId, profileId, from, caller, profileName, ca
   return sendMulticast(tokens, payload);
 };
 
+const sendSafetyPush = async ({ agencyId, sessionId, profileId, profileName, type }) => {
+  const tokens = await getAgencyTokens(agencyId);
+  const payload = buildSafetyPushPayload({ sessionId, profileName, type, profileId });
+  return sendMulticast(tokens, payload);
+};
+
 module.exports = {
   registerPushToken,
   buildChatPushPayload,
   buildCallPushPayload,
+  buildSafetyPushPayload,
   sendChatPush,
-  sendCallPush
+  sendCallPush,
+  sendSafetyPush
 };
 

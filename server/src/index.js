@@ -4,12 +4,16 @@ const app = require('./app');
 const logger = require('./services/logger');
 const http = require('http');
 const socketService = require('./services/socket');
+const safetyService = require('./services/safetyService');
 
 const PORT = process.env.PORT || 3001;
 const server = http.createServer(app);
 
 // Initialize Socket.io
 socketService.init(server);
+
+// Start Safety Worker
+safetyService.startEscalationWorker();
 
 // Handle Unhandled Rejections and Exceptions
 process.on('unhandledRejection', (reason, promise) => {
