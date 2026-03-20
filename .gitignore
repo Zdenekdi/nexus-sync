@@ -40,3 +40,17 @@ server/public/downloads/*.apk
 # Environment
 .env
 *.local
+
+# Diagnostic and Audit
+client/android/ui-audit/
+client/android/tools/
+client/android/*.png
+client/android/*.xml
+client/android/*.txt
+client/android/device-logcat.txt
+client/android/device-screenshot*.png
+client/android/device-ui.xml
+client/scroll-test.html
+client/SCROLL_FIX_*.md
+client/android/release/output-metadata.json
+client/android/app/release/output-metadata.json
