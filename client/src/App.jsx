@@ -1651,7 +1651,7 @@ function App() {
           .main-content {
             margin-left: 0 !important;
             padding-top: 0 !important;
-            padding-bottom: max(1rem, env(safe-area-inset-bottom)) !important;
+            padding-bottom: calc(3.5rem + max(env(safe-area-inset-bottom), 0px)) !important;
             height: calc(100dvh - 70px - max(env(safe-area-inset-top), 0px)) !important;
             min-height: calc(100dvh - 70px - max(env(safe-area-inset-top), 0px)) !important;
             overflow-y: auto !important;
@@ -2041,13 +2041,13 @@ function App() {
         flex: 1,
         display: 'flex', 
         flexDirection: 'column', 
-        height: isMobile ? 'calc(100vh - 70px - max(env(safe-area-inset-top), 0px))' : '100vh',
+        height: isMobile ? 'calc(100dvh - 70px - max(env(safe-area-inset-top), 0px))' : '100vh',
         minWidth: 0,
         width: '100%',
         overflowY: 'auto',
         overflowX: 'hidden',
         paddingTop: 0,
-        paddingBottom: isMobile ? 'max(1rem, env(safe-area-inset-bottom))' : '0',
+        paddingBottom: isMobile ? 'calc(3.5rem + max(env(safe-area-inset-bottom), 0px))' : '0',
         position: 'relative',
         background: 'var(--bg-color)',
       }}>
@@ -2317,7 +2317,7 @@ function App() {
         )}
    
         {activeTab === 'calendar' && (
-          <div style={{ padding: isMobile ? '1.5rem 1rem' : '3rem', paddingBottom: '8rem', flex: 1, display: 'flex', flexDirection: 'column', overflowY: isMobile ? 'visible' : 'auto' }} className="fade-in custom-scrollbar">
+          <div style={{ padding: isMobile ? '1.5rem 1rem' : '3rem', paddingBottom: '8rem', flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }} className="fade-in custom-scrollbar">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '2.5rem', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : '0' }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
@@ -2393,7 +2393,7 @@ function App() {
               </div>
             )}
 
-            <div style={{ display: isMobile ? 'flex' : 'grid', flexDirection: isMobile ? 'column' : 'row', gridTemplateColumns: isMobile ? '1fr' : '1fr 350px', gap: '2rem', flex: 1, minHeight: 0 }}>
+            <div style={{ display: isMobile ? 'flex' : 'grid', flexDirection: isMobile ? 'column' : 'row', gridTemplateColumns: isMobile ? '1fr' : '1fr 350px', gap: '2rem', flex: isMobile ? 'none' : 1, minHeight: isMobile ? 'auto' : 0 }}>
               <div className="glass-card" style={{ padding: isMobile ? '1.25rem' : '2rem', overflowY: isMobile ? 'visible' : 'auto' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {bookingSchedule.length === 0 ? (
