@@ -81,7 +81,7 @@ async function main() {
 
   // 4. Profiles
   const profiles = [
-    { id: 'ldn-01', name: 'Sophie (Central London)', phoneNumber: '+44 7700 900123', agencyId: 'agency-01' },
+    { id: 'ldn-01', name: 'Sophie (Central London)', phoneNumber: '+420 735 231 027', agencyId: 'agency-01' },
     { id: 'manc-05', name: 'Bella (Manchester)', phoneNumber: '+44 7700 900456', agencyId: 'agency-01' },
     { id: 'birm-02', name: 'Chloe (Birmingham)', phoneNumber: '+44 7700 900789', agencyId: 'agency-01' },
     { id: 'nyc-01', name: 'Elena (New York City)', phoneNumber: '+1 212 555 0101', agencyId: 'agency-02' },
