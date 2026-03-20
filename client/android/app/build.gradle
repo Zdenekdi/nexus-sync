@@ -9,16 +9,19 @@ if (versionPropsFile.exists()) {
 
 def majorVersion = (versionProps.getProperty('VERSION_MAJOR') ?: '0').toInteger()
 def minorVersion = (versionProps.getProperty('VERSION_MINOR') ?: '1').toInteger()
+def forceNextMajorFromFile = (versionProps.getProperty('FORCE_NEXT_MAJOR') ?: 'false').toBoolean()
 
 def requestedTasks = gradle.startParameter.taskNames.collect { it.toLowerCase() }
 def isReleaseBuild = requestedTasks.any { it.contains('assemblerelease') || it.contains('bundlerelease') }
-def isMajorRelease = (project.findProperty('majorRelease')?.toString()?.toBoolean() ?: false)
+def isMajorRelease = (project.findProperty('majorRelease')?.toString()?.toBoolean() ?: false) || forceNextMajorFromFile
 def skipVersionIncrement = (project.findProperty('skipVersionIncrement')?.toString()?.toBoolean() ?: false)
 
 if (isReleaseBuild && !skipVersionIncrement) {
     if (isMajorRelease) {
         majorVersion += 1
         minorVersion = 0
+        // One-shot flag: consume it after first major bump.
+        versionProps.remove('FORCE_NEXT_MAJOR')
     } else {
         minorVersion += 1
     }
