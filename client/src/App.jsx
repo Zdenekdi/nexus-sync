@@ -96,27 +96,57 @@ function App() {
     localStorage.setItem('nexus_language', lang);
   }, [lang]);
 
-  // Recover Safety Session on Load
+  // Recover Safety Session and Fetch Real Data on Load
   useEffect(() => {
-    const recoverSession = async () => {
+    const initData = async () => {
       if (!isLoggedIn || !token) return;
+      
       try {
-        const res = await axios.get('https://nexus-api.myvnc.com/api/safety/sessions/active', {
+        // 1. Recover Safety Session
+        const safetyRes = await axios.get('https://nexus-api.myvnc.com/api/safety/sessions/active', {
           headers: { Authorization: `Bearer ${token}` }
         });
-        if (res.data) {
-          setActiveSafetySession(res.data);
+        if (safetyRes.data) {
+          setActiveSafetySession(safetyRes.data);
           setIsTimerActive(true);
-          // Calculate remaining time
-          const endAt = new Date(res.data.plannedEndAt).getTime();
+          const endAt = new Date(safetyRes.data.plannedEndAt).getTime();
           const now = Date.now();
           setTimeLeft(Math.floor((endAt - now) / 1000));
         }
+
+        // 2. Fetch Real Profiles (only if not already fetched or to ensure sync)
+        const profileRes = await axios.get('https://nexus-api.myvnc.com/api/profiles', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (profileRes.data && profileRes.data.length > 0) {
+          setProfiles(profileRes.data);
+        }
+
+        // 3. Fetch Real Chats/Messages
+        const chatRes = await axios.get('https://nexus-api.myvnc.com/api/chats', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (chatRes.data && chatRes.data.length > 0) {
+          // Map API chats to UI message structure
+          // Note: App.jsx uses the "messages" state as the source for the inbox list.
+          const mappedMessages = chatRes.data.map(chat => ({
+            id: chat.id,
+            profileId: chat.profileId,
+            from: chat.externalId,
+            text: chat.messages?.[0]?.text || 'No messages yet',
+            time: chat.lastMessageAt ? new Date(chat.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---',
+            status: 'read', // Simplified for now
+            direction: 'inbound',
+            type: 'sms'
+          }));
+          setMessages(mappedMessages);
+        }
       } catch (err) {
-        console.warn('No active safety session found or error fetching.');
+        console.warn('Error fetching initial data from backend:', err.message);
       }
     };
-    recoverSession();
+    initData();
   }, [isLoggedIn, token]);
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -132,16 +162,20 @@ function App() {
   const [showPanicConfirm, setShowPanicConfirm] = useState(false);
   const [emergencyAlert, setEmergencyAlert] = useState(null);
 
+  // App Visibility and Real-time Updates
   useEffect(() => {
-    if (typeof document === 'undefined') {
-      return undefined;
-    }
+    if (typeof document === 'undefined') return undefined;
 
     const handleVisibilityChange = () => {
       setIsAppVisible(document.visibilityState === 'visible');
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Socket.io Real-time Listeners (if socket is available from useSocket)
+    // We'll rely on useSocket hook which likely already handles the socket instance, 
+    // but the actual state updates for messages should happen here or where messages are defined.
+
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
