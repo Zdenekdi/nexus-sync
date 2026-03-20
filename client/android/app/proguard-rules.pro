@@ -16,6 +16,13 @@
 # debugging stack traces.
 #-keepattributes SourceFile,LineNumberTable
 
+# Preserve Capacitor runtime annotations and plugin metadata used for
+# permission alias discovery in release builds.
+-keepattributes RuntimeVisibleAnnotations,RuntimeVisibleParameterAnnotations,AnnotationDefault
+-keep class com.getcapacitor.annotation.** { *; }
+-keep @com.getcapacitor.annotation.CapacitorPlugin class * { *; }
+-keep class * extends com.getcapacitor.Plugin { *; }
+
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile

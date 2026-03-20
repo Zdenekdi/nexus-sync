@@ -79,7 +79,7 @@ export const MOCK_PROFILES = [
             { id: 'q1', label: 'Services', text: 'I offer GFE, massage and companion services. 1h/£150, 2h/£250.' },
             { id: 'q2', label: 'Location', text: 'I am located in Central London, near Victoria station.' }
         ],
-        phoneNumber: '+44 7700 900123'
+        phoneNumber: '+420 735 231 027'
     },
     {
         id: 'manc-05',
