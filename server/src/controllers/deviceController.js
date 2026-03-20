@@ -135,12 +135,13 @@ exports.handleRelay = async (req, res) => {
       return res.status(404).json({ message: 'No agency context found' });
     }
 
+    // Find a profile in this agency to associate with the relay device
+    const profile = await prisma.profile.findFirst({ where: { agencyId } });
+    if (!profile) return res.status(404).json({ message: 'No profile found for agency context' });
+
     if (type === 'sms') {
       // 1. Find/Create Chat (assuming "from" is the external client)
       // Note: We don't have the "to" (SIM number) here, so we'll just use a generic approach
-      // or try to find a profile in this agency.
-      const profile = await prisma.profile.findFirst({ where: { agencyId } });
-      if (!profile) return res.status(404).json({ message: 'No profile found in agency' });
 
       let chat = await prisma.chat.findUnique({ 
         where: { externalId_profileId: { externalId: from, profileId: profile.id } } 
