@@ -14,10 +14,10 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
       
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: isMobile ? '1rem' : '1.5rem', marginBottom: isMobile ? '1.5rem' : '3rem' }}>
         {[
-          { label: t('totalRevenue'), value: '$842,500', icon: <DollarSign color="#10b981" />, growth: '+12.5%', chart: MOCK_STATS.revenue.chart },
-          { label: (t('agencies') || 'Agencies').toUpperCase(), value: (agencies || []).length, icon: <Building2 color="#3b82f6" />, growth: '+2', chart: [10, 12, 11, 13, 12, 14, 14] },
-          { label: (t('activeNodes') || 'Active Nodes').toUpperCase(), value: '14', icon: <Zap color="#f59e0b" />, growth: 'HEALTHY', chart: [14, 14, 13, 14, 14, 14, 14] },
-          { label: t('globalTraffic').toUpperCase(), value: '2.4M', icon: <Activity color="#8b5cf6" />, growth: '85% LOAD', chart: MOCK_STATS.engagement.chart }
+          { label: t('totalRevenue'), value: MOCK_STATS.revenue.total, icon: <DollarSign color="#10b981" />, growth: '0%', chart: MOCK_STATS.revenue.chart },
+          { label: (t('agencies') || 'Agencies').toUpperCase(), value: (agencies || []).length, icon: <Building2 color="#3b82f6" />, growth: '---', chart: [0, 0, 0, 0, 0, 0, 0] },
+          { label: (t('activeNodes') || 'Active Nodes').toUpperCase(), value: '0', icon: <Zap color="#f59e0b" />, growth: 'IDLE', chart: [0, 0, 0, 0, 0, 0, 0] },
+          { label: t('globalTraffic').toUpperCase(), value: '0', icon: <Activity color="#8b5cf6" />, growth: '0% LOAD', chart: MOCK_STATS.engagement.chart }
         ].map((stat, i) => (
           <div key={i} className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
@@ -83,11 +83,11 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--accent-color)', marginBottom: '0.5rem' }}>{t('revenueMtd')}</div>
-              <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>$42,850</div>
+              <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>$0</div>
             </div>
-            <MiniSparkline data={[1200, 1500, 1400, 1800, 2100, 1900, 2400]} color="var(--accent-color)" />
+            <MiniSparkline data={[0, 0, 0, 0, 0, 0, 0]} color="var(--accent-color)" />
           </div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--success-color)', fontWeight: '700', marginTop: '0.5rem' }}>↑ 18% {t('vsLastMonth')}</div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '700', marginTop: '0.5rem' }}>0% {t('vsLastMonth')}</div>
         </div>
         <div className="glass-card" style={{ padding: '1.5rem' }}>
            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -103,11 +103,11 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('avgConversion')}</div>
-              <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>24%</div>
+              <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>0%</div>
             </div>
-            <MiniSparkline data={[18, 22, 21, 25, 24, 26, 24]} color="var(--success-color)" />
+            <MiniSparkline data={[0, 0, 0, 0, 0, 0, 0]} color="var(--success-color)" />
           </div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--success-color)', fontWeight: '700', marginTop: '0.5rem' }}>{t('optimalRange')}</div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '700', marginTop: '0.5rem' }}>---</div>
         </div>
       </div>
 
@@ -167,22 +167,22 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
             <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center' }}>
                <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('messages')}</div>
                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-                 <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>142</div>
-                 <MiniSparkline data={[10, 15, 8, 22, 18, 25, 14]} color="var(--text-secondary)" width={40} />
+                 <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>0</div>
+                 <MiniSparkline data={[0, 0, 0, 0, 0, 0, 0]} color="var(--text-secondary)" width={40} />
                </div>
             </div>
             <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center' }}>
                <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('calls')}</div>
                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-                 <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>18</div>
-                 <MiniSparkline data={[1, 3, 0, 4, 2, 5, 2]} color="var(--text-secondary)" width={40} />
+                 <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>0</div>
+                 <MiniSparkline data={[0, 0, 0, 0, 0, 0, 0]} color="var(--text-secondary)" width={40} />
                </div>
             </div>
             <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center', border: '1px solid var(--accent-color)', gridColumn: 'auto' }}>
                <div style={{ color: 'var(--accent-color)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('commission')}</div>
                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-                 <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>$185</div>
-                 <MiniSparkline data={[15, 25, 20, 35, 30, 45, 18]} color="var(--accent-color)" width={40} />
+                 <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>$0</div>
+                 <MiniSparkline data={[0, 0, 0, 0, 0, 0, 0]} color="var(--accent-color)" width={40} />
                </div>
             </div>
           </div>
@@ -254,15 +254,15 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                <div>
                  <div style={{ color: '#f59e0b', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('earningsWeek')}</div>
-                 <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>$2,140</div>
+                 <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>$0</div>
                </div>
                <div style={{ textAlign: 'right' }}>
-                 <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t('goal')}: $3,000</div>
-                 <div style={{ fontSize: '0.75rem', color: '#f59e0b', fontWeight: '800', marginTop: '0.25rem' }}>71% COMPLETE</div>
+                 <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t('goal')}: $0</div>
+                 <div style={{ fontSize: '0.75rem', color: '#f59e0b', fontWeight: '800', marginTop: '0.25rem' }}>0% COMPLETE</div>
                </div>
              </div>
              <div style={{ height: '150px' }}>
-               <RevenueLineChart data={MOCK_CHART_DATA.slice(-7)} height={150} color="#f59e0b" />
+               <RevenueLineChart data={[0, 0, 0, 0, 0, 0, 0]} height={150} color="#f59e0b" />
              </div>
           </div>
 
