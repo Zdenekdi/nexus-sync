@@ -6,6 +6,7 @@ import android.os.Build;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyCallback;
 import android.telephony.TelephonyManager;
+import androidx.annotation.RequiresApi;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.PermissionState;
 import com.getcapacitor.Plugin;
@@ -156,7 +157,7 @@ public class NexusRelayPlugin extends Plugin {
         if (phoneListener != null) {
             return;
         }
-        phoneListener = new NexusPhoneListener();
+        phoneListener = new NexusPhoneListener(getContext());
         telephonyManager.listen(phoneListener, PhoneStateListener.LISTEN_CALL_STATE);
     }
 
@@ -188,20 +189,19 @@ public class NexusRelayPlugin extends Plugin {
         call.resolve(ret);
     }
 
-    public static void onMessageReceived(String from, String body) {
-        if (instance == null) return;
-        
-        Context context = instance.getContext();
+    public static void onMessageReceived(Context context, String from, String body) {
         android.content.SharedPreferences prefs = context.getSharedPreferences("NexusRelayPrefs", Context.MODE_PRIVATE);
         boolean isActive = prefs.getBoolean("isActive", false);
         String baseUrl = prefs.getString("baseUrl", null);
         String deviceId = prefs.getString("deviceId", "RELAY-DEVICE");
 
         // 1. Notify JS (for UI logs if app is open)
-        JSObject ret = new JSObject();
-        ret.put("from", from);
-        ret.put("body", body);
-        instance.notifyListeners("onSmsReceived", ret, true);
+        if (instance != null) {
+            JSObject ret = new JSObject();
+            ret.put("from", from);
+            ret.put("body", body);
+            instance.notifyListeners("onSmsReceived", ret, true);
+        }
 
         // 2. Native Background Forwarding
         if (isActive && baseUrl != null) {
@@ -209,20 +209,19 @@ public class NexusRelayPlugin extends Plugin {
         }
     }
 
-    public static void onCallStateChanged(String from, String state) {
-        if (instance == null) return;
-
-        Context context = instance.getContext();
+    public static void onCallStateChanged(Context context, String from, String state) {
         android.content.SharedPreferences prefs = context.getSharedPreferences("NexusRelayPrefs", Context.MODE_PRIVATE);
         boolean isActive = prefs.getBoolean("isActive", false);
         String baseUrl = prefs.getString("baseUrl", null);
         String deviceId = prefs.getString("deviceId", "RELAY-DEVICE");
 
         // 1. Notify JS
-        JSObject ret = new JSObject();
-        ret.put("from", from);
-        ret.put("state", state);
-        instance.notifyListeners("onCallStateChanged", ret, true);
+        if (instance != null) {
+            JSObject ret = new JSObject();
+            ret.put("from", from);
+            ret.put("state", state);
+            instance.notifyListeners("onCallStateChanged", ret, true);
+        }
 
         // 2. Native Background Forwarding
         if (isActive && baseUrl != null && state != null && !state.equals("IDLE")) {
@@ -277,10 +276,15 @@ public class NexusRelayPlugin extends Plugin {
         return "IDLE";
     }
 
+    @RequiresApi(Build.VERSION_CODES.S)
     private static class NexusCallStateCallback extends TelephonyCallback implements TelephonyCallback.CallStateListener {
         @Override
         public void onCallStateChanged(int state) {
-            NexusRelayPlugin.onCallStateChanged(null, NexusRelayPlugin.toCallStateString(state));
+            NexusRelayPlugin plugin = NexusRelayPlugin.instance;
+            if (plugin == null) {
+                return;
+            }
+            NexusRelayPlugin.onCallStateChanged(plugin.getContext(), null, NexusRelayPlugin.toCallStateString(state));
         }
     }
 }
