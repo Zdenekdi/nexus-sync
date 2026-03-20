@@ -18,13 +18,15 @@ import com.getcapacitor.annotation.PermissionCallback;
 @CapacitorPlugin(
     name = "NexusRelay",
     permissions = {
-        @Permission(alias = NexusRelayPlugin.SMS_PERMISSION_ALIAS, strings = { Manifest.permission.RECEIVE_SMS }),
-        @Permission(alias = NexusRelayPlugin.PHONE_PERMISSION_ALIAS, strings = { Manifest.permission.READ_PHONE_STATE })
+        @Permission(alias = NexusRelayPlugin.SMS_PERMISSION_ALIAS, strings = { Manifest.permission.RECEIVE_SMS, Manifest.permission.READ_SMS }),
+        @Permission(alias = NexusRelayPlugin.PHONE_PERMISSION_ALIAS, strings = { Manifest.permission.READ_PHONE_STATE }),
+        @Permission(alias = NexusRelayPlugin.LOCATION_PERMISSION_ALIAS, strings = { Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION })
     }
 )
 public class NexusRelayPlugin extends Plugin {
     static final String SMS_PERMISSION_ALIAS = "sms";
     static final String PHONE_PERMISSION_ALIAS = "phone";
+    static final String LOCATION_PERMISSION_ALIAS = "location";
 
     public static NexusRelayPlugin instance;
     private NexusPhoneListener phoneListener;
@@ -73,34 +75,39 @@ public class NexusRelayPlugin extends Plugin {
 
     private boolean hasAllRequiredPermissions() {
         return getPermissionState(SMS_PERMISSION_ALIAS) == PermissionState.GRANTED &&
-            getPermissionState(PHONE_PERMISSION_ALIAS) == PermissionState.GRANTED;
+            getPermissionState(PHONE_PERMISSION_ALIAS) == PermissionState.GRANTED &&
+            getPermissionState(LOCATION_PERMISSION_ALIAS) == PermissionState.GRANTED;
     }
 
     private String[] getMissingPermissionAliases() {
-        boolean needsSms = getPermissionState(SMS_PERMISSION_ALIAS) != PermissionState.GRANTED;
-        boolean needsPhone = getPermissionState(PHONE_PERMISSION_ALIAS) != PermissionState.GRANTED;
-
-        if (needsSms && needsPhone) {
-            return new String[] { SMS_PERMISSION_ALIAS, PHONE_PERMISSION_ALIAS };
+        java.util.List<String> missing = new java.util.ArrayList<>();
+        if (getPermissionState(SMS_PERMISSION_ALIAS) != PermissionState.GRANTED) {
+            missing.add(SMS_PERMISSION_ALIAS);
         }
-        if (needsSms) {
-            return new String[] { SMS_PERMISSION_ALIAS };
+        if (getPermissionState(PHONE_PERMISSION_ALIAS) != PermissionState.GRANTED) {
+            missing.add(PHONE_PERMISSION_ALIAS);
         }
-        if (needsPhone) {
-            return new String[] { PHONE_PERMISSION_ALIAS };
+        if (getPermissionState(LOCATION_PERMISSION_ALIAS) != PermissionState.GRANTED) {
+            missing.add(LOCATION_PERMISSION_ALIAS);
         }
-        return new String[0];
+        return missing.toArray(new String[0]);
     }
 
     private JSObject buildStatus() {
         JSObject status = new JSObject();
         PermissionState smsState = getPermissionState(SMS_PERMISSION_ALIAS);
         PermissionState phoneState = getPermissionState(PHONE_PERMISSION_ALIAS);
+        PermissionState locationState = getPermissionState(LOCATION_PERMISSION_ALIAS);
         status.put(SMS_PERMISSION_ALIAS, smsState.toString());
         status.put(PHONE_PERMISSION_ALIAS, phoneState.toString());
-        status.put("ready", smsState == PermissionState.GRANTED && phoneState == PermissionState.GRANTED);
+        status.put(LOCATION_PERMISSION_ALIAS, locationState.toString());
+        status.put("ready",
+            smsState == PermissionState.GRANTED &&
+            phoneState == PermissionState.GRANTED &&
+            locationState == PermissionState.GRANTED);
         status.put("callMonitoring", phoneState == PermissionState.GRANTED);
         status.put("smsMonitoring", smsState == PermissionState.GRANTED);
+        status.put("locationMonitoring", locationState == PermissionState.GRANTED);
         return status;
     }
 
