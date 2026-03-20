@@ -74,6 +74,64 @@ class SafetyController {
     }
 
     /**
+     * Manual model acknowledgement ("I'm OK") to postpone escalation window.
+     */
+    async acknowledgeSession(req, res) {
+        try {
+            const { id } = req.params;
+            const { extendMinutes = 10 } = req.body || {};
+
+            const existing = await prisma.safetySession.findUnique({ where: { id } });
+            if (!existing) {
+                return res.status(404).json({ message: 'Session not found' });
+            }
+            if (existing.state === 'RESOLVED') {
+                return res.status(409).json({ message: 'Session is already resolved' });
+            }
+
+            const nextGraceUntil = new Date(Date.now() + Number(extendMinutes || 10) * 60000);
+            const session = await prisma.safetySession.update({
+                where: { id },
+                data: {
+                    state: 'CHECKED_IN',
+                    graceUntil: nextGraceUntil,
+                }
+            });
+
+            logger.info(`Safety Session acknowledged: ${session.id}, graceUntil=${nextGraceUntil.toISOString()}`);
+            res.json(session);
+        } catch (error) {
+            logger.error('Acknowledge failed:', error);
+            res.status(500).json({ message: 'Acknowledge failed' });
+        }
+    }
+
+    /**
+     * Return latest active safety session for currently authenticated agency.
+     */
+    async getActiveSession(req, res) {
+        try {
+            const agencyId = req.user?.agencyId;
+            const session = await prisma.safetySession.findFirst({
+                where: {
+                    agencyId,
+                    state: { in: ['CHECKED_IN', 'GRACE', 'ESCALATED'] }
+                },
+                orderBy: { updatedAt: 'desc' }
+            });
+
+            if (!session) {
+                return res.status(404).json({ message: 'No active safety session' });
+            }
+
+            return res.json(session);
+        } catch (error) {
+            logger.error('Failed to load active safety session:', error);
+            return res.status(500).json({ message: 'Failed to load active safety session' });
+        }
+    }
+
+    /**
      * Trigger Panic Alert
      */
     async triggerPanic(req, res) {
