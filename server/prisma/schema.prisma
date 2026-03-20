@@ -81,8 +81,78 @@ model Profile {
   data        String?
   chats       Chat[]
   callLogs    CallLog[]
+  bookings    Booking[]
+  sessions    SafetySession[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+}
+
+model Booking {
+  id          String    @id @default(cuid())
+  profileId   String
+  profile     Profile   @relation(fields: [profileId], references: [id])
+  agencyId    String
+  title       String
+  startTime   DateTime
+  endTime     DateTime
+  status      String    @default("scheduled")
+  
+  safetySession SafetySession?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model SafetySession {
+  id            String    @id @default(cuid())
+  agencyId      String
+  profileId     String
+  profile       Profile   @relation(fields: [profileId], references: [id])
+  bookingId     String?   @unique
+  booking       Booking?  @relation(fields: [bookingId], references: [id])
+  
+  state         String    @default("PLANNED") // PLANNED, CHECKED_IN, GRACE, ESCALATED, RESOLVED
+  plannedEndAt  DateTime?
+  graceUntil    DateTime?
+  escalatedAt   DateTime?
+  resolvedAt    DateTime?
+  
+  locationPoints SafetyLocationPoint[]
+  emergencyEvents EmergencyEvent[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model SafetyLocationPoint {
+  id            String    @id @default(cuid())
+  sessionId     String
+  session       SafetySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  lat           Float
+  lng           Float
+  accuracy      Float?
+  capturedAt    DateTime
+  receivedAt    DateTime  @default(now())
+}
+
+model EmergencyEvent {
+  id            String    @id @default(cuid())
+  sessionId     String
+  session       SafetySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  type          String    // panic, timeout
+  severity      String    @default("high")
+  
+  receipts      EmergencyReceipt[]
+  createdAt     DateTime  @default(now())
+}
+
+model EmergencyReceipt {
+  id            String    @id @default(cuid())
+  eventId       String
+  event         EmergencyEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  recipientId   String    // User ID
+  recipientRole String
+  deliveredAt   DateTime  @default(now())
+  acknowledgedAt DateTime?
 }
 
 model Chat {

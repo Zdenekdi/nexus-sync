@@ -96,6 +96,54 @@ async function main() {
   }
   console.log('Profiles seeded.');
 
+  // 5. Bookings & Safety Sessions
+  const now = new Date();
+  const bookings = [
+    {
+      id: 'book-01',
+      profileId: 'ldn-01',
+      agencyId: 'agency-01',
+      title: 'Private Dinner - Mayfair',
+      startTime: new Date(now.getTime() + 3600000), // In 1 hour
+      endTime: new Date(now.getTime() + 3600000 * 3), // 2 hours duration
+      status: 'scheduled'
+    },
+    {
+      id: 'book-02',
+      profileId: 'ldn-01',
+      agencyId: 'agency-01',
+      title: 'Studio Session',
+      startTime: new Date(now.getTime() - 3600000 * 2), // 2 hours ago
+      endTime: new Date(now.getTime() - 3600000), // 1 hour ago
+      status: 'completed'
+    }
+  ];
+
+  for (const booking of bookings) {
+    await prisma.booking.upsert({
+      where: { id: booking.id },
+      update: {},
+      create: booking,
+    });
+  }
+  console.log('Bookings seeded.');
+
+  // Create an active safety session for testing
+  await prisma.safetySession.upsert({
+    where: { id: 'sess-01' },
+    update: {},
+    create: {
+      id: 'sess-01',
+      agencyId: 'agency-01',
+      profileId: 'ldn-01',
+      bookingId: 'book-01',
+      state: 'CHECKED_IN',
+      plannedEndAt: new Date(now.getTime() + 3600000 * 3),
+      graceUntil: new Date(now.getTime() + 3600000 * 3 + 600000), // +10 min grace
+    }
+  });
+  console.log('Safety Sessions seeded.');
+
   console.log('Seed finished successfully.');
 }
 
