@@ -2143,7 +2143,7 @@ function App() {
             flexDirection: 'column', 
             height: '100%', 
             width: '100%',
-            padding: 'max(env(safe-area-inset-top), 2rem) 1.5rem max(env(safe-area-inset-bottom), 2rem)'
+            padding: 'max(env(safe-area-inset-top), 2rem) 1.5rem calc(max(env(safe-area-inset-bottom), 0px) + 3.25rem)'
           }}>
             {/* Mobile Menu Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>

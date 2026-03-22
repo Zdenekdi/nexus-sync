@@ -4,4 +4,8 @@
     <string name="title_activity_main">Nexus Relay</string>
     <string name="package_name">com.nexushub.app</string>
     <string name="custom_url_scheme">com.nexushub.app</string>
+    <string name="relay_service_title">Nexus Relay is active</string>
+    <string name="relay_service_text">Forwarding SMS and calls in background</string>
+    <string name="relay_service_channel_name">Relay background service</string>
+    <string name="relay_service_channel_desc">Keeps relay forwarding active when the app is in background</string>
 </resources>
