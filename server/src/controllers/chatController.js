@@ -6,7 +6,14 @@ exports.getChats = async (req, res) => {
     const whereClause = isSuperAdmin ? {} : { agencyId };
     const chats = await prisma.chat.findMany({
       where: whereClause,
-      include: { profile: { select: { id: true, name: true } }, _count: { select: { messages: true } } },
+      include: { 
+        profile: { select: { id: true, name: true } }, 
+        messages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        },
+        _count: { select: { messages: true } } 
+      },
       orderBy: { lastMessageAt: 'desc' }
     });
     res.json(chats);
@@ -24,7 +31,13 @@ exports.getProfileChats = async (req, res) => {
     if (!isSuperAdmin) whereClause.agencyId = agencyId;
     const chats = await prisma.chat.findMany({
       where: whereClause,
-      include: { _count: { select: { messages: true } } },
+      include: { 
+        messages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        },
+        _count: { select: { messages: true } } 
+      },
       orderBy: { lastMessageAt: 'desc' }
     });
     res.json(chats);

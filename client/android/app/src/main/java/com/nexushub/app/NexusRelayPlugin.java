@@ -26,6 +26,11 @@ import com.getcapacitor.annotation.PermissionCallback;
     }
 )
 public class NexusRelayPlugin extends Plugin {
+    static final String PREFS_NAME = "NexusRelayPrefs";
+    static final String KEY_BASE_URL = "baseUrl";
+    static final String KEY_DEVICE_ID = "deviceId";
+    static final String KEY_IS_ACTIVE = "isActive";
+
     static final String SMS_PERMISSION_ALIAS = "sms";
     static final String PHONE_PERMISSION_ALIAS = "phone";
     static final String LOCATION_PERMISSION_ALIAS = "location";
@@ -41,6 +46,9 @@ public class NexusRelayPlugin extends Plugin {
         instance = this;
 
         telephonyManager = (TelephonyManager) getContext().getSystemService(Context.TELEPHONY_SERVICE);
+        if (isRelayActiveInPrefs()) {
+            NexusRelayForegroundService.start(getContext());
+        }
         maybeRegisterCallStateListener();
     }
 
@@ -114,6 +122,11 @@ public class NexusRelayPlugin extends Plugin {
     }
 
     private void maybeRegisterCallStateListener() {
+        // Foreground service owns call monitoring when relay mode is active.
+        if (isRelayActiveInPrefs()) {
+            unregisterCallStateListener();
+            return;
+        }
         if (telephonyManager == null || getPermissionState(PHONE_PERMISSION_ALIAS) != PermissionState.GRANTED) {
             return;
         }
@@ -177,13 +190,22 @@ public class NexusRelayPlugin extends Plugin {
         Boolean isActive = call.getBoolean("isActive", false);
 
         Context context = getContext();
-        android.content.SharedPreferences prefs = context.getSharedPreferences("NexusRelayPrefs", Context.MODE_PRIVATE);
+        android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         android.content.SharedPreferences.Editor editor = prefs.edit();
         
-        if (baseUrl != null) editor.putString("baseUrl", baseUrl);
-        if (deviceId != null) editor.putString("deviceId", deviceId);
-        editor.putBoolean("isActive", isActive != null && isActive);
+        if (baseUrl != null) editor.putString(KEY_BASE_URL, baseUrl);
+        if (deviceId != null) editor.putString(KEY_DEVICE_ID, deviceId);
+        boolean relayActive = isActive != null && isActive;
+        editor.putBoolean(KEY_IS_ACTIVE, relayActive);
         editor.apply();
+
+        if (relayActive) {
+            unregisterCallStateListener();
+            NexusRelayForegroundService.start(context);
+        } else {
+            NexusRelayForegroundService.stop(context);
+            maybeRegisterCallStateListener();
+        }
 
         JSObject ret = buildStatus();
         ret.put("configUpdated", true);
@@ -191,10 +213,10 @@ public class NexusRelayPlugin extends Plugin {
     }
 
     public static void onMessageReceived(Context context, String from, String body) {
-        android.content.SharedPreferences prefs = context.getSharedPreferences("NexusRelayPrefs", Context.MODE_PRIVATE);
-        boolean isActive = prefs.getBoolean("isActive", false);
-        String baseUrl = prefs.getString("baseUrl", null);
-        String deviceId = prefs.getString("deviceId", "RELAY-DEVICE");
+        android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        boolean isActive = prefs.getBoolean(KEY_IS_ACTIVE, false);
+        String baseUrl = prefs.getString(KEY_BASE_URL, null);
+        String deviceId = prefs.getString(KEY_DEVICE_ID, "RELAY-DEVICE");
 
         // 1. Notify JS (for UI logs if app is open)
         if (instance != null) {
@@ -211,10 +233,10 @@ public class NexusRelayPlugin extends Plugin {
     }
 
     public static void onCallStateChanged(Context context, String from, String state) {
-        android.content.SharedPreferences prefs = context.getSharedPreferences("NexusRelayPrefs", Context.MODE_PRIVATE);
-        boolean isActive = prefs.getBoolean("isActive", false);
-        String baseUrl = prefs.getString("baseUrl", null);
-        String deviceId = prefs.getString("deviceId", "RELAY-DEVICE");
+        android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        boolean isActive = prefs.getBoolean(KEY_IS_ACTIVE, false);
+        String baseUrl = prefs.getString(KEY_BASE_URL, null);
+        String deviceId = prefs.getString(KEY_DEVICE_ID, "RELAY-DEVICE");
 
         // 1. Notify JS
         if (instance != null) {
@@ -290,6 +312,10 @@ public class NexusRelayPlugin extends Plugin {
         if (state == TelephonyManager.CALL_STATE_RINGING) return "RINGING";
         if (state == TelephonyManager.CALL_STATE_OFFHOOK) return "OFFHOOK";
         return "IDLE";
+    }
+
+    private boolean isRelayActiveInPrefs() {
+        return getContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getBoolean(KEY_IS_ACTIVE, false);
     }
 
     @RequiresApi(Build.VERSION_CODES.S)

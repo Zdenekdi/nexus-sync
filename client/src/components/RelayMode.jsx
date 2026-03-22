@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { 
+import React, { useState, useEffect, useRef } from 'react';
+import {
   Signal, 
   Wifi, 
   Battery, 
@@ -23,14 +23,36 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
   const [signalStrength, setSignalStrength] = useState(85);
   const [batteryLevel, setBatteryLevel] = useState(100);
   const [isCharging, setIsCharging] = useState(false);
-  const [logs, setLogs] = useState([
-    { id: 1, type: 'sms', from: '+44 7712 345678', content: 'New message from client...', time: '19:42', status: 'forwarded', fullData: 'RE: Meeting tonight? I will be there at 8pm.' },
-    { id: 2, type: 'call', from: '+420 731 222 333', content: 'Incoming Call (Ringing)', time: '19:35', status: 'logged', fullData: 'Duration: 0s | Reason: Missed' }
-  ]);
+  const [logs, setLogs] = useState([]);
   const [lastForwardedId, setLastForwardedId] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeLog, setActiveLog] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [settingsBatteryWarning, setSettingsBatteryWarning] = useState(true);
+  const [settingsTrafficProxy, setSettingsTrafficProxy] = useState(true);
+  const [settingsHiddenMode, setSettingsHiddenMode] = useState(false);
+  const latestHealthCheckRef = useRef(0);
+
+  const connectionUi = {
+    connected: {
+      label: 'CONNECTED',
+      color: 'var(--success-color)',
+      icon: Server
+    },
+    connecting: {
+      label: 'CONNECTING',
+      color: 'var(--accent-color)',
+      icon: RefreshCw
+    },
+    disconnected: {
+      label: 'DISCONNECTED',
+      color: 'var(--error-color)',
+      icon: AlertCircle
+    }
+  };
+
+  const currentConnectionUi = connectionUi[connectionStatus] || connectionUi.disconnected;
+  const isServerConnected = connectionStatus === 'connected';
 
   const updateBatteryDiagnostics = async () => {
     try {
@@ -73,21 +95,35 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
     return () => clearInterval(interval);
   }, []);
 
-  const checkServerConnection = async () => {
-    setConnectionStatus('connecting');
+  const checkServerConnection = async ({ showConnectingState = true } = {}) => {
+    const checkId = ++latestHealthCheckRef.current;
+    if (showConnectingState) {
+      setConnectionStatus('connecting');
+    }
+
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
       const response = await fetch(`${RELAY_API_BASE}/health`, {
         method: 'GET',
-        cache: 'no-store'
+        cache: 'no-store',
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
         throw new Error(`Health check failed (${response.status})`);
       }
-      setConnectionStatus('connected');
+
+      if (checkId === latestHealthCheckRef.current) {
+        setConnectionStatus('connected');
+      }
       return true;
     } catch (error) {
       console.warn('[Relay] Server is unreachable', error);
-      setConnectionStatus('disconnected');
+      if (checkId === latestHealthCheckRef.current) {
+        setConnectionStatus('disconnected');
+      }
       return false;
     }
   };
@@ -157,6 +193,13 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
   }, []);
 
   useEffect(() => {
+    const interval = setInterval(() => {
+      void checkServerConnection({ showConnectingState: false });
+    }, 15000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
     // Sync relay status to native side for background forwarding
     if (window.Capacitor?.Plugins?.NexusRelay) {
       window.Capacitor.Plugins.NexusRelay.configureRelay({
@@ -196,18 +239,20 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
       minHeight: '100vh', 
       background: '#07080a', 
       color: 'white', 
-      padding: 'calc(env(safe-area-inset-top, 30px) + 1.5rem) 1.5rem calc(env(safe-area-inset-bottom, 20px) + 5rem)',
+      padding: 'calc(env(safe-area-inset-top, 30px) + 1.5rem) 1.5rem 0',
+      paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 5.5rem)',
       display: 'flex',
       flexDirection: 'column',
       gap: '1.5rem',
       position: 'relative',
-      width: '100%'
+      width: '100%',
+      boxSizing: 'border-box'
     }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{ width: '40px', height: '40px', background: 'var(--accent-color)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <RefreshCw size={24} className={(isActive || isRefreshing) ? 'rotate' : ''} />
+            <RefreshCw size={24} className={(connectionStatus === 'connecting' || isRefreshing) ? 'rotate' : ''} />
           </div>
           <div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: '900', letterSpacing: '0.05em' }}>NEXUS RELAY</h2>
@@ -221,8 +266,8 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
             height: '50px', 
             borderRadius: '50%', 
             border: 'none', 
-            background: isActive ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)',
-            color: isActive ? 'var(--error-color)' : 'var(--success-color)',
+            background: isActive ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+            color: isActive ? 'var(--success-color)' : 'var(--error-color)',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -235,11 +280,11 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
 
       {/* Main Status Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-        {[
-          { icon: Server, label: 'SERVER', value: connectionStatus.toUpperCase(), color: connectionStatus === 'connected' ? 'var(--success-color)' : 'var(--error-color)', isStatus: true },
-          { icon: Signal, label: 'SIGNAL', value: `${Math.round(signalStrength)}%`, color: 'var(--success-color)' },
-          { icon: Battery, label: 'BATTERY', value: `${Math.round(batteryLevel)}%${isCharging ? ' ⚡' : ''}`, color: batteryLevel > 20 ? 'var(--success-color)' : 'var(--error-color)' },
-          { icon: Activity, label: 'UPTIME', value: '14d 05h', color: 'var(--accent-color)' }
+          {[
+          { icon: currentConnectionUi.icon, label: 'SERVER', value: currentConnectionUi.label, color: currentConnectionUi.color, isStatus: true },
+          { icon: Signal, label: 'SIGNAL', value: `${Math.round(signalStrength)}%`, color: isServerConnected ? 'var(--success-color)' : 'var(--text-secondary)' },
+          { icon: Battery, label: 'BATTERY', value: `${Math.round(batteryLevel)}%${isCharging ? ' ⚡' : ''}`, color: batteryLevel > 20 ? (isServerConnected ? 'var(--success-color)' : 'var(--text-secondary)') : 'var(--error-color)' },
+          { icon: Activity, label: 'UPTIME', value: '14d 05h', color: isServerConnected ? 'var(--accent-color)' : 'var(--text-secondary)' }
         ].map((card, i) => (
           <div 
             key={i} 
@@ -256,7 +301,7 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-              <card.icon size={18} color={card.color} className={isRefreshing ? 'rotate' : ''} />
+              <card.icon size={18} color={card.color} className={(isRefreshing || (card.isStatus && connectionStatus === 'connecting')) ? 'rotate' : ''} />
               <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)' }}>{card.label}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -347,7 +392,7 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
                   <span style={{ fontSize: '0.85rem', fontWeight: '800' }}>{log.from}</span>
                   <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{log.time}</span>
                 </div>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0, wordBreak: 'break-word', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                   {log.content}
                 </p>
               </div>
@@ -406,27 +451,30 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
       {/* Settings Drawer */}
       {showSettings && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'flex-end' }} onClick={() => setShowSettings(false)}>
-          <div style={{ background: '#12141a', borderTop: '1px solid var(--card-border)', borderTopLeftRadius: '32px', borderTopRightRadius: '32px', width: '100%', padding: '2.5rem 1.5rem', maxHeight: '80dvh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-            <div style={{ width: '40px', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', margin: '0 auto 2.5rem' }} />
-            <h3 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '2rem' }}>Relay Settings</h3>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              {[
-                { label: 'API Gateway', sub: 'nexus-api.myvnc.com', icon: Server },
-                { label: 'Battery Warning', sub: 'Alert at 15%', icon: Battery, toggle: true },
-                { label: 'Traffic Proxy', sub: 'Routing through SIM', icon: Wifi, toggle: true },
-                { label: 'Hidden Mode', sub: 'Hide text in logs', icon: Activity, toggle: false }
+          <div style={{ background: '#12141a', borderTop: '1px solid var(--card-border)', borderTopLeftRadius: '32px', borderTopRightRadius: '32px', width: '100%', height: '100dvh', padding: '2rem 1.5rem', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: '40px', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', margin: '0 auto 1.5rem' }} />
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '1.5rem' }}>Relay Settings</h3>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, overflowY: 'auto' }}>
+                {[
+                { label: 'API Gateway', sub: `https://nexus-api.myvnc.com/api/device/relay • ${currentConnectionUi.label}`, icon: currentConnectionUi.icon, iconColor: currentConnectionUi.color, toggle: undefined, onToggle: reconnectServer },
+                { label: 'Battery Warning', sub: 'Alert at 15%', icon: Battery, toggle: settingsBatteryWarning, onToggle: () => setSettingsBatteryWarning(v => !v) },
+                { label: 'Traffic Proxy', sub: 'Routing through SIM', icon: Wifi, toggle: settingsTrafficProxy, onToggle: () => setSettingsTrafficProxy(v => !v) },
+                { label: 'Hidden Mode', sub: 'Hide text in logs', icon: Activity, toggle: settingsHiddenMode, onToggle: () => setSettingsHiddenMode(v => !v) }
               ].map((item, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid var(--card-border)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><item.icon size={20} color="var(--accent-color)" /></div>
-                    <div>
-                      <div style={{ fontWeight: '800', fontSize: '1rem' }}>{item.label}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{item.sub}</div>
+                <div key={i} onClick={item.onToggle} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.85rem', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid var(--card-border)', cursor: item.onToggle ? 'pointer' : 'default' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><item.icon size={18} color={item.iconColor || 'var(--accent-color)'} className={(item.label === 'API Gateway' && connectionStatus === 'connecting') ? 'rotate' : ''} /></div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: '800', fontSize: '0.95rem' }}>{item.label}</div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{item.sub}</div>
                     </div>
                   </div>
                   {item.toggle !== undefined ? (
-                    <div style={{ width: '44px', height: '24px', background: item.toggle ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)', borderRadius: '12px', position: 'relative', cursor: 'pointer' }}>
+                    <div
+                      onClick={e => { e.stopPropagation(); item.onToggle(); }}
+                      style={{ width: '44px', height: '24px', background: item.toggle ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)', borderRadius: '12px', position: 'relative', cursor: 'pointer', flexShrink: 0 }}
+                    >
                       <div style={{ width: '20px', height: '20px', background: 'white', borderRadius: '50%', position: 'absolute', top: '2px', left: item.toggle ? '22px' : '2px', transition: 'all 0.2s ease' }} />
                     </div>
                   ) : <RefreshCw size={16} color="var(--text-secondary)" />}
@@ -434,7 +482,7 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
               ))}
             </div>
 
-            <button onClick={() => setShowSettings(false)} style={{ width: '100%', padding: '1.25rem', borderRadius: '18px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', fontWeight: '900', marginTop: '3rem', cursor: 'pointer' }}>SAVE & CLOSE</button>
+            <button onClick={() => setShowSettings(false)} style={{ width: '100%', padding: '1rem', borderRadius: '18px', background: 'var(--accent-color)', border: 'none', color: 'white', fontWeight: '900', marginTop: '1rem', cursor: 'pointer', transition: 'all 0.2s ease' }}>SAVE & CLOSE</button>
           </div>
         </div>
       )}
