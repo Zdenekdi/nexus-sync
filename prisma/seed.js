@@ -66,8 +66,9 @@ async function main() {
   const users = [
     { id: 'op-01', email: 'alice@nexus.sync', name: 'Alice M.', password: 'password123', roleName: 'Senior Operator', agencyId: 'agency-01' },
     { id: 'op-02', email: 'mark@nexus.sync', name: 'Mark T.', password: 'password123', roleName: 'Agency Admin', agencyId: 'agency-01' },
-    { id: 'op-03', email: 'sarah@nexus.sync', name: 'Sarah K.', password: 'password123', roleName: 'Senior Operator', agencyId: 'agency-02' },
-    { id: 'op-06', email: 'admin@nexus.ai', name: 'Super Admin', password: 'password123', roleName: 'System Owner', agencyId: null },
+    { id: 'op-03', email: 'sarah@nexus.sync', name: 'Sarah K.', password: 'password123', roleName: 'Operator', agencyId: 'agency-01' },
+    { id: 'op-04', email: 'diana@nexus.sync', name: 'Diana B.', password: 'password123', roleName: 'Model', agencyId: 'agency-01' },
+    { id: 'op-06', email: 'dias.zd@gmail.com', name: 'App Owner', password: 'password123', roleName: 'System Owner', agencyId: null },
   ];
 
   for (const user of users) {
@@ -95,10 +96,14 @@ async function main() {
 
   // 4. Profiles with Assignments
   const profiles = [
-    { id: 'ldn-01', name: 'Diana (Central London)', phoneNumber: '+420 773 227 907', agencyId: 'agency-01', assignedUserIds: ['op-01'] },
+    { id: 'ldn-01', name: 'Diana (Central London)', phoneNumber: '+420 773 227 907', agencyId: 'agency-01', assignedUserIds: ['op-01', 'op-04'] },
     { id: 'manc-05', name: 'Bella (Manchester)', phoneNumber: '+44 7700 900456', agencyId: 'agency-01', assignedUserIds: ['op-01'] },
     { id: 'birm-02', name: 'Chloe (Birmingham)', phoneNumber: '+44 7700 900789', agencyId: 'agency-01', assignedUserIds: ['op-02'] },
     { id: 'nyc-01', name: 'Elena (New York City)', phoneNumber: '+1 212 555 0101', agencyId: 'agency-02', assignedUserIds: ['op-03'] },
+    { id: 'leeds-01', name: 'Mia (Leeds)', phoneNumber: '+44 7700 900888', agencyId: 'agency-01', assignedUserIds: ['op-01'] },
+    { id: 'newc-03', name: 'Katerina (Newcastle)', phoneNumber: '+44 7700 900999', agencyId: 'agency-01', assignedUserIds: ['op-01'] },
+    { id: 'bris-02', name: 'Zoe (Bristol)', phoneNumber: '+44 7700 900777', agencyId: 'agency-01', assignedUserIds: ['op-01'] },
+    { id: 'card-01', name: 'Lily (Cardiff)', phoneNumber: '+44 7700 900666', agencyId: 'agency-01', assignedUserIds: ['op-01'] },
   ];
 
   for (const profile of profiles) {
