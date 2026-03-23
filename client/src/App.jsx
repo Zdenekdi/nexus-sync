@@ -205,7 +205,7 @@ function App() {
   const activeRole = normalizeRole(activeOperator?.role);
 
   const isNativeApp = Capacitor.isNativePlatform();
-  const RELAY_RCS_STARTUP_PROMPT_KEY = 'nexus_relay_rcs_startup_prompted';
+  const RELAY_RCS_FIRST_LOGIN_PROMPT_KEY = 'nexus_relay_rcs_first_login_prompted';
   const APP_LOCK_TIMEOUT_MS = 2 * 60 * 1000;
   const backgroundedAtRef = useRef(null);
   const unlockInProgressRef = useRef(false);
@@ -641,6 +641,35 @@ function App() {
       console.warn('[Device] Verification endpoint unavailable', error);
     }
   }, [isNativeApp]);
+
+  const maybePromptRcsAccessOnFirstLogin = useCallback(async (operator) => {
+    if (!isNativeApp) return;
+    if (localStorage.getItem(RELAY_RCS_FIRST_LOGIN_PROMPT_KEY) === 'true') return;
+    // Do not show this prompt for users that immediately enter Relay mode.
+    if (shouldAutoRelay(operator)) return;
+
+    const relayPlugin = window.Capacitor?.Plugins?.NexusRelay;
+    if (!relayPlugin?.ensureReady || !relayPlugin?.openNotificationAccessSettings) {
+      return;
+    }
+
+    try {
+      localStorage.setItem(RELAY_RCS_FIRST_LOGIN_PROMPT_KEY, 'true');
+      const status = await relayPlugin.ensureReady();
+      if (!status?.ready || status?.rcsMonitoring) {
+        return;
+      }
+
+      const openSettings = window.confirm(
+        t('relayOpenNotificationAccessConfirm') || 'SMS/phone/location permissions are active. For RCS capture, enable Notification Access for Nexus Relay. Open settings now?'
+      );
+      if (openSettings) {
+        await relayPlugin.openNotificationAccessSettings();
+      }
+    } catch (error) {
+      console.warn('[Permissions] First-login RCS prompt failed', error);
+    }
+  }, [isNativeApp, shouldAutoRelay, t]);
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [bookingCollision, setBookingCollision] = useState(null);
   const [isCalendarSyncOpen, setIsCalendarSyncOpen] = useState(false);
@@ -1159,12 +1188,12 @@ function App() {
   const [isSyncingPush, setIsSyncingPush] = useState(false);
 
   const syncPushToken = useCallback(async () => {
-    if (!isNativeApp) return;
+    if (!isNativeApp) return false;
     setIsSyncingPush(true);
     try {
       const storedToken = localStorage.getItem('nexus_push_token');
       if (storedToken && token) {
-        await fetch('https://nexus-api.myvnc.com/api/device/push-token', {
+        const response = await fetch('https://nexus-api.myvnc.com/api/device/push-token', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1176,9 +1205,12 @@ function App() {
             operatorId: activeOperator?.id || null,
           }),
         });
+        return response.ok;
       }
+      return false;
     } catch (error) {
       console.warn('[Relay] Push token sync failed', error);
+      return false;
     } finally {
       setIsSyncingPush(false);
     }
@@ -1213,23 +1245,7 @@ function App() {
       try {
         const relayPlugin = window.Capacitor?.Plugins?.NexusRelay;
         if (relayPlugin) {
-          const status = await relayPlugin.ensureReady();
-
-          // Ask once after install/startup to enable Notification Access required for RCS capture.
-          if (
-            status?.ready &&
-            !status?.rcsMonitoring &&
-            relayPlugin?.openNotificationAccessSettings &&
-            localStorage.getItem(RELAY_RCS_STARTUP_PROMPT_KEY) !== 'true'
-          ) {
-            localStorage.setItem(RELAY_RCS_STARTUP_PROMPT_KEY, 'true');
-            const openSettings = window.confirm(
-              t('relayOpenNotificationAccessConfirm') || 'SMS/phone/location permissions are active. For RCS capture, enable Notification Access for Nexus Relay. Open settings now?'
-            );
-            if (openSettings) {
-              await relayPlugin.openNotificationAccessSettings();
-            }
-          }
+          await relayPlugin.ensureReady();
         }
       } catch (err) {
         console.warn('[Permissions] Relay permission request failed', err);
@@ -1255,7 +1271,7 @@ function App() {
       clearTimeout(timer);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isNativeApp, t]);
+  }, [isNativeApp]);
 
   // Real-time message simulation logic
   useEffect(() => {
@@ -1422,6 +1438,7 @@ function App() {
         setActiveOperator(data.user);
         setIsLoggedIn(true);
         void verifyNativeDeviceBinding(data.token, data.user);
+        void maybePromptRcsAccessOnFirstLogin(data.user);
         // Auto-relay: operators / models go straight into relay mode on native
         if (shouldAutoRelay(data.user)) {
           setIsRelayMode(true);
@@ -1442,6 +1459,7 @@ function App() {
       setActiveOperator(operator);
       setIsLoggedIn(true);
       void verifyNativeDeviceBinding(null, operator);
+      void maybePromptRcsAccessOnFirstLogin(operator);
       // Auto-relay: operators / models go straight into relay mode on native
       if (shouldAutoRelay(operator)) {
         setIsRelayMode(true);
