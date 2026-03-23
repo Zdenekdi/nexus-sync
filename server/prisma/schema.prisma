@@ -22,6 +22,7 @@ model Agency {
   profiles  Profile[]
   chats     Chat[]
   pushDevices PushDevice[]
+  deviceBindings DeviceBinding[]
 }
 
 model Role {
@@ -52,6 +53,7 @@ model User {
   agency    Agency?  @relation(fields: [agencyId], references: [id])
   messages  Message[]
   pushDevices PushDevice[]
+  deviceBindings DeviceBinding[]
   assignedProfiles Profile[] @relation("ProfileAssignees")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -74,6 +76,28 @@ model PushDevice {
   @@index([userId])
 }
 
+model DeviceBinding {
+  id             String   @id @default(cuid())
+  installationId String   @unique
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agencyId       String?
+  agency         Agency?  @relation(fields: [agencyId], references: [id], onDelete: SetNull)
+  profileId      String?
+  profile        Profile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  platform       String   @default("android")
+  active         Boolean  @default(true)
+  model          String?
+  deviceName     String?
+  lastSeenAt     DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([agencyId])
+  @@index([userId])
+  @@index([profileId])
+}
+
 model Profile {
   id          String    @id @default(cuid())
   name        String
@@ -86,6 +110,7 @@ model Profile {
   callLogs    CallLog[]
   bookings    Booking[]
   sessions    SafetySession[]
+  deviceBindings DeviceBinding[]
   assignees   User[]    @relation("ProfileAssignees")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

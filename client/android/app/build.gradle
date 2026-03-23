@@ -101,6 +101,9 @@ tasks.matching { it.name == "preBuild" }.configureEach {
 android {
     namespace = "com.nexushub.app"
     compileSdk = rootProject.ext.compileSdkVersion
+    buildFeatures {
+        buildConfig = true
+    }
     defaultConfig {
         applicationId "com.nexushub.app"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -108,6 +111,16 @@ android {
         versionCode appVersionCode
         versionName appVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        // DEVICE_SECRET: load from local.properties or environment variable
+        def localProps = new Properties()
+        def localPropsFile = rootProject.file("local.properties")
+        if (localPropsFile.exists()) localProps.load(new FileInputStream(localPropsFile))
+        def deviceSecret = localProps.getProperty("DEVICE_SECRET")
+            ?: System.getenv("DEVICE_SECRET")
+            ?: ""
+        buildConfigField "String", "DEVICE_SECRET", "\"${deviceSecret}\""
+
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61

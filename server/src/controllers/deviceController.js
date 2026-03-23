@@ -51,6 +51,116 @@ exports.registerPushToken = async (req, res) => {
   }
 };
 
+exports.verifyDeviceBinding = async (req, res) => {
+  try {
+    const userId = req.user?.userId;
+    const agencyId = req.user?.agencyId || null;
+    const { installationId, profileId, platform, model, deviceName } = req.body || {};
+
+    if (!userId) {
+      return res.status(401).json({ ok: false, message: 'Unauthorized' });
+    }
+
+    if (!installationId || typeof installationId !== 'string' || installationId.length > 256) {
+      return res.status(400).json({ ok: false, message: 'Invalid installationId' });
+    }
+
+    let resolvedProfileId = null;
+    if (profileId != null) {
+      if (typeof profileId !== 'string' || profileId.length > 128) {
+        return res.status(400).json({ ok: false, message: 'Invalid profileId' });
+      }
+
+      const profile = await prisma.profile.findFirst({
+        where: {
+          id: profileId,
+          agencyId: agencyId || undefined,
+        },
+        select: { id: true },
+      });
+
+      if (!profile) {
+        return res.status(403).json({ ok: false, message: 'Profile does not belong to your agency' });
+      }
+
+      resolvedProfileId = profile.id;
+    }
+
+    if (!resolvedProfileId && agencyId) {
+      const assignedProfile = await prisma.profile.findFirst({
+        where: {
+          agencyId,
+          assignees: {
+            some: {
+              id: userId,
+            },
+          },
+        },
+        select: { id: true },
+      });
+      if (assignedProfile) {
+        resolvedProfileId = assignedProfile.id;
+      }
+    }
+
+    const binding = await prisma.$transaction(async (tx) => {
+      const current = await tx.deviceBinding.upsert({
+        where: { installationId },
+        update: {
+          userId,
+          agencyId,
+          profileId: resolvedProfileId,
+          platform: typeof platform === 'string' && platform.length <= 32 ? platform : 'android',
+          active: true,
+          model: typeof model === 'string' && model.length <= 128 ? model : null,
+          deviceName: typeof deviceName === 'string' && deviceName.length <= 128 ? deviceName : null,
+          lastSeenAt: new Date(),
+        },
+        create: {
+          installationId,
+          userId,
+          agencyId,
+          profileId: resolvedProfileId,
+          platform: typeof platform === 'string' && platform.length <= 32 ? platform : 'android',
+          active: true,
+          model: typeof model === 'string' && model.length <= 128 ? model : null,
+          deviceName: typeof deviceName === 'string' && deviceName.length <= 128 ? deviceName : null,
+          lastSeenAt: new Date(),
+        },
+      });
+
+      // Single-device policy: keep only this installation active for this user.
+      await tx.deviceBinding.updateMany({
+        where: {
+          userId,
+          installationId: { not: installationId },
+          active: true,
+        },
+        data: { active: false },
+      });
+
+      return tx.deviceBinding.findUnique({
+        where: { installationId },
+        select: {
+          id: true,
+          installationId: true,
+          userId: true,
+          agencyId: true,
+          profileId: true,
+          platform: true,
+          active: true,
+          updatedAt: true,
+        },
+      });
+    });
+
+    return res.json({ ok: true, binding });
+  } catch (error) {
+    console.error('Device verification error:', error);
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
 exports.sendTestPush = async (req, res) => {
   try {
     const { type = 'chat', agencyId: requestedAgencyId, profileId, from, messagePreview, callState } = req.body || {};
@@ -111,7 +221,7 @@ exports.sendTestPush = async (req, res) => {
 // Nexus Relay (from RelayMode.jsx in mobile app)
 exports.handleRelay = async (req, res) => {
   try {
-    const { deviceId, type, transport, from, content, secret } = req.body;
+    const { installationId, deviceId, type, transport, from, content, secret } = req.body;
     const messageTransport = normalizeTransport(transport || type);
 
     // ── Auth: DEVICE_SECRET required ─────────────────────────────────────────
@@ -124,6 +234,9 @@ exports.handleRelay = async (req, res) => {
     if (!deviceId || typeof deviceId !== 'string' || deviceId.length > 128) {
       return res.status(400).json({ message: 'Invalid deviceId' });
     }
+    if (!installationId || typeof installationId !== 'string' || installationId.length > 256) {
+      return res.status(400).json({ message: 'Invalid installationId' });
+    }
     if (!messageTransport) {
       return res.status(400).json({ message: 'Invalid or missing transport' });
     }
@@ -134,28 +247,53 @@ exports.handleRelay = async (req, res) => {
       return res.status(400).json({ message: 'Invalid content field' });
     }
 
-    console.log(`[Relay] ${messageTransport.toUpperCase()} from ${from} (Device: ${deviceId})`);
+    console.log(`[Relay] ${messageTransport.toUpperCase()} from ${from} (Device: ${deviceId}, Installation: ${installationId})`);
 
-    // Try to find agency context from deviceId (which is the operator's userId)
-    const user = await prisma.user.findUnique({
-      where: { id: deviceId },
-      include: { agency: true }
+    // Strict mapping: relay traffic must come from a previously verified installation.
+    const binding = await prisma.deviceBinding.findUnique({
+      where: { installationId },
+      select: {
+        userId: true,
+        agencyId: true,
+        profileId: true,
+        active: true,
+      },
     });
 
-    if (!user) {
-      console.warn(`[Relay] Unknown deviceId=${deviceId}`);
+    if (!binding) {
+      console.warn(`[Relay] Unknown installationId=${installationId}`);
       return res.status(404).json({ message: 'Device not registered' });
     }
 
-    const agencyId = user.agencyId;
+    if (binding.userId !== deviceId) {
+      console.warn(`[Relay] Device mismatch installationId=${installationId} expectedUserId=${binding.userId} gotDeviceId=${deviceId}`);
+      return res.status(403).json({ message: 'Device binding mismatch' });
+    }
 
+    if (!binding.active) {
+      console.warn(`[Relay] Inactive device binding installationId=${installationId}`);
+      return res.status(403).json({ message: 'Device is no longer active' });
+    }
+
+    const agencyId = binding.agencyId;
     if (!agencyId) {
       return res.status(404).json({ message: 'No agency context found' });
     }
 
-    // Find a profile in this agency to associate with the relay device
-    const profile = await prisma.profile.findFirst({ where: { agencyId } });
-    if (!profile) return res.status(404).json({ message: 'No profile found for agency context' });
+    if (!binding.profileId) {
+      return res.status(409).json({ message: 'No profile is bound to this device' });
+    }
+
+    const profile = await prisma.profile.findFirst({
+      where: {
+        id: binding.profileId,
+        agencyId,
+      },
+      select: { id: true },
+    });
+    if (!profile) {
+      return res.status(404).json({ message: 'Bound profile not found for agency context' });
+    }
 
     if (messageTransport === 'sms' || messageTransport === 'rcs') {
       let chat = await prisma.chat.findUnique({
