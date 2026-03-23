@@ -300,7 +300,7 @@ exports.handleRelay = async (req, res) => {
     }
 
     if (!isAuthorized) {
-      console.warn(`[Relay] Unauthorized relay attempt from deviceId=${deviceId || 'unknown'} installationId=${installationId || 'unknown'} ip=${req.ip}`);
+      console.warn(`[Relay] Unauthorized relay attempt from IP=${req.ip}. Body: ${JSON.stringify(req.body)}`);
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
