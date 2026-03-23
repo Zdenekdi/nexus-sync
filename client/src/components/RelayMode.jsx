@@ -451,6 +451,19 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
             });
           }
 
+          if (!status?.rcsMonitoring && relayPlugin?.openNotificationAccessSettings) {
+            const openSettings = window.confirm(
+              t('relayOpenNotificationAccessConfirm') || 'RCS capture needs Notification Access for Nexus Relay. Open settings now?'
+            );
+            if (openSettings) {
+              await relayPlugin.openNotificationAccessSettings();
+            }
+            if (!status?.ready) {
+              alert(t('relayPermissionsMissing') || 'Please allow SMS, phone and location permissions to keep Relay monitoring active.');
+            }
+            return;
+          }
+
           if (status?.ready) {
             if (status?.rcsMonitoring) {
               alert(t('relayAllPermissionsActive') || 'SMS, phone, location and RCS notification access are granted.');
