@@ -109,6 +109,10 @@ function App() {
   const [stats] = useState(MOCK_STATS);
   const [auditLogs] = useState(MOCK_AUDIT_LOG);
   const [newAgencyData, setNewAgencyData] = useState({ name: '', region: 'International', tier: 'Pro' });
+  const [newOperatorData, setNewOperatorData] = useState({ name: '', email: '', role: 'Operator', profileId: null });
+  const [isAddAgencyModalOpen, setIsAddAgencyModalOpen] = useState(false);
+  const [isAddOperatorModalOpen, setIsAddOperatorModalOpen] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
 
   // Persistence Effects
   useEffect(() => {
