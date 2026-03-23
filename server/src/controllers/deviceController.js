@@ -161,6 +161,73 @@ exports.verifyDeviceBinding = async (req, res) => {
   }
 };
 
+exports.getRelayStatus = async (req, res) => {
+  try {
+    const userId = req.user?.userId;
+    const installationId = req.query?.installationId;
+
+    if (!userId) {
+      return res.status(401).json({ ok: false, message: 'Unauthorized' });
+    }
+
+    if (!installationId || typeof installationId !== 'string' || installationId.length > 256) {
+      return res.status(400).json({ ok: false, message: 'Invalid installationId' });
+    }
+
+    const binding = await prisma.deviceBinding.findUnique({
+      where: { installationId },
+      select: {
+        installationId: true,
+        userId: true,
+        agencyId: true,
+        profileId: true,
+        active: true,
+        platform: true,
+        model: true,
+        deviceName: true,
+        lastSeenAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!binding) {
+      return res.status(404).json({ ok: true, registered: false, online: false, active: false });
+    }
+
+    if (binding.userId !== userId) {
+      return res.status(403).json({ ok: false, message: 'Device binding mismatch' });
+    }
+
+    const refreshedBinding = await prisma.deviceBinding.update({
+      where: { installationId },
+      data: { lastSeenAt: new Date() },
+      select: {
+        installationId: true,
+        agencyId: true,
+        profileId: true,
+        active: true,
+        platform: true,
+        model: true,
+        deviceName: true,
+        lastSeenAt: true,
+        updatedAt: true,
+      },
+    });
+
+    return res.json({
+      ok: true,
+      registered: true,
+      active: Boolean(refreshedBinding.active),
+      online: Boolean(refreshedBinding.active),
+      source: 'device-binding',
+      binding: refreshedBinding,
+    });
+  } catch (error) {
+    console.error('Relay status error:', error);
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
 exports.sendTestPush = async (req, res) => {
   try {
     const { type = 'chat', agencyId: requestedAgencyId, profileId, from, messagePreview, callState } = req.body || {};
@@ -274,6 +341,11 @@ exports.handleRelay = async (req, res) => {
       console.warn(`[Relay] Inactive device binding installationId=${installationId}`);
       return res.status(403).json({ message: 'Device is no longer active' });
     }
+
+    await prisma.deviceBinding.update({
+      where: { installationId },
+      data: { lastSeenAt: new Date() },
+    });
 
     const agencyId = binding.agencyId;
     if (!agencyId) {
