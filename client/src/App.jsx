@@ -693,7 +693,7 @@ function App() {
   const [newAgencyData, setNewAgencyData] = useState({ name: '', region: 'UK/Europe', tier: 'Professional' });
   const [isAddOperatorModalOpen, setIsAddOperatorModalOpen] = useState(false);
   const [targetAgencyId, setTargetAgencyId] = useState(null);
-  const [newOperatorData, setNewOperatorData] = useState({ name: '', role: 'Operator', email: '', password: 'password123' });
+  const [newOperatorData, setNewOperatorData] = useState({ name: '', role: 'Operator', email: '', password: '' });
   const [rolePermissions, setRolePermissions] = useState(MOCK_PERMISSIONS);
   const [activeMarket, setActiveMarket] = useState(() => localStorage.getItem('nexus_activeMarket') || 'EU');
   
@@ -1508,7 +1508,7 @@ function App() {
   );
 
   const myProfiles = useMemo(() =>
-    profiles.filter(p => p.operators.some(op => op.id === activeOperator?.id && op.active)),
+    profiles.filter(p => p.operators?.some(op => op.id === activeOperator?.id && op.active)),
     [profiles, activeOperator?.id]
   );
 
@@ -2811,29 +2811,26 @@ function App() {
             </div>
 
             {isCalendarSyncOpen && (
-              <div className="glass-card fade-in" style={{ padding: '2rem', marginBottom: '2rem', background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.2)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ flex: 1 }}>
-                    <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <RefreshCw size={18} /> {t('syncCalendar')}
-                    </h3>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>{t('syncDesc')}</p>
-                    
-                    <div style={{ display: 'flex', gap: '1rem', maxWidth: '600px', flexDirection: isMobile ? 'column' : 'row' }}>
-                      <input 
-                        type="text" 
-                        placeholder="https://calendar.google.com/calendar/ical/..." 
-                        value={calendarSyncUrl}
-                        onChange={(e) => setCalendarSyncUrl(e.target.value)}
-                        style={{ flex: 1, padding: '0.75rem 1.25rem' }} 
-                        className="glass-input" 
-                      />
-                      <button className="action-btn" style={{ whiteSpace: 'nowrap' }}>{t('add')}</button>
-                    </div>
+              <div className="glass-card fade-in" style={{ position: 'relative', padding: '1.5rem 1.5rem 2rem', marginBottom: '2rem', background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.2)' }}>
+                <button onClick={() => setIsCalendarSyncOpen(false)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                  <X size={20} />
+                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <RefreshCw size={18} /> {t('syncCalendar')}
+                  </h3>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', maxWidth: '480px' }}>{t('syncDesc')}</p>
+                  <div style={{ display: 'flex', gap: '1rem', width: '100%', maxWidth: '560px', flexDirection: isMobile ? 'column' : 'row' }}>
+                    <input
+                      type="text"
+                      placeholder="https://calendar.google.com/calendar/ical/..."
+                      value={calendarSyncUrl}
+                      onChange={(e) => setCalendarSyncUrl(e.target.value)}
+                      style={{ flex: 1, padding: '0.75rem 1.25rem' }}
+                      className="glass-input"
+                    />
+                    <button className="action-btn" style={{ whiteSpace: 'nowrap' }}>{t('add')}</button>
                   </div>
-                  <button onClick={() => setIsCalendarSyncOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                    <X size={20} />
-                  </button>
                 </div>
               </div>
             )}
