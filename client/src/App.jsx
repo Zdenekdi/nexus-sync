@@ -138,7 +138,8 @@ function App() {
             time: chat.lastMessageAt ? new Date(chat.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---',
             status: 'read', // Simplified for now
             direction: 'inbound',
-            type: 'sms'
+            transport: chat.messages?.[0]?.transport || chat.messages?.[0]?.type || 'sms',
+            type: chat.messages?.[0]?.transport || chat.messages?.[0]?.type || 'sms'
           }));
           setMessages(mappedMessages);
         }
@@ -1358,18 +1359,20 @@ function App() {
   useSocket(
     token,
     useCallback((newMsg) => {
-      setMessages(prev => [newMsg, ...prev]);
-      
+      const resolvedTransport = newMsg.transport || newMsg.type || 'sms';
+      const normalizedMessage = { ...newMsg, transport: resolvedTransport, type: resolvedTransport };
+      setMessages(prev => [normalizedMessage, ...prev]);
+
       // Find profile for notification
-      const profile = profiles.find(p => p.id === newMsg.profileId);
+      const profile = profiles.find(p => p.id === normalizedMessage.profileId);
       if (profile) {
         addNotification({
-          title: t('newInboxMessage') || 'New message',
-          message: `${profile.name}: ${newMsg.text || newMsg.body || newMsg.from || ''}`,
+          title: resolvedTransport === 'rcs' ? 'New RCS message' : (t('newInboxMessage') || 'New message'),
+          message: `${profile.name}: ${normalizedMessage.text || normalizedMessage.body || normalizedMessage.from || ''}`,
           type: 'info',
           profileId: profile.id,
-          chatId: newMsg.id,
-          from: newMsg.from,
+          chatId: normalizedMessage.chatId || normalizedMessage.id,
+          from: normalizedMessage.from,
           targetType: 'inbox',
         });
       }
@@ -1984,11 +1987,11 @@ function App() {
       top: 0,
       zIndex: 1000
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flex: 1, minWidth: 0 }}>
-        <img src="/nexus_icon.png" alt="Nexus" style={{ width: '32px', height: '32px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.25)' }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: 0 }}>
+        <img src="/nexus_icon.png" alt="Nexus Hub" style={{ width: '36px', height: '36px', borderRadius: '10px', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)' }} />
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: '1rem', fontWeight: '950', letterSpacing: '0.04em', color: 'white' }}>NEXUSSYNC</div>
-          <div style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em', fontWeight: '800' }}>{activeRole?.toUpperCase() || 'SYSTEM'}</div>
+          <div style={{ fontSize: '1.1rem', fontWeight: '900', color: 'white' }}>Nexus Hub</div>
+          <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.05em', fontWeight: '800' }}>{activeRole?.toUpperCase() || 'SYSTEM'}</div>
         </div>
       </div>
 
@@ -2285,16 +2288,18 @@ function App() {
                   onClick={() => setActiveTab('dashboard')}
                   style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', cursor: 'pointer' }}
                 >
-                  <div style={{ position: 'relative', width: isSidebarCollapsed ? '32px' : '42px', height: isSidebarCollapsed ? '32px' : '42px', transition: 'all 0.3s' }}>
-                    <img src="/nexus_icon.png" alt="Nexus" style={{ width: '100%', height: '100%', borderRadius: '10px', boxShadow: '0 8px 25px rgba(59, 130, 246, 0.25)' }} />
+                  <div style={{ 
+                    width: isSidebarCollapsed ? '42px' : '48px', 
+                    height: isSidebarCollapsed ? '42px' : '48px', 
+                    transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                    position: 'relative'
+                  }}>
+                    <img src="/nexus_icon.png" alt="Nexus Hub" style={{ width: '100%', height: '100%', borderRadius: '12px', boxShadow: '0 8px 25px rgba(59, 130, 246, 0.25)' }} />
                   </div>
                   {!isSidebarCollapsed && (
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                      <img src="/nexus_icon.png" alt="Icon" style={{ width: '32px', height: '32px', borderRadius: '8px', boxShadow: '0 0 15px rgba(59, 130, 246, 0.3)' }} />
-                      <img src="/nexus_systems_logo.png" alt="Nexus Systems" style={{ height: '24px', opacity: 0.9 }} />
-                    </div>
-                      <span style={{ fontSize: '0.65rem', color: 'var(--accent-color)', fontWeight: '800', letterSpacing: '0.22em' }}>NETWORK</span>
+                      <span style={{ fontSize: '1.25rem', fontWeight: '900', color: 'white', letterSpacing: '-0.01em', lineHeight: 1.1 }}>Nexus Hub</span>
+                      <span style={{ fontSize: '0.6rem', color: 'var(--accent-color)', fontWeight: '800', letterSpacing: '0.15em', marginTop: '0.15rem' }}>PREMIUM SYNC</span>
                     </div>
                   )}
                 </div>

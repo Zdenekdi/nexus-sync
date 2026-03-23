@@ -1,8 +1,11 @@
 package com.nexushub.app;
 
 import android.Manifest;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Build;
+import android.provider.Settings;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyCallback;
 import android.telephony.TelephonyManager;
@@ -34,11 +37,15 @@ public class NexusRelayPlugin extends Plugin {
     static final String SMS_PERMISSION_ALIAS = "sms";
     static final String PHONE_PERMISSION_ALIAS = "phone";
     static final String LOCATION_PERMISSION_ALIAS = "location";
+    private static final String[] SUPPORTED_RCS_PACKAGES = { "com.google.android.apps.messaging" };
+    private static final long SMS_DEDUP_WINDOW_MS = 8000L;
 
     public static NexusRelayPlugin instance;
     private NexusPhoneListener phoneListener;
     private TelephonyCallback telephonyCallback;
     private TelephonyManager telephonyManager;
+    private static String lastSmsBody;
+    private static long lastSmsBodyAt;
 
     @Override
     public void load() {
@@ -108,6 +115,7 @@ public class NexusRelayPlugin extends Plugin {
         PermissionState smsState = getPermissionState(SMS_PERMISSION_ALIAS);
         PermissionState phoneState = getPermissionState(PHONE_PERMISSION_ALIAS);
         PermissionState locationState = getPermissionState(LOCATION_PERMISSION_ALIAS);
+        boolean notificationAccess = isNotificationListenerEnabled(getContext());
         status.put(SMS_PERMISSION_ALIAS, smsState.toString());
         status.put(PHONE_PERMISSION_ALIAS, phoneState.toString());
         status.put(LOCATION_PERMISSION_ALIAS, locationState.toString());
@@ -118,7 +126,20 @@ public class NexusRelayPlugin extends Plugin {
         status.put("callMonitoring", phoneState == PermissionState.GRANTED);
         status.put("smsMonitoring", smsState == PermissionState.GRANTED);
         status.put("locationMonitoring", locationState == PermissionState.GRANTED);
+        status.put("notificationAccess", notificationAccess);
+        status.put("rcsMonitoring", notificationAccess);
         return status;
+    }
+
+    @PluginMethod
+    public void openNotificationAccessSettings(PluginCall call) {
+        Intent intent = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        getContext().startActivity(intent);
+        JSObject ret = new JSObject();
+        ret.put("opened", true);
+        ret.put("notificationAccess", isNotificationListenerEnabled(getContext()));
+        call.resolve(ret);
     }
 
     private void maybeRegisterCallStateListener() {
@@ -213,26 +234,58 @@ public class NexusRelayPlugin extends Plugin {
     }
 
     public static void onMessageReceived(Context context, String from, String body) {
+        onTransportMessageReceived(context, "sms", from, body, null);
+    }
+
+    public static void onRcsMessageReceived(Context context, String from, String body, String sourcePackage) {
+        onTransportMessageReceived(context, "rcs", from, body, sourcePackage);
+    }
+
+    private static void onTransportMessageReceived(Context context, String transport, String from, String body, String sourcePackage) {
         android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         boolean isActive = prefs.getBoolean(KEY_IS_ACTIVE, false);
         String baseUrl = prefs.getString(KEY_BASE_URL, null);
         String deviceId = prefs.getString(KEY_DEVICE_ID, "RELAY-DEVICE");
 
+        String safeFrom = from != null ? from : "UNKNOWN";
+        String safeBody = body != null ? body : "";
+        String safeTransport = normalizeTransport(transport);
+
+        if ("sms".equals(safeTransport)) {
+            rememberRecentSmsBody(safeBody);
+        }
+
         // 1. Notify JS (for UI logs if app is open)
         if (instance != null) {
             JSObject ret = new JSObject();
-            ret.put("from", from);
-            ret.put("body", body);
-            instance.notifyListeners("onSmsReceived", ret, true);
+            ret.put("from", safeFrom);
+            ret.put("body", safeBody);
+            ret.put("transport", safeTransport);
+            ret.put("type", safeTransport);
+            if (sourcePackage != null) {
+                ret.put("sourcePackage", sourcePackage);
+            }
+            instance.notifyListeners("onMessageReceived", ret, true);
+            if ("rcs".equals(safeTransport)) {
+                instance.notifyListeners("onRcsReceived", ret, true);
+            } else {
+                instance.notifyListeners("onSmsReceived", ret, true);
+            }
         }
 
         // 2. Native Background Forwarding
         if (isActive && baseUrl != null) {
-            forwardDataNative(baseUrl, deviceId, "sms", from, body);
+            forwardDataNative(baseUrl, deviceId, safeTransport, safeFrom, safeBody);
         }
     }
 
     public static void onCallStateChanged(Context context, String from, String state) {
+        // Ignore IDLE state – fired on listener registration and after call ends;
+        // logging it would create phantom "call" entries when no call occurred.
+        if (state == null || state.equals("IDLE")) {
+            return;
+        }
+
         android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         boolean isActive = prefs.getBoolean(KEY_IS_ACTIVE, false);
         String baseUrl = prefs.getString(KEY_BASE_URL, null);
@@ -247,7 +300,7 @@ public class NexusRelayPlugin extends Plugin {
         }
 
         // 2. Native Background Forwarding
-        if (isActive && baseUrl != null && state != null && !state.equals("IDLE")) {
+        if (isActive && baseUrl != null) {
             forwardDataNative(baseUrl, deviceId, "call", from, "State: " + state);
         }
     }
@@ -268,6 +321,7 @@ public class NexusRelayPlugin extends Plugin {
 
                     org.json.JSONObject jsonParam = new org.json.JSONObject();
                     jsonParam.put("deviceId", deviceId);
+                    jsonParam.put("transport", type);
                     jsonParam.put("type", type);
                     jsonParam.put("from", from);
                     jsonParam.put("content", content);
@@ -312,6 +366,64 @@ public class NexusRelayPlugin extends Plugin {
         if (state == TelephonyManager.CALL_STATE_RINGING) return "RINGING";
         if (state == TelephonyManager.CALL_STATE_OFFHOOK) return "OFFHOOK";
         return "IDLE";
+    }
+
+    private static String normalizeTransport(String transport) {
+        if ("call".equals(transport) || "rcs".equals(transport)) {
+            return transport;
+        }
+        return "sms";
+    }
+
+    static boolean isRcsPackageSupported(String packageName) {
+        if (packageName == null) {
+            return false;
+        }
+        for (String supportedPackage : SUPPORTED_RCS_PACKAGES) {
+            if (supportedPackage.equals(packageName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static boolean isNotificationListenerEnabled(Context context) {
+        if (context == null) {
+            return false;
+        }
+        String enabledListeners = Settings.Secure.getString(context.getContentResolver(), "enabled_notification_listeners");
+        if (enabledListeners == null || enabledListeners.isEmpty()) {
+            return false;
+        }
+        ComponentName componentName = new ComponentName(context, NexusRcsNotificationListenerService.class);
+        String flatName = componentName.flattenToString();
+        String shortName = componentName.flattenToShortString();
+        return enabledListeners.contains(flatName) || enabledListeners.contains(shortName);
+    }
+
+    static boolean wasRecentlyCapturedViaSms(String body) {
+        String normalizedBody = normalizeBodyFingerprint(body);
+        if (normalizedBody.isEmpty()) {
+            return false;
+        }
+        synchronized (NexusRelayPlugin.class) {
+            return normalizedBody.equals(lastSmsBody) && (System.currentTimeMillis() - lastSmsBodyAt) < SMS_DEDUP_WINDOW_MS;
+        }
+    }
+
+    private static void rememberRecentSmsBody(String body) {
+        String normalizedBody = normalizeBodyFingerprint(body);
+        if (normalizedBody.isEmpty()) {
+            return;
+        }
+        synchronized (NexusRelayPlugin.class) {
+            lastSmsBody = normalizedBody;
+            lastSmsBodyAt = System.currentTimeMillis();
+        }
+    }
+
+    private static String normalizeBodyFingerprint(String body) {
+        return body == null ? "" : body.trim();
     }
 
     private boolean isRelayActiveInPrefs() {
