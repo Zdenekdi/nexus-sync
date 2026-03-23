@@ -63,10 +63,19 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
   .map(o => o.trim())
   .filter(Boolean);
 
+// Capacitor Android/iOS WebView always uses these origins — must be unconditionally allowed.
+const CAPACITOR_ORIGINS = [
+  'https://localhost',
+  'capacitor://localhost',
+  'http://localhost',
+];
+
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (native mobile app, curl, Postman in dev)
     if (!origin) return callback(null, true);
+    // Always allow Capacitor WebView origins
+    if (CAPACITOR_ORIGINS.includes(origin)) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error(`CORS: origin '${origin}' not allowed`));
   },
