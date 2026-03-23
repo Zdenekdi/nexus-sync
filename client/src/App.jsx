@@ -1625,6 +1625,13 @@ function App() {
 
   const myProfileIds = useMemo(() => myProfiles.map(p => p.id), [myProfiles]);
 
+  const filteredProfiles = useMemo(() => {
+    if (activeRole === 'App Owner') return profiles;
+    if (activeRole === 'Agency Manager' || activeRole === 'Agency Admin') {
+      return profiles.filter(p => p.clientId === activeOperator?.clientId);
+    }
+    return profiles.filter(p => p.operators?.some(o => o.id === activeOperator?.id) || p.assignees?.some(a => a.id === activeOperator?.id));
+  }, [profiles, activeOperator?.clientId, activeOperator?.id, activeRole]);
 
   const allAgencyProfiles = useMemo(() =>
     activeRole === 'App Owner' ? profiles : profiles.filter(p => p.clientId === activeOperator?.clientId),
@@ -1642,7 +1649,7 @@ function App() {
       return profiles.filter(p => p.clientId === activeOperator?.clientId);
     }
     // For operators, show only their assigned models
-    return profiles.filter(p => p.operators?.some(o => o.id === activeOperator?.id));
+    return profiles.filter(p => p.operators?.some(o => o.id === activeOperator?.id) || p.assignees?.some(a => a.id === activeOperator?.id));
   }, [profiles, activeRole, activeOperator]);
 
   const filteredMessages = useMemo(() => {
