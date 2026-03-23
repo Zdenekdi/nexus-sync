@@ -35,10 +35,12 @@ app.use('/downloads', (req, res, next) => {
   next();
 }, express.static(path.join(__dirname, '..', 'public', 'downloads')));
 
-// Rate limiting: 100 requests per 15 minutes
+// Rate limiting: 500 requests per 15 minutes
+// (relay mode polls /api/device/status every 15 s → ~120 req/15 min per client;
+//  multiple clients + other API calls could easily exceed a lower threshold)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 500,
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: 'Too many requests, please try again later.' }

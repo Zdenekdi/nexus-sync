@@ -198,29 +198,19 @@ exports.getRelayStatus = async (req, res) => {
       return res.status(403).json({ ok: false, message: 'Device binding mismatch' });
     }
 
-    const refreshedBinding = await prisma.deviceBinding.update({
-      where: { installationId },
-      data: { lastSeenAt: new Date() },
-      select: {
-        installationId: true,
-        agencyId: true,
-        profileId: true,
-        active: true,
-        platform: true,
-        model: true,
-        deviceName: true,
-        lastSeenAt: true,
-        updatedAt: true,
-      },
-    });
+    // NOTE: Do NOT update lastSeenAt here — this endpoint is polled every 15 s and
+    // a write on every call causes excessive SQLite lock contention that blocks
+    // concurrent queries (including /api/auth/login).  lastSeenAt is already
+    // refreshed by handleRelay whenever the device actually forwards a message.
+    const { userId: _uid, ...bindingData } = binding;
 
     return res.json({
       ok: true,
       registered: true,
-      active: Boolean(refreshedBinding.active),
-      online: Boolean(refreshedBinding.active),
+      active: Boolean(binding.active),
+      online: Boolean(binding.active),
       source: 'device-binding',
-      binding: refreshedBinding,
+      binding: bindingData,
     });
   } catch (error) {
     console.error('Relay status error:', error);
