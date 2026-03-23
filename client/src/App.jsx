@@ -10,7 +10,7 @@ import {
     Eye, Save, X, RotateCcw, Lock, Share2, Filter, Menu, UserCircle, Plus, Info, ChevronDown, ChevronUp, ChevronLeft,
     BarChart2 as BarChart3, HardDrive, Gift, Trophy, RefreshCw, Bug, Copy, Signal, Mic, MicOff, Sparkles,
     StickyNote, AlertTriangle, Image, Link, Star, CheckCircle, Languages, Package, Bell,
-    History, Terminal, Mail, RefreshCcw, ArrowUpRight, PlusCircle, BarChart, PieChart, Download, EyeOff, Radio
+    History, Terminal, Mail, ArrowUpRight, PlusCircle, BarChart, PieChart, Download, EyeOff, Radio
   } from 'lucide-react';
 import LandingPage from './components/LandingPage';
 import RelayMode from './components/RelayMode';
@@ -421,12 +421,6 @@ function App() {
     initData();
   }, [isLoggedIn, token]);
 
-  // Ensure device is bound on startup if already logged in
-  useEffect(() => {
-    if (isNativeApp && isLoggedIn && token && activeOperator) {
-      void verifyNativeDeviceBinding(token, activeOperator);
-    }
-  }, [isNativeApp, isLoggedIn, token, activeOperator, verifyNativeDeviceBinding]);
 
 
   // Safety Guard State
@@ -855,6 +849,13 @@ function App() {
       console.warn('[Device] Verification endpoint unavailable', error);
     }
   }, [isNativeApp]);
+
+  // Ensure device is bound on startup if already logged in
+  useEffect(() => {
+    if (isNativeApp && isLoggedIn && token && activeOperator) {
+      void verifyNativeDeviceBinding(token, activeOperator);
+    }
+  }, [isNativeApp, isLoggedIn, token, activeOperator, verifyNativeDeviceBinding]);
 
   const maybePromptRcsAccessOnFirstLogin = useCallback(async (operator) => {
     if (!isNativeApp) return;
