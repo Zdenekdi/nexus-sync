@@ -9,10 +9,8 @@ async function main() {
   const agencies = [
     {
       id: 'agency-01',
-      name: 'Elite Talent Management',
-      region: 'UK/Europe',
-      plan: 'Enterprise',
-      safetyAlertMode: 'MANAGERS_AND_ASSIGNED',
+      name: 'Nexus Sync Central',
+      region: 'UK',
     },
     {
       id: 'agency-02',
@@ -72,26 +70,40 @@ async function main() {
   ];
 
   for (const user of users) {
-    const hashedPassword = await bcrypt.hash(user.password, 10);
-    const existing = await prisma.user.findUnique({ where: { email: user.email } });
-    if (existing) {
-        await prisma.user.update({
-            where: { id: existing.id },
-            data: { roleId: getRoleId(user.roleName, user.agencyId) }
-        });
-    } else {
-        await prisma.user.create({
-            data: {
-                id: user.id,
-                email: user.email,
-                name: user.name,
-                password: hashedPassword,
-                roleId: getRoleId(user.roleName, user.agencyId),
-                agencyId: user.agencyId,
-            }
-        });
+        // Check if user exists by email OR by ID
+        const existingByEmail = await prisma.user.findUnique({ where: { email: user.email } });
+        const existingById = await prisma.user.findUnique({ where: { id: user.id } });
+
+        if (existingByEmail || existingById) {
+            const targetId = existingByEmail ? existingByEmail.id : existingById.id;
+            console.log(`Updating existing user: ${user.email} (ID: ${targetId})`);
+            
+            // Update role if needed
+            const role = await prisma.role.findFirst({ where: { name: user.roleName } });
+            await prisma.user.update({
+                where: { id: targetId },
+                data: {
+                    email: user.email,
+                    name: user.name,
+                    roleId: role.id,
+                    agencyId: user.agencyId
+                }
+            });
+        } else {
+            // Create new user
+            const role = await prisma.role.findFirst({ where: { name: user.roleName } });
+            await prisma.user.create({
+                data: {
+                    id: user.id,
+                    email: user.email,
+                    name: user.name,
+                    password: await bcrypt.hash(user.password, 10),
+                    roleId: role.id,
+                    agencyId: user.agencyId
+                }
+            });
+        }
     }
-  }
   console.log('Users seeded.');
 
   // 4. Profiles with Assignments
