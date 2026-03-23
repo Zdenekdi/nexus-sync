@@ -100,6 +100,14 @@ function App() {
   const [notificationPanelOpen, setNotificationPanelOpen] = useState(false);
   const [isAppVisible, setIsAppVisible] = useState(() => typeof document === 'undefined' ? true : document.visibilityState === 'visible');
   const [isSimulating, setIsSimulating] = useState(false);
+  const [isToolsExpanded, setIsToolsExpanded] = useState(false);
+  const [sessions, setSessions] = useState(MOCK_SESSIONS);
+  const [typingProfiles, setTypingProfiles] = useState({});
+  const [isShiftActive, setIsShiftActive] = useState(true);
+  const [subscriptionPlans] = useState(MOCK_PLANS);
+  const [smartReplies] = useState(MOCK_SMART_REPLIES);
+  const [stats] = useState(MOCK_STATS);
+  const [auditLogs] = useState(MOCK_AUDIT_LOG);
 
   // Persistence Effects
   useEffect(() => {
@@ -420,9 +428,7 @@ function App() {
     }
   }, [isNativeApp, isLoggedIn, token, activeOperator, verifyNativeDeviceBinding]);
 
-  const [isToolsExpanded, setIsToolsExpanded] = useState(false);
-  const [isAppVisible, setIsAppVisible] = useState(() => typeof document === 'undefined' ? true : document.visibilityState === 'visible');
-  
+
   // Safety Guard State
   const [activeSafetySession, setActiveSafetySession] = useState(null);
   const [isSafetyLoading, setIsSafetyLoading] = useState(false);
@@ -898,11 +904,6 @@ function App() {
     }
   }, [activeOperator]);
 
-  const [clientNotes, setClientNotes] = useState(() => {
-    const saved = localStorage.getItem('nexus_client_notes');
-    return saved ? JSON.parse(saved) : {};
-  });
-
   const [clientNames, setClientNames] = useState(() => {
     const saved = localStorage.getItem('nexus_client_names');
     return saved ? JSON.parse(saved) : {};
@@ -993,9 +994,6 @@ function App() {
   const [isBugReportOpen, setIsBugReportOpen] = useState(false);
   const [bugDescription, setBugDescription] = useState('');
   const [showOnlyOnline, setShowOnlyOnline] = useState(false);
-  const [sessions] = useState(MOCK_SESSIONS);
-  const [typingProfiles, setTypingProfiles] = useState({});
-  const [isSimulating, setIsSimulating] = useState(false);
 
   const emergencySafetyAlerts = useMemo(() => {
     const safetyPattern = /SAFETY GUARD|NO CHECK-OUT|PANIC/i;
@@ -1055,9 +1053,6 @@ function App() {
       actionHandle?.remove?.();
     };
   }, [isNativeApp, openNotificationTarget]);
-
-    return value;
-  }, []);
 
   const mapPushPayloadToTarget = useCallback((payload = {}) => {
     const data = payload?.data || {};
