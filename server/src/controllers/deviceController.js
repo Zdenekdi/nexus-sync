@@ -405,7 +405,6 @@ exports.handleRelay = async (req, res) => {
         data: {
           chatId: chat.id,
           text: content,
-          transport: messageTransport,
           direction: 'INBOUND',
           status: 'delivered'
         }
