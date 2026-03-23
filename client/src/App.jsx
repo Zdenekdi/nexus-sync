@@ -205,6 +205,7 @@ function App() {
   const activeRole = normalizeRole(activeOperator?.role);
 
   const isNativeApp = Capacitor.isNativePlatform();
+  const RELAY_RCS_STARTUP_PROMPT_KEY = 'nexus_relay_rcs_startup_prompted';
   const APP_LOCK_TIMEOUT_MS = 2 * 60 * 1000;
   const backgroundedAtRef = useRef(null);
   const unlockInProgressRef = useRef(false);
@@ -1212,7 +1213,23 @@ function App() {
       try {
         const relayPlugin = window.Capacitor?.Plugins?.NexusRelay;
         if (relayPlugin) {
-          await relayPlugin.ensureReady();
+          const status = await relayPlugin.ensureReady();
+
+          // Ask once after install/startup to enable Notification Access required for RCS capture.
+          if (
+            status?.ready &&
+            !status?.rcsMonitoring &&
+            relayPlugin?.openNotificationAccessSettings &&
+            localStorage.getItem(RELAY_RCS_STARTUP_PROMPT_KEY) !== 'true'
+          ) {
+            localStorage.setItem(RELAY_RCS_STARTUP_PROMPT_KEY, 'true');
+            const openSettings = window.confirm(
+              t('relayOpenNotificationAccessConfirm') || 'SMS/phone/location permissions are active. For RCS capture, enable Notification Access for Nexus Relay. Open settings now?'
+            );
+            if (openSettings) {
+              await relayPlugin.openNotificationAccessSettings();
+            }
+          }
         }
       } catch (err) {
         console.warn('[Permissions] Relay permission request failed', err);
@@ -1238,7 +1255,7 @@ function App() {
       clearTimeout(timer);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isNativeApp]);
+  }, [isNativeApp, t]);
 
   // Real-time message simulation logic
   useEffect(() => {
