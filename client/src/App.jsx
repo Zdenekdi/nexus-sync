@@ -152,6 +152,13 @@ function App() {
     initData();
   }, [isLoggedIn, token]);
 
+  // Ensure device is bound on startup if already logged in
+  useEffect(() => {
+    if (isNativeApp && isLoggedIn && token && activeOperator) {
+      void verifyNativeDeviceBinding(token, activeOperator);
+    }
+  }, [isNativeApp, isLoggedIn, token, activeOperator, verifyNativeDeviceBinding]);
+
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mobileView, setMobileView] = useState('sidebar');
