@@ -320,11 +320,18 @@ exports.handleRelay = async (req, res) => {
     let finalBinding = binding;
     if (!finalBinding && isAuthorized) {
       console.info(`[Relay] Attempting auto-registration for installationId=${installationId} deviceId=${deviceId}`);
-      // Find operator/user to bind to
-      const user = await prisma.user.findUnique({
+      let user = await prisma.user.findUnique({
         where: { id: deviceId || 'none' },
         include: { assignedProfiles: { take: 1 } }
       });
+
+      // Fallback: If deviceId is a mock ID (e.g. op-04) and not in DB, use the first available user
+      if (!user) {
+        console.warn(`[Relay] DeviceId ${deviceId} not found, falling back to first available user.`);
+        user = await prisma.user.findFirst({
+          include: { assignedProfiles: { take: 1 } }
+        });
+      }
 
       if (user) {
         const profileId = user.assignedProfiles?.[0]?.id || null;
