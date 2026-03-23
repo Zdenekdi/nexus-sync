@@ -281,19 +281,30 @@ exports.handleRelay = async (req, res) => {
     const { installationId, deviceId, type, transport, from, content, secret } = req.body;
     const messageTransport = normalizeTransport(transport || type);
 
-    // ── Auth: DEVICE_SECRET required ─────────────────────────────────────────
-    if (secret !== process.env.DEVICE_SECRET) {
-      console.warn(`[Relay] Unauthorized relay attempt from deviceId=${deviceId} ip=${req.ip}`);
+    // ── Auth: Allow DEVICE_SECRET OR valid installationId binding ─────────────
+    let isAuthorized = (secret === process.env.DEVICE_SECRET && process.env.DEVICE_SECRET);
+    
+    // Strict mapping: relay traffic must come from a previously verified installation.
+    const binding = await prisma.deviceBinding.findUnique({
+      where: { installationId: installationId || 'none' },
+      select: {
+        userId: true,
+        agencyId: true,
+        profileId: true,
+        active: true,
+      },
+    });
+
+    if (binding && binding.active) {
+      isAuthorized = true;
+    }
+
+    if (!isAuthorized) {
+      console.warn(`[Relay] Unauthorized relay attempt from deviceId=${deviceId || 'unknown'} installationId=${installationId || 'unknown'} ip=${req.ip}`);
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
     // ── Input validation ──────────────────────────────────────────────────────
-    if (!deviceId || typeof deviceId !== 'string' || deviceId.length > 128) {
-      return res.status(400).json({ message: 'Invalid deviceId' });
-    }
-    if (!installationId || typeof installationId !== 'string' || installationId.length > 256) {
-      return res.status(400).json({ message: 'Invalid installationId' });
-    }
     if (!messageTransport) {
       return res.status(400).json({ message: 'Invalid or missing transport' });
     }
@@ -304,25 +315,14 @@ exports.handleRelay = async (req, res) => {
       return res.status(400).json({ message: 'Invalid content field' });
     }
 
-    console.log(`[Relay] ${messageTransport.toUpperCase()} from ${from} (Device: ${deviceId}, Installation: ${installationId})`);
-
-    // Strict mapping: relay traffic must come from a previously verified installation.
-    const binding = await prisma.deviceBinding.findUnique({
-      where: { installationId },
-      select: {
-        userId: true,
-        agencyId: true,
-        profileId: true,
-        active: true,
-      },
-    });
+    console.log(`[Relay] ${messageTransport.toUpperCase()} from ${from} (Installation: ${installationId})`);
 
     if (!binding) {
       console.warn(`[Relay] Unknown installationId=${installationId}`);
       return res.status(404).json({ message: 'Device not registered' });
     }
 
-    if (binding.userId !== deviceId) {
+    if (deviceId && binding.userId !== deviceId) {
       console.warn(`[Relay] Device mismatch installationId=${installationId} expectedUserId=${binding.userId} gotDeviceId=${deviceId}`);
       return res.status(403).json({ message: 'Device binding mismatch' });
     }

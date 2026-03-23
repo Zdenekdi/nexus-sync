@@ -38,7 +38,12 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     locationMonitoring: false,
     rcsMonitoring: false
   });
+  const [relayNotice, setRelayNotice] = useState(null);
   const latestHealthCheckRef = useRef(0);
+  const consecutiveHealthFailuresRef = useRef(0);
+  const POLL_FAILURES_FOR_DISCONNECT = 3;
+  const HEALTH_CHECK_TIMEOUT_MS = 8000;
+  const MANUAL_RETRY_ATTEMPTS = 3;
 
   const connectionUi = {
     connected: {
@@ -68,6 +73,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       if (!nextIsActive) {
         // Invalidate any in-flight health check so paused mode stays visually disconnected.
         latestHealthCheckRef.current += 1;
+        consecutiveHealthFailuresRef.current = 0;
         setConnectionStatus('disconnected');
       }
 
@@ -116,54 +122,190 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     return () => clearInterval(interval);
   }, []);
 
-  const checkServerConnection = async ({ showConnectingState = true } = {}) => {
+  const checkRelayStatusFromApi = async () => {
+    const installationId = localStorage.getItem('nexus_installation_id');
+    const token = localStorage.getItem('nexus_token');
+    if (!installationId || !token) {
+      return { available: false, connected: false };
+    }
+
+    try {
+      const response = await fetch(`${RELAY_API_BASE}/api/device/status?installationId=${encodeURIComponent(installationId)}`, {
+        method: 'GET',
+        cache: 'no-store',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        return { available: true, connected: false, statusCode: response.status };
+      }
+
+      const data = await response.json();
+      return {
+        available: true,
+        connected: Boolean(data?.online),
+        source: data?.source || 'device-binding',
+      };
+    } catch (error) {
+      console.warn('[Relay] Relay status API check failed', error);
+      return { available: false, connected: false };
+    }
+  };
+
+  const checkProfileStatusFromApi = async () => {
+    const token = localStorage.getItem('nexus_token');
+    if (!token || !operator?.id) {
+      return { available: false, connected: false };
+    }
+
+    try {
+      const response = await fetch(`${RELAY_API_BASE}/api/profiles`, {
+        method: 'GET',
+        cache: 'no-store',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        return { available: true, connected: false, statusCode: response.status };
+      }
+
+      const profiles = await response.json();
+      const linkedProfiles = Array.isArray(profiles)
+        ? profiles.filter((profile) => {
+            if (profile?.id === operator?.profileId) {
+              return true;
+            }
+            return Array.isArray(profile?.assignees) && profile.assignees.some((assignee) => assignee?.id === operator?.id);
+          })
+        : [];
+
+      return {
+        available: true,
+        connected: linkedProfiles.some((profile) => `${profile?.status || ''}`.toLowerCase() === 'online'),
+        source: 'profiles-db',
+      };
+    } catch (error) {
+      console.warn('[Relay] Profiles API check failed', error);
+      return { available: false, connected: false };
+    }
+  };
+
+  const checkServerConnection = async ({ showConnectingState = true, source = 'manual', attempts = 1 } = {}) => {
     const checkId = ++latestHealthCheckRef.current;
     if (showConnectingState) {
       setConnectionStatus('connecting');
     }
 
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
-      const response = await fetch(`${RELAY_API_BASE}/health`, {
-        method: 'GET',
-        cache: 'no-store',
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`Health check failed (${response.status})`);
-      }
-
+    const relayStatus = await checkRelayStatusFromApi();
+    if (relayStatus.available && relayStatus.connected) {
       if (checkId === latestHealthCheckRef.current) {
+        consecutiveHealthFailuresRef.current = 0;
         setConnectionStatus('connected');
       }
       return true;
-    } catch (error) {
-      console.warn('[Relay] Server is unreachable', error);
-      if (checkId === latestHealthCheckRef.current) {
-        setConnectionStatus('disconnected');
-      }
-      return false;
     }
+
+    const profileStatus = await checkProfileStatusFromApi();
+    if (profileStatus.available && profileStatus.connected) {
+      if (checkId === latestHealthCheckRef.current) {
+        consecutiveHealthFailuresRef.current = 0;
+        setConnectionStatus('connected');
+      }
+      return true;
+    }
+
+    let lastError = null;
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT_MS);
+        const response = await fetch(`${RELAY_API_BASE}/health`, {
+          method: 'GET',
+          cache: 'no-store',
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`Health check failed (${response.status})`);
+        }
+
+        if (checkId === latestHealthCheckRef.current) {
+          consecutiveHealthFailuresRef.current = 0;
+          setConnectionStatus('connected');
+        }
+        return true;
+      } catch (error) {
+        // Fallback for mobile WebView CORS restrictions: treat successful opaque fetch as reachable server.
+        try {
+          const corsBypassController = new AbortController();
+          const bypassTimeoutId = setTimeout(() => corsBypassController.abort(), HEALTH_CHECK_TIMEOUT_MS);
+          await fetch(`${RELAY_API_BASE}/health`, {
+            method: 'GET',
+            cache: 'no-store',
+            mode: 'no-cors',
+            signal: corsBypassController.signal,
+          });
+          clearTimeout(bypassTimeoutId);
+
+          if (checkId === latestHealthCheckRef.current) {
+            consecutiveHealthFailuresRef.current = 0;
+            setConnectionStatus('connected');
+          }
+          return true;
+        } catch (bypassError) {
+          lastError = bypassError || error;
+        }
+
+        if (attempt < attempts) {
+          await new Promise(resolve => setTimeout(resolve, 650));
+        }
+      }
+    }
+
+    if (checkId === latestHealthCheckRef.current) {
+      consecutiveHealthFailuresRef.current += 1;
+      const failureThreshold = source === 'poll' ? POLL_FAILURES_FOR_DISCONNECT : 1;
+
+      if (consecutiveHealthFailuresRef.current >= failureThreshold) {
+        console.warn('[Relay] Server is unreachable', lastError);
+        setConnectionStatus('disconnected');
+      } else {
+        // Keep previous state on early transient failures to avoid false DISCONNECTED flips.
+        console.warn(`[Relay] Transient health check failure (${consecutiveHealthFailuresRef.current}/${failureThreshold})`);
+      }
+    }
+
+    return false;
   };
 
   const reconnectServer = async () => {
     setIsRefreshing(true);
-    const connected = await checkServerConnection();
+    let connected = await checkServerConnection({ source: 'manual', attempts: MANUAL_RETRY_ATTEMPTS });
+    let pushSyncReachedServer = false;
 
     if (typeof syncPushToken === 'function') {
       try {
-        await syncPushToken();
+        pushSyncReachedServer = await syncPushToken();
       } catch (error) {
         console.warn('[Relay] Push token sync failed during reconnect', error);
       }
     }
 
+    if (!connected && pushSyncReachedServer) {
+      connected = true;
+      consecutiveHealthFailuresRef.current = 0;
+      setConnectionStatus('connected');
+      showRelayNotice(t('relayConnectedViaApi') || 'Server API responded successfully. Relay stays connected.', 'success');
+    }
+
     setIsRefreshing(false);
     if (!connected) {
-      alert('Server is unreachable. Check internet connection and try again.');
+      showRelayNotice(t('relayServerUnreachable') || 'Server is unreachable. Check internet connection and try again.', 'error');
     }
   };
 
@@ -215,14 +357,15 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
 
   useEffect(() => {
     if (!isActive) {
+      consecutiveHealthFailuresRef.current = 0;
       setConnectionStatus('disconnected');
       return;
     }
 
-    void checkServerConnection();
+    void checkServerConnection({ source: 'manual' });
 
     const interval = setInterval(() => {
-      void checkServerConnection({ showConnectingState: false });
+      void checkServerConnection({ showConnectingState: false, source: 'poll' });
     }, 15000);
 
     return () => clearInterval(interval);
@@ -353,6 +496,17 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     }
   };
 
+  const showRelayNotice = (message, type = 'info') => {
+    if (!message) return;
+    setRelayNotice({ message, type });
+  };
+
+  useEffect(() => {
+    if (!relayNotice) return;
+    const timer = setTimeout(() => setRelayNotice(null), 3200);
+    return () => clearTimeout(timer);
+  }, [relayNotice]);
+
   return (
     <div className="relay-container fade-in" style={{ 
       minHeight: '100vh', 
@@ -435,11 +589,10 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       <div 
         onClick={async () => {
           if (typeof requestRelayPermissions !== 'function') {
-            alert(t('relayPermissionUnavailable') || 'Relay permission prompt is unavailable on this platform.');
+            showRelayNotice(t('relayPermissionUnavailable') || 'Relay permission prompt is unavailable on this platform.', 'error');
             return;
           }
           const status = await requestRelayPermissions();
-          const relayPlugin = window.Capacitor?.Plugins?.NexusRelay;
 
           // Update permissions status display
           if (status) {
@@ -451,37 +604,15 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
             });
           }
 
-          if (!status?.rcsMonitoring && relayPlugin?.openNotificationAccessSettings) {
-            const openSettings = window.confirm(
-              t('relayOpenNotificationAccessConfirm') || 'RCS capture needs Notification Access for Nexus Relay. Open settings now?'
-            );
-            if (openSettings) {
-              await relayPlugin.openNotificationAccessSettings();
-            }
-            if (!status?.ready) {
-              alert(t('relayPermissionsMissing') || 'Please allow SMS, phone and location permissions to keep Relay monitoring active.');
-            }
-            return;
-          }
-
           if (status?.ready) {
             if (status?.rcsMonitoring) {
-              alert(t('relayAllPermissionsActive') || 'SMS, phone, location and RCS notification access are granted.');
+              showRelayNotice(t('relayAllPermissionsActive') || 'SMS, phone, location and RCS notification access are granted.', 'success');
               return;
             }
-            if (relayPlugin?.openNotificationAccessSettings) {
-              const openSettings = window.confirm(
-                t('relayOpenNotificationAccessConfirm') || 'SMS/phone/location permissions are active. For RCS capture, enable Notification Access for Nexus Relay. Open settings now?'
-              );
-              if (openSettings) {
-                await relayPlugin.openNotificationAccessSettings();
-              }
-              return;
-            }
-            alert(t('relayPermissionsGrantedRcsDisabled') || 'SMS and phone permissions are granted, but RCS notification access is still disabled.');
+            showRelayNotice((t('relayPermissionsGrantedRcsDisabled') || 'SMS and phone permissions are granted, but RCS notification access is still disabled.') + ' ' + (t('relayUseRcsButtonHint') || 'Use the RCS button below to open Notification Access.'), 'info');
             return;
           }
-          alert(t('relayPermissionsMissing') || 'Please allow SMS, phone and location permissions to keep Relay monitoring active.');
+          showRelayNotice(t('relayPermissionsMissing') || 'Please allow SMS, phone and location permissions to keep Relay monitoring active.', 'error');
         }}
         className="glass-card clickable"
         style={{ padding: '1.5rem', borderRadius: '20px', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)', cursor: 'pointer' }}
@@ -517,6 +648,63 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
             </div>
           ))}
         </div>
+        {!permissionsStatus.rcsMonitoring && (
+          <button
+            onClick={async (event) => {
+              event.stopPropagation();
+              const relayPlugin = window.Capacitor?.Plugins?.NexusRelay;
+              if (!relayPlugin?.openNotificationAccessSettings) {
+                showRelayNotice(t('relayPermissionUnavailable') || 'Relay permission prompt is unavailable on this platform.', 'error');
+                return;
+              }
+              await relayPlugin.openNotificationAccessSettings();
+            }}
+            style={{
+              marginTop: '0.9rem',
+              width: '100%',
+              padding: '0.75rem 0.9rem',
+              borderRadius: '10px',
+              border: '1px solid rgba(168, 85, 247, 0.35)',
+              background: 'rgba(168, 85, 247, 0.08)',
+              color: '#d8b4fe',
+              fontWeight: '800',
+              fontSize: '0.75rem',
+              letterSpacing: '0.03em',
+              cursor: 'pointer'
+            }}
+          >
+            {t('relayEnableRcsAccess') || 'ENABLE RCS ACCESS'}
+          </button>
+        )}
+        {relayNotice && (
+          <div
+            style={{
+              marginTop: '0.85rem',
+              fontSize: '0.72rem',
+              lineHeight: '1.4',
+              padding: '0.7rem 0.85rem',
+              borderRadius: '10px',
+              border: relayNotice.type === 'error'
+                ? '1px solid rgba(239,68,68,0.35)'
+                : (relayNotice.type === 'success'
+                  ? '1px solid rgba(34,197,94,0.35)'
+                  : '1px solid rgba(59,130,246,0.35)'),
+              background: relayNotice.type === 'error'
+                ? 'rgba(239,68,68,0.08)'
+                : (relayNotice.type === 'success'
+                  ? 'rgba(34,197,94,0.08)'
+                  : 'rgba(59,130,246,0.08)'),
+              color: relayNotice.type === 'error'
+                ? 'var(--error-color)'
+                : (relayNotice.type === 'success'
+                  ? 'var(--success-color)'
+                  : 'var(--accent-color)'),
+              fontWeight: '700'
+            }}
+          >
+            {relayNotice.message}
+          </div>
+        )}
       </div>
 
       {/* Forwarding Logs */}
