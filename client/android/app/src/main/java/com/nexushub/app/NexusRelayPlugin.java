@@ -28,7 +28,7 @@ import com.getcapacitor.annotation.PermissionCallback;
     name = "NexusRelay",
     permissions = {
         @Permission(alias = NexusRelayPlugin.SMS_PERMISSION_ALIAS, strings = { Manifest.permission.RECEIVE_SMS, Manifest.permission.READ_SMS }),
-        @Permission(alias = NexusRelayPlugin.PHONE_PERMISSION_ALIAS, strings = { Manifest.permission.READ_PHONE_STATE }),
+        @Permission(alias = NexusRelayPlugin.PHONE_PERMISSION_ALIAS, strings = { Manifest.permission.READ_PHONE_STATE, Manifest.permission.READ_CALL_LOG }),
         @Permission(alias = NexusRelayPlugin.LOCATION_PERMISSION_ALIAS, strings = { Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION })
     }
 )
@@ -325,6 +325,11 @@ public class NexusRelayPlugin extends Plugin {
         // Ignore IDLE state – fired on listener registration and after call ends;
         // logging it would create phantom "call" entries when no call occurred.
         if (state == null || state.equals("IDLE")) {
+            return;
+        }
+        
+        // Prevent duplicate calls from Android 12+ TelephonyCallback which fires with null 'from'
+        if (from == null || from.trim().isEmpty()) {
             return;
         }
 
