@@ -317,17 +317,50 @@ exports.handleRelay = async (req, res) => {
 
     console.log(`[Relay] ${messageTransport.toUpperCase()} from ${from} (Installation: ${installationId})`);
 
-    if (!binding) {
-      console.warn(`[Relay] Unknown installationId=${installationId}`);
+    let finalBinding = binding;
+    if (!finalBinding && isAuthorized) {
+      console.info(`[Relay] Attempting auto-registration for installationId=${installationId} deviceId=${deviceId}`);
+      // Find operator/user to bind to
+      const user = await prisma.user.findUnique({
+        where: { id: deviceId || 'none' },
+        include: { assignedProfiles: { take: 1 } }
+      });
+
+      if (user) {
+        const profileId = user.assignedProfiles?.[0]?.id || null;
+        finalBinding = await prisma.deviceBinding.upsert({
+          where: { installationId },
+          create: {
+            installationId,
+            userId: user.id,
+            agencyId: user.agencyId,
+            profileId: profileId,
+            active: true,
+            platform: 'android',
+            deviceName: 'Auto-Registered Relay'
+          },
+          update: {
+            userId: user.id,
+            agencyId: user.agencyId,
+            profileId: profileId,
+            active: true
+          }
+        });
+        console.info(`[Relay] Auto-registered device for user=${user.email} profileId=${profileId}`);
+      }
+    }
+
+    if (!finalBinding) {
+      console.warn(`[Relay] Unknown installationId=${installationId} and could not auto-bind to deviceId=${deviceId}`);
       return res.status(404).json({ message: 'Device not registered' });
     }
 
-    if (deviceId && binding.userId !== deviceId) {
-      console.warn(`[Relay] Device mismatch installationId=${installationId} expectedUserId=${binding.userId} gotDeviceId=${deviceId}`);
+    if (deviceId && finalBinding.userId !== deviceId) {
+      console.warn(`[Relay] Device mismatch installationId=${installationId} expectedUserId=${finalBinding.userId} gotDeviceId=${deviceId}`);
       return res.status(403).json({ message: 'Device binding mismatch' });
     }
 
-    if (!binding.active) {
+    if (!finalBinding.active) {
       console.warn(`[Relay] Inactive device binding installationId=${installationId}`);
       return res.status(403).json({ message: 'Device is no longer active' });
     }
@@ -337,18 +370,18 @@ exports.handleRelay = async (req, res) => {
       data: { lastSeenAt: new Date() },
     });
 
-    const agencyId = binding.agencyId;
+    const agencyId = finalBinding.agencyId;
     if (!agencyId) {
       return res.status(404).json({ message: 'No agency context found' });
     }
 
-    if (!binding.profileId) {
+    if (!finalBinding.profileId) {
       return res.status(409).json({ message: 'No profile is bound to this device' });
     }
 
     const profile = await prisma.profile.findFirst({
       where: {
-        id: binding.profileId,
+        id: finalBinding.profileId,
         agencyId,
       },
       select: { id: true },
