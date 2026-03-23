@@ -356,7 +356,7 @@ public class NexusRelayPlugin extends Plugin {
                     java.net.URL url = new java.net.URL(baseUrl);
                     java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("POST");
-                    conn.setRequestProperty("Content-Type", "application/json; utf-8");
+                    conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
                     conn.setRequestProperty("Accept", "application/json");
                     conn.setDoOutput(true);
                     conn.setConnectTimeout(12000);

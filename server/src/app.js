@@ -77,10 +77,18 @@ app.use(cors({
     // Always allow Capacitor WebView origins
     if (CAPACITOR_ORIGINS.includes(origin)) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error(`CORS: origin '${origin}' not allowed`));
   },
   credentials: true
 }));
+
+// Fix for Android native plugin sending non-standard "application/json; utf-8" (missing charset=)
+app.use((req, res, next) => {
+  if (req.headers['content-type'] === 'application/json; utf-8') {
+    req.headers['content-type'] = 'application/json; charset=utf-8';
+  }
+  next();
+});
+
 app.use(express.json({ limit: '64kb' }));
 
 // Apply global limiter to all API routes
