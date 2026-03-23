@@ -12,6 +12,7 @@ router.post('/mobile/call', express.json(), deviceController.handleMobileCall);
 // Relay Mode (Nexus Relay APK)
 router.post('/relay', express.json(), deviceController.handleRelay);
 router.post('/push-token', authMiddleware, express.json(), deviceController.registerPushToken);
+router.get('/status', authMiddleware, deviceController.getRelayStatus);
 router.post('/verify', authMiddleware, express.json(), deviceController.verifyDeviceBinding);
 router.post('/push-test', authMiddleware, express.json(), deviceController.sendTestPush);
 
