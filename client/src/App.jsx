@@ -120,6 +120,8 @@ function App() {
   const isNativeApp = Capacitor.isNativePlatform();
   const RELAY_RCS_FIRST_LOGIN_PROMPT_KEY = 'nexus_relay_rcs_first_login_prompted';
   const APP_LOCK_TIMEOUT_MS = 2 * 60 * 1000;
+  const backgroundedAtRef = useRef(null);
+  const unlockInProgressRef = useRef(false);
 
   // Recover Safety Session and Fetch Real Data on Load
   useEffect(() => {
