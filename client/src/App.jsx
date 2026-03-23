@@ -68,11 +68,11 @@ function App() {
     } catch { return MOCK_CLIENTS[0]; }
   });
 
-  const [messages, setMessages] = useState(MOCK_MESSAGES);
-  const [profiles, setProfiles] = useState(MOCK_PROFILES);
-  const [agencies, setAgencies] = useState(MOCK_AGENCIES);
+  const [messages, setMessages] = useState([]);
+  const [profiles, setProfiles] = useState([]);
+  const [agencies, setAgencies] = useState([]);
   const [agencySettings, setAgencySettings] = useState({ safetyAlertMode: 'MANAGERS_AND_ASSIGNED' });
-  const [operators, setOperators] = useState(MOCK_OPERATORS);
+  const [operators, setOperators] = useState([]);
   const [assigningProfile, setAssigningProfile] = useState(null);
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('nexus_activeTab') || 'dashboard');
   const [activeProfileId, setActiveProfileId] = useState(() => {
@@ -97,6 +97,29 @@ function App() {
   useEffect(() => {
     localStorage.setItem('nexus_language', lang);
   }, [lang]);
+
+  const t = (key, data = {}) => {
+    try {
+      let str = (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || key || '';
+      Object.keys(data).forEach(k => {
+        str = str.replace(`{${k}}`, data[k]);
+      });
+      return str;
+    } catch {
+      return key || '';
+    }
+  };
+
+  const normalizeRole = useCallback((role) => {
+    if (!role) return role;
+    if (role === 'Super Admin' || role === 'System Owner') return 'App Owner';
+    return role;
+  }, []);
+
+  const activeRole = normalizeRole(activeOperator?.role);
+  const isNativeApp = Capacitor.isNativePlatform();
+  const RELAY_RCS_FIRST_LOGIN_PROMPT_KEY = 'nexus_relay_rcs_first_login_prompted';
+  const APP_LOCK_TIMEOUT_MS = 2 * 60 * 1000;
 
   // Recover Safety Session and Fetch Real Data on Load
   useEffect(() => {
@@ -145,6 +168,14 @@ function App() {
           }));
           setMessages(mappedMessages);
         }
+
+        // 4. Fetch Real Agency Users (Team)
+        const userRes = await axios.get('https://nexus-api.myvnc.com/api/agency/users', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (userRes.data && userRes.data.length > 0) {
+          setOperators(userRes.data);
+        }
       } catch (err) {
         console.warn('Error fetching initial data from backend:', err.message);
       }
@@ -188,34 +219,6 @@ function App() {
 
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
-
-  const t = (key, data = {}) => {
-    try {
-      let str = (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || key || '';
-      Object.keys(data).forEach(k => {
-        str = str.replace(`{${k}}`, data[k]);
-      });
-      return str;
-    } catch {
-      return key || '';
-    }
-  };
-
-  // Normalize legacy role names to the current 'App Owner' role for permission lookups.
-  // This keeps the app backward-compatible with stale localStorage sessions.
-  const normalizeRole = useCallback((role) => {
-    if (!role) return role;
-    if (role === 'Super Admin' || role === 'System Owner') return 'App Owner';
-    return role;
-  }, []);
-
-  const activeRole = normalizeRole(activeOperator?.role);
-
-  const isNativeApp = Capacitor.isNativePlatform();
-  const RELAY_RCS_FIRST_LOGIN_PROMPT_KEY = 'nexus_relay_rcs_first_login_prompted';
-  const APP_LOCK_TIMEOUT_MS = 2 * 60 * 1000;
-  const backgroundedAtRef = useRef(null);
-  const unlockInProgressRef = useRef(false);
 
   const renderNotifications = () => (
     <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: '10px', pointerEvents: 'none' }}>

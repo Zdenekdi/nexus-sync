@@ -22,4 +22,5 @@ jobs:
             git reset --hard origin/master
             npm install
             npx prisma generate
+            npx prisma db seed --force
             pm2 restart all
