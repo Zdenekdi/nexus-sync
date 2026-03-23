@@ -79,8 +79,37 @@ function App() {
     const saved = localStorage.getItem('nexus_activeProfileId');
     return (saved && saved !== 'undefined') ? Number(saved) : (MOCK_PROFILES[0]?.id);
   });
+  const [selectedChatId, setSelectedChatId] = useState(null);
+  const [lang, setLang] = useState(() => localStorage.getItem('nexus_language') || 'en');
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mobileView, setMobileView] = useState('sidebar');
+  const [incomingCall, setIncomingCall] = useState(null);
+  const [clientNotes, setClientNotes] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nexus_client_notes');
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
+  });
+  const [rolePermissions, setRolePermissions] = useState(MOCK_PERMISSIONS);
+  const [notifications, setNotifications] = useState(() => {
+    const saved = localStorage.getItem('nexus_notifications');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [toasts, setToasts] = useState([]);
+  const [notificationPanelOpen, setNotificationPanelOpen] = useState(false);
+  const [isAppVisible, setIsAppVisible] = useState(() => typeof document === 'undefined' ? true : document.visibilityState === 'visible');
+  const [isSimulating, setIsSimulating] = useState(false);
 
-  // State Persistence Effects
+  // Persistence Effects
+  useEffect(() => {
+    localStorage.setItem('nexus_notifications', JSON.stringify(notifications.slice(0, 50)));
+  }, [notifications]);
+
+  useEffect(() => {
+    localStorage.setItem('nexus_client_notes', JSON.stringify(clientNotes));
+  }, [clientNotes]);
+
   useEffect(() => {
     localStorage.setItem('nexus_activeTab', activeTab);
   }, [activeTab]);
@@ -90,14 +119,21 @@ function App() {
       localStorage.setItem('nexus_activeProfileId', activeProfileId);
     }
   }, [activeProfileId]);
-  const [selectedChatId, setSelectedChatId] = useState(null);
-  const [lang, setLang] = useState(() => localStorage.getItem('nexus_language') || 'en');
-  
-  // Sync language to persistence
+
   useEffect(() => {
     localStorage.setItem('nexus_language', lang);
   }, [lang]);
 
+  // Visibility tracker
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsAppVisible(document.visibilityState === 'visible');
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // Basic Utilities
   const t = (key, data = {}) => {
     try {
       let str = (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || key || '';
@@ -118,6 +154,198 @@ function App() {
 
   const activeRole = normalizeRole(activeOperator?.role);
   const isNativeApp = Capacitor.isNativePlatform();
+
+  // Notification Logic
+  const playNotificationSound = useCallback((type = 'info') => {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      if (type === 'emergency') {
+        oscillator.type = 'sawtooth';
+        oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+      } else {
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(type === 'success' ? 880 : 660, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      }
+
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.5);
+    } catch (e) {
+      console.warn('Audio feedback blocked by browser policies or not supported');
+    }
+  }, []);
+
+  const scheduleSystemNotification = useCallback(async (notification) => {
+    if (!isNativeApp || isAppVisible) {
+      return;
+    }
+
+    try {
+      const title = notification.title || (notification.callState ? (t('incomingCall') || 'Incoming Call') : (t('notifications') || 'Notification'));
+      const body = notification.message || notification.msg || title;
+
+      await LocalNotifications.schedule({
+        notifications: [{
+          id: Number(String(Date.now()).slice(-9)),
+          title,
+          body,
+          channelId: 'nexus-events',
+          schedule: { at: new Date(Date.now() + 50) },
+          extra: {
+            notificationId: notification.id,
+            profileId: notification.profileId ?? null,
+            chatId: notification.chatId ?? null,
+            from: notification.from ?? null,
+            caller: notification.caller ?? null,
+            callState: notification.callState ?? null,
+            targetType: notification.targetType ?? null,
+          },
+        }],
+      });
+    } catch (error) {
+      console.warn('[Notifications] Failed to schedule local notification', error);
+    }
+  }, [isAppVisible, isNativeApp, t]);
+
+  const addNotification = useCallback((input, type = 'info', profileId = null, options = {}) => {
+    const payload = typeof input === 'object' && input !== null
+      ? input
+      : { msg: input, type, profileId, ...options };
+
+    const resolvedType = payload.type || payload.priority || type;
+    const resolvedProfileId = payload.profileId ?? profileId ?? null;
+    const title = payload.title || null;
+    const message = payload.message || payload.msg || '';
+    const summary = payload.msg || [title, payload.message].filter(Boolean).join(' — ') || title || message;
+
+    if (activeRole === 'App Owner' && resolvedType !== 'emergency') {
+      return;
+    }
+
+    const isBookingMsg = [summary, title, message].some(value => value === t('newBooking') || value === 'New Booking' || value === 'Nová rezervace');
+    if (isBookingMsg && activeRole !== 'Model') {
+      return;
+    }
+
+    if (activeRole === 'Model' && resolvedProfileId && resolvedProfileId !== activeOperator?.profileId) {
+      return;
+    }
+
+    const operatorRole = activeOperator?.role || 'Operator';
+    const perms = rolePermissions[operatorRole] || {};
+
+    if (!perms.messaging && resolvedType !== 'emergency') {
+      return;
+    }
+
+    const id = payload.id ?? Date.now();
+    const newNotification = {
+      ...payload,
+      id,
+      title,
+      message,
+      msg: summary,
+      type: resolvedType,
+      profileId: resolvedProfileId,
+      read: payload.read ?? false,
+      timestamp: payload.timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      chatId: payload.chatId ?? null,
+      from: payload.from ?? null,
+      caller: payload.caller ?? null,
+      callState: payload.callState ?? null,
+      targetType: payload.targetType ?? null,
+    };
+
+    setNotifications(prev => [newNotification, ...prev]);
+    setToasts(prev => [newNotification, ...prev]);
+    playNotificationSound(resolvedType);
+    void scheduleSystemNotification(newNotification);
+
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 5000);
+  }, [activeOperator, activeRole, playNotificationSound, rolePermissions, scheduleSystemNotification, t]);
+
+  const markNotificationRead = useCallback((notificationId) => {
+    if (notificationId == null) return;
+    setNotifications(prev => prev.map(item => item.id === notificationId ? { ...item, read: true } : item));
+    setToasts(prev => prev.filter(item => item.id !== notificationId));
+  }, []);
+
+  const parseChatId = useCallback((value) => {
+    if (value == null) return null;
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string' && /^\d+$/.test(value)) return Number(value);
+    return value;
+  }, []);
+
+  const resolveNotificationTarget = useCallback((notification = {}) => {
+    const profileId = notification.profileId ?? null;
+
+    let matchingMessage = null;
+    if (notification.chatId != null) {
+      matchingMessage = messages.find(msg => msg.id === notification.chatId) || null;
+    }
+    if (!matchingMessage && notification.from) {
+      matchingMessage = messages.find(msg => (!profileId || msg.profileId === profileId) && msg.from === notification.from) || null;
+    }
+    if (!matchingMessage && profileId) {
+      matchingMessage = messages.find(msg => msg.profileId === profileId) || null;
+    }
+
+    return {
+      targetType: notification.targetType || (notification.callState ? 'call' : 'inbox'),
+      profileId: profileId ?? matchingMessage?.profileId ?? null,
+      chatId: matchingMessage?.id ?? notification.chatId ?? null,
+      from: notification.from ?? matchingMessage?.from ?? notification.caller ?? null,
+      caller: notification.caller ?? notification.from ?? matchingMessage?.from ?? null,
+      callState: notification.callState ?? null,
+    };
+  }, [messages]);
+
+  const openNotificationTarget = useCallback((notification = {}) => {
+    const target = resolveNotificationTarget(notification);
+    if (!target.profileId && !target.chatId && !target.from) return false;
+    if (target.profileId) setActiveProfileId(target.profileId);
+    setActiveTab('inbox');
+    setNotificationPanelOpen(false);
+    if (target.chatId) {
+      setSelectedChatId(target.chatId);
+      if (isMobile) setMobileView('chat');
+    } else {
+      setSelectedChatId(null);
+      if (isMobile) setMobileView('list');
+    }
+    if (target.from) {
+      setClientNotes(prev => prev[target.from] ? prev : { ...prev, [target.from]: [] });
+    }
+    if (target.targetType === 'call' && target.caller) {
+      const targetProfile = profiles.find(profile => profile.id === target.profileId);
+      setIncomingCall(prev => prev || {
+        profileId: target.profileId,
+        profileName: targetProfile?.name,
+        caller: target.caller,
+      });
+    }
+    if (notification.id != null) markNotificationRead(notification.id);
+    return true;
+  }, [isMobile, markNotificationRead, profiles, resolveNotificationTarget]);
+
+  const handleNotificationClick = useCallback((notification) => {
+    const opened = openNotificationTarget(notification);
+    if (!opened && notification?.id != null) markNotificationRead(notification.id);
+  }, [markNotificationRead, openNotificationTarget]);
+
   const RELAY_RCS_FIRST_LOGIN_PROMPT_KEY = 'nexus_relay_rcs_first_login_prompted';
   const APP_LOCK_TIMEOUT_MS = 2 * 60 * 1000;
   const backgroundedAtRef = useRef(null);
@@ -192,9 +420,6 @@ function App() {
     }
   }, [isNativeApp, isLoggedIn, token, activeOperator, verifyNativeDeviceBinding]);
 
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [mobileView, setMobileView] = useState('sidebar');
   const [isToolsExpanded, setIsToolsExpanded] = useState(false);
   const [isAppVisible, setIsAppVisible] = useState(() => typeof document === 'undefined' ? true : document.visibilityState === 'visible');
   
@@ -279,37 +504,8 @@ function App() {
     </div>
   );
 
-  const playNotificationSound = useCallback((type = 'info') => {
-    try {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const oscillator = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-
-      oscillator.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-
-      if (type === 'emergency') {
-        oscillator.type = 'sawtooth';
-        oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
-        oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
-        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-      } else {
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(type === 'success' ? 880 : 660, audioCtx.currentTime);
-        gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-      }
-
-      oscillator.start();
-      oscillator.stop(audioCtx.currentTime + 0.5);
-    } catch (e) {
-      console.warn('Audio feedback blocked by browser policies or not supported');
-    }
-  }, []);
 
   const [activeCall, setActiveCall] = useState(null);
-  const [incomingCall, setIncomingCall] = useState(null);
   const [callTime, setCallTime] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState(0);
@@ -364,7 +560,7 @@ function App() {
       });
       playNotificationSound('emergency');
     }
-  }, [timeLeft, isTimerActive]);
+  }, [timeLeft, isTimerActive, addNotification, playNotificationSound]);
 
   // API Configuration
   const API_BASE = 'https://nexus-api.myvnc.com/api';
@@ -797,38 +993,9 @@ function App() {
   const [isBugReportOpen, setIsBugReportOpen] = useState(false);
   const [bugDescription, setBugDescription] = useState('');
   const [showOnlyOnline, setShowOnlyOnline] = useState(false);
-  const [isShiftActive, setIsShiftActive] = useState(true);
-
-  // Agency Management States
-  const [isAddAgencyModalOpen, setIsAddAgencyModalOpen] = useState(false);
-  const [newAgencyData, setNewAgencyData] = useState({ name: '', region: 'UK/Europe', tier: 'Professional' });
-  const [isAddOperatorModalOpen, setIsAddOperatorModalOpen] = useState(false);
-  const [targetAgencyId, setTargetAgencyId] = useState(null);
-  const [newOperatorData, setNewOperatorData] = useState({ name: '', role: 'Operator', email: '', password: '' });
-  const [rolePermissions, setRolePermissions] = useState(MOCK_PERMISSIONS);
-  const [activeMarket, setActiveMarket] = useState(() => localStorage.getItem('nexus_activeMarket') || 'EU');
-  
-  useEffect(() => {
-    localStorage.setItem('nexus_activeMarket', activeMarket);
-  }, [activeMarket]);
-
-  const [subscriptionPlans] = useState(MOCK_PLANS);
-  const [smartReplies] = useState(MOCK_SMART_REPLIES);
-  const [stats] = useState(MOCK_STATS);
-  const [auditLogs] = useState(MOCK_AUDIT_LOG);
   const [sessions] = useState(MOCK_SESSIONS);
   const [typingProfiles, setTypingProfiles] = useState({});
-  const [notifications, setNotifications] = useState(() => {
-    const saved = localStorage.getItem('nexus_notifications');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [toasts, setToasts] = useState([]);
-  const [notificationPanelOpen, setNotificationPanelOpen] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
-
-  useEffect(() => {
-    localStorage.setItem('nexus_notifications', JSON.stringify(notifications.slice(0, 50)));
-  }, [notifications]);
 
   const emergencySafetyAlerts = useMemo(() => {
     const safetyPattern = /SAFETY GUARD|NO CHECK-OUT|PANIC/i;
@@ -838,126 +1005,6 @@ function App() {
       return item.type === 'emergency' && (item.category === 'safety-guard' || safetyPattern.test(`${title} ${message}`));
     });
   }, [notifications]);
-
-  const markNotificationRead = useCallback((notificationId) => {
-    if (notificationId == null) return;
-    setNotifications(prev => prev.map(item => item.id === notificationId ? { ...item, read: true } : item));
-    setToasts(prev => prev.filter(item => item.id !== notificationId));
-  }, []);
-
-  const resolveNotificationTarget = useCallback((notification = {}) => {
-    const profileId = notification.profileId ?? null;
-
-    let matchingMessage = null;
-    if (notification.chatId != null) {
-      matchingMessage = messages.find(msg => msg.id === notification.chatId) || null;
-    }
-    if (!matchingMessage && notification.from) {
-      matchingMessage = messages.find(msg => (!profileId || msg.profileId === profileId) && msg.from === notification.from) || null;
-    }
-    if (!matchingMessage && profileId) {
-      matchingMessage = messages.find(msg => msg.profileId === profileId) || null;
-    }
-
-    return {
-      targetType: notification.targetType || (notification.callState ? 'call' : 'inbox'),
-      profileId: profileId ?? matchingMessage?.profileId ?? null,
-      chatId: matchingMessage?.id ?? notification.chatId ?? null,
-      from: notification.from ?? matchingMessage?.from ?? notification.caller ?? null,
-      caller: notification.caller ?? notification.from ?? matchingMessage?.from ?? null,
-      callState: notification.callState ?? null,
-    };
-  }, [messages]);
-
-  const hasNotificationTarget = useCallback((notification = {}) => {
-    const target = resolveNotificationTarget(notification);
-    return Boolean(target.profileId || target.chatId || target.from);
-  }, [resolveNotificationTarget]);
-
-  const openNotificationTarget = useCallback((notification = {}) => {
-    const target = resolveNotificationTarget(notification);
-
-    if (!target.profileId && !target.chatId && !target.from) {
-      return false;
-    }
-
-    if (target.profileId) {
-      setActiveProfileId(target.profileId);
-    }
-
-    setActiveTab('inbox');
-    setNotificationPanelOpen(false);
-
-    if (target.chatId) {
-      setSelectedChatId(target.chatId);
-      if (isMobile) {
-        setMobileView('chat');
-      }
-    } else {
-      setSelectedChatId(null);
-      if (isMobile) {
-        setMobileView('list');
-      }
-    }
-
-    if (target.from) {
-      setClientNotes(prev => prev[target.from] ? prev : { ...prev, [target.from]: [] });
-    }
-
-    if (target.targetType === 'call' && target.caller) {
-      const targetProfile = profiles.find(profile => profile.id === target.profileId);
-      setIncomingCall(prev => prev || {
-        profileId: target.profileId,
-        profileName: targetProfile?.name,
-        caller: target.caller,
-      });
-    }
-
-    if (notification.id != null) {
-      markNotificationRead(notification.id);
-    }
-
-    return true;
-  }, [isMobile, markNotificationRead, profiles, resolveNotificationTarget]);
-
-  const handleNotificationClick = useCallback((notification) => {
-    const opened = openNotificationTarget(notification);
-    if (!opened && notification?.id != null) {
-      markNotificationRead(notification.id);
-    }
-  }, [markNotificationRead, openNotificationTarget]);
-
-  const scheduleSystemNotification = useCallback(async (notification) => {
-    if (!isNativeApp || isAppVisible) {
-      return;
-    }
-
-    try {
-      const title = notification.title || (notification.callState ? (t('incomingCall') || 'Incoming Call') : (t('notifications') || 'Notification'));
-      const body = notification.message || notification.msg || title;
-
-      await LocalNotifications.schedule({
-        notifications: [{
-          id: Number(String(Date.now()).slice(-9)),
-          title,
-          body,
-          channelId: 'nexus-events',
-          schedule: { at: new Date(Date.now() + 50) },
-          extra: {
-            notificationId: notification.id,
-            profileId: notification.profileId ?? null,
-            chatId: notification.chatId ?? null,
-            from: notification.from ?? null,
-            caller: notification.caller ?? null,
-            callState: notification.callState ?? null,
-            targetType: notification.targetType ?? null,
-          },
-        }],
-      });
-    } catch (error) {
-      console.warn('[Notifications] Failed to schedule local notification', error);
-    }
-  }, [isAppVisible, isNativeApp, t]);
 
   useEffect(() => {
     if (!isNativeApp) {
@@ -1009,74 +1056,6 @@ function App() {
     };
   }, [isNativeApp, openNotificationTarget]);
 
-  const addNotification = useCallback((input, type = 'info', profileId = null, options = {}) => {
-    const payload = typeof input === 'object' && input !== null
-      ? input
-      : { msg: input, type, profileId, ...options };
-
-    const resolvedType = payload.type || payload.priority || type;
-    const resolvedProfileId = payload.profileId ?? profileId ?? null;
-    const title = payload.title || null;
-    const message = payload.message || payload.msg || '';
-    const summary = payload.msg || [title, payload.message].filter(Boolean).join(' — ') || title || message;
-
-    // Silencing operational notifications for App Owner as they are ballast for this role
-    if (activeRole === 'App Owner' && resolvedType !== 'emergency') {
-      return;
-    }
-
-    // New Booking notifications are only necessary for Models
-    const isBookingMsg = [summary, title, message].some(value => value === t('newBooking') || value === 'New Booking' || value === 'Nová rezervace');
-    if (isBookingMsg && activeRole !== 'Model') {
-      return;
-    }
-
-    // Filter notification for models - they should only see their own
-    if (activeRole === 'Model' && resolvedProfileId && resolvedProfileId !== activeOperator?.profileId) {
-      return;
-    }
-
-    const operatorRole = activeOperator?.role || 'Operator';
-    const perms = rolePermissions[operatorRole] || {};
-
-    // Fallback permission check
-    if (!perms.messaging && resolvedType !== 'emergency') {
-      return;
-    }
-
-    const id = payload.id ?? Date.now();
-    const newNotification = {
-      ...payload,
-      id,
-      title,
-      message,
-      msg: summary,
-      type: resolvedType,
-      profileId: resolvedProfileId,
-      read: payload.read ?? false,
-      timestamp: payload.timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      chatId: payload.chatId ?? null,
-      from: payload.from ?? null,
-      caller: payload.caller ?? null,
-      callState: payload.callState ?? null,
-      targetType: payload.targetType ?? null,
-    };
-
-    setNotifications(prev => [newNotification, ...prev]);
-    setToasts(prev => [newNotification, ...prev]);
-    playNotificationSound(resolvedType);
-    void scheduleSystemNotification(newNotification);
-
-    // Auto-dismiss toast from screen after 5 seconds
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
-    }, 5000);
-  }, [activeOperator, activeRole, playNotificationSound, rolePermissions, scheduleSystemNotification, t]);
-
-  const parseChatId = useCallback((value) => {
-    if (value == null) return null;
-    if (typeof value === 'number') return value;
-    if (typeof value === 'string' && /^\d+$/.test(value)) return Number(value);
     return value;
   }, []);
 
