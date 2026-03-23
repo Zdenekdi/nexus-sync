@@ -16,7 +16,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 
-const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestRelayPermissions }) => {
+const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, requestRelayPermissions }) => {
   const RELAY_API_BASE = 'https://nexus-api.myvnc.com';
   const [isActive, setIsActive] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState('connecting');
@@ -228,16 +228,48 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
     return () => clearInterval(interval);
   }, [isActive]);
 
-  useEffect(() => {
-    // Sync relay status to native side for background forwarding
-    if (window.Capacitor?.Plugins?.NexusRelay) {
-      window.Capacitor.Plugins.NexusRelay.configureRelay({
+  const syncRelayToNative = async (active) => {
+    if (!window.Capacitor?.Plugins?.NexusRelay) return;
+    let installationId = localStorage.getItem('nexus_installation_id');
+    if (!installationId) {
+      try {
+        const devicePlugin = window.Capacitor?.Plugins?.Device;
+        if (devicePlugin?.getId) {
+          const info = await devicePlugin.getId();
+          installationId = info?.identifier || null;
+          if (installationId) {
+            localStorage.setItem('nexus_installation_id', installationId);
+          }
+        }
+      } catch (error) {
+        console.warn('[Relay] Could not resolve installationId from device plugin', error);
+      }
+    }
+    try {
+      await window.Capacitor.Plugins.NexusRelay.configureRelay({
         baseUrl: 'https://nexus-api.myvnc.com/api/device/relay',
         deviceId: operator?.id || 'RELAY-01',
-        isActive: isActive
+        installationId: installationId || null,
+        isActive: active
       });
+    } catch (error) {
+      console.warn('[Relay] Failed to sync native relay config', error);
     }
+  };
+
+  useEffect(() => {
+    // Sync relay status to native side for background forwarding.
+    void syncRelayToNative(isActive);
   }, [isActive, operator]);
+
+  const handleExitMode = async () => {
+    setIsActive(false);
+    setConnectionStatus('disconnected');
+    await syncRelayToNative(false);
+    if (typeof onExit === 'function') {
+      onExit();
+    }
+  };
 
   useEffect(() => {
     if (window.Capacitor?.Plugins?.NexusRelay) {
@@ -564,8 +596,17 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
             <Settings size={18} /> {t('settings') || 'SETTINGS'}
           </button>
         </div>
-        <button 
-          onClick={onExit}
+        <button
+          onClick={() => {
+            if (typeof onHide === 'function') {
+              onHide();
+            }
+          }}
+          style={{ padding: '1rem', borderRadius: '14px', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)', color: 'var(--accent-color)', fontWeight: '800', cursor: 'pointer' }}>
+          {t('hideRelayPage') || 'HIDE RELAY PAGE'}
+        </button>
+        <button
+          onClick={handleExitMode}
           style={{ padding: '1rem', borderRadius: '14px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'var(--text-secondary)', fontWeight: '800', cursor: 'pointer' }}>
           {t('exitMode') || 'EXIT MODE'}
         </button>

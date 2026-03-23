@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Shield, Laptop, Smartphone, Globe, Activity, Building2, MapPin,
   Search, Send, MessageCircle, Clock, Check, MoreVertical,
@@ -26,6 +26,8 @@ import ResetPasswordView from './components/ResetPasswordView';
 import InventoryView from './components/InventoryView';
 import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
+import { Device } from '@capacitor/device';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { Geolocation } from '@capacitor/geolocation';
@@ -203,6 +205,9 @@ function App() {
   const activeRole = normalizeRole(activeOperator?.role);
 
   const isNativeApp = Capacitor.isNativePlatform();
+  const APP_LOCK_TIMEOUT_MS = 2 * 60 * 1000;
+  const backgroundedAtRef = useRef(null);
+  const unlockInProgressRef = useRef(false);
 
   const renderNotifications = () => (
     <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: '10px', pointerEvents: 'none' }}>
@@ -570,7 +575,71 @@ function App() {
     return `${seconds < 0 ? '-' : ''}${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
   const [showLanding, setShowLanding] = useState(!isLoggedIn);
-  const [isRelayMode, setIsRelayMode] = useState(false);
+  // Relay mode – persisted so the phone stays in relay after restart
+  const [isRelayMode, setIsRelayMode] = useState(() => {
+    return localStorage.getItem('nexus_relay_mode') === 'true';
+  });
+
+  // Persist relay mode state whenever it changes
+  useEffect(() => {
+    localStorage.setItem('nexus_relay_mode', isRelayMode ? 'true' : 'false');
+  }, [isRelayMode]);
+
+  // Helper: should a given operator auto-enter relay mode?
+  const shouldAutoRelay = useCallback((operator) => {
+    if (!operator) return false;
+    if (!Capacitor.isNativePlatform()) return false;
+    if (operator.isSuperAdmin || operator.isManager) return false;
+    // Auto-relay only for models; operators open standard dashboard by default.
+    return Boolean(operator.isModel);
+  }, [normalizeRole]);
+
+  const requestSystemUnlock = useCallback(async () => {
+    const relayPlugin = window.Capacitor?.Plugins?.NexusRelay;
+    if (!relayPlugin?.confirmDeviceCredential) {
+      return false;
+    }
+
+    try {
+      const result = await relayPlugin.confirmDeviceCredential({
+        title: 'Unlock Nexus Hub',
+        description: 'Confirm your screen lock to continue'
+      });
+      return Boolean(result?.unlocked);
+    } catch (error) {
+      console.warn('[Lock] System unlock failed', error);
+      return false;
+    }
+  }, []);
+
+  const verifyNativeDeviceBinding = useCallback(async (authToken, operator) => {
+    if (!isNativeApp || !authToken || !operator?.id) return;
+
+    try {
+      const info = await Device.getInfo();
+      const deviceId = await Device.getId();
+      const installationId = deviceId?.identifier || null;
+      if (installationId) {
+        localStorage.setItem('nexus_installation_id', installationId);
+      }
+      await fetch('https://nexus-api.myvnc.com/api/device/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          installationId,
+          profileId: operator?.profileId || null,
+          platform: info?.platform || Capacitor.getPlatform(),
+          model: info?.model || null,
+          deviceName: info?.name || null,
+        }),
+      });
+    } catch (error) {
+      console.warn('[Device] Verification endpoint unavailable', error);
+    }
+  }, [isNativeApp]);
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [bookingCollision, setBookingCollision] = useState(null);
   const [isCalendarSyncOpen, setIsCalendarSyncOpen] = useState(false);
@@ -1335,7 +1404,13 @@ function App() {
         setToken(data.token);
         setActiveOperator(data.user);
         setIsLoggedIn(true);
-        window.history.replaceState(null, '', '/dashboard');
+        void verifyNativeDeviceBinding(data.token, data.user);
+        // Auto-relay: operators / models go straight into relay mode on native
+        if (shouldAutoRelay(data.user)) {
+          setIsRelayMode(true);
+        } else {
+          window.history.replaceState(null, '', '/dashboard');
+        }
         return;
       }
     } catch (err) {
@@ -1349,7 +1424,13 @@ function App() {
       localStorage.setItem('nexus_activeOperator', JSON.stringify(operator));
       setActiveOperator(operator);
       setIsLoggedIn(true);
-      window.history.replaceState(null, '', '/dashboard');
+      void verifyNativeDeviceBinding(null, operator);
+      // Auto-relay: operators / models go straight into relay mode on native
+      if (shouldAutoRelay(operator)) {
+        setIsRelayMode(true);
+      } else {
+        window.history.replaceState(null, '', '/dashboard');
+      }
     } else {
       alert(t('loginError') || 'Invalid credentials');
     }
@@ -1725,12 +1806,59 @@ function App() {
     setShowLanding(true);
     setActiveProfileId(null);
     setSelectedChatId(null);
+    setIsRelayMode(false);
     localStorage.removeItem('nexus_isLoggedIn');
     localStorage.removeItem('nexus_activeOperator');
     localStorage.removeItem('nexus_activeClient');
     localStorage.removeItem('nexus_token');
+    localStorage.removeItem('nexus_relay_mode'); // Reset so next login auto-activates relay again
     setToken(null);
   }, []);
+
+  useEffect(() => {
+    if (!isNativeApp || !isLoggedIn) {
+      backgroundedAtRef.current = null;
+      return undefined;
+    }
+
+    let listener = null;
+    let cancelled = false;
+
+    const setupAppStateLock = async () => {
+      listener = await CapacitorApp.addListener('appStateChange', async ({ isActive }) => {
+        if (!isLoggedIn) return;
+
+        if (!isActive) {
+          backgroundedAtRef.current = Date.now();
+          return;
+        }
+
+        const pausedAt = backgroundedAtRef.current;
+        backgroundedAtRef.current = null;
+        if (!pausedAt) return;
+        if ((Date.now() - pausedAt) < APP_LOCK_TIMEOUT_MS) return;
+        if (unlockInProgressRef.current) return;
+
+        unlockInProgressRef.current = true;
+        const unlocked = await requestSystemUnlock();
+        unlockInProgressRef.current = false;
+
+        if (!unlocked && !cancelled) {
+          // Secure fallback when system lock is unavailable or cancelled.
+          handleLogout();
+        }
+      });
+    };
+
+    void setupAppStateLock();
+
+    return () => {
+      cancelled = true;
+      if (listener?.remove) {
+        void listener.remove();
+      }
+    };
+  }, [isNativeApp, isLoggedIn, handleLogout, requestSystemUnlock]);
 
   // Main UI logic
   const renderNotificationPanel = () => {
@@ -2017,7 +2145,14 @@ function App() {
         <RelayMode 
           operator={activeOperator} 
           t={t} 
-          onExit={() => setIsRelayMode(false)}
+          onHide={() => {
+            setIsRelayMode(false);
+          }}
+          onExit={() => {
+            // User explicitly exits relay – remember this so auto-relay won't re-activate on next startup
+            localStorage.setItem('nexus_relay_mode', 'false');
+            setIsRelayMode(false);
+          }}
           syncPushToken={syncPushToken}
           isSyncingPush={isSyncingPush}
           requestRelayPermissions={requestRelayPermissions}
@@ -2246,8 +2381,12 @@ function App() {
 
               {/* Relay Mode Button */}
               <button
-                onClick={() => { setIsRelayMode(true); setIsMobileMenuOpen(false); }}
-                style={{ 
+                onClick={() => {
+                  localStorage.setItem('nexus_relay_mode', 'true');
+                  setIsRelayMode(true);
+                  setIsMobileMenuOpen(false);
+                }}
+                style={{
                   display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.25rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '18px', cursor: 'pointer', width: '100%', color: 'var(--accent-color)', fontWeight: '950'
                 }}
               >

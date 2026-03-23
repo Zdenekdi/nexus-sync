@@ -1,6 +1,8 @@
 package com.nexushub.app;
 
 import android.Manifest;
+import android.app.Activity;
+import android.app.KeyguardManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -9,6 +11,7 @@ import android.provider.Settings;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyCallback;
 import android.telephony.TelephonyManager;
+import androidx.activity.result.ActivityResult;
 import androidx.annotation.RequiresApi;
 import java.nio.charset.StandardCharsets;
 import com.getcapacitor.JSObject;
@@ -16,6 +19,7 @@ import com.getcapacitor.PermissionState;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.annotation.PermissionCallback;
@@ -32,6 +36,7 @@ public class NexusRelayPlugin extends Plugin {
     static final String PREFS_NAME = "NexusRelayPrefs";
     static final String KEY_BASE_URL = "baseUrl";
     static final String KEY_DEVICE_ID = "deviceId";
+    static final String KEY_INSTALLATION_ID = "installationId";
     static final String KEY_IS_ACTIVE = "isActive";
 
     static final String SMS_PERMISSION_ALIAS = "sms";
@@ -208,6 +213,7 @@ public class NexusRelayPlugin extends Plugin {
     public void configureRelay(PluginCall call) {
         String baseUrl = call.getString("baseUrl");
         String deviceId = call.getString("deviceId");
+        String installationId = call.getString("installationId");
         Boolean isActive = call.getBoolean("isActive", false);
 
         Context context = getContext();
@@ -216,6 +222,7 @@ public class NexusRelayPlugin extends Plugin {
         
         if (baseUrl != null) editor.putString(KEY_BASE_URL, baseUrl);
         if (deviceId != null) editor.putString(KEY_DEVICE_ID, deviceId);
+        if (installationId != null) editor.putString(KEY_INSTALLATION_ID, installationId);
         boolean relayActive = isActive != null && isActive;
         editor.putBoolean(KEY_IS_ACTIVE, relayActive);
         editor.apply();
@@ -233,6 +240,40 @@ public class NexusRelayPlugin extends Plugin {
         call.resolve(ret);
     }
 
+    @PluginMethod
+    public void confirmDeviceCredential(PluginCall call) {
+        KeyguardManager keyguardManager = (KeyguardManager) getContext().getSystemService(Context.KEYGUARD_SERVICE);
+        JSObject ret = new JSObject();
+
+        if (keyguardManager == null || !keyguardManager.isDeviceSecure()) {
+            ret.put("available", false);
+            ret.put("unlocked", false);
+            call.resolve(ret);
+            return;
+        }
+
+        String title = call.getString("title", "Unlock Nexus Hub");
+        String description = call.getString("description", "Confirm your screen lock to continue");
+        Intent intent = keyguardManager.createConfirmDeviceCredentialIntent(title, description);
+
+        if (intent == null) {
+            ret.put("available", false);
+            ret.put("unlocked", false);
+            call.resolve(ret);
+            return;
+        }
+
+        startActivityForResult(call, intent, "confirmDeviceCredentialCallback");
+    }
+
+    @ActivityCallback
+    private void confirmDeviceCredentialCallback(PluginCall call, ActivityResult result) {
+        JSObject ret = new JSObject();
+        ret.put("available", true);
+        ret.put("unlocked", result != null && result.getResultCode() == Activity.RESULT_OK);
+        call.resolve(ret);
+    }
+
     public static void onMessageReceived(Context context, String from, String body) {
         onTransportMessageReceived(context, "sms", from, body, null);
     }
@@ -246,6 +287,7 @@ public class NexusRelayPlugin extends Plugin {
         boolean isActive = prefs.getBoolean(KEY_IS_ACTIVE, false);
         String baseUrl = prefs.getString(KEY_BASE_URL, null);
         String deviceId = prefs.getString(KEY_DEVICE_ID, "RELAY-DEVICE");
+        String installationId = prefs.getString(KEY_INSTALLATION_ID, null);
 
         String safeFrom = from != null ? from : "UNKNOWN";
         String safeBody = body != null ? body : "";
@@ -275,7 +317,7 @@ public class NexusRelayPlugin extends Plugin {
 
         // 2. Native Background Forwarding
         if (isActive && baseUrl != null) {
-            forwardDataNative(baseUrl, deviceId, safeTransport, safeFrom, safeBody);
+            forwardDataNative(baseUrl, deviceId, installationId, safeTransport, safeFrom, safeBody);
         }
     }
 
@@ -290,6 +332,7 @@ public class NexusRelayPlugin extends Plugin {
         boolean isActive = prefs.getBoolean(KEY_IS_ACTIVE, false);
         String baseUrl = prefs.getString(KEY_BASE_URL, null);
         String deviceId = prefs.getString(KEY_DEVICE_ID, "RELAY-DEVICE");
+        String installationId = prefs.getString(KEY_INSTALLATION_ID, null);
 
         // 1. Notify JS
         if (instance != null) {
@@ -301,11 +344,11 @@ public class NexusRelayPlugin extends Plugin {
 
         // 2. Native Background Forwarding
         if (isActive && baseUrl != null) {
-            forwardDataNative(baseUrl, deviceId, "call", from, "State: " + state);
+            forwardDataNative(baseUrl, deviceId, installationId, "call", from, "State: " + state);
         }
     }
 
-    private static void forwardDataNative(final String baseUrl, final String deviceId, final String type, final String from, final String content) {
+    private static void forwardDataNative(final String baseUrl, final String deviceId, final String installationId, final String type, final String from, final String content) {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -321,6 +364,9 @@ public class NexusRelayPlugin extends Plugin {
 
                     org.json.JSONObject jsonParam = new org.json.JSONObject();
                     jsonParam.put("deviceId", deviceId);
+                    if (installationId != null && !installationId.isEmpty()) {
+                        jsonParam.put("installationId", installationId);
+                    }
                     jsonParam.put("transport", type);
                     jsonParam.put("type", type);
                     jsonParam.put("from", from);
