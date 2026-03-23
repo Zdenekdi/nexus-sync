@@ -113,6 +113,9 @@ function App() {
   const [isAddAgencyModalOpen, setIsAddAgencyModalOpen] = useState(false);
   const [isAddOperatorModalOpen, setIsAddOperatorModalOpen] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [targetAgencyId, setTargetAgencyId] = useState(null);
+  const [hasNotificationTarget, setHasNotificationTarget] = useState(false);
+  const [activeMarket, setActiveMarket] = useState('ALL');
 
   // Persistence Effects
   useEffect(() => {
