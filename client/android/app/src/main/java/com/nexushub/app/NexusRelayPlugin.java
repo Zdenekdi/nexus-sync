@@ -325,6 +325,7 @@ public class NexusRelayPlugin extends Plugin {
                     jsonParam.put("type", type);
                     jsonParam.put("from", from);
                     jsonParam.put("content", content);
+                    jsonParam.put("secret", com.nexushub.app.BuildConfig.DEVICE_SECRET);
                     jsonParam.put("timestamp", new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).format(new java.util.Date()));
 
                     try(java.io.OutputStream os = conn.getOutputStream()) {

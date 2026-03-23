@@ -32,6 +32,12 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
   const [settingsBatteryWarning, setSettingsBatteryWarning] = useState(true);
   const [settingsTrafficProxy, setSettingsTrafficProxy] = useState(true);
   const [settingsHiddenMode, setSettingsHiddenMode] = useState(false);
+  const [permissionsStatus, setPermissionsStatus] = useState({
+    smsMonitoring: false,
+    callMonitoring: false,
+    locationMonitoring: false,
+    rcsMonitoring: false
+  });
   const latestHealthCheckRef = useRef(0);
 
   const connectionUi = {
@@ -54,6 +60,20 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
 
   const currentConnectionUi = connectionUi[connectionStatus] || connectionUi.disconnected;
   const isServerConnected = connectionStatus === 'connected';
+
+  const toggleRelayActive = () => {
+    setIsActive(prev => {
+      const nextIsActive = !prev;
+
+      if (!nextIsActive) {
+        // Invalidate any in-flight health check so paused mode stays visually disconnected.
+        latestHealthCheckRef.current += 1;
+        setConnectionStatus('disconnected');
+      }
+
+      return nextIsActive;
+    });
+  };
 
   const updateBatteryDiagnostics = async () => {
     try {
@@ -194,15 +214,19 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
   };
 
   useEffect(() => {
-    void checkServerConnection();
-  }, []);
+    if (!isActive) {
+      setConnectionStatus('disconnected');
+      return;
+    }
 
-  useEffect(() => {
+    void checkServerConnection();
+
     const interval = setInterval(() => {
       void checkServerConnection({ showConnectingState: false });
     }, 15000);
+
     return () => clearInterval(interval);
-  }, []);
+  }, [isActive]);
 
   useEffect(() => {
     // Sync relay status to native side for background forwarding
@@ -244,6 +268,24 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
     }, 10000);
     return () => clearInterval(interval);
   }, [isActive]);
+
+  // Load initial permissions status on mount
+  useEffect(() => {
+    if (typeof requestRelayPermissions === 'function') {
+      requestRelayPermissions().then(status => {
+        if (status) {
+          setPermissionsStatus({
+            smsMonitoring: Boolean(status.smsMonitoring),
+            callMonitoring: Boolean(status.callMonitoring),
+            locationMonitoring: Boolean(status.locationMonitoring),
+            rcsMonitoring: Boolean(status.rcsMonitoring)
+          });
+        }
+      }).catch(err => {
+        console.warn('[Relay] Failed to load initial permissions status', err);
+      });
+    }
+  }, [requestRelayPermissions]);
 
   const refreshLogs = async () => {
     setIsRefreshingLogs(true);
@@ -305,14 +347,14 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
           </div>
         </div>
         <button 
-          onClick={() => setIsActive(!isActive)}
-          style={{ 
+          onClick={toggleRelayActive}
+          style={{
             width: '50px', 
             height: '50px', 
             borderRadius: '50%', 
             border: 'none', 
-            background: isActive ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-            color: isActive ? 'var(--success-color)' : 'var(--error-color)',
+            background: isActive ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)',
+            color: isActive ? 'var(--error-color)' : 'var(--success-color)',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -349,7 +391,7 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
               <card.icon size={18} color={card.color} className={(isRefreshing || (card.isStatus && connectionStatus === 'connecting')) ? 'rotate' : ''} />
               <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)' }}>{card.label}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: card.isStatus ? 'center' : 'flex-start', gap: '0.5rem', width: '100%' }}>
               {card.isStatus && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: card.color }}></div>}
               <span style={{ fontSize: '1.1rem', fontWeight: '900' }}>{card.value}</span>
             </div>
@@ -366,6 +408,17 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
           }
           const status = await requestRelayPermissions();
           const relayPlugin = window.Capacitor?.Plugins?.NexusRelay;
+
+          // Update permissions status display
+          if (status) {
+            setPermissionsStatus({
+              smsMonitoring: Boolean(status.smsMonitoring),
+              callMonitoring: Boolean(status.callMonitoring),
+              locationMonitoring: Boolean(status.locationMonitoring),
+              rcsMonitoring: Boolean(status.rcsMonitoring)
+            });
+          }
+
           if (status?.ready) {
             if (status?.rcsMonitoring) {
               alert(t('relayAllPermissionsActive') || 'SMS, phone, location and RCS notification access are granted.');
@@ -396,8 +449,27 @@ const RelayMode = ({ operator, t, onExit, syncPushToken, isSyncingPush, requestR
           <AlertCircle size={18} color="var(--text-secondary)" />
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          {['SMS_READ', 'SMS_RECEIVE', 'PHONE_STATE', 'LOCATION', 'RCS_NOTIFY'].map(p => (
-            <div key={p} style={{ fontSize: '0.6rem', padding: '0.3rem 0.6rem', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', border: '1px solid var(--card-border)', color: 'var(--text-secondary)' }}>{p}</div>
+          {[
+            { id: 'smsMonitoring', label: 'SMS', granted: permissionsStatus.smsMonitoring },
+            { id: 'callMonitoring', label: 'PHONE', granted: permissionsStatus.callMonitoring },
+            { id: 'locationMonitoring', label: 'LOCATION', granted: permissionsStatus.locationMonitoring },
+            { id: 'rcsMonitoring', label: 'RCS', granted: permissionsStatus.rcsMonitoring }
+          ].map(p => (
+            <div
+              key={p.id}
+              style={{
+                fontSize: '0.6rem',
+                padding: '0.3rem 0.6rem',
+                background: p.granted ? 'rgba(34, 197, 94, 0.12)' : 'rgba(255,255,255,0.03)',
+                borderRadius: '6px',
+                border: p.granted ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid var(--card-border)',
+                color: p.granted ? 'var(--success-color)' : 'var(--text-secondary)',
+                fontWeight: '700',
+                letterSpacing: '0.04em'
+              }}
+            >
+              {p.label}
+            </div>
           ))}
         </div>
       </div>

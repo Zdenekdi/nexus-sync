@@ -2,6 +2,19 @@ const prisma = require('../services/db');
 const { registerPushToken, sendChatPush, sendCallPush } = require('../services/pushService');
 const { getIO } = require('../services/socket');
 
+const normalizeCallState = (state) => {
+  const normalized = `${state || ''}`.replace(/^State:\s*/i, '').trim().toUpperCase();
+  return normalized || 'RINGING';
+};
+
+const normalizeTransport = (value) => {
+  const normalized = `${value || ''}`.trim().toLowerCase();
+  if (normalized === 'sms' || normalized === 'rcs' || normalized === 'call') {
+    return normalized;
+  }
+  return null;
+};
+
 exports.registerPushToken = async (req, res) => {
   try {
     const { token, platform, operatorId } = req.body;
@@ -98,38 +111,43 @@ exports.sendTestPush = async (req, res) => {
 // Nexus Relay (from RelayMode.jsx in mobile app)
 exports.handleRelay = async (req, res) => {
   try {
-    const { deviceId, type, from, content, secret } = req.body;
-    
-    // Optional secret check if defined in env
-    if (process.env.DEVICE_SECRET && secret !== process.env.DEVICE_SECRET) {
-      console.warn(`[Relay] Unauthorized relay attempt from ${deviceId}`);
-      // In demo mode we might want to allow it, but let's be secure
-      // return res.status(401).json({ message: 'Unauthorized' });
+    const { deviceId, type, transport, from, content, secret } = req.body;
+    const messageTransport = normalizeTransport(transport || type);
+
+    // ── Auth: DEVICE_SECRET required ─────────────────────────────────────────
+    if (secret !== process.env.DEVICE_SECRET) {
+      console.warn(`[Relay] Unauthorized relay attempt from deviceId=${deviceId} ip=${req.ip}`);
+      return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    if (!deviceId || !type || !from || !content) {
-      return res.status(400).json({ message: 'Missing relay fields' });
+    // ── Input validation ──────────────────────────────────────────────────────
+    if (!deviceId || typeof deviceId !== 'string' || deviceId.length > 128) {
+      return res.status(400).json({ message: 'Invalid deviceId' });
+    }
+    if (!messageTransport) {
+      return res.status(400).json({ message: 'Invalid or missing transport' });
+    }
+    if (!from || typeof from !== 'string' || from.length > 64) {
+      return res.status(400).json({ message: 'Invalid from field' });
+    }
+    if (!content || typeof content !== 'string' || content.length > 4096) {
+      return res.status(400).json({ message: 'Invalid content field' });
     }
 
-    console.log(`[Relay] ${type.toUpperCase()} from ${from} (Device: ${deviceId}): ${content}`);
+    console.log(`[Relay] ${messageTransport.toUpperCase()} from ${from} (Device: ${deviceId})`);
 
     // Try to find agency context from deviceId (which is the operator's userId)
-    let agencyId = null;
-    let operatorName = 'Relay Device';
-    
     const user = await prisma.user.findUnique({
       where: { id: deviceId },
       include: { agency: true }
     });
 
-    if (user) {
-      agencyId = user.agencyId;
-      operatorName = user.name;
-    } else {
-      // Fallback for demo or unknown device
-      const firstAgency = await prisma.agency.findFirst();
-      agencyId = firstAgency?.id;
+    if (!user) {
+      console.warn(`[Relay] Unknown deviceId=${deviceId}`);
+      return res.status(404).json({ message: 'Device not registered' });
     }
+
+    const agencyId = user.agencyId;
 
     if (!agencyId) {
       return res.status(404).json({ message: 'No agency context found' });
@@ -139,43 +157,41 @@ exports.handleRelay = async (req, res) => {
     const profile = await prisma.profile.findFirst({ where: { agencyId } });
     if (!profile) return res.status(404).json({ message: 'No profile found for agency context' });
 
-    if (type === 'sms') {
-      // 1. Find/Create Chat (assuming "from" is the external client)
-      // Note: We don't have the "to" (SIM number) here, so we'll just use a generic approach
-
-      let chat = await prisma.chat.findUnique({ 
-        where: { externalId_profileId: { externalId: from, profileId: profile.id } } 
+    if (messageTransport === 'sms' || messageTransport === 'rcs') {
+      let chat = await prisma.chat.findUnique({
+        where: { externalId_profileId: { externalId: from, profileId: profile.id } }
       });
 
       if (!chat) {
-        chat = await prisma.chat.create({ 
-          data: { externalId: from, profileId: profile.id, agencyId } 
+        chat = await prisma.chat.create({
+          data: { externalId: from, profileId: profile.id, agencyId }
         });
       }
 
-      // 2. Create Message
       const createdMessage = await prisma.message.create({
-        data: { 
-          chatId: chat.id, 
-          text: content, 
-          direction: 'INBOUND', 
-          status: 'delivered' 
+        data: {
+          chatId: chat.id,
+          text: content,
+          transport: messageTransport,
+          direction: 'INBOUND',
+          status: 'delivered'
         }
       });
 
-      await prisma.chat.update({ 
-        where: { id: chat.id }, 
-        data: { lastMessageAt: new Date() } 
+      await prisma.chat.update({
+        where: { id: chat.id },
+        data: { lastMessageAt: new Date() }
       });
 
-      // 3. Socket broadcast for real-time web inbox update
       try {
         getIO().to(`agency_${agencyId}`).emit('new_message', {
           id: createdMessage.id,
           profileId: profile.id,
           chatId: chat.id,
-          from: from,
+          from,
           text: content,
+          transport: messageTransport,
+          type: messageTransport,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           status: 'delivered',
           direction: 'inbound',
@@ -185,7 +201,6 @@ exports.handleRelay = async (req, res) => {
         console.warn('[Relay] Socket emit failed', e.message);
       }
 
-      // 4. Push notification to other operators in same agency
       try {
         await sendChatPush({
           agencyId,
@@ -196,33 +211,44 @@ exports.handleRelay = async (req, res) => {
           profileName: profile.name
         });
       } catch (e) {
-        console.warn('[Relay] Push send failed', e.message);
+        console.warn(`[Relay] Push send failed for ${messageTransport}`, e.message);
       }
-    } else if (type === 'call') {
-      // Socket broadcast for incoming call
+    } else if (messageTransport === 'call') {
+      const callState = normalizeCallState(content);
+
+      await prisma.callLog.create({
+        data: {
+          profileId: profile.id,
+          from: from || 'UNKNOWN',
+          status: callState
+        }
+      });
+
       try {
         getIO().to(`agency_${agencyId}`).emit('incoming_call', {
           profileId: profile.id,
           from,
           profileName: profile.name,
-          state: content.replace('State: ', '') || 'RINGING'
+          state: callState
         });
       } catch (e) {
         console.warn('[Relay] Socket emit failed for call', e.message);
       }
 
-      // Push notification
       try {
         await sendCallPush({
           agencyId,
+          profileId: profile.id,
           from,
           caller: from,
           profileName: 'Relay Inbound',
-          callState: content.replace('State: ', '') || 'RINGING'
+          callState
         });
       } catch (e) {
         console.warn('[Relay] Push send failed for call', e.message);
       }
+    } else {
+      return res.status(400).json({ message: 'Unsupported relay transport' });
     }
 
     return res.json({ ok: true });
@@ -252,13 +278,13 @@ exports.handleGoIP = async (req, res) => {
       chat = await prisma.chat.create({ data: { externalId: src, profileId: profile.id, agencyId: profile.agencyId } });
     }
 
-    const createdMessage = await prisma.message.create({ data: { chatId: chat.id, text: msg, direction: 'INBOUND', status: 'delivered' } });
+    const createdMessage = await prisma.message.create({ data: { chatId: chat.id, text: msg, transport: 'sms', direction: 'INBOUND', status: 'delivered' } });
     await prisma.chat.update({ where: { id: chat.id }, data: { lastMessageAt: new Date() } });
 
     try {
       const { getIO } = require('../services/socket');
       getIO().to(`agency_${profile.agencyId}`).emit('new_message', {
-        id: Date.now(), profileId: profile.id, from: src, text: msg,
+        id: Date.now(), profileId: profile.id, from: src, text: msg, transport: 'sms', type: 'sms',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         status: 'delivered', direction: 'inbound'
       });
@@ -288,11 +314,17 @@ exports.handleGoIP = async (req, res) => {
 exports.handleMobileSms = async (req, res) => {
   try {
     const { from, to, text, secret } = req.body;
-    if (process.env.DEVICE_SECRET && secret !== process.env.DEVICE_SECRET) {
+    if (secret !== process.env.DEVICE_SECRET) {
       return res.status(401).json({ message: 'Unauthorized device' });
     }
-    if (!from || !to || !text) {
-      return res.status(400).json({ message: 'Missing from, to, or text' });
+    if (!from || typeof from !== 'string' || from.length > 64) {
+      return res.status(400).json({ message: 'Invalid from field' });
+    }
+    if (!to || typeof to !== 'string' || to.length > 64) {
+      return res.status(400).json({ message: 'Invalid to field' });
+    }
+    if (!text || typeof text !== 'string' || text.length > 4096) {
+      return res.status(400).json({ message: 'Invalid text field' });
     }
 
     const profile = await prisma.profile.findFirst({ where: { phoneNumber: to } });
@@ -303,13 +335,13 @@ exports.handleMobileSms = async (req, res) => {
       chat = await prisma.chat.create({ data: { externalId: from, profileId: profile.id, agencyId: profile.agencyId } });
     }
 
-    const createdMessage = await prisma.message.create({ data: { chatId: chat.id, text, direction: 'INBOUND', status: 'delivered' } });
+    const createdMessage = await prisma.message.create({ data: { chatId: chat.id, text, transport: 'sms', direction: 'INBOUND', status: 'delivered' } });
     await prisma.chat.update({ where: { id: chat.id }, data: { lastMessageAt: new Date() } });
 
     try {
       const { getIO } = require('../services/socket');
       getIO().to(`agency_${profile.agencyId}`).emit('new_message', {
-        id: Date.now(), profileId: profile.id, from, text,
+        id: Date.now(), profileId: profile.id, from, text, transport: 'sms', type: 'sms',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         status: 'delivered', direction: 'inbound'
       });
@@ -339,19 +371,35 @@ exports.handleMobileSms = async (req, res) => {
 exports.handleMobileCall = async (req, res) => {
   try {
     const { from, to, state, secret } = req.body;
-    if (process.env.DEVICE_SECRET && secret !== process.env.DEVICE_SECRET) {
+    if (secret !== process.env.DEVICE_SECRET) {
       return res.status(401).json({ message: 'Unauthorized device' });
     }
-    if (!from || !to || !state) {
-      return res.status(400).json({ message: 'Missing from, to, or state' });
+    if (!from || typeof from !== 'string' || from.length > 64) {
+      return res.status(400).json({ message: 'Invalid from field' });
+    }
+    if (!to || typeof to !== 'string' || to.length > 64) {
+      return res.status(400).json({ message: 'Invalid to field' });
+    }
+    if (!state || typeof state !== 'string' || state.length > 32) {
+      return res.status(400).json({ message: 'Invalid state field' });
     }
 
     const profile = await prisma.profile.findFirst({ where: { phoneNumber: to } });
     if (!profile) return res.status(404).json({ message: 'Profile not found' });
 
+    const callState = normalizeCallState(state);
+
+    await prisma.callLog.create({
+      data: {
+        profileId: profile.id,
+        from: from || 'UNKNOWN',
+        status: callState
+      }
+    });
+
     try {
       const { getIO } = require('../services/socket');
-      getIO().to(`agency_${profile.agencyId}`).emit('incoming_call', { from, profileName: profile.name, profileId: profile.id, state });
+      getIO().to(`agency_${profile.agencyId}`).emit('incoming_call', { from, profileName: profile.name, profileId: profile.id, state: callState });
     } catch (e) { console.warn('Socket emit failed for call', e); }
 
     try {
@@ -361,7 +409,7 @@ exports.handleMobileCall = async (req, res) => {
         from,
         caller: from,
         profileName: profile.name,
-        callState: state
+        callState
       });
     } catch (e) {
       console.warn('Push send failed for call', e.message);
