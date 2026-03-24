@@ -4482,9 +4482,8 @@ function App() {
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '1rem' : '2rem' }}>
                   {[
-                    { node: 'NEXUS-MAIN-API', location: 'nexus-api.myvnc.com', status: 'Optimal', latency: '12ms', load: '4%' },
-                    { node: 'RELAY-UK-PROD', location: 'London Gateway', status: 'Optimal', latency: '38ms', load: '12%' },
-                    { node: 'RELAY-EU-CENTRAL', location: 'Prague Node', status: 'Optimal', latency: '15ms', load: '7%' }
+                    { node: 'VULTR-FRA-PROD (Main)', location: '78.141.202.139', status: 'Optimal', latency: '8ms', load: '3%' },
+                    { node: 'NEXUS-MAIN-API', location: 'nexus-api.myvnc.com', status: 'Optimal', latency: '15ms', load: '6%' }
                   ].map((node, i) => (
                     <div key={i} style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--card-border)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
