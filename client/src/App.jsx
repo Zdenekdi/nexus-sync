@@ -14,7 +14,7 @@ import {
   } from 'lucide-react';
 import LandingPage from './components/LandingPage';
 import RelayMode from './components/RelayMode';
-import { MOCK_OPERATORS, MOCK_CLIENTS, MOCK_AGENCIES, MOCK_PROFILES, MOCK_MESSAGES, MOCK_STATS, MOCK_CALENDAR, MOCK_SESSIONS, MOCK_AUDIT_LOG, MOCK_CHART_DATA, MOCK_SMART_REPLIES, MOCK_PLANS, MOCK_REFERRALS, MOCK_PERMISSIONS } from './DemoData';
+// Mock data imports removed for production hardening
 import { TRANSLATIONS } from './translations';
 import { useSocket } from './hooks/useSocket';
 import QAView from './components/QAView';
@@ -54,8 +54,8 @@ function App() {
         }
         return parsed;
       }
-      return MOCK_OPERATORS[5] || {}; // Default to App Owner for safety if possible
-    } catch { return MOCK_OPERATORS[5] || {}; }
+      return null; // Production: No mock fallback
+    } catch { return null; }
   });
   const [activeClient, setActiveClient] = useState(() => {
     try {
@@ -64,8 +64,8 @@ function App() {
         const parsed = JSON.parse(saved);
         if (parsed) return parsed;
       }
-      return MOCK_CLIENTS[0];
-    } catch { return MOCK_CLIENTS[0]; }
+      return null;
+    } catch { return null; }
   });
 
   const [messages, setMessages] = useState([]);
@@ -77,7 +77,7 @@ function App() {
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('nexus_activeTab') || 'dashboard');
   const [activeProfileId, setActiveProfileId] = useState(() => {
     const saved = localStorage.getItem('nexus_activeProfileId');
-    return (saved && saved !== 'undefined') ? Number(saved) : (MOCK_PROFILES[0]?.id);
+    return (saved && saved !== 'undefined') ? Number(saved) : null;
   });
   const [selectedChatId, setSelectedChatId] = useState(null);
   const [lang, setLang] = useState(() => localStorage.getItem('nexus_language') || 'en');
@@ -91,7 +91,7 @@ function App() {
       return saved ? JSON.parse(saved) : {};
     } catch { return {}; }
   });
-  const [rolePermissions, setRolePermissions] = useState(MOCK_PERMISSIONS);
+  const [rolePermissions, setRolePermissions] = useState({});
   const [notifications, setNotifications] = useState(() => {
     const saved = localStorage.getItem('nexus_notifications');
     return saved ? JSON.parse(saved) : [];
@@ -104,10 +104,10 @@ function App() {
   const [sessions, setSessions] = useState([]);
   const [typingProfiles, setTypingProfiles] = useState({});
   const [isShiftActive, setIsShiftActive] = useState(true);
-  const [subscriptionPlans] = useState(MOCK_PLANS);
-  const [smartReplies] = useState(MOCK_SMART_REPLIES);
-  const [stats] = useState(MOCK_STATS);
-  const [auditLogs] = useState(MOCK_AUDIT_LOG);
+  const [subscriptionPlans] = useState([]);
+  const [smartReplies] = useState([]);
+  const [stats] = useState({});
+  const [auditLogs] = useState([]);
   const [newAgencyData, setNewAgencyData] = useState({ name: '', region: 'International', tier: 'Pro' });
   const [newOperatorData, setNewOperatorData] = useState({ name: '', email: '', role: 'Operator', profileId: null });
   const [isAddAgencyModalOpen, setIsAddAgencyModalOpen] = useState(false);
@@ -588,7 +588,7 @@ function App() {
     duration: '60',
     type: 'work'
   });
-  const [bookingSchedule, setBookingSchedule] = useState(MOCK_CALENDAR.events);
+  const [bookingSchedule, setBookingSchedule] = useState([]);
   const [activeTimerEvent, setActiveTimerEvent] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [isTimerActive, setIsTimerActive] = useState(false);
@@ -3499,12 +3499,12 @@ function App() {
             <p style={{ color: 'var(--text-secondary)', marginBottom: isMobile ? '1.5rem' : '3rem', fontSize: isMobile ? '0.9rem' : '1.1rem' }}>{t('teamHierarchyDesc')}</p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              {MOCK_OPERATORS.filter(op => {
-                if (activeRole === 'App Owner') return !op.isSuperAdmin && !op.isModel;
-                return op.clientId === activeOperator?.clientId && !op.isAdmin && !op.isSuperAdmin;
+              {operators.filter(op => {
+                if (activeRole === 'App Owner') return true;
+                return op.agencyId === activeOperator?.agencyId;
               }).map(op => {
-                const assignedModels = MOCK_PROFILES.filter(p => p.operators.some(o => o.id === op.id && o.active));
-                const agency = MOCK_AGENCIES.find(a => a.id === op.clientId);
+                const assignedModels = profiles.filter(p => (p.operators || p.assignees || []).some(o => o.id === op.id || o === op.id));
+                const agency = agencies.find(a => a.id === op.agencyId);
                 return (
                   <div key={op.id} className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '2rem', flexDirection: isMobile ? 'column' : 'row', gap: '1.5rem' }}>
@@ -3577,10 +3577,10 @@ function App() {
 
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
               {[
-                { label: (t('clicks') || '').toUpperCase(), value: MOCK_REFERRALS[activeOperator?.id]?.stats?.clicks || 0, icon: Activity, color: '#3b82f6' },
-                { label: (t('signups') || '').toUpperCase(), value: MOCK_REFERRALS[activeOperator?.id]?.stats?.signups || 0, icon: UserPlus, color: '#10b981' },
-                { label: (t('earned') || '').toUpperCase(), value: MOCK_REFERRALS[activeOperator?.id]?.stats?.earned || '£0', icon: Trophy, color: '#f59e0b' },
-                { label: (t('pending') || '').toUpperCase(), value: MOCK_REFERRALS[activeOperator?.id]?.stats?.pending || '£0', icon: Clock, color: 'var(--text-secondary)' }
+                { label: (t('clicks') || '').toUpperCase(), value: 0, icon: Activity, color: '#3b82f6' },
+                { label: (t('signups') || '').toUpperCase(), value: 0, icon: UserPlus, color: '#10b981' },
+                { label: (t('earned') || '').toUpperCase(), value: '£0', icon: Trophy, color: '#f59e0b' },
+                { label: (t('pending') || '').toUpperCase(), value: '£0', icon: Clock, color: 'var(--text-secondary)' }
               ].map((stat, i) => (
                 <div key={i} className="glass-card" style={{ padding: '1.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
@@ -3602,7 +3602,7 @@ function App() {
                 </p>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <div style={{ flex: 1, background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--card-border)', fontFamily: 'monospace', fontSize: '0.9rem', color: '#f59e0b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {MOCK_REFERRALS[activeOperator?.id]?.link || 'https://nexus.sync/ref/default'}
+                    {'https://nexus.sync/ref/' + (activeOperator?.id || 'default')}
                   </div>
                   <button className="action-btn" style={{ width: 'auto', padding: '0 1.5rem', marginTop: 0, background: 'var(--accent-color)' }}>
                     <Copy size={18} />
@@ -3650,11 +3650,11 @@ function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {(MOCK_REFERRALS[activeOperator?.id]?.history || []).map((item) => (
+                    {([]).map((item) => (
                       <tr key={item.id} style={{ borderTop: '1px solid var(--card-border)' }}>
                         <td style={{ padding: '1.25rem 1rem' }}>
                           <div style={{ fontWeight: '700' }}>{item.entity}</div>
-                          <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>ID: REF-{item.id}00X</div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>ID: REF-{item.id}</div>
                         </td>
                         <td style={{ padding: '1.25rem 1rem', fontSize: '0.85rem' }}>{item.date}</td>
                         <td style={{ padding: '1.25rem 1rem' }}>
@@ -3663,17 +3663,17 @@ function App() {
                             borderRadius: '6px',
                             fontSize: '0.7rem',
                             fontWeight: '800',
-                            background: item.status === 'Active' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                            color: item.status === 'Active' ? '#10b981' : '#f59e0b',
-                            border: `1px solid ${item.status === 'Active' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)'}`
+                            background: 'rgba(16, 185, 129, 0.1)',
+                            color: '#10b981',
+                            border: '1px solid rgba(16, 185, 129, 0.2)'
                           }}>
-                            {item.status.toUpperCase()}
+                            ACTIVE
                           </span>
                         </td>
-                        <td style={{ padding: '1.25rem 1rem', textAlign: 'right', fontWeight: '800', color: '#f59e0b' }}>{item.reward}</td>
+                        <td style={{ padding: '1.25rem 1rem', textAlign: 'right', fontWeight: '800', color: '#f59e0b' }}>£0</td>
                       </tr>
                     ))}
-                    {(!MOCK_REFERRALS[activeOperator?.id]?.history || MOCK_REFERRALS[activeOperator?.id]?.history?.length === 0) && (
+                    {true && (
                       <tr>
                         <td colSpan="4" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                           {t('noReferralActivity')}
@@ -3963,7 +3963,7 @@ function App() {
             </div>
             {isMobile ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {MOCK_AUDIT_LOG.filter(log => availableOperators.some(op => op.name === log.operator)).map(log => (
+                {auditLogs.filter(log => availableOperators.some(op => op.name === log.operator)).map(log => (
                   <div key={log.id} className="glass-card" style={{ padding: '1.25rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '700' }}>{log.timestamp}</span>
@@ -4076,7 +4076,7 @@ function App() {
               <div className="glass-card" style={{ padding: '2rem', marginTop: '3rem' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '2rem' }}>{t('operatorPerformance')}</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {MOCK_OPERATORS.filter(op => op?.clientId === activeOperator?.clientId && !op?.isAdmin && !op?.isSuperAdmin).map(op => (
+                  {operators.filter(op => op?.agencyId === activeOperator?.agencyId && op?.role?.name !== 'System Owner').map(op => (
                     <div key={op.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <div style={{ width: '40px', height: '40px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: 'var(--accent-color)' }}>{op.avatar}</div>
