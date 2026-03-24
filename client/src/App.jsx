@@ -40,10 +40,10 @@ const DEFAULT_ROLE_PERMISSIONS = {
     global_features: true,
     hierarchy: false,
     analytics: true,
-    messaging: false,
-    calendar: false,
-    profiles: false,
-    web_profiles: false,
+    messaging: true,
+    calendar: true,
+    profiles: true,
+    web_profiles: true,
     device_setup: true,
     audit_logs: true,
     qa_hub: false,
@@ -1918,8 +1918,8 @@ function App() {
 
   // Memoized Derived Data
   const availableOperators = useMemo(() =>
-    activeOperator?.isAppOwner ? operators : operators.filter(op => op.clientId === activeOperator?.clientId),
-    [activeOperator?.clientId, activeOperator?.isAppOwner, operators]
+    activeOperator?.isAppOwner ? operators : operators.filter(op => op.agencyId === activeOperator?.agencyId),
+    [activeOperator?.agencyId, activeOperator?.isAppOwner, operators]
   );
 
   const myProfiles = useMemo(() =>
@@ -1935,17 +1935,17 @@ function App() {
   const filteredProfiles = useMemo(() => {
     if (activeRole === 'App Owner') return profiles;
     if (activeRole === 'Agency Manager' || activeRole === 'Agency Admin') {
-      return profiles.filter(p => p.clientId === activeOperator?.clientId);
+      return profiles.filter(p => p.agencyId === activeOperator?.agencyId);
     }
     return profiles.filter(p => 
       p.operators?.some(o => o.id === activeOperator?.id) || 
       p.assignees?.some(a => a.id === activeOperator?.id)
     );
-  }, [profiles, activeOperator?.clientId, activeOperator?.id, activeRole]);
+  }, [profiles, activeOperator?.agencyId, activeOperator?.id, activeRole]);
 
   const allAgencyProfiles = useMemo(() =>
-    activeRole === 'App Owner' ? profiles : profiles.filter(p => p.clientId === activeOperator?.clientId),
-    [profiles, activeOperator?.clientId, activeRole]
+    activeRole === 'App Owner' ? profiles : profiles.filter(p => p.agencyId === activeOperator?.agencyId),
+    [profiles, activeOperator?.agencyId, activeRole]
   );
 
   const activeProfile = useMemo(() =>
@@ -4528,8 +4528,8 @@ function App() {
                 {isMobile ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {agencies.map((agency) => {
-                      const agencyProfilesCount = profiles.filter(p => p.clientId === agency.id).length;
-                      const agencyOps = operators.filter(o => o.clientId === agency.id);
+                      const agencyProfilesCount = profiles.filter(p => p.agencyId === agency.id).length;
+                      const agencyOps = operators.filter(o => o.agencyId === agency.id);
                       return (
                         <div key={agency.id} className="glass-card" style={{ padding: '1.5rem' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
@@ -4589,7 +4589,7 @@ function App() {
                               <button
                                 onClick={() => {
                                   setActiveClient(agency);
-                                  const clientOp = operators.find(o => o.clientId === agency.id) || operators.find(o => o.id === 'op-1');
+                                  const clientOp = operators.find(o => o.agencyId === agency.id) || operators.find(o => o.id === 'op-1');
                                   setActiveOperator(clientOp);
                                   setActiveTab('dashboard');
                                 }}
