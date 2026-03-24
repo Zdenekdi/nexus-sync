@@ -1,7 +1,7 @@
+const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '..', '.env') });
 const { PrismaClient } = require('@prisma/client');
 const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
 
 const prisma = new PrismaClient();
 const oldDbPath = path.join(__dirname, '..', 'prisma', 'prisma', 'dev.db');
