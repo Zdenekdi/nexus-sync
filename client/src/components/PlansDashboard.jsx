@@ -12,7 +12,7 @@ const PlansDashboard = ({ t, lang, subscriptionPlans, activeMarket, setActiveMar
         </div>
         
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '0.5rem', display: 'flex', gap: '0.25rem', width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'center' : 'flex-start' }}>
-          {(lang === 'cz' ? ['CZ', 'EU'] : ['EU', 'UK']).map(market => (
+          {['cz', 'eu', 'uk'].map(market => (
             <button
               key={market}
               onClick={() => setActiveMarket(market)}
@@ -28,7 +28,7 @@ const PlansDashboard = ({ t, lang, subscriptionPlans, activeMarket, setActiveMar
                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
               }}
             >
-              {market === 'CZ' ? 'CZ (Kč)' : market === 'UK' ? 'UK (£)' : 'EU (€)'}
+              {market === 'cz' ? 'CZ (Kč)' : market === 'uk' ? 'UK (£)' : 'EU (€)'}
             </button>
           ))}
         </div>
@@ -63,31 +63,31 @@ const PlansDashboard = ({ t, lang, subscriptionPlans, activeMarket, setActiveMar
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                 <div>
                   <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.5rem' }}>{plan.name}</h3>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
-                    <div style={{ fontSize: '1.25rem', color: 'var(--accent-color)', fontWeight: '800' }}>
-                      {lang === 'cz' ? plan.prices.CZ : plan.prices.EU}
-                    </div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
-                      / {lang === 'cz' ? plan.prices.EU : plan.prices.UK}
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+                      <div style={{ fontSize: '1.25rem', color: 'var(--accent-color)', fontWeight: '800' }}>
+                        {plan.prices[activeMarket.toLowerCase()]}
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
+                        {activeMarket === 'cz' ? plan.prices.eu : (activeMarket === 'uk' ? plan.prices.eu : plan.prices.cz)}
+                      </div>
                     </div>
                   </div>
+                  <div style={{ width: '48px', height: '48px', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <CreditCard size={24} color="#6366f1" />
+                  </div>
                 </div>
-                <div style={{ width: '48px', height: '48px', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CreditCard size={24} color="#6366f1" />
-                </div>
-              </div>
-              
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: '1.6' }}>{plan.description}</p>
-              
-              <div style={{ marginBottom: '2rem' }}>
-                <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.1em' }}>{t('includedFeatures')}</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {(plan.features || []).map((feat, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.85rem' }}>
-                      <Check size={14} color="var(--success-color)" />
-                      <span>{feat}</span>
-                    </div>
-                  ))}
+                
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: '1.6' }}>{plan.description}</p>
+                
+                <div style={{ marginBottom: '2rem' }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.1em' }}>{t('includedFeatures')}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {(plan.features || []).map((feat, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.85rem' }}>
+                        <Check size={14} color="var(--success-color)" />
+                        <span>{t(feat)}</span>
+                      </div>
+                    ))}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.85rem' }}>
                     <Users size={14} color="var(--accent-color)" />
                     <span>{t('profilesLimitLabel', { count: plan.profilesLimit })}</span>

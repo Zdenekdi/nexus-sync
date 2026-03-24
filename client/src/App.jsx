@@ -201,26 +201,26 @@ function App() {
     {
       id: 'basic',
       name: 'Basic Node',
-      prices: { CZ: '2,900 Kč', EU: '120 €', UK: '110 £' },
+      prices: { cz: '2,900 Kč', eu: '120 €', uk: '110 £' },
       description: 'Standard relay capabilities for small teams.',
       profilesLimit: 5,
-      features: ['24/7 SMS Relay', 'Call Notifications', 'Basic Analytics']
+      features: ['feat_sms', 'feat_calls', 'feat_analytics']
     },
     {
       id: 'pro',
       name: 'Professional',
-      prices: { CZ: '7,500 Kč', EU: '300 €', UK: '280 £' },
+      prices: { cz: '7,500 Kč', eu: '300 €', uk: '280 £' },
       description: 'Advanced features for growing agencies.',
       profilesLimit: 25,
-      features: ['AI Smart Replies', 'Custom Proxies', 'Priority Support', 'Full Audit Log']
+      features: ['feat_sms', 'feat_calls', 'feat_smart_replies', 'feat_proxies', 'feat_priority', 'feat_audit']
     },
     {
       id: 'enterprise',
       name: 'Enterprise',
-      prices: { CZ: '15,000 Kč', EU: '600 €', UK: '550 £' },
+      prices: { cz: '15,000 Kč', eu: '600 €', uk: '550 £' },
       description: 'Full-scale infrastructure control and customization.',
       profilesLimit: 100,
-      features: ['Dedicated API Gateway', 'AI Voice Relay', 'White-label Dashboard', 'Custom AI Training']
+      features: ['feat_sms', 'feat_calls', 'feat_gateway', 'feat_voice', 'feat_whitelabel', 'feat_training']
     }
   ]);
   const [smartReplies] = useState([]);
@@ -233,7 +233,7 @@ function App() {
   const [isMuted, setIsMuted] = useState(false);
   const [targetAgencyId, setTargetAgencyId] = useState(null);
   const [hasNotificationTarget, setHasNotificationTarget] = useState(false);
-  const [activeMarket, setActiveMarket] = useState('ALL');
+  const [activeMarket, setActiveMarket] = useState(lang === 'cz' ? 'cz' : 'eu');
 
   // Persistence Effects
   useEffect(() => {
@@ -4301,9 +4301,9 @@ function App() {
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '1rem' : '2rem' }}>
                   {[
-                    { node: 'UK-LDN-01', location: 'London, UK', status: 'Optimal', latency: '42ms', load: '12%' },
-                    { node: 'US-NYC-04', location: 'New York, USA', status: 'Optimal', latency: '115ms', load: '28%' },
-                    { node: 'EU-PRG-02', location: 'Prague, CZ', status: 'Optimal', latency: '18ms', load: '5%' }
+                    { node: 'NEXUS-API-PROD', location: 'Frankfurt, DE (Vultr)', status: stats.uptime ? 'Optimal' : 'Checking', latency: '24ms', load: '12%' },
+                    { node: 'UK-LDN-RELAY', location: 'London, UK (Residential)', status: 'Optimal', latency: '42ms', load: '8%' },
+                    { node: 'EU-PRG-RELAY', location: 'Prague, CZ (Residential)', status: 'Optimal', latency: '18ms', load: '5%' }
                   ].map((node, i) => (
                     <div key={i} style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--card-border)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>

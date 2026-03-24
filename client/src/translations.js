@@ -466,7 +466,23 @@ export const TRANSLATIONS = {
         modeManagersAndAssigned: 'Managers + Assigned Operators',
         modeAssignedOnly: 'Strictly Assigned Operators Only',
         teamSeats: 'TEAM SEATS',
-        regionalReach: 'REGIONAL REACH'
+        regionalReach: 'REGIONAL REACH',
+        feat_sms: '24/7 SMS Relay',
+        feat_calls: 'Call Notifications',
+        feat_analytics: 'Basic Analytics',
+        feat_smart_replies: 'AI Smart Replies',
+        feat_proxies: 'Custom Proxies',
+        feat_priority: 'Priority Support',
+        feat_audit: 'Full Audit Log',
+        feat_gateway: 'Dedicated API Gateway',
+        feat_voice: 'AI Voice Relay',
+        feat_whitelabel: 'White-label Dashboard',
+        feat_training: 'Custom AI Training',
+        systemLoad: 'SYSTEM LOAD OVERVIEW',
+        revenueGrowth: 'REVENUE GROWTH',
+        conversionOverview: 'CONVERSION OVERVIEW',
+        revenueTrend: 'REVENUE TREND',
+        bookings: 'Bookings'
     },
     cz: {
         logo: 'NEXUSSYNC',
@@ -930,6 +946,22 @@ export const TRANSLATIONS = {
         modeManagersAndAssigned: 'Manažeři + Přiřazení operátoři',
         modeAssignedOnly: 'Pouze přiřazení operátoři',
         teamSeats: 'TÝMOVÁ MÍSTA',
-        regionalReach: 'REGIONÁLNÍ DOSAH'
+        regionalReach: 'REGIONÁLNÍ DOSAH',
+        feat_sms: '24/7 SMS Relay',
+        feat_calls: 'Hovory & Notifikace',
+        feat_analytics: 'Základní analytika',
+        feat_smart_replies: 'AI Chytré odpovědi',
+        feat_proxies: 'Vlastní Proxy',
+        feat_priority: 'Prioritní podpora',
+        feat_audit: 'Kompletní auditní log',
+        feat_gateway: 'Vyhrazená API brána',
+        feat_voice: 'AI Hlasové relé',
+        feat_whitelabel: 'White-label Dashboard',
+        feat_training: 'Vlastní trénování AI',
+        systemLoad: 'PŘEHLED ZÁTĚŽE SYSTÉMU',
+        revenueGrowth: 'RŮST PŘÍJMŮ',
+        conversionOverview: 'PŘEHLED KONVERZÍ',
+        revenueTrend: 'TREND PŘÍJMŮ',
+        bookings: 'Rezervace'
     }
 };
