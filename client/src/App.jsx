@@ -1464,14 +1464,22 @@ function App() {
     fetchServerData();
   }, [isLoggedIn]);
 
+  const [isLoginLoading, setIsLoginLoading] = useState(false);
+
   // Login handler – tries real API first, falls back to DemoData
   const handleLogin = async (email, password) => {
+    setIsLoginLoading(true);
+    const start = performance.now();
     try {
+      console.log('[Performance] Starting API login fetch...');
       const res = await fetch('https://nexus-api.myvnc.com/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
+
+      const end = performance.now();
+      console.log(`[Performance] API login fetch took ${(end - start).toFixed(2)}ms`);
 
       if (res.ok) {
         const data = await res.json();
@@ -1483,35 +1491,22 @@ function App() {
         setIsLoggedIn(true);
         void verifyNativeDeviceBinding(data.token, data.user);
         void maybePromptRcsAccessOnFirstLogin(data.user);
-        // Auto-relay: operators / models go straight into relay mode on native
         if (shouldAutoRelay(data.user)) {
           setIsRelayMode(true);
         } else {
           window.history.replaceState(null, '', '/dashboard');
         }
+        setIsLoginLoading(false);
         return;
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        alert(errorData.message || (t('loginError') || 'Invalid credentials'));
       }
     } catch (err) {
-      console.warn('[API] Real login unavailable, using mock fallback.', err);
-    }
-
-    // Fallback: DemoData mock login
-    const operator = MOCK_OPERATORS.find(op => op.email === email && op.password === password);
-    if (operator) {
-      localStorage.setItem('nexus_isLoggedIn', 'true');
-      localStorage.setItem('nexus_activeOperator', JSON.stringify(operator));
-      setActiveOperator(operator);
-      setIsLoggedIn(true);
-      void verifyNativeDeviceBinding(null, operator);
-      void maybePromptRcsAccessOnFirstLogin(operator);
-      // Auto-relay: operators / models go straight into relay mode on native
-      if (shouldAutoRelay(operator)) {
-        setIsRelayMode(true);
-      } else {
-        window.history.replaceState(null, '', '/dashboard');
-      }
-    } else {
-      alert(t('loginError') || 'Invalid credentials');
+      console.error('[API] Real login failed:', err);
+      alert('Nebylo možné se spojit s ostrým serverem. Zkontrolujte prosím připojení k internetu a stav serveru.');
+    } finally {
+      setIsLoginLoading(false);
     }
   };
 
