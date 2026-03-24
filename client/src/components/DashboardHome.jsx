@@ -3,7 +3,7 @@ import { DollarSign, Building2, Zap, Activity, TrendingUp, Users } from 'lucide-
 import { RevenueLineChart, ConversionDonutChart, MiniSparkline } from './AnalyticsCharts';
 import { MOCK_CHART_DATA, MOCK_CONVERSION_DATA, MOCK_STATS } from '../DemoData';
 
-const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], isShiftActive, setIsShiftActive, isMobile }) => {
+const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], isShiftActive, setIsShiftActive, isMobile, stats = {} }) => {
   
   const renderSuperAdmin = () => (
     <div className="fade-in">
@@ -167,22 +167,22 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
             <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center' }}>
                <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('messages')}</div>
                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-                 <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>0</div>
-                 <MiniSparkline data={[0, 0, 0, 0, 0, 0, 0]} color="var(--text-secondary)" width={40} />
+                 <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>{stats.totalMessages || 0}</div>
+                 <MiniSparkline data={stats.chartData || [0, 0, 0, 0, 0, 0, 0]} color="var(--text-secondary)" width={40} />
                </div>
             </div>
             <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center' }}>
                <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('calls')}</div>
                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-                 <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>0</div>
-                 <MiniSparkline data={[0, 0, 0, 0, 0, 0, 0]} color="var(--text-secondary)" width={40} />
+                 <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>{stats.totalCalls || 0}</div>
+                 <MiniSparkline data={stats.chartData || [0, 0, 0, 0, 0, 0, 0]} color="var(--text-secondary)" width={40} />
                </div>
             </div>
             <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center', border: '1px solid var(--accent-color)', gridColumn: 'auto' }}>
-               <div style={{ color: 'var(--accent-color)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('commission')}</div>
+               <div style={{ color: 'var(--accent-color)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('bookings').toUpperCase() || t('commission')}</div>
                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-                 <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>$0</div>
-                 <MiniSparkline data={[0, 0, 0, 0, 0, 0, 0]} color="var(--accent-color)" width={40} />
+                 <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>{stats.totalBookings || 0}</div>
+                 <MiniSparkline data={stats.chartData || [0, 0, 0, 0, 0, 0, 0]} color="var(--accent-color)" width={40} />
                </div>
             </div>
           </div>
@@ -193,7 +193,7 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
                <span style={{ fontSize: '0.8rem', color: 'var(--success-color)', fontWeight: '700' }}>+24% {t('thisWeek') || 'this week'}</span>
             </div>
             <div style={{ height: '200px' }}>
-              <RevenueLineChart data={MOCK_CHART_DATA.slice(-7)} height={200} />
+              <RevenueLineChart data={stats.chartData || [0, 0, 0, 0, 0, 0, 0]} height={200} />
             </div>
           </div>
 
