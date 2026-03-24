@@ -1858,6 +1858,35 @@ function App() {
   const currentAgency = useMemo(() => agencies.find(a => a.id === activeClient?.id) || agencies[0], [activeClient, agencies]);
 
 
+  const handleSendMessage = async (text) => {
+    if (!text?.trim() || !selectedChatId) return;
+    
+    try {
+      const chat = messages.find(m => m.id === selectedChatId);
+      if (!chat) return;
+
+      const res = await axios.post(`${API_BASE}/message`, {
+        chatId: selectedChatId,
+        text: text.trim(),
+        direction: 'OUTBOUND',
+        transport: 'sms'
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.data) {
+        setMessageValue('');
+      }
+    } catch (error) {
+      console.error('Send message error:', error);
+      addNotification({
+        title: t('sendError') || 'Error',
+        message: t('sendErrorMessage') || 'Could not send message. Please check the relay device.',
+        type: 'error'
+      });
+    }
+  };
+
   const toggleOperatorStatus = (profileId, operatorId) => {
     setProfiles(prev => prev.map(p => {
       if (p.id === profileId) {
@@ -3033,8 +3062,7 @@ function App() {
                             <button 
                               onClick={() => {
                                 if (messageValue.trim()) {
-                                  // Simplified send logic for demo
-                                  setMessageValue('');
+                                  handleSendMessage(messageValue);
                                 }
                               }}
                               style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '12px', fontWeight: '800' }}
