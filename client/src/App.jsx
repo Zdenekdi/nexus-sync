@@ -413,17 +413,29 @@ function App() {
         const startTime = performance.now();
         console.log('[Performance] Starting parallel data fetch...');
 
-        // Parallelize independent data fetches
+        const axiosWithTiming = async (url, config = {}) => {
+          const s = performance.now();
+          const name = url.split('/').pop();
+          try {
+            const res = await axios.get(url, { ...config, timeout: 10000 });
+            console.log(`[Performance] Fetch ${name} took ${(performance.now() - s).toFixed(2)}ms`);
+            return res;
+          } catch (err) {
+            console.warn(`[Performance] Fetch ${name} FAILED or TIMED OUT after ${(performance.now() - s).toFixed(2)}ms`, err);
+            return { data: null };
+          }
+        };
+
         const [safetyRes, profileRes, chatRes, userRes, bindingRes] = await Promise.all([
-          axios.get('https://nexus-api.myvnc.com/api/safety/sessions/active', { headers: { Authorization: `Bearer ${token}` } }).catch(e => ({ data: null })),
-          axios.get('https://nexus-api.myvnc.com/api/profiles', { headers: { Authorization: `Bearer ${token}` } }).catch(e => ({ data: [] })),
-          axios.get('https://nexus-api.myvnc.com/api/chats', { headers: { Authorization: `Bearer ${token}` } }).catch(e => ({ data: [] })),
-          axios.get('https://nexus-api.myvnc.com/api/agency/users', { headers: { Authorization: `Bearer ${token}` } }).catch(e => ({ data: [] })),
-          axios.get('https://nexus-api.myvnc.com/api/device/bindings', { headers: { Authorization: `Bearer ${token}` } }).catch(e => ({ data: { ok: false } }))
+          axiosWithTiming('https://nexus-api.myvnc.com/api/safety/sessions/active', { headers: { Authorization: `Bearer ${token}` } }),
+          axiosWithTiming('https://nexus-api.myvnc.com/api/profiles', { headers: { Authorization: `Bearer ${token}` } }),
+          axiosWithTiming('https://nexus-api.myvnc.com/api/chats', { headers: { Authorization: `Bearer ${token}` } }),
+          axiosWithTiming('https://nexus-api.myvnc.com/api/agency/users', { headers: { Authorization: `Bearer ${token}` } }),
+          axiosWithTiming('https://nexus-api.myvnc.com/api/device/bindings', { headers: { Authorization: `Bearer ${token}` } })
         ]);
 
         const endTime = performance.now();
-        console.log(`[Performance] Parallel data fetch took ${(endTime - startTime).toFixed(2)}ms`);
+        console.log(`[Performance] Parallel data fetch completed in ${(endTime - startTime).toFixed(2)}ms`);
 
         // 1. Process Safety Session
         if (safetyRes.data) {
