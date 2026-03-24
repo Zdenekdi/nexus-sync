@@ -104,7 +104,53 @@ async function migrate() {
       console.log('Profile table not found or already migrated.');
     }
 
-    console.log('--- Migration Successfully Completed ---');
+    // 5. Migrate Chats
+    try {
+      console.log('Migrating Chats...');
+      const oldChats = await getAll(db, "SELECT * FROM Chat");
+      for (const c of oldChats) {
+        await prisma.chat.upsert({
+          where: { id: c.id },
+          update: { externalId: c.externalId, profileId: c.profileId, agencyId: c.agencyId, lastMessageAt: new Date(c.lastMessageAt || Date.now()) },
+          create: { id: c.id, externalId: c.externalId, profileId: c.profileId, agencyId: c.agencyId, lastMessageAt: new Date(c.lastMessageAt || Date.now()) }
+        });
+      }
+    } catch (e) {
+      console.log('Chat table not found or empty.');
+    }
+
+    // 6. Migrate Messages
+    try {
+      console.log('Migrating Messages...');
+      const oldMsgs = await getAll(db, "SELECT * FROM Message");
+      for (const m of oldMsgs) {
+        await prisma.message.upsert({
+          where: { id: m.id },
+          update: { chatId: m.chatId, direction: m.direction, text: m.text, status: m.status || 'sent', senderId: m.senderId, createdAt: new Date(m.createdAt) },
+          create: { id: m.id, chatId: m.chatId, direction: m.direction, text: m.text, status: m.status || 'sent', senderId: m.senderId, createdAt: new Date(m.createdAt) }
+        });
+      }
+    } catch (e) {
+      console.log('Message table not found or empty.');
+    }
+
+    // 7. Migrate Assignments (Alice to Diana etc.)
+    try {
+      console.log('Migrating Profile Assignments...');
+      const oldAssigns = await getAll(db, "SELECT * FROM _ProfileAssignees");
+      // Format: A = ProfileID, B = UserID
+      for (const rel of oldAssigns) {
+        await prisma.user.update({
+          where: { id: rel.B },
+          data: { assignedProfiles: { connect: { id: rel.A } } }
+        });
+      }
+      console.log(`Restored ${oldAssigns.length} profile assignments.`);
+    } catch (e) {
+      console.log('Assignment table (_ProfileAssignees) not found or empty.');
+    }
+
+    console.log('--- Full Migration Successfully Completed ---');
   } catch (err) {
     console.error('Migration failed:', err.message);
   } finally {
