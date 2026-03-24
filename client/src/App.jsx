@@ -38,11 +38,11 @@ const DEFAULT_ROLE_PERMISSIONS = {
     permissions: true,
     plans: true,
     global_features: true,
-    hierarchy: false,
+    hierarchy: true,
     analytics: true,
-    messaging: false,
-    calendar: false,
-    profiles: false,
+    messaging: true,
+    calendar: true,
+    profiles: true,
     web_profiles: true,
     device_setup: true,
     audit_logs: true,
@@ -184,7 +184,16 @@ function App() {
   const [notificationPanelOpen, setNotificationPanelOpen] = useState(false);
   const [isAppVisible, setIsAppVisible] = useState(() => typeof document === 'undefined' ? true : document.visibilityState === 'visible');
   const [isSimulating, setIsSimulating] = useState(false);
-  const [isToolsExpanded, setIsToolsExpanded] = useState(false);
+  const [isToolsExpanded, setIsToolsExpanded] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nexus_activeOperator');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.role === 'System Owner' || parsed.role === 'App Owner' || parsed.role === 'Super Admin';
+      }
+      return false;
+    } catch { return false; }
+  });
   const [sessions, setSessions] = useState([]);
   const [typingProfiles, setTypingProfiles] = useState({});
   const [isShiftActive, setIsShiftActive] = useState(true);
