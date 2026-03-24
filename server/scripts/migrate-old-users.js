@@ -28,8 +28,8 @@ async function migrate() {
     for (const a of oldAgencies) {
       await prisma.agency.upsert({
         where: { id: a.id },
-        update: { name: a.name, region: a.region, tier: a.tier || a.plan, status: a.status },
-        create: { id: a.id, name: a.name, region: a.region, tier: a.tier || a.plan, status: a.status }
+        update: { name: a.name, region: a.region, plan: a.tier || a.plan, status: a.status || 'active' },
+        create: { id: a.id, name: a.name, region: a.region, plan: a.tier || a.plan, status: a.status || 'active' }
       });
     }
     console.log(`Restored ${oldAgencies.length} agencies.`);
