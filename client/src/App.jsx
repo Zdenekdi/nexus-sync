@@ -232,8 +232,9 @@ function App() {
   const [isAddOperatorModalOpen, setIsAddOperatorModalOpen] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [targetAgencyId, setTargetAgencyId] = useState(null);
-  const [hasNotificationTarget, setHasNotificationTarget] = useState(false);
+  const [canNavigateToNotification, setCanNavigateToNotification] = useState(false);
   const [activeMarket, setActiveMarket] = useState(lang === 'cz' ? 'cz' : 'eu');
+  const SAFETY_SUGGESTIONS = ['10:00', '14:00', '18:00', '22:00'];
 
   // Persistence Effects
   useEffect(() => {
@@ -578,6 +579,11 @@ function App() {
     if (notification.id != null) markNotificationRead(notification.id);
     return true;
   }, [isMobile, markNotificationRead, profiles, resolveNotificationTarget]);
+
+  const hasNotificationTarget = useCallback((notification) => {
+    const target = resolveNotificationTarget(notification);
+    return !!(target.profileId || target.chatId || target.from);
+  }, [resolveNotificationTarget]);
 
   const handleNotificationClick = useCallback((notification) => {
     const opened = openNotificationTarget(notification);
@@ -1580,16 +1586,6 @@ function App() {
             from: newMessage.from,
             targetType: 'inbox',
           });
-
-          // Randomly trigger other notification types for demo
-          const rand = Math.random();
-          if (rand > 0.85 && activeRole === 'Model') {
-            setTimeout(() => addNotification(t('newBooking') || 'New Booking', 'success'), 2000);
-          } else if (rand > 0.75) {
-            setTimeout(() => addNotification(t('incomingCall') || 'Incoming Call', 'emergency'), 3000);
-          } else if (rand > 0.65) {
-            setTimeout(() => addNotification('System: Session sync warning', 'warning'), 1500);
-          }
 
           setTypingProfiles(prev => {
             const next = { ...prev };
@@ -2645,9 +2641,6 @@ function App() {
             padding-top: max(env(safe-area-inset-top), 0px) !important;
             z-index: 9600 !important;
           }
-          .demo-controls {
-             bottom: max(1rem, env(safe-area-inset-bottom)) !important;
-             width: 90% !important;
           }
         }
       ` }} />
@@ -3519,7 +3512,7 @@ function App() {
                     <Clock size={18} color="var(--warning-color)" /> {t('recommendedSlots')}
                   </h3>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-                    {MOCK_CALENDAR.suggestions.map(s => (
+                    {SAFETY_SUGGESTIONS.map(s => (
                       <div key={s} className="status-badge" style={{ background: 'rgba(245, 158, 11, 0.1)', cursor: 'pointer', border: '1px solid var(--warning-color)', color: 'white' }}>{s}</div>
                     ))}
                   </div>
@@ -4301,7 +4294,7 @@ function App() {
                   <thead><tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--card-border)' }}>
                     {[t('timestamp'), t('event'), t('handledBy'), t('target'), t('hash')].map(h => <th key={h} style={{ padding: '1.25rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{h}</th>)}
                   </tr></thead>
-                  <tbody>{MOCK_AUDIT_LOG.filter(log => availableOperators.some(op => op.name === log.operator)).map(log => (
+                  <tbody>{auditLogs.filter(log => availableOperators.some(op => op.name === log.operator)).map(log => (
                     <tr key={log.id} style={{ borderBottom: '1px solid var(--card-border)' }}>
                       <td style={{ padding: '1.25rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{log.timestamp}</td>
                       <td style={{ padding: '1.25rem', fontWeight: '700' }}>{log.action}</td>

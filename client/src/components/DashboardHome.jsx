@@ -54,8 +54,8 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
           </h3>
           <div style={{ display: 'flex', justifyContent: 'center', height: '100%', alignItems: 'center' }}>
             <ConversionDonutChart data={[
-              { label: 'Active', value: 85 },
-              { label: 'Idle', value: 15 }
+              { label: 'Active', value: stats.totalProfiles ? 100 : 0 },
+              { label: 'Idle', value: stats.totalProfiles ? 0 : 100 }
             ]} />
           </div>
         </div>
