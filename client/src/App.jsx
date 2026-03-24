@@ -4109,6 +4109,7 @@ function App() {
               </div>
             )}
           </div>
+        </div>
         )}
 
         {activeTab === 'qa' && (
