@@ -4454,7 +4454,7 @@ function App() {
                 {[
                   { label: t('totalAgencies'), value: stats.totalAgencies || agencies.length, icon: <Building2 size={20} />, color: '#3b82f6', trend: `LIVE` },
                   { label: t('activeProfiles'), value: stats.totalProfiles || profiles.length, icon: <Users size={20} />, color: '#8b5cf6', trend: t('globalReach') },
-                  { label: t('monthlyRevenue'), value: stats.revenue || '£0.00', icon: <CreditCard size={20} />, color: '#10b981', trend: t('projected') },
+                  { label: 'Vultr Charges', value: '$4.01', icon: <CreditCard size={20} />, color: '#10b981', trend: 'Current Month' },
                   { label: t('systemUptime'), value: stats.uptime || '99.9%', icon: <Activity size={20} />, color: '#f59e0b', trend: t('allNodesActive') }
                 ].map((stat, i) => (
                   <div key={i} className="glass-card" style={{ padding: '1.5rem' }}>
@@ -4482,17 +4482,34 @@ function App() {
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '1rem' : '2rem' }}>
                   {[
-                    { node: 'VULTR-FRA-PROD (Main)', location: '78.141.202.139', status: 'Optimal', latency: '8ms', load: '3%' },
-                    { node: 'NEXUS-MAIN-API', location: 'nexus-api.myvnc.com', status: 'Optimal', latency: '15ms', load: '6%' }
+                    { 
+                      node: 'nexus-sync (Main)', 
+                      location: '78.141.202.139', 
+                      specs: '1 vCPU / 1GB RAM / 25GB SSD',
+                      os: 'Ubuntu 22.04 x64',
+                      status: 'Optimal', 
+                      latency: '8ms', 
+                      load: '1%' 
+                    },
+                    { 
+                      node: 'nexus-api.myvnc.com', 
+                      location: 'Secondary Node', 
+                      specs: 'Relay Active',
+                      os: 'Linux (Embedded)',
+                      status: 'Optimal', 
+                      latency: '15ms', 
+                      load: '5%' 
+                    }
                   ].map((node, i) => (
                     <div key={i} style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--card-border)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
                         <div style={{ fontWeight: '800', fontSize: '1.1rem' }}>{node.node}</div>
                         <div className="dot" style={{ background: 'var(--success-color)', position: 'static', transform: 'none' }}></div>
                       </div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>{node.location}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{node.location}</div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--accent-color)', fontWeight: '700', marginBottom: '1rem' }}>{node.specs} • {node.os}</div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: '700' }}>
-                        <span>{t('latency')}: <span style={{ color: 'var(--accent-color)' }}>{node.latency}</span></span>
+                        <span>{t('latency')}: {node.latency}</span>
                         <span>{t('load')}: {node.load}</span>
                       </div>
                       <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', marginTop: '0.75rem', overflow: 'hidden' }}>
