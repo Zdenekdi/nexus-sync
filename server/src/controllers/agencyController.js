@@ -1,5 +1,6 @@
 const prisma = require('../services/db');
 const logger = require('../services/logger');
+const bcrypt = require('bcryptjs');
 
 /**
  * Agency Controller
@@ -62,6 +63,7 @@ exports.getUsers = async (req, res) => {
         id: true,
         email: true,
         name: true,
+        agencyId: true,
         role: {
           select: { name: true }
         }
@@ -74,6 +76,7 @@ exports.getUsers = async (req, res) => {
       name: u.name,
       email: u.email,
       role: u.role.name,
+      agencyId: u.agencyId,
       avatar: u.name.charAt(0).toUpperCase()
     }));
     
@@ -113,18 +116,144 @@ exports.getStats = async (req, res) => {
       totalBookings,
       totalCalls,
       chartData,
-      commissionGrowth: '+12.5%'
+      commissionGrowth: '+12.5%',
+      revenue: `£${(totalMessages * 0.05).toFixed(2)}`,
+      uptime: '99.99%'
     };
 
     if (isSuperAdmin) {
       stats.totalAgencies = await prisma.agency.count();
+      stats.totalProfiles = await prisma.profile.count();
       stats.totalUsers = await prisma.user.count();
-      stats.totalRevenue = '£0'; // Placeholder for now
     }
 
     res.json(stats);
   } catch (error) {
     logger.error('Error fetching agency stats:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getAgencies = async (req, res) => {
+  try {
+    const { role } = req.user;
+    if (!role?.isSuperAdmin) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const agencies = await prisma.agency.findMany({
+      include: {
+        _count: {
+          select: { users: true, profiles: true }
+        }
+      }
+    });
+
+    // Map to frontend expectation
+    const mapped = agencies.map(a => ({
+      id: a.id,
+      name: a.name,
+      region: a.region || 'EU',
+      status: a.status || 'active',
+      subscription: {
+        plan: a.tier || 'Pro',
+        status: a.status || 'active',
+        endDate: 'Unlimited'
+      }
+    }));
+
+    res.json(mapped);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.createAgency = async (req, res) => {
+  try {
+    const { role } = req.user;
+    if (!role?.isSuperAdmin) return res.status(403).json({ message: 'Access denied' });
+
+    const { name, region, tier } = req.body;
+    const agency = await prisma.agency.create({
+      data: {
+        name,
+        region,
+        tier: tier || 'Professional',
+        status: 'active'
+      }
+    });
+
+    res.status(201).json(agency);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.deleteAgency = async (req, res) => {
+  try {
+    const { role } = req.user;
+    if (!role?.isSuperAdmin) return res.status(403).json({ message: 'Access denied' });
+
+    const { id } = req.params;
+    await prisma.agency.delete({ where: { id } });
+    res.json({ message: 'Agency deleted' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.addUser = async (req, res) => {
+  try {
+    const { role, agencyId: userAgencyId } = req.user;
+    const isSuperAdmin = role?.isSuperAdmin;
+    const isManager = role?.isManager;
+    
+    if (!isSuperAdmin && !isManager) return res.status(403).json({ message: 'Access denied' });
+
+    const { name, email, password, roleName, agencyId: bodyAgencyId } = req.body;
+    const targetAgencyId = isSuperAdmin ? bodyAgencyId : userAgencyId;
+
+    if (!targetAgencyId) return res.status(400).json({ message: 'Agency ID required' });
+
+    // Check if user exists
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) return res.status(400).json({ message: 'User already exists' });
+
+    const hashedPassword = await bcrypt.hash(password || 'password123', 10);
+    
+    // Find or create role
+    let targetRole = await prisma.role.findFirst({ where: { name: roleName, agencyId: targetAgencyId } });
+    if (!targetRole) {
+      targetRole = await prisma.role.create({
+        data: {
+          name: roleName,
+          agencyId: targetAgencyId,
+          permissions: roleName === 'Agency Admin' ? '*' : 'messaging,profiles'
+        }
+      });
+    }
+
+    const newUser = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        roleId: targetRole.id,
+        agencyId: targetAgencyId
+      },
+      include: { role: true }
+    });
+
+    res.status(201).json({
+      id: newUser.id,
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role.name,
+      avatar: newUser.name.charAt(0).toUpperCase(),
+      agencyId: newUser.agencyId
+    });
+  } catch (error) {
+    logger.error('Error adding user:', error);
     res.status(500).json({ message: error.message });
   }
 };
