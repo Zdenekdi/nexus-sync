@@ -44,8 +44,8 @@ const DEFAULT_ROLE_PERMISSIONS = {
     calendar: false,
     profiles: false,
     web_profiles: false,
-    device_setup: true,
-    audit_logs: true,
+    device_setup: false,
+    audit_logs: false,
     qa_hub: true,
     settings: true,
     referrals: true,
@@ -4482,9 +4482,9 @@ function App() {
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '1rem' : '2rem' }}>
                   {[
-                    { node: 'NEXUS-API-PROD', location: 'Frankfurt, DE (Vultr)', status: stats.uptime ? 'Optimal' : 'Checking', latency: '24ms', load: '12%' },
-                    { node: 'UK-LDN-RELAY', location: 'London, UK (Residential)', status: 'Optimal', latency: '42ms', load: '8%' },
-                    { node: 'EU-PRG-RELAY', location: 'Prague, CZ (Residential)', status: 'Optimal', latency: '18ms', load: '5%' }
+                    { node: 'NEXUS-MAIN-API', location: 'nexus-api.myvnc.com', status: 'Optimal', latency: '12ms', load: '4%' },
+                    { node: 'RELAY-UK-PROD', location: 'London Gateway', status: 'Optimal', latency: '38ms', load: '12%' },
+                    { node: 'RELAY-EU-CENTRAL', location: 'Prague Node', status: 'Optimal', latency: '15ms', load: '7%' }
                   ].map((node, i) => (
                     <div key={i} style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--card-border)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
