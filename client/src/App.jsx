@@ -38,7 +38,7 @@ const DEFAULT_ROLE_PERMISSIONS = {
     permissions: true,
     plans: true,
     global_features: true,
-    hierarchy: false,
+    hierarchy: true,
     analytics: true,
     messaging: true,
     calendar: true,
@@ -46,8 +46,10 @@ const DEFAULT_ROLE_PERMISSIONS = {
     web_profiles: true,
     device_setup: true,
     audit_logs: true,
-    qa_hub: false,
-    settings: true
+    qa_hub: true,
+    settings: true,
+    referrals: true,
+    inventory: true
   },
   'Agency Admin': {
     infrastructure: false,
@@ -285,8 +287,9 @@ function App() {
 
   const normalizeRole = useCallback((role) => {
     if (!role) return role;
-    if (role === 'App Owner' || role === 'App Owner') return 'App Owner';
-    return role;
+    const roleName = typeof role === 'object' ? role.name : role;
+    if (roleName === 'App Owner' || roleName === 'SUPER_ADMIN' || roleName === 'ROOT') return 'App Owner';
+    return roleName;
   }, []);
 
   const activeRole = normalizeRole(activeOperator?.role);
@@ -1182,7 +1185,7 @@ function App() {
 
   // Proactive check: Ensure App Owners start with expanded sidebar for clarity
   useEffect(() => {
-    if (activeOperator?.isAppOwner || activeOperator?.role === 'App Owner') {
+    if (activeRole === 'App Owner') {
       setIsSidebarCollapsed(false);
     }
   }, [activeOperator]);
@@ -1918,8 +1921,8 @@ function App() {
 
   // Memoized Derived Data
   const availableOperators = useMemo(() =>
-    activeOperator?.isAppOwner ? operators : operators.filter(op => op.agencyId === activeOperator?.agencyId),
-    [activeOperator?.agencyId, activeOperator?.isAppOwner, operators]
+    activeRole === 'App Owner' ? operators : operators.filter(op => op.agencyId === activeOperator?.agencyId),
+    [activeOperator?.agencyId, activeRole, operators]
   );
 
   const myProfiles = useMemo(() =>
@@ -2463,7 +2466,7 @@ function App() {
     { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
   ].filter(item => (rolePermissions[activeRole] || {})[item.perm])), [t, rolePermissions, activeRole]);
 
-  const shouldShowAssignedProfiles = !activeOperator?.isModel && !activeOperator?.isAppOwner && !activeOperator?.isAdmin;
+  const shouldShowAssignedProfiles = activeRole !== 'Model' && activeRole !== 'App Owner' && activeRole !== 'Agency Admin';
 
   const renderMobileDrawerButton = (item, { nested = false } = {}) => {
     const Icon = item.icon;
@@ -3332,7 +3335,7 @@ function App() {
                         outline: 'none'
                       }}
                     >
-                      {(activeOperator?.role === 'Owner' || activeOperator?.role === 'Manager' || activeOperator?.isAppOwner ? allAgencyProfiles : myProfiles).map(p => (
+                      {(activeRole === 'App Owner' || activeRole === 'Agency Admin' || activeRole === 'Manager' ? allAgencyProfiles : myProfiles).map(p => (
                         <option key={p.id} value={p.id} style={{ background: '#0a0c10', color: 'white' }}>{p.name}</option>
                       ))}
                     </select>
