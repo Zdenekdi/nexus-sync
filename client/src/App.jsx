@@ -43,10 +43,10 @@ const DEFAULT_ROLE_PERMISSIONS = {
     messaging: false,
     calendar: false,
     profiles: false,
-    web_profiles: true,
+    web_profiles: false,
     device_setup: true,
     audit_logs: true,
-    qa_hub: true,
+    qa_hub: false,
     settings: true
   },
   'Agency Admin': {
@@ -197,7 +197,32 @@ function App() {
   const [sessions, setSessions] = useState([]);
   const [typingProfiles, setTypingProfiles] = useState({});
   const [isShiftActive, setIsShiftActive] = useState(true);
-  const [subscriptionPlans] = useState([]);
+  const [subscriptionPlans] = useState([
+    {
+      id: 'basic',
+      name: 'Basic Node',
+      prices: { CZ: '2,900 Kč', EU: '120 €', UK: '110 £' },
+      description: 'Standard relay capabilities for small teams.',
+      profilesLimit: 5,
+      features: ['24/7 SMS Relay', 'Call Notifications', 'Basic Analytics']
+    },
+    {
+      id: 'pro',
+      name: 'Professional',
+      prices: { CZ: '7,500 Kč', EU: '300 €', UK: '280 £' },
+      description: 'Advanced features for growing agencies.',
+      profilesLimit: 25,
+      features: ['AI Smart Replies', 'Custom Proxies', 'Priority Support', 'Full Audit Log']
+    },
+    {
+      id: 'enterprise',
+      name: 'Enterprise',
+      prices: { CZ: '15,000 Kč', EU: '600 €', UK: '550 £' },
+      description: 'Full-scale infrastructure control and customization.',
+      profilesLimit: 100,
+      features: ['Dedicated API Gateway', 'AI Voice Relay', 'White-label Dashboard', 'Custom AI Training']
+    }
+  ]);
   const [smartReplies] = useState([]);
   const [stats, setStats] = useState({});
   const [auditLogs] = useState([]);
