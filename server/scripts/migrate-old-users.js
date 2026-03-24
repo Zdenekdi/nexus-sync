@@ -25,8 +25,8 @@ async function migrate() {
     for (const row of rows) {
       console.log(`Migrating: ${row.email}...`);
       
-      // Map old role logic if needed, or use default from seed
-      // Note: isSuperAdmin was the old field. We need to find the correct role in new schema.
+      // Try to match the role name if it existed in the old DB (if any) or identify by isAppOwner logic
+      const targetRole = roles.find(r => r.name === 'App Owner') || roles[0];
       
       try {
         await prisma.user.upsert({
@@ -34,13 +34,12 @@ async function migrate() {
           update: {
             name: row.name,
             password: row.password,
-            // Add other fields as necessary
           },
           create: {
             email: row.email,
             name: row.name,
             password: row.password,
-            roleId: roles[0].id, // Default to first role or match carefully
+            roleId: (row.isSuperAdmin || row.email === 'dias.zd@gmail.com') ? targetRole.id : roles.find(r => r.name === 'Operator')?.id || roles[0].id,
           }
         });
       } catch (e) {
