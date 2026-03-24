@@ -5,52 +5,78 @@ const path = require('path');
 const prisma = new PrismaClient();
 const oldDbPath = path.join(__dirname, '..', 'prisma', 'prisma', 'dev.db');
 
+async function getAll(db, query) {
+  return new Promise((resolve, reject) => {
+    db.all(query, (err, rows) => {
+      if (err) reject(err);
+      else resolve(rows);
+    });
+  });
+}
+
 async function migrate() {
-  console.log('--- Migrating users from old database ---');
+  console.log('--- Full Production Data Restoration ---');
   console.log(`Source: ${oldDbPath}`);
 
   const db = new sqlite3.Database(oldDbPath);
 
-  db.all("SELECT * FROM User", async (err, rows) => {
-    if (err) {
-      console.error('Error reading old DB:', err.message);
-      process.exit(1);
+  try {
+    // 1. Migrate Agencies
+    console.log('Migrating Agencies...');
+    const oldAgencies = await getAll(db, "SELECT * FROM Agency");
+    for (const a of oldAgencies) {
+      await prisma.agency.upsert({
+        where: { id: a.id },
+        update: { name: a.name, region: a.region, tier: a.tier || a.plan, status: a.status },
+        create: { id: a.id, name: a.name, region: a.region, tier: a.tier || a.plan, status: a.status }
+      });
+    }
+    console.log(`Restored ${oldAgencies.length} agencies.`);
+
+    // 2. Migrate Roles
+    console.log('Migrating Roles...');
+    const oldRoles = await getAll(db, "SELECT * FROM Role");
+    for (const r of oldRoles) {
+      await prisma.role.upsert({
+        where: { id: r.id },
+        update: { name: r.name, isAppOwner: r.isSuperAdmin || r.isAppOwner || false, isManager: r.isManager || false, permissions: r.permissions, agencyId: r.agencyId },
+        create: { id: r.id, name: r.name, isAppOwner: r.isSuperAdmin || r.isAppOwner || false, isManager: r.isManager || false, permissions: r.permissions, agencyId: r.agencyId }
+      });
     }
 
-    console.log(`Found ${rows.length} users in old database.`);
+    // 3. Migrate Users
+    console.log('Migrating Users...');
+    const oldUsers = await getAll(db, "SELECT * FROM User");
+    for (const u of oldUsers) {
+      await prisma.user.upsert({
+        where: { email: u.email },
+        update: { name: u.name, password: u.password, roleId: u.roleId, agencyId: u.agencyId },
+        create: { id: u.id, email: u.email, name: u.name, password: u.password, roleId: u.roleId, agencyId: u.agencyId }
+      });
+    }
 
-    // Get roles
-    const roles = await prisma.role.findMany();
-    
-    for (const row of rows) {
-      console.log(`Migrating: ${row.email}...`);
-      
-      // Try to match the role name if it existed in the old DB (if any) or identify by isAppOwner logic
-      const targetRole = roles.find(r => r.name === 'App Owner') || roles[0];
-      
-      try {
-        await prisma.user.upsert({
-          where: { email: row.email },
-          update: {
-            name: row.name,
-            password: row.password,
-          },
-          create: {
-            email: row.email,
-            name: row.name,
-            password: row.password,
-            roleId: (row.isSuperAdmin || row.email === 'dias.zd@gmail.com') ? targetRole.id : roles.find(r => r.name === 'Operator')?.id || roles[0].id,
-          }
+    // 4. Migrate Profiles (if table exists)
+    try {
+      console.log('Migrating Profiles...');
+      const oldProfiles = await getAll(db, "SELECT * FROM Profile");
+      for (const p of oldProfiles) {
+        await prisma.profile.upsert({
+          where: { id: p.id },
+          update: { name: p.name, phone: p.phone, status: p.status, agencyId: p.agencyId },
+          create: { id: p.id, name: p.name, phone: p.phone, status: p.status, agencyId: p.agencyId }
         });
-      } catch (e) {
-        console.error(`Failed to migrate ${row.email}:`, e.message);
       }
+    } catch (e) {
+      console.log('Profile table not found or already migrated.');
     }
 
-    console.log('--- Migration Complete ---');
+    console.log('--- Migration Successfully Completed ---');
+  } catch (err) {
+    console.error('Migration failed:', err.message);
+  } finally {
     await prisma.$disconnect();
     db.close();
-  });
+  }
 }
 
 migrate();
