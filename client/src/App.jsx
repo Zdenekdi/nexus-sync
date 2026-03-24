@@ -3835,7 +3835,7 @@ function App() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               {allAgencyProfiles.map((profile, i) => {
                 const isMyProfile = myProfiles.find(p => p.id === profile.id);
-                const activeCount = profile.operators.filter(op => op.active).length;
+                const activeCount = (profile.operators?.filter(op => op.active).length || 0) + (profile.assignees?.length || 0);
 
                 return (
                   <div key={i} className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2rem', display: 'flex', gap: isMobile ? '1.5rem' : '2.5rem', borderColor: isMyProfile ? 'rgba(59, 130, 246, 0.4)' : 'var(--card-border)', flexDirection: isMobile ? 'column' : 'row' }}>

@@ -21,7 +21,10 @@ const QAView = ({ t, messages = [], clientNotes = {}, clientNames = {}, updateCl
     // If a specific operator is selected, use all profiles assigned to that operator
     if (filterOperatorId !== 'all') {
       return profiles
-        .filter(p => p.operators?.some(o => o.id === filterOperatorId))
+        .filter(p => 
+          p.operators?.some(o => o.id === filterOperatorId) || 
+          p.assignees?.some(a => a.id === filterOperatorId)
+        )
         .map(p => p.id);
     }
 
@@ -82,7 +85,10 @@ const QAView = ({ t, messages = [], clientNotes = {}, clientNames = {}, updateCl
     if (filterOperatorId === 'all') {
       return profiles.filter(p => activeOperator?.isSuperAdmin || p.clientId === activeOperator?.clientId);
     }
-    return profiles.filter(p => p.operators?.some(o => o.id === filterOperatorId));
+    return profiles.filter(p => 
+      p.operators?.some(o => o.id === filterOperatorId) || 
+      p.assignees?.some(a => a.id === filterOperatorId)
+    );
   }, [filterOperatorId, profiles, activeOperator]);
 
   return (
