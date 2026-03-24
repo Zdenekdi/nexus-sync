@@ -30,8 +30,8 @@ model Role {
   name        String
   description String?
   permissions String   // JSON string
-  isSuperAdmin Boolean  @default(false)
-  isManager   Boolean  @default(false)
+  isAppOwner   Boolean  @default(false)
+  isManager    Boolean  @default(false)
   agencyId    String?
   agency      Agency?  @relation(fields: [agencyId], references: [id])
   

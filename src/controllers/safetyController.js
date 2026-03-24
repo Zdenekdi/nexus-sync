@@ -14,10 +14,10 @@ class SafetyController {
         try {
             const { profileId, bookingId, plannedEndAt, graceMinutes = 10 } = req.body;
             const { role, agencyId: userAgencyId } = req.user;
-            const isSuperAdmin = role?.isSuperAdmin;
+            const isAppOwner = role?.isAppOwner;
             
             let agencyId = userAgencyId;
-            if (!agencyId && isSuperAdmin) {
+            if (!agencyId && isAppOwner) {
                 const profile = await prisma.profile.findUnique({ where: { id: profileId } });
                 agencyId = profile?.agencyId;
             }
@@ -119,11 +119,11 @@ class SafetyController {
     async getActiveSession(req, res) {
         try {
             const { role, agencyId } = req.user || {};
-            const isSuperAdmin = role?.isSuperAdmin;
+            const isAppOwner = role?.isAppOwner;
             
             const session = await prisma.safetySession.findFirst({
                 where: {
-                    ...(isSuperAdmin ? {} : { agencyId }),
+                    ...(isAppOwner ? {} : { agencyId }),
                     state: { in: ['CHECKED_IN', 'GRACE', 'ESCALATED'] }
                 },
                 orderBy: { updatedAt: 'desc' }

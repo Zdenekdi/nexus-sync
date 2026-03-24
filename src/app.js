@@ -68,6 +68,7 @@ const CAPACITOR_ORIGINS = [
   'https://localhost',
   'capacitor://localhost',
   'http://localhost',
+  'http://localhost',
 ];
 
 app.use(cors({

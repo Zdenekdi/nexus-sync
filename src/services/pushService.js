@@ -257,7 +257,11 @@ const sendSafetyPush = async ({ agencyId, sessionId, profileId, profileName, typ
 const sendRelaySmsPush = async ({ agencyId, profileId, to, text }) => {
   // 1. Find the bound device for this profile to get the specific user/tokens
   const binding = await prisma.deviceBinding.findFirst({
-    where: { profileId, agencyId, active: true },
+    where: { 
+      profileId, 
+      active: true,
+      ...(agencyId ? { agencyId } : {})
+    },
     select: { userId: true }
   });
 
