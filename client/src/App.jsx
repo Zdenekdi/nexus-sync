@@ -1464,8 +1464,6 @@ function App() {
     fetchServerData();
   }, [isLoggedIn]);
 
-  const [isLoginLoading, setIsLoginLoading] = useState(false);
-
   // Login handler – tries real API first, falls back to DemoData
   const handleLogin = async (email, password) => {
     setIsLoginLoading(true);
