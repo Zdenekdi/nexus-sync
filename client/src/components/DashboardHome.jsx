@@ -186,7 +186,7 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
 
   if (!user) return null;
   const activeRole = user.role;
-  const isSuperAdmin = activeRole === 'App Owner' || user.isSuperAdmin;
+  const isAppOwner = activeRole === 'App Owner' || user.isAppOwner;
   const isManager = activeRole === 'Agency Admin' || activeRole === 'Manager';
   const isModel = activeRole === 'Model' || user.isModel;
 
@@ -200,7 +200,7 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
       display: 'flex',
       flexDirection: 'column'
     }}>
-      {isSuperAdmin ? renderSuperAdmin() : (isManager ? renderManager() : (isModel ? renderModel() : renderOperator()))}
+      {isAppOwner ? renderSuperAdmin() : (isManager ? renderManager() : (isModel ? renderModel() : renderOperator()))}
     </div>
   );
 };

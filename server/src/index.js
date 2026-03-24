@@ -1,4 +1,9 @@
-require('dotenv').config();
+try {
+  require('dotenv').config();
+} catch (e) {
+  console.warn('[Bootstrap] DOTENV Load failed - assuming ENV variables are set externally:', e.message);
+}
+
 const app = require('./app');
 
 const logger = require('./services/logger');

@@ -3,8 +3,9 @@ const prisma = require('../services/db');
 exports.getChats = async (req, res) => {
   try {
     const { role, agencyId } = req.user;
-    const isSuperAdmin = role?.isSuperAdmin;
-    const whereClause = isSuperAdmin ? {} : { agencyId };
+    const isAppOwner = role?.isAppOwner;
+    if (isAppOwner) return res.status(403).json({ message: 'App Owner cannot access messages' });
+    const whereClause = { agencyId };
     const chats = await prisma.chat.findMany({
       where: whereClause,
       include: { 
@@ -28,9 +29,9 @@ exports.getProfileChats = async (req, res) => {
   try {
     const { profileId } = req.params;
     const { role, agencyId } = req.user;
-    const isSuperAdmin = role?.isSuperAdmin;
-    const whereClause = { profileId };
-    if (!isSuperAdmin) whereClause.agencyId = agencyId;
+    const isAppOwner = role?.isAppOwner;
+    if (isAppOwner) return res.status(403).json({ message: 'App Owner cannot access messages' });
+    const whereClause = { profileId, agencyId };
     const chats = await prisma.chat.findMany({
       where: whereClause,
       include: { 

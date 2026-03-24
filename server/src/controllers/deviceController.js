@@ -240,9 +240,9 @@ exports.getRelayStatus = async (req, res) => {
 exports.getDeviceBindings = async (req, res) => {
   try {
     const { role, agencyId } = req.user;
-    const isSuperAdmin = role?.isSuperAdmin;
+    const isAppOwner = role?.isAppOwner;
     const isManager = role?.isManager;
-    const isAdmin = isManager || isSuperAdmin;
+    const isAdmin = isManager || isAppOwner;
     
     const bindings = await prisma.deviceBinding.findMany({
       where: isAdmin ? { agencyId } : { userId },
@@ -284,9 +284,9 @@ exports.revokeDeviceBinding = async (req, res) => {
     }
 
     // Verify ownership or permission
-    const isSuperAdmin = req.user.role?.isSuperAdmin;
+    const isAppOwner = req.user.role?.isAppOwner;
     const isManager = req.user.role?.isManager;
-    const isAdmin = isManager || isSuperAdmin;
+    const isAdmin = isManager || isAppOwner;
     if (!isAdmin && binding.userId !== userId) {
       return res.status(403).json({ ok: false, message: 'Forbidden' });
     }
@@ -313,13 +313,13 @@ exports.sendTestPush = async (req, res) => {
     }
 
     // Non-superadmin users can only target their own agency.
-    const isSuperAdmin = user.role?.isSuperAdmin;
-    const targetAgencyId = isSuperAdmin ? (requestedAgencyId || user.agencyId) : user.agencyId;
+    const isAppOwner = user.role?.isAppOwner;
+    const targetAgencyId = isAppOwner ? (requestedAgencyId || user.agencyId) : user.agencyId;
     if (!targetAgencyId) {
       return res.status(400).json({ ok: false, message: 'Missing agencyId context' });
     }
 
-    if (!isSuperAdmin && requestedAgencyId && requestedAgencyId !== user.agencyId) {
+    if (!isAppOwner && requestedAgencyId && requestedAgencyId !== user.agencyId) {
       return res.status(403).json({ ok: false, message: 'Access denied for target agency' });
     }
 
