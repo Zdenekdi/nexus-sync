@@ -16,4 +16,8 @@ router.get('/status', authMiddleware, deviceController.getRelayStatus);
 router.post('/verify', authMiddleware, express.json(), deviceController.verifyDeviceBinding);
 router.post('/push-test', authMiddleware, express.json(), deviceController.sendTestPush);
 
+// Device Management
+router.get('/bindings', authMiddleware, deviceController.getDeviceBindings);
+router.post('/revoke-binding', authMiddleware, express.json(), deviceController.revokeDeviceBinding);
+
 module.exports = router;
