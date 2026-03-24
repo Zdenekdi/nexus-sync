@@ -1673,7 +1673,10 @@ function App() {
   );
 
   const myProfiles = useMemo(() =>
-    profiles.filter(p => p.operators?.some(op => op.id === activeOperator?.id && op.active)),
+    profiles.filter(p => 
+      p.operators?.some(op => op.id === activeOperator?.id && op.active) ||
+      p.assignees?.some(a => a.id === activeOperator?.id)
+    ),
     [profiles, activeOperator?.id]
   );
 
@@ -1684,7 +1687,10 @@ function App() {
     if (activeRole === 'Agency Manager' || activeRole === 'Agency Admin') {
       return profiles.filter(p => p.clientId === activeOperator?.clientId);
     }
-    return profiles.filter(p => p.operators?.some(o => o.id === activeOperator?.id) || p.assignees?.some(a => a.id === activeOperator?.id));
+    return profiles.filter(p => 
+      p.operators?.some(o => o.id === activeOperator?.id) || 
+      p.assignees?.some(a => a.id === activeOperator?.id)
+    );
   }, [profiles, activeOperator?.clientId, activeOperator?.id, activeRole]);
 
   const allAgencyProfiles = useMemo(() =>
@@ -1703,7 +1709,10 @@ function App() {
       return profiles.filter(p => p.clientId === activeOperator?.clientId);
     }
     // For operators, show only their assigned models
-    return profiles.filter(p => p.operators?.some(o => o.id === activeOperator?.id) || p.assignees?.some(a => a.id === activeOperator?.id));
+    return profiles.filter(p => 
+      p.operators?.some(o => o.id === activeOperator?.id) || 
+      p.assignees?.some(a => a.id === activeOperator?.id)
+    );
   }, [profiles, activeRole, activeOperator]);
 
   const filteredMessages = useMemo(() => {
