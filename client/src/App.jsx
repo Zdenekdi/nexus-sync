@@ -106,7 +106,7 @@ function App() {
   const [isShiftActive, setIsShiftActive] = useState(true);
   const [subscriptionPlans] = useState([]);
   const [smartReplies] = useState([]);
-  const [stats] = useState({});
+  const [stats, setStats] = useState({});
   const [auditLogs] = useState([]);
   const [newAgencyData, setNewAgencyData] = useState({ name: '', region: 'International', tier: 'Pro' });
   const [newOperatorData, setNewOperatorData] = useState({ name: '', email: '', role: 'Operator', profileId: null });
@@ -426,16 +426,21 @@ function App() {
           }
         };
 
-        const [safetyRes, profileRes, chatRes, userRes, bindingRes] = await Promise.all([
+        const [safetyRes, profileRes, chatRes, userRes, bindingRes, statsRes] = await Promise.all([
           axiosWithTiming('https://nexus-api.myvnc.com/api/safety/sessions/active', { headers: { Authorization: `Bearer ${token}` } }),
           axiosWithTiming('https://nexus-api.myvnc.com/api/profiles', { headers: { Authorization: `Bearer ${token}` } }),
           axiosWithTiming('https://nexus-api.myvnc.com/api/chats', { headers: { Authorization: `Bearer ${token}` } }),
           axiosWithTiming('https://nexus-api.myvnc.com/api/agency/users', { headers: { Authorization: `Bearer ${token}` } }),
-          axiosWithTiming('https://nexus-api.myvnc.com/api/device/bindings', { headers: { Authorization: `Bearer ${token}` } })
+          axiosWithTiming('https://nexus-api.myvnc.com/api/device/bindings', { headers: { Authorization: `Bearer ${token}` } }),
+          axiosWithTiming('https://nexus-api.myvnc.com/api/agency/stats', { headers: { Authorization: `Bearer ${token}` } })
         ]);
 
         const endTime = performance.now();
         console.log(`[Performance] Parallel data fetch completed in ${(endTime - startTime).toFixed(2)}ms`);
+
+        if (statsRes && statsRes.data) {
+          setStats(statsRes.data);
+        }
 
         // 1. Process Safety Session
         if (safetyRes.data) {
@@ -2745,6 +2750,7 @@ function App() {
             isShiftActive={isShiftActive}
             setIsShiftActive={setIsShiftActive}
             isMobile={isMobile}
+            stats={stats}
           />
         )}
 
@@ -4070,8 +4076,6 @@ function App() {
                   <button onClick={simulateIncomingCall} className="action-btn" style={{ maxWidth: '300px' }}><Phone size={16} /> {t('simulateCall')}</button>
                 </div>
               )}
-            </div>
-
             {rolePermissions[activeRole]?.analytics && !rolePermissions[activeRole]?.infrastructure && (
               <div className="glass-card" style={{ padding: '2rem', marginTop: '3rem' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '2rem' }}>{t('operatorPerformance')}</h3>
