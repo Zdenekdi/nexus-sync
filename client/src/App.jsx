@@ -410,10 +410,22 @@ function App() {
       if (!isLoggedIn || !token) return;
       
       try {
-        // 1. Recover Safety Session
-        const safetyRes = await axios.get('https://nexus-api.myvnc.com/api/safety/sessions/active', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const startTime = performance.now();
+        console.log('[Performance] Starting parallel data fetch...');
+
+        // Parallelize independent data fetches
+        const [safetyRes, profileRes, chatRes, userRes, bindingRes] = await Promise.all([
+          axios.get('https://nexus-api.myvnc.com/api/safety/sessions/active', { headers: { Authorization: `Bearer ${token}` } }).catch(e => ({ data: null })),
+          axios.get('https://nexus-api.myvnc.com/api/profiles', { headers: { Authorization: `Bearer ${token}` } }).catch(e => ({ data: [] })),
+          axios.get('https://nexus-api.myvnc.com/api/chats', { headers: { Authorization: `Bearer ${token}` } }).catch(e => ({ data: [] })),
+          axios.get('https://nexus-api.myvnc.com/api/agency/users', { headers: { Authorization: `Bearer ${token}` } }).catch(e => ({ data: [] })),
+          axios.get('https://nexus-api.myvnc.com/api/device/bindings', { headers: { Authorization: `Bearer ${token}` } }).catch(e => ({ data: { ok: false } }))
+        ]);
+
+        const endTime = performance.now();
+        console.log(`[Performance] Parallel data fetch took ${(endTime - startTime).toFixed(2)}ms`);
+
+        // 1. Process Safety Session
         if (safetyRes.data) {
           setActiveSafetySession(safetyRes.data);
           setIsTimerActive(true);
@@ -422,29 +434,20 @@ function App() {
           setTimeLeft(Math.floor((endAt - now) / 1000));
         }
 
-        // 2. Fetch Real Profiles (only if not already fetched or to ensure sync)
-        const profileRes = await axios.get('https://nexus-api.myvnc.com/api/profiles', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        // 2. Process Profiles
         if (profileRes.data && profileRes.data.length > 0) {
           setProfiles(profileRes.data);
         }
 
-        // 3. Fetch Real Chats/Messages
-        const chatRes = await axios.get('https://nexus-api.myvnc.com/api/chats', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
+        // 3. Process Chats/Messages
         if (chatRes.data && chatRes.data.length > 0) {
-          // Map API chats to UI message structure
-          // Note: App.jsx uses the "messages" state as the source for the inbox list.
           const mappedMessages = chatRes.data.map(chat => ({
             id: chat.id,
             profileId: chat.profileId,
             from: chat.externalId,
             text: chat.messages?.[0]?.text || 'No messages yet',
             time: chat.lastMessageAt ? new Date(chat.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---',
-            status: 'read', // Simplified for now
+            status: 'read',
             direction: 'inbound',
             transport: chat.messages?.[0]?.transport || chat.messages?.[0]?.type || 'sms',
             type: chat.messages?.[0]?.transport || chat.messages?.[0]?.type || 'sms'
@@ -452,32 +455,24 @@ function App() {
           setMessages(mappedMessages);
         }
 
-        // 4. Fetch Real Agency Users (Team)
-        const userRes = await axios.get('https://nexus-api.myvnc.com/api/agency/users', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        // 4. Process Agency Users (Team)
         if (userRes.data && userRes.data.length > 0) {
           setOperators(userRes.data);
         }
 
-        // 5. Fetch Device Bindings
-        try {
-          const bindingRes = await axios.get('https://nexus-api.myvnc.com/api/device/bindings', {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          if (bindingRes.data && bindingRes.data.ok) {
-            setSessions(bindingRes.data.bindings.map(b => ({
-              id: b.id,
-              installationId: b.installationId,
-              device: b.model || b.deviceName || 'Android Mobile',
-              location: b.profile?.name || 'Unassigned',
-              status: b.active ? 'Active' : 'Revoked',
-              current: false // We don't have local installationId easily accessible here yet
-            })));
-          }
-        } catch (bErr) { console.warn('Bindings fetch failed', bErr.message); }
+        // 5. Process Device Bindings
+        if (bindingRes.data && bindingRes.data.ok) {
+          setSessions(bindingRes.data.bindings.map(b => ({
+            id: b.id,
+            installationId: b.installationId,
+            device: b.model || b.deviceName || 'Android Mobile',
+            location: b.profile?.name || 'Unassigned',
+            status: b.active ? 'Active' : 'Revoked',
+            current: false
+          })));
+        }
       } catch (err) {
-        console.warn('Error fetching initial data from backend:', err.message);
+        console.warn('[Performance] Error in optimized initData:', err.message);
       }
     };
     initData();
