@@ -2741,7 +2741,7 @@ function App() {
               </div>
 
               {/* Assigned Profiles in Mobile Menu */}
-              {!activeOperator?.isModel && !activeOperator?.isAppOwner && !activeOperator?.isAdmin && myProfiles.length > 0 && (
+              {!activeOperator?.isModel && activeRole !== 'App Owner' && !activeOperator?.isAdmin && myProfiles.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ fontSize: '0.7rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{t('myAssignedGirls').toUpperCase()}</div>
@@ -2949,7 +2949,7 @@ function App() {
               </div>
 
               {/* Assigned Girls Section */}
-              {!activeOperator?.isModel && !activeOperator?.isAppOwner && !activeOperator?.isAdmin && !isSidebarCollapsed && (
+              {!activeOperator?.isModel && activeRole !== 'App Owner' && !activeOperator?.isAdmin && !isSidebarCollapsed && (
                 <div style={{ marginTop: '1.25rem', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem', padding: '0 0.85rem' }}>
                     <div style={{ fontSize: '0.65rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{t('myAssignedGirls').toUpperCase()}</div>
