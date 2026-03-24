@@ -5,7 +5,8 @@ const { sendChatPush } = require('../services/pushService');
 exports.getMessages = async (req, res) => {
   try {
     const { chatId } = req.params;
-    const { isSuperAdmin, agencyId } = req.user;
+    const { role, agencyId } = req.user;
+    const isSuperAdmin = role?.isSuperAdmin;
     const chat = await prisma.chat.findUnique({ where: { id: chatId } });
     if (!chat) return res.status(404).json({ message: 'Chat not found' });
     if (!isSuperAdmin && chat.agencyId !== agencyId) return res.status(403).json({ message: 'Access denied' });
@@ -24,7 +25,8 @@ exports.getMessages = async (req, res) => {
 exports.createMessage = async (req, res) => {
   try {
     const { chatId, text, direction, status, transport } = req.body;
-    const { id: userId, isSuperAdmin, agencyId } = req.user;
+    const { id: userId, role, agencyId } = req.user;
+    const isSuperAdmin = role?.isSuperAdmin;
     const chat = await prisma.chat.findUnique({ where: { id: chatId } });
     if (!chat) return res.status(404).json({ message: 'Chat not found' });
     if (!isSuperAdmin && chat.agencyId !== agencyId) return res.status(403).json({ message: 'Access denied' });
@@ -40,7 +42,7 @@ exports.createMessage = async (req, res) => {
       include: { sender: { select: { id: true, name: true } } }
     });
     await prisma.chat.update({ where: { id: chatId }, data: { lastMessageAt: new Date() } });
-    try { getIO().to(`agency_${agencyId}`).emit('new_message', { chatId, message }); } catch (e) { /* Socket may not be ready */ }
+    try { getIO().to(`agency_${chat.agencyId}`).emit('new_message', { chatId, message }); } catch (e) { /* Socket may not be ready */ }
     res.status(201).json(message);
   } catch (error) {
     console.error(error);
@@ -80,7 +82,8 @@ exports.simulateInbound = async (req, res) => {
 exports.markAsRead = async (req, res) => {
   try {
     const { messageId } = req.params;
-    const { isSuperAdmin, agencyId } = req.user;
+    const { role, agencyId } = req.user;
+    const isSuperAdmin = role?.isSuperAdmin;
     const message = await prisma.message.findUnique({ where: { id: messageId }, include: { chat: true } });
     if (!message) return res.status(404).json({ message: 'Message not found' });
     if (!isSuperAdmin && message.chat.agencyId !== agencyId) return res.status(403).json({ message: 'Access denied' });

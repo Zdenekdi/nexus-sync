@@ -2,12 +2,11 @@ const prisma = require('../services/db');
 
 exports.getProfiles = async (req, res) => {
   try {
-    if (req.user.isSuperAdmin) {
-      return res.json([]);
-    }
+    const { role, agencyId } = req.user;
+    const isSuperAdmin = role?.isSuperAdmin;
 
     const profiles = await prisma.profile.findMany({
-      where: { agencyId: req.user.agencyId },
+      where: isSuperAdmin ? {} : { agencyId },
       include: {
         assignees: { select: { id: true, name: true } }
       },
