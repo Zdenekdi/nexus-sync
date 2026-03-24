@@ -28,8 +28,17 @@ async function migrate() {
     for (const a of oldAgencies) {
       await prisma.agency.upsert({
         where: { id: a.id },
-        update: { name: a.name, region: a.region, plan: a.tier || a.plan, status: a.status || 'active' },
-        create: { id: a.id, name: a.name, region: a.region, plan: a.tier || a.plan, status: a.status || 'active' }
+        update: { 
+          name: a.name, 
+          region: a.region, 
+          plan: a.tier || a.plan || 'Standard'
+        },
+        create: { 
+          id: a.id, 
+          name: a.name, 
+          region: a.region, 
+          plan: a.tier || a.plan || 'Standard'
+        }
       });
     }
     console.log(`Restored ${oldAgencies.length} agencies.`);
@@ -40,8 +49,21 @@ async function migrate() {
     for (const r of oldRoles) {
       await prisma.role.upsert({
         where: { id: r.id },
-        update: { name: r.name, isAppOwner: r.isSuperAdmin || r.isAppOwner || false, isManager: r.isManager || false, permissions: r.permissions, agencyId: r.agencyId },
-        create: { id: r.id, name: r.name, isAppOwner: r.isSuperAdmin || r.isAppOwner || false, isManager: r.isManager || false, permissions: r.permissions, agencyId: r.agencyId }
+        update: { 
+          name: r.name, 
+          isAppOwner: !!(r.isSuperAdmin || r.isAppOwner), 
+          isManager: !!(r.isManager), 
+          permissions: r.permissions || '*', 
+          agencyId: r.agencyId 
+        },
+        create: { 
+          id: r.id, 
+          name: r.name, 
+          isAppOwner: !!(r.isSuperAdmin || r.isAppOwner), 
+          isManager: !!(r.isManager), 
+          permissions: r.permissions || '*', 
+          agencyId: r.agencyId 
+        }
       });
     }
 
@@ -56,15 +78,26 @@ async function migrate() {
       });
     }
 
-    // 4. Migrate Profiles (if table exists)
+    // 4. Migrate Profiles
     try {
       console.log('Migrating Profiles...');
       const oldProfiles = await getAll(db, "SELECT * FROM Profile");
       for (const p of oldProfiles) {
         await prisma.profile.upsert({
           where: { id: p.id },
-          update: { name: p.name, phone: p.phone, status: p.status, agencyId: p.agencyId },
-          create: { id: p.id, name: p.name, phone: p.phone, status: p.status, agencyId: p.agencyId }
+          update: { 
+            name: p.name, 
+            phoneNumber: p.phone || p.phoneNumber, 
+            status: p.status || 'offline', 
+            agencyId: p.agencyId 
+          },
+          create: { 
+            id: p.id, 
+            name: p.name, 
+            phoneNumber: p.phone || p.phoneNumber, 
+            status: p.status || 'offline', 
+            agencyId: p.agencyId 
+          }
         });
       }
     } catch (e) {
