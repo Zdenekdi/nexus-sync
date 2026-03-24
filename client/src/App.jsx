@@ -38,11 +38,11 @@ const DEFAULT_ROLE_PERMISSIONS = {
     permissions: true,
     plans: true,
     global_features: true,
-    hierarchy: true,
+    hierarchy: false,
     analytics: true,
-    messaging: true,
-    calendar: true,
-    profiles: true,
+    messaging: false,
+    calendar: false,
+    profiles: false,
     web_profiles: true,
     device_setup: true,
     audit_logs: true,
@@ -519,13 +519,14 @@ function App() {
           }
         };
 
-        const [safetyRes, profileRes, chatRes, userRes, bindingRes, statsRes] = await Promise.all([
+        const [safetyRes, profileRes, chatRes, userRes, bindingRes, statsRes, agencyRes] = await Promise.all([
           axiosWithTiming('https://nexus-api.myvnc.com/api/safety/sessions/active', { headers: { Authorization: `Bearer ${token}` } }),
           axiosWithTiming('https://nexus-api.myvnc.com/api/profiles', { headers: { Authorization: `Bearer ${token}` } }),
           axiosWithTiming('https://nexus-api.myvnc.com/api/chats', { headers: { Authorization: `Bearer ${token}` } }),
           axiosWithTiming('https://nexus-api.myvnc.com/api/agency/users', { headers: { Authorization: `Bearer ${token}` } }),
           axiosWithTiming('https://nexus-api.myvnc.com/api/device/bindings', { headers: { Authorization: `Bearer ${token}` } }),
-          axiosWithTiming('https://nexus-api.myvnc.com/api/agency/stats', { headers: { Authorization: `Bearer ${token}` } })
+          axiosWithTiming('https://nexus-api.myvnc.com/api/agency/stats', { headers: { Authorization: `Bearer ${token}` } }),
+          axiosWithTiming('https://nexus-api.myvnc.com/api/agency/all', { headers: { Authorization: `Bearer ${token}` } })
         ]);
 
         const endTime = performance.now();
@@ -580,6 +581,11 @@ function App() {
             status: b.active ? 'Active' : 'Revoked',
             current: false
           })));
+        }
+
+        // 6. Process Global Agencies
+        if (agencyRes && agencyRes.data) {
+          setAgencies(agencyRes.data);
         }
       } catch (err) {
         console.warn('[Performance] Error in optimized initData:', err.message);
@@ -1692,70 +1698,71 @@ function App() {
     }
   }, [activeOperator]);
 
-  const addAgency = useCallback(() => {
+  const addAgency = useCallback(async () => {
     if (!newAgencyData.name) return;
-    const newAgency = {
-      id: `agency-${Date.now()}`,
-      name: newAgencyData.name,
-      region: newAgencyData.region,
-      tier: newAgencyData.tier,
-      status: 'active',
-      subscription: {
-        plan: newAgencyData.tier,
-        status: 'active',
-        startDate: new Date().toISOString().split('T')[0],
-        endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-      },
-      features: {
-        ai_relay: true,
-        analytics: true,
-        enterprise_proxies: newAgencyData.tier === 'Enterprise',
-        multiUser: true,
-        customReports: newAgencyData.tier === 'Enterprise'
+    try {
+      const resp = await axios.post('https://nexus-api.myvnc.com/api/agency', newAgencyData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (resp.data) {
+        setAgencies(prev => [...prev, {
+          ...resp.data,
+          subscription: { plan: resp.data.tier, status: 'active', endDate: 'Unlimited' }
+        }]);
+        setIsAddAgencyModalOpen(false);
+        setNewAgencyData({ name: '', region: 'UK/Europe', tier: 'Professional' });
       }
-    };
-    setAgencies(prev => [...prev, newAgency]);
-    setIsAddAgencyModalOpen(false);
-    setNewAgencyData({ name: '', region: 'UK/Europe', tier: 'Professional' });
-  }, [newAgencyData]);
+    } catch (err) {
+      console.error('Failed to add agency:', err);
+      alert('Failed to add agency');
+    }
+  }, [newAgencyData, token]);
 
-  const deleteAgency = (id) => {
+  const deleteAgency = async (id) => {
     if (window.confirm('Are you sure you want to PERMANENTLY delete this agency and all its team members? This action cannot be undone.')) {
-      setAgencies(prev => prev.filter(a => a.id !== id));
-      setOperators(prev => prev.filter(o => o.clientId !== id));
-      setProfiles(prev => prev.filter(p => p.clientId !== id));
+      try {
+        await axios.delete(`https://nexus-api.myvnc.com/api/agency/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setAgencies(prev => prev.filter(a => a.id !== id));
+        setOperators(prev => prev.filter(o => o.agencyId !== id));
+        setProfiles(prev => prev.filter(p => p.agencyId !== id));
+      } catch (err) {
+        console.error('Failed to delete agency:', err);
+        alert('Failed to delete agency');
+      }
     }
   };
 
-  const addOperator = useCallback(() => {
+  const addOperator = useCallback(async () => {
     if (!newOperatorData.name || !newOperatorData.email || !targetAgencyId) return;
     
-    // Auto-generate password if not manually provided
-    const autoPassword = `Nexus_${Math.floor(1000 + Math.random() * 9000)}`;
-    const finalPassword = (newOperatorData.password && newOperatorData.password !== 'password123') ? newOperatorData.password : autoPassword;
+    try {
+      // Auto-generate password if not manually provided
+      const autoPassword = `Nexus_${Math.floor(1000 + Math.random() * 9000)}`;
+      const finalPassword = (newOperatorData.password && newOperatorData.password !== 'password123') ? newOperatorData.password : autoPassword;
 
-    const newOp = {
-      id: `op-${Date.now()}`,
-      name: newOperatorData.name,
-      role: newOperatorData.role,
-      clientId: targetAgencyId,
-      avatar: newOperatorData.name.split(' ').map(n => n[0]).join('').toUpperCase(),
-      email: newOperatorData.email,
-      password: finalPassword,
-      mustResetPassword: true,
-      metrics: { messages: 0, calls: 0, conversion: '0%' },
-      permissions: { qa: true, referrals: false }
-    };
-    setOperators(prev => [...prev, newOp]);
-    setIsAddOperatorModalOpen(false);
-    
-    // Simulate Email Notification
-    const emailPayload = `Subject: Welcome to Nexus Sync! \n\nHello ${newOp.name},\nYour account has been created. \nTemporary Password: ${finalPassword}\nPlease log in to change your password.`;
-    console.log("%c [EMAIL SIMULATION] Sending registration email...", "color: #3b82f6; font-weight: bold;", emailPayload);
-    alert(`${t('emailSentNotification')} ${newOp.email}\n\nTemp Password: ${finalPassword}`);
+      const resp = await axios.post('https://nexus-api.myvnc.com/api/agency/users', {
+        name: newOperatorData.name,
+        email: newOperatorData.email,
+        password: finalPassword,
+        roleName: newOperatorData.role,
+        agencyId: targetAgencyId
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
-    setNewOperatorData({ name: '', role: 'Operator', email: '', password: 'password123' });
-  }, [newOperatorData, targetAgencyId, t]);
+      if (resp.data) {
+        setOperators(prev => [...prev, resp.data]);
+        setIsAddOperatorModalOpen(false);
+        alert(`${t('operatorAddedSuccess') || 'User created successfully.'}\nTemp Password: ${finalPassword}`);
+        setNewOperatorData({ name: '', role: 'Operator', email: '', password: 'password123' });
+      }
+    } catch (err) {
+      console.error('Failed to add operator:', err);
+      alert('Failed to add operator');
+    }
+  }, [newOperatorData, targetAgencyId, token, t]);
 
   const deleteOperator = (id) => {
     if (window.confirm('Remove this team member?')) {
@@ -4239,10 +4246,10 @@ function App() {
                 gap: isMobile ? '0.75rem' : '1.5rem'
               }}>
                 {[
-                  { label: t('totalAgencies'), value: agencies.length, icon: <Building2 size={20} />, color: '#3b82f6', trend: `+2 ${t('thisMonth')}` },
-                  { label: t('activeProfiles'), value: profiles.length, icon: <Users size={20} />, color: '#8b5cf6', trend: t('globalReach') },
-                  { label: t('monthlyRevenue'), value: '$1.2M', icon: <CreditCard size={20} />, color: '#10b981', trend: `+12% ${t('growth')}` },
-                  { label: t('systemUptime'), value: '99.98%', icon: <Activity size={20} />, color: '#f59e0b', trend: t('allNodesActive') }
+                  { label: t('totalAgencies'), value: stats.totalAgencies || agencies.length, icon: <Building2 size={20} />, color: '#3b82f6', trend: `LIVE` },
+                  { label: t('activeProfiles'), value: stats.totalProfiles || profiles.length, icon: <Users size={20} />, color: '#8b5cf6', trend: t('globalReach') },
+                  { label: t('monthlyRevenue'), value: stats.revenue || '£0.00', icon: <CreditCard size={20} />, color: '#10b981', trend: t('projected') },
+                  { label: t('systemUptime'), value: stats.uptime || '99.9%', icon: <Activity size={20} />, color: '#f59e0b', trend: t('allNodesActive') }
                 ].map((stat, i) => (
                   <div key={i} className="glass-card" style={{ padding: '1.5rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
@@ -4413,34 +4420,36 @@ function App() {
                       </thead>
                       <tbody>
                         {agencies.map((agency, i) => {
-                          const agencyProfilesCount = profiles.filter(p => p.clientId === agency.id).length;
-                          const agencyOps = operators.filter(o => o.clientId === agency.id);
+                          const agencyProfilesCount = profiles.filter(p => p.agencyId === agency.id).length;
+                          const agencyOps = operators.filter(o => o.agencyId === agency.id);
+                          const subscription = agency.subscription || { status: 'active', plan: 'Pro', endDate: 'Unlimited' };
+                          
                           return (
                             <tr key={agency.id} style={{ borderBottom: i < agencies.length - 1 ? '1px solid var(--card-border)' : 'none' }}>
                               <td style={{ padding: '1.25rem 1.5rem' }}>
                                 <div style={{ fontWeight: '700', fontSize: '1rem' }}>{agency.name}</div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('regionLabel')}: {agency.region}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('regionLabel')}: {agency.region || 'EU'}</div>
                               </td>
                               <td style={{ padding: '1.25rem 1.5rem' }}>
                                 <div style={{
                                   display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.2rem 0.6rem', borderRadius: '6px',
-                                  background: agency.subscription.status === 'active' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                                  color: agency.subscription.status === 'active' ? 'var(--success-color)' : 'var(--error-color)',
+                                  background: (subscription.status || 'active') === 'active' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                  color: (subscription.status || 'active') === 'active' ? 'var(--success-color)' : 'var(--error-color)',
                                   fontSize: '0.7rem', fontWeight: '800'
                                 }}>
                                   <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }}></div>
-                                  {agency.subscription.status.toUpperCase()}
+                                  {(subscription.status || 'active').toUpperCase()}
                                 </div>
                               </td>
                               <td style={{ padding: '1.25rem 1.5rem' }}>
-                                <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{agency.subscription.plan} {t('planLabel')}</div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('nextRenewal')}: {agency.subscription.endDate}</div>
+                                <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{subscription.plan || 'Pro'} {t('planLabel')}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('nextRenewal')}: {subscription.endDate || 'N/A'}</div>
                               </td>
                               <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
                                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
                                   <button
                                     onClick={() => {
-                                      setAgencies(prev => prev.map(a => a.id === agency.id ? { ...a, status: a.status === 'suspended' ? 'active' : 'suspended' } : a));
+                                      // Toggle status logic
                                     }}
                                     className="status-badge"
                                     style={{
@@ -4456,8 +4465,9 @@ function App() {
                                     style={{ fontSize: '0.7rem', color: 'var(--accent-color)', cursor: 'pointer' }}
                                     onClick={() => {
                                       setActiveClient(agency);
-                                      const clientOp = operators.find(o => o.clientId === agency.id) || operators.find(o => o.id === 'op-1');
-                                      setActiveOperator(clientOp);
+                                      // Impersonate first user of this agency
+                                      const clientOp = operators.find(o => o.agencyId === agency.id);
+                                      if (clientOp) setActiveOperator(clientOp);
                                       setActiveTab('dashboard');
                                     }}
                                   >
