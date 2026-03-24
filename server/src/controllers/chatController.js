@@ -2,7 +2,8 @@ const prisma = require('../services/db');
 
 exports.getChats = async (req, res) => {
   try {
-    const { isSuperAdmin, agencyId } = req.user;
+    const { role, agencyId } = req.user;
+    const isSuperAdmin = role?.isSuperAdmin;
     const whereClause = isSuperAdmin ? {} : { agencyId };
     const chats = await prisma.chat.findMany({
       where: whereClause,
@@ -26,7 +27,8 @@ exports.getChats = async (req, res) => {
 exports.getProfileChats = async (req, res) => {
   try {
     const { profileId } = req.params;
-    const { isSuperAdmin, agencyId } = req.user;
+    const { role, agencyId } = req.user;
+    const isSuperAdmin = role?.isSuperAdmin;
     const whereClause = { profileId };
     if (!isSuperAdmin) whereClause.agencyId = agencyId;
     const chats = await prisma.chat.findMany({
