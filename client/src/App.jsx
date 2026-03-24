@@ -39,11 +39,11 @@ const DEFAULT_ROLE_PERMISSIONS = {
     plans: true,
     global_features: true,
     hierarchy: true,
-    analytics: true,
-    messaging: true,
-    calendar: true,
-    profiles: true,
-    web_profiles: true,
+    analytics: false,
+    messaging: false,
+    calendar: false,
+    profiles: false,
+    web_profiles: false,
     device_setup: true,
     audit_logs: true,
     qa_hub: true,
@@ -2447,9 +2447,9 @@ function App() {
   }, [messages]);
 
   const primaryNavItems = useMemo(() => ([
-    { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator?.isModel ? 0 : totalUnread },
-    { id: 'calendar', icon: Calendar, label: t('schedule'), badge: 0 },
-  ]), [t, activeOperator?.isModel, totalUnread]);
+    { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator?.isModel ? 0 : totalUnread, perm: 'messaging' },
+    { id: 'calendar', icon: Calendar, label: t('schedule'), badge: 0, perm: 'calendar' },
+  ].filter(item => (rolePermissions[activeRole] || {})[item.perm])), [t, rolePermissions, activeRole, activeOperator?.isModel, totalUnread]);
 
   const toolNavItems = useMemo(() => ([
     { id: 'infra', icon: HardDrive, label: t('infra'), perm: 'infrastructure' },
