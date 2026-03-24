@@ -104,6 +104,19 @@ exports.verifyDeviceBinding = async (req, res) => {
     }
 
     const binding = await prisma.$transaction(async (tx) => {
+      // Limit to 2 active devices per user
+      const activeCount = await tx.deviceBinding.count({
+        where: {
+          userId,
+          active: true,
+          installationId: { not: installationId }
+        }
+      });
+
+      if (activeCount >= 2) {
+        throw new Error('LIMIT_EXCEEDED');
+      }
+
       const current = await tx.deviceBinding.upsert({
         where: { installationId },
         update: {
@@ -129,7 +142,9 @@ exports.verifyDeviceBinding = async (req, res) => {
         },
       });
 
-      // Single-device policy: keep only this installation active for this user.
+      /* 
+      // Multi-device support enabled: We no longer deactivate other devices by default.
+      // This allows a user to be bound across multiple phones/installations.
       await tx.deviceBinding.updateMany({
         where: {
           userId,
@@ -138,6 +153,7 @@ exports.verifyDeviceBinding = async (req, res) => {
         },
         data: { active: false },
       });
+      */
 
       return tx.deviceBinding.findUnique({
         where: { installationId },
@@ -156,6 +172,9 @@ exports.verifyDeviceBinding = async (req, res) => {
 
     return res.json({ ok: true, binding });
   } catch (error) {
+    if (error.message === 'LIMIT_EXCEEDED') {
+      return res.status(403).json({ ok: false, message: 'Device limit reached (max 2). Please revoke an existing device first.' });
+    }
     console.error('Device verification error:', error);
     return res.status(500).json({ ok: false, message: 'Internal server error' });
   }
@@ -214,6 +233,75 @@ exports.getRelayStatus = async (req, res) => {
     });
   } catch (error) {
     console.error('Relay status error:', error);
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+exports.getDeviceBindings = async (req, res) => {
+  try {
+    const userId = req.user?.userId;
+    const agencyId = req.user?.agencyId;
+
+    if (!userId) {
+      return res.status(401).json({ ok: false, message: 'Unauthorized' });
+    }
+
+    // Admins/Managers can see all bindings in their agency, others only their own.
+    const isAdmin = req.user.isAdmin || req.user.role === 'Admin' || req.user.role === 'Agency Manager';
+    
+    const bindings = await prisma.deviceBinding.findMany({
+      where: isAdmin ? { agencyId } : { userId },
+      include: {
+        profile: {
+          select: { name: true }
+        }
+      },
+      orderBy: { lastSeenAt: 'desc' }
+    });
+
+    return res.json({ ok: true, bindings });
+  } catch (error) {
+    console.error('Get device bindings error:', error);
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+exports.revokeDeviceBinding = async (req, res) => {
+  try {
+    const userId = req.user?.userId;
+    const agencyId = req.user?.agencyId;
+    const { installationId } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ ok: false, message: 'Unauthorized' });
+    }
+
+    if (!installationId) {
+      return res.status(400).json({ ok: false, message: 'Missing installationId' });
+    }
+
+    const binding = await prisma.deviceBinding.findUnique({
+      where: { installationId }
+    });
+
+    if (!binding) {
+      return res.status(404).json({ ok: false, message: 'Binding not found' });
+    }
+
+    // Verify ownership or permission
+    const isAdmin = req.user.isAdmin || req.user.role === 'Admin' || req.user.role === 'Agency Manager';
+    if (!isAdmin && binding.userId !== userId) {
+      return res.status(403).json({ ok: false, message: 'Forbidden' });
+    }
+
+    await prisma.deviceBinding.update({
+      where: { installationId },
+      data: { active: false }
+    });
+
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error('Revoke device binding error:', error);
     return res.status(500).json({ ok: false, message: 'Internal server error' });
   }
 };

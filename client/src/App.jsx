@@ -101,7 +101,7 @@ function App() {
   const [isAppVisible, setIsAppVisible] = useState(() => typeof document === 'undefined' ? true : document.visibilityState === 'visible');
   const [isSimulating, setIsSimulating] = useState(false);
   const [isToolsExpanded, setIsToolsExpanded] = useState(false);
-  const [sessions, setSessions] = useState(MOCK_SESSIONS);
+  const [sessions, setSessions] = useState([]);
   const [typingProfiles, setTypingProfiles] = useState({});
   const [isShiftActive, setIsShiftActive] = useState(true);
   const [subscriptionPlans] = useState(MOCK_PLANS);
@@ -292,6 +292,43 @@ function App() {
     }, 5000);
   }, [activeOperator, activeRole, playNotificationSound, rolePermissions, scheduleSystemNotification, t]);
 
+  const handleRevokeBinding = async (installationId) => {
+    try {
+      if (!window.confirm('Are you sure you want to revoke this device? It will no longer receive relay updates.')) return;
+      
+      await axios.post('https://nexus-api.myvnc.com/api/device/revoke-binding', { installationId }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // Refresh list
+      const bindingRes = await axios.get('https://nexus-api.myvnc.com/api/device/bindings', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (bindingRes.data && bindingRes.data.ok) {
+        setSessions(bindingRes.data.bindings.map(b => ({
+          id: b.id,
+          installationId: b.installationId,
+          device: b.model || b.deviceName || 'Android Mobile',
+          location: b.profile?.name || 'Unassigned',
+          status: b.active ? 'Active' : 'Revoked',
+          current: false
+        })));
+      }
+      showToast('Device connection revoked', 'success');
+    } catch (err) {
+      console.error('Revoke error:', err);
+      showToast('Failed to revoke device', 'error');
+    }
+  };
+
+  const showToast = (message, type = 'info') => {
+    const id = Date.now();
+    setToasts(prev => [...prev.slice(-4), { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 4000);
+  };
+
   const markNotificationRead = useCallback((notificationId) => {
     if (notificationId == null) return;
     setNotifications(prev => prev.map(item => item.id === notificationId ? { ...item, read: true } : item));
@@ -422,6 +459,23 @@ function App() {
         if (userRes.data && userRes.data.length > 0) {
           setOperators(userRes.data);
         }
+
+        // 5. Fetch Device Bindings
+        try {
+          const bindingRes = await axios.get('https://nexus-api.myvnc.com/api/device/bindings', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (bindingRes.data && bindingRes.data.ok) {
+            setSessions(bindingRes.data.bindings.map(b => ({
+              id: b.id,
+              installationId: b.installationId,
+              device: b.model || b.deviceName || 'Android Mobile',
+              location: b.profile?.name || 'Unassigned',
+              status: b.active ? 'Active' : 'Revoked',
+              current: false // We don't have local installationId easily accessible here yet
+            })));
+          }
+        } catch (bErr) { console.warn('Bindings fetch failed', bErr.message); }
       } catch (err) {
         console.warn('Error fetching initial data from backend:', err.message);
       }
@@ -3960,13 +4014,21 @@ function App() {
               <div className="settings-section">
                 <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Smartphone size={20} color="var(--accent-color)" /> {t('sessionTopology')}</h3>
                 <div className="glass-card" style={{ padding: 0 }}>
-                  {MOCK_SESSIONS.map((s, i) => (
-                    <div key={i} style={{ padding: '1.5rem', borderBottom: i < MOCK_SESSIONS.length - 1 ? '1px solid var(--card-border)' : 'none', display: 'flex', justifyContent: 'space-between' }}>
+                  {sessions.length === 0 ? (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>{t('noDevicesConnected') || 'No active device bindings found.'}</div>
+                  ) : sessions.map((s, i) => (
+                    <div key={i} style={{ padding: '1.5rem', borderBottom: i < sessions.length - 1 ? '1px solid var(--card-border)' : 'none', display: 'flex', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', gap: '1.25rem' }}>
-                        <div style={{ background: s.current ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '12px' }}><Smartphone size={20} color={s.current ? 'var(--accent-color)' : 'var(--text-secondary)'} /></div>
+                        <div style={{ background: (s.current || s.status === 'Active') ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '12px' }}><Smartphone size={20} color={(s.current || s.status === 'Active') ? 'var(--accent-color)' : 'var(--text-secondary)'} /></div>
                         <div><div style={{ fontWeight: '700' }}>{s.device} {s.current && <span style={{ color: 'var(--success-color)', fontSize: '0.7rem' }}>({t('thisDevice')})</span>}</div><div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{s.location} • {s.status}</div></div>
                       </div>
-                      <div className="status-badge">{s.current ? t('secure') : t('revoke')}</div>
+                      <div 
+                        className="status-badge" 
+                        style={{ cursor: s.status === 'Active' ? 'pointer' : 'default', opacity: s.status === 'Active' ? 1 : 0.5 }}
+                        onClick={() => s.status === 'Active' && handleRevokeBinding(s.installationId)}
+                      >
+                        {s.status === 'Active' ? t('revoke') : t('revoked') || 'REVOKED'}
+                      </div>
                     </div>
                   ))}
                 </div>

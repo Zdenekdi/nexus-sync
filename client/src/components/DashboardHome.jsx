@@ -161,9 +161,9 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: isMobile ? '1rem' : '2rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '1rem' : '1.5rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '1rem' : '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 2fr) minmax(300px, 1fr)', gap: isMobile ? '1rem' : '2rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '1rem' : '1.5rem', minWidth: 0 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))', gap: isMobile ? '1rem' : '1.5rem' }}>
             <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center' }}>
                <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('messages')}</div>
                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
@@ -287,7 +287,9 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
       maxWidth: '1400px', 
       margin: '0 auto',
       width: '100%',
-      overflowX: 'hidden'
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column'
     }}>
       {user.isSuperAdmin ? renderSuperAdmin() : (isAdminOrManager ? renderManager() : (user.isModel || user.role === 'Model' ? renderModel() : renderOperator()))}
     </div>
