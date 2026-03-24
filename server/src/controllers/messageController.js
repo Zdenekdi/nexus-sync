@@ -1,6 +1,6 @@
 const prisma = require('../services/db');
 const { getIO } = require('../services/socket');
-const { sendChatPush } = require('../services/pushService');
+const { sendChatPush, sendRelaySmsPush } = require('../services/pushService');
 
 exports.getMessages = async (req, res) => {
   try {
@@ -30,6 +30,7 @@ exports.createMessage = async (req, res) => {
     const chat = await prisma.chat.findUnique({ where: { id: chatId } });
     if (!chat) return res.status(404).json({ message: 'Chat not found' });
     if (!isSuperAdmin && chat.agencyId !== agencyId) return res.status(403).json({ message: 'Access denied' });
+    
     const message = await prisma.message.create({
       data: {
         chatId,
@@ -41,8 +42,31 @@ exports.createMessage = async (req, res) => {
       },
       include: { sender: { select: { id: true, name: true } } }
     });
+    
     await prisma.chat.update({ where: { id: chatId }, data: { lastMessageAt: new Date() } });
-    try { getIO().to(`agency_${chat.agencyId}`).emit('new_message', { chatId, message }); } catch (e) { /* Socket may not be ready */ }
+    
+    // ── Outbound Relay Toggle ────────────────────────────────────────────────
+    if (direction === 'OUTBOUND' && transport === 'sms') {
+      try {
+        await sendRelaySmsPush({
+          agencyId: chat.agencyId,
+          profileId: chat.profileId,
+          to: chat.externalId,
+          text: text
+        });
+      } catch (e) {
+        console.error('[Relay] Failed to trigger outbound push:', e.message);
+      }
+    }
+
+    try { 
+      getIO().to(`agency_${chat.agencyId}`).emit('new_message', { 
+        ...message,
+        chatId: chatId,
+        profileId: chat.profileId
+      }); 
+    } catch (e) { /* Socket may not be ready */ }
+    
     res.status(201).json(message);
   } catch (error) {
     console.error(error);
@@ -61,7 +85,15 @@ exports.simulateInbound = async (req, res) => {
     }
     const message = await prisma.message.create({ data: { chatId: chat.id, text, direction: 'INBOUND', transport: 'sms', status: 'received' } });
     await prisma.chat.update({ where: { id: chat.id }, data: { lastMessageAt: new Date() } });
-    try { getIO().to(`agency_${profile.agencyId}`).emit('new_message', { chatId: chat.id, message }); } catch (e) { /* Socket may not be ready */ }
+    
+    try { 
+      getIO().to(`agency_${profile.agencyId}`).emit('new_message', { 
+        ...message,
+        chatId: chat.id,
+        profileId: profile.id
+      }); 
+    } catch (e) { /* Socket may not be ready */ }
+    
     try {
       await sendChatPush({
         agencyId: profile.agencyId,
