@@ -32,12 +32,12 @@ async function main() {
 
   // 2. Roles
   const roles = [
-    { name: 'System Owner', isSuperAdmin: true, isManager: true, permissions: JSON.stringify({ all: true }), agencyId: null },
-    { name: 'Agency Admin', isSuperAdmin: false, isManager: true, permissions: JSON.stringify({ manage: true }), agencyId: 'agency-01' },
-    { name: 'Senior Operator', isSuperAdmin: false, isManager: true, permissions: JSON.stringify({ operate: true }), agencyId: 'agency-01' },
-    { name: 'Operator', isSuperAdmin: false, isManager: false, permissions: JSON.stringify({ basic: true }), agencyId: 'agency-01' },
-    { name: 'Model', isSuperAdmin: false, isManager: false, permissions: JSON.stringify({ view: true }), agencyId: 'agency-01' },
-    { name: 'Senior Operator', isSuperAdmin: false, isManager: true, permissions: JSON.stringify({ operate: true }), agencyId: 'agency-02' },
+    { name: 'App Owner', isAppOwner: true, isManager: true, permissions: JSON.stringify({ all: true }), agencyId: null },
+    { name: 'Agency Admin', isAppOwner: false, isManager: true, permissions: JSON.stringify({ manage: true }), agencyId: 'agency-01' },
+    { name: 'Senior Operator', isAppOwner: false, isManager: true, permissions: JSON.stringify({ operate: true }), agencyId: 'agency-01' },
+    { name: 'Operator', isAppOwner: false, isManager: false, permissions: JSON.stringify({ basic: true }), agencyId: 'agency-01' },
+    { name: 'Model', isAppOwner: false, isManager: false, permissions: JSON.stringify({ view: true }), agencyId: 'agency-01' },
+    { name: 'Senior Operator', isAppOwner: false, isManager: true, permissions: JSON.stringify({ operate: true }), agencyId: 'agency-02' },
   ];
 
   for (const role of roles) {
@@ -66,7 +66,7 @@ async function main() {
     { id: 'op-02', email: 'mark@nexus.sync', name: 'Mark T.', password: 'password123', roleName: 'Agency Admin', agencyId: 'agency-01' },
     { id: 'op-03', email: 'sarah@nexus.sync', name: 'Sarah K.', password: 'password123', roleName: 'Operator', agencyId: 'agency-01' },
     { id: 'op-04', email: 'diana@nexus.sync', name: 'Diana B.', password: 'password123', roleName: 'Model', agencyId: 'agency-01' },
-    { id: 'op-06', email: 'dias.zd@gmail.com', name: 'App Owner', password: 'password123', roleName: 'System Owner', agencyId: null },
+    { id: 'op-06', email: 'dias.zd@gmail.com', name: 'App Owner', password: 'password123', roleName: 'App Owner', agencyId: null },
   ];
 
   for (const user of users) {
