@@ -72,11 +72,21 @@ const CAPACITOR_ORIGINS = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (native mobile app, curl, Postman in dev)
+    // Allow requests with no origin (mobile app, curl)
     if (!origin) return callback(null, true);
-    // Always allow Capacitor WebView origins
-    if (CAPACITOR_ORIGINS.includes(origin)) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
+    
+    // Always allow known patterns
+    const isAllowed = allowedOrigins.includes(origin) || 
+                      origin.includes('firebaseapp.com') || 
+                      origin.includes('web.app') ||
+                      CAPACITOR_ORIGINS.includes(origin);
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      logger.warn(`CORS Blocked for origin: ${origin}`);
+      callback(new Error(`CORS: Origin ${origin} not allowed`));
+    }
   },
   credentials: true
 }));
