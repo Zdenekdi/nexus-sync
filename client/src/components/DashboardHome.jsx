@@ -14,10 +14,10 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
       
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: isMobile ? '1rem' : '1.5rem', marginBottom: isMobile ? '1.5rem' : '3rem' }}>
         {[
-          { label: t('totalRevenue'), value: MOCK_STATS.revenue.total, icon: <DollarSign color="#10b981" />, growth: '0%', chart: MOCK_STATS.revenue.chart },
-          { label: (t('agencies') || 'Agencies').toUpperCase(), value: (agencies || []).length, icon: <Building2 color="#3b82f6" />, growth: '---', chart: [0, 0, 0, 0, 0, 0, 0] },
-          { label: (t('activeNodes') || 'Active Nodes').toUpperCase(), value: '0', icon: <Zap color="#f59e0b" />, growth: 'IDLE', chart: [0, 0, 0, 0, 0, 0, 0] },
-          { label: t('globalTraffic').toUpperCase(), value: '0', icon: <Activity color="#8b5cf6" />, growth: '0% LOAD', chart: MOCK_STATS.engagement.chart }
+          { label: t('totalRevenue'), value: stats.totalRevenue || MOCK_STATS.revenue.total, icon: <DollarSign color="#10b981" />, growth: '0%', chart: MOCK_STATS.revenue.chart },
+          { label: (t('agencies') || 'Agencies').toUpperCase(), value: stats.totalAgencies || (agencies || []).length, icon: <Building2 color="#3b82f6" />, growth: '---', chart: [0, 0, 0, 0, 0, 0, 0] },
+          { label: (t('activeNodes') || 'Active Nodes').toUpperCase(), value: stats.activeNodes || '0', icon: <Zap color="#f59e0b" />, growth: 'IDLE', chart: [0, 0, 0, 0, 0, 0, 0] },
+          { label: t('globalTraffic').toUpperCase(), value: stats.totalMessages || '0', icon: <Activity color="#8b5cf6" />, growth: '0% LOAD', chart: MOCK_STATS.engagement.chart }
         ].map((stat, i) => (
           <div key={i} className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>

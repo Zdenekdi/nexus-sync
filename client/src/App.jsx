@@ -31,9 +31,93 @@ import { Device } from '@capacitor/device';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { Geolocation } from '@capacitor/geolocation';
-
-
-
+const DEFAULT_ROLE_PERMISSIONS = {
+  'App Owner': {
+    infrastructure: true,
+    agencies: true,
+    permissions: true,
+    plans: true,
+    global_features: true,
+    hierarchy: false,
+    analytics: true,
+    messaging: false,
+    calendar: false,
+    profiles: false,
+    web_profiles: true,
+    device_setup: true,
+    audit_logs: true,
+    qa_hub: true,
+    settings: true
+  },
+  'Agency Admin': {
+    infrastructure: false,
+    agencies: false,
+    permissions: true,
+    plans: false,
+    global_features: false,
+    hierarchy: true,
+    analytics: true,
+    messaging: true,
+    calendar: true,
+    profiles: true,
+    web_profiles: true,
+    device_setup: true,
+    audit_logs: true,
+    qa_hub: true,
+    settings: true
+  },
+  'Senior Operator': {
+    infrastructure: false,
+    agencies: false,
+    permissions: false,
+    plans: false,
+    global_features: false,
+    hierarchy: false,
+    analytics: true,
+    messaging: true,
+    calendar: true,
+    profiles: true,
+    web_profiles: true,
+    device_setup: true,
+    audit_logs: false,
+    qa_hub: true,
+    settings: true
+  },
+  'Operator': {
+    infrastructure: false,
+    agencies: false,
+    permissions: false,
+    plans: false,
+    global_features: false,
+    hierarchy: false,
+    analytics: false,
+    messaging: true,
+    calendar: true,
+    profiles: true,
+    web_profiles: false,
+    device_setup: true,
+    audit_logs: false,
+    qa_hub: false,
+    settings: true
+  },
+  'Model': {
+    infrastructure: false,
+    agencies: false,
+    permissions: false,
+    plans: false,
+    global_features: false,
+    hierarchy: false,
+    analytics: false,
+    messaging: true,
+    calendar: true,
+    profiles: false,
+    web_profiles: false,
+    device_setup: false,
+    audit_logs: false,
+    qa_hub: false,
+    settings: false
+  }
+};
 
 function App() {
   const [showResetPassword, setShowResetPassword] = useState(false);
@@ -91,7 +175,7 @@ function App() {
       return saved ? JSON.parse(saved) : {};
     } catch { return {}; }
   });
-  const [rolePermissions, setRolePermissions] = useState({});
+  const [rolePermissions, setRolePermissions] = useState(DEFAULT_ROLE_PERMISSIONS);
   const [notifications, setNotifications] = useState(() => {
     const saved = localStorage.getItem('nexus_notifications');
     return saved ? JSON.parse(saved) : [];
@@ -4080,7 +4164,7 @@ function App() {
               <div className="glass-card" style={{ padding: '2rem', marginTop: '3rem' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '2rem' }}>{t('operatorPerformance')}</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {operators.filter(op => op?.agencyId === activeOperator?.agencyId && op?.role?.name !== 'System Owner').map(op => (
+                  {operators.filter(op => (activeRole === 'App Owner' || op?.agencyId === activeOperator?.agencyId) && op?.role?.name !== 'System Owner').map(op => (
                     <div key={op.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <div style={{ width: '40px', height: '40px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: 'var(--accent-color)' }}>{op.avatar}</div>
