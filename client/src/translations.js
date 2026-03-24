@@ -458,7 +458,15 @@ export const TRANSLATIONS = {
         relayTrafficProxySub: 'Routing through SIM',
         relayHiddenMode: 'Hidden Mode',
         relayHiddenModeSub: 'Hide text in logs',
-        saveAndClose: 'SAVE & CLOSE'
+        saveAndClose: 'SAVE & CLOSE',
+        commissionGrowth: 'COMMISSION GROWTH',
+        safetyGuardHeading: 'Safety Guard Configuration',
+        safetyAlertMode: 'Emergency Alert Routing',
+        safetyAlertModeDesc: 'Choose who receives push notifications during a panic alert.',
+        modeManagersAndAssigned: 'Managers + Assigned Operators',
+        modeAssignedOnly: 'Strictly Assigned Operators Only',
+        teamSeats: 'TEAM SEATS',
+        regionalReach: 'REGIONAL REACH'
     },
     cz: {
         logo: 'NEXUSSYNC',
@@ -914,6 +922,14 @@ export const TRANSLATIONS = {
         relayTrafficProxySub: 'Směrování přes SIM',
         relayHiddenMode: 'Skrytý režim',
         relayHiddenModeSub: 'Skrýt text v logách',
-        saveAndClose: 'ULOŽIT A ZAVŘÍT'
+        saveAndClose: 'ULOŽIT A ZAVŘÍT',
+        commissionGrowth: 'RŮST PROVIZÍ',
+        safetyGuardHeading: 'Konfigurace bezpečnostní pojistky',
+        safetyAlertMode: 'Směrování nouzových upozornění',
+        safetyAlertModeDesc: 'Vyberte, kdo obdrží push notifikaci v případě aktivace tísňového tlačítka.',
+        modeManagersAndAssigned: 'Manažeři + Přiřazení operátoři',
+        modeAssignedOnly: 'Pouze přiřazení operátoři',
+        teamSeats: 'TÝMOVÁ MÍSTA',
+        regionalReach: 'REGIONÁLNÍ DOSAH'
     }
 };
