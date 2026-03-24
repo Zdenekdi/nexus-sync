@@ -6,12 +6,16 @@ const logger = require('../services/logger');
  */
 exports.updateSettings = async (req, res) => {
     try {
-        const { safetyAlertMode } = req.body;
-        const agencyId = req.user.agencyId;
+        const { role, agencyId: userAgencyId } = req.user;
+        const { safetyAlertMode, agencyId: bodyAgencyId } = req.body;
+        const isSuperAdmin = role?.isSuperAdmin;
 
-        if (!req.user.role.isManager) {
+        if (!role?.isManager && !isSuperAdmin) {
             return res.status(403).json({ message: 'Only managers can update agency settings' });
         }
+
+        const agencyId = isSuperAdmin ? bodyAgencyId : userAgencyId;
+        if (!agencyId) return res.status(404).json({ message: 'Agency context required' });
 
         const agency = await prisma.agency.update({
             where: { id: agencyId },
@@ -28,7 +32,10 @@ exports.updateSettings = async (req, res) => {
 
 exports.getSettings = async (req, res) => {
   try {
-    const agencyId = req.user.agencyId;
+    const { role, agencyId: userAgencyId } = req.user;
+    const isSuperAdmin = role?.isSuperAdmin;
+    const agencyId = isSuperAdmin ? req.query.agencyId : userAgencyId;
+
     if (!agencyId) return res.status(404).json({ message: 'Agency not found' });
     const agency = await prisma.agency.findUnique({
       where: { id: agencyId },
@@ -42,14 +49,15 @@ exports.getSettings = async (req, res) => {
 
 exports.getUsers = async (req, res) => {
   try {
-    const agencyId = req.user.agencyId;
-    if (!agencyId) {
-      // Superadmins might not have an agencyId, but they can see all users? 
-      // For now, let's limit to agency for consistency.
+    const { agencyId, role } = req.user;
+    const isSuperAdmin = role?.isSuperAdmin;
+
+    if (!agencyId && !isSuperAdmin) {
       return res.status(404).json({ message: 'Agency context required' });
     }
+
     const users = await prisma.user.findMany({
-      where: { agencyId },
+      where: isSuperAdmin ? {} : { agencyId },
       select: {
         id: true,
         email: true,
@@ -77,34 +85,44 @@ exports.getUsers = async (req, res) => {
 
 exports.getStats = async (req, res) => {
   try {
-    const agencyId = req.user.agencyId;
-    if (!agencyId) return res.status(404).json({ message: 'Agency not found' });
+    const { agencyId, role } = req.user;
+    const isSuperAdmin = role?.isSuperAdmin;
 
-    // 1. Total Messages for the agency
+    if (!agencyId && !isSuperAdmin) return res.status(404).json({ message: 'Agency not found' });
+
+    // 1. Total Messages (Global if Superadmin)
     const totalMessages = await prisma.message.count({
-      where: { chat: { agencyId } }
+      where: isSuperAdmin ? {} : { chat: { agencyId } }
     });
 
     // 2. Total Bookings (Safety Sessions)
     const totalBookings = await prisma.safetySession.count({
-      where: { agencyId }
+      where: isSuperAdmin ? {} : { agencyId }
     });
 
     // 3. Total Calls
     const totalCalls = await prisma.callLog.count({
-      where: { profile: { agencyId } }
+      where: isSuperAdmin ? {} : { profile: { agencyId } }
     });
 
     // 4. Generate a simple trend for the chart (last 7 days)
     const chartData = [30, 45, 38, 52, 48, 62, 75]; 
     
-    res.json({
+    const stats = {
       totalMessages,
       totalBookings,
       totalCalls,
       chartData,
       commissionGrowth: '+12.5%'
-    });
+    };
+
+    if (isSuperAdmin) {
+      stats.totalAgencies = await prisma.agency.count();
+      stats.totalUsers = await prisma.user.count();
+      stats.totalRevenue = '£0'; // Placeholder for now
+    }
+
+    res.json(stats);
   } catch (error) {
     logger.error('Error fetching agency stats:', error);
     res.status(500).json({ message: error.message });

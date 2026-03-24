@@ -239,15 +239,10 @@ exports.getRelayStatus = async (req, res) => {
 
 exports.getDeviceBindings = async (req, res) => {
   try {
-    const userId = req.user?.userId;
-    const agencyId = req.user?.agencyId;
-
-    if (!userId) {
-      return res.status(401).json({ ok: false, message: 'Unauthorized' });
-    }
-
-    // Admins/Managers can see all bindings in their agency, others only their own.
-    const isAdmin = req.user.isAdmin || req.user.role === 'Admin' || req.user.role === 'Agency Manager';
+    const { role, agencyId } = req.user;
+    const isSuperAdmin = role?.isSuperAdmin;
+    const isManager = role?.isManager;
+    const isAdmin = isManager || isSuperAdmin;
     
     const bindings = await prisma.deviceBinding.findMany({
       where: isAdmin ? { agencyId } : { userId },
@@ -289,7 +284,9 @@ exports.revokeDeviceBinding = async (req, res) => {
     }
 
     // Verify ownership or permission
-    const isAdmin = req.user.isAdmin || req.user.role === 'Admin' || req.user.role === 'Agency Manager';
+    const isSuperAdmin = req.user.role?.isSuperAdmin;
+    const isManager = req.user.role?.isManager;
+    const isAdmin = isManager || isSuperAdmin;
     if (!isAdmin && binding.userId !== userId) {
       return res.status(403).json({ ok: false, message: 'Forbidden' });
     }
@@ -316,12 +313,13 @@ exports.sendTestPush = async (req, res) => {
     }
 
     // Non-superadmin users can only target their own agency.
-    const targetAgencyId = user.isSuperAdmin ? (requestedAgencyId || user.agencyId) : user.agencyId;
+    const isSuperAdmin = user.role?.isSuperAdmin;
+    const targetAgencyId = isSuperAdmin ? (requestedAgencyId || user.agencyId) : user.agencyId;
     if (!targetAgencyId) {
       return res.status(400).json({ ok: false, message: 'Missing agencyId context' });
     }
 
-    if (!user.isSuperAdmin && requestedAgencyId && requestedAgencyId !== user.agencyId) {
+    if (!isSuperAdmin && requestedAgencyId && requestedAgencyId !== user.agencyId) {
       return res.status(403).json({ ok: false, message: 'Access denied for target agency' });
     }
 

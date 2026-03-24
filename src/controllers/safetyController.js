@@ -13,7 +13,14 @@ class SafetyController {
     async createSession(req, res) {
         try {
             const { profileId, bookingId, plannedEndAt, graceMinutes = 10 } = req.body;
-            const agencyId = req.user.agencyId;
+            const { role, agencyId: userAgencyId } = req.user;
+            const isSuperAdmin = role?.isSuperAdmin;
+            
+            let agencyId = userAgencyId;
+            if (!agencyId && isSuperAdmin) {
+                const profile = await prisma.profile.findUnique({ where: { id: profileId } });
+                agencyId = profile?.agencyId;
+            }
 
             // Calculate grace period
             const plannedEnd = plannedEndAt ? new Date(plannedEndAt) : new Date(Date.now() + 3600000);
@@ -111,10 +118,12 @@ class SafetyController {
      */
     async getActiveSession(req, res) {
         try {
-            const agencyId = req.user?.agencyId;
+            const { role, agencyId } = req.user || {};
+            const isSuperAdmin = role?.isSuperAdmin;
+            
             const session = await prisma.safetySession.findFirst({
                 where: {
-                    agencyId,
+                    ...(isSuperAdmin ? {} : { agencyId }),
                     state: { in: ['CHECKED_IN', 'GRACE', 'ESCALATED'] }
                 },
                 orderBy: { updatedAt: 'desc' }
