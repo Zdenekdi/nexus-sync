@@ -22,7 +22,7 @@ exports.login = async (req, res) => {
         role: {
           name: user.role.name,
           isManager: user.role.isManager,
-          isSuperAdmin: user.role.isSuperAdmin
+          isAppOwner: user.role.isAppOwner
         }
       },
       process.env.JWT_SECRET,
@@ -37,7 +37,7 @@ exports.login = async (req, res) => {
         name: user.name,
         role: user.role.name,
         isManager: user.role.isManager,
-        isSuperAdmin: user.role.isSuperAdmin,
+        isAppOwner: user.role.isAppOwner,
         agencyId: user.agencyId,
         agencyName: user.agency?.name || 'System'
       }
@@ -74,7 +74,7 @@ exports.registerAgency = async (req, res) => {
           name: 'Agency Admin',
           description: 'Full access to agency resources',
           permissions: '*',
-          isSuperAdmin: false,
+          isAppOwner: false,
           agencyId: agency.id
         }
       });
@@ -179,7 +179,7 @@ exports.getProfile = async (req, res) => {
       name: user.name,
       role: user.role.name,
       isManager: user.role.isManager,
-      isSuperAdmin: user.role.isSuperAdmin,
+      isAppOwner: user.role.isAppOwner,
       agencyId: user.agencyId,
       agencyName: user.agency?.name || 'System'
     });

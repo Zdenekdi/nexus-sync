@@ -9,13 +9,13 @@ exports.updateSettings = async (req, res) => {
     try {
         const { role, agencyId: userAgencyId } = req.user;
         const { safetyAlertMode, agencyId: bodyAgencyId } = req.body;
-        const isSuperAdmin = role?.isSuperAdmin;
+        const isAppOwner = role?.isAppOwner;
 
-        if (!role?.isManager && !isSuperAdmin) {
+        if (!role?.isManager && !isAppOwner) {
             return res.status(403).json({ message: 'Only managers can update agency settings' });
         }
 
-        const agencyId = isSuperAdmin ? bodyAgencyId : userAgencyId;
+        const agencyId = isAppOwner ? bodyAgencyId : userAgencyId;
         if (!agencyId) return res.status(404).json({ message: 'Agency context required' });
 
         const agency = await prisma.agency.update({
@@ -34,8 +34,8 @@ exports.updateSettings = async (req, res) => {
 exports.getSettings = async (req, res) => {
   try {
     const { role, agencyId: userAgencyId } = req.user;
-    const isSuperAdmin = role?.isSuperAdmin;
-    const agencyId = isSuperAdmin ? req.query.agencyId : userAgencyId;
+    const isAppOwner = role?.isAppOwner;
+    const agencyId = isAppOwner ? req.query.agencyId : userAgencyId;
 
     if (!agencyId) return res.status(404).json({ message: 'Agency not found' });
     const agency = await prisma.agency.findUnique({
@@ -51,14 +51,14 @@ exports.getSettings = async (req, res) => {
 exports.getUsers = async (req, res) => {
   try {
     const { agencyId, role } = req.user;
-    const isSuperAdmin = role?.isSuperAdmin;
+    const isAppOwner = role?.isAppOwner;
 
-    if (!agencyId && !isSuperAdmin) {
+    if (!agencyId && !isAppOwner) {
       return res.status(404).json({ message: 'Agency context required' });
     }
 
     const users = await prisma.user.findMany({
-      where: isSuperAdmin ? {} : { agencyId },
+      where: isAppOwner ? {} : { agencyId },
       select: {
         id: true,
         email: true,
@@ -89,23 +89,23 @@ exports.getUsers = async (req, res) => {
 exports.getStats = async (req, res) => {
   try {
     const { agencyId, role } = req.user;
-    const isSuperAdmin = role?.isSuperAdmin;
+    const isAppOwner = role?.isAppOwner;
 
-    if (!agencyId && !isSuperAdmin) return res.status(404).json({ message: 'Agency not found' });
+    if (!agencyId && !isAppOwner) return res.status(404).json({ message: 'Agency not found' });
 
     // 1. Total Messages (Global if Superadmin)
     const totalMessages = await prisma.message.count({
-      where: isSuperAdmin ? {} : { chat: { agencyId } }
+      where: isAppOwner ? {} : { chat: { agencyId } }
     });
 
     // 2. Total Bookings (Safety Sessions)
     const totalBookings = await prisma.safetySession.count({
-      where: isSuperAdmin ? {} : { agencyId }
+      where: isAppOwner ? {} : { agencyId }
     });
 
     // 3. Total Calls
     const totalCalls = await prisma.callLog.count({
-      where: isSuperAdmin ? {} : { profile: { agencyId } }
+      where: isAppOwner ? {} : { profile: { agencyId } }
     });
 
     // 4. Generate a simple trend for the chart (last 7 days)
@@ -121,7 +121,7 @@ exports.getStats = async (req, res) => {
       uptime: '99.99%'
     };
 
-    if (isSuperAdmin) {
+    if (isAppOwner) {
       stats.totalAgencies = await prisma.agency.count();
       stats.totalProfiles = await prisma.profile.count();
       stats.totalUsers = await prisma.user.count();
@@ -137,7 +137,7 @@ exports.getStats = async (req, res) => {
 exports.getAgencies = async (req, res) => {
   try {
     const { role } = req.user;
-    if (!role?.isSuperAdmin) {
+    if (!role?.isAppOwner) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
@@ -171,7 +171,7 @@ exports.getAgencies = async (req, res) => {
 exports.createAgency = async (req, res) => {
   try {
     const { role } = req.user;
-    if (!role?.isSuperAdmin) return res.status(403).json({ message: 'Access denied' });
+    if (!role?.isAppOwner) return res.status(403).json({ message: 'Access denied' });
 
     const { name, region, tier } = req.body;
     const agency = await prisma.agency.create({
@@ -192,7 +192,7 @@ exports.createAgency = async (req, res) => {
 exports.deleteAgency = async (req, res) => {
   try {
     const { role } = req.user;
-    if (!role?.isSuperAdmin) return res.status(403).json({ message: 'Access denied' });
+    if (!role?.isAppOwner) return res.status(403).json({ message: 'Access denied' });
 
     const { id } = req.params;
     await prisma.agency.delete({ where: { id } });
@@ -205,13 +205,13 @@ exports.deleteAgency = async (req, res) => {
 exports.addUser = async (req, res) => {
   try {
     const { role, agencyId: userAgencyId } = req.user;
-    const isSuperAdmin = role?.isSuperAdmin;
+    const isAppOwner = role?.isAppOwner;
     const isManager = role?.isManager;
     
-    if (!isSuperAdmin && !isManager) return res.status(403).json({ message: 'Access denied' });
+    if (!isAppOwner && !isManager) return res.status(403).json({ message: 'Access denied' });
 
     const { name, email, password, roleName, agencyId: bodyAgencyId } = req.body;
-    const targetAgencyId = isSuperAdmin ? bodyAgencyId : userAgencyId;
+    const targetAgencyId = isAppOwner ? bodyAgencyId : userAgencyId;
 
     if (!targetAgencyId) return res.status(400).json({ message: 'Agency ID required' });
 

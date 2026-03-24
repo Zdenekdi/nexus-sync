@@ -132,7 +132,7 @@ function App() {
       if (saved && saved !== 'undefined' && saved !== 'null') {
         let parsed = JSON.parse(saved);
         // Safety migration for role name changes
-        if (parsed.role === 'System Owner' || parsed.role === 'Super Admin') {
+        if (parsed.role === 'App Owner' || parsed.role === 'App Owner') {
           parsed.role = 'App Owner';
           parsed.name = 'App Owner';
         }
@@ -189,7 +189,7 @@ function App() {
       const saved = localStorage.getItem('nexus_activeOperator');
       if (saved) {
         const parsed = JSON.parse(saved);
-        return parsed.role === 'System Owner' || parsed.role === 'App Owner' || parsed.role === 'Super Admin';
+        return parsed.role === 'App Owner' || parsed.role === 'App Owner' || parsed.role === 'App Owner';
       }
       return false;
     } catch { return false; }
@@ -251,6 +251,8 @@ function App() {
   useEffect(() => {
     if (activeProfileId) {
       localStorage.setItem('nexus_activeProfileId', activeProfileId);
+    } else {
+      localStorage.removeItem('nexus_activeProfileId');
     }
   }, [activeProfileId]);
 
@@ -282,7 +284,7 @@ function App() {
 
   const normalizeRole = useCallback((role) => {
     if (!role) return role;
-    if (role === 'Super Admin' || role === 'System Owner') return 'App Owner';
+    if (role === 'App Owner' || role === 'App Owner') return 'App Owner';
     return role;
   }, []);
 
@@ -460,18 +462,83 @@ function App() {
     return value;
   }, []);
 
+  const normalizeProfileId = useCallback((value) => {
+    if (value == null || value === '') return null;
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string' && /^\d+$/.test(value)) return Number(value);
+    return value;
+  }, []);
+
+  const upsertIncomingMessage = useCallback((incomingMessage) => {
+    if (!incomingMessage) return null;
+
+    const resolvedTransport = incomingMessage.transport || incomingMessage.type || 'sms';
+    const resolvedText = incomingMessage.text || incomingMessage.content || incomingMessage.body || incomingMessage.message || '';
+    const resolvedFrom = incomingMessage.from || incomingMessage.externalId || incomingMessage.phone || 'UNKNOWN';
+    const resolvedProfileId = normalizeProfileId(
+      incomingMessage.profileId ?? incomingMessage.profile?.id ?? activeOperator?.profileId ?? activeProfileId ?? null
+    );
+    const resolvedChatId = parseChatId(incomingMessage.chatId ?? incomingMessage.id ?? null);
+    const resolvedTimestamp = incomingMessage.timestamp || incomingMessage.createdAt || new Date().toISOString();
+
+    const normalizedMessage = {
+      ...incomingMessage,
+      id: resolvedChatId ?? incomingMessage.id ?? `${resolvedProfileId ?? 'unknown'}:${resolvedFrom}`,
+      chatId: resolvedChatId ?? incomingMessage.chatId ?? incomingMessage.id ?? null,
+      profileId: resolvedProfileId,
+      from: resolvedFrom,
+      text: resolvedText,
+      content: resolvedText,
+      body: resolvedText,
+      timestamp: resolvedTimestamp,
+      time: new Date(resolvedTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      transport: resolvedTransport,
+      type: resolvedTransport,
+      status: incomingMessage.status || 'unread'
+    };
+
+    setMessages(prev => {
+      const existingByChatId = normalizedMessage.chatId != null
+        ? prev.findIndex(msg => parseChatId(msg.chatId ?? msg.id) === normalizedMessage.chatId)
+        : -1;
+      const existingByProfileAndFrom = existingByChatId === -1
+        ? prev.findIndex(msg => normalizeProfileId(msg.profileId) === normalizedMessage.profileId && msg.from === normalizedMessage.from)
+        : -1;
+      const existingIndex = existingByChatId !== -1 ? existingByChatId : existingByProfileAndFrom;
+
+      if (existingIndex === -1) {
+        return [normalizedMessage, ...prev];
+      }
+
+      const existing = prev[existingIndex];
+      const merged = {
+        ...existing,
+        ...normalizedMessage,
+        id: existing.chatId ?? existing.id ?? normalizedMessage.chatId ?? normalizedMessage.id,
+        chatId: existing.chatId ?? normalizedMessage.chatId ?? existing.id ?? normalizedMessage.id,
+        profileId: normalizedMessage.profileId ?? normalizeProfileId(existing.profileId)
+      };
+
+      const next = [...prev];
+      next.splice(existingIndex, 1);
+      return [merged, ...next];
+    });
+
+    return normalizedMessage;
+  }, [activeOperator?.profileId, activeProfileId, normalizeProfileId, parseChatId]);
+
   const resolveNotificationTarget = useCallback((notification = {}) => {
-    const profileId = notification.profileId ?? null;
+    const profileId = normalizeProfileId(notification.profileId ?? null);
 
     let matchingMessage = null;
     if (notification.chatId != null) {
       matchingMessage = messages.find(msg => msg.id === notification.chatId) || null;
     }
     if (!matchingMessage && notification.from) {
-      matchingMessage = messages.find(msg => (!profileId || msg.profileId === profileId) && msg.from === notification.from) || null;
+      matchingMessage = messages.find(msg => (!profileId || normalizeProfileId(msg.profileId) === profileId) && msg.from === notification.from) || null;
     }
     if (!matchingMessage && profileId) {
-      matchingMessage = messages.find(msg => msg.profileId === profileId) || null;
+      matchingMessage = messages.find(msg => normalizeProfileId(msg.profileId) === profileId) || null;
     }
 
     return {
@@ -482,7 +549,7 @@ function App() {
       caller: notification.caller ?? notification.from ?? matchingMessage?.from ?? null,
       callState: notification.callState ?? null,
     };
-  }, [messages]);
+  }, [messages, normalizeProfileId]);
 
   const openNotificationTarget = useCallback((notification = {}) => {
     const target = resolveNotificationTarget(notification);
@@ -577,17 +644,28 @@ function App() {
 
         // 3. Process Chats/Messages
         if (chatRes.data && chatRes.data.length > 0) {
-          const mappedMessages = chatRes.data.map(chat => ({
-            id: chat.id,
-            profileId: chat.profileId,
-            from: chat.externalId,
-            text: chat.messages?.[0]?.text || 'No messages yet',
-            time: chat.lastMessageAt ? new Date(chat.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---',
-            status: 'read',
-            direction: 'inbound',
-            transport: chat.messages?.[0]?.transport || chat.messages?.[0]?.type || 'sms',
-            type: chat.messages?.[0]?.transport || chat.messages?.[0]?.type || 'sms'
-          }));
+          const mappedMessages = chatRes.data.map(chat => {
+            const latestMessage = chat.messages?.[0] || {};
+            const resolvedText = latestMessage.text || latestMessage.content || latestMessage.body || latestMessage.message || 'No messages yet';
+            const resolvedTransport = latestMessage.transport || latestMessage.type || 'sms';
+            const resolvedTimestamp = chat.lastMessageAt || latestMessage.timestamp || latestMessage.createdAt || new Date().toISOString();
+
+            return {
+              id: parseChatId(chat.id) ?? chat.id,
+              chatId: parseChatId(chat.id) ?? chat.id,
+              profileId: normalizeProfileId(chat.profileId),
+              from: chat.externalId,
+              text: resolvedText,
+              content: resolvedText,
+              body: resolvedText,
+              timestamp: resolvedTimestamp,
+              time: new Date(resolvedTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              status: 'read',
+              direction: 'inbound',
+              transport: resolvedTransport,
+              type: resolvedTransport
+            };
+          });
           setMessages(mappedMessages);
         }
 
@@ -617,7 +695,7 @@ function App() {
       }
     };
     initData();
-  }, [isLoggedIn, token]);
+  }, [isLoggedIn, token, normalizeProfileId, parseChatId]);
 
 
 
@@ -996,7 +1074,7 @@ function App() {
   const shouldAutoRelay = useCallback((operator) => {
     if (!operator) return false;
     if (!Capacitor.isNativePlatform()) return false;
-    if (operator.isSuperAdmin || operator.isManager) return false;
+    if (operator.isAppOwner || operator.isManager) return false;
     // Auto-relay only for models; operators open standard dashboard by default.
     return Boolean(operator.isModel);
   }, [normalizeRole]);
@@ -1098,7 +1176,7 @@ function App() {
 
   // Proactive check: Ensure App Owners start with expanded sidebar for clarity
   useEffect(() => {
-    if (activeOperator?.isSuperAdmin || activeOperator?.role === 'App Owner') {
+    if (activeOperator?.isAppOwner || activeOperator?.role === 'App Owner') {
       setIsSidebarCollapsed(false);
     }
   }, [activeOperator]);
@@ -1653,24 +1731,26 @@ function App() {
   useSocket(
     token,
     useCallback((newMsg) => {
-      const resolvedTransport = newMsg.transport || newMsg.type || 'sms';
-      const normalizedMessage = { ...newMsg, transport: resolvedTransport, type: resolvedTransport };
-      setMessages(prev => [normalizedMessage, ...prev]);
+      const normalizedMessageForNotification = upsertIncomingMessage(newMsg);
+
+      if (!normalizedMessageForNotification) {
+        return;
+      }
 
       // Find profile for notification
-      const profile = profiles.find(p => p.id === normalizedMessage.profileId);
+      const profile = profiles.find(p => normalizeProfileId(p.id) === normalizeProfileId(normalizedMessageForNotification.profileId));
       if (profile) {
         addNotification({
-          title: resolvedTransport === 'rcs' ? 'New RCS message' : (t('newInboxMessage') || 'New message'),
-          message: `${profile.name}: ${normalizedMessage.text || normalizedMessage.body || normalizedMessage.from || ''}`,
+          title: (normalizedMessageForNotification.transport || normalizedMessageForNotification.type) === 'rcs' ? 'New RCS message' : (t('newInboxMessage') || 'New message'),
+          message: `${profile.name}: ${normalizedMessageForNotification.text || normalizedMessageForNotification.from || ''}`,
           type: 'info',
           profileId: profile.id,
-          chatId: normalizedMessage.chatId || normalizedMessage.id,
-          from: normalizedMessage.from,
+          chatId: normalizedMessageForNotification.chatId || normalizedMessageForNotification.id,
+          from: normalizedMessageForNotification.from,
           targetType: 'inbox',
         });
       }
-    }, [profiles, t, addNotification]),
+    }, [profiles, t, addNotification, normalizeProfileId, upsertIncomingMessage]),
     useCallback((updatedMsg) => {
       setMessages(prev => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m));
     }, []),
@@ -1710,6 +1790,50 @@ function App() {
       });
     }, [addNotification, t])
   );
+
+  useEffect(() => {
+    const relayPlugin = window.Capacitor?.Plugins?.NexusRelay;
+    if (!relayPlugin?.addListener || !isLoggedIn) {
+      return undefined;
+    }
+
+    let smsListener;
+    let rcsListener;
+
+    const handleNativeIncomingMessage = (payload, transport) => {
+      const normalizedMessage = upsertIncomingMessage({
+        ...payload,
+        transport,
+        type: transport,
+        text: payload?.text || payload?.content || payload?.body || '',
+      });
+
+      if (!normalizedMessage) {
+        return;
+      }
+
+      const profile = profiles.find(p => normalizeProfileId(p.id) === normalizeProfileId(normalizedMessage.profileId));
+      if (profile) {
+        addNotification({
+          title: transport === 'rcs' ? 'New RCS message' : (t('newInboxMessage') || 'New message'),
+          message: `${profile.name}: ${normalizedMessage.text || normalizedMessage.from || ''}`,
+          type: 'info',
+          profileId: profile.id,
+          chatId: normalizedMessage.chatId || normalizedMessage.id,
+          from: normalizedMessage.from,
+          targetType: 'inbox',
+        });
+      }
+    };
+
+    smsListener = relayPlugin.addListener('onSmsReceived', (payload) => handleNativeIncomingMessage(payload, 'sms'));
+    rcsListener = relayPlugin.addListener('onRcsReceived', (payload) => handleNativeIncomingMessage(payload, 'rcs'));
+
+    return () => {
+      smsListener?.remove?.();
+      rcsListener?.remove?.();
+    };
+  }, [addNotification, isLoggedIn, normalizeProfileId, profiles, t, upsertIncomingMessage]);
 
   // Dynamic Document Title
   useEffect(() => {
@@ -1798,8 +1922,8 @@ function App() {
 
   // Memoized Derived Data
   const availableOperators = useMemo(() =>
-    activeOperator?.isSuperAdmin ? operators : operators.filter(op => op.clientId === activeOperator?.clientId),
-    [activeOperator?.clientId, activeOperator?.isSuperAdmin, operators]
+    activeOperator?.isAppOwner ? operators : operators.filter(op => op.clientId === activeOperator?.clientId),
+    [activeOperator?.clientId, activeOperator?.isAppOwner, operators]
   );
 
   const myProfiles = useMemo(() =>
@@ -1845,10 +1969,34 @@ function App() {
     );
   }, [profiles, activeRole, activeOperator]);
 
+  useEffect(() => {
+    const candidateProfiles = activeOperator?.isModel
+      ? profiles.filter(p => normalizeProfileId(p.id) === normalizeProfileId(activeOperator?.profileId))
+      : assignedProfiles;
+
+    if (!candidateProfiles.length) {
+      return;
+    }
+
+    const normalizedCurrent = normalizeProfileId(activeProfileId);
+    const hasCurrentProfile = candidateProfiles.some(profile => normalizeProfileId(profile.id) === normalizedCurrent);
+
+    if (!hasCurrentProfile) {
+      setActiveProfileId(normalizeProfileId(candidateProfiles[0].id));
+    }
+  }, [activeOperator?.isModel, activeOperator?.profileId, activeProfileId, assignedProfiles, normalizeProfileId, profiles]);
+
   const filteredMessages = useMemo(() => {
-    let base = messages.filter(m => m.profileId === activeProfileId);
-    return base.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  }, [messages, activeProfileId]);
+    const toTimestamp = (message) => {
+      const raw = message?.timestamp || message?.lastMessageAt || message?.createdAt;
+      const ts = raw ? new Date(raw).getTime() : 0;
+      return Number.isFinite(ts) ? ts : 0;
+    };
+
+    const effectiveActiveProfileId = normalizeProfileId(activeProfileId ?? activeProfile?.id ?? assignedProfiles[0]?.id ?? activeOperator?.profileId ?? null);
+    const base = messages.filter(m => normalizeProfileId(m.profileId) === effectiveActiveProfileId);
+    return [...base].sort((a, b) => toTimestamp(b) - toTimestamp(a));
+  }, [messages, activeProfileId, activeOperator?.profileId, activeProfile?.id, assignedProfiles, normalizeProfileId]);
 
   const selectedChat = useMemo(() =>
     selectedChatId ? filteredMessages.find(m => m.id === selectedChatId) : (filteredMessages[0] || null),
@@ -2319,7 +2467,7 @@ function App() {
     { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
   ].filter(item => (rolePermissions[activeRole] || {})[item.perm])), [t, rolePermissions, activeRole]);
 
-  const shouldShowAssignedProfiles = !activeOperator?.isModel && !activeOperator?.isSuperAdmin && !activeOperator?.isAdmin;
+  const shouldShowAssignedProfiles = !activeOperator?.isModel && !activeOperator?.isAppOwner && !activeOperator?.isAdmin;
 
   const renderMobileDrawerButton = (item, { nested = false } = {}) => {
     const Icon = item.icon;
@@ -2600,7 +2748,7 @@ function App() {
               </div>
 
               {/* Assigned Profiles in Mobile Menu */}
-              {!activeOperator?.isModel && !activeOperator?.isSuperAdmin && !activeOperator?.isAdmin && myProfiles.length > 0 && (
+              {!activeOperator?.isModel && !activeOperator?.isAppOwner && !activeOperator?.isAdmin && myProfiles.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ fontSize: '0.7rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{t('myAssignedGirls').toUpperCase()}</div>
@@ -2808,7 +2956,7 @@ function App() {
               </div>
 
               {/* Assigned Girls Section */}
-              {!activeOperator?.isModel && !activeOperator?.isSuperAdmin && !activeOperator?.isAdmin && !isSidebarCollapsed && (
+              {!activeOperator?.isModel && !activeOperator?.isAppOwner && !activeOperator?.isAdmin && !isSidebarCollapsed && (
                 <div style={{ marginTop: '1.25rem', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem', padding: '0 0.85rem' }}>
                     <div style={{ fontSize: '0.65rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{t('myAssignedGirls').toUpperCase()}</div>
@@ -3014,7 +3162,7 @@ function App() {
                       </div>
                       <div style={{ flex: 1, padding: '2rem', overflowY: 'auto', background: 'rgba(0,0,0,0.2)' }}>
                          <div className="message-bubble-in" style={{ marginBottom: '1rem' }}>{selectedChat.text}</div>
-                         
+
                          {typingProfiles[activeProfileId] === selectedChat.from && (
                            <div className="message-bubble-in fade-in" style={{ marginBottom: '1rem', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '8px', width: 'fit-content' }}>
                              <div className="typing-dot" style={{ width: '6px', height: '6px', background: 'var(--accent-color)', borderRadius: '50%', animation: 'bounce 0.6s infinite alternate' }}></div>
@@ -3136,6 +3284,15 @@ function App() {
                                 <div className="fade-in" style={{ padding: '1rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '12px', position: 'relative' }}>
                                   <div style={{ position: 'absolute', top: '-8px', right: '12px', background: 'var(--accent-color)', color: 'white', fontSize: '0.6rem', fontWeight: '900', padding: '2px 8px', borderRadius: '4px' }}>{t('poweredByAi')}</div>
                                   <div style={{ fontSize: '0.9rem', color: 'white', lineHeight: '1.5' }}>{translatedText}</div>
+                                  <button 
+                                    onClick={() => {
+                                      setMessageValue(translatedText);
+                                      setActiveContextTab('note'); // Switch back or stay
+                                    }}
+                                    style={{ marginTop: '0.75rem', width: '100%', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', padding: '0.4rem', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer' }}
+                                  >
+                                    {lang === 'cz' ? 'POUŽÍT PŘEKLAD' : 'USE TRANSLATION'}
+                                  </button>
                                 </div>
                               )}
                             </div>
@@ -3169,8 +3326,8 @@ function App() {
                     <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>•</span>
                     <select 
                       value={activeProfileId} 
-                      onChange={(e) => setActiveProfileId(e.target.value)}
-                      style={{ 
+                      onChange={(e) => setActiveProfileId(Number(e.target.value))}
+                      style={{
                         background: 'rgba(255,255,255,0.05)', 
                         border: '1px solid var(--card-border)', 
                         color: 'var(--accent-color)', 
@@ -3182,7 +3339,7 @@ function App() {
                         outline: 'none'
                       }}
                     >
-                      {(activeOperator?.role === 'Owner' || activeOperator?.role === 'Manager' || activeOperator?.isSuperAdmin ? allAgencyProfiles : myProfiles).map(p => (
+                      {(activeOperator?.role === 'Owner' || activeOperator?.role === 'Manager' || activeOperator?.isAppOwner ? allAgencyProfiles : myProfiles).map(p => (
                         <option key={p.id} value={p.id} style={{ background: '#0a0c10', color: 'white' }}>{p.name}</option>
                       ))}
                     </select>
@@ -4065,7 +4222,7 @@ function App() {
                                     <button onClick={() => setAssigningProfile(null)} style={{ background: 'transparent', border: 'none', color: 'white' }}><X size={24} /></button>
                                 </div>
                                 <div style={{ maxHeight: '400px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem' }}>
-                                    {operators.filter(op => !op.isSuperAdmin && op.role !== 'Model').map(op => {
+                                    {operators.filter(op => !op.isAppOwner && op.role !== 'Model').map(op => {
                                         const isAssigned = profile.assignees?.some(a => a.id === op.id) || profile.operators?.some(o => o.id === op.id);
                                         return (
                                             <div 
@@ -4233,7 +4390,7 @@ function App() {
               <div className="glass-card" style={{ padding: '2rem', marginTop: '3rem' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '2rem' }}>{t('operatorPerformance')}</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {operators.filter(op => (activeRole === 'App Owner' || op?.agencyId === activeOperator?.agencyId) && op?.role?.name !== 'System Owner').map(op => (
+                  {operators.filter(op => (activeRole === 'App Owner' || op?.agencyId === activeOperator?.agencyId) && op?.role?.name !== 'App Owner').map(op => (
                     <div key={op.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <div style={{ width: '40px', height: '40px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: 'var(--accent-color)' }}>{op.avatar}</div>

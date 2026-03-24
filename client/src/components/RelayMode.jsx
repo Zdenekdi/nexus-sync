@@ -44,6 +44,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   const POLL_FAILURES_FOR_DISCONNECT = 3;
   const HEALTH_CHECK_TIMEOUT_MS = 8000;
   const MANUAL_RETRY_ATTEMPTS = 3;
+  const relayDebug = (...args) => console.info('[Relay]', ...args);
 
   const connectionUi = {
     connected: {
@@ -126,20 +127,24 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     const installationId = localStorage.getItem('nexus_installation_id');
     const token = localStorage.getItem('nexus_token');
     if (!installationId || !token) {
-      return { available: false, connected: false };
+      return { available: false, connected: false, reason: 'missing-installation-or-token' };
     }
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT_MS);
       const response = await fetch(`${RELAY_API_BASE}/api/device/status?installationId=${encodeURIComponent(installationId)}`, {
         method: 'GET',
         cache: 'no-store',
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
-        return { available: true, connected: false, statusCode: response.status };
+        return { available: true, connected: false, statusCode: response.status, reason: 'device-status-non-ok' };
       }
 
       const data = await response.json();
@@ -150,27 +155,31 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       };
     } catch (error) {
       console.warn('[Relay] Relay status API check failed', error);
-      return { available: false, connected: false };
+      return { available: false, connected: false, reason: 'device-status-error' };
     }
   };
 
   const checkProfileStatusFromApi = async () => {
     const token = localStorage.getItem('nexus_token');
     if (!token || !operator?.id) {
-      return { available: false, connected: false };
+      return { available: false, connected: false, reason: 'missing-token-or-operator' };
     }
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT_MS);
       const response = await fetch(`${RELAY_API_BASE}/api/profiles`, {
         method: 'GET',
         cache: 'no-store',
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
-        return { available: true, connected: false, statusCode: response.status };
+        return { available: true, connected: false, statusCode: response.status, reason: 'profiles-non-ok' };
       }
 
       const profiles = await response.json();
@@ -190,31 +199,36 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       };
     } catch (error) {
       console.warn('[Relay] Profiles API check failed', error);
-      return { available: false, connected: false };
+      return { available: false, connected: false, reason: 'profiles-error' };
     }
   };
 
   const checkServerConnection = async ({ showConnectingState = true, source = 'manual', attempts = 1 } = {}) => {
     const checkId = ++latestHealthCheckRef.current;
+    relayDebug('checkServerConnection:start', { source, attempts, showConnectingState, checkId, isActive });
     if (showConnectingState) {
       setConnectionStatus('connecting');
     }
 
     const relayStatus = await checkRelayStatusFromApi();
+    relayDebug('checkServerConnection:deviceStatus', relayStatus);
     if (relayStatus.available && relayStatus.connected) {
       if (checkId === latestHealthCheckRef.current) {
         consecutiveHealthFailuresRef.current = 0;
         setConnectionStatus('connected');
       }
+      relayDebug('checkServerConnection:connected-via-device-status');
       return true;
     }
 
     const profileStatus = await checkProfileStatusFromApi();
+    relayDebug('checkServerConnection:profileStatus', profileStatus);
     if (profileStatus.available && profileStatus.connected) {
       if (checkId === latestHealthCheckRef.current) {
         consecutiveHealthFailuresRef.current = 0;
         setConnectionStatus('connected');
       }
+      relayDebug('checkServerConnection:connected-via-profiles');
       return true;
     }
 
@@ -238,6 +252,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
           consecutiveHealthFailuresRef.current = 0;
           setConnectionStatus('connected');
         }
+        relayDebug('checkServerConnection:connected-via-health', { attempt, status: response.status });
         return true;
       } catch (error) {
         // Fallback for mobile WebView CORS restrictions: treat successful opaque fetch as reachable server.
@@ -256,9 +271,11 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
             consecutiveHealthFailuresRef.current = 0;
             setConnectionStatus('connected');
           }
+          relayDebug('checkServerConnection:connected-via-health-no-cors', { attempt });
           return true;
         } catch (bypassError) {
           lastError = bypassError || error;
+          relayDebug('checkServerConnection:health-attempt-failed', { attempt, error: String(lastError) });
         }
 
         if (attempt < attempts) {
@@ -280,10 +297,19 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       }
     }
 
+    relayDebug('checkServerConnection:failed', {
+      source,
+      attempts,
+      consecutiveFailures: consecutiveHealthFailuresRef.current,
+      relayStatus,
+      profileStatus,
+      error: String(lastError || 'unknown')
+    });
     return false;
   };
 
   const reconnectServer = async () => {
+    relayDebug('reconnectServer:clicked');
     setIsRefreshing(true);
     let connected = await checkServerConnection({ source: 'manual', attempts: MANUAL_RETRY_ATTEMPTS });
     let pushSyncReachedServer = false;
@@ -307,6 +333,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     if (!connected) {
       showRelayNotice(t('relayServerUnreachable') || 'Server is unreachable. Check internet connection and try again.', 'error');
     }
+    relayDebug('reconnectServer:result', { connected, pushSyncReachedServer });
   };
 
   const normalizeLogType = (log) => {
@@ -539,8 +566,8 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
             height: '50px', 
             borderRadius: '50%', 
             border: 'none', 
-            background: isActive ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)',
-            color: isActive ? 'var(--error-color)' : 'var(--success-color)',
+            background: isActive ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+            color: isActive ? 'var(--success-color)' : 'var(--error-color)',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',

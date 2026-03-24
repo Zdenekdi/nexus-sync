@@ -30,7 +30,7 @@ const QAView = ({ t, messages = [], clientNotes = {}, clientNames = {}, updateCl
 
     // Default: show all profiles for the current operator's agency
     return profiles
-      .filter(p => activeOperator?.isSuperAdmin || p.clientId === activeOperator?.clientId)
+      .filter(p => activeOperator?.isAppOwner || p.clientId === activeOperator?.clientId)
       .map(p => p.id);
   }, [filterOperatorId, filterProfileId, profiles, activeOperator]);
 
@@ -76,14 +76,14 @@ const QAView = ({ t, messages = [], clientNotes = {}, clientNames = {}, updateCl
 
   // Operators scoped to current agency
   const agencyOperators = useMemo(() =>
-    operators.filter(op => !op.isSuperAdmin && !op.isModel && (activeOperator?.isSuperAdmin || op.clientId === activeOperator?.clientId)),
+    operators.filter(op => !op.isAppOwner && !op.isModel && (activeOperator?.isAppOwner || op.clientId === activeOperator?.clientId)),
     [operators, activeOperator]
   );
 
   // Profiles for the selected operator (or all agency profiles)
   const operatorProfiles = useMemo(() => {
     if (filterOperatorId === 'all') {
-      return profiles.filter(p => activeOperator?.isSuperAdmin || p.clientId === activeOperator?.clientId);
+      return profiles.filter(p => activeOperator?.isAppOwner || p.clientId === activeOperator?.clientId);
     }
     return profiles.filter(p => 
       p.operators?.some(o => o.id === filterOperatorId) || 

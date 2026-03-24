@@ -95,7 +95,7 @@ const PlansDashboard = ({ t, lang, subscriptionPlans, activeMarket, setActiveMar
                 </div>
               </div>
               
-              {activeOperator?.isSuperAdmin ? (
+              {activeOperator?.isAppOwner ? (
                 <button 
                   onClick={() => {}} // Simulation only
                   style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
