@@ -15,7 +15,7 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
         {[
           { label: t('totalRevenue'), value: stats.revenue || '£0.00', icon: <DollarSign color="#10b981" />, growth: stats.commissionGrowth || 'STABLE', chart: stats.chartData || [0,0,0,0,0,0,0] },
           { label: (t('agencies') || 'Agencies').toUpperCase(), value: stats.totalAgencies || (agencies || []).length, icon: <Building2 color="#3b82f6" />, growth: 'PROD', chart: [0,0,0,0,0,0,0] },
-          { label: (t('activeNodes') || 'Active Nodes').toUpperCase(), value: stats.totalProfiles || '0', icon: <Zap color="#f59e0b" />, growth: 'ONLINE', chart: [0,0,0,0,0,0,0] },
+          { label: (t('activeNodes') || 'Active Nodes').toUpperCase(), value: stats.totalProfiles || '0', icon: <Zap color="#f59e0b" />, growth: 'STABLE', chart: [0,0,0,0,0,0,0] },
           { label: t('globalTraffic').toUpperCase(), value: stats.totalMessages || '0', icon: <Activity color="#8b5cf6" />, growth: stats.uptime || '100% UP', chart: stats.chartData || [0,0,0,0,0,0,0] }
         ].map((stat, i) => (
           <div key={i} className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
@@ -50,12 +50,12 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
 
         <div className="glass-card" style={{ padding: '2rem' }}>
           <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <Users size={20} color="#a855f7" /> {t('conversionOverview') || 'CONVERSION OVERVIEW'}
+            <Activity size={20} color="#a855f7" /> {t('systemLoad') || 'SYSTEM LOAD OVERVIEW'}
           </h3>
           <div style={{ display: 'flex', justifyContent: 'center', height: '100%', alignItems: 'center' }}>
             <ConversionDonutChart data={[
-              { label: 'Messages', value: stats.totalMessages || 0 },
-              { label: 'Bookings', value: stats.totalBookings || 0 }
+              { label: 'Active', value: 85 },
+              { label: 'Idle', value: 15 }
             ]} />
           </div>
         </div>
