@@ -675,8 +675,8 @@ function App() {
             const resolvedTimestamp = chat.lastMessageAt || latestMessage.timestamp || latestMessage.createdAt || new Date().toISOString();
 
             return {
-              id: parseChatId(chat.id) ?? chat.id,
-              chatId: parseChatId(chat.id) ?? chat.id,
+              id: chat.id,
+              chatId: chat.id,
               profileId: normalizeProfileId(chat.profileId),
               from: chat.externalId,
               text: resolvedText,
@@ -2027,10 +2027,10 @@ function App() {
     return [...base].sort((a, b) => toTimestamp(b) - toTimestamp(a));
   }, [messages, activeProfileId, activeOperator?.profileId, activeProfile?.id, assignedProfiles, normalizeProfileId]);
 
-  const selectedChat = useMemo(() =>
-    selectedChatId ? filteredMessages.find(m => m.id === selectedChatId) : (filteredMessages[0] || null),
-    [filteredMessages, selectedChatId]
-  );
+  const selectedChat = useMemo(() => {
+    if (!selectedChatId) return filteredMessages[0] || null;
+    return filteredMessages.find(m => String(m.id) === String(selectedChatId)) || filteredMessages[0] || null;
+  }, [filteredMessages, selectedChatId]);
 
   const currentAgency = useMemo(() => agencies.find(a => a.id === activeClient?.id) || agencies[0], [activeClient, agencies]);
 
