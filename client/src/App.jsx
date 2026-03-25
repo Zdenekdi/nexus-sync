@@ -2039,10 +2039,13 @@ function App() {
     if (!text?.trim() || !selectedChatId) return;
     
     try {
-      const chat = messages.find(m => m.id === selectedChatId);
-      if (!chat) return;
+      const chat = messages.find(m => m.id == selectedChatId);
+      if (!chat) {
+        console.warn('[Chat] Could not find chat with ID:', selectedChatId);
+        return;
+      }
 
-      const res = await axios.post(`${API_BASE}/message`, {
+      const res = await axios.post(`${API_BASE}/messages`, {
         chatId: selectedChatId,
         text: text.trim(),
         direction: 'OUTBOUND',
@@ -3230,6 +3233,11 @@ function App() {
                               type="text" 
                               value={messageValue}
                               onChange={(e) => setMessageValue(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && messageValue.trim()) {
+                                  handleSendMessage(messageValue);
+                                }
+                              }}
                               placeholder="Type a message..." 
                               style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '1rem', borderRadius: '12px', color: 'white' }} 
                             />
@@ -3239,7 +3247,7 @@ function App() {
                                   handleSendMessage(messageValue);
                                 }
                               }}
-                              style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '12px', fontWeight: '800' }}
+                              style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '12px', fontWeight: '800', cursor: 'pointer' }}
                             >
                               SEND
                             </button>

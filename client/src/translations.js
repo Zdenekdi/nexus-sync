@@ -482,7 +482,9 @@ export const TRANSLATIONS = {
         revenueGrowth: 'REVENUE GROWTH',
         conversionOverview: 'CONVERSION OVERVIEW',
         revenueTrend: 'REVENUE TREND',
-        bookings: 'Bookings'
+        bookings: 'Bookings',
+        sendError: 'Send Error',
+        sendErrorMessage: 'Message could not be sent. Please check the relay device connection.'
     },
     cz: {
         logo: 'NEXUSSYNC',
@@ -962,6 +964,8 @@ export const TRANSLATIONS = {
         revenueGrowth: 'RŮST PŘÍJMŮ',
         conversionOverview: 'PŘEHLED KONVERZÍ',
         revenueTrend: 'TREND PŘÍJMŮ',
-        bookings: 'Rezervace'
+        bookings: 'Rezervace',
+        sendError: 'Chyba odesílání',
+        sendErrorMessage: 'Zprávu se nepodařilo odeslat. Zkontrolujte prosím připojení relay zařízení.'
     }
 };
