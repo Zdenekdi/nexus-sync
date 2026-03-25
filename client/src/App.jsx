@@ -648,14 +648,16 @@ function App() {
 
         // 2. Process Profiles
         if (profileRes.data && profileRes.data.length > 0) {
-          // Self-healing: Restore Diana's name if it was accidentally changed to Sophie
+          // Self-healing: Restore Diana's name and ensure ALL profiles are visible by defaulting to online
           const sanitizedProfiles = profileRes.data.map(p => {
+            let name = p.name;
             if (p.id === 'ldn-01' && (p.name?.includes('Sophie') || !p.name)) {
-              return { ...p, name: 'Diana (Central London)' };
+              name = 'Diana (Central London)';
             }
-            return p;
+            return { ...p, name, status: 'online' }; // Force online for visibility
           });
           setProfiles(sanitizedProfiles);
+          setShowOnlyOnline(false); // Force filter off
         }
 
         // 3. Process Chats/Messages
