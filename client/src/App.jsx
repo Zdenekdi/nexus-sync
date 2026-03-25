@@ -1941,10 +1941,20 @@ function App() {
   );
 
   const myProfiles = useMemo(() => {
+    // Basic role visibility rules
     if (activeRole === 'App Owner') return profiles;
-    if (activeRole === 'Agency Manager' || activeRole === 'Agency Admin' || activeRole === 'Senior Operator') {
-      return profiles.filter(p => p.agencyId === activeOperator?.agencyId);
+    
+    const isAgencyManagerOrSeniorOp = activeRole === 'Agency Manager' || activeRole === 'Agency Admin' || activeRole === 'Senior Operator';
+    
+    if (isAgencyManagerOrSeniorOp) {
+      // If we have an agencyId, filter by it. If not, fallback to all profiles (since backend already filtered them)
+      const currentAgencyId = activeOperator?.agencyId;
+      if (currentAgencyId) {
+        return profiles.filter(p => p.agencyId === currentAgencyId);
+      }
+      return profiles;
     }
+
     return profiles.filter(p => 
       p.operators?.some(op => op.id === activeOperator?.id && op.active) ||
       p.assignees?.some(a => a.id === activeOperator?.id)
