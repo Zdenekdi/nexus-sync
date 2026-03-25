@@ -5075,8 +5075,27 @@ function App() {
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .unread-badge { margin-left: auto; background: var(--error-color); color: white; font-size: 0.7rem; font-weight: 800; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; padding: 0 5px; }
         .avatar-circle { width: 48px; height: 48px; background: rgba(59, 130, 246, 0.1); border-radius: 50%; display: flex; alignItems: center; justifyContent: center; }
-        .message-bubble-in { align-self: flex-start; max-width: 65%; background: var(--card-bg); padding: 1.5rem; border-radius: 4px 24px 24px 24px; border: 1px solid var(--card-border); }
-        .message-bubble-out { align-self: flex-end; max-width: 65%; background: var(--accent-color); padding: 1.5rem; border-radius: 24px 24px 4px 24px; color: white; box-shadow: 0 10px 30px var(--accent-glow); }
+        .message-bubble-in { 
+          align-self: flex-start; 
+          max-width: 75%; 
+          background: rgba(255, 255, 255, 0.04); 
+          padding: 0.8rem 1.2rem; 
+          border-radius: 18px 18px 18px 4px; 
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: #e2e8f0;
+          word-break: break-word;
+          backdrop-filter: blur(10px);
+        }
+        .message-bubble-out { 
+          align-self: flex-end; 
+          max-width: 75%; 
+          background: var(--accent-gradient); 
+          padding: 0.8rem 1.2rem; 
+          border-radius: 18px 18px 4px 18px; 
+          color: white; 
+          box-shadow: 0 4px 15px var(--accent-glow); 
+          word-break: break-word;
+        }
         .suggestion-chip { background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); color: var(--text-secondary); padding: 0.6rem 1rem; borderRadius: 12px; font-size: 0.85rem; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
         .suggestion-chip:hover { background: rgba(59, 130, 246, 0.1); border-color: var(--accent-color); color: white; }
         .status-badge-small { font-size: 0.75rem; padding: 0.2rem 0.5rem; border: 1px solid var(--card-border); border-radius: 6px; display: inline-flex; }
