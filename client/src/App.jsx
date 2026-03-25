@@ -3219,7 +3219,7 @@ function App() {
                           <MoreVertical size={20} color="var(--text-secondary)" />
                         </div>
                       </div>
-                      <div style={{ flex: 1, padding: '2rem', overflowY: 'auto', background: 'rgba(0,0,0,0.2)' }}>
+                      <div style={{ flex: 1, padding: '3rem 2rem', overflowY: 'auto', background: 'rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                          {isHistoryLoading && chatMessages.length === 0 ? (
                            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Loading history...</div>
                          ) : chatMessages.length > 0 ? (
