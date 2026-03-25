@@ -26,7 +26,7 @@ exports.getMessages = async (req, res) => {
 exports.createMessage = async (req, res) => {
   try {
     const { chatId, text, direction, status, transport } = req.body;
-    const { id: userId, role, agencyId } = req.user;
+    const { userId, role, agencyId } = req.user;
     const isAppOwner = role?.isAppOwner;
     if (isAppOwner) return res.status(403).json({ message: 'App Owner cannot access messages' });
     const chat = await prisma.chat.findUnique({ where: { id: chatId } });
