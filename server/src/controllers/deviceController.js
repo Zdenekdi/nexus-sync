@@ -245,7 +245,7 @@ exports.getDeviceBindings = async (req, res) => {
     const isAdmin = isManager || isAppOwner;
     
     const bindings = await prisma.deviceBinding.findMany({
-      where: isAdmin ? { agencyId } : { userId },
+      where: isAdmin ? { agencyId } : { userId: req.user.id },
       include: {
         profile: {
           select: { name: true }
