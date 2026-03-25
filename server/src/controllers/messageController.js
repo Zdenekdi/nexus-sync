@@ -66,7 +66,8 @@ exports.createMessage = async (req, res) => {
       getIO().to(`agency_${chat.agencyId}`).emit('new_message', { 
         ...message,
         chatId: chatId,
-        profileId: chat.profileId
+        profileId: chat.profileId,
+        from: chat.externalId
       }); 
     } catch (e) { /* Socket may not be ready */ }
     
@@ -93,7 +94,8 @@ exports.simulateInbound = async (req, res) => {
       getIO().to(`agency_${profile.agencyId}`).emit('new_message', { 
         ...message,
         chatId: chat.id,
-        profileId: profile.id
+        profileId: profile.id,
+        from: externalId
       }); 
     } catch (e) { /* Socket may not be ready */ }
     
