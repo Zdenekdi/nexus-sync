@@ -33,12 +33,12 @@ exports.createMessage = async (req, res) => {
     if (!chat) return res.status(404).json({ message: 'Chat not found' });
     if (chat.agencyId !== agencyId) return res.status(403).json({ message: 'Access denied' });
     
+    // Save message to DB first (for audit trail). transport is NOT in production schema.
     const message = await prisma.message.create({
       data: {
         chatId,
         text,
         direction,
-        transport: transport || (direction === 'OUTBOUND' ? 'app' : 'sms'),
         status: status || 'sent',
         senderId: direction === 'OUTBOUND' ? userId : null
       },
@@ -47,8 +47,9 @@ exports.createMessage = async (req, res) => {
     
     await prisma.chat.update({ where: { id: chatId }, data: { lastMessageAt: new Date() } });
     
-    // ── Outbound Relay Toggle ────────────────────────────────────────────────
-    if (direction === 'OUTBOUND' && transport === 'sms') {
+    // ── Outbound Relay: send SMS via profile's relay device (appears as Diana) ──
+    // Always trigger relay for outbound messages so they reach the original sender.
+    if (direction === 'OUTBOUND') {
       try {
         await sendRelaySmsPush({
           agencyId: chat.agencyId,
