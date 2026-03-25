@@ -530,8 +530,18 @@ function App() {
       return [merged, ...next];
     });
 
+    // Sync with currently open chat history
+    if (selectedChatId && (normalizedMessage.chatId === selectedChatId || String(normalizedMessage.chatId) === String(selectedChatId))) {
+      setChatMessages(prev => {
+        // Avoid duplicates (especially for outbound messages sent locally)
+        const exists = prev.some(m => m.id === normalizedMessage.id || (m.text === normalizedMessage.text && Math.abs(new Date(m.createdAt || m.timestamp) - new Date(normalizedMessage.timestamp)) < 2000));
+        if (exists) return prev;
+        return [...prev, normalizedMessage];
+      });
+    }
+
     return normalizedMessage;
-  }, [activeOperator?.profileId, activeProfileId, normalizeProfileId, parseChatId]);
+  }, [selectedChatId, activeOperator?.profileId, activeProfileId, normalizeProfileId, parseChatId]);
 
   const resolveNotificationTarget = useCallback((notification = {}) => {
     const profileId = normalizeProfileId(notification.profileId ?? null);
