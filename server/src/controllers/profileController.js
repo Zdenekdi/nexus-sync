@@ -25,7 +25,8 @@ exports.getProfiles = async (req, res) => {
       return {
         ...profile,
         name: name,
-        data: data
+        data: data,
+        agencyId: profile.agencyId
       };
     });
 
