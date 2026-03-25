@@ -3,6 +3,7 @@ const prisma = require('../services/db');
 exports.getProfiles = async (req, res) => {
   try {
     const { role, agencyId } = req.user;
+    console.log(`[Backend Profile Fetch] User: ${req.user.name}, Role: ${role?.name || 'Unknown'}, AgencyId: ${agencyId}`);
     const isAppOwner = role?.isAppOwner;
 
     const profiles = await prisma.profile.findMany({
