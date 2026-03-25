@@ -2032,12 +2032,22 @@ function App() {
     return filteredMessages.find(m => String(m.id) === String(selectedChatId)) || filteredMessages[0] || null;
   }, [filteredMessages, selectedChatId]);
 
+  useEffect(() => {
+    if (!selectedChatId && filteredMessages.length > 0) {
+      setSelectedChatId(filteredMessages[0].id);
+    }
+  }, [filteredMessages, selectedChatId, setSelectedChatId]);
+
   const currentAgency = useMemo(() => agencies.find(a => a.id === activeClient?.id) || agencies[0], [activeClient, agencies]);
 
 
   const handleSendMessage = async (text) => {
     const targetChatId = selectedChatId || selectedChat?.id;
-    if (!text?.trim() || !targetChatId) return;
+    console.log('[Chat] Sending message:', { targetChatId, text });
+    if (!text?.trim() || !targetChatId) {
+      console.warn('[Chat] Aborting send: missing text or chat ID');
+      return;
+    }
     
     try {
       const res = await axios.post(`${API_BASE}/messages`, {
