@@ -1932,13 +1932,16 @@ function App() {
     [activeOperator?.agencyId, activeRole, operators]
   );
 
-  const myProfiles = useMemo(() =>
-    profiles.filter(p => 
+  const myProfiles = useMemo(() => {
+    if (activeRole === 'App Owner') return profiles;
+    if (activeRole === 'Agency Manager' || activeRole === 'Agency Admin' || activeRole === 'Senior Operator') {
+      return profiles.filter(p => p.agencyId === activeOperator?.agencyId);
+    }
+    return profiles.filter(p => 
       p.operators?.some(op => op.id === activeOperator?.id && op.active) ||
       p.assignees?.some(a => a.id === activeOperator?.id)
-    ),
-    [profiles, activeOperator?.id]
-  );
+    );
+  }, [profiles, activeOperator?.id, activeOperator?.agencyId, activeRole]);
 
   const myProfileIds = useMemo(() => myProfiles.map(p => p.id), [myProfiles]);
 
