@@ -2039,12 +2039,6 @@ function App() {
     if (!text?.trim() || !selectedChatId) return;
     
     try {
-      const chat = messages.find(m => m.id == selectedChatId);
-      if (!chat) {
-        console.warn('[Chat] Could not find chat with ID:', selectedChatId);
-        return;
-      }
-
       const res = await axios.post(`${API_BASE}/messages`, {
         chatId: selectedChatId,
         text: text.trim(),
