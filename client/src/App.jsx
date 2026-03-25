@@ -288,8 +288,7 @@ function App() {
   const normalizeRole = useCallback((role) => {
     if (!role) return role;
     const roleName = typeof role === 'object' ? role.name : role;
-    if (roleName === 'App Owner' || roleName === 'SUPER_ADMIN' || roleName === 'ROOT' || roleName?.isAppOwner) return 'App Owner';
-    if (roleName === 'Agency Manager' || roleName === 'Agency Admin' || roleName === 'Senior Operator' || role?.isManager) return 'Agency Manager';
+    if (roleName === 'App Owner' || roleName === 'SUPER_ADMIN' || roleName === 'ROOT') return 'App Owner';
     return roleName;
   }, []);
 
@@ -1945,7 +1944,7 @@ function App() {
 
   const filteredProfiles = useMemo(() => {
     if (activeRole === 'App Owner') return profiles;
-    if (activeRole === 'Agency Manager' || activeRole === 'Agency Admin') {
+    if (activeRole === 'Agency Manager' || activeRole === 'Agency Admin' || activeRole === 'Senior Operator') {
       return profiles.filter(p => p.agencyId === activeOperator?.agencyId);
     }
     return profiles.filter(p => 
@@ -1965,9 +1964,9 @@ function App() {
   );
 
   const assignedProfiles = useMemo(() => {
-    // For Agency Manager, show all profiles in the agency
-    if (activeRole === 'Agency Manager' || activeRole === 'Agency Admin') {
-      return profiles.filter(p => p.clientId === activeOperator?.clientId);
+    // For Agency Manager/Senior Operator, show all profiles in the agency
+    if (activeRole === 'Agency Manager' || activeRole === 'Agency Admin' || activeRole === 'Senior Operator') {
+      return profiles.filter(p => p.agencyId === activeOperator?.agencyId);
     }
     // For operators, show only their assigned models
     return profiles.filter(p => 
