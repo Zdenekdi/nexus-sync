@@ -33,38 +33,37 @@ exports.createMessage = async (req, res) => {
     if (!chat) return res.status(404).json({ message: 'Chat not found' });
     if (chat.agencyId !== agencyId) return res.status(403).json({ message: 'Access denied' });
     
-    // ── Pre-Save Relay: ensuring the message can be sent via relay before persisting ──
-    if (direction === 'OUTBOUND') {
-      const relayRes = await sendRelaySmsPush({
-        agencyId: chat.agencyId,
-        profileId: chat.profileId,
-        to: chat.externalId,
-        text: text
-      });
-
-      if (!relayRes.ok) {
-        console.error('[Relay] Failed to trigger outbound push:', relayRes.message);
-        return res.status(400).json({ 
-          message: 'Failed to send message via relay device', 
-          details: relayRes.message 
-        });
-      }
-    }
-
-    // Save message to DB only after successful relay (for OUTBOUND) or directly (for INBOUND)
+        // 1. Save message to DB first with 'pending_relay' status (User Request: DB first)
     const message = await prisma.message.create({
       data: {
         chatId,
         text,
         direction,
-        status: status || 'sent',
+        status: direction === 'OUTBOUND' ? 'pending_relay' : (status || 'sent'),
         senderId: direction === 'OUTBOUND' ? userId : null
       },
-      include: { sender: { select: { id: true, name: true } } }
+      include: { 
+        sender: { select: { id: true, name: true } }
+      }
     });
 
     // Update chat timestamp
     await prisma.chat.update({ where: { id: chatId }, data: { lastMessageAt: new Date() } });
+
+    // 2. Notify the relay device via Push (The phone will then pull or act on this)
+    if (direction === 'OUTBOUND') {
+      try {
+        await sendRelaySmsPush({
+          agencyId: chat.agencyId,
+          profileId: chat.profileId,
+          to: chat.externalId,
+          text: text,
+          messageId: message.id
+        });
+      } catch (e) {
+        console.error('[Relay] Failed to trigger outbound push:', e.message);
+      }
+    }
 
     try { 
       getIO().to(`agency_${chat.agencyId}`).emit('new_message', { 
@@ -124,16 +123,76 @@ exports.markAsRead = async (req, res) => {
   try {
     const { messageId } = req.params;
     const { role, agencyId } = req.user;
+
     const isAppOwner = role?.isAppOwner;
     if (isAppOwner) return res.status(403).json({ message: 'App Owner cannot access messages' });
+
     const message = await prisma.message.findUnique({ where: { id: messageId }, include: { chat: true } });
     if (!message) return res.status(404).json({ message: 'Message not found' });
     if (message.chat.agencyId !== agencyId) return res.status(403).json({ message: 'Access denied' });
-    const updated = await prisma.message.update({ where: { id: messageId }, data: { status: 'read' } });
-    try { getIO().to(`agency_${message.chat.agencyId}`).emit('message_updated', { chatId: message.chatId, message: updated }); } catch (e) { /* Socket may not be ready */ }
+
+    const updated = await prisma.message.update({
+      where: { id: messageId },
+      data: { status: 'read' }
+    });
+
+    try {
+      getIO().to(`agency_${message.chat.agencyId}`).emit('message_updated', { chatId: message.chatId, message: updated });
+    } catch (e) { /* Socket may not be ready */ }
+
     res.json(updated);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error marking message as read' });
+  }
+};
+
+// ── Outbox Pull: for the relay app to fetch pending messages ──
+exports.getOutbox = async (req, res) => {
+  try {
+    const { profileId } = req.query;
+    if (!profileId) return res.status(400).json({ message: 'profileId required' });
+
+    const pending = await prisma.message.findMany({
+      where: {
+        chat: { profileId },
+        direction: 'OUTBOUND',
+        status: 'pending_relay'
+      },
+      include: { chat: { select: { externalId: true } } },
+      orderBy: { createdAt: 'asc' }
+    });
+
+    res.json(pending.map(m => ({
+      id: m.id,
+      to: m.chat.externalId,
+      text: m.text,
+      createdAt: m.createdAt
+    })));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error fetching outbox' });
+  }
+};
+
+exports.updateMessageStatus = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { status } = req.body; // e.g., 'sent', 'failed'
+
+    const message = await prisma.message.update({
+      where: { id: messageId },
+      data: { status }
+    });
+
+    try {
+      const chat = await prisma.chat.findUnique({ where: { id: message.chatId } });
+      getIO().to(`agency_${chat.agencyId}`).emit('message_updated', { chatId: message.chatId, message });
+    } catch (e) {}
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error updating status' });
   }
 };
