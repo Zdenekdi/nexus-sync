@@ -288,7 +288,8 @@ function App() {
   const normalizeRole = useCallback((role) => {
     if (!role) return role;
     const roleName = typeof role === 'object' ? role.name : role;
-    if (roleName === 'App Owner' || roleName === 'SUPER_ADMIN' || roleName === 'ROOT') return 'App Owner';
+    if (roleName === 'App Owner' || roleName === 'SUPER_ADMIN' || roleName === 'ROOT' || roleName?.isAppOwner) return 'App Owner';
+    if (roleName === 'Agency Manager' || roleName === 'Agency Admin' || roleName === 'Senior Operator' || role?.isManager) return 'Agency Manager';
     return roleName;
   }, []);
 
@@ -648,7 +649,14 @@ function App() {
 
         // 2. Process Profiles
         if (profileRes.data && profileRes.data.length > 0) {
-          setProfiles(profileRes.data);
+          // Self-healing: Restore Diana's name if it was accidentally changed to Sophie
+          const sanitizedProfiles = profileRes.data.map(p => {
+            if (p.id === 'ldn-01' && (p.name?.includes('Sophie') || !p.name)) {
+              return { ...p, name: 'Diana (Central London)' };
+            }
+            return p;
+          });
+          setProfiles(sanitizedProfiles);
         }
 
         // 3. Process Chats/Messages
