@@ -628,7 +628,7 @@ function App() {
           axiosWithTiming('https://nexus-api.myvnc.com/api/device/bindings', { headers: { Authorization: `Bearer ${token}` } }),
           axiosWithTiming('https://nexus-api.myvnc.com/api/agency/stats', { headers: { Authorization: `Bearer ${token}` } }),
           axiosWithTiming('https://nexus-api.myvnc.com/api/agency/all', { headers: { Authorization: `Bearer ${token}` } }),
-          axiosWithTiming('https://nexus-api.myvnc.com/api/auth/profile', { headers: { Authorization: `Bearer ${token}` } })
+          axiosWithTiming('https://nexus-api.myvnc.com/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
         ]);
 
         const endTime = performance.now();
