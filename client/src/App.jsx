@@ -1941,22 +1941,26 @@ function App() {
   );
 
   const myProfiles = useMemo(() => {
-    // Basic role visibility rules
+    // 1. App Owner sees everything
     if (activeRole === 'App Owner') return profiles;
     
-    // For Managers and Senior Operators, we ALREADY get only their agency's profiles from the backend.
-    // So we should return all of them to ensure they see everything they are supposed to.
+    // 2. Managers and Senior Operators should see their agency's models.
+    // The backend filters by agencyId, so profiles array already only has relevant ones.
     const isAgencyManagerOrSeniorOp = activeRole === 'Agency Manager' || activeRole === 'Agency Admin' || activeRole === 'Senior Operator' || activeOperator?.role?.isManager;
     
     if (isAgencyManagerOrSeniorOp) {
+      // NUCLEAR FALLBACK: If profiles array exists, just return it. 
+      // This bypasses any potential agencyId mismatch in the frontend state.
       return profiles;
     }
 
-    // Standard operator logic: only assigned ones
-    return profiles.filter(p => 
+    // 3. Standard operator logic: only assigned ones
+    const assigned = profiles.filter(p => 
       p.operators?.some(op => op.id === activeOperator?.id && op.active) ||
       p.assignees?.some(a => a.id === activeOperator?.id)
     );
+    
+    return assigned;
   }, [profiles, activeOperator?.id, activeOperator?.role?.isManager, activeRole]);
 
   const myProfileIds = useMemo(() => myProfiles.map(p => p.id), [myProfiles]);
