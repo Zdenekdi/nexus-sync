@@ -12,6 +12,7 @@ model Agency {
   name      String
   region    String
   plan      String   @default("Standard")
+  tier      String   @default("Standard")
   inviteCode String?  @unique
   safetyAlertMode String @default("MANAGERS_AND_ASSIGNED") // MANAGERS_AND_ASSIGNED, ASSIGNED_ONLY
   createdAt DateTime @default(now())

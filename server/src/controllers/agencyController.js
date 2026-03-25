@@ -179,6 +179,7 @@ exports.createAgency = async (req, res) => {
         name,
         region,
         tier: tier || 'Professional',
+        plan: tier || 'Professional', // Keep plan in sync for now
         status: 'active'
       }
     });
