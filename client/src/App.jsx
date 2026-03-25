@@ -3229,8 +3229,13 @@ function App() {
                                <div style={{ fontSize: '0.65rem', opacity: 0.6, marginTop: '4px', textAlign: 'right' }}>
                                  {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                </div>
-                             </div>
-                                  {typingProfiles[activeProfileId] === selectedChat.from && (
+                                                          </div>
+                           ))
+                         ) : (
+                           <div className="message-bubble-in" style={{ marginBottom: '1rem' }}>{selectedChat.text}</div>
+                         )}
+
+                         {typingProfiles[activeProfileId] === selectedChat.from && (
                            <div className="message-bubble-in fade-in" style={{ alignSelf: 'flex-start', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '8px', width: 'fit-content' }}>
                              <div className="typing-dot" style={{ width: '6px', height: '6px', background: 'var(--accent-color)', borderRadius: '50%', animation: 'bounce 0.6s infinite alternate' }}></div>
                              <div className="typing-dot" style={{ width: '6px', height: '6px', background: 'var(--accent-color)', borderRadius: '50%', animation: 'bounce 0.6s infinite alternate 0.2s' }}></div>
