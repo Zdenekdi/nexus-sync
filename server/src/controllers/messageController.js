@@ -33,7 +33,25 @@ exports.createMessage = async (req, res) => {
     if (!chat) return res.status(404).json({ message: 'Chat not found' });
     if (chat.agencyId !== agencyId) return res.status(403).json({ message: 'Access denied' });
     
-    // Save message to DB first (for audit trail). transport is NOT in production schema.
+    // ── Pre-Save Relay: ensuring the message can be sent via relay before persisting ──
+    if (direction === 'OUTBOUND') {
+      const relayRes = await sendRelaySmsPush({
+        agencyId: chat.agencyId,
+        profileId: chat.profileId,
+        to: chat.externalId,
+        text: text
+      });
+
+      if (!relayRes.ok) {
+        console.error('[Relay] Failed to trigger outbound push:', relayRes.message);
+        return res.status(400).json({ 
+          message: 'Failed to send message via relay device', 
+          details: relayRes.message 
+        });
+      }
+    }
+
+    // Save message to DB only after successful relay (for OUTBOUND) or directly (for INBOUND)
     const message = await prisma.message.create({
       data: {
         chatId,
@@ -44,23 +62,9 @@ exports.createMessage = async (req, res) => {
       },
       include: { sender: { select: { id: true, name: true } } }
     });
-    
+
+    // Update chat timestamp
     await prisma.chat.update({ where: { id: chatId }, data: { lastMessageAt: new Date() } });
-    
-    // ── Outbound Relay: send SMS via profile's relay device (appears as Diana) ──
-    // Always trigger relay for outbound messages so they reach the original sender.
-    if (direction === 'OUTBOUND') {
-      try {
-        await sendRelaySmsPush({
-          agencyId: chat.agencyId,
-          profileId: chat.profileId,
-          to: chat.externalId,
-          text: text
-        });
-      } catch (e) {
-        console.error('[Relay] Failed to trigger outbound push:', e.message);
-      }
-    }
 
     try { 
       getIO().to(`agency_${chat.agencyId}`).emit('new_message', { 
