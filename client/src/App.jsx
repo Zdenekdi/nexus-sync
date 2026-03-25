@@ -2036,11 +2036,12 @@ function App() {
 
 
   const handleSendMessage = async (text) => {
-    if (!text?.trim() || !selectedChatId) return;
+    const targetChatId = selectedChatId || selectedChat?.id;
+    if (!text?.trim() || !targetChatId) return;
     
     try {
       const res = await axios.post(`${API_BASE}/messages`, {
-        chatId: selectedChatId,
+        chatId: targetChatId,
         text: text.trim(),
         direction: 'OUTBOUND',
         transport: 'sms'
