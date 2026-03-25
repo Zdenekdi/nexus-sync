@@ -13,10 +13,21 @@ exports.getProfiles = async (req, res) => {
       orderBy: { name: 'asc' }
     });
 
-    const sanitizedProfiles = profiles.map(profile => ({
-      ...profile,
-      data: profile.data ? JSON.parse(profile.data) : {}
-    }));
+    const sanitizedProfiles = profiles.map(profile => {
+      let data = profile.data ? JSON.parse(profile.data) : {};
+      let name = profile.name;
+      
+      // Self-healing for Diana
+      if (profile.id === 'ldn-01' && (name?.includes('Sophie') || !name)) {
+        name = 'Diana (Central London)';
+      }
+      
+      return {
+        ...profile,
+        name: name,
+        data: data
+      };
+    });
 
     res.json(sanitizedProfiles);
   } catch (error) {
