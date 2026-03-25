@@ -155,6 +155,8 @@ function App() {
   });
 
   const [messages, setMessages] = useState([]);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [profiles, setProfiles] = useState([]);
   const [agencies, setAgencies] = useState([]);
   const [agencySettings, setAgencySettings] = useState({ safetyAlertMode: 'MANAGERS_AND_ASSIGNED' });
@@ -1213,6 +1215,29 @@ function App() {
   useEffect(() => {
     localStorage.setItem('nexus_client_names', JSON.stringify(clientNames));
   }, [clientNames]);
+
+  const fetchChatMessages = useCallback(async (chatId) => {
+    if (!token || !chatId) return;
+    try {
+      setIsHistoryLoading(true);
+      const res = await axios.get(`${API_BASE}/messages/${chatId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setChatMessages(res.data || []);
+    } catch (err) {
+      console.error('Failed to fetch chat messages:', err);
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  }, [token, API_BASE]);
+
+  useEffect(() => {
+    if (selectedChatId) {
+      fetchChatMessages(selectedChatId);
+    } else {
+      setChatMessages([]);
+    }
+  }, [selectedChatId, fetchChatMessages]);
 
   const fetchAgencySettings = useCallback(async () => {
     if (!token) return;
@@ -3195,19 +3220,23 @@ function App() {
                         </div>
                       </div>
                       <div style={{ flex: 1, padding: '2rem', overflowY: 'auto', background: 'rgba(0,0,0,0.2)' }}>
-                         <div className="message-bubble-in" style={{ marginBottom: '1rem' }}>{selectedChat.text}</div>
-
-                         {typingProfiles[activeProfileId] === selectedChat.from && (
-                           <div className="message-bubble-in fade-in" style={{ marginBottom: '1rem', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '8px', width: 'fit-content' }}>
+                         {isHistoryLoading && chatMessages.length === 0 ? (
+                           <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Loading history...</div>
+                         ) : chatMessages.length > 0 ? (
+                           chatMessages.map((msg, i) => (
+                             <div key={msg.id || i} className={msg.direction === 'OUTBOUND' ? 'message-bubble-out' : 'message-bubble-in'} style={{ alignSelf: msg.direction === 'OUTBOUND' ? 'flex-end' : 'flex-start', marginBottom: '1rem' }}>
+                               <div style={{ fontSize: '0.95rem' }}>{msg.text}</div>
+                               <div style={{ fontSize: '0.65rem', opacity: 0.6, marginTop: '4px', textAlign: 'right' }}>
+                                 {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                               </div>
+                             </div>
+                                  {typingProfiles[activeProfileId] === selectedChat.from && (
+                           <div className="message-bubble-in fade-in" style={{ alignSelf: 'flex-start', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '8px', width: 'fit-content' }}>
                              <div className="typing-dot" style={{ width: '6px', height: '6px', background: 'var(--accent-color)', borderRadius: '50%', animation: 'bounce 0.6s infinite alternate' }}></div>
                              <div className="typing-dot" style={{ width: '6px', height: '6px', background: 'var(--accent-color)', borderRadius: '50%', animation: 'bounce 0.6s infinite alternate 0.2s' }}></div>
                              <div className="typing-dot" style={{ width: '6px', height: '6px', background: 'var(--accent-color)', borderRadius: '50%', animation: 'bounce 0.6s infinite alternate 0.4s' }}></div>
                            </div>
                          )}
-
-                         <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)', border: '1px dashed var(--card-border)', borderRadius: '12px' }}>
-                            Chat history and tools are temporarily simplified for stability.
-                         </div>
                       </div>
                       <div style={{ padding: '1.5rem', borderTop: '1px solid var(--card-border)' }}>
                          {selectedChat && activeProfile?.quickReplies?.length > 0 && (
