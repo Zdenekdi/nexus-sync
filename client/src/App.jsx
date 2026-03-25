@@ -478,11 +478,11 @@ function App() {
 
     const resolvedTransport = incomingMessage.transport || incomingMessage.type || 'sms';
     const resolvedText = incomingMessage.text || incomingMessage.content || incomingMessage.body || incomingMessage.message || '';
-    const resolvedFrom = incomingMessage.from || incomingMessage.externalId || incomingMessage.phone || 'UNKNOWN';
+    const resolvedFrom = incomingMessage.from || incomingMessage.externalId || incomingMessage.phone;
     const resolvedProfileId = normalizeProfileId(
       incomingMessage.profileId ?? incomingMessage.profile?.id ?? activeOperator?.profileId ?? activeProfileId ?? null
     );
-    const resolvedChatId = parseChatId(incomingMessage.chatId ?? incomingMessage.id ?? null);
+    const resolvedChatId = incomingMessage.chatId ?? incomingMessage.id ?? null;
     const resolvedTimestamp = incomingMessage.timestamp || incomingMessage.createdAt || new Date().toISOString();
 
     const normalizedMessage = {
@@ -503,7 +503,7 @@ function App() {
 
     setMessages(prev => {
       const existingByChatId = normalizedMessage.chatId != null
-        ? prev.findIndex(msg => parseChatId(msg.chatId ?? msg.id) === normalizedMessage.chatId)
+        ? prev.findIndex(msg => (msg.chatId || msg.id) === normalizedMessage.chatId)
         : -1;
       const existingByProfileAndFrom = existingByChatId === -1
         ? prev.findIndex(msg => normalizeProfileId(msg.profileId) === normalizedMessage.profileId && msg.from === normalizedMessage.from)
