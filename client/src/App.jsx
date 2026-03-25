@@ -620,18 +620,24 @@ function App() {
           }
         };
 
-        const [safetyRes, profileRes, chatRes, userRes, bindingRes, statsRes, agencyRes] = await Promise.all([
+        const [safetyRes, profileRes, chatRes, userRes, bindingRes, statsRes, agencyRes, selfRes] = await Promise.all([
           axiosWithTiming('https://nexus-api.myvnc.com/api/safety/sessions/active', { headers: { Authorization: `Bearer ${token}` } }),
           axiosWithTiming('https://nexus-api.myvnc.com/api/profiles', { headers: { Authorization: `Bearer ${token}` } }),
           axiosWithTiming('https://nexus-api.myvnc.com/api/chats', { headers: { Authorization: `Bearer ${token}` } }),
           axiosWithTiming('https://nexus-api.myvnc.com/api/agency/users', { headers: { Authorization: `Bearer ${token}` } }),
           axiosWithTiming('https://nexus-api.myvnc.com/api/device/bindings', { headers: { Authorization: `Bearer ${token}` } }),
           axiosWithTiming('https://nexus-api.myvnc.com/api/agency/stats', { headers: { Authorization: `Bearer ${token}` } }),
-          axiosWithTiming('https://nexus-api.myvnc.com/api/agency/all', { headers: { Authorization: `Bearer ${token}` } })
+          axiosWithTiming('https://nexus-api.myvnc.com/api/agency/all', { headers: { Authorization: `Bearer ${token}` } }),
+          axiosWithTiming('https://nexus-api.myvnc.com/api/auth/profile', { headers: { Authorization: `Bearer ${token}` } })
         ]);
 
         const endTime = performance.now();
         console.log(`[Performance] Parallel data fetch completed in ${(endTime - startTime).toFixed(2)}ms`);
+
+        if (selfRes && selfRes.data) {
+          setActiveOperator(selfRes.data);
+          localStorage.setItem('nexus_activeOperator', JSON.stringify(selfRes.data));
+        }
 
         if (statsRes && statsRes.data) {
           setStats(statsRes.data);
