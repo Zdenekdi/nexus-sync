@@ -24,6 +24,7 @@ import DashboardHome from './components/DashboardHome';
 import LoginScreen from './components/LoginScreen';
 import ResetPasswordView from './components/ResetPasswordView';
 import InventoryView from './components/InventoryView';
+import InfraTab from './components/InfraTab';
 import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
@@ -1410,8 +1411,138 @@ function App() {
       caller,
       callState,
       targetType,
+      // Pass-through for relay commands
+      to: data.to || null,
+      content: data.content || null,
+      messageId: data.id || null
     };
   }, [parseChatId]);
+
+  const handleRelaySmsCommand = useCallback(async (data) => {
+    const { to, content: text, messageId } = data;
+    if (!to || !text) return;
+
+    console.log('[Relay] Executing SMS command', { to, messageId });
+    try {
+      const plugin = window.Capacitor?.Plugins?.NexusRelay;
+      if (!plugin) throw new Error('Relay plugin not available');
+
+      // 1. Send SMS via native plugin
+      await plugin.sendSms({ to, text });
+
+      // 2. Update status on backend
+      if (messageId && !String(messageId).startsWith('relay-')) {
+        await axios.patch(`https://nexus-api.myvnc.com/api/messages/${messageId}/status`, 
+          { status: 'sent' },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+    } catch (error) {
+      console.error('[Relay] SMS command failed', error);
+      if (messageId && !String(messageId).startsWith('relay-')) {
+        try {
+          await axios.patch(`https://nexus-api.myvnc.com/api/messages/${messageId}/status`, 
+            { status: 'failed' },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+        } catch (e) {}
+      }
+    }
+  }, [token]);
+
+  const processRelayOutbox = useCallback(async (profileId) => {
+    if (!profileId || !token) return;
+    
+    console.log('[Relay] Checking outbox for profile:', profileId);
+    try {
+      const response = await axios.get(`https://nexus-api.myvnc.com/api/messages/outbox?profileId=${profileId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const pending = response.data || [];
+      if (pending.length === 0) return;
+      
+      console.log(`[Relay] Found ${pending.length} pending messages in outbox`);
+      for (const msg of pending) {
+        await handleRelaySmsCommand({
+          to: msg.to,
+          content: msg.text,
+          messageId: msg.id
+        });
+        // Small delay between sends to prevent carrier blocking/flooding
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    } catch (error) {
+      console.warn('[Relay] Outbox sync failed', error);
+    }
+  }, [handleRelaySmsCommand, token]);
+
+  const syncSmsHistory = useCallback(async (profileId) => {
+    if (!profileId || !token) return;
+    
+    const lastSyncStr = localStorage.getItem(`nexus_last_sms_sync_${profileId}`);
+    let lastTimestamp = lastSyncStr ? parseInt(lastSyncStr, 10) : 0;
+    
+    if (lastTimestamp === 0) {
+      lastTimestamp = Date.now() - (48 * 60 * 60 * 1000); 
+    }
+
+    console.log('[Relay] Starting SMS history sync from:', new Date(lastTimestamp).toLocaleString());
+    
+    try {
+      const plugin = window.Capacitor?.Plugins?.NexusRelay;
+      if (!plugin) throw new Error('Relay plugin not available');
+
+      const result = await plugin.getSmsHistory({ lastTimestamp, limit: 100 });
+      const messages = result.messages || [];
+      
+      if (messages.length === 0) {
+        console.log('[Relay] No new history messages to sync');
+        return;
+      }
+
+      console.log(`[Relay] Syncing ${messages.length} messages...`);
+      const deviceId = localStorage.getItem('nexus_device_id');
+      const installationId = localStorage.getItem('nexus_installation_id');
+
+      for (const msg of messages) {
+        const payload = {
+          deviceId,
+          installationId,
+          transport: 'sms',
+          type: msg.type === 'inbound' ? 'SMS_RECEIVED' : 'SMS_SENT',
+          from: msg.address,
+          content: msg.body,
+          timestamp: new Date(msg.date).toISOString()
+        };
+
+        try {
+          await axios.post('https://nexus-api.myvnc.com/api/relay', payload, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        } catch (e) {
+          console.warn('[Relay] Individual message sync failed', e.message);
+        }
+        lastTimestamp = Math.max(lastTimestamp, msg.date);
+      }
+
+      localStorage.setItem(`nexus_last_sms_sync_${profileId}`, String(lastTimestamp));
+    } catch (error) {
+      console.error('[Relay] History sync failed', error);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (isRelayMode && activeOperator?.profileId) {
+      processRelayOutbox(activeOperator.profileId);
+      syncSmsHistory(activeOperator.profileId);
+      const interval = setInterval(() => {
+        processRelayOutbox(activeOperator.profileId);
+        syncSmsHistory(activeOperator.profileId);
+      }, 30000); // Poll every 30 seconds
+      return () => clearInterval(interval);
+    }
+  }, [isRelayMode, activeOperator?.profileId, processRelayOutbox, syncSmsHistory]);
 
   const isPushRegistrationEnabled = useMemo(() => {
     try {
@@ -1480,11 +1611,24 @@ function App() {
 
         receivedHandle = await PushNotifications.addListener('pushNotificationReceived', (notification) => {
           const mapped = mapPushPayloadToTarget(notification);
+          
+          if (mapped.type === 'send_sms') {
+            handleRelaySmsCommand(mapped);
+            return;
+          }
+
           addNotification(mapped);
         });
 
         actionHandle = await PushNotifications.addListener('pushNotificationActionPerformed', (event) => {
           const mapped = mapPushPayloadToTarget(event?.notification || {});
+          
+          if (mapped.type === 'send_sms') {
+            // Already handled by received listener usually, but if tapped from tray:
+            handleRelaySmsCommand(mapped);
+            return;
+          }
+
           openNotificationTarget(mapped);
         });
 
@@ -2635,6 +2779,8 @@ function App() {
           syncPushToken={syncPushToken}
           isSyncingPush={isSyncingPush}
           requestRelayPermissions={requestRelayPermissions}
+          processRelayOutbox={processRelayOutbox}
+          syncSmsHistory={syncSmsHistory}
         />
       );
     }
@@ -4607,6 +4753,18 @@ function App() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'infra' && rolePermissions[activeRole]?.infrastructure && (
+          <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
+            <h2 style={{ fontSize: isMobile ? '2rem' : '2.5rem', fontWeight: '900', marginBottom: '0.5rem', background: 'linear-gradient(to right, #6366f1, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              {t('infraTitle') || 'Infrastructure Control'}
+            </h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '1rem' }}>
+              {t('infraSubtitle') || 'Global oversight of system health and core service stability.'}
+            </p>
+            <InfraTab t={t} />
           </div>
         )}
 

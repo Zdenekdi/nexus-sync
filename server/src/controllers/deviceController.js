@@ -487,12 +487,17 @@ exports.handleRelay = async (req, res) => {
         });
       }
 
+      // Determine direction from type (from relay device)
+      const direction = type === 'SMS_SENT' ? 'OUTBOUND' : 'INBOUND';
+
       const createdMessage = await prisma.message.create({
         data: {
           chatId: chat.id,
           text: content,
-          direction: 'INBOUND',
-          status: 'delivered'
+          transport: messageTransport,
+          direction: direction,
+          status: 'delivered',
+          createdAt: timestamp ? new Date(timestamp) : new Date()
         }
       });
 
@@ -510,9 +515,9 @@ exports.handleRelay = async (req, res) => {
           text: content,
           transport: messageTransport,
           type: messageTransport,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          time: new Date(createdMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           status: 'delivered',
-          direction: 'inbound',
+          direction: direction.toLowerCase(),
           sender: null
         });
       } catch (e) {

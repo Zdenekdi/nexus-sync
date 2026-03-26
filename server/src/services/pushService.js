@@ -254,7 +254,7 @@ const sendSafetyPush = async ({ agencyId, sessionId, profileId, profileName, typ
   return sendMulticast(tokens, payload);
 };
 
-const sendRelaySmsPush = async ({ agencyId, profileId, to, text }) => {
+const sendRelaySmsPush = async ({ agencyId, profileId, to, text, messageId }) => {
   // 1. Find the bound device for this profile to get the specific user/tokens
   const binding = await prisma.deviceBinding.findFirst({
     where: { 
@@ -288,7 +288,8 @@ const sendRelaySmsPush = async ({ agencyId, profileId, to, text }) => {
       to: ensureString(to),
       content: ensureString(text),
       profileId: ensureString(profileId),
-      notificationId: `relay-${Date.now()}`,
+      id: ensureString(messageId),
+      notificationId: `relay-${messageId || Date.now()}`,
       timestamp: new Date().toISOString()
     },
     android: {
