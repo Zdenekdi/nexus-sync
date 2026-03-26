@@ -1,11 +1,14 @@
 package com.nexushub.app;
 
+import android.telephony.SmsManager;
 import android.Manifest;
 import android.app.Activity;
 import android.app.KeyguardManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
 import android.telephony.PhoneStateListener;
@@ -14,6 +17,7 @@ import android.telephony.TelephonyManager;
 import androidx.activity.result.ActivityResult;
 import androidx.annotation.RequiresApi;
 import java.nio.charset.StandardCharsets;
+import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.PermissionState;
 import com.getcapacitor.Plugin;
@@ -27,7 +31,7 @@ import com.getcapacitor.annotation.PermissionCallback;
 @CapacitorPlugin(
     name = "NexusRelay",
     permissions = {
-        @Permission(alias = NexusRelayPlugin.SMS_PERMISSION_ALIAS, strings = { Manifest.permission.RECEIVE_SMS, Manifest.permission.READ_SMS }),
+        @Permission(alias = NexusRelayPlugin.SMS_PERMISSION_ALIAS, strings = { Manifest.permission.RECEIVE_SMS, Manifest.permission.READ_SMS, Manifest.permission.SEND_SMS }),
         @Permission(alias = NexusRelayPlugin.PHONE_PERMISSION_ALIAS, strings = { Manifest.permission.READ_PHONE_STATE, Manifest.permission.READ_CALL_LOG }),
         @Permission(alias = NexusRelayPlugin.LOCATION_PERMISSION_ALIAS, strings = { Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION })
     }
@@ -113,6 +117,11 @@ public class NexusRelayPlugin extends Plugin {
             missing.add(LOCATION_PERMISSION_ALIAS);
         }
         return missing.toArray(new String[0]);
+    }
+
+    @PluginMethod
+    public void checkStatus(PluginCall call) {
+        call.resolve(buildStatus());
     }
 
     private JSObject buildStatus() {
@@ -264,6 +273,88 @@ public class NexusRelayPlugin extends Plugin {
         }
 
         startActivityForResult(call, intent, "confirmDeviceCredentialCallback");
+    }
+
+    @PluginMethod
+    public void sendSms(PluginCall call) {
+        String to = call.getString("to");
+        String text = call.getString("text");
+
+        if (to == null || text == null) {
+            call.reject("Recipient and text are required");
+            return;
+        }
+
+        try {
+            SmsManager smsManager;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                smsManager = getContext().getSystemService(SmsManager.class);
+            } else {
+                smsManager = SmsManager.getDefault();
+            }
+
+            if (text.length() > 160) {
+                java.util.ArrayList<String> parts = smsManager.divideMessage(text);
+                smsManager.sendMultipartTextMessage(to, null, parts, null, null);
+            } else {
+                smsManager.sendTextMessage(to, null, text, null, null);
+            }
+
+            // Emit event to JS for real-time logging in UI
+            JSObject relayEvent = new JSObject();
+            relayEvent.put("type", "sms");
+            relayEvent.put("from", to);
+            relayEvent.put("content", text);
+            relayEvent.put("status", "sent");
+            relayEvent.put("direction", "outbound");
+            notifyListeners("relay_event", relayEvent);
+
+            JSObject ret = new JSObject();
+            ret.put("sent", true);
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("SMS failed to send: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void getSmsHistory(PluginCall call) {
+        long lastTimestamp = call.getLong("lastTimestamp", 0L);
+        int limit = call.getInt("limit", 500);
+        JSArray messages = new JSArray();
+
+        try {
+            Uri uri = Uri.parse("content://sms/");
+            String[] projection = new String[] { "_id", "address", "body", "date", "type" };
+            String selection = "date > ?";
+            String[] selectionArgs = new String[] { String.valueOf(lastTimestamp) };
+            String sortOrder = "date ASC LIMIT " + limit;
+
+            Cursor cursor = getContext().getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
+
+            if (cursor != null) {
+                if (cursor.moveToFirst()) {
+                    do {
+                        JSObject msg = new JSObject();
+                        msg.put("id", cursor.getString(cursor.getColumnIndexOrThrow("_id")));
+                        msg.put("address", cursor.getString(cursor.getColumnIndexOrThrow("address")));
+                        msg.put("body", cursor.getString(cursor.getColumnIndexOrThrow("body")));
+                        msg.put("date", cursor.getLong(cursor.getColumnIndexOrThrow("date")));
+                        int type = cursor.getInt(cursor.getColumnIndexOrThrow("type"));
+                        // 1 = MESSAGE_TYPE_INBOX, 2 = MESSAGE_TYPE_SENT
+                        msg.put("type", type == 1 ? "inbound" : "outbound");
+                        messages.put(msg);
+                    } while (cursor.moveToNext());
+                }
+                cursor.close();
+            }
+
+            JSObject ret = new JSObject();
+            ret.put("messages", messages);
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("Failed to fetch SMS history: " + e.getMessage());
+        }
     }
 
     @ActivityCallback

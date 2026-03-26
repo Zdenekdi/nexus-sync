@@ -16,7 +16,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 
-const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, requestRelayPermissions }) => {
+const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, requestRelayPermissions, processRelayOutbox, syncSmsHistory }) => {
   const RELAY_API_BASE = 'https://nexus-api.myvnc.com';
   const [isActive, setIsActive] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState('connecting');
@@ -329,6 +329,14 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       showRelayNotice(t('relayConnectedViaApi') || 'Server API responded successfully. Relay stays connected.', 'success');
     }
 
+    if (connected && typeof processRelayOutbox === 'function' && operator?.profileId) {
+      void processRelayOutbox(operator.profileId);
+    }
+
+    if (connected && typeof syncSmsHistory === 'function' && operator?.profileId) {
+      void syncSmsHistory(operator.profileId);
+    }
+
     setIsRefreshing(false);
     if (!connected) {
       showRelayNotice(t('relayServerUnreachable') || 'Server is unreachable. Check internet connection and try again.', 'error');
@@ -396,6 +404,46 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     }, 15000);
 
     return () => clearInterval(interval);
+  }, [isActive]);
+
+  const testSms = async () => {
+    try {
+      const plugin = window.Capacitor?.Plugins?.NexusRelay;
+      if (!plugin) throw new Error('Relay plugin not available');
+      
+      const testNum = prompt(t('enterTestNumber') || 'Zadejte testovací číslo:', '+420');
+      if (!testNum) return;
+
+      const testMsg = 'Nexus Relay Diagnostic Test - ' + new Date().toLocaleTimeString();
+      addLocalLog('sms', testNum, 'TEST: ' + testMsg);
+      
+      await plugin.sendSms({ to: testNum, text: testMsg });
+      showRelayNotice(t('testSmsSent') || 'Testovací SMS odeslána!', 'success');
+    } catch (e) {
+      console.error('[Relay] Test SMS failed', e);
+      showRelayNotice(t('testSmsFailed') || 'Chyba při testu SMS: ' + e.message, 'error');
+    }
+  };
+
+  useEffect(() => {
+    // 1. Listen for background events from native plugin
+    const plugin = window.Capacitor?.Plugins?.NexusRelay;
+    let listener = null;
+    
+    if (plugin?.addListener) {
+      listener = plugin.addListener('relay_event', (event) => {
+        console.log('[Relay] Native event received:', event);
+        addLocalLog(event.type || 'sms', event.from, (event.direction === 'outbound' ? '[OUTBOUND] ' : '') + event.content);
+        
+        if (event.status === 'sent') {
+          showRelayNotice(t('smsRelayed') || 'SMS byla odeslána!', 'success');
+        }
+      });
+    }
+
+    return () => {
+      if (listener) listener.remove();
+    };
   }, [isActive]);
 
   const syncRelayToNative = async (active) => {
@@ -471,23 +519,37 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     return () => clearInterval(interval);
   }, [isActive]);
 
-  // Load initial permissions status on mount
-  useEffect(() => {
-    if (typeof requestRelayPermissions === 'function') {
-      requestRelayPermissions().then(status => {
-        if (status) {
-          setPermissionsStatus({
-            smsMonitoring: Boolean(status.smsMonitoring),
-            callMonitoring: Boolean(status.callMonitoring),
-            locationMonitoring: Boolean(status.locationMonitoring),
-            rcsMonitoring: Boolean(status.rcsMonitoring)
-          });
-        }
-      }).catch(err => {
-        console.warn('[Relay] Failed to load initial permissions status', err);
-      });
+  const refreshPermissionsStatus = async () => {
+    try {
+      const plugin = window.Capacitor?.Plugins?.NexusRelay;
+      if (!plugin?.checkStatus) return;
+      
+      const status = await plugin.checkStatus();
+      if (status) {
+        setPermissionsStatus({
+          smsMonitoring: Boolean(status.smsMonitoring),
+          callMonitoring: Boolean(status.callMonitoring),
+          locationMonitoring: Boolean(status.locationMonitoring),
+          rcsMonitoring: Boolean(status.rcsMonitoring)
+        });
+      }
+    } catch (err) {
+      console.warn('[Relay] Failed to refresh permissions status', err);
     }
-  }, [requestRelayPermissions]);
+  };
+
+  // Load initial permissions status and start polling
+  useEffect(() => {
+    void refreshPermissionsStatus();
+
+    const interval = setInterval(() => {
+      if (isActive) {
+        void refreshPermissionsStatus();
+      }
+    }, 10000); // Poll every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [isActive]);
 
   const refreshLogs = async () => {
     setIsRefreshingLogs(true);
@@ -548,6 +610,48 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       width: '100%',
       boxSizing: 'border-box'
     }}>
+      {/* Diagnostics / Test Section */}
+      <div className="glass-card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontWeight: '800', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t('relayDiagnostics') || 'DIAGNOSTICS'}</div>
+          <Activity size={16} color="var(--text-secondary)" />
+        </div>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button 
+            onClick={testSms}
+            style={{ 
+              flex: 1, 
+              padding: '0.75rem', 
+              borderRadius: '12px', 
+              background: 'rgba(59, 130, 246, 0.1)', 
+              border: '1px solid rgba(59, 130, 246, 0.2)', 
+              color: 'var(--accent-color)', 
+              fontSize: '0.8rem', 
+              fontWeight: '800',
+              cursor: 'pointer'
+            }}
+          >
+            {t('runSmsTest') || 'RUN SMS TEST'}
+          </button>
+          <button 
+            onClick={refreshDiagnostics}
+            style={{ 
+              flex: 1, 
+              padding: '0.75rem', 
+              borderRadius: '12px', 
+              background: 'rgba(255, 255, 255, 0.05)', 
+              border: '1px solid var(--card-border)', 
+              color: 'var(--text-secondary)', 
+              fontSize: '0.8rem', 
+              fontWeight: '800',
+              cursor: 'pointer'
+            }}
+          >
+            {t('refreshHealth') || 'REFRESH HEALTH'}
+          </button>
+        </div>
+      </div>
+
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
