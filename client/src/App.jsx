@@ -1882,7 +1882,12 @@ function App() {
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data) && data.length > 0) {
-            setProfiles(data);
+            // Enrich profiles with locally persisted quickReplies
+            const enriched = data.map(p => ({
+              ...p,
+              quickReplies: JSON.parse(localStorage.getItem(`nexus_quick_replies_${p.id}`) || 'null') || p.quickReplies || []
+            }));
+            setProfiles(enriched);
           }
         }
       } catch (err) {
@@ -2291,7 +2296,11 @@ function App() {
 
   const handleSaveProfile = useCallback(() => {
     if (!editingProfileData) return;
-    setProfiles(prev => prev.map(p => 
+    // Persist quick replies to localStorage (no backend field needed)
+    if (editingProfileData.quickReplies) {
+      localStorage.setItem(`nexus_quick_replies_${editingProfileData.id}`, JSON.stringify(editingProfileData.quickReplies));
+    }
+    setProfiles(prev => prev.map(p =>
       p.id === editingProfileData.id ? { ...p, ...editingProfileData } : p
     ));
     setIsEditProfileModalOpen(false);
@@ -3548,6 +3557,18 @@ function App() {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                               <textarea value={internalNote} onChange={(e) => setInternalNote(e.target.value)} placeholder="Add internal note..." style={{ width: '100%', minHeight: '100px', background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.2)', borderRadius: '12px', padding: '1rem', color: '#f59e0b' }} />
                               <button onClick={handleSaveNote} disabled={!internalNote.trim()} style={{ alignSelf: 'flex-end', background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.4)', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: '700' }}>Save Note</button>
+                              {/* Saved notes list */}
+                              {(clientNotes[selectedChat?.from] || []).length > 0 && (
+                                <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>SAVED NOTES</div>
+                                  {(clientNotes[selectedChat.from] || []).slice().reverse().map(note => (
+                                    <div key={note.id} style={{ background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.15)', borderRadius: '10px', padding: '0.75rem' }}>
+                                      <div style={{ fontSize: '0.85rem', color: '#f59e0b', lineHeight: '1.5' }}>{note.text}</div>
+                                      <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>{note.author} · {note.timestamp}</div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
