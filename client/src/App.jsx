@@ -1107,6 +1107,9 @@ function App() {
     return localStorage.getItem('nexus_relay_mode') === 'true';
   });
 
+  // profileId bound to this device (read from DeviceBinding on server)
+  const [boundProfileId, setBoundProfileId] = useState(() => localStorage.getItem('nexus_bound_profile_id'));
+
   // Persist relay mode state whenever it changes
   useEffect(() => {
     localStorage.setItem('nexus_relay_mode', isRelayMode ? 'true' : 'false');
@@ -1149,7 +1152,7 @@ function App() {
       if (installationId) {
         localStorage.setItem('nexus_installation_id', installationId);
       }
-      await fetch(`${API_BASE}/device/verify`, {
+      const verifyRes = await fetch(`${API_BASE}/device/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1163,6 +1166,14 @@ function App() {
           deviceName: info?.name || null,
         }),
       });
+      // Store bound profileId so relay outbox polling can use it
+      if (verifyRes.ok) {
+        const binding = await verifyRes.json();
+        if (binding?.profileId) {
+          localStorage.setItem('nexus_bound_profile_id', binding.profileId);
+          setBoundProfileId(binding.profileId);
+        }
+      }
     } catch (error) {
       console.warn('[Device] Verification endpoint unavailable', error);
     }
@@ -1538,16 +1549,17 @@ function App() {
   }, [token]);
 
   useEffect(() => {
-    if (isRelayMode && activeOperator?.profileId) {
-      processRelayOutbox(activeOperator.profileId);
-      syncSmsHistory(activeOperator.profileId);
+    const relayProfileId = activeOperator?.profileId || boundProfileId;
+    if (isRelayMode && relayProfileId) {
+      processRelayOutbox(relayProfileId);
+      syncSmsHistory(relayProfileId);
       const interval = setInterval(() => {
-        processRelayOutbox(activeOperator.profileId);
-        syncSmsHistory(activeOperator.profileId);
+        processRelayOutbox(relayProfileId);
+        syncSmsHistory(relayProfileId);
       }, 30000); // Poll every 30 seconds
       return () => clearInterval(interval);
     }
-  }, [isRelayMode, activeOperator?.profileId, processRelayOutbox, syncSmsHistory]);
+  }, [isRelayMode, activeOperator?.profileId, boundProfileId, processRelayOutbox, syncSmsHistory]);
 
   const isPushRegistrationEnabled = useMemo(() => {
     try {
@@ -2245,6 +2257,8 @@ function App() {
 
       if (res.data) {
         setMessageValue('');
+        // Optimistic update – add message to chat immediately without waiting for socket event
+        setChatMessages(prev => [...prev, res.data]);
       }
     } catch (error) {
       console.error('Send message error:', error);
