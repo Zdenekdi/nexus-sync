@@ -54,3 +54,5 @@ client/scroll-test.html
 client/SCROLL_FIX_*.md
 client/android/release/output-metadata.json
 client/android/app/release/output-metadata.json
+server/prisma/*.db
+server/prisma/*.db-journal
