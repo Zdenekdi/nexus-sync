@@ -3543,66 +3543,68 @@ function App() {
                     )}
                     {selectedChat ? (
                       <div style={{ display: 'flex', flex: 1, flexDirection: 'column', overflow: 'hidden' }}>
-                         <div style={{ display: 'flex', borderBottom: '1px solid var(--card-border)', background: 'rgba(255, 255, 255, 0.02)' }}>
-                           <button onClick={() => setActiveContextTab('translator')} style={{ flex: 1, padding: '0.75rem', border: 'none', background: 'transparent', color: activeContextTab === 'translator' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                             <Languages size={16} /> {t('aiTranslator') || 'AI Translator'}
+                         {/* Tab bar */}
+                         <div style={{ display: 'flex', borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)' }}>
+                           <button onClick={() => setActiveContextTab('translator')} style={{ flex: 1, padding: '0.6rem 0.25rem', border: 'none', background: 'transparent', color: activeContextTab === 'translator' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.7rem' }}>
+                             <Languages size={13} /> {lang === 'cz' ? 'Překladač' : 'Translator'}
                            </button>
-                           <button onClick={() => setActiveContextTab('note')} style={{ flex: 1, padding: '0.75rem', border: 'none', background: 'transparent', color: activeContextTab === 'note' ? '#f59e0b' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                             <StickyNote size={16} /> {t('internalNote') || 'Internal Note'}
+                           <button onClick={() => setActiveContextTab('note')} style={{ flex: 1, padding: '0.6rem 0.25rem', border: 'none', background: 'transparent', color: activeContextTab === 'note' ? '#f59e0b' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.7rem' }}>
+                             <StickyNote size={13} /> {lang === 'cz' ? 'Poznámky' : 'Notes'}
+                           </button>
+                           <button onClick={() => setActiveContextTab('quickReplies')} style={{ flex: 1, padding: '0.6rem 0.25rem', border: 'none', background: 'transparent', color: activeContextTab === 'quickReplies' ? '#10b981' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.7rem' }}>
+                             <Zap size={13} /> {lang === 'cz' ? 'Odpovědi' : 'Replies'}
                            </button>
                          </div>
-                        <div style={{ padding: '1.5rem', flex: 1, overflowY: 'auto' }}>
+                        {/* Tab content */}
+                        <div style={{ padding: '1.25rem', flex: 1, overflowY: 'auto' }}>
                           {activeContextTab === 'translator' ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                               <textarea value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder={t('typeResponse')} style={{ width: '100%', height: '100px', background: 'rgba(0, 0, 0, 0.2)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem', color: 'white', resize: 'none' }} />
-                              <button onClick={handleTranslate} disabled={isTranslating} style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0.75rem 1rem', borderRadius: '12px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.2s' }}>
-                                {isTranslating ? (
-                                  <>
-                                    <div className="loader-dots" style={{ display: 'flex', gap: '4px' }}>
-                                      <span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span>
-                                      <span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span>
-                                      <span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span>
-                                    </div>
-                                    {t('translating')}
-                                  </>
-                                ) : (
-                                  <>
-                                    <Sparkles size={16} /> {lang === 'cz' ? 'PŘELOŽIT PŘES AI' : 'TRANSLATE VIA AI'}
-                                  </>
-                                )}
+                              <button onClick={handleTranslate} disabled={isTranslating} style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0.75rem 1rem', borderRadius: '12px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                                {isTranslating ? (<><div className="loader-dots" style={{ display: 'flex', gap: '4px' }}><span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span><span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span><span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span></div>{t('translating')}</>) : (<><Sparkles size={16} /> {lang === 'cz' ? 'PŘELOŽIT PŘES AI' : 'TRANSLATE VIA AI'}</>)}
                               </button>
                               {translatedText && (
-                                <div className="fade-in" style={{ padding: '1rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '12px', position: 'relative' }}>
+                                <div className="fade-in" style={{ padding: '1rem', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '12px', position: 'relative' }}>
                                   <div style={{ position: 'absolute', top: '-8px', right: '12px', background: 'var(--accent-color)', color: 'white', fontSize: '0.6rem', fontWeight: '900', padding: '2px 8px', borderRadius: '4px' }}>{t('poweredByAi')}</div>
                                   <div style={{ fontSize: '0.9rem', color: 'white', lineHeight: '1.5' }}>{translatedText}</div>
-                                  <button 
-                                    onClick={() => {
-                                      setMessageValue(translatedText);
-                                      setActiveContextTab('note'); // Switch back or stay
-                                    }}
-                                    style={{ marginTop: '0.75rem', width: '100%', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', padding: '0.4rem', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer' }}
-                                  >
+                                  <button onClick={() => { setMessageValue(translatedText); setActiveContextTab('note'); }} style={{ marginTop: '0.75rem', width: '100%', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', padding: '0.4rem', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer' }}>
                                     {lang === 'cz' ? 'POUŽÍT PŘEKLAD' : 'USE TRANSLATION'}
                                   </button>
                                 </div>
                               )}
                             </div>
-                          ) : (
+                          ) : activeContextTab === 'note' ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                              <textarea value={internalNote} onChange={(e) => setInternalNote(e.target.value)} placeholder="Add internal note..." style={{ width: '100%', minHeight: '100px', background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.2)', borderRadius: '12px', padding: '1rem', color: '#f59e0b' }} />
-                              <button onClick={handleSaveNote} disabled={!internalNote.trim()} style={{ alignSelf: 'flex-end', background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.4)', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: '700' }}>Save Note</button>
-                              {/* Saved notes list */}
+                              <textarea value={internalNote} onChange={(e) => setInternalNote(e.target.value)} placeholder="Add internal note..." style={{ width: '100%', minHeight: '100px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '12px', padding: '1rem', color: '#f59e0b' }} />
+                              <button onClick={handleSaveNote} disabled={!internalNote.trim()} style={{ alignSelf: 'flex-end', background: 'rgba(245,158,11,0.2)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.4)', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: '700' }}>Save Note</button>
                               {(clientNotes[selectedChat?.from] || []).length > 0 && (
                                 <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                   <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>SAVED NOTES</div>
                                   {(clientNotes[selectedChat.from] || []).slice().reverse().map(note => (
-                                    <div key={note.id} style={{ background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.15)', borderRadius: '10px', padding: '0.75rem', position: 'relative' }}>
-                                      <button onClick={() => handleDeleteNote(selectedChat.from, note.id)} style={{ position: 'absolute', top: '6px', right: '8px', background: 'none', border: 'none', color: 'rgba(245,158,11,0.5)', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, padding: '2px 4px' }} title="Delete note">×</button>
+                                    <div key={note.id} style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: '10px', padding: '0.75rem', position: 'relative' }}>
+                                      <button onClick={() => handleDeleteNote(selectedChat.from, note.id)} style={{ position: 'absolute', top: '6px', right: '8px', background: 'none', border: 'none', color: 'rgba(245,158,11,0.5)', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, padding: '2px 4px' }}>×</button>
                                       <div style={{ fontSize: '0.85rem', color: '#f59e0b', lineHeight: '1.5', paddingRight: '1.5rem' }}>{note.text}</div>
                                       <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>{note.author} · {note.timestamp}</div>
                                     </div>
                                   ))}
                                 </div>
+                              )}
+                            </div>
+                          ) : (
+                            /* Quick Replies tab */
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                              {(activeProfile?.quickReplies || []).length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                                  <Zap size={32} style={{ opacity: 0.2, marginBottom: '0.75rem', display: 'block', margin: '0 auto 0.75rem' }} />
+                                  {lang === 'cz' ? 'Žádné rychlé odpovědi. Přidej je v nastavení profilu.' : 'No quick replies yet. Add them in Profile Settings.'}
+                                </div>
+                              ) : (
+                                (activeProfile.quickReplies || []).map(reply => (
+                                  <button key={reply.id} onClick={() => setMessageValue(reply.text)} style={{ textAlign: 'left', background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '10px', padding: '0.75rem 1rem', cursor: 'pointer' }}>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#10b981', marginBottom: '0.2rem' }}>{reply.label}</div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{reply.text}</div>
+                                  </button>
+                                ))
                               )}
                             </div>
                           )}

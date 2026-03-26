@@ -25,6 +25,7 @@ const deviceRoutes = require('./routes/deviceRoutes');
 const safetyRoutes = require('./routes/safetyRoutes');
 const agencyRoutes = require('./routes/agencyRoutes');
 const vultrRoutes = require('./routes/vultrRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
 
 const app = express();
 
@@ -123,6 +124,7 @@ app.use('/api/device', deviceRoutes);
 app.use('/api/safety', safetyRoutes);
 app.use('/api/agency', agencyRoutes);
 app.use('/api/vultr', vultrRoutes);
+app.use('/api/bookings', bookingRoutes);
 
 // Basic health check
 app.get('/health', (req, res) => {
