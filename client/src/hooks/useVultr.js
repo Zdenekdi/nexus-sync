@@ -35,12 +35,27 @@ export function useVultr() {
     }
   }, [getHeaders]);
 
+  const [stats, setStats] = useState(null);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const { data } = await axios.get("/api/agency/stats", getHeaders());
+      setStats(data);
+    } catch (err) {
+      console.warn("Failed to fetch global stats:", err);
+    }
+  }, [getHeaders]);
+
   useEffect(() => {
     fetchStatus();
     fetchBandwidth();
-    const interval = setInterval(fetchStatus, 30000); // refresh every 30s
+    fetchStats();
+    const interval = setInterval(() => {
+      fetchStatus();
+      fetchStats();
+    }, 30000); // refresh every 30s
     return () => clearInterval(interval);
-  }, [fetchStatus, fetchBandwidth]);
+  }, [fetchStatus, fetchBandwidth, fetchStats]);
 
   const serverAction = async (action) => {
     setLoading(true);
@@ -75,5 +90,5 @@ export function useVultr() {
     }
   };
 
-  return { status, bandwidth, loading, cmdOutput, error, serverAction, runCommand, gitPull, fetchStatus };
+  return { status, bandwidth, stats, loading, cmdOutput, error, serverAction, runCommand, gitPull, fetchStatus };
 }

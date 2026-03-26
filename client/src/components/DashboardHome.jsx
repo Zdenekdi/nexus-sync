@@ -1,37 +1,55 @@
 import React from 'react';
-import { DollarSign, Building2, Zap, Activity, TrendingUp, Users } from 'lucide-react';
+import { DollarSign, Building2, Zap, Activity, TrendingUp, Users, Server, ShieldCheck } from 'lucide-react';
 import { RevenueLineChart, ConversionDonutChart, MiniSparkline } from './AnalyticsCharts';
+import { useVultr } from '../hooks/useVultr';
 
 const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], isShiftActive, setIsShiftActive, isMobile, stats = {} }) => {
-  
-  const renderSuperAdmin = () => (
+  const { status: vultrStatus } = useVultr();
+
+  const renderSuperAdmin = () => {
+    const statusColor = {
+      running: "var(--success-color)",
+      active: "var(--success-color)",
+      stopped: "var(--error-color)",
+      off: "var(--error-color)",
+    }[vultrStatus?.power_status?.toLowerCase()] ?? "var(--text-secondary)";
+
+    return (
     <div className="fade-in">
       <div style={{ marginBottom: isMobile ? '1.5rem' : '2.5rem', paddingRight: isMobile ? 'calc(0.5rem + env(safe-area-inset-right))' : 0, paddingLeft: isMobile ? 'calc(0.5rem + env(safe-area-inset-left))' : 0 }}>
         <h2 style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '900', letterSpacing: '0.05em' }}>{t('globalOverview').toUpperCase()}</h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1rem' }}>{t('globalHealthDesc')}</p>
       </div>
       
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: isMobile ? '1rem' : '1.5rem', marginBottom: isMobile ? '1.5rem' : '3rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(240px, 1fr))', gap: isMobile ? '1rem' : '1.5rem', marginBottom: isMobile ? '1.5rem' : '3rem' }}>
         {[
           { label: t('totalRevenue'), value: stats.revenue || '£0.00', icon: <DollarSign color="#10b981" />, growth: stats.commissionGrowth || 'STABLE', chart: stats.chartData || [0,0,0,0,0,0,0] },
           { label: (t('agencies') || 'Agencies').toUpperCase(), value: stats.totalAgencies || (agencies || []).length, icon: <Building2 color="#3b82f6" />, growth: 'PROD', chart: [0,0,0,0,0,0,0] },
+          { label: 'SERVER STATUS', value: (vultrStatus?.power_status || 'CHECKING...').toUpperCase(), icon: <Server color={statusColor} />, growth: vultrStatus?.main_ip || 'PENDING', chart: [0,0,0,0,0,0,0], isStatus: true },
           { label: (t('activeNodes') || 'Active Nodes').toUpperCase(), value: stats.totalProfiles || '0', icon: <Zap color="#f59e0b" />, growth: 'STABLE', chart: [0,0,0,0,0,0,0] },
           { label: t('globalTraffic').toUpperCase(), value: stats.totalMessages || '0', icon: <Activity color="#8b5cf6" />, growth: stats.uptime || '100% UP', chart: stats.chartData || [0,0,0,0,0,0,0] }
         ].map((stat, i) => (
-          <div key={i} className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
+          <div key={i} className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', border: stat.isStatus ? `1px solid ${statusColor}40` : '1px solid var(--card-border)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
               <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {stat.icon}
               </div>
               <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: '800', color: (stat.growth || '').startsWith('+') ? 'var(--success-color)' : 'var(--text-secondary)' }}>{stat.growth}</span>
-                <div style={{ marginTop: '0.25rem' }}>
-                  <MiniSparkline data={stat.chart} color={stat.icon.props.color} />
-                </div>
+                <span style={{ fontSize: '0.75rem', fontWeight: '800', color: stat.isStatus ? statusColor : ((stat.growth || '').startsWith('+') ? 'var(--success-color)' : 'var(--text-secondary)') }}>{stat.growth}</span>
+                {!stat.isStatus && (
+                  <div style={{ marginTop: '0.25rem' }}>
+                    <MiniSparkline data={stat.chart} color={stat.icon.props.color} />
+                  </div>
+                )}
+                {stat.isStatus && vultrStatus && (
+                   <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '700', marginTop: '0.25rem' }}>
+                     {vultrStatus.region}
+                   </div>
+                )}
               </div>
             </div>
             <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>{stat.label}</div>
-            <div style={{ fontSize: '1.75rem', fontWeight: '900' }}>{stat.value}</div>
+            <div style={{ fontSize: '1.75rem', fontWeight: '900', color: stat.isStatus ? statusColor : 'inherit' }}>{stat.value}</div>
           </div>
         ))}
       </div>
@@ -68,7 +86,7 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
         </div>
       </div>
     </div>
-  );
+  ); };
 
   const renderManager = () => (
     <div className="fade-in">
