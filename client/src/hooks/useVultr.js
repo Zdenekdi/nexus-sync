@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 
+const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
+
 export function useVultr() {
   const [status, setStatus] = useState(null);
   const [bandwidth, setBandwidth] = useState(null);
@@ -17,7 +19,7 @@ export function useVultr() {
 
   const fetchStatus = useCallback(async () => {
     try {
-      const { data } = await axios.get("/api/vultr/status", getHeaders());
+      const { data } = await axios.get(`${API_BASE}/vultr/status`, getHeaders());
       setStatus(data);
       setError(null);
     } catch (err) {
@@ -28,7 +30,7 @@ export function useVultr() {
 
   const fetchBandwidth = useCallback(async () => {
     try {
-      const { data } = await axios.get("/api/vultr/bandwidth", getHeaders());
+      const { data } = await axios.get(`${API_BASE}/vultr/bandwidth`, getHeaders());
       setBandwidth(data);
     } catch (err) {
       console.warn("Failed to fetch Vultr bandwidth:", err);
@@ -39,7 +41,7 @@ export function useVultr() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const { data } = await axios.get("/api/agency/stats", getHeaders());
+      const { data } = await axios.get(`${API_BASE}/agency/stats`, getHeaders());
       setStats(data);
     } catch (err) {
       console.warn("Failed to fetch global stats:", err);
@@ -60,7 +62,7 @@ export function useVultr() {
   const serverAction = async (action) => {
     setLoading(true);
     try {
-      await axios.post(`/api/vultr/${action}`, {}, getHeaders());
+      await axios.post(`${API_BASE}/vultr/${action}`, {}, getHeaders());
       setTimeout(fetchStatus, 3500); // wait a bit for status to update
     } catch (err) {
       setError(err.response?.data?.error || err.message);
@@ -73,7 +75,7 @@ export function useVultr() {
     if (!command) return;
     setCmdOutput("Spouštím...");
     try {
-      const { data } = await axios.post("/api/vultr/command", { command }, getHeaders());
+      const { data } = await axios.post(`${API_BASE}/vultr/command`, { command }, getHeaders());
       setCmdOutput(data.stdout || data.stderr || "Žádný výstup");
     } catch (err) {
       setCmdOutput("Error: " + (err.response?.data?.error || err.message));
@@ -83,7 +85,7 @@ export function useVultr() {
   const gitPull = async (path) => {
     setCmdOutput("Stahuji změny...");
     try {
-      const { data } = await axios.post("/api/vultr/git-pull", { path }, getHeaders());
+      const { data } = await axios.post(`${API_BASE}/vultr/git-pull`, { path }, getHeaders());
       setCmdOutput(data.stdout || data.stderr || "Git pull dokončen");
     } catch (err) {
       setCmdOutput("Error: " + (err.response?.data?.error || err.message));

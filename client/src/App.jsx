@@ -122,6 +122,9 @@ const DEFAULT_ROLE_PERMISSIONS = {
   }
 };
 
+// API Configuration
+const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
+
 function App() {
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [tempUser, setTempUser] = useState(null);
@@ -423,12 +426,12 @@ function App() {
     try {
       if (!window.confirm('Are you sure you want to revoke this device? It will no longer receive relay updates.')) return;
       
-      await axios.post('https://nexus-api.myvnc.com/api/device/revoke-binding', { installationId }, {
+      await axios.post(`${API_BASE}/device/revoke-binding`, { installationId }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
       // Refresh list
-      const bindingRes = await axios.get('https://nexus-api.myvnc.com/api/device/bindings', {
+      const bindingRes = await axios.get(`${API_BASE}/device/bindings`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (bindingRes.data && bindingRes.data.ok) {
@@ -634,14 +637,14 @@ function App() {
         };
 
         const [safetyRes, profileRes, chatRes, userRes, bindingRes, statsRes, agencyRes, selfRes] = await Promise.all([
-          axiosWithTiming('https://nexus-api.myvnc.com/api/safety/sessions/active', { headers: { Authorization: `Bearer ${token}` } }),
-          axiosWithTiming('https://nexus-api.myvnc.com/api/profiles', { headers: { Authorization: `Bearer ${token}` } }),
-          axiosWithTiming('https://nexus-api.myvnc.com/api/chats', { headers: { Authorization: `Bearer ${token}` } }),
-          axiosWithTiming('https://nexus-api.myvnc.com/api/agency/users', { headers: { Authorization: `Bearer ${token}` } }),
-          axiosWithTiming('https://nexus-api.myvnc.com/api/device/bindings', { headers: { Authorization: `Bearer ${token}` } }),
-          axiosWithTiming('https://nexus-api.myvnc.com/api/agency/stats', { headers: { Authorization: `Bearer ${token}` } }),
-          axiosWithTiming('https://nexus-api.myvnc.com/api/agency/all', { headers: { Authorization: `Bearer ${token}` } }),
-          axiosWithTiming('https://nexus-api.myvnc.com/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
+          axiosWithTiming(`${API_BASE}/safety/sessions/active`, { headers: { Authorization: `Bearer ${token}` } }),
+          axiosWithTiming(`${API_BASE}/profiles`, { headers: { Authorization: `Bearer ${token}` } }),
+          axiosWithTiming(`${API_BASE}/chats`, { headers: { Authorization: `Bearer ${token}` } }),
+          axiosWithTiming(`${API_BASE}/agency/users`, { headers: { Authorization: `Bearer ${token}` } }),
+          axiosWithTiming(`${API_BASE}/device/bindings`, { headers: { Authorization: `Bearer ${token}` } }),
+          axiosWithTiming(`${API_BASE}/agency/stats`, { headers: { Authorization: `Bearer ${token}` } }),
+          axiosWithTiming(`${API_BASE}/agency/all`, { headers: { Authorization: `Bearer ${token}` } }),
+          axiosWithTiming(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
         ]);
 
         const endTime = performance.now();
@@ -876,7 +879,7 @@ function App() {
   }, [timeLeft, isTimerActive, addNotification, playNotificationSound]);
 
   // API Configuration
-  const API_BASE = 'https://nexus-api.myvnc.com/api';
+  // const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
   
   // Update handleCheckIn for real backend
   const handleCheckIn = async (event) => {
@@ -1144,7 +1147,7 @@ function App() {
       if (installationId) {
         localStorage.setItem('nexus_installation_id', installationId);
       }
-      await fetch('https://nexus-api.myvnc.com/api/device/verify', {
+      await fetch(`${API_BASE}/device/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1432,7 +1435,7 @@ function App() {
 
       // 2. Update status on backend
       if (messageId && !String(messageId).startsWith('relay-')) {
-        await axios.patch(`https://nexus-api.myvnc.com/api/messages/${messageId}/status`, 
+        await axios.patch(`${API_BASE}/messages/${messageId}/status`, 
           { status: 'sent' },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -1441,7 +1444,7 @@ function App() {
       console.error('[Relay] SMS command failed', error);
       if (messageId && !String(messageId).startsWith('relay-')) {
         try {
-          await axios.patch(`https://nexus-api.myvnc.com/api/messages/${messageId}/status`, 
+          await axios.patch(`${API_BASE}/messages/${messageId}/status`, 
             { status: 'failed' },
             { headers: { Authorization: `Bearer ${token}` } }
           );
@@ -1455,7 +1458,7 @@ function App() {
     
     console.log('[Relay] Checking outbox for profile:', profileId);
     try {
-      const response = await axios.get(`https://nexus-api.myvnc.com/api/messages/outbox?profileId=${profileId}`, {
+      const response = await axios.get(`${API_BASE}/messages/outbox?profileId=${profileId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -1517,7 +1520,7 @@ function App() {
         };
 
         try {
-          await axios.post('https://nexus-api.myvnc.com/api/relay', payload, {
+          await axios.post(`${API_BASE}/relay`, payload, {
             headers: { Authorization: `Bearer ${token}` }
           });
         } catch (e) {
@@ -1566,7 +1569,7 @@ function App() {
 
     const registerPushTokenOnBackend = async (pushToken) => {
       try {
-        await fetch('https://nexus-api.myvnc.com/api/device/push-token', {
+        await fetch(`${API_BASE}/device/push-token`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1659,7 +1662,7 @@ function App() {
     try {
       const storedToken = localStorage.getItem('nexus_push_token');
       if (storedToken && token) {
-        const response = await fetch('https://nexus-api.myvnc.com/api/device/push-token', {
+        const response = await fetch(`${API_BASE}/device/push-token`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1859,7 +1862,7 @@ function App() {
 
     const fetchServerData = async () => {
       try {
-        const res = await fetch('https://nexus-api.myvnc.com/api/profiles', {
+        const res = await fetch(`${API_BASE}/profiles`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
@@ -1882,7 +1885,7 @@ function App() {
     const start = performance.now();
     try {
       console.log('[Performance] Starting API login fetch...');
-      const res = await fetch('https://nexus-api.myvnc.com/api/auth/login', {
+      const res = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -2043,7 +2046,7 @@ function App() {
   const addAgency = useCallback(async () => {
     if (!newAgencyData.name) return;
     try {
-      const resp = await axios.post('https://nexus-api.myvnc.com/api/agency', newAgencyData, {
+      const resp = await axios.post(`${API_BASE}/agency`, newAgencyData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (resp.data) {
@@ -2063,7 +2066,7 @@ function App() {
   const deleteAgency = async (id) => {
     if (window.confirm('Are you sure you want to PERMANENTLY delete this agency and all its team members? This action cannot be undone.')) {
       try {
-        await axios.delete(`https://nexus-api.myvnc.com/api/agency/${id}`, {
+        await axios.delete(`${API_BASE}/agency/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setAgencies(prev => prev.filter(a => a.id !== id));
@@ -2084,7 +2087,7 @@ function App() {
       const autoPassword = `Nexus_${Math.floor(1000 + Math.random() * 9000)}`;
       const finalPassword = (newOperatorData.password && newOperatorData.password !== 'password123') ? newOperatorData.password : autoPassword;
 
-      const resp = await axios.post('https://nexus-api.myvnc.com/api/agency/users', {
+      const resp = await axios.post(`${API_BASE}/agency/users`, {
         name: newOperatorData.name,
         email: newOperatorData.email,
         password: finalPassword,
@@ -2594,7 +2597,7 @@ function App() {
 
   const handleRegisterAgency = async (data) => {
     try {
-      const res = await fetch('https://nexus-api.myvnc.com/api/auth/register-agency', {
+      const res = await fetch(`${API_BASE}/auth/register-agency`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -2610,7 +2613,7 @@ function App() {
 
   const handleRegisterUser = async (data) => {
     try {
-      const res = await fetch('https://nexus-api.myvnc.com/api/auth/register-user', {
+      const res = await fetch(`${API_BASE}/auth/register-user`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -2626,7 +2629,7 @@ function App() {
 
   const handleResetRequest = async (email) => {
     try {
-      await fetch('https://nexus-api.myvnc.com/api/auth/reset-password-request', {
+      await fetch(`${API_BASE}/auth/reset-password-request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
