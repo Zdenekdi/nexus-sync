@@ -364,7 +364,7 @@ exports.sendTestPush = async (req, res) => {
 // Nexus Relay (from RelayMode.jsx in mobile app)
 exports.handleRelay = async (req, res) => {
   try {
-    const { installationId, deviceId, type, transport, from, content, secret } = req.body;
+    const { installationId, deviceId, type, transport, from, content, secret, timestamp } = req.body;
     const messageTransport = normalizeTransport(transport || type);
 
     // ── Auth: Allow DEVICE_SECRET OR valid installationId binding ─────────────
@@ -470,7 +470,7 @@ exports.handleRelay = async (req, res) => {
         id: finalBinding.profileId,
         agencyId,
       },
-      select: { id: true },
+      select: { id: true, name: true },
     });
     if (!profile) {
       return res.status(404).json({ message: 'Bound profile not found for agency context' });
@@ -505,6 +505,12 @@ exports.handleRelay = async (req, res) => {
         where: { id: chat.id },
         data: { lastMessageAt: new Date() }
       });
+
+      if (direction === 'INBOUND') {
+        console.log(`[Relay ✅ INBOUND] SMS přijata od ${from} → chat=${chat.id}, message=${createdMessage.id}`);
+      } else {
+        console.log(`[Relay ✅ OUTBOUND] SMS potvrzena relayem od ${from} → chat=${chat.id}, message=${createdMessage.id}`);
+      }
 
       try {
         getIO().to(`agency_${agencyId}`).emit('new_message', {
@@ -576,7 +582,7 @@ exports.handleRelay = async (req, res) => {
 
     return res.json({ ok: true });
   } catch (error) {
-    console.error('Relay handling error:', error);
+    console.error(`[Relay ❌ FAILED] Chyba při zpracování relay zprávy od installationId=${req.body?.installationId}:`, error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 };

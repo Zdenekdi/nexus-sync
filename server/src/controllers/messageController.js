@@ -181,10 +181,21 @@ exports.updateMessageStatus = async (req, res) => {
     const { messageId } = req.params;
     const { status } = req.body; // e.g., 'sent', 'failed'
 
+    const prevMessage = await prisma.message.findUnique({ where: { id: messageId }, select: { status: true } });
+    const prevStatus = prevMessage?.status || 'unknown';
+
     const message = await prisma.message.update({
       where: { id: messageId },
       data: { status }
     });
+
+    if (status === 'sent') {
+      console.log(`[Relay ✅ OUTBOUND] SMS odeslána relay zařízením, message=${messageId}: ${prevStatus} → sent`);
+    } else if (status === 'failed') {
+      console.warn(`[Relay ❌ FAILED] SMS odeslání selhalo, message=${messageId}: ${prevStatus} → failed`);
+    } else {
+      console.log(`[Relay] Message ${messageId} status updated: ${prevStatus} → ${status}`);
+    }
 
     try {
       const chat = await prisma.chat.findUnique({ where: { id: message.chatId } });
