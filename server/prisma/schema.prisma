@@ -205,6 +205,7 @@ model Message {
   chatId    String
   chat      Chat     @relation(fields: [chatId], references: [id])
   direction String
+  transport String?
   text      String
   status    String   @default("sent")
   senderId  String?
