@@ -169,7 +169,8 @@ function App() {
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('nexus_activeTab') || 'dashboard');
   const [activeProfileId, setActiveProfileId] = useState(() => {
     const saved = localStorage.getItem('nexus_activeProfileId');
-    return (saved && saved !== 'undefined') ? Number(saved) : null;
+    // Return raw value to support alphanumeric IDs like 'ldn-01'
+    return (saved && saved !== 'undefined' && saved !== 'null') ? saved : null;
   });
   const [selectedChatId, setSelectedChatId] = useState(null);
   const [lang, setLang] = useState(() => localStorage.getItem('nexus_language') || 'en');
@@ -475,8 +476,9 @@ function App() {
   const normalizeProfileId = useCallback((value) => {
     if (value == null || value === '') return null;
     if (typeof value === 'number') return value;
+    // Only convert if it is a pure numeric string AND doesn't look like a code (e.g., '123' -> 123, 'ldn-01' -> 'ldn-01')
     if (typeof value === 'string' && /^\d+$/.test(value)) return Number(value);
-    return value;
+    return String(value);
   }, []);
 
   const upsertIncomingMessage = useCallback((incomingMessage) => {
@@ -2914,7 +2916,7 @@ function App() {
                 <div style={{ width: '50px', height: '50px', background: 'linear-gradient(135deg, var(--accent-color) 0%, #1d4ed8 100%)', borderRadius: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'white', fontSize: '1.1rem', boxShadow: '0 10px 25px rgba(59, 130, 246, 0.3)' }}>{activeOperator?.avatar}</div>
                 <div>
                   <div style={{ fontSize: '1.2rem', fontWeight: '900', color: 'white' }}>{activeOperator?.name}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', fontWeight: '800', letterSpacing: '0.05em' }}>{activeRole.toUpperCase()}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', fontWeight: '800', letterSpacing: '0.05em' }}>{activeRole?.toUpperCase() || ''}</div>
                 </div>
               </div>
               <button onClick={() => setIsMobileMenuOpen(false)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', width: '44px', height: '44px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -3227,7 +3229,7 @@ function App() {
                 {!isSidebarCollapsed && (
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '0.88rem', fontWeight: '900', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'white' }}>{activeOperator?.name}</div>
-                    <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', fontWeight: '800', letterSpacing: '0.05em' }}>{activeRole.toUpperCase()}</div>
+                    <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', fontWeight: '800', letterSpacing: '0.05em' }}>{activeRole?.toUpperCase() || ''}</div>
                   </div>
                 )}
                 {!isSidebarCollapsed && (
@@ -3286,7 +3288,7 @@ function App() {
                       <select 
                         value={activeProfileId} 
                         onChange={(e) => {
-                          setActiveProfileId(Number(e.target.value));
+                          setActiveProfileId(e.target.value);
                           setSelectedChatId(null); // Reset selection when switching model
                         }}
                         style={{ 
@@ -3558,7 +3560,7 @@ function App() {
                     <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>•</span>
                     <select 
                       value={activeProfileId} 
-                      onChange={(e) => setActiveProfileId(Number(e.target.value))}
+                      onChange={(e) => setActiveProfileId(e.target.value)}
                       style={{
                         background: 'rgba(255,255,255,0.05)', 
                         border: '1px solid var(--card-border)', 
@@ -3781,7 +3783,7 @@ function App() {
               <div style={{ position: 'relative', width: '220px' }}>
                 <select 
                   value={activeProfileId} 
-                  onChange={(e) => setActiveProfileId(Number(e.target.value))}
+                  onChange={(e) => setActiveProfileId(e.target.value)}
                   style={{ 
                     width: '100%',
                     background: 'rgba(255,255,255,0.05)', 
@@ -3982,7 +3984,7 @@ function App() {
                   </div>
                   
                   <a 
-                    href="https://nexus-api.myvnc.com/downloads/nexus-relay.apk" 
+                    href={`${API_BASE.replace(/\/api$/, '')}/downloads/nexus-relay.apk`} 
                     target="_blank"
                     rel="noreferrer"
                     className="action-btn" 
@@ -4011,7 +4013,7 @@ function App() {
                     <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#60a5fa', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('webhookLabel')}</div>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>{t('proxyNote')}</p>
                     <code style={{ fontSize: '0.9rem', color: '#60a5fa', wordBreak: 'break-all', display: 'block', padding: '0.75rem', background: 'rgba(0,0,0,0.3)', borderRadius: '8px' }}>
-                      https://nexus-api.myvnc.com/api/device/relay
+                      {`${API_BASE}/device/relay`}
                     </code>
                   </div>
 

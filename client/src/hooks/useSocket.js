@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = 'https://nexus-api.myvnc.com';
+const SOCKET_URL = (import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api').replace(/\/api$/, '');
 
 export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert) => {
   const socketRef = useRef(null);
