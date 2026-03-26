@@ -3,6 +3,7 @@ package com.nexushub.app;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.PowerManager;
 import android.provider.Telephony;
 import android.telephony.SmsMessage;
 
@@ -18,14 +19,34 @@ public class NexusSmsReceiver extends BroadcastReceiver {
             return;
         }
 
-        for (SmsMessage smsMessage : messages) {
-            if (smsMessage == null) {
-                continue;
-            }
+        // Acquire a WakeLock so the CPU stays awake long enough for the HTTP
+        // forwarding thread in NexusRelayPlugin to complete (screen may be off).
+        PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+        final PowerManager.WakeLock wakeLock = pm != null
+            ? pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "NexusHub:SmsRelay")
+            : null;
+        if (wakeLock != null) {
+            wakeLock.acquire(30_000L); // 30s max — HTTP timeout is 12s
+        }
 
-            String sender = smsMessage.getDisplayOriginatingAddress();
-            String body = smsMessage.getDisplayMessageBody();
-            NexusRelayPlugin.onMessageReceived(context, sender, body);
+        // goAsync() keeps the BroadcastReceiver alive while we hand off to the
+        // plugin (which spawns its own thread); finish() signals Android we're done.
+        final PendingResult result = goAsync();
+
+        try {
+            for (SmsMessage smsMessage : messages) {
+                if (smsMessage == null) {
+                    continue;
+                }
+                String sender = smsMessage.getDisplayOriginatingAddress();
+                String body = smsMessage.getDisplayMessageBody();
+                NexusRelayPlugin.onMessageReceived(context, sender, body);
+            }
+        } finally {
+            result.finish();
+            if (wakeLock != null && wakeLock.isHeld()) {
+                wakeLock.release();
+            }
         }
     }
 }

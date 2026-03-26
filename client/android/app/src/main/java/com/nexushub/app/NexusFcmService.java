@@ -75,14 +75,25 @@ public class NexusFcmService extends MessagingService {
             return;
         }
 
-        // DATA-ONLY message: if the app is backgrounded, show a system tray
-        // notification ourselves. Foreground handling is left to the JS layer.
-        if (isAppInForeground()) {
+        Map<String, String> data = remoteMessage.getData();
+        if (data.isEmpty()) {
             return;
         }
 
-        Map<String, String> data = remoteMessage.getData();
-        if (data.isEmpty()) {
+        // ── Relay command: send_sms ──────────────────────────────────────────
+        // This FCM message is a COMMAND sent by the Hub operator to reply to a
+        // real SMS. Handle it natively so it works even when the app is killed
+        // or the screen is off (JS layer is not running).
+        String msgType = data.get("type");
+        if ("send_sms".equals(msgType)) {
+            Log.d(TAG, "[Relay] FCM send_sms received – executing natively");
+            NexusRelayPlugin.sendSmsFromData(getApplicationContext(), data);
+            return;
+        }
+
+        // DATA-ONLY message: if the app is backgrounded, show a system tray
+        // notification ourselves. Foreground handling is left to the JS layer.
+        if (isAppInForeground()) {
             return;
         }
 

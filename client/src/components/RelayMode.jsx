@@ -470,6 +470,27 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
         installationId: installationId || null,
         isActive: active
       });
+
+      // When activating relay, check if Android battery optimization is blocking
+      // background operation and prompt user to disable it.
+      if (active) {
+        try {
+          const batteryResult = await window.Capacitor.Plugins.NexusRelay.checkBatteryOptimization();
+          if (batteryResult?.optimized) {
+            // Show dialog asynchronously — do not block relay activation
+            setTimeout(async () => {
+              try {
+                await window.Capacitor.Plugins.NexusRelay.requestIgnoreBatteryOptimization();
+              } catch (e) {
+                console.warn('[Relay] Battery optimization dialog failed', e);
+              }
+            }, 800);
+          }
+        } catch (e) {
+          // Older OS or plugin version — ignore silently
+          console.warn('[Relay] Battery optimization check skipped', e);
+        }
+      }
     } catch (error) {
       console.warn('[Relay] Failed to sync native relay config', error);
     }
