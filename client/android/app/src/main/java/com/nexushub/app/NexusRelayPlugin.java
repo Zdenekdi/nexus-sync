@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
+import android.os.PowerManager;
 import android.provider.Settings;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyCallback;
@@ -354,6 +355,85 @@ public class NexusRelayPlugin extends Plugin {
             call.resolve(ret);
         } catch (Exception e) {
             call.reject("Failed to fetch SMS history: " + e.getMessage());
+        }
+    }
+
+    // ── Static send_sms entry point (called natively from NexusFcmService) ─────
+    // Sends an SMS using data from a FCM data-only payload without needing
+    // the JS / Capacitor layer to be running (works when screen is off / killed).
+    public static void sendSmsFromData(Context context, java.util.Map<String, String> data) {
+        if (context == null || data == null) return;
+
+        // Only proceed if relay mode is active
+        boolean isActive = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getBoolean(KEY_IS_ACTIVE, false);
+        if (!isActive) {
+            android.util.Log.w("NexusRelay", "sendSmsFromData: relay not active, skipping");
+            return;
+        }
+
+        String to = data.get("to");
+        String content = data.get("content");
+        if (to == null || to.isEmpty() || content == null || content.isEmpty()) {
+            android.util.Log.w("NexusRelay", "sendSmsFromData: missing to/content");
+            return;
+        }
+
+        try {
+            SmsManager smsManager;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                smsManager = context.getSystemService(SmsManager.class);
+            } else {
+                smsManager = SmsManager.getDefault();
+            }
+            if (smsManager == null) {
+                android.util.Log.e("NexusRelay", "sendSmsFromData: SmsManager unavailable");
+                return;
+            }
+            if (content.length() > 160) {
+                java.util.ArrayList<String> parts = smsManager.divideMessage(content);
+                smsManager.sendMultipartTextMessage(to, null, parts, null, null);
+            } else {
+                smsManager.sendTextMessage(to, null, content, null, null);
+            }
+            android.util.Log.d("NexusRelay", "sendSmsFromData: SMS sent to " + to);
+        } catch (Exception e) {
+            android.util.Log.e("NexusRelay", "sendSmsFromData: failed to send SMS", e);
+        }
+    }
+
+    // ── Battery Optimization PluginMethods ───────────────────────────────
+    @PluginMethod
+    public void checkBatteryOptimization(PluginCall call) {
+        JSObject ret = new JSObject();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PowerManager pm = (PowerManager) getContext().getSystemService(Context.POWER_SERVICE);
+            boolean isIgnoring = pm != null && pm.isIgnoringBatteryOptimizations(getContext().getPackageName());
+            ret.put("optimized", !isIgnoring);
+        } else {
+            ret.put("optimized", false);
+        }
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void requestIgnoreBatteryOptimization(PluginCall call) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+            intent.setData(Uri.parse("package:" + getContext().getPackageName()));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            try {
+                getContext().startActivity(intent);
+                JSObject ret = new JSObject();
+                ret.put("requested", true);
+                call.resolve(ret);
+            } catch (Exception e) {
+                call.reject("Could not open battery optimization settings: " + e.getMessage());
+            }
+        } else {
+            JSObject ret = new JSObject();
+            ret.put("requested", false);
+            call.resolve(ret);
         }
     }
 
