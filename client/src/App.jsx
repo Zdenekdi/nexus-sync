@@ -538,11 +538,34 @@ function App() {
 
     // Sync with currently open chat history
     if (selectedChatId && (normalizedMessage.chatId === selectedChatId || String(normalizedMessage.chatId) === String(selectedChatId))) {
+      const isOutbound = (incomingMessage.direction || '').toUpperCase() === 'OUTBOUND';
+      const realMessageId = incomingMessage.id;
+
       setChatMessages(prev => {
-        // Avoid duplicates (especially for outbound messages sent locally)
-        const exists = prev.some(m => m.id === normalizedMessage.id || (m.text === normalizedMessage.text && Math.abs(new Date(m.createdAt || m.timestamp) - new Date(normalizedMessage.timestamp)) < 2000));
+        if (isOutbound && realMessageId) {
+          // OUTBOUND: update the existing optimistic message status (sent by this session)
+          const existingIdx = prev.findIndex(m =>
+            m.id === realMessageId ||
+            (m.text === resolvedText && Math.abs(new Date(m.createdAt || m.timestamp || 0) - new Date(resolvedTimestamp)) < 10000)
+          );
+          if (existingIdx !== -1) {
+            // Update status of the existing optimistic message
+            const updated = [...prev];
+            updated[existingIdx] = { ...updated[existingIdx], ...incomingMessage, id: realMessageId };
+            return updated;
+          }
+          // Not found (e.g. different browser tab) — add it
+          return [...prev, { ...normalizedMessage, id: realMessageId }];
+        }
+
+        // INBOUND: avoid duplicates then append
+        const msgId = realMessageId || normalizedMessage.id;
+        const exists = prev.some(m =>
+          m.id === msgId ||
+          (m.text === resolvedText && Math.abs(new Date(m.createdAt || m.timestamp || 0) - new Date(resolvedTimestamp)) < 10000)
+        );
         if (exists) return prev;
-        return [...prev, normalizedMessage];
+        return [...prev, { ...normalizedMessage, id: msgId }];
       });
     }
 
@@ -1952,6 +1975,10 @@ function App() {
         return;
       }
 
+      // Only notify for INBOUND messages (not for our own outbound sends)
+      const isInbound = (newMsg.direction || normalizedMessageForNotification.direction || '').toUpperCase() !== 'OUTBOUND';
+      if (!isInbound) return;
+
       // Find profile for notification
       const profile = profiles.find(p => normalizeProfileId(p.id) === normalizeProfileId(normalizedMessageForNotification.profileId));
       if (profile) {
@@ -2318,6 +2345,13 @@ function App() {
     }));
     setInternalNote('');
   }, [internalNote, selectedChat, activeOperator]);
+
+  const handleDeleteNote = useCallback((from, noteId) => {
+    setClientNotes(prev => ({
+      ...prev,
+      [from]: (prev[from] || []).filter(n => n.id !== noteId)
+    }));
+  }, []);
 
   const totalUnread = useMemo(() =>
     messages?.filter(msg =>
@@ -3562,8 +3596,9 @@ function App() {
                                 <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                   <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>SAVED NOTES</div>
                                   {(clientNotes[selectedChat.from] || []).slice().reverse().map(note => (
-                                    <div key={note.id} style={{ background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.15)', borderRadius: '10px', padding: '0.75rem' }}>
-                                      <div style={{ fontSize: '0.85rem', color: '#f59e0b', lineHeight: '1.5' }}>{note.text}</div>
+                                    <div key={note.id} style={{ background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.15)', borderRadius: '10px', padding: '0.75rem', position: 'relative' }}>
+                                      <button onClick={() => handleDeleteNote(selectedChat.from, note.id)} style={{ position: 'absolute', top: '6px', right: '8px', background: 'none', border: 'none', color: 'rgba(245,158,11,0.5)', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, padding: '2px 4px' }} title="Delete note">×</button>
+                                      <div style={{ fontSize: '0.85rem', color: '#f59e0b', lineHeight: '1.5', paddingRight: '1.5rem' }}>{note.text}</div>
                                       <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>{note.author} · {note.timestamp}</div>
                                     </div>
                                   ))}
