@@ -103,71 +103,57 @@ exports.verifyDeviceBinding = async (req, res) => {
       }
     }
 
-    const binding = await prisma.$transaction(async (tx) => {
-      // Limit to 2 active devices per user
-      const activeCount = await tx.deviceBinding.count({
-        where: {
-          userId,
-          active: true,
-          installationId: { not: installationId }
-        }
-      });
-
-      if (activeCount >= 2) {
-        throw new Error('LIMIT_EXCEEDED');
+    // Limit to 2 active devices per user (plain count — no transaction needed, avoids SQLite lock)
+    const activeCount = await prisma.deviceBinding.count({
+      where: {
+        userId,
+        active: true,
+        installationId: { not: installationId }
       }
+    });
 
-      const current = await tx.deviceBinding.upsert({
-        where: { installationId },
-        update: {
-          userId,
-          agencyId,
-          profileId: resolvedProfileId,
-          platform: typeof platform === 'string' && platform.length <= 32 ? platform : 'android',
-          active: true,
-          model: typeof model === 'string' && model.length <= 128 ? model : null,
-          deviceName: typeof deviceName === 'string' && deviceName.length <= 128 ? deviceName : null,
-          lastSeenAt: new Date(),
-        },
-        create: {
-          installationId,
-          userId,
-          agencyId,
-          profileId: resolvedProfileId,
-          platform: typeof platform === 'string' && platform.length <= 32 ? platform : 'android',
-          active: true,
-          model: typeof model === 'string' && model.length <= 128 ? model : null,
-          deviceName: typeof deviceName === 'string' && deviceName.length <= 128 ? deviceName : null,
-          lastSeenAt: new Date(),
-        },
-      });
+    if (activeCount >= 2) {
+      throw new Error('LIMIT_EXCEEDED');
+    }
 
-      /* 
-      // Multi-device support enabled: We no longer deactivate other devices by default.
-      // This allows a user to be bound across multiple phones/installations.
-      await tx.deviceBinding.updateMany({
-        where: {
-          userId,
-          installationId: { not: installationId },
-          active: true,
-        },
-        data: { active: false },
-      });
-      */
+    // Upsert the device binding (single write, no transaction needed)
+    await prisma.deviceBinding.upsert({
+      where: { installationId },
+      update: {
+        userId,
+        agencyId,
+        profileId: resolvedProfileId,
+        platform: typeof platform === 'string' && platform.length <= 32 ? platform : 'android',
+        active: true,
+        model: typeof model === 'string' && model.length <= 128 ? model : null,
+        deviceName: typeof deviceName === 'string' && deviceName.length <= 128 ? deviceName : null,
+        lastSeenAt: new Date(),
+      },
+      create: {
+        installationId,
+        userId,
+        agencyId,
+        profileId: resolvedProfileId,
+        platform: typeof platform === 'string' && platform.length <= 32 ? platform : 'android',
+        active: true,
+        model: typeof model === 'string' && model.length <= 128 ? model : null,
+        deviceName: typeof deviceName === 'string' && deviceName.length <= 128 ? deviceName : null,
+        lastSeenAt: new Date(),
+      },
+    });
 
-      return tx.deviceBinding.findUnique({
-        where: { installationId },
-        select: {
-          id: true,
-          installationId: true,
-          userId: true,
-          agencyId: true,
-          profileId: true,
-          platform: true,
-          active: true,
-          updatedAt: true,
-        },
-      });
+    const binding = await prisma.deviceBinding.findUnique({
+      where: { installationId },
+      select: {
+        id: true,
+        installationId: true,
+        userId: true,
+        agencyId: true,
+        profileId: true,
+        platform: true,
+        active: true,
+        updatedAt: true,
+      },
     });
 
     return res.json({ ok: true, binding });
