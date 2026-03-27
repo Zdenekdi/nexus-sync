@@ -106,9 +106,10 @@ export function useVultr() {
 
   const clearCmdOutput = () => setCmdOutput("");
 
-  const uploadApk = async (file) => {
+  const uploadApk = async (file, version = "1.0") => {
     const formData = new FormData();
     formData.append("apk", file);
+    formData.append("version", version);
     setUploadProgress(0);
     try {
       const token = localStorage.getItem("nexus_token");
