@@ -228,7 +228,7 @@ model CallLog {
 model InventoryLocation {
   id        String   @id @default(cuid())
   name      String
-  agencyId  String
+  agencyId  String?
   items     InventoryItem[]
   createdAt DateTime @default(now())
 
@@ -242,7 +242,7 @@ model InventoryItem {
   threshold   Int               @default(10)
   locationId  String
   location    InventoryLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
-  agencyId    String
+  agencyId    String?
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 

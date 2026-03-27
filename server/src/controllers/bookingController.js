@@ -5,9 +5,9 @@ exports.getBookings = async (req, res) => {
   try {
     const { profileId } = req.query;
     const { role, agencyId } = req.user;
-    if (role?.isAppOwner) return res.status(403).json({ message: 'App Owner cannot access bookings' });
+    const isAppOwner = role?.isAppOwner;
 
-    const where = { agencyId };
+    const where = isAppOwner ? {} : { agencyId };
     if (profileId) where.profileId = profileId;
 
     const bookings = await prisma.booking.findMany({
@@ -27,20 +27,23 @@ exports.createBooking = async (req, res) => {
   try {
     const { profileId, title, startTime, endTime } = req.body;
     const { role, agencyId } = req.user;
-    if (role?.isAppOwner) return res.status(403).json({ message: 'App Owner cannot create bookings' });
+    const isAppOwner = role?.isAppOwner;
+
     if (!profileId || !title || !startTime || !endTime) {
       return res.status(400).json({ message: 'profileId, title, startTime and endTime are required' });
     }
 
     const profile = await prisma.profile.findUnique({ where: { id: profileId } });
-    if (!profile || profile.agencyId !== agencyId) {
+    if (!profile || (!isAppOwner && profile.agencyId !== agencyId)) {
       return res.status(403).json({ message: 'Profile not found or access denied' });
     }
+
+    const targetAgencyId = isAppOwner ? profile.agencyId : agencyId;
 
     const booking = await prisma.booking.create({
       data: {
         profileId,
-        agencyId,
+        agencyId: targetAgencyId,
         title,
         startTime: new Date(startTime),
         endTime: new Date(endTime),

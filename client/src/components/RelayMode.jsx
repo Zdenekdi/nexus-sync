@@ -436,7 +436,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     if (plugin?.addListener) {
       listener = plugin.addListener('relay_event', (event) => {
         console.log('[Relay] Native event received:', event);
-        addLocalLog(event.type || 'sms', event.from, (event.direction === 'outbound' ? '[OUTBOUND] ' : '') + event.content, event.direction || 'inbound');
+        addLocalLog(event.type || 'sms', event.from, event.content, event.direction || 'inbound');
         
         if (event.status === 'sent') {
           showRelayNotice(t('smsRelayed') || 'SMS byla odeslána!', 'success');

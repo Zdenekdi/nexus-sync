@@ -285,13 +285,47 @@ function App() {
     const last = [...chatMessages].reverse().find(m => (m.direction || '').toUpperCase() === 'INBOUND');
     if (!last) { setDetectedMeeting(null); return; }
     const text = last.text || '';
-    const timeMatch = text.match(/\b(\d{1,2})[:\.]?(\d{2})\s*(AM|PM|am|pm)?\b|\b(\d{1,2})\s*(AM|PM|am|pm)\b/);
-    if (timeMatch) {
-      setDetectedMeeting({ time: timeMatch[0], messageId: last.id, text });
+    const timeMatch = text.match(/\b(\d{1,2})[:\.]?(\d{2})?\s*(AM|PM|am|pm)?\b/i);
+    if (timeMatch && timeMatch[1]) {
+      const hour = parseInt(timeMatch[1]);
+      if (hour >= 0 && hour <= 24) {
+        setDetectedMeeting({ time: timeMatch[0], messageId: last.id, text });
+      } else {
+        setDetectedMeeting(null);
+      }
     } else {
       setDetectedMeeting(null);
     }
   }, [chatMessages, selectedChatId]);
+
+  const handleQuickSaveMeeting = useCallback(async () => {
+    if (!detectedMeeting || !activeProfileId) return;
+    try {
+      const hMatch = detectedMeeting.time.match(/(\d{1,2})[:\.]?(\d{2})?/);
+      const ampm = detectedMeeting.time.toLowerCase().includes('pm') ? 'PM' : 'AM';
+      let hh = hMatch ? parseInt(hMatch[1]) : 12;
+      const mm = hMatch?.[2] || '00';
+      
+      if (ampm === 'PM' && hh < 12) hh += 12;
+      if (ampm === 'AM' && hh === 12) hh = 0;
+
+      const dateStr = new Date().toISOString().split('T')[0];
+      const startTime = new Date(`${dateStr}T${String(hh).padStart(2,'0')}:${mm}:00`).toISOString();
+      const endTime = new Date(new Date(startTime).getTime() + 3600000).toISOString(); // +1 hour
+
+      await axios.post(`${API_BASE}/bookings`, 
+        { profileId: activeProfileId, title: `Meeting w/ ${selectedChat?.from || 'Client'}`, startTime, endTime },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      setDetectedMeeting(null);
+      showToast(lang === 'cz' ? 'Schůzka uložena ✓' : 'Meeting saved ✓', 'success');
+      await fetchBookings(activeProfileId);
+    } catch (e) {
+      console.error('[Booking] Direct save error:', e.message);
+      setBookingModalOpen(true); // Fallback to modal on error
+    }
+  }, [detectedMeeting, activeProfileId, selectedChat, API_BASE, token, lang, fetchBookings]);
 
   useEffect(() => {
     if (activeTab === 'device-setup') {
@@ -451,7 +485,7 @@ function App() {
       type: resolvedType,
       profileId: resolvedProfileId,
       read: payload.read ?? false,
-      timestamp: payload.timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: payload.timestamp || new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' }),
       chatId: payload.chatId ?? null,
       from: payload.from ?? null,
       caller: payload.caller ?? null,
@@ -549,7 +583,7 @@ function App() {
       content: resolvedText,
       body: resolvedText,
       timestamp: resolvedTimestamp,
-      time: new Date(resolvedTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      time: new Date(resolvedTimestamp).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' }),
       transport: resolvedTransport,
       type: resolvedTransport,
       status: incomingMessage.status || 'unread'
@@ -770,7 +804,7 @@ function App() {
               content: resolvedText,
               body: resolvedText,
               timestamp: resolvedTimestamp,
-              time: new Date(resolvedTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              time: new Date(resolvedTimestamp).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' }),
               status: 'read',
               direction: 'inbound',
               transport: resolvedTransport,
@@ -945,7 +979,7 @@ function App() {
         title: 'SAFETY GUARD: SESSION END',
         message: 'Scheduled session time has ended. Please check out!',
         priority: 'emergency',
-        timestamp: new Date().toLocaleTimeString(),
+        timestamp: new Date().toLocaleTimeString('cs-CZ', { timeZone: 'Europe/Prague' }),
         read: false
       });
       playNotificationSound('emergency');
@@ -957,7 +991,7 @@ function App() {
         title: 'EMERGENCY: NO CHECK-OUT',
         message: 'Safety Guard escalating! Contacting agency manager...',
         priority: 'emergency',
-        timestamp: new Date().toLocaleTimeString(),
+        timestamp: new Date().toLocaleTimeString('cs-CZ', { timeZone: 'Europe/Prague' }),
         read: false
       });
       playNotificationSound('emergency');
@@ -1000,7 +1034,7 @@ function App() {
         title: 'Safety Guard Active',
         message: `Session started for ${event.title}. Security monitored.`,
         priority: 'success',
-        timestamp: new Date().toLocaleTimeString(),
+        timestamp: new Date().toLocaleTimeString('cs-CZ', { timeZone: 'Europe/Prague' }),
         read: false
       });
     } catch (error) {
@@ -1010,7 +1044,7 @@ function App() {
         title: 'Safety Error',
         message: 'Could not start safety session. Please try again.',
         priority: 'emergency',
-        timestamp: new Date().toLocaleTimeString(),
+        timestamp: new Date().toLocaleTimeString('cs-CZ', { timeZone: 'Europe/Prague' }),
         read: false
       });
     } finally {
@@ -1038,7 +1072,7 @@ function App() {
         title: 'Safety Deactivated', 
         message: 'Checkout successful. Go home safe!', 
         priority: 'success', 
-        timestamp: new Date().toLocaleTimeString(), 
+        timestamp: new Date().toLocaleTimeString('cs-CZ', { timeZone: 'Europe/Prague' }), 
         read: false 
       });
     } catch (error) {
@@ -1048,7 +1082,7 @@ function App() {
         title: 'Network Error',
         message: 'Could not complete checkout. Please contact manager.',
         priority: 'emergency',
-        timestamp: new Date().toLocaleTimeString(),
+        timestamp: new Date().toLocaleTimeString('cs-CZ', { timeZone: 'Europe/Prague' }),
         read: false
       });
     } finally {
@@ -1076,7 +1110,7 @@ function App() {
         title: 'Safety Acknowledged',
         message: 'Manager delay acknowledged. Extra 10 minutes granted.',
         priority: 'success',
-        timestamp: new Date().toLocaleTimeString(),
+        timestamp: new Date().toLocaleTimeString('cs-CZ', { timeZone: 'Europe/Prague' }),
         read: false,
       });
     } catch (error) {
@@ -1086,7 +1120,7 @@ function App() {
         title: 'Acknowledge Failed',
         message: 'Could not confirm safety status. Please check out or contact manager.',
         priority: 'emergency',
-        timestamp: new Date().toLocaleTimeString(),
+        timestamp: new Date().toLocaleTimeString('cs-CZ', { timeZone: 'Europe/Prague' }),
         read: false,
       });
     } finally {
@@ -1102,7 +1136,7 @@ function App() {
         title: 'Acknowledge Failed',
         message: 'Missing session ID in emergency alert.',
         priority: 'emergency',
-        timestamp: new Date().toLocaleTimeString(),
+        timestamp: new Date().toLocaleTimeString('cs-CZ', { timeZone: 'Europe/Prague' }),
         read: false,
       });
       return;
@@ -1121,7 +1155,7 @@ function App() {
         title: 'Emergency Acknowledged',
         message: 'Session acknowledged and postponed by 10 minutes.',
         priority: 'success',
-        timestamp: new Date().toLocaleTimeString(),
+        timestamp: new Date().toLocaleTimeString('cs-CZ', { timeZone: 'Europe/Prague' }),
         read: false,
       });
       setEmergencyAlert(null);
@@ -1132,7 +1166,7 @@ function App() {
         title: 'Acknowledge Failed',
         message: 'Could not update emergency session. Try again.',
         priority: 'emergency',
-        timestamp: new Date().toLocaleTimeString(),
+        timestamp: new Date().toLocaleTimeString('cs-CZ', { timeZone: 'Europe/Prague' }),
         read: false,
       });
     } finally {
@@ -1647,16 +1681,13 @@ function App() {
 
   const isPushRegistrationEnabled = useMemo(() => {
     try {
-      // Auto-enable push for any logged-in operator on the native platform.
-      // The relay device uses a separate push channel (sendRelaySmsPush by userId),
-      // so there's no conflict — both relay + operator tokens can coexist.
-      if (isNativeApp && isLoggedIn) return true;
-      // Legacy manual override via localStorage (for testing/debug)
+      // DEFAULT TO FALSE to prevent crashes on Android if google-services.json is missing.
+      // Enable only if explicitly requested via localStorage for now.
       return localStorage.getItem('nexus_enable_push_registration') === 'true';
     } catch {
       return false;
     }
-  }, [isNativeApp, isLoggedIn]);
+  }, []);
 
 
   useEffect(() => {
@@ -1877,7 +1908,7 @@ function App() {
               "Hello, are you online?",
               "I'd like to book a session."
             ][Math.floor(Math.random() * 7)],
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' }),
           };
           
           setMessages(prev => [newMessage, ...prev]);
@@ -3618,7 +3649,7 @@ function App() {
                              <div key={msg.id || i} className={msg.direction === 'OUTBOUND' ? 'message-bubble-out' : 'message-bubble-in'} style={{ alignSelf: msg.direction === 'OUTBOUND' ? 'flex-end' : 'flex-start', marginBottom: '1rem' }}>
                                <div style={{ fontSize: '0.95rem' }}>{msg.text}</div>
                                <div style={{ fontSize: '0.65rem', opacity: 0.6, marginTop: '4px', textAlign: 'right' }}>
-                                 {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                 {new Date(msg.createdAt).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' })}
                                </div>
                                                           </div>
                            ))
@@ -3641,13 +3672,7 @@ function App() {
                              <Calendar size={14} color="var(--success-color)" />
                              <span style={{ flex: 1, fontSize: '0.72rem', color: 'var(--success-color)', fontWeight: '700' }}>Detekován čas: <strong>{detectedMeeting.time}</strong> — Uložit schůzku?</span>
                              <button
-                               onClick={() => {
-                                 const h = detectedMeeting.time.match(/(\d{1,2})[:\.]?(\d{2})?/);
-                                 const hh = h ? h[1].padStart(2,'0') : '12';
-                                 const mm = h?.[2] || '00';
-                                 setNewBookingForm(f => ({ ...f, title: `Schůzka – ${selectedChat?.from || 'klient'}`, date: new Date().toISOString().split('T')[0], startTime: `${hh}:${mm}`, endTime: `${String(+hh+1).padStart(2,'0')}:${mm}` }));
-                                 setBookingModalOpen(true);
-                               }}
+                               onClick={handleQuickSaveMeeting}
                                style={{ padding: '0.3rem 0.65rem', borderRadius: '6px', background: 'rgba(16,185,129,0.2)', border: '1px solid rgba(16,185,129,0.35)', color: 'var(--success-color)', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer' }}
                              >Uložit</button>
                              <button onClick={() => setDetectedMeeting(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, padding: '0 2px' }}>×</button>
@@ -3829,8 +3854,8 @@ function App() {
                                   <span style={{ fontSize: '0.72rem', fontStyle: 'italic' }}>{lang === 'cz' ? 'Žádné schůzky' : 'No bookings'}</span>
                                 </div>
                               ) : bookingsForDate.map(b => {
-                                const timeStr = b.startTime ? new Date(b.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (b.time || '');
-                                const endStr = b.endTime ? new Date(b.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                                const timeStr = b.startTime ? new Date(b.startTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' }) : (b.time || '');
+                                const endStr = b.endTime ? new Date(b.endTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' }) : '';
                                 return (
                                   <div key={b.id} style={{ display: 'flex', gap: '0.6rem', padding: '0.5rem 0.65rem', background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '8px', borderLeft: '3px solid var(--accent-color)', alignItems: 'flex-start' }}>
                                     <div style={{ flexShrink: 0, textAlign: 'right', minWidth: '42px' }}>
@@ -3845,10 +3870,34 @@ function App() {
                                 );
                               })}
                             </div>
-                            {/* add booking footer */}
-                            <button onClick={() => { setNewBookingForm(f => ({ ...f, date: calDateStr })); setBookingModalOpen(true); }} style={{ margin: '0 0.75rem 0.5rem', padding: '0.45rem', borderRadius: '8px', background: 'rgba(99,102,241,0.06)', border: '1px dashed rgba(99,102,241,0.25)', color: '#a5b4fc', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', flexShrink: 0 }}>
-                              <PlusCircle size={13} /> {lang === 'cz' ? 'Přidat schůzku' : 'Add booking'}
-                            </button>
+                            {/* add booking footer aligned with chat input */}
+                            <div style={{ 
+                              padding: '1.4rem 0.75rem', 
+                              borderTop: '1px solid var(--card-border)',
+                              background: 'rgba(0,0,0,0.05)',
+                              marginTop: 'auto'
+                            }}>
+                              <button 
+                                onClick={() => { setNewBookingForm(f => ({ ...f, date: calDateStr })); setBookingModalOpen(true); }} 
+                                style={{ 
+                                  width: '100%',
+                                  padding: '0.85rem', 
+                                  borderRadius: '12px', 
+                                  background: 'var(--accent-color)', 
+                                  border: 'none',
+                                  color: 'white', 
+                                  fontSize: '0.85rem', 
+                                  fontWeight: '800', 
+                                  cursor: 'pointer', 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  justifyContent: 'center', 
+                                  gap: '0.5rem' 
+                                }}
+                              >
+                                <PlusCircle size={16} /> {lang === 'cz' ? 'Přidat schůzku' : 'Add booking'}
+                              </button>
+                            </div>
                           </div>
                         );
                       })()}
