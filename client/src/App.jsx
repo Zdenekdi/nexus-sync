@@ -4820,7 +4820,7 @@ function App() {
         )}
 
         {activeTab === 'inventory' && (
-          <InventoryView t={TRANSLATIONS[lang]} />
+          <InventoryView t={TRANSLATIONS[lang]} token={token} />
         )}
 
         {activeTab === 'infra' && rolePermissions[activeRole]?.infrastructure && (

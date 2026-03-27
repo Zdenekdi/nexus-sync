@@ -1,413 +1,286 @@
-import React, { useState, useMemo } from 'react';
-import { 
-  Package, 
-  MapPin, 
-  AlertTriangle, 
-  Plus, 
-  Search, 
-  Filter, 
-  ChevronDown, 
-  CheckCircle2, 
-  XCircle,
-  RefreshCw,
-  MoreVertical,
-  Minus,
-  Check,
-  X
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import {
+  Package, MapPin, AlertTriangle, Plus, Search, Filter,
+  ChevronDown, CheckCircle2, XCircle, RefreshCw, MoreVertical,
+  Minus, Check, X, Trash2, Edit2
 } from 'lucide-react';
 
-const InventoryView = ({ t }) => {
+const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
+
+const InventoryView = ({ t, token }) => {
   const isMobile = window.innerWidth < 768;
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  const [locations, setLocations] = useState([]);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddingLocation, setIsAddingLocation] = useState(false);
   const [newLocationName, setNewLocationName] = useState('');
-  
-  // Locations State
-  const [locations, setLocations] = useState([
-    { id: 'warehouse', labelKey: 'warehouse' },
-    { id: 'officeMain', labelKey: 'officeMain' }
-  ]);
 
-  // Mock Data
-  const [inventoryItems, setInventoryItems] = useState([
-    { id: 1, name: 'SIM Card - UK EE', quantity: 150, threshold: 50, location: 'warehouse', lastUpdated: '2024-03-15' },
-    { id: 2, name: 'SIM Card - DE O2', quantity: 12, threshold: 25, location: 'officeMain', lastUpdated: '2024-03-16' },
-    { id: 3, name: 'Marketing Brochures', quantity: 500, threshold: 100, location: 'warehouse', lastUpdated: '2024-03-10' },
-    { id: 4, name: 'Phone - Samsung A54', quantity: 3, threshold: 5, location: 'officeMain', lastUpdated: '2024-03-17' },
-    { id: 5, name: 'SIM Card - FR Orange', quantity: 0, threshold: 20, location: 'officeMain', lastUpdated: '2024-03-17' },
-  ]);
+  // Add item modal
+  const [addItemModal, setAddItemModal] = useState(false);
+  const [newItem, setNewItem] = useState({ name: '', quantity: 0, threshold: 10, locationId: '' });
+  const [editingQty, setEditingQty] = useState(null); // { id, value }
 
-  const handleAddLocation = () => {
-    if (newLocationName.trim()) {
-      const newId = newLocationName.toLowerCase().replace(/\s+/g, '-');
-      setLocations(prev => [...prev, { id: newId, label: newLocationName }]);
-      setNewLocationName('');
-      setIsAddingLocation(false);
+  // ── API helpers ─────────────────────────────────────────────────────────────
+  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+
+  const fetchAll = useCallback(async () => {
+    try {
+      setLoading(true);
+      const [locsRes, itemsRes] = await Promise.all([
+        fetch(`${API_BASE}/inventory/locations`, { headers }),
+        fetch(`${API_BASE}/inventory/items`, { headers })
+      ]);
+      if (locsRes.ok) setLocations(await locsRes.json());
+      if (itemsRes.ok) setItems(await itemsRes.json());
+    } catch (e) {
+      console.error('[Inventory] fetch failed:', e);
+    } finally {
+      setLoading(false);
     }
+  }, [token]);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  // ── CRUD ─────────────────────────────────────────────────────────────────────
+  const handleAddLocation = async () => {
+    if (!newLocationName.trim()) return;
+    const res = await fetch(`${API_BASE}/inventory/locations`, {
+      method: 'POST', headers,
+      body: JSON.stringify({ name: newLocationName.trim() })
+    });
+    if (res.ok) { const loc = await res.json(); setLocations(p => [...p, loc]); }
+    setNewLocationName(''); setIsAddingLocation(false);
   };
 
-  const filteredItems = useMemo(() => {
-    return inventoryItems.filter(item => {
-      const matchesLocation = selectedLocation === 'all' || item.location === selectedLocation;
-      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesLocation && matchesSearch;
+  const handleDeleteLocation = async (id) => {
+    if (!window.confirm('Smazat lokaci a všechny její položky?')) return;
+    const res = await fetch(`${API_BASE}/inventory/locations/${id}`, { method: 'DELETE', headers });
+    if (res.ok) { setLocations(p => p.filter(l => l.id !== id)); setItems(p => p.filter(i => i.locationId !== id)); }
+  };
+
+  const handleAddItem = async () => {
+    if (!newItem.name.trim() || !newItem.locationId) return;
+    const res = await fetch(`${API_BASE}/inventory/items`, {
+      method: 'POST', headers, body: JSON.stringify(newItem)
     });
-  }, [inventoryItems, selectedLocation, searchQuery]);
+    if (res.ok) { const item = await res.json(); setItems(p => [...p, item]); setAddItemModal(false); setNewItem({ name: '', quantity: 0, threshold: 10, locationId: '' }); }
+  };
+
+  const handleUpdateQuantity = async (id, quantity) => {
+    const res = await fetch(`${API_BASE}/inventory/items/${id}`, {
+      method: 'PATCH', headers, body: JSON.stringify({ quantity: Number(quantity) })
+    });
+    if (res.ok) { const updated = await res.json(); setItems(p => p.map(i => i.id === id ? updated : i)); }
+    setEditingQty(null);
+  };
+
+  const handleDeleteItem = async (id) => {
+    const res = await fetch(`${API_BASE}/inventory/items/${id}`, { method: 'DELETE', headers });
+    if (res.ok) setItems(p => p.filter(i => i.id !== id));
+  };
+
+  // ── Derived ───────────────────────────────────────────────────────────────
+  const filteredItems = useMemo(() => items.filter(item => {
+    const matchesLoc = selectedLocation === 'all' || item.locationId === selectedLocation;
+    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesLoc && matchesSearch;
+  }), [items, selectedLocation, searchQuery]);
 
   const stats = useMemo(() => {
-    const activeItems = inventoryItems.filter(item => selectedLocation === 'all' || item.location === selectedLocation);
+    const active = selectedLocation === 'all' ? items : items.filter(i => i.locationId === selectedLocation);
     return {
-      total: activeItems.length,
-      lowStock: activeItems.filter(item => item.quantity > 0 && item.quantity <= item.threshold).length,
-      outOfStock: activeItems.filter(item => item.quantity === 0).length,
-      inStock: activeItems.filter(item => item.quantity > item.threshold).length
+      total: active.length,
+      inStock: active.filter(i => i.quantity > i.threshold).length,
+      lowStock: active.filter(i => i.quantity > 0 && i.quantity <= i.threshold).length,
+      outOfStock: active.filter(i => i.quantity === 0).length
     };
-  }, [inventoryItems, selectedLocation]);
+  }, [items, selectedLocation]);
 
-  const getStatusColor = (quantity, threshold) => {
-    if (quantity === 0) return 'var(--error-color)';
-    if (quantity <= threshold) return 'var(--warning-color)';
-    return 'var(--success-color)';
-  };
-
-  const getStatusText = (quantity, threshold) => {
-    if (quantity === 0) return t.outOfStock;
-    if (quantity <= threshold) return t.lowStock;
-    return t.inStock;
-  };
-
-  const getLocLabel = (loc) => {
-    if (loc.labelKey) return t[loc.labelKey];
-    return loc.label;
-  };
+  const getColor = (q, t) => q === 0 ? 'var(--error-color)' : q <= t ? 'var(--warning-color)' : 'var(--success-color)';
+  const getLabel = (q, thr) => q === 0 ? (t?.outOfStock || 'Out of Stock') : q <= thr ? (t?.lowStock || 'Low Stock') : (t?.inStock || 'In Stock');
+  const locName = (id) => locations.find(l => l.id === id)?.name || id;
 
   return (
-    <div style={{ padding: isMobile ? 'calc(1rem + env(safe-area-inset-left)) 1rem calc(8rem + max(env(safe-area-inset-bottom), 1rem) + env(safe-area-inset-right))' : '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto', maxHeight: isMobile ? 'calc(100dvh - max(env(safe-area-inset-top), 1rem) - 3rem)' : '100%' }} className="fade-in custom-scrollbar">
+    <div style={{ padding: isMobile ? '1.5rem 1rem' : '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: isMobile ? '1.5rem' : '3rem', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : 0 }}>
         <div>
           <h2 style={{ fontSize: isMobile ? '1.75rem' : '2.5rem', fontWeight: '900', marginBottom: '0.5rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <Package size={isMobile ? 24 : 32} color="var(--accent-color)" /> {t.stockCard}
+            <Package size={isMobile ? 24 : 32} color="var(--accent-color)" /> {t?.stockCard || 'Sklad'}
           </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1.1rem' }}>Manage physical assets across your agency nodes.</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1.1rem' }}>Správa fyzického majetku a zásob agentury.</p>
         </div>
-        
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexDirection: isMobile ? 'column' : 'row', width: isMobile ? '100%' : 'auto' }}>
-          <div style={{ display: isMobile ? 'none' : 'flex', gap: '1rem', alignItems: 'center' }}>
-            {/* Keeping existing flow for desktop, will simplify for mobile below */}
-            {isAddingLocation ? (
-              <div className="glass-card" style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', animation: 'fadeIn 0.2s ease' }}>
-                <input
-                  type="text"
-                  autoFocus
-                  placeholder={t.locationNamePlaceholder}
-                  value={newLocationName}
-                  onChange={(e) => setNewLocationName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddLocation()}
-                  style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '0.85rem', outline: 'none', width: '150px' }}
-                />
-                <button onClick={handleAddLocation} style={{ background: 'var(--success-color)', border: 'none', borderRadius: '4px', color: 'white', padding: '2px', cursor: 'pointer' }}>
-                  <Check size={14} />
-                </button>
-                <button onClick={() => setIsAddingLocation(false)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '4px', color: 'white', padding: '2px', cursor: 'pointer' }}>
-                  <X size={14} />
-                </button>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Location selector */}
+          {!isAddingLocation ? (
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <div style={{ position: 'relative' }}>
+                <MapPin size={14} color="var(--text-secondary)" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
+                <select value={selectedLocation} onChange={e => setSelectedLocation(e.target.value)} style={{ padding: '0.6rem 1.5rem 0.6rem 2rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontSize: '0.85rem', cursor: 'pointer', minWidth: '140px' }}>
+                  <option value="all">Vše</option>
+                  {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                </select>
               </div>
-            ) : (
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <div style={{ position: 'relative' }}>
-                  <MapPin size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                  <select
-                    value={selectedLocation}
-                    onChange={(e) => setSelectedLocation(e.target.value)}
-                    style={{
-                      padding: '0.6rem 2.5rem 0.6rem 2.5rem',
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid var(--card-border)',
-                      borderRadius: '10px',
-                      color: 'white',
-                      fontSize: '0.9rem',
-                      appearance: 'none',
-                      cursor: 'pointer',
-                      minWidth: '180px'
-                    }}
-                  >
-                    <option value="all">{t.allLocations}</option>
-                    {locations.map(loc => (
-                      <option key={loc.id} value={loc.id}>{getLocLabel(loc)}</option>
-                    ))}
-                  </select>
-                  <ChevronDown size={14} color="var(--text-secondary)" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-                </div>
-                <button 
-                  onClick={() => setIsAddingLocation(true)}
-                  title={t.addLocation}
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.6rem', borderRadius: '10px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                >
-                  <Plus size={18} />
+              <button onClick={() => setIsAddingLocation(true)} title="Přidat lokaci" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.55rem', borderRadius: '10px', color: 'white', cursor: 'pointer', display: 'flex' }}>
+                <Plus size={16} />
+              </button>
+              {selectedLocation !== 'all' && (
+                <button onClick={() => handleDeleteLocation(selectedLocation)} title="Smazat lokaci" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', padding: '0.55rem', borderRadius: '10px', color: 'var(--error-color)', cursor: 'pointer', display: 'flex' }}>
+                  <Trash2 size={16} />
                 </button>
-              </div>
-            )}
-          </div>
-          
-          <button className="action-btn" style={{ marginTop: 0, width: isMobile ? '100%' : 'auto', padding: '0.6rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', background: 'var(--accent-color)', borderRadius: '10px', fontWeight: '700' }}>
-            <Plus size={18} style={{ strokeWidth: 3 }} /> {t.addStockItem}
+              )}
+            </div>
+          ) : (
+            <div className="glass-card" style={{ padding: '0.5rem 0.75rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <input autoFocus value={newLocationName} onChange={e => setNewLocationName(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAddLocation()} placeholder="Název lokace..." style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '0.85rem', outline: 'none', width: '140px' }} />
+              <button onClick={handleAddLocation} style={{ background: 'var(--success-color)', border: 'none', borderRadius: '4px', color: 'white', padding: '3px', cursor: 'pointer' }}><Check size={14} /></button>
+              <button onClick={() => setIsAddingLocation(false)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '4px', color: 'white', padding: '3px', cursor: 'pointer' }}><X size={14} /></button>
+            </div>
+          )}
+          <button onClick={() => { setNewItem(p => ({ ...p, locationId: selectedLocation !== 'all' ? selectedLocation : (locations[0]?.id || '') })); setAddItemModal(true); }} className="action-btn" style={{ marginTop: 0, padding: '0.65rem 1.25rem', display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'var(--accent-color)', fontWeight: '700' }}>
+            <Plus size={18} /> Přidat položku
           </button>
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '1rem' : '1.5rem', marginBottom: '3rem' }}>
-        <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem', borderRadius: '10px' }}>
-              <Package size={20} color="var(--accent-color)" />
-            </div>
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: isMobile ? '0.75rem' : '1.5rem', marginBottom: '2rem' }}>
+        {[
+          { label: t?.itemsInStock || 'Skladem', val: stats.inStock, color: 'var(--accent-color)', Icon: Package },
+          { label: t?.lowStockItems || 'Nízké zásoby', val: stats.lowStock, color: 'var(--warning-color)', Icon: AlertTriangle },
+          { label: t?.outOfStockItems || 'Vyprodáno', val: stats.outOfStock, color: 'var(--error-color)', Icon: XCircle },
+          { label: 'Celkem položek', val: stats.total, color: 'var(--success-color)', Icon: CheckCircle2 },
+        ].map(({ label, val, color, Icon }) => (
+          <div key={label} className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
+            <div style={{ background: `${color}15`, padding: '0.5rem', borderRadius: '10px', width: 'fit-content', marginBottom: '0.75rem' }}><Icon size={20} color={color} /></div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.65rem', fontWeight: '800', letterSpacing: '0.05em' }}>{label.toUpperCase()}</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{val}</div>
           </div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.6rem', fontWeight: '800', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>{t.itemsInStock.toUpperCase()}</div>
-          <div style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: '900' }}>{stats.inStock}</div>
-        </div>
-
-        <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <div style={{ background: 'rgba(245, 158, 11, 0.1)', padding: '0.5rem', borderRadius: '10px' }}>
-              <AlertTriangle size={20} color="var(--warning-color)" />
-            </div>
-          </div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.6rem', fontWeight: '800', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>{t.lowStockItems.toUpperCase()}</div>
-          <div style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: '900' }}>{stats.lowStock}</div>
-        </div>
-
-        <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '0.5rem', borderRadius: '10px' }}>
-              <XCircle size={20} color="var(--error-color)" />
-            </div>
-          </div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.6rem', fontWeight: '800', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>{t.outOfStockItems.toUpperCase()}</div>
-          <div style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: '900' }}>{stats.outOfStock}</div>
-        </div>
-
-        <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '0.5rem', borderRadius: '10px' }}>
-              <RefreshCw size={20} color="var(--success-color)" />
-            </div>
-          </div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.6rem', fontWeight: '800', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>SYNC</div>
-          <div style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: '900' }}>LIVE</div>
-        </div>
+        ))}
       </div>
 
-      {/* Main Table Content */}
+      {/* Table */}
       <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: isMobile ? '1rem' : '1.5rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.01)', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1.5rem' : 0 }}>
-          <div style={{ position: 'relative', width: isMobile ? '100%' : '400px' }}>
-            <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-            <input 
-              type="text" 
-              placeholder={t.searchPlaceholder || "Search items..."} 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.85rem 0.85rem 0.85rem 2.5rem', borderRadius: '12px', color: 'white' }} 
-            />
+        <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <div style={{ position: 'relative', flex: 1, minWidth: '200px', maxWidth: '400px' }}>
+            <Search size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+            <input type="text" placeholder="Hledat položku..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.75rem 0.75rem 0.75rem 2.5rem', borderRadius: '12px', color: 'white' }} />
           </div>
-          <div style={{ display: 'flex', gap: '0.75rem', width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'space-between' : 'flex-end' }}>
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
-              <button style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.75rem', borderRadius: '10px', color: 'white', cursor: 'pointer' }}>
-                <Filter size={18} />
-              </button>
-              <button style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.75rem', borderRadius: '10px', color: 'white', cursor: 'pointer' }}>
-                <RefreshCw size={18} />
-              </button>
-            </div>
-            {isMobile && (
-              <div style={{ position: 'relative', flex: 1 }}>
-                <select
-                  value={selectedLocation}
-                  onChange={(e) => setSelectedLocation(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem 2.5rem 0.75rem 1rem',
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid var(--card-border)',
-                    borderRadius: '12px',
-                    color: 'white',
-                    fontSize: '0.9rem',
-                    appearance: 'none',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <option value="all">{t.allLocations}</option>
-                  {locations.map(loc => (
-                    <option key={loc.id} value={loc.id}>{getLocLabel(loc)}</option>
-                  ))}
-                </select>
-                <ChevronDown size={14} color="var(--text-secondary)" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-              </div>
-            )}
-          </div>
+          <button onClick={fetchAll} style={{ background: 'none', border: '1px solid var(--card-border)', padding: '0.7rem', borderRadius: '10px', color: 'white', cursor: 'pointer', display: 'flex' }}><RefreshCw size={16} /></button>
         </div>
 
-        {isMobile ? (
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {loading ? (
+          <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}><RefreshCw size={24} style={{ opacity: 0.4 }} /></div>
+        ) : isMobile ? (
+          <div>
             {filteredItems.map((item, idx) => (
-              <div key={item.id} style={{ 
-                padding: '1.5rem', 
-                borderBottom: idx < filteredItems.length - 1 ? '1px solid var(--card-border)' : 'none',
-                background: 'rgba(255,255,255,0.01)'
-              }}>
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.25rem' }}>
-                  <div style={{ width: '44px', height: '44px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Package size={22} color="var(--text-secondary)" />
+              <div key={item.id} style={{ padding: '1.25rem', borderBottom: idx < filteredItems.length - 1 ? '1px solid var(--card-border)' : 'none' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <div>
+                    <div style={{ fontWeight: '800' }}>{item.name}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><MapPin size={10} /> {locName(item.locationId)}</div>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '800', fontSize: '1.1rem', marginBottom: '0.25rem' }}>{item.name}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
-                      <MapPin size={12} />
-                      {(() => {
-                        const loc = locations.find(l => l.id === item.location);
-                        return loc ? getLocLabel(loc) : item.location;
-                      })()}
-                    </div>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.6rem', borderRadius: '6px', fontSize: '0.65rem', fontWeight: '900', background: `${getColor(item.quantity, item.threshold)}15`, color: getColor(item.quantity, item.threshold) }}>
+                    {getLabel(item.quantity, item.threshold).toUpperCase()}
                   </div>
                 </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem', background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '15px' }}>
-                  <div>
-                    <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>QUANTITY</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: '900', color: item.quantity <= item.threshold ? 'var(--warning-color)' : 'white' }}>{item.quantity}</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>THRESHOLD</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: '900', color: 'rgba(255,255,255,0.2)' }}>{item.threshold}</div>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ 
-                    display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.35rem 0.75rem', borderRadius: '8px', 
-                    fontSize: '0.7rem', fontWeight: '900', background: `${getStatusColor(item.quantity, item.threshold)}15`,
-                    color: getStatusColor(item.quantity, item.threshold), border: `1px solid ${getStatusColor(item.quantity, item.threshold)}30`
-                  }}>
-                    <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: getStatusColor(item.quantity, item.threshold) }}></div>
-                    {getStatusText(item.quantity, item.threshold).toUpperCase()}
-                  </div>
-                  
-                  <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    <button style={{ padding: '0.6rem 1rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid var(--accent-color)', borderRadius: '10px', color: 'white', fontSize: '0.75rem', fontWeight: '800' }}>
-                      {t.updateStock}
-                    </button>
-                    <button style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.6rem', borderRadius: '10px', color: 'var(--text-secondary)' }}>
-                      <MoreVertical size={18} />
-                    </button>
-                  </div>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                  {editingQty?.id === item.id ? (
+                    <input type="number" value={editingQty.value} onChange={e => setEditingQty(p => ({ ...p, value: e.target.value }))} onBlur={() => handleUpdateQuantity(item.id, editingQty.value)} onKeyDown={e => e.key === 'Enter' && handleUpdateQuantity(item.id, editingQty.value)} style={{ width: '70px', background: 'rgba(255,255,255,0.1)', border: '1px solid var(--accent-color)', borderRadius: '8px', color: 'white', padding: '0.4rem', fontSize: '0.9rem', fontWeight: '800' }} />
+                  ) : (
+                    <button onClick={() => setEditingQty({ id: item.id, value: item.quantity })} style={{ fontWeight: '800', fontSize: '1.1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '8px', color: item.quantity <= item.threshold ? 'var(--warning-color)' : 'white', padding: '0.3rem 0.75rem', cursor: 'pointer' }}>{item.quantity}</button>
+                  )}
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>/ limit {item.threshold}</span>
+                  <button onClick={() => handleDeleteItem(item.id)} style={{ background: 'none', border: 'none', color: 'var(--error-color)', cursor: 'pointer', marginLeft: 'auto', display: 'flex' }}><Trash2 size={16} /></button>
                 </div>
               </div>
             ))}
-            {filteredItems.length === 0 && (
-              <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                <Package size={48} style={{ opacity: 0.1, marginBottom: '1rem' }} />
-                <div>No inventory items found.</div>
-              </div>
-            )}
+            {!filteredItems.length && <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}><Package size={40} style={{ opacity: 0.1 }} /><div>Žádné položky</div></div>}
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)' }}>
-                  <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t.itemName}</th>
-                  <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t.location}</th>
-                  <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>{t.quantity}</th>
-                  <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>{t.alertThreshold}</th>
-                  <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t.status}</th>
-                  <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>{t.actions}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredItems.map(item => (
-                  <tr key={item.id} style={{ borderBottom: '1px solid var(--card-border)', transition: 'background 0.2s' }} className="table-row-hover">
-                    <td style={{ padding: '1.25rem 1.5rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <div style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Package size={20} color="var(--text-secondary)" />
-                        </div>
-                        <div>
-                          <div style={{ fontWeight: '700', fontSize: '1rem' }}>{item.name}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t.lastUpdated}: {item.lastUpdated}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{ padding: '1.25rem 1.5rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                        <MapPin size={14} />
-                        {(() => {
-                          const loc = locations.find(l => l.id === item.location);
-                          return loc ? getLocLabel(loc) : item.location;
-                        })()}
-                      </div>
-                    </td>
-                    <td style={{ padding: '1.25rem 1.5rem', textAlign: 'center' }}>
-                      <div style={{ fontSize: '1.1rem', fontWeight: '800', color: item.quantity <= item.threshold ? 'var(--warning-color)' : 'white' }}>
-                        {item.quantity}
-                      </div>
-                    </td>
-                    <td style={{ padding: '1.25rem 1.5rem', textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{item.threshold}</div>
-                    </td>
-                    <td style={{ padding: '1.25rem 1.5rem' }}>
-                      <div style={{ 
-                        display: 'inline-flex', 
-                        alignItems: 'center', 
-                        gap: '0.5rem', 
-                        padding: '0.4rem 0.8rem', 
-                        borderRadius: '8px', 
-                        fontSize: '0.75rem', 
-                        fontWeight: '800',
-                        background: `${getStatusColor(item.quantity, item.threshold)}15`,
-                        color: getStatusColor(item.quantity, item.threshold),
-                        border: `1px solid ${getStatusColor(item.quantity, item.threshold)}30`
-                      }}>
-                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: getStatusColor(item.quantity, item.threshold) }}></div>
-                        {getStatusText(item.quantity, item.threshold).toUpperCase()}
-                      </div>
-                    </td>
-                    <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                        <button style={{ padding: '0.4rem 0.8rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '8px', color: 'white', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer' }}>
-                          {t.updateStock}
-                        </button>
-                        <button style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                          <MoreVertical size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)' }}>
+                {['Název', 'Lokace', 'Množství', 'Limit', 'Stav', ''].map(h => (
+                  <th key={h} style={{ padding: '1rem 1.25rem', color: 'var(--text-secondary)', fontSize: '0.72rem', fontWeight: '800', textTransform: 'uppercase', textAlign: h === 'Množství' || h === 'Limit' ? 'center' : 'left' }}>{h}</th>
                 ))}
-                {filteredItems.length === 0 && (
-                  <tr>
-                    <td colSpan="6" style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                      <Package size={48} style={{ opacity: 0.1, marginBottom: '1rem' }} />
-                      <div>No inventory items found.</div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredItems.map(item => (
+                <tr key={item.id} style={{ borderBottom: '1px solid var(--card-border)' }} className="table-row-hover">
+                  <td style={{ padding: '1rem 1.25rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{ width: '36px', height: '36px', background: 'rgba(255,255,255,0.04)', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Package size={18} color="var(--text-secondary)" /></div>
+                      <div style={{ fontWeight: '700' }}>{item.name}</div>
+                    </div>
+                  </td>
+                  <td style={{ padding: '1rem 1.25rem' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}><MapPin size={13} />{locName(item.locationId)}</div></td>
+                  <td style={{ padding: '1rem 1.25rem', textAlign: 'center' }}>
+                    {editingQty?.id === item.id ? (
+                      <input type="number" value={editingQty.value} onChange={e => setEditingQty(p => ({ ...p, value: e.target.value }))} onBlur={() => handleUpdateQuantity(item.id, editingQty.value)} onKeyDown={e => e.key === 'Enter' && handleUpdateQuantity(item.id, editingQty.value)} autoFocus style={{ width: '70px', background: 'rgba(255,255,255,0.1)', border: '1px solid var(--accent-color)', borderRadius: '8px', color: 'white', padding: '0.3rem', textAlign: 'center', fontSize: '1rem', fontWeight: '800' }} />
+                    ) : (
+                      <button onClick={() => setEditingQty({ id: item.id, value: item.quantity })} title="Klikni pro úpravu" style={{ fontWeight: '800', fontSize: '1rem', color: item.quantity <= item.threshold ? 'var(--warning-color)' : 'white', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--card-border)', borderRadius: '8px', padding: '0.2rem 0.75rem', cursor: 'pointer' }}>{item.quantity}</button>
+                    )}
+                  </td>
+                  <td style={{ padding: '1rem 1.25rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{item.threshold}</td>
+                  <td style={{ padding: '1rem 1.25rem' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.75rem', borderRadius: '7px', fontSize: '0.72rem', fontWeight: '800', background: `${getColor(item.quantity, item.threshold)}15`, color: getColor(item.quantity, item.threshold), border: `1px solid ${getColor(item.quantity, item.threshold)}30` }}>
+                      <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: getColor(item.quantity, item.threshold) }} />{getLabel(item.quantity, item.threshold).toUpperCase()}
+                    </div>
+                  </td>
+                  <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
+                    <button onClick={() => handleDeleteItem(item.id)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.3rem' }}><Trash2 size={16} /></button>
+                  </td>
+                </tr>
+              ))}
+              {!filteredItems.length && (
+                <tr><td colSpan="6" style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}><Package size={40} style={{ opacity: 0.1, marginBottom: '0.75rem' }} /><div>Žádné položky</div></td></tr>
+              )}
+            </tbody>
+          </table>
         )}
       </div>
-      
+
+      {/* Add Item Modal */}
+      {addItemModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '440px', padding: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+              <h3 style={{ fontWeight: '800', fontSize: '1.1rem' }}>Nová skladová položka</h3>
+              <button onClick={() => setAddItemModal(false)} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <input placeholder="Název položky *" value={newItem.name} onChange={e => setNewItem(p => ({ ...p, name: e.target.value }))} style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontSize: '0.95rem' }} />
+              <select value={newItem.locationId} onChange={e => setNewItem(p => ({ ...p, locationId: e.target.value }))} style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontSize: '0.95rem' }}>
+                <option value="">Vyberte lokaci *</option>
+                {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+              </select>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '700' }}>MNOŽSTVÍ</label>
+                  <input type="number" min="0" value={newItem.quantity} onChange={e => setNewItem(p => ({ ...p, quantity: Number(e.target.value) }))} style={{ width: '100%', marginTop: '0.4rem', padding: '0.65rem 0.75rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '700' }}>MIN. LIMIT</label>
+                  <input type="number" min="0" value={newItem.threshold} onChange={e => setNewItem(p => ({ ...p, threshold: Number(e.target.value) }))} style={{ width: '100%', marginTop: '0.4rem', padding: '0.65rem 0.75rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white' }} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button onClick={() => setAddItemModal(false)} style={{ flex: 1, padding: '0.75rem', borderRadius: '10px', border: '1px solid var(--card-border)', background: 'transparent', color: 'white', fontWeight: '700', cursor: 'pointer' }}>Zrušit</button>
+                <button onClick={handleAddItem} disabled={!newItem.name.trim() || !newItem.locationId} style={{ flex: 1, padding: '0.75rem', borderRadius: '10px', border: 'none', background: 'var(--accent-color)', color: 'white', fontWeight: '800', cursor: 'pointer', opacity: !newItem.name.trim() || !newItem.locationId ? 0.5 : 1 }}>Přidat položku</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
-        .table-row-hover:hover {
-          background: rgba(255,255,255,0.03) !important;
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(-5px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
+        .table-row-hover:hover { background: rgba(255,255,255,0.03) !important; }
       `}</style>
     </div>
   );

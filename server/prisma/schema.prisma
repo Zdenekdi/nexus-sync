@@ -224,3 +224,28 @@ model CallLog {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model InventoryLocation {
+  id        String   @id @default(cuid())
+  name      String
+  agencyId  String
+  items     InventoryItem[]
+  createdAt DateTime @default(now())
+
+  @@index([agencyId])
+}
+
+model InventoryItem {
+  id          String            @id @default(cuid())
+  name        String
+  quantity    Int               @default(0)
+  threshold   Int               @default(10)
+  locationId  String
+  location    InventoryLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  agencyId    String
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([agencyId])
+  @@index([locationId])
+}
