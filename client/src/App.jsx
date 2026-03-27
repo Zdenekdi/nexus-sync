@@ -279,14 +279,6 @@ function App() {
     }
   }, [selectedChatId]);
 
-  // Close booking dropdown on outside click
-  useEffect(() => {
-    if (!openBookingMenuId) return;
-    const close = () => setOpenBookingMenuId(null);
-    window.addEventListener('click', close);
-    return () => window.removeEventListener('click', close);
-  }, [openBookingMenuId]);
-
   // Detect meeting time in most recent inbound message → offer to save to calendar
   useEffect(() => {
     if (!chatMessages.length || !selectedChatId) { setDetectedMeeting(null); return; }
@@ -923,6 +915,13 @@ function App() {
   const [mottoText, setMottoText] = useState('');
   const [detectedMeeting, setDetectedMeeting] = useState(null);
   const [openBookingMenuId, setOpenBookingMenuId] = useState(null);
+  // Close booking dropdown on outside click
+  useEffect(() => {
+    if (!openBookingMenuId) return;
+    const close = () => setOpenBookingMenuId(null);
+    window.addEventListener('click', close);
+    return () => window.removeEventListener('click', close);
+  }, [openBookingMenuId]);
   const [activeTimerEvent, setActiveTimerEvent] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [isTimerActive, setIsTimerActive] = useState(false);
