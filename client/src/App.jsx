@@ -3739,6 +3739,42 @@ function App() {
                             </div>
                           )}
                         </div>
+                      {/* Calendar mini-panel below tabs */}
+                      {(() => {
+                        const calDateStr = calViewDate.toISOString().split('T')[0];
+                        const bookingsForDate = bookingSchedule.filter(b => b.startTime?.startsWith(calDateStr));
+                        const isToday = calDateStr === new Date().toISOString().split('T')[0];
+                        const fmt = calViewDate.toLocaleDateString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { day: 'numeric', month: 'short', weekday: 'short' });
+                        return (
+                          <div style={{ borderTop: '1px solid var(--card-border)', flexShrink: 0, display: 'flex', flexDirection: 'column', maxHeight: '220px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.55rem 1rem', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--card-border)' }}>
+                              <button onClick={() => { const d = new Date(calViewDate); d.setDate(d.getDate()-1); setCalViewDate(d); }} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.2rem', display: 'flex' }}><ChevronLeft size={15} /></button>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <Calendar size={12} color="var(--accent-color)" />
+                                <span style={{ fontSize: '0.7rem', fontWeight: '800', color: isToday ? 'var(--accent-color)' : 'white' }}>{isToday ? (lang === 'cz' ? 'Dnes' : 'Today') : fmt}</span>
+                              </div>
+                              <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center' }}>
+                                {!isToday && <button onClick={() => setCalViewDate(new Date())} style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: '4px', color: '#a5b4fc', fontSize: '0.58rem', fontWeight: '800', cursor: 'pointer', padding: '0.15rem 0.4rem' }}>Dnes</button>}
+                                <button onClick={() => { const d = new Date(calViewDate); d.setDate(d.getDate()+1); setCalViewDate(d); }} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.2rem', display: 'flex' }}><ChevronRight size={15} /></button>
+                              </div>
+                            </div>
+                            <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                              {bookingsForDate.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '1rem 0', color: 'var(--text-secondary)', fontSize: '0.72rem', fontStyle: 'italic' }}>{lang === 'cz' ? 'Žádné schůzky' : 'No bookings'}</div>
+                              ) : bookingsForDate.map(b => (
+                                <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.45rem 0.6rem', background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.18)', borderRadius: '8px' }}>
+                                  <span style={{ fontSize: '0.65rem', fontWeight: '900', color: '#a5b4fc', whiteSpace: 'nowrap' }}>{b.time}</span>
+                                  <span style={{ fontSize: '0.72rem', color: 'white', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.title}</span>
+                                  <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{b.duration}</span>
+                                </div>
+                              ))}
+                              <button onClick={() => { setNewBookingForm(f => ({ ...f, date: calDateStr })); setBookingModalOpen(true); }} style={{ width: '100%', marginTop: '0.2rem', padding: '0.4rem', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: '1px dashed var(--card-border)', color: 'var(--text-secondary)', fontSize: '0.68rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}>
+                                <PlusCircle size={12} /> {lang === 'cz' ? 'Přidat schůzku' : 'Add booking'}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })()}
                       </div>
                     ) : (
                       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
