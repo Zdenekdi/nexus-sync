@@ -26,6 +26,7 @@ const safetyRoutes = require('./routes/safetyRoutes');
 const agencyRoutes = require('./routes/agencyRoutes');
 const vultrRoutes = require('./routes/vultrRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
+const inventoryRoutes = require('./routes/inventoryRoutes');
 
 const app = express();
 
@@ -124,6 +125,7 @@ app.use('/api/device', deviceRoutes);
 app.use('/api/safety', safetyRoutes);
 app.use('/api/agency', agencyRoutes);
 app.use('/api/vultr', vultrRoutes);
+app.use('/api/inventory', inventoryRoutes);
 app.use('/api/bookings', bookingRoutes);
 
 // Basic health check
