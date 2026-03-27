@@ -244,6 +244,7 @@ function App() {
   const [isMuted, setIsMuted] = useState(false);
   const [targetAgencyId, setTargetAgencyId] = useState(null);
   const [canNavigateToNotification, setCanNavigateToNotification] = useState(false);
+  const [relayApkInfo, setRelayApkInfo] = useState(null);
   const [activeMarket, setActiveMarket] = useState(lang === 'cz' ? 'cz' : 'eu');
   const SAFETY_SUGGESTIONS = ['10:00', '14:00', '18:00', '22:00'];
 
@@ -258,6 +259,17 @@ function App() {
 
   useEffect(() => {
     localStorage.setItem('nexus_activeTab', activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'device-setup') {
+      const token = localStorage.getItem('nexus_token');
+      if (!token) return;
+      fetch(`${API_BASE}/vultr/apk-info`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.json())
+        .then(d => setRelayApkInfo(d))
+        .catch(() => {});
+    }
   }, [activeTab]);
 
   useEffect(() => {
@@ -4118,7 +4130,7 @@ function App() {
                   </div>
                   
                   <a 
-                    href={`${API_BASE.replace(/\/api$/, '')}/downloads/nexus-relay.apk`} 
+                    href={relayApkInfo?.available ? relayApkInfo.downloadUrl : `${API_BASE.replace(/\/api$/, '')}/downloads/nexus-relay.apk`} 
                     target="_blank"
                     rel="noreferrer"
                     className="action-btn" 
@@ -4137,8 +4149,18 @@ function App() {
                       width: isMobile ? '100%' : 'auto',
                       justifyContent: 'center'
                     }}
+                    onClick={async (e) => {
+                      if (!relayApkInfo) {
+                        try {
+                          const token = localStorage.getItem('nexus_token');
+                          const r = await fetch(`${API_BASE}/vultr/apk-info`, { headers: { Authorization: `Bearer ${token}` } });
+                          const d = await r.json();
+                          setRelayApkInfo(d);
+                        } catch {}
+                      }
+                    }}
                   >
-                    <Download size={20} /> {t('downloadApp')} (v0.1)
+                    <Download size={20} /> {t('downloadApp')} (v{relayApkInfo?.version || '0.1'})
                   </a>
                 </div>
 

@@ -27,6 +27,7 @@ function InfraTab({ t }) {
   const [repoPath, setRepoPath] = useState("~/app");
   const [apkError, setApkError] = useState(null);
   const [apkSuccess, setApkSuccess] = useState(false);
+  const [apkVersion, setApkVersion] = useState("1.0");
   const fileInputRef = useRef(null);
 
   const statusColor = {
@@ -260,11 +261,21 @@ function InfraTab({ t }) {
                 const file = e.target.files?.[0];
                 if (!file) return;
                 setApkError(null); setApkSuccess(false);
-                try { await uploadApk(file); setApkSuccess(true); setTimeout(() => setApkSuccess(false), 4000); }
+                try { await uploadApk(file, apkVersion); setApkSuccess(true); setTimeout(() => setApkSuccess(false), 4000); }
                 catch(err) { setApkError(err.response?.data?.error || err.message); }
                 e.target.value = '';
               }}
             />
+
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Verze:</span>
+              <input
+                value={apkVersion}
+                onChange={e => setApkVersion(e.target.value)}
+                placeholder="1.0"
+                style={{ flex: 1, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--card-border)', borderRadius: '8px', padding: '0.35rem 0.6rem', color: 'white', fontSize: '0.78rem' }}
+              />
+            </div>
 
             {uploadProgress !== null ? (
               <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '10px', height: '8px', overflow: 'hidden', marginBottom: '0.5rem' }}>
