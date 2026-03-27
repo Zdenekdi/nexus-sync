@@ -279,6 +279,20 @@ function App() {
     }
   }, [selectedChatId]);
 
+  // Detect meeting time in most recent inbound message → offer to save to calendar
+  useEffect(() => {
+    if (!chatMessages.length || !selectedChatId) { setDetectedMeeting(null); return; }
+    const last = [...chatMessages].reverse().find(m => (m.direction || '').toUpperCase() === 'INBOUND');
+    if (!last) { setDetectedMeeting(null); return; }
+    const text = last.text || '';
+    const timeMatch = text.match(/\b(\d{1,2})[:\.]?(\d{2})\s*(AM|PM|am|pm)?\b|\b(\d{1,2})\s*(AM|PM|am|pm)\b/);
+    if (timeMatch) {
+      setDetectedMeeting({ time: timeMatch[0], messageId: last.id, text });
+    } else {
+      setDetectedMeeting(null);
+    }
+  }, [chatMessages, selectedChatId]);
+
   useEffect(() => {
     if (activeTab === 'device-setup') {
       const token = localStorage.getItem('nexus_token');
@@ -895,6 +909,8 @@ function App() {
   const [bookingSchedule, setBookingSchedule] = useState([]);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [newBookingForm, setNewBookingForm] = useState({ title: '', date: new Date().toISOString().split('T')[0], startTime: '10:00', endTime: '11:00' });
+  const [calViewDate, setCalViewDate] = useState(new Date());
+  const [detectedMeeting, setDetectedMeeting] = useState(null);
   const [activeTimerEvent, setActiveTimerEvent] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [isTimerActive, setIsTimerActive] = useState(false);
@@ -3558,6 +3574,24 @@ function App() {
                          )}
                       </div>
                       <div style={{ padding: '1.5rem', borderTop: '1px solid var(--card-border)' }}>
+                         {/* Meeting detection banner */}
+                         {detectedMeeting && (
+                           <div className="fade-in" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0.85rem', marginBottom: '0.75rem', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: '10px' }}>
+                             <Calendar size={14} color="var(--success-color)" />
+                             <span style={{ flex: 1, fontSize: '0.72rem', color: 'var(--success-color)', fontWeight: '700' }}>Detekován čas: <strong>{detectedMeeting.time}</strong> — Uložit schůzku?</span>
+                             <button
+                               onClick={() => {
+                                 const h = detectedMeeting.time.match(/(\d{1,2})[:\.]?(\d{2})?/);
+                                 const hh = h ? h[1].padStart(2,'0') : '12';
+                                 const mm = h?.[2] || '00';
+                                 setNewBookingForm(f => ({ ...f, title: `Schůzka – ${selectedChat?.from || 'klient'}`, date: new Date().toISOString().split('T')[0], startTime: `${hh}:${mm}`, endTime: `${String(+hh+1).padStart(2,'0')}:${mm}` }));
+                                 setBookingModalOpen(true);
+                               }}
+                               style={{ padding: '0.3rem 0.65rem', borderRadius: '6px', background: 'rgba(16,185,129,0.2)', border: '1px solid rgba(16,185,129,0.35)', color: 'var(--success-color)', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer' }}
+                             >Uložit</button>
+                             <button onClick={() => setDetectedMeeting(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, padding: '0 2px' }}>×</button>
+                           </div>
+                         )}
                          {selectedChat && activeProfile?.quickReplies?.length > 0 && (
                            <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', overflowX: 'auto', paddingBottom: '0.5rem' }} className="custom-scrollbar">
                              {activeProfile.quickReplies.map((reply) => (

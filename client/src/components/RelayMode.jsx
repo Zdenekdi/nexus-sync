@@ -13,7 +13,9 @@ import {
   Settings,
   RefreshCw,
   Phone,
-  MessageSquare
+  MessageSquare,
+  ArrowUpRight,
+  ArrowDownLeft
 } from 'lucide-react';
 
 const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, requestRelayPermissions, processRelayOutbox, syncSmsHistory }) => {
@@ -372,7 +374,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     return 'sms';
   };
 
-  const addLocalLog = (type, from, content) => {
+  const addLocalLog = (type, from, content, direction) => {
     if (!isActive) return;
 
     const newLog = {
@@ -382,6 +384,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       from: from || 'UNKNOWN',
       content,
       fullData: content,
+      direction: direction || (content?.startsWith('[OUTBOUND]') ? 'outbound' : 'inbound'),
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       status: 'forwarded'
     };
@@ -433,7 +436,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     if (plugin?.addListener) {
       listener = plugin.addListener('relay_event', (event) => {
         console.log('[Relay] Native event received:', event);
-        addLocalLog(event.type || 'sms', event.from, (event.direction === 'outbound' ? '[OUTBOUND] ' : '') + event.content);
+        addLocalLog(event.type || 'sms', event.from, (event.direction === 'outbound' ? '[OUTBOUND] ' : '') + event.content, event.direction || 'inbound');
         
         if (event.status === 'sent') {
           showRelayNotice(t('smsRelayed') || 'SMS byla odeslána!', 'success');
@@ -911,7 +914,12 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
                 justifyContent: 'center',
                 color: (log.transport || log.type) === 'call' ? 'var(--success-color)' : ((log.transport || log.type) === 'rcs' ? '#c084fc' : 'var(--accent-color)')
               }}>
-                {(log.transport || log.type) === 'call' ? <Phone size={20} /> : <MessageSquare size={20} />}
+                {(() => {
+                  const type = log.transport || log.type;
+                  if (type === 'call') return <Phone size={20} />;
+                  const isOut = log.direction === 'outbound' || (log.content || '').startsWith('[OUTBOUND]');
+                  return isOut ? <ArrowUpRight size={20} /> : <ArrowDownLeft size={20} />;
+                })()}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
@@ -971,7 +979,12 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
           <div style={{ background: '#12141a', border: '1px solid var(--card-border)', borderRadius: '24px', width: '100%', maxWidth: '400px', padding: '2rem', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
               <div style={{ width: '50px', height: '50px', borderRadius: '12px', background: (activeLog.transport || activeLog.type) === 'call' ? 'rgba(34,197,94,0.12)' : ((activeLog.transport || activeLog.type) === 'rcs' ? 'rgba(168,85,247,0.16)' : 'rgba(59,130,246,0.1)'), display: 'flex', alignItems: 'center', justifyContent: 'center', color: (activeLog.transport || activeLog.type) === 'call' ? 'var(--success-color)' : ((activeLog.transport || activeLog.type) === 'rcs' ? '#c084fc' : 'var(--accent-color)') }}>
-                {(activeLog.transport || activeLog.type) === 'call' ? <Phone size={24} /> : <MessageSquare size={24} />}
+                {(() => {
+                  const type = activeLog.transport || activeLog.type;
+                  if (type === 'call') return <Phone size={24} />;
+                  const isOut = activeLog.direction === 'outbound' || (activeLog.content || '').startsWith('[OUTBOUND]');
+                  return isOut ? <ArrowUpRight size={24} /> : <ArrowDownLeft size={24} />;
+                })()}
               </div>
               <div>
                 <div style={{ fontWeight: '900', fontSize: '1.1rem' }}>{activeLog.from}</div>
