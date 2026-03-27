@@ -918,6 +918,9 @@ function App() {
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [newBookingForm, setNewBookingForm] = useState({ title: '', date: new Date().toISOString().split('T')[0], startTime: '10:00', endTime: '11:00' });
   const [calViewDate, setCalViewDate] = useState(new Date());
+  const [bioLang, setBioLang] = useState('EN');
+  const [bioText, setBioText] = useState('');
+  const [mottoText, setMottoText] = useState('');
   const [detectedMeeting, setDetectedMeeting] = useState(null);
   const [openBookingMenuId, setOpenBookingMenuId] = useState(null);
   const [activeTimerEvent, setActiveTimerEvent] = useState(null);
@@ -2453,6 +2456,35 @@ function App() {
     } catch (e) { console.error('[Booking] create error:', e.message); }
   }, [newBookingForm, activeProfileId, API_BASE, token, fetchBookings]);
 
+  const handleSaveBio = useCallback(async () => {
+    if (!activeProfile?.id || !token) return;
+    try {
+      await axios.patch(`${API_BASE}/profiles/${activeProfile.id}`, {
+        bio: mottoText || activeProfile?.bio || '',
+        description: bioText
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      setProfiles(prev => prev.map(p => p.id === activeProfile.id ? { ...p, bio: mottoText, description: bioText } : p));
+      alert(lang === 'cz' ? 'Bio uloženo ✓' : 'Bio saved ✓');
+    } catch (e) {
+      console.error('[Bio] save error:', e.message);
+      alert(lang === 'cz' ? 'Chyba při ukládání' : 'Save failed');
+    }
+  }, [activeProfile, mottoText, bioText, API_BASE, token, lang]);
+
+  const handleSaveCalendarSync = useCallback(async () => {
+    if (!calendarSyncUrl.trim()) return;
+    try {
+      await axios.post(`${API_BASE}/calendar/sync`, { url: calendarSyncUrl, profileId: activeProfileId },
+        { headers: { Authorization: `Bearer ${token}` } });
+      alert(lang === 'cz' ? 'Kalendář synchronizován ✓' : 'Calendar synced ✓');
+      if (activeProfileId) fetchBookings(activeProfileId);
+    } catch (e) {
+      // Store URL locally even if API fails
+      localStorage.setItem(`nexus_cal_sync_${activeProfileId}`, calendarSyncUrl);
+      alert(lang === 'cz' ? 'URL uložena lokálně ✓' : 'URL saved locally ✓');
+    }
+  }, [calendarSyncUrl, API_BASE, token, activeProfileId, fetchBookings, lang]);
+
   const handleDeleteBooking = useCallback(async (bookingId) => {
     if (!bookingId || !token) return;
     try {
@@ -3905,7 +3937,7 @@ function App() {
                       style={{ flex: 1, padding: '0.75rem 1.25rem' }}
                       className="glass-input"
                     />
-                    <button className="action-btn" style={{ whiteSpace: 'nowrap' }}>{t('add')}</button>
+                    <button className="action-btn" onClick={handleSaveCalendarSync} style={{ whiteSpace: 'nowrap' }}>{t('add')}</button>
                   </div>
                 </div>
               </div>
@@ -4120,7 +4152,13 @@ function App() {
               <div className="glass-card" style={{ padding: '2rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                   <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Image size={20} color="var(--accent-color)" /> {t('gallery')}</h3>
-                  <button className="action-btn" style={{ width: 'auto', padding: '0.5rem 1rem', marginTop: 0, fontSize: '0.8rem' }}>+ {t('uploadPhoto')}</button>
+                  <>
+                   <input type="file" id="photo-upload-input" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
+                     const file = e.target.files?.[0];
+                     if (file) alert((lang === 'cz' ? 'Foto vybráno: ' : 'Photo selected: ') + file.name);
+                   }} />
+                   <button className="action-btn" onClick={() => document.getElementById('photo-upload-input').click()} style={{ width: 'auto', padding: '0.5rem 1rem', marginTop: 0, fontSize: '0.8rem' }}>+ {t('uploadPhoto')}</button>
+                 </>
                 </div>
 
                 <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem', flexDirection: isMobile ? 'column' : 'row' }}>
@@ -4148,8 +4186,8 @@ function App() {
                     <FileEdit size={20} color="var(--accent-color)" /> {t('biography')} & {t('services')}
                   </h3>
                   <div style={{ display: 'flex', gap: '0.4rem', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '10px', border: '1px solid var(--card-border)' }}>
-                    <button style={{ padding: '6px 12px', border: 'none', background: 'var(--accent-color)', color: 'white', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer' }}>EN</button>
-                    <button style={{ padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-secondary)', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer' }}>CZ</button>
+                    <button onClick={() => setBioLang('EN')} style={{ padding: '6px 12px', border: 'none', background: bioLang === 'EN' ? 'var(--accent-color)' : 'transparent', color: bioLang === 'EN' ? 'white' : 'var(--text-secondary)', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}>EN</button>
+                    <button onClick={() => setBioLang('CZ')} style={{ padding: '6px 12px', border: 'none', background: bioLang === 'CZ' ? 'var(--accent-color)' : 'transparent', color: bioLang === 'CZ' ? 'white' : 'var(--text-secondary)', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}>CZ</button>
                   </div>
                 </div>
 
@@ -4181,7 +4219,8 @@ function App() {
                         borderBottom: '2px solid rgba(59, 130, 246, 0.3)',
                         paddingBottom: '1rem'
                       }} 
-                      defaultValue="Hi, I am available in the city center. VIP companion offering GFE, outcalls and incalls. Very friendly and open minded..."
+                      value={bioText || activeProfile?.description || ''}
+                      onChange={e => setBioText(e.target.value)}
                       placeholder={t('bioPlaceholder')}
                     ></textarea>
                     <div style={{ marginTop: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', fontWeight: '600' }}>
@@ -4190,7 +4229,7 @@ function App() {
                     </div>
                   </div>
                   
-                  <button className="action-btn" style={{ width: 'fit-content', padding: '1rem 2.5rem', fontSize: '1rem', marginTop: '1rem', boxShadow: '0 10px 20px rgba(59, 130, 246, 0.2)' }}>
+                  <button onClick={handleSaveBio} className="action-btn" style={{ width: 'fit-content', padding: '1rem 2.5rem', fontSize: '1rem', marginTop: '1rem', boxShadow: '0 10px 20px rgba(59, 130, 246, 0.2)' }}>
                     {t('saveChanges')}
                   </button>
                 </div>
@@ -4471,7 +4510,7 @@ function App() {
                   <div style={{ flex: 1, background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--card-border)', fontFamily: 'monospace', fontSize: '0.9rem', color: '#f59e0b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {'https://nexus.sync/ref/' + (activeOperator?.id || 'default')}
                   </div>
-                  <button className="action-btn" style={{ width: 'auto', padding: '0 1.5rem', marginTop: 0, background: 'var(--accent-color)' }}>
+                  <button onClick={() => navigator.clipboard.writeText('https://nexus.sync/ref/' + (activeOperator?.id || 'default')).then(() => alert(lang === 'cz' ? 'Odkaz zkopírován ✓' : 'Link copied ✓'))} className="action-btn" style={{ width: 'auto', padding: '0 1.5rem', marginTop: 0, background: 'var(--accent-color)' }}>
                     <Copy size={18} />
                   </button>
                 </div>
