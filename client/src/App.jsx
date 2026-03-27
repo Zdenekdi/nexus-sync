@@ -4391,7 +4391,7 @@ function App() {
                           </tr>
                         </thead>
                         <tbody>
-                          {allAgencyProfiles.sort((a,b) => parseInt(b.earnings.replace(/\D/g,'')) - parseInt(a.earnings.replace(/\D/g,''))).map((p, idx) => (
+                          {[...allAgencyProfiles].sort((a,b) => parseInt((b.earnings || '£0').replace(/\D/g,'')) - parseInt((a.earnings || '£0').replace(/\D/g,''))).map((p, idx) => (
                             <tr key={p.id} style={{ borderBottom: '1px solid var(--card-border)' }}>
                               <td style={{ padding: '1rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -4498,13 +4498,14 @@ function App() {
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
                         {(profile.assignees || profile.operators || []).map(profileOp => {
                           const opData = operators.find(o => o.id === profileOp.id);
-                          if (!opData) return null;
+                          const displayName = opData?.name || profileOp.name || profileOp.id;
+                          const displayRole = opData?.role || '';
                           return (
-                            <div key={profileOp.id} style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: '1rem', opacity: profileOp.active !== false ? 1 : 0.4 }}>
-                              <div style={{ width: '32px', height: '32px', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-color)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: '900' }}>{opData.avatar || opData.name?.substring(0,2).toUpperCase()}</div>
+                            <div key={profileOp.id} style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                              <div style={{ width: '32px', height: '32px', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-color)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: '900' }}>{(opData?.avatar) || displayName.substring(0,2).toUpperCase()}</div>
                               <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>{opData.name}</div>
-                                <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{opData.role}</div>
+                                <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>{displayName}</div>
+                                {displayRole && <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{displayRole}</div>}
                               </div>
                               <ShieldCheck size={16} color="var(--accent-color)" />
                             </div>
@@ -4518,6 +4519,21 @@ function App() {
                          </div>
                       </div>
                     </div>
+
+                    {/* Quick Replies for this profile */}
+                    {(profile.quickReplies || []).length > 0 && (
+                      <div style={{ marginTop: isMobile ? '1.5rem' : 0, flex: '0 0 auto', minWidth: isMobile ? '100%' : '220px' }}>
+                        <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#10b981', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>RYCHLÉ ODPOVĚDI</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          {(profile.quickReplies || []).map(reply => (
+                            <div key={reply.id} style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: '8px', padding: '0.5rem 0.75rem' }}>
+                              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#10b981' }}>{reply.label}</div>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>{reply.text}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Simple Inline User Selection Modal (as a sibling for easier coding) */}
                     {assigningProfile?.id === profile.id && (
