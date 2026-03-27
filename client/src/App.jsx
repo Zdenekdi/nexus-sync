@@ -861,6 +861,8 @@ function App() {
     type: 'work'
   });
   const [bookingSchedule, setBookingSchedule] = useState([]);
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [newBookingForm, setNewBookingForm] = useState({ title: '', date: new Date().toISOString().split('T')[0], startTime: '10:00', endTime: '11:00' });
   const [activeTimerEvent, setActiveTimerEvent] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [isTimerActive, setIsTimerActive] = useState(false);
@@ -2321,18 +2323,24 @@ function App() {
     setIsEditProfileModalOpen(true);
   };
 
-  const handleSaveProfile = useCallback(() => {
+  const handleSaveProfile = useCallback(async () => {
     if (!editingProfileData) return;
-    // Persist quick replies to localStorage (no backend field needed)
-    if (editingProfileData.quickReplies) {
-      localStorage.setItem(`nexus_quick_replies_${editingProfileData.id}`, JSON.stringify(editingProfileData.quickReplies));
+    try {
+      await axios.patch(`${API_BASE}/profiles/${editingProfileData.id}`, {
+        name: editingProfileData.name,
+        phone: editingProfileData.phone,
+        quickReplies: editingProfileData.quickReplies || []
+      }, { headers: { Authorization: `Bearer ${token}` } });
+    } catch (e) {
+      console.warn('[Profile] Backend save failed, localStorage fallback:', e.message);
+      localStorage.setItem(`nexus_quick_replies_${editingProfileData.id}`, JSON.stringify(editingProfileData.quickReplies || []));
     }
     setProfiles(prev => prev.map(p =>
       p.id === editingProfileData.id ? { ...p, ...editingProfileData } : p
     ));
     setIsEditProfileModalOpen(false);
     setEditingProfileData(null);
-  }, [editingProfileData]);
+  }, [editingProfileData, API_BASE, token]);
 
   const handleSaveNote = useCallback(() => {
     if (!internalNote.trim() || !selectedChat?.from) return;
@@ -2345,6 +2353,47 @@ function App() {
     }));
     setInternalNote('');
   }, [internalNote, selectedChat, activeOperator]);
+
+  // ── Booking API integration ─────────────────────────────────────────────────
+  const fetchBookings = useCallback(async (profileId) => {
+    if (!token || !profileId) return;
+    try {
+      const res = await axios.get(`${API_BASE}/bookings?profileId=${profileId}`, { headers: { Authorization: `Bearer ${token}` } });
+      const formatted = (res.data || []).map(b => {
+        const start = new Date(b.startTime);
+        const end = new Date(b.endTime);
+        const h = start.getHours() % 12 || 12;
+        const m = start.getMinutes().toString().padStart(2, '0');
+        const ampm = start.getHours() >= 12 ? 'PM' : 'AM';
+        const durMin = Math.round((end - start) / 60000);
+        return {
+          id: b.id, time: `${h}:${m} ${ampm}`,
+          duration: durMin >= 60 ? `${Math.floor(durMin/60)}h${durMin%60>0?' '+durMin%60+'m':''}` : `${durMin}m`,
+          type: 'work', title: b.title, status: b.status,
+          startTime: b.startTime, endTime: b.endTime
+        };
+      });
+      setBookingSchedule(formatted);
+    } catch (e) { console.error('[Booking] fetch error:', e.message); }
+  }, [token, API_BASE]);
+
+  const handleCreateBooking = useCallback(async () => {
+    if (!newBookingForm.title || !newBookingForm.date || !activeProfileId) return;
+    try {
+      const startTime = new Date(`${newBookingForm.date}T${newBookingForm.startTime}:00`).toISOString();
+      const endTime = new Date(`${newBookingForm.date}T${newBookingForm.endTime}:00`).toISOString();
+      await axios.post(`${API_BASE}/bookings`, { profileId: activeProfileId, title: newBookingForm.title, startTime, endTime },
+        { headers: { Authorization: `Bearer ${token}` } });
+      setBookingModalOpen(false);
+      setNewBookingForm({ title: '', date: new Date().toISOString().split('T')[0], startTime: '10:00', endTime: '11:00' });
+      await fetchBookings(activeProfileId);
+    } catch (e) { console.error('[Booking] create error:', e.message); }
+  }, [newBookingForm, activeProfileId, API_BASE, token, fetchBookings]);
+
+  useEffect(() => {
+    if (activeProfileId && token) fetchBookings(activeProfileId);
+  }, [activeProfileId, token, fetchBookings]);
+
 
   const handleDeleteNote = useCallback((from, noteId) => {
     setClientNotes(prev => ({
@@ -3654,6 +3703,9 @@ function App() {
                 <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('bookingScheduleDesc')}</p>
               </div>
               <div style={{ display: 'flex', gap: '0.75rem', width: isMobile ? '100%' : 'auto', flexDirection: isMobile ? 'column' : 'row' }}>
+                 <button onClick={() => setBookingModalOpen(true)} style={{ padding: '0.85rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', color: 'white', border: 'none', background: 'var(--accent-color)', borderRadius: '15px', fontWeight: '800', fontSize: '0.85rem' }}>
+                   <Plus size={16} /> {lang === 'cz' ? 'Přidat akci' : 'Add Booking'}
+                 </button>
                  <button 
                    onClick={handleExportICS}
                    className="glass-card" 
@@ -4431,7 +4483,7 @@ function App() {
                       </tr>
                     </thead>
                     <tbody>
-                      {availableOperators.sort((a,b) => b.metrics.messages - a.metrics.messages).map((op, i) => (
+                      {[...availableOperators].sort((a,b) => (b.metrics?.messages || 0) - (a.metrics?.messages || 0)).map((op, i) => (
                         <tr key={op.id} style={{ borderBottom: i < availableOperators.length - 1 ? '1px solid var(--card-border)' : 'none' }}>
                           <td style={{ padding: '1rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -4439,8 +4491,8 @@ function App() {
                               <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{op.name}</div>
                             </div>
                           </td>
-                          <td style={{ padding: '1rem', textAlign: 'right', fontWeight: '700' }}>{op.metrics.messages}</td>
-                          <td style={{ padding: '1rem', textAlign: 'right', color: 'var(--text-secondary)' }}>{op.metrics.calls}</td>
+                          <td style={{ padding: '1rem', textAlign: 'right', fontWeight: '700' }}>{op.metrics?.messages ?? 0}</td>
+                          <td style={{ padding: '1rem', textAlign: 'right', color: 'var(--text-secondary)' }}>{op.metrics?.calls ?? 0}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -5493,6 +5545,42 @@ function App() {
             <div style={{ display: 'flex', gap: '1rem', marginTop: '2.5rem' }}>
               <button onClick={() => setIsAddAgencyModalOpen(false)} style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid var(--card-border)', color: 'white', borderRadius: '12px', fontWeight: '700' }}>{t('cancel')}</button>
               <button onClick={addAgency} className="action-btn" style={{ flex: 1, background: 'var(--accent-color)', color: 'white', fontWeight: '800' }}>{t('provision')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Booking Modal */}
+      {bookingModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1002, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', padding: '1rem' }}>
+          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '480px', padding: '2.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+              <h3 style={{ fontSize: '1.3rem', fontWeight: '800' }}>{lang === 'cz' ? 'Přidat akci do kalendáře' : 'Add Booking'}</h3>
+              <button onClick={() => setBookingModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{lang === 'cz' ? 'NÁZEV' : 'TITLE'}</label>
+                <input value={newBookingForm.title} onChange={e => setNewBookingForm(p => ({ ...p, title: e.target.value }))} placeholder={lang === 'cz' ? 'např. Schůzka s klientem' : 'e.g. Meeting with client'} style={{ width: '100%', marginTop: '0.5rem', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontSize: '0.95rem' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{lang === 'cz' ? 'DATUM' : 'DATE'}</label>
+                <input type="date" value={newBookingForm.date} onChange={e => setNewBookingForm(p => ({ ...p, date: e.target.value }))} style={{ width: '100%', marginTop: '0.5rem', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontSize: '0.95rem', colorScheme: 'dark' }} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{lang === 'cz' ? 'OD' : 'START'}</label>
+                  <input type="time" value={newBookingForm.startTime} onChange={e => setNewBookingForm(p => ({ ...p, startTime: e.target.value }))} style={{ width: '100%', marginTop: '0.5rem', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontSize: '0.95rem', colorScheme: 'dark' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{lang === 'cz' ? 'DO' : 'END'}</label>
+                  <input type="time" value={newBookingForm.endTime} onChange={e => setNewBookingForm(p => ({ ...p, endTime: e.target.value }))} style={{ width: '100%', marginTop: '0.5rem', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontSize: '0.95rem', colorScheme: 'dark' }} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button onClick={() => setBookingModalOpen(false)} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--card-border)', background: 'transparent', color: 'white', fontWeight: '700', cursor: 'pointer' }}>{lang === 'cz' ? 'Zrušit' : 'Cancel'}</button>
+                <button onClick={handleCreateBooking} disabled={!newBookingForm.title || !newBookingForm.date} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: 'none', background: 'var(--accent-color)', color: 'white', fontWeight: '800', cursor: 'pointer', opacity: (!newBookingForm.title || !newBookingForm.date) ? 0.5 : 1 }}>{lang === 'cz' ? 'Uložit akci' : 'Save Booking'}</button>
+              </div>
             </div>
           </div>
         </div>
