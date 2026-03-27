@@ -37,6 +37,8 @@ export function useVultr() {
     }
   }, [getHeaders]);
 
+  const [apkInfo, setApkInfo] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(null);
   const [stats, setStats] = useState(null);
 
   const fetchStats = useCallback(async () => {
@@ -48,22 +50,32 @@ export function useVultr() {
     }
   }, [getHeaders]);
 
+  const fetchApkInfo = useCallback(async () => {
+    try {
+      const { data } = await axios.get(`${API_BASE}/vultr/apk-info`, getHeaders());
+      setApkInfo(data);
+    } catch (err) {
+      console.warn("Failed to fetch APK info:", err);
+    }
+  }, [getHeaders]);
+
   useEffect(() => {
     fetchStatus();
     fetchBandwidth();
     fetchStats();
+    fetchApkInfo();
     const interval = setInterval(() => {
       fetchStatus();
       fetchStats();
-    }, 30000); // refresh every 30s
+    }, 30000);
     return () => clearInterval(interval);
-  }, [fetchStatus, fetchBandwidth, fetchStats]);
+  }, [fetchStatus, fetchBandwidth, fetchStats, fetchApkInfo]);
 
   const serverAction = async (action) => {
     setLoading(true);
     try {
       await axios.post(`${API_BASE}/vultr/${action}`, {}, getHeaders());
-      setTimeout(fetchStatus, 3500); // wait a bit for status to update
+      setTimeout(fetchStatus, 3500);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
     } finally {
@@ -92,5 +104,26 @@ export function useVultr() {
     }
   };
 
-  return { status, bandwidth, stats, loading, cmdOutput, error, serverAction, runCommand, gitPull, fetchStatus };
+  const clearCmdOutput = () => setCmdOutput("");
+
+  const uploadApk = async (file) => {
+    const formData = new FormData();
+    formData.append("apk", file);
+    setUploadProgress(0);
+    try {
+      const token = localStorage.getItem("nexus_token");
+      const { data } = await axios.post(`${API_BASE}/vultr/upload-apk`, formData, {
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
+        onUploadProgress: (e) => setUploadProgress(Math.round((e.loaded / e.total) * 100))
+      });
+      setApkInfo({ available: true, ...data });
+      setUploadProgress(null);
+      return data;
+    } catch (err) {
+      setUploadProgress(null);
+      throw err;
+    }
+  };
+
+  return { status, bandwidth, stats, loading, cmdOutput, clearCmdOutput, error, serverAction, runCommand, gitPull, fetchStatus, apkInfo, uploadApk, uploadProgress };
 }

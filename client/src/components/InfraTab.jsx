@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useVultr } from "../hooks/useVultr";
 import { 
   Server, 
@@ -12,17 +12,22 @@ import {
   Database, 
   Globe,
   AlertCircle,
-  Building2,
-  Users,
   CreditCard,
   Zap,
-  Layout
+  Layout,
+  Upload,
+  Download,
+  Smartphone,
+  CheckCircle2
 } from 'lucide-react';
 
 function InfraTab({ t }) {
-  const { status, bandwidth, stats, loading, cmdOutput, error, serverAction, runCommand, gitPull } = useVultr();
+  const { status, bandwidth, stats, loading, cmdOutput, clearCmdOutput, error, serverAction, runCommand, gitPull, apkInfo, uploadApk, uploadProgress } = useVultr();
   const [command, setCommand] = useState("");
   const [repoPath, setRepoPath] = useState("~/app");
+  const [apkError, setApkError] = useState(null);
+  const [apkSuccess, setApkSuccess] = useState(false);
+  const fileInputRef = useRef(null);
 
   const statusColor = {
     running: "var(--success-color)",
@@ -206,13 +211,64 @@ function InfraTab({ t }) {
                   {cmdOutput}
                 </pre>
                 <button 
-                  onClick={() => setCmdOutput("")}
+                  onClick={clearCmdOutput}
                   style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: 'none', border: 'none', color: 'rgba(16, 185, 129, 0.5)', cursor: 'pointer', fontSize: '0.65rem' }}
                 >
                   Clear
                 </button>
               </div>
             )}
+          </div>
+          {/* APK Management */}
+          <div className="glass-card" style={{ padding: '1.25rem', borderRadius: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+              <Smartphone size={18} color="var(--text-secondary)" />
+              <h3 style={{ fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>RELAY APK</h3>
+            </div>
+
+            {/* Current APK Info */}
+            {apkInfo?.available ? (
+              <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '12px', padding: '0.75rem 1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--success-color)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><CheckCircle2 size={13} /> APK dostupné</div>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                    {(apkInfo.size / 1024 / 1024).toFixed(1)} MB · {new Date(apkInfo.uploadedAt).toLocaleDateString('cs-CZ')}
+                  </div>
+                </div>
+                <a href={apkInfo.downloadUrl} target="_blank" rel="noreferrer"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.45rem 0.8rem', borderRadius: '8px', background: 'rgba(16,185,129,0.15)', color: 'var(--success-color)', fontSize: '0.72rem', fontWeight: '800', textDecoration: 'none' }}>
+                  <Download size={13} /> Stáhnout
+                </a>
+              </div>
+            ) : (
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', fontStyle: 'italic' }}>Žádné APK na serveru</div>
+            )}
+
+            {/* Upload */}
+            <input ref={fileInputRef} type="file" accept=".apk" style={{ display: 'none' }}
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setApkError(null); setApkSuccess(false);
+                try { await uploadApk(file); setApkSuccess(true); setTimeout(() => setApkSuccess(false), 4000); }
+                catch(err) { setApkError(err.response?.data?.error || err.message); }
+                e.target.value = '';
+              }}
+            />
+
+            {uploadProgress !== null ? (
+              <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '10px', height: '8px', overflow: 'hidden', marginBottom: '0.5rem' }}>
+                <div style={{ height: '100%', width: `${uploadProgress}%`, background: 'var(--accent-color)', transition: 'width 0.2s', borderRadius: '10px' }} />
+              </div>
+            ) : null}
+
+            {apkError && <div style={{ fontSize: '0.72rem', color: 'var(--error-color)', marginBottom: '0.5rem' }}>{apkError}</div>}
+            {apkSuccess && <div style={{ fontSize: '0.72rem', color: 'var(--success-color)', marginBottom: '0.5rem' }}>✓ APK nahráno úspěšně</div>}
+
+            <button onClick={() => fileInputRef.current?.click()} disabled={uploadProgress !== null}
+              style={{ width: '100%', padding: '0.7rem', borderRadius: '12px', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', color: '#a5b4fc', fontWeight: '800', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: uploadProgress !== null ? 0.5 : 1 }}>
+              <Upload size={14} /> {uploadProgress !== null ? `Nahrávám... ${uploadProgress}%` : 'Nahrát novou verzi APK'}
+            </button>
           </div>
         </div>
       </div>
