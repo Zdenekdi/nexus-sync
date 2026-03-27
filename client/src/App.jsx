@@ -163,6 +163,9 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [chatMessages, setChatMessages] = useState([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const messagesEndRef = useRef(null);
+  const chatScrollRef = useRef(null);
+  const isUserScrolled = useRef(false);
   const [profiles, setProfiles] = useState([]);
   const [agencies, setAgencies] = useState([]);
   const [agencySettings, setAgencySettings] = useState({ safetyAlertMode: 'MANAGERS_AND_ASSIGNED' });
@@ -260,6 +263,21 @@ function App() {
   useEffect(() => {
     localStorage.setItem('nexus_activeTab', activeTab);
   }, [activeTab]);
+
+  // Auto-scroll: scroll to bottom on new messages unless user scrolled up
+  useEffect(() => {
+    if (!isUserScrolled.current && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages]);
+
+  // Reset scroll position when switching to different chat
+  useEffect(() => {
+    isUserScrolled.current = false;
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'instant' });
+    }
+  }, [selectedChatId]);
 
   useEffect(() => {
     if (activeTab === 'device-setup') {
@@ -2311,8 +2329,8 @@ function App() {
 
       if (res.data) {
         setMessageValue('');
-        // Optimistic update – add message to chat immediately without waiting for socket event
-        setChatMessages(prev => [...prev, res.data]);
+        // Do NOT add optimistically here — socket new_message event handles it
+        // with proper dedup logic. Adding here causes race condition duplicates.
       }
     } catch (error) {
       console.error('Send message error:', error);
@@ -3508,7 +3526,14 @@ function App() {
                           <MoreVertical size={20} color="var(--text-secondary)" />
                         </div>
                       </div>
-                      <div style={{ flex: 1, padding: '3rem 2rem', overflowY: 'auto', background: 'rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      <div
+                        ref={chatScrollRef}
+                        onScroll={(e) => {
+                          const el = e.currentTarget;
+                          const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+                          isUserScrolled.current = distFromBottom > 100;
+                        }}
+                        style={{ flex: 1, padding: '3rem 2rem', overflowY: 'auto', background: 'rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                          {isHistoryLoading && chatMessages.length === 0 ? (
                            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Loading history...</div>
                          ) : chatMessages.length > 0 ? (
