@@ -483,7 +483,7 @@ exports.handleRelay = async (req, res) => {
           transport: messageTransport,
           direction: direction,
           status: 'delivered',
-          createdAt: timestamp ? new Date(timestamp) : new Date()
+          createdAt: new Date() // Always use server time for live messages to ensure correct chronology
         }
       });
 
