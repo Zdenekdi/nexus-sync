@@ -43,6 +43,7 @@ public class NexusRelayPlugin extends Plugin {
     static final String KEY_DEVICE_ID = "deviceId";
     static final String KEY_INSTALLATION_ID = "installationId";
     static final String KEY_IS_ACTIVE = "isActive";
+    static final String KEY_PROFILE_ID = "profileId";
 
     static final String SMS_PERMISSION_ALIAS = "sms";
     static final String PHONE_PERMISSION_ALIAS = "phone";
@@ -233,6 +234,8 @@ public class NexusRelayPlugin extends Plugin {
         if (baseUrl != null) editor.putString(KEY_BASE_URL, baseUrl);
         if (deviceId != null) editor.putString(KEY_DEVICE_ID, deviceId);
         if (installationId != null) editor.putString(KEY_INSTALLATION_ID, installationId);
+        String profileId = call.getString("profileId");
+        if (profileId != null) editor.putString(KEY_PROFILE_ID, profileId);
         boolean relayActive = isActive != null && isActive;
         editor.putBoolean(KEY_IS_ACTIVE, relayActive);
         editor.apply();

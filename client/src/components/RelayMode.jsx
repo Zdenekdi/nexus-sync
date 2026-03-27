@@ -471,8 +471,10 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
         baseUrl: `${RELAY_API_BASE}/api/device/relay`,
         deviceId: operator?.id || 'RELAY-01',
         installationId: installationId || null,
+        profileId: operator?.profileId || null,
         isActive: active
       });
+
 
       // When activating relay, check if Android battery optimization is blocking
       // background operation and prompt user to disable it.
