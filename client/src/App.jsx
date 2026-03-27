@@ -67,7 +67,8 @@ const DEFAULT_ROLE_PERMISSIONS = {
     device_setup: true,
     audit_logs: true,
     qa_hub: true,
-    settings: true
+    settings: true,
+    inventory: true
   },
   'Senior Operator': {
     infrastructure: false,
@@ -84,7 +85,8 @@ const DEFAULT_ROLE_PERMISSIONS = {
     device_setup: true,
     audit_logs: false,
     qa_hub: true,
-    settings: true
+    settings: true,
+    inventory: true
   },
   'Operator': {
     infrastructure: false,
@@ -2791,6 +2793,7 @@ function App() {
     { id: 'permissions', icon: Shield, label: t('permissions'), perm: 'permissions' },
     { id: 'plans', icon: CreditCard, label: t('plans'), perm: 'plans' },
     { id: 'features', icon: Zap, label: t('features'), perm: 'global_features' },
+    { id: 'inventory', icon: Package, label: t('stockCard') || 'Sklad', perm: 'inventory' },
     { id: 'analytics', icon: BarChart3, label: t('analytics'), perm: 'analytics' },
     { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
     { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles' },
@@ -3255,6 +3258,7 @@ function App() {
                         { id: 'permissions', icon: Shield, label: t('permissions'), perm: 'permissions' },
                         { id: 'plans', icon: CreditCard, label: t('plans'), perm: 'plans' },
                         { id: 'features', icon: Zap, label: t('features'), perm: 'global_features' },
+                        { id: 'inventory', icon: Package, label: t('stockCard') || 'Sklad', perm: 'inventory' },
                         { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles' },
                         { id: 'device-setup', icon: Smartphone, label: t('deviceSetup'), perm: 'device_setup' },
                         { id: 'activity', icon: Activity, label: t('auditLog'), perm: 'audit_logs' },
