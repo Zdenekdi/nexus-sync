@@ -114,7 +114,7 @@ export function useVultr() {
     try {
       const token = localStorage.getItem("nexus_token");
       const { data } = await axios.post(`${API_BASE}/vultr/upload-apk`, formData, {
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
+        headers: { Authorization: `Bearer ${token}` },
         onUploadProgress: (e) => setUploadProgress(Math.round((e.loaded / e.total) * 100))
       });
       setApkInfo({ available: true, ...data });
