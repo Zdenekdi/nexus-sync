@@ -230,18 +230,28 @@ function InfraTab({ t }) {
             {apkInfo?.available ? (
               <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '12px', padding: '0.75rem 1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--success-color)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><CheckCircle2 size={13} /> APK dostupné</div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--success-color)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><CheckCircle2 size={13} /> APK na serveru</div>
                   <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                    {(apkInfo.size / 1024 / 1024).toFixed(1)} MB · {new Date(apkInfo.uploadedAt).toLocaleDateString('cs-CZ')}
+                    {(apkInfo.size / 1024 / 1024).toFixed(1)} MB · Nahráno {new Date(apkInfo.uploadedAt).toLocaleDateString('cs-CZ')}
                   </div>
+                  <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', marginTop: '0.15rem', wordBreak: 'break-all' }}>{apkInfo.downloadUrl}</div>
                 </div>
                 <a href={apkInfo.downloadUrl} target="_blank" rel="noreferrer"
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.45rem 0.8rem', borderRadius: '8px', background: 'rgba(16,185,129,0.15)', color: 'var(--success-color)', fontSize: '0.72rem', fontWeight: '800', textDecoration: 'none' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.45rem 0.8rem', borderRadius: '8px', background: 'rgba(16,185,129,0.15)', color: 'var(--success-color)', fontSize: '0.72rem', fontWeight: '800', textDecoration: 'none', whiteSpace: 'nowrap', marginLeft: '0.75rem' }}>
                   <Download size={13} /> Stáhnout
                 </a>
               </div>
             ) : (
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', fontStyle: 'italic' }}>Žádné APK na serveru</div>
+              <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '12px', padding: '0.75rem 1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#a5b4fc', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Smartphone size={13} /> Aktuální stažení</div>
+                  <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>nexus-sync-8d50b.web.app/device-setup</div>
+                </div>
+                <a href="https://nexus-sync-8d50b.web.app/device-setup" target="_blank" rel="noreferrer"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.45rem 0.8rem', borderRadius: '8px', background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', fontSize: '0.72rem', fontWeight: '800', textDecoration: 'none', whiteSpace: 'nowrap', marginLeft: '0.75rem' }}>
+                  <Download size={13} /> Stránka
+                </a>
+              </div>
             )}
 
             {/* Upload */}
