@@ -28,7 +28,16 @@ function InfraTab({ t }) {
   const [apkError, setApkError] = useState(null);
   const [apkSuccess, setApkSuccess] = useState(false);
   const [apkVersion, setApkVersion] = useState("1.0");
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
+
+  const handleApkFile = async (file) => {
+    if (!file) return;
+    if (!file.name.endsWith('.apk')) { setApkError('Pouze soubory .apk jsou povoleny'); return; }
+    setApkError(null); setApkSuccess(false);
+    try { await uploadApk(file, apkVersion); setApkSuccess(true); setTimeout(() => setApkSuccess(false), 4000); }
+    catch(err) { setApkError(err.response?.data?.error || err.message); }
+  };
 
   const statusColor = {
     running: "var(--success-color)",
@@ -255,19 +264,14 @@ function InfraTab({ t }) {
               </div>
             )}
 
-            {/* Upload */}
             <input ref={fileInputRef} type="file" accept=".apk" style={{ display: 'none' }}
               onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                setApkError(null); setApkSuccess(false);
-                try { await uploadApk(file, apkVersion); setApkSuccess(true); setTimeout(() => setApkSuccess(false), 4000); }
-                catch(err) { setApkError(err.response?.data?.error || err.message); }
+                await handleApkFile(e.target.files?.[0]);
                 e.target.value = '';
               }}
             />
 
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.75rem' }}>
               <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Verze:</span>
               <input
                 value={apkVersion}
@@ -277,19 +281,52 @@ function InfraTab({ t }) {
               />
             </div>
 
-            {uploadProgress !== null ? (
-              <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '10px', height: '8px', overflow: 'hidden', marginBottom: '0.5rem' }}>
-                <div style={{ height: '100%', width: `${uploadProgress}%`, background: 'var(--accent-color)', transition: 'width 0.2s', borderRadius: '10px' }} />
-              </div>
-            ) : null}
+            {/* Drag-and-drop zone */}
+            <div
+              onClick={() => uploadProgress === null && fileInputRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+              onDragEnter={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
+              onDrop={async (e) => {
+                e.preventDefault(); e.stopPropagation(); setIsDragging(false);
+                const file = e.dataTransfer.files?.[0];
+                await handleApkFile(file);
+              }}
+              style={{
+                border: `2px dashed ${isDragging ? '#6366f1' : uploadProgress !== null ? 'rgba(99,102,241,0.2)' : 'rgba(99,102,241,0.35)'}`,
+                borderRadius: '14px',
+                padding: '1.25rem 1rem',
+                textAlign: 'center',
+                cursor: uploadProgress !== null ? 'not-allowed' : 'pointer',
+                background: isDragging ? 'rgba(99,102,241,0.12)' : 'rgba(99,102,241,0.04)',
+                transition: 'all 0.18s ease',
+                opacity: uploadProgress !== null ? 0.6 : 1,
+                userSelect: 'none'
+              }}
+            >
+              {uploadProgress !== null ? (
+                <>
+                  <div style={{ fontSize: '0.72rem', color: '#a5b4fc', fontWeight: '800', marginBottom: '0.5rem' }}>Nahrávám... {uploadProgress}%</div>
+                  <div style={{ background: 'rgba(255,255,255,0.07)', borderRadius: '10px', height: '6px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${uploadProgress}%`, background: 'var(--accent-color)', transition: 'width 0.2s', borderRadius: '10px' }} />
+                  </div>
+                </>
+              ) : isDragging ? (
+                <>
+                  <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>📦</div>
+                  <div style={{ fontSize: '0.78rem', color: '#a5b4fc', fontWeight: '900' }}>Pusť pro nahrání APK</div>
+                </>
+              ) : (
+                <>
+                  <Upload size={22} style={{ color: '#a5b4fc', marginBottom: '0.4rem', opacity: 0.7 }} />
+                  <div style={{ fontSize: '0.78rem', color: '#a5b4fc', fontWeight: '800', marginBottom: '0.2rem' }}>Přetáhni APK sem</div>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>nebo klikni pro výběr souboru</div>
+                </>
+              )}
+            </div>
 
-            {apkError && <div style={{ fontSize: '0.72rem', color: 'var(--error-color)', marginBottom: '0.5rem' }}>{apkError}</div>}
-            {apkSuccess && <div style={{ fontSize: '0.72rem', color: 'var(--success-color)', marginBottom: '0.5rem' }}>✓ APK nahráno úspěšně</div>}
-
-            <button onClick={() => fileInputRef.current?.click()} disabled={uploadProgress !== null}
-              style={{ width: '100%', padding: '0.7rem', borderRadius: '12px', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', color: '#a5b4fc', fontWeight: '800', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: uploadProgress !== null ? 0.5 : 1 }}>
-              <Upload size={14} /> {uploadProgress !== null ? `Nahrávám... ${uploadProgress}%` : 'Nahrát novou verzi APK'}
-            </button>
+            {apkError && <div style={{ fontSize: '0.72rem', color: 'var(--error-color)', marginTop: '0.5rem' }}>{apkError}</div>}
+            {apkSuccess && <div style={{ fontSize: '0.72rem', color: 'var(--success-color)', marginTop: '0.5rem' }}>✓ APK nahráno úspěšně</div>}
           </div>
         </div>
       </div>
