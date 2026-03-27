@@ -3686,7 +3686,7 @@ function App() {
                            </button>
                          </div>
                         {/* Tab content */}
-                        <div style={{ padding: '1.25rem', flex: '1 1 0', minHeight: 0, overflowY: 'auto' }}>
+                        <div style={{ padding: '1.25rem', flex: '1 1 0', minHeight: 0, maxHeight: '45%', overflowY: 'auto' }}>
                           {activeContextTab === 'translator' ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                               <textarea value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder={t('typeResponse')} style={{ width: '100%', height: '100px', background: 'rgba(0, 0, 0, 0.2)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem', color: 'white', resize: 'none' }} />
@@ -3747,7 +3747,7 @@ function App() {
                         const dayName = calViewDate.toLocaleDateString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { weekday: 'long' });
                         const dayDate = calViewDate.toLocaleDateString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { day: 'numeric', month: 'long' });
                         return (
-                          <div style={{ borderTop: '1px solid var(--card-border)', flex: '0 0 auto', display: 'flex', flexDirection: 'column', height: '280px' }}>
+                          <div style={{ borderTop: '1px solid var(--card-border)', flex: '0 0 auto', display: 'flex', flexDirection: 'column', height: '340px' }}>
                             {/* day nav header */}
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.75rem', background: 'rgba(99,102,241,0.05)', borderBottom: '1px solid var(--card-border)', flexShrink: 0 }}>
                               <button onClick={() => { const d = new Date(calViewDate); d.setDate(d.getDate()-1); setCalViewDate(d); }} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--card-border)', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.25rem 0.5rem', borderRadius: '6px', display: 'flex', alignItems: 'center' }}><ChevronLeft size={13} /></button>
