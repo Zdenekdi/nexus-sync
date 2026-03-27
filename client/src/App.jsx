@@ -279,6 +279,14 @@ function App() {
     }
   }, [selectedChatId]);
 
+  // Close booking dropdown on outside click
+  useEffect(() => {
+    if (!openBookingMenuId) return;
+    const close = () => setOpenBookingMenuId(null);
+    window.addEventListener('click', close);
+    return () => window.removeEventListener('click', close);
+  }, [openBookingMenuId]);
+
   // Detect meeting time in most recent inbound message → offer to save to calendar
   useEffect(() => {
     if (!chatMessages.length || !selectedChatId) { setDetectedMeeting(null); return; }
@@ -911,6 +919,7 @@ function App() {
   const [newBookingForm, setNewBookingForm] = useState({ title: '', date: new Date().toISOString().split('T')[0], startTime: '10:00', endTime: '11:00' });
   const [calViewDate, setCalViewDate] = useState(new Date());
   const [detectedMeeting, setDetectedMeeting] = useState(null);
+  const [openBookingMenuId, setOpenBookingMenuId] = useState(null);
   const [activeTimerEvent, setActiveTimerEvent] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [isTimerActive, setIsTimerActive] = useState(false);
@@ -2444,6 +2453,27 @@ function App() {
     } catch (e) { console.error('[Booking] create error:', e.message); }
   }, [newBookingForm, activeProfileId, API_BASE, token, fetchBookings]);
 
+  const handleDeleteBooking = useCallback(async (bookingId) => {
+    if (!bookingId || !token) return;
+    try {
+      await axios.delete(`${API_BASE}/bookings/${bookingId}`, { headers: { Authorization: `Bearer ${token}` } });
+      setBookingSchedule(prev => prev.filter(b => b.id !== bookingId));
+      setOpenBookingMenuId(null);
+    } catch (e) { console.error('[Booking] delete error:', e.message); }
+  }, [API_BASE, token]);
+
+  const handleEditBooking = useCallback((event) => {
+    setNewBookingForm({
+      title: event.title || '',
+      date: event.startTime ? event.startTime.split('T')[0] : new Date().toISOString().split('T')[0],
+      startTime: event.startTime ? new Date(event.startTime).toTimeString().slice(0,5) : event.time?.slice(0,5) || '10:00',
+      endTime: event.endTime ? new Date(event.endTime).toTimeString().slice(0,5) : '11:00',
+      editId: event.id
+    });
+    setOpenBookingMenuId(null);
+    setBookingModalOpen(true);
+  }, []);
+
   useEffect(() => {
     if (activeProfileId && token) fetchBookings(activeProfileId);
   }, [activeProfileId, token, fetchBookings]);
@@ -3938,8 +3968,28 @@ function App() {
                                 {isMobile ? 'IN' : 'CHECK-IN'}
                               </button>
                             )}
-                            <div style={{ opacity: 0.5 }}>
-                              <MoreVertical size={16} />
+                            <div style={{ position: 'relative' }}>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setOpenBookingMenuId(openBookingMenuId === event.id ? null : event.id); }}
+                                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.35rem', borderRadius: '6px', display: 'flex', alignItems: 'center' }}
+                                onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.07)'}
+                                onMouseLeave={e => e.currentTarget.style.background='none'}
+                              >
+                                <MoreVertical size={16} />
+                              </button>
+                              {openBookingMenuId === event.id && (
+                                <div
+                                  style={{ position: 'absolute', right: 0, top: '100%', zIndex: 999, minWidth: '140px', background: '#1a1d27', border: '1px solid var(--card-border)', borderRadius: '10px', boxShadow: '0 8px 24px rgba(0,0,0,0.4)', padding: '0.35rem', marginTop: '4px' }}
+                                  onClick={e => e.stopPropagation()}
+                                >
+                                  <button onClick={() => handleEditBooking(event)} style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', color: 'white', padding: '0.5rem 0.75rem', borderRadius: '7px', cursor: 'pointer', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }} onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.07)'} onMouseLeave={e => e.currentTarget.style.background='none'}>
+                                    ✏️ Upravit
+                                  </button>
+                                  <button onClick={() => handleDeleteBooking(event.id)} style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', color: '#ef4444', padding: '0.5rem 0.75rem', borderRadius: '7px', cursor: 'pointer', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }} onMouseEnter={e => e.currentTarget.style.background='rgba(239,68,68,0.1)'} onMouseLeave={e => e.currentTarget.style.background='none'}>
+                                    🗑 Smazat
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
