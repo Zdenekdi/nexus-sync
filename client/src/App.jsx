@@ -1588,11 +1588,17 @@ function App() {
 
   const isPushRegistrationEnabled = useMemo(() => {
     try {
+      // Auto-enable push for any logged-in operator on the native platform.
+      // The relay device uses a separate push channel (sendRelaySmsPush by userId),
+      // so there's no conflict — both relay + operator tokens can coexist.
+      if (isNativeApp && isLoggedIn) return true;
+      // Legacy manual override via localStorage (for testing/debug)
       return localStorage.getItem('nexus_enable_push_registration') === 'true';
     } catch {
       return false;
     }
-  }, []);
+  }, [isNativeApp, isLoggedIn]);
+
 
   useEffect(() => {
     // Guard against Android crash when Firebase is not configured (missing google-services setup).
