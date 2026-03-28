@@ -8,6 +8,7 @@ const LoginScreen = ({ onLogin, onRegisterAgency, onRegisterUser, onResetRequest
   const [agencyName, setAgencyName] = useState('');
   const [fullName, setFullName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
+  const [selectedRole, setSelectedRole] = useState('Operator');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -29,7 +30,7 @@ const LoginScreen = ({ onLogin, onRegisterAgency, onRegisterUser, onResetRequest
         setMessage(t('registrationSuccess'));
         setTimeout(() => setMode('login'), 2000);
       } else if (mode === 'register_user') {
-        const data = { fullName, email, password, inviteCode };
+        const data = { fullName, email, password, inviteCode, roleName: selectedRole };
         if (onRegisterUser) await onRegisterUser(data);
         setMessage(t('registrationSuccess'));
         setTimeout(() => setMode('login'), 2000);
@@ -145,6 +146,21 @@ const LoginScreen = ({ onLogin, onRegisterAgency, onRegisterUser, onResetRequest
                 <ShieldCheck size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
                 <input type="text" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} placeholder="NEXUS-XXXX-XXXX" required className="glass-input" style={{ width: '100%', paddingLeft: '3rem' }} />
               </div>
+            </div>
+          )}
+
+          {mode === 'register_user' && (
+            <div className="fade-in">
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.05em' }}>{lang === 'cz' ? 'ROLE' : 'ROLE'}</label>
+              <select
+                value={selectedRole}
+                onChange={e => setSelectedRole(e.target.value)}
+                className="glass-input"
+                style={{ width: '100%', background: 'rgba(0,0,0,0.5)', cursor: 'pointer' }}
+              >
+                <option value="Operator">{lang === 'cz' ? 'Operátorka' : 'Operator'}</option>
+                <option value="Model">{lang === 'cz' ? 'Modelka' : 'Model'}</option>
+              </select>
             </div>
           )}
 

@@ -105,7 +105,11 @@ exports.registerAgency = async (req, res) => {
 
 exports.registerUser = async (req, res) => {
   try {
-    const { fullName, email, password, inviteCode } = req.body;
+    const { fullName, email, password, inviteCode, roleName } = req.body;
+
+    // Only allow self-registration for safe roles
+    const allowedRoles = ['Operator', 'Model'];
+    const requestedRole = allowedRoles.includes(roleName) ? roleName : 'Operator';
     
     const agency = await prisma.agency.findFirst({ where: { inviteCode } });
     if (!agency) return res.status(404).json({ message: 'Invalid invite code' });
@@ -115,16 +119,19 @@ exports.registerUser = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    // Default to "Operator" role if exists, or create one
+    const rolePermissions = requestedRole === 'Model'
+      ? 'profiles:read,messaging:read'
+      : 'messaging,profiles';
+
     let role = await prisma.role.findFirst({ 
-      where: { agencyId: agency.id, name: 'Operator' } 
+      where: { agencyId: agency.id, name: requestedRole } 
     });
 
     if (!role) {
       role = await prisma.role.create({
         data: {
-          name: 'Operator',
-          permissions: 'messaging,profiles',
+          name: requestedRole,
+          permissions: rolePermissions,
           agencyId: agency.id
         }
       });

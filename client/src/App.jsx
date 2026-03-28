@@ -6030,10 +6030,13 @@ function App() {
                   onChange={e => setNewOperatorData({...newOperatorData, role: e.target.value})}
                   style={{ width: '100%', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
                 >
-                  <option value="Operator">Operator</option>
+                  <option value="Model">{lang === 'cz' ? 'Modelka' : 'Model'}</option>
+                  <option value="Operator">{lang === 'cz' ? 'Operátorka' : 'Operator'}</option>
                   <option value="Senior Operator">Senior Operator</option>
-                  <option value="Manager">Regional Manager</option>
-                  <option value="Admin">Agency Admin</option>
+                  <option value="Agency Manager">{lang === 'cz' ? 'Manažer agentury' : 'Agency Manager'}</option>
+                  {(activeRole === 'App Owner' || activeOperator?.role?.isManager) && (
+                    <option value="Agency Admin">Agency Admin</option>
+                  )}
                 </select>
               </div>
             </div>
