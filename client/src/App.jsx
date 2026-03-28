@@ -5026,7 +5026,15 @@ function App() {
                   </div>
                   <div className="glass-card" style={{ padding: '1.5rem' }}>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('regionalReach')}</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{activeClient?.regio                  {(() => {
+                    <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{activeClient?.region || t('global')}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="settings-section">
+                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Smartphone size={20} color="var(--accent-color)" /> {t('sessionTopology')}</h3>
+                <div className="glass-card" style={{ padding: 0 }}>
+                  {(() => {
                     const isManager = activeRole === 'App Owner' || activeRole === 'Agency Admin' || activeRole === 'Agency Manager' || activeOperator?.role?.isManager;
                     // Operators see all devices in their agency; managers see all
                     const visibleSessions = sessions.filter(s => {
