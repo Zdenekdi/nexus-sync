@@ -299,34 +299,7 @@ function App() {
     }
   }, [chatMessages, selectedChatId]);
 
-  const handleQuickSaveMeeting = useCallback(async () => {
-    if (!detectedMeeting || !activeProfileId) return;
-    try {
-      const hMatch = detectedMeeting.time.match(/(\d{1,2})[:\.]?(\d{2})?/);
-      const ampm = detectedMeeting.time.toLowerCase().includes('pm') ? 'PM' : 'AM';
-      let hh = hMatch ? parseInt(hMatch[1]) : 12;
-      const mm = hMatch?.[2] || '00';
-      
-      if (ampm === 'PM' && hh < 12) hh += 12;
-      if (ampm === 'AM' && hh === 12) hh = 0;
 
-      const dateStr = new Date().toISOString().split('T')[0];
-      const startTime = new Date(`${dateStr}T${String(hh).padStart(2,'0')}:${mm}:00`).toISOString();
-      const endTime = new Date(new Date(startTime).getTime() + 3600000).toISOString(); // +1 hour
-
-      await axios.post(`${API_BASE}/bookings`, 
-        { profileId: activeProfileId, title: `Meeting w/ ${selectedChat?.from || 'Client'}`, startTime, endTime },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      setDetectedMeeting(null);
-      showToast(lang === 'cz' ? 'Schůzka uložena ✓' : 'Meeting saved ✓', 'success');
-      await fetchBookings(activeProfileId);
-    } catch (e) {
-      console.error('[Booking] Direct save error:', e.message);
-      setBookingModalOpen(true); // Fallback to modal on error
-    }
-  }, [detectedMeeting, activeProfileId, selectedChat, API_BASE, token, lang, fetchBookings]);
 
   useEffect(() => {
     if (activeTab === 'device-setup') {
@@ -2472,6 +2445,35 @@ function App() {
       setBookingSchedule(formatted);
     } catch (e) { console.error('[Booking] fetch error:', e.message); }
   }, [token, API_BASE]);
+
+  const handleQuickSaveMeeting = useCallback(async () => {
+    if (!detectedMeeting || !activeProfileId) return;
+    try {
+      const hMatch = detectedMeeting.time.match(/(\d{1,2})[:\.]?(\d{2})?/);
+      const ampm = detectedMeeting.time.toLowerCase().includes('pm') ? 'PM' : 'AM';
+      let hh = hMatch ? parseInt(hMatch[1]) : 12;
+      const mm = hMatch?.[2] || '00';
+      
+      if (ampm === 'PM' && hh < 12) hh += 12;
+      if (ampm === 'AM' && hh === 12) hh = 0;
+
+      const dateStr = new Date().toISOString().split('T')[0];
+      const startTime = new Date(`${dateStr}T${String(hh).padStart(2,'0')}:${mm}:00`).toISOString();
+      const endTime = new Date(new Date(startTime).getTime() + 3600000).toISOString(); // +1 hour
+
+      await axios.post(`${API_BASE}/bookings`, 
+        { profileId: activeProfileId, title: `Meeting w/ ${selectedChat?.from || 'Client'}`, startTime, endTime },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      setDetectedMeeting(null);
+      showToast(lang === 'cz' ? 'Schůzka uložena ✓' : 'Meeting saved ✓', 'success');
+      await fetchBookings(activeProfileId);
+    } catch (e) {
+      console.error('[Booking] Direct save error:', e.message);
+      setBookingModalOpen(true); // Fallback to modal on error
+    }
+  }, [detectedMeeting, activeProfileId, selectedChat, API_BASE, token, lang, fetchBookings]);
 
   const handleCreateBooking = useCallback(async () => {
     if (!newBookingForm.title || !newBookingForm.date || !activeProfileId) return;
