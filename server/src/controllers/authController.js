@@ -9,7 +9,7 @@ exports.login = async (req, res) => {
     
     const user = await prisma.user.findUnique({
       where: { email },
-      include: { role: true, agency: true }
+      include: { role: true, agency: true, assignedProfiles: { take: 1, select: { id: true } } }
     });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
@@ -40,7 +40,8 @@ exports.login = async (req, res) => {
         isManager: user.role.isManager,
         isAppOwner: user.role.isAppOwner,
         agencyId: user.agencyId,
-        agencyName: user.agency?.name || 'System'
+        agencyName: user.agency?.name || 'System',
+        profileId: user.assignedProfiles?.[0]?.id || null
       }
     });
   } catch (error) {
@@ -178,7 +179,7 @@ exports.getProfile = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user.userId },
-      include: { role: true, agency: true }
+      include: { role: true, agency: true, assignedProfiles: { take: 1, select: { id: true } } }
     });
     
     if (!user) return res.status(404).json({ message: 'User not found' });
@@ -191,7 +192,8 @@ exports.getProfile = async (req, res) => {
       isManager: user.role.isManager,
       isAppOwner: user.role.isAppOwner,
       agencyId: user.agencyId,
-      agencyName: user.agency?.name || 'System'
+      agencyName: user.agency?.name || 'System',
+      profileId: user.assignedProfiles?.[0]?.id || null
     });
   } catch {
     res.status(500).json({ message: 'Server error' });
