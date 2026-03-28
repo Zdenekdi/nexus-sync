@@ -87,3 +87,33 @@ exports.assignUsersToProfile = async (req, res) => {
     res.status(500).json({ message: 'Failed to assign users' });
   }
 };
+
+exports.createProfile = async (req, res) => {
+  try {
+    const { role, agencyId, id: userId } = req.user;
+    if (!role?.isManager && !role?.isAppOwner) {
+      return res.status(403).json({ message: 'Only managers or App Owner can create profiles' });
+    }
+    const { name, phoneNumber, targetAgencyId } = req.body;
+    if (!name) return res.status(400).json({ message: 'Profile name is required' });
+
+    const resolvedAgencyId = role?.isAppOwner && targetAgencyId ? targetAgencyId : agencyId;
+    if (!resolvedAgencyId) return res.status(400).json({ message: 'Agency not found' });
+
+    const profile = await prisma.profile.create({
+      data: {
+        name,
+        phoneNumber: phoneNumber || null,
+        agencyId: resolvedAgencyId,
+        status: 'offline',
+        data: JSON.stringify({ quickReplies: [] })
+      },
+      include: { assignees: { select: { id: true, name: true } } }
+    });
+
+    res.status(201).json({ ...profile, data: { quickReplies: [] }, quickReplies: [] });
+  } catch (error) {
+    console.error('Error creating profile:', error);
+    res.status(500).json({ message: 'Failed to create profile' });
+  }
+};
