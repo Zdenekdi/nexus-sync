@@ -4993,34 +4993,47 @@ function App() {
                   </div>
                   <div className="glass-card" style={{ padding: '1.5rem' }}>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('regionalReach')}</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{activeClient?.region || t('global')}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="settings-section">
-                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Smartphone size={20} color="var(--accent-color)" /> {t('sessionTopology')}</h3>
-                <div className="glass-card" style={{ padding: 0 }}>
-                  {(() => {
+                    <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{activeClient?.regio                  {(() => {
                     const isManager = activeRole === 'App Owner' || activeRole === 'Agency Admin' || activeRole === 'Agency Manager' || activeOperator?.role?.isManager;
-                    const visibleSessions = isManager
-                      ? sessions
-                      : sessions.filter(s => s.profileId === activeOperator?.profileId);
+                    // Operators see all devices in their agency; managers see all
+                    const visibleSessions = sessions.filter(s => {
+                      if (isManager) return true;
+                      // Operator: show sessions for profiles in same agency
+                      const sessionProfile = profiles.find(p => p.id === s.profileId);
+                      return sessionProfile?.agencyId === activeOperator?.agencyId;
+                    });
                     if (visibleSessions.length === 0) return (
                       <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>{t('noDevicesConnected') || 'No active device bindings found.'}</div>
                     );
                     return visibleSessions.map((s, i) => (
-                    <div key={i} style={{ padding: '1.5rem', borderBottom: i < sessions.length - 1 ? '1px solid var(--card-border)' : 'none', display: 'flex', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', gap: '1.25rem' }}>
+                    <div key={i} style={{ padding: '1.5rem', borderBottom: i < visibleSessions.length - 1 ? '1px solid var(--card-border)' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                      <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
                         <div style={{ background: (s.current || s.status === 'Active') ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '12px' }}><Smartphone size={20} color={(s.current || s.status === 'Active') ? 'var(--accent-color)' : 'var(--text-secondary)'} /></div>
                         <div><div style={{ fontWeight: '700' }}>{s.device} {s.current && <span style={{ color: 'var(--success-color)', fontSize: '0.7rem' }}>({t('thisDevice')})</span>}</div><div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{s.location} • {s.status}</div></div>
                       </div>
-                      <div 
-                        className="status-badge" 
-                        style={{ cursor: s.status === 'Active' ? 'pointer' : 'default', opacity: s.status === 'Active' ? 1 : 0.5 }}
-                        onClick={() => s.status === 'Active' && handleRevokeBinding(s.installationId)}
-                      >
-                        {s.status === 'Active' ? t('revoke') : t('revoked') || 'REVOKED'}
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <button
+                          title={lang === 'cz' ? 'Zobrazit polohu zařízení' : 'Show device location'}
+                          onClick={() => {
+                            if (s.lat && s.lng) {
+                              window.open(`https://www.google.com/maps?q=${s.lat},${s.lng}`, '_blank');
+                            } else {
+                              showToast(lang === 'cz' ? 'Poloha momentálně není k dispozici' : 'Location not available', 'info');
+                            }
+                          }}
+                          style={{ padding: '0.4rem 0.75rem', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.3)', color: '#a78bfa', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                        >
+                          📍 {lang === 'cz' ? 'Poloha' : 'Location'}
+                        </button>
+                        {(isManager || s.profileId === activeOperator?.profileId) && (
+                          <div
+                            className="status-badge"
+                            style={{ cursor: s.status === 'Active' ? 'pointer' : 'default', opacity: s.status === 'Active' ? 1 : 0.5 }}
+                            onClick={() => s.status === 'Active' && handleRevokeBinding(s.installationId)}
+                          >
+                            {s.status === 'Active' ? t('revoke') : t('revoked') || 'REVOKED'}
+                          </div>
+                        )}
                       </div>
                     </div>
                     ));
