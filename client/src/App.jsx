@@ -250,6 +250,7 @@ function App() {
   const [relayApkInfo, setRelayApkInfo] = useState(null);
   const [activeMarket, setActiveMarket] = useState(lang === 'cz' ? 'cz' : 'eu');
   const SAFETY_SUGGESTIONS = ['10:00', '14:00', '18:00', '22:00'];
+  const [detectedMeeting, setDetectedMeeting] = useState(null);
 
   // Persistence Effects
   useEffect(() => {
@@ -947,7 +948,6 @@ function App() {
   const [bioLang, setBioLang] = useState('EN');
   const [bioText, setBioText] = useState('');
   const [mottoText, setMottoText] = useState('');
-  const [detectedMeeting, setDetectedMeeting] = useState(null);
   const [openBookingMenuId, setOpenBookingMenuId] = useState(null);
   // Close booking dropdown on outside click
   useEffect(() => {
