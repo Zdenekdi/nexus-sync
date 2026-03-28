@@ -956,10 +956,14 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
               </div>
               <div style={{
                 fontSize: '0.6rem', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: '800',
-                background: log.status === 'failed' ? 'rgba(239, 68, 68, 0.1)' : log.status === 'pending' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(34, 197, 94, 0.1)',
+                background: log.status === 'failed' ? 'rgba(239, 68, 68, 0.1)' : log.status === 'pending' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(34, 197, 94, 0.1)',
                 color: log.status === 'failed' ? 'var(--error-color)' : log.status === 'pending' ? '#f59e0b' : 'var(--success-color)'
               }}>
-                {log.status === 'pending' ? '⏳ ČEKÁ' : log.status === 'failed' ? '❌ SELHALO' : '✓ PŘEPOSLÁN0'}
+                {log.status === 'pending'
+                  ? (lang === 'cz' ? '📤 Odesílání...' : '📤 Sending...')
+                  : log.status === 'failed'
+                  ? (lang === 'cz' ? '❌ Selhalo' : '❌ Failed')
+                  : (lang === 'cz' ? '✓ Přeposlána' : '✓ Forwarded')}
               </div>
             </div>
           ))}
