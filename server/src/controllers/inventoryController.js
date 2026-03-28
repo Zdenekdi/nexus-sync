@@ -26,8 +26,7 @@ exports.createLocation = async (req, res) => {
   try {
     const { name } = req.body;
     if (!name?.trim()) return res.status(400).json({ message: 'Name required' });
-    const agencyId = req.user.agencyId;
-    if (!agencyId) return res.status(403).json({ message: 'Agency required' });
+    const agencyId = req.user.agencyId || null;
     const loc = await prisma.inventoryLocation.create({ data: { name: name.trim(), agencyId } });
     res.status(201).json(loc);
   } catch (e) {
@@ -69,8 +68,7 @@ exports.createItem = async (req, res) => {
   try {
     const { name, quantity = 0, threshold = 10, locationId } = req.body;
     if (!name?.trim() || !locationId) return res.status(400).json({ message: 'name + locationId required' });
-    const agencyId = req.user.agencyId;
-    if (!agencyId) return res.status(403).json({ message: 'Agency required' });
+    const agencyId = req.user.agencyId || null;
     const item = await prisma.inventoryItem.create({
       data: { name: name.trim(), quantity: Number(quantity), threshold: Number(threshold), locationId, agencyId },
       include: { location: { select: { id: true, name: true } } }
