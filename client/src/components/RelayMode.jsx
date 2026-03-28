@@ -41,6 +41,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     rcsMonitoring: false
   });
   const [relayNotice, setRelayNotice] = useState(null);
+  const [noProfileWarning, setNoProfileWarning] = useState(false);
   const latestHealthCheckRef = useRef(0);
   const consecutiveHealthFailuresRef = useRef(0);
   const POLL_FAILURES_FOR_DISCONNECT = 3;
@@ -150,6 +151,12 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       }
 
       const data = await response.json();
+      // Check if device has no profile assigned
+      if (data?.binding && !data.binding.profileId) {
+        setNoProfileWarning(true);
+      } else {
+        setNoProfileWarning(false);
+      }
       return {
         available: true,
         connected: Boolean(data?.online),
@@ -851,6 +858,11 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
           >
             {t('relayEnableRcsAccess') || 'ENABLE RCS ACCESS'}
           </button>
+        )}
+        {noProfileWarning && (
+          <div style={{ marginTop: '0.85rem', fontSize: '0.72rem', lineHeight: '1.4', padding: '0.7rem 0.85rem', borderRadius: '10px', border: '1px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.1)', color: 'var(--error-color)', fontWeight: '700' }}>
+            ❌ {lang === 'cz' ? 'Žádný profil není přiřazen k tomuto zařízení — SMS nebudou uloženy. Odhlaste se, přiřaďte profil a spárujte znovu.' : 'No profile assigned to this device — SMS will not be saved. Log out, assign a profile, then re-pair.'}
+          </div>
         )}
         {relayNotice && (
           <div

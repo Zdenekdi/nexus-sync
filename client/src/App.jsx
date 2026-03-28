@@ -5048,8 +5048,13 @@ function App() {
                     );
                     return visibleSessions.map((s, i) => (
                     <div key={i} style={{ padding: '1.5rem', borderBottom: i < visibleSessions.length - 1 ? '1px solid var(--card-border)' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                    {!s.profileId && (
+                      <div style={{ width: '100%', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '8px', padding: '0.5rem 0.75rem', fontSize: '0.75rem', color: '#f59e0b', fontWeight: '700', marginBottom: '0.5rem' }}>
+                        ⚠️ {lang === 'cz' ? 'Žádný profil přiřazen — SMS relay nefunguje. Přiřaďte profil a spárujte znovu.' : 'No profile assigned — SMS relay disabled. Assign a profile then re-pair.'}
+                      </div>
+                    )}
                       <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
-                        <div style={{ background: (s.current || s.status === 'Active') ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '12px' }}><Smartphone size={20} color={(s.current || s.status === 'Active') ? 'var(--accent-color)' : 'var(--text-secondary)'} /></div>
+                        <div style={{ background: !s.profileId ? 'rgba(245,158,11,0.1)' : (s.current || s.status === 'Active') ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '12px' }}><Smartphone size={20} color={!s.profileId ? '#f59e0b' : (s.current || s.status === 'Active') ? 'var(--accent-color)' : 'var(--text-secondary)'} /></div>
                         <div><div style={{ fontWeight: '700' }}>{s.device} {s.current && <span style={{ color: 'var(--success-color)', fontSize: '0.7rem' }}>({t('thisDevice')})</span>}</div><div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{s.location} • {s.status}</div></div>
                       </div>
                       <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>

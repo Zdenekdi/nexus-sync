@@ -103,7 +103,15 @@ exports.verifyDeviceBinding = async (req, res) => {
       }
     }
 
-    // Limit to 2 active devices per user (plain count — no transaction needed, avoids SQLite lock)
+    // Hard block: never create a binding without a profile — relay would silently fail
+    if (!resolvedProfileId) {
+      return res.status(409).json({
+        ok: false,
+        profileRequired: true,
+        message: 'No profile is assigned to your account. Ask your manager to assign you a profile first, then re-pair.'
+      });
+    }
+
     const activeCount = await prisma.deviceBinding.count({
       where: {
         userId,
