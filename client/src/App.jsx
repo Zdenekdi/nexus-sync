@@ -242,6 +242,7 @@ function App() {
   const [auditLogs] = useState([]);
   const [newAgencyData, setNewAgencyData] = useState({ name: '', email: '', region: 'International', tier: 'Pro' });
   const [newOperatorData, setNewOperatorData] = useState({ name: '', email: '', role: 'Operator', profileId: null });
+  const [selectedAgencyDetail, setSelectedAgencyDetail] = useState(null);
   const [isAddAgencyModalOpen, setIsAddAgencyModalOpen] = useState(false);
   const [isAddOperatorModalOpen, setIsAddOperatorModalOpen] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -798,6 +799,7 @@ function App() {
           setSessions(bindingRes.data.bindings.map(b => ({
             id: b.id,
             installationId: b.installationId,
+            profileId: b.profileId || b.profile?.id || null,
             device: b.model || b.deviceName || 'Android Mobile',
             location: b.profile?.name || 'Unassigned',
             status: b.active ? 'Active' : 'Revoked',
@@ -4999,9 +5001,15 @@ function App() {
               <div className="settings-section">
                 <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Smartphone size={20} color="var(--accent-color)" /> {t('sessionTopology')}</h3>
                 <div className="glass-card" style={{ padding: 0 }}>
-                  {sessions.length === 0 ? (
-                    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>{t('noDevicesConnected') || 'No active device bindings found.'}</div>
-                  ) : sessions.map((s, i) => (
+                  {(() => {
+                    const isManager = activeRole === 'App Owner' || activeRole === 'Agency Admin' || activeRole === 'Agency Manager' || activeOperator?.role?.isManager;
+                    const visibleSessions = isManager
+                      ? sessions
+                      : sessions.filter(s => s.profileId === activeOperator?.profileId);
+                    if (visibleSessions.length === 0) return (
+                      <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>{t('noDevicesConnected') || 'No active device bindings found.'}</div>
+                    );
+                    return visibleSessions.map((s, i) => (
                     <div key={i} style={{ padding: '1.5rem', borderBottom: i < sessions.length - 1 ? '1px solid var(--card-border)' : 'none', display: 'flex', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', gap: '1.25rem' }}>
                         <div style={{ background: (s.current || s.status === 'Active') ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '12px' }}><Smartphone size={20} color={(s.current || s.status === 'Active') ? 'var(--accent-color)' : 'var(--text-secondary)'} /></div>
@@ -5015,7 +5023,8 @@ function App() {
                         {s.status === 'Active' ? t('revoke') : t('revoked') || 'REVOKED'}
                       </div>
                     </div>
-                  ))}
+                    ));
+                  })()}
                 </div>
               </div>
 
@@ -5272,10 +5281,16 @@ function App() {
                                   </button>
                                   <button
                                     className="status-badge"
+                                    style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', cursor: 'pointer', borderColor: 'var(--card-border)' }}
+                                    onClick={() => setSelectedAgencyDetail(agency)}
+                                  >
+                                    DETAIL
+                                  </button>
+                                  <button
+                                    className="status-badge"
                                     style={{ fontSize: '0.7rem', color: 'var(--accent-color)', cursor: 'pointer' }}
                                     onClick={() => {
                                       setActiveClient(agency);
-                                      // Impersonate first user of this agency
                                       const clientOp = operators.find(o => o.agencyId === agency.id);
                                       if (clientOp) setActiveOperator(clientOp);
                                       setActiveTab('dashboard');
@@ -5783,6 +5798,58 @@ function App() {
         </div>
       )}
 
+
+      {/* Agency Detail Modal */}
+      {selectedAgencyDetail && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1002, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(12px)', padding: '1rem' }}>
+          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '480px', padding: '2.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: '900', marginBottom: '0.25rem' }}>{selectedAgencyDetail.name}</h3>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{selectedAgencyDetail.region}</div>
+              </div>
+              <button onClick={() => setSelectedAgencyDetail(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {selectedAgencyDetail.email && (
+                <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem' }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>EMAIL</div>
+                  <div style={{ fontWeight: '700' }}>{selectedAgencyDetail.email}</div>
+                </div>
+              )}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem' }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>PLÁN</div>
+                  <div style={{ fontWeight: '700' }}>{selectedAgencyDetail.subscription?.plan || 'Standard'}</div>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem' }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>STAFF</div>
+                  <div style={{ fontWeight: '700' }}>{operators.filter(o => o.agencyId === selectedAgencyDetail.id).length} uživatelů</div>
+                </div>
+              </div>
+              <div style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '12px', padding: '1.25rem' }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--accent-color)', marginBottom: '0.6rem' }}>INVITATION CODE</div>
+                {selectedAgencyDetail.inviteCode ? (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+                    <code style={{ fontSize: '1.1rem', fontWeight: '900', letterSpacing: '0.05em', color: 'white' }}>{selectedAgencyDetail.inviteCode}</code>
+                    <button
+                      onClick={() => { navigator.clipboard.writeText(selectedAgencyDetail.inviteCode); showToast('Invite code copied!', 'success'); }}
+                      style={{ background: 'rgba(59,130,246,0.2)', border: '1px solid var(--accent-color)', color: 'var(--accent-color)', borderRadius: '8px', padding: '0.4rem 0.8rem', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                    >
+                      KOPÍROVAT
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Kód ještě nebyl vygenerován</div>
+                )}
+              </div>
+            </div>
+            <button onClick={() => setSelectedAgencyDetail(null)} style={{ width: '100%', marginTop: '2rem', padding: '1rem', background: 'transparent', border: '1px solid var(--card-border)', color: 'white', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}>
+              {lang === 'cz' ? 'Zavřít' : 'Close'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Provision New Agency Modal */}
       {isAddAgencyModalOpen && (
