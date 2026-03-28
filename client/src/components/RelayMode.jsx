@@ -374,7 +374,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     return 'sms';
   };
 
-  const addLocalLog = (type, from, content, direction) => {
+  const addLocalLog = (type, from, content, direction, status = 'pending') => {
     if (!isActive) return;
 
     const newLog = {
@@ -386,11 +386,20 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       fullData: content,
       direction: direction || (content?.startsWith('[OUTBOUND]') ? 'outbound' : 'inbound'),
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      status: 'forwarded'
+      status
     };
 
     setLogs(prev => [newLog, ...prev.slice(0, 19)]);
     setLastForwardedId(newLog.id);
+    return newLog.id;
+  };
+
+  const updateLogStatus = (from, newStatus) => {
+    setLogs(prev => prev.map(l =>
+      l.from === from && l.status === 'pending'
+        ? { ...l, status: newStatus }
+        : l
+    ));
   };
 
   useEffect(() => {
@@ -436,10 +445,17 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     if (plugin?.addListener) {
       listener = plugin.addListener('relay_event', (event) => {
         console.log('[Relay] Native event received:', event);
-        addLocalLog(event.type || 'sms', event.from, event.content, event.direction || 'inbound');
-        
-        if (event.status === 'sent') {
+        if (event.status === 'sent' || event.status === 'forwarded') {
+          // Server confirmed - update pending log to forwarded
+          updateLogStatus(event.from, 'forwarded');
           showRelayNotice(t('smsRelayed') || 'SMS byla odeslána!', 'success');
+        } else if (event.status === 'failed' || event.status === 'error') {
+          // Server rejected - mark as failed
+          updateLogStatus(event.from, 'failed');
+          showRelayNotice(t('relayFailed') || 'Přeposlání selhalo!', 'error');
+        } else {
+          // Unknown event - add as pending
+          addLocalLog(event.type || 'sms', event.from, event.content, event.direction || 'inbound', 'pending');
         }
       });
     }
@@ -518,10 +534,10 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   useEffect(() => {
     if (window.Capacitor?.Plugins?.NexusRelay) {
       const smsListener = window.Capacitor.Plugins.NexusRelay.addListener('onSmsReceived', (data) => {
-        addLocalLog('sms', data.from, data.body);
+        addLocalLog('sms', data.from, data.body, 'inbound', 'pending');
       });
       const rcsListener = window.Capacitor.Plugins.NexusRelay.addListener('onRcsReceived', (data) => {
-        addLocalLog('rcs', data.from, data.body);
+        addLocalLog('rcs', data.from, data.body, 'inbound', 'pending');
       });
       const callListener = window.Capacitor.Plugins.NexusRelay.addListener('onCallStateChanged', (data) => {
         if (data.state && data.state !== 'IDLE') {
@@ -935,8 +951,12 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
                   {log.content}
                 </p>
               </div>
-              <div style={{ fontSize: '0.6rem', padding: '0.2rem 0.5rem', background: log.status === 'failed' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)', color: log.status === 'failed' ? 'var(--error-color)' : 'var(--success-color)', borderRadius: '4px', fontWeight: '800' }}>
-                {log.status.toUpperCase()}
+              <div style={{
+                fontSize: '0.6rem', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: '800',
+                background: log.status === 'failed' ? 'rgba(239, 68, 68, 0.1)' : log.status === 'pending' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(34, 197, 94, 0.1)',
+                color: log.status === 'failed' ? 'var(--error-color)' : log.status === 'pending' ? '#f59e0b' : 'var(--success-color)'
+              }}>
+                {log.status === 'pending' ? '⏳ ČEKÁ' : log.status === 'failed' ? '❌ SELHALO' : '✓ PŘEPOSLÁN0'}
               </div>
             </div>
           ))}
