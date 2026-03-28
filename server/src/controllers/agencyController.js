@@ -153,8 +153,10 @@ exports.getAgencies = async (req, res) => {
     const mapped = agencies.map(a => ({
       id: a.id,
       name: a.name,
+      email: a.email || null,
       region: a.region || 'EU',
       status: a.status || 'active',
+      inviteCode: a.inviteCode || null,
       subscription: {
         plan: a.tier || 'Pro',
         status: a.status || 'active',
@@ -168,23 +170,53 @@ exports.getAgencies = async (req, res) => {
   }
 };
 
+exports.getAgency = async (req, res) => {
+  try {
+    const { role } = req.user;
+    if (!role?.isAppOwner) return res.status(403).json({ message: 'Access denied' });
+
+    const agency = await prisma.agency.findUnique({
+      where: { id: req.params.id },
+      include: { _count: { select: { users: true, profiles: true } } }
+    });
+    if (!agency) return res.status(404).json({ message: 'Agency not found' });
+
+    res.json({
+      id: agency.id,
+      name: agency.name,
+      email: agency.email || null,
+      region: agency.region,
+      tier: agency.tier,
+      inviteCode: agency.inviteCode || null,
+      usersCount: agency._count.users,
+      profilesCount: agency._count.profiles
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 exports.createAgency = async (req, res) => {
   try {
     const { role } = req.user;
     if (!role?.isAppOwner) return res.status(403).json({ message: 'Access denied' });
 
-    const { name, region, tier } = req.body;
+    const { name, region, tier, email } = req.body;
+    const inviteCode = `NEXUS-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
     const agency = await prisma.agency.create({
       data: {
         name,
+        email: email || null,
         region,
         tier: tier || 'Professional',
-        plan: tier || 'Professional', // Keep plan in sync for now
-        status: 'active'
+        plan: tier || 'Professional',
+        status: 'active',
+        inviteCode
       }
     });
 
-    res.status(201).json(agency);
+    res.status(201).json({ ...agency, inviteCode });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

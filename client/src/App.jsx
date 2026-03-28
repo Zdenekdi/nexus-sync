@@ -240,7 +240,7 @@ function App() {
   const [smartReplies] = useState([]);
   const [stats, setStats] = useState({});
   const [auditLogs] = useState([]);
-  const [newAgencyData, setNewAgencyData] = useState({ name: '', region: 'International', tier: 'Pro' });
+  const [newAgencyData, setNewAgencyData] = useState({ name: '', email: '', region: 'International', tier: 'Pro' });
   const [newOperatorData, setNewOperatorData] = useState({ name: '', email: '', role: 'Operator', profileId: null });
   const [isAddAgencyModalOpen, setIsAddAgencyModalOpen] = useState(false);
   const [isAddOperatorModalOpen, setIsAddOperatorModalOpen] = useState(false);
@@ -2169,16 +2169,20 @@ function App() {
       if (resp.data) {
         setAgencies(prev => [...prev, {
           ...resp.data,
+          inviteCode: resp.data.inviteCode,
           subscription: { plan: resp.data.tier, status: 'active', endDate: 'Unlimited' }
         }]);
         setIsAddAgencyModalOpen(false);
-        setNewAgencyData({ name: '', region: 'UK/Europe', tier: 'Professional' });
+        setNewAgencyData({ name: '', email: '', region: 'International', tier: 'Pro' });
+        if (resp.data.inviteCode) {
+          showToast(`Agentura vytvořena! Invitation code: ${resp.data.inviteCode}`, 'success');
+        }
       }
     } catch (err) {
       console.error('Failed to add agency:', err);
       alert('Failed to add agency');
     }
-  }, [newAgencyData, token]);
+  }, [newAgencyData, token, showToast]);
 
   const deleteAgency = async (id) => {
     if (window.confirm('Are you sure you want to PERMANENTLY delete this agency and all its team members? This action cannot be undone.')) {
@@ -5822,6 +5826,16 @@ function App() {
                   <option value="Professional">Professional</option>
                   <option value="Enterprise">Enterprise</option>
                 </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>EMAIL AGENTURY</label>
+                <input
+                  type="email"
+                  value={newAgencyData.email}
+                  onChange={e => setNewAgencyData({...newAgencyData, email: e.target.value})}
+                  placeholder="agency@example.com"
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
+                />
               </div>
             </div>
             <div style={{ display: 'flex', gap: '1rem', marginTop: '2.5rem' }}>
