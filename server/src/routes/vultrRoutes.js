@@ -10,7 +10,7 @@ const authMiddleware = require("../middleware/authMiddleware");
 
 const VULTR_API = "https://api.vultr.com/v2";
 const headers = () => ({
-  "API-Key": process.env.VULTR_API_KEY,
+  "Authorization": `Bearer ${process.env.VULTR_API_KEY}`,
   "Content-Type": "application/json",
 });
 
