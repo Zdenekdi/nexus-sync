@@ -4,7 +4,8 @@ const prisma = require('../services/db');
 
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email: rawEmail, password } = req.body;
+    const email = rawEmail?.toLowerCase();
     
     const user = await prisma.user.findUnique({
       where: { email },
@@ -50,7 +51,8 @@ exports.login = async (req, res) => {
 
 exports.registerAgency = async (req, res) => {
   try {
-    const { agencyName, fullName, email, password } = req.body;
+    const { agencyName, fullName, email: rawEmail2, password } = req.body;
+    const email = rawEmail2?.toLowerCase();
     
     // 1. Check if user exists
     const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -105,7 +107,8 @@ exports.registerAgency = async (req, res) => {
 
 exports.registerUser = async (req, res) => {
   try {
-    const { fullName, email, password, inviteCode, roleName } = req.body;
+    const { fullName, email: rawEmail3, password, inviteCode, roleName } = req.body;
+    const email = rawEmail3?.toLowerCase();
 
     // Only allow self-registration for safe roles
     const allowedRoles = ['Operator', 'Model'];
