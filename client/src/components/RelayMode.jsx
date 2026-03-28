@@ -444,18 +444,19 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     
     if (plugin?.addListener) {
       listener = plugin.addListener('relay_event', (event) => {
-        console.log('[Relay] Native event received:', event);
-        if (event.status === 'sent' || event.status === 'forwarded') {
-          // Server confirmed - update pending log to forwarded
-          updateLogStatus(event.from, 'forwarded');
-          showRelayNotice(t('smsRelayed') || 'SMS byla odeslána!', 'success');
-        } else if (event.status === 'failed' || event.status === 'error') {
-          // Server rejected - mark as failed
-          updateLogStatus(event.from, 'failed');
-          showRelayNotice(t('relayFailed') || 'Přeposlání selhalo!', 'error');
-        } else {
-          // Unknown event - add as pending
-          addLocalLog(event.type || 'sms', event.from, event.content, event.direction || 'inbound', 'pending');
+        try {
+          console.log('[Relay] Native event received:', event);
+          if (event.status === 'sent' || event.status === 'forwarded') {
+            updateLogStatus(event.from, 'forwarded');
+            showRelayNotice(t('smsRelayed') || 'SMS byla odeslána!', 'success');
+          } else if (event.status === 'failed' || event.status === 'error') {
+            updateLogStatus(event.from, 'failed');
+            showRelayNotice(t('relayFailed') || 'Přeposlání selhalo!', 'error');
+          } else {
+            addLocalLog(event.type || 'sms', event.from, event.content, event.direction || 'inbound', 'pending');
+          }
+        } catch (e) {
+          console.error('[Relay] relay_event handler error:', e);
         }
       });
     }
@@ -534,15 +535,17 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   useEffect(() => {
     if (window.Capacitor?.Plugins?.NexusRelay) {
       const smsListener = window.Capacitor.Plugins.NexusRelay.addListener('onSmsReceived', (data) => {
-        addLocalLog('sms', data.from, data.body, 'inbound', 'pending');
+        try { addLocalLog('sms', data.from, data.body, 'inbound', 'pending'); } catch (e) { console.error('[Relay] onSmsReceived error:', e); }
       });
       const rcsListener = window.Capacitor.Plugins.NexusRelay.addListener('onRcsReceived', (data) => {
-        addLocalLog('rcs', data.from, data.body, 'inbound', 'pending');
+        try { addLocalLog('rcs', data.from, data.body, 'inbound', 'pending'); } catch (e) { console.error('[Relay] onRcsReceived error:', e); }
       });
       const callListener = window.Capacitor.Plugins.NexusRelay.addListener('onCallStateChanged', (data) => {
-        if (data.state && data.state !== 'IDLE') {
-          addLocalLog('call', data.from, `State: ${data.state}`);
-        }
+        try {
+          if (data.state && data.state !== 'IDLE') {
+            addLocalLog('call', data.from, `State: ${data.state}`);
+          }
+        } catch (e) { console.error('[Relay] onCallStateChanged error:', e); }
       });
       return () => {
         smsListener.remove();
