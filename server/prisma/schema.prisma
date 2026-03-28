@@ -10,6 +10,7 @@ datasource db {
 model Agency {
   id        String   @id @default(cuid())
   name      String
+  email     String?
   region    String
   plan      String   @default("Standard")
   tier      String   @default("Standard")

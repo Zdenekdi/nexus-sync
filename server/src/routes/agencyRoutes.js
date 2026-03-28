@@ -14,6 +14,7 @@ router.get('/profiles', profileController.getProfiles);
 
 // Global Agency Management (App Owner Only)
 router.get('/all', agencyController.getAgencies);
+router.get('/:id', agencyController.getAgency);
 router.post('/', agencyController.createAgency);
 router.post('/users', agencyController.addUser);
 router.delete('/:id', agencyController.deleteAgency);
