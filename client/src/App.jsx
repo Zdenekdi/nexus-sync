@@ -243,6 +243,7 @@ function App() {
   const [newAgencyData, setNewAgencyData] = useState({ name: '', email: '', region: 'International', tier: 'Pro' });
   const [newOperatorData, setNewOperatorData] = useState({ name: '', email: '', role: 'Operator', profileId: null });
   const [selectedAgencyDetail, setSelectedAgencyDetail] = useState(null);
+  const [originalOperator, setOriginalOperator] = useState(null);
   const [isAddAgencyModalOpen, setIsAddAgencyModalOpen] = useState(false);
   const [isAddOperatorModalOpen, setIsAddOperatorModalOpen] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -3524,6 +3525,19 @@ function App() {
         position: 'relative',
         background: 'var(--bg-color)',
       }}>
+        {/* Exit Impersonation Banner */}
+        {originalOperator && activeRole !== 'App Owner' && (
+          <div style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(239,68,68,0.1))', border: '1px solid rgba(245,158,11,0.4)', padding: '0.75rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexShrink: 0 }}>
+            <div style={{ fontSize: '0.8rem', color: '#f59e0b', fontWeight: '700' }}>👁️ Prohlížíte jako: <strong>{activeOperator?.name || activeClient?.name}</strong> ({activeClient?.name})</div>
+            <button
+              onClick={() => { setActiveOperator(originalOperator); setActiveClient(null); setOriginalOperator(null); setActiveTab('agency-management'); }}
+              style={{ background: 'rgba(245,158,11,0.2)', border: '1px solid #f59e0b', color: '#f59e0b', padding: '0.4rem 1rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', whiteSpace: 'nowrap' }}
+            >
+              ← Zpět jako App Owner
+            </button>
+          </div>
+        )}
+
         {activeTab === 'dashboard' && (
           <DashboardHome 
             user={activeOperator} 
@@ -4792,7 +4806,26 @@ function App() {
         )}
         {activeTab === 'profiles' && (
           <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto' }} className="fade-in custom-scrollbar">
-            <h2 style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '800', marginBottom: '2rem' }}>{t('managedProfiles')}</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+              <h2 style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '800' }}>{t('managedProfiles')}</h2>
+              {(activeRole === 'App Owner' || activeRole === 'Agency Manager' || activeRole === 'Agency Admin' || activeOperator?.role?.isManager) && (
+                <button
+                  onClick={async () => {
+                    const name = window.prompt(lang === 'cz' ? 'Jméno nového profilu (pracovní jméno):' : 'New profile name (stage name):');
+                    if (!name) return;
+                    const phone = window.prompt(lang === 'cz' ? 'Telefonní číslo (nebo ponech prázdné):' : 'Phone number (or leave empty):') || '';
+                    try {
+                      const resp = await axios.post(`${API_BASE}/profiles`, { name, phoneNumber: phone || null }, { headers: { Authorization: `Bearer ${token}` } });
+                      setProfiles(prev => [...prev, resp.data]);
+                      showToast(lang === 'cz' ? `Profil "${name}" byl vytvořen` : `Profile "${name}" created`, 'success');
+                    } catch (e) { showToast('Failed to create profile', 'error'); }
+                  }}
+                  style={{ padding: '0.75rem 1.25rem', background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  + {lang === 'cz' ? 'Přidat profil' : 'Add Profile'}
+                </button>
+              )}
+            </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               {allAgencyProfiles.map((profile, i) => {
@@ -5217,13 +5250,13 @@ function App() {
                               </button>
                               <button
                                 onClick={() => {
+                                  setOriginalOperator(activeOperator);
                                   setActiveClient(agency);
-                                  const clientOp = operators.find(o => o.agencyId === agency.id) || operators.find(o => o.id === 'op-1');
-                                  setActiveOperator(clientOp);
+                                  const agencyOps = operators.filter(o => o.agencyId === agency.id);
+                                  const best = agencyOps.find(o => o.role?.isManager || o.role?.name?.includes("Manager") || o.role?.name?.includes("Admin")) || agencyOps[0];
+                                  if (best) setActiveOperator(best);
                                   setActiveTab('dashboard');
                                 }}
-                                className="status-badge"
-                                style={{ flex: 1, padding: '0.6rem', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-color)', border: 'none' }}
                               >
                                 {t('impersonate')}
                               </button>
@@ -5303,9 +5336,12 @@ function App() {
                                     className="status-badge"
                                     style={{ fontSize: '0.7rem', color: 'var(--accent-color)', cursor: 'pointer' }}
                                     onClick={() => {
+                                      setOriginalOperator(activeOperator);
                                       setActiveClient(agency);
-                                      const clientOp = operators.find(o => o.agencyId === agency.id);
-                                      if (clientOp) setActiveOperator(clientOp);
+                                      // Pick best operator: prefer manager/admin, fallback to first
+                                      const agencyOps = operators.filter(o => o.agencyId === agency.id);
+                                      const best = agencyOps.find(o => o.role?.isManager || o.role?.name?.includes('Manager') || o.role?.name?.includes('Admin')) || agencyOps[0];
+                                      if (best) setActiveOperator(best);
                                       setActiveTab('dashboard');
                                     }}
                                   >
