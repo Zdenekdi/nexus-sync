@@ -453,7 +453,8 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       listener = plugin.addListener('relay_event', (event) => {
         try {
           console.log('[Relay] Native event received:', event);
-          if (event.status === 'sent' || event.status === 'forwarded') {
+          const st = (event.status || '').toLowerCase();
+          if (st === 'sent' || st === 'forwarded' || st === 'relayed' || st === 'ok' || st === 'success' || st === 'delivered') {
             updateLogStatus(event.from, 'forwarded');
             showRelayNotice(t('smsRelayed') || 'SMS byla odeslána!', 'success');
           } else if (event.status === 'failed' || event.status === 'error') {
@@ -542,10 +543,17 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   useEffect(() => {
     if (window.Capacitor?.Plugins?.NexusRelay) {
       const smsListener = window.Capacitor.Plugins.NexusRelay.addListener('onSmsReceived', (data) => {
-        try { addLocalLog('sms', data.from, data.body, 'inbound', 'pending'); } catch (e) { console.error('[Relay] onSmsReceived error:', e); }
+        try {
+          addLocalLog('sms', data.from, data.body, 'inbound', 'pending');
+          // Auto-confirm after 4s: if native plugin doesn't fire relay_event, refresh from server
+          setTimeout(() => { try { refreshLogs(); } catch (e) {} }, 4000);
+        } catch (e) { console.error('[Relay] onSmsReceived error:', e); }
       });
       const rcsListener = window.Capacitor.Plugins.NexusRelay.addListener('onRcsReceived', (data) => {
-        try { addLocalLog('rcs', data.from, data.body, 'inbound', 'pending'); } catch (e) { console.error('[Relay] onRcsReceived error:', e); }
+        try {
+          addLocalLog('rcs', data.from, data.body, 'inbound', 'pending');
+          setTimeout(() => { try { refreshLogs(); } catch (e) {} }, 4000);
+        } catch (e) { console.error('[Relay] onRcsReceived error:', e); }
       });
       const callListener = window.Capacitor.Plugins.NexusRelay.addListener('onCallStateChanged', (data) => {
         try {

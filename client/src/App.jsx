@@ -3894,10 +3894,10 @@ function App() {
                             </div>
                             {/* add booking footer aligned with chat input */}
                             <div style={{ 
-                              padding: '1.4rem 0.75rem', 
+                              padding: '0.75rem', 
                               borderTop: '1px solid var(--card-border)',
-                              background: 'rgba(0,0,0,0.05)',
-                              marginTop: 'auto'
+                              background: 'var(--bg-primary)',
+                              flexShrink: 0
                             }}>
                               <button 
                                 onClick={() => { setNewBookingForm(f => ({ ...f, date: calDateStr })); setBookingModalOpen(true); }} 
