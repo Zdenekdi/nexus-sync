@@ -20,13 +20,15 @@ import {
 
 const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, requestRelayPermissions, processRelayOutbox, syncSmsHistory }) => {
   const RELAY_API_BASE = (import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api').replace(/\/api$/, '');
-  const lang = localStorage.getItem('nexus_lang') || 'cz';
+  const [lang, setLang] = useState(() => localStorage.getItem('nexus_lang') || 'cz');
   const [isActive, setIsActive] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState('connecting');
   const [signalStrength, setSignalStrength] = useState(85);
   const [batteryLevel, setBatteryLevel] = useState(100);
   const [isCharging, setIsCharging] = useState(false);
-  const [logs, setLogs] = useState([]);
+  const [logs, setLogs] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('nexus_relay_logs') || '[]'); } catch { return []; }
+  });
   const [lastForwardedId, setLastForwardedId] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isRefreshingLogs, setIsRefreshingLogs] = useState(false);
@@ -46,6 +48,21 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   const latestHealthCheckRef = useRef(0);
   const consecutiveHealthFailuresRef = useRef(0);
   const POLL_FAILURES_FOR_DISCONNECT = 3;
+
+  // Persist logs to localStorage whenever they change
+  useEffect(() => {
+    try { localStorage.setItem('nexus_relay_logs', JSON.stringify(logs.slice(0, 20))); } catch (e) {}
+  }, [logs]);
+
+  // Sync lang from localStorage in case user changes language while relay is running
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const current = localStorage.getItem('nexus_lang') || 'cz';
+      setLang(prev => prev !== current ? current : prev);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
   const HEALTH_CHECK_TIMEOUT_MS = 8000;
   const MANUAL_RETRY_ATTEMPTS = 3;
   const relayDebug = (...args) => console.info('[Relay]', ...args);
@@ -923,7 +940,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
               {isRefreshingLogs ? (t('refreshing') || 'REFRESHING...') : (t('refresh') || 'REFRESH')}
             </button>
             <button
-              onClick={() => setLogs([])}
+              onClick={() => { setLogs([]); localStorage.removeItem('nexus_relay_logs'); }}
               style={{ padding: '0.4rem 0.85rem', background: 'transparent', border: '1px solid var(--card-border)', borderRadius: '8px', color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer' }}
             >
               {t('clear') || 'CLEAR'}
