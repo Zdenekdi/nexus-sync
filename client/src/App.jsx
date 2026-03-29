@@ -2962,7 +2962,7 @@ function App() {
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1199 }}
         />
         <div style={{ position: 'fixed', right: 0, top: 0, bottom: 0, width: isMobile ? 'min(400px, 100vw)' : '400px', maxWidth: '100vw', background: 'rgba(5, 7, 10, 0.95)', borderLeft: '1px solid var(--card-border)', zIndex: 1200, display: 'flex', flexDirection: 'column', backdropFilter: 'blur(30px)', animation: 'slideInRight 0.3s cubic-bezier(0, 0, 0.2, 1)' }}>
-          <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ padding: isMobile ? 'calc(env(safe-area-inset-top, 0px) + 1.5rem) 1.5rem 1.5rem' : '1.5rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
             <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>{t('notifications')}</h3>
             <div style={{ display: 'flex', gap: '1rem' }}>
               <button onClick={() => setNotifications([])} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}>{t('clearAll')}</button>
@@ -2974,7 +2974,7 @@ function App() {
               </button>
             </div>
           </div>
-          <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }} className="custom-scrollbar">
+          <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? `1rem 1rem calc(env(safe-area-inset-bottom, 0px) + 1rem)` : '1rem' }} className="custom-scrollbar">
             {(() => {
               const filteredNotifications = notifications.filter(n => {
                 if (activeOperator?.isModel) {
