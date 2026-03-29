@@ -2457,6 +2457,7 @@ function App() {
     if (!token || !profileId) return;
     try {
       const res = await axios.get(`${API_BASE}/bookings?profileId=${profileId}`, { headers: { Authorization: `Bearer ${token}` } });
+      const profileName = profiles.find(p => p.id === profileId)?.name || '';
       const formatted = (res.data || []).map(b => {
         const start = new Date(b.startTime);
         const end = new Date(b.endTime);
@@ -2468,12 +2469,13 @@ function App() {
           id: b.id, time: `${h}:${m} ${ampm}`,
           duration: durMin >= 60 ? `${Math.floor(durMin/60)}h${durMin%60>0?' '+durMin%60+'m':''}` : `${durMin}m`,
           type: 'work', title: b.title, status: b.status,
-          startTime: b.startTime, endTime: b.endTime
+          startTime: b.startTime, endTime: b.endTime,
+          profileId, profileName
         };
       });
       setBookingSchedule(formatted);
     } catch (e) { console.error('[Booking] fetch error:', e.message); }
-  }, [token, API_BASE]);
+  }, [token, API_BASE, profiles]);
 
   const handleQuickSaveMeeting = useCallback(async () => {
     if (!detectedMeeting || !activeProfileId) return;
