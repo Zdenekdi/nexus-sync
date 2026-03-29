@@ -12,7 +12,7 @@ class SafetyController {
      */
     async createSession(req, res) {
         try {
-            const { profileId, bookingId, plannedEndAt, graceMinutes = 10 } = req.body;
+            const { profileId, bookingId, plannedEndAt, graceMinutes = 10, locationType = 'incall' } = req.body;
             const { role, agencyId: userAgencyId } = req.user;
             const isAppOwner = role?.isAppOwner;
             
@@ -33,6 +33,7 @@ class SafetyController {
                     agencyId,
                     plannedEndAt: plannedEnd,
                     graceUntil: graceUntil,
+                    locationType: locationType,
                     state: 'CHECKED_IN'
                 }
             });

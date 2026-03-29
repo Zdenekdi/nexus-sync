@@ -924,7 +924,7 @@ function App() {
   const [bookingSchedule, setBookingSchedule] = useState([]);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [selectedScheduleEvent, setSelectedScheduleEvent] = useState(null);
-  const [newBookingForm, setNewBookingForm] = useState({ title: '', date: new Date().toISOString().split('T')[0], startTime: '10:00', endTime: '11:00' });
+  const [newBookingForm, setNewBookingForm] = useState({ title: '', date: new Date().toISOString().split('T')[0], startTime: '10:00', endTime: '11:00', locationType: 'incall' });
   const [calViewDate, setCalViewDate] = useState(new Date());
   const [bioLang, setBioLang] = useState('EN');
   const [bioText, setBioText] = useState('');
@@ -1057,6 +1057,14 @@ function App() {
           }
           if (!position || !position.coords) return;
 
+          // NEW LOGIC: 
+          // If it is an INCALL, only send updates if the alarm is triggered (safetyAlarmTriggered).
+          // If it is an OUTCALL, send updates always during the session.
+          const isOutcall = activeSafetySession.locationType === 'outcall';
+          const shouldSend = isOutcall || safetyAlarmTriggered;
+          
+          if (!shouldSend) return;
+
           const now = Date.now();
           // Battery optimization: Send update only every 60 seconds
           if (now - lastLocationUpdateRef.current < 60000) return;
@@ -1108,7 +1116,8 @@ function App() {
         profileId: activeProfileId,
         bookingId: event.id,
         plannedEndAt: new Date(Date.now() + (durationMatch ? parseInt(durationMatch[1]) : 1) * 3600000),
-        graceMinutes
+        graceMinutes,
+        locationType: event.locationType || 'incall'
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -2648,10 +2657,16 @@ function App() {
     try {
       const startTime = new Date(`${newBookingForm.date}T${newBookingForm.startTime}:00`).toISOString();
       const endTime = new Date(`${newBookingForm.date}T${newBookingForm.endTime}:00`).toISOString();
-      await axios.post(`${API_BASE}/bookings`, { profileId: activeProfileId, title: newBookingForm.title, startTime, endTime },
+      await axios.post(`${API_BASE}/bookings`, { 
+        profileId: activeProfileId, 
+        title: newBookingForm.title, 
+        startTime, 
+        endTime,
+        locationType: newBookingForm.locationType || 'incall'
+      },
         { headers: { Authorization: `Bearer ${token}` } });
       setBookingModalOpen(false);
-      setNewBookingForm({ title: '', date: new Date().toISOString().split('T')[0], startTime: '10:00', endTime: '11:00' });
+      setNewBookingForm({ title: '', date: new Date().toISOString().split('T')[0], startTime: '10:00', endTime: '11:00', locationType: 'incall' });
       await fetchBookings(activeProfileId);
     } catch (e) { console.error('[Booking] create error:', e.message); }
   }, [newBookingForm, activeProfileId, API_BASE, token, fetchBookings]);
@@ -6246,6 +6261,48 @@ function App() {
               <div>
                 <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{lang === 'cz' ? 'DATUM' : 'DATE'}</label>
                 <input type="date" value={newBookingForm.date} onChange={e => setNewBookingForm(p => ({ ...p, date: e.target.value }))} style={{ width: '100%', marginTop: '0.5rem', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontSize: '0.95rem', colorScheme: 'dark' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{lang === 'cz' ? 'TYP SCHŮZKY' : 'LOCATION TYPE'}</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.5rem' }}>
+                  <button 
+                    onClick={() => setNewBookingForm(p => ({ ...p, locationType: 'incall' }))}
+                    style={{ 
+                      padding: '0.75rem', 
+                      borderRadius: '10px', 
+                      border: '1px solid var(--card-border)', 
+                      background: newBookingForm.locationType === 'incall' ? 'var(--accent-color)' : 'rgba(255,255,255,0.05)',
+                      color: 'white',
+                      fontWeight: '700',
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    Incall
+                  </button>
+                  <button 
+                    onClick={() => setNewBookingForm(p => ({ ...p, locationType: 'outcall' }))}
+                    style={{ 
+                      padding: '0.75rem', 
+                      borderRadius: '10px', 
+                      border: '1px solid var(--card-border)', 
+                      background: newBookingForm.locationType === 'outcall' ? 'var(--accent-color)' : 'rgba(255,255,255,0.05)',
+                      color: 'white',
+                      fontWeight: '700',
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    Outcall
+                  </button>
+                </div>
+                <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.5rem', fontStyle: 'italic' }}>
+                  {newBookingForm.locationType === 'outcall' 
+                    ? (lang === 'cz' ? '💡 Outcall: GPS tracking aktivní celou dobu.' : '💡 Outcall: GPS tracking active throughout.')
+                    : (lang === 'cz' ? '🛡️ Incall: GPS tracking jen při emergency alertu.' : '🛡️ Incall: GPS tracking only on emergency.')}
+                </p>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div>

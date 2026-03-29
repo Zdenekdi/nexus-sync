@@ -25,7 +25,7 @@ exports.getBookings = async (req, res) => {
 // POST /api/bookings
 exports.createBooking = async (req, res) => {
   try {
-    const { profileId, title, startTime, endTime } = req.body;
+    const { profileId, title, startTime, endTime, locationType } = req.body;
     const { role, agencyId } = req.user;
     const isAppOwner = role?.isAppOwner;
 
@@ -47,6 +47,7 @@ exports.createBooking = async (req, res) => {
         title,
         startTime: new Date(startTime),
         endTime: new Date(endTime),
+        locationType: locationType || 'incall',
         status: 'confirmed'
       },
       include: { profile: { select: { id: true, name: true } } }
@@ -64,7 +65,7 @@ exports.createBooking = async (req, res) => {
 exports.updateBooking = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, startTime, endTime, status } = req.body;
+    const { title, startTime, endTime, status, locationType } = req.body;
     const { agencyId } = req.user;
 
     const existing = await prisma.booking.findUnique({ where: { id } });
@@ -78,6 +79,7 @@ exports.updateBooking = async (req, res) => {
         ...(title && { title }),
         ...(startTime && { startTime: new Date(startTime) }),
         ...(endTime && { endTime: new Date(endTime) }),
+        ...(locationType && { locationType }),
         ...(status && { status })
       }
     });
