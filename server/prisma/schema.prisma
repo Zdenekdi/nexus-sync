@@ -19,6 +19,10 @@ model Agency {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
+  referralCode String? @unique
+  referrals   Referral[] @relation("AgencyReferrer")
+  referralOf  Referral?  @relation("AgencyReferred")
+
   users     User[]
   roles     Role[]
   profiles  Profile[]
@@ -112,6 +116,8 @@ model Profile {
   callLogs    CallLog[]
   bookings    Booking[]
   sessions    SafetySession[]
+  qaRecords   QaRecord[]
+  icalUrl     String?
   deviceBindings DeviceBinding[]
   assignees   User[]    @relation("ProfileAssignees")
   createdAt   DateTime  @default(now())
@@ -251,4 +257,53 @@ model InventoryItem {
 
   @@index([agencyId])
   @@index([locationId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  agencyId  String?
+  agency    Agency?  @relation(fields: [agencyId], references: [id])
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String   
+  details   String?  
+  timestamp DateTime @default(now())
+
+  @@index([agencyId])
+}
+
+model QaRecord {
+  id        String   @id @default(cuid())
+  profileId String
+  profile   Profile  @relation(fields: [profileId], references: [id])
+  rating    Int      @default(5)
+  comment   String?
+  category  String?  
+  createdAt DateTime @default(now())
+
+  @@index([profileId])
+}
+
+model Referral {
+  id           String   @id @default(cuid())
+  referrerId   String
+  referrer     Agency   @relation("AgencyReferrer", fields: [referrerId], references: [id])
+  referredId   String   @unique
+  referred     Agency   @relation("AgencyReferred", fields: [referredId], references: [id])
+  status       String   @default("pending") 
+  rewardAmount Float    @default(0)
+  createdAt    DateTime @default(now())
+
+  @@index([referrerId])
+}
+
+model DailyStat {
+  id           String   @id @default(cuid())
+  agencyId     String
+  date         DateTime 
+  revenue      Float    @default(0)
+  bookingsCount Int      @default(0)
+  activeProfiles Int     @default(0)
+
+  @@unique([agencyId, date])
 }
