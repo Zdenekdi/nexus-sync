@@ -197,6 +197,33 @@ class SafetyController {
             res.status(500).json({ message: 'Failed to fetch session' });
         }
     }
+    /**
+     * Client departure not confirmed in time → escalate
+     */
+    async departureTimeout(req, res) {
+        try {
+            const { id } = req.params;
+            const result = await safetyService.escalateSession(id, 'departure_timeout');
+            res.json(result);
+        } catch (error) {
+            logger.error('Departure timeout escalation failed:', error);
+            res.status(500).json({ message: 'Departure timeout escalation failed' });
+        }
+    }
+
+    /**
+     * Model confirmed client has left — safe
+     */
+    async departureConfirmed(req, res) {
+        try {
+            const { id } = req.params;
+            // Just mark session with a note, session is already RESOLVED after checkout
+            logger.info(`Departure confirmed for session ${id}`);
+            res.json({ ok: true, sessionId: id });
+        } catch (error) {
+            res.status(500).json({ message: 'Departure confirmation failed' });
+        }
+    }
 }
 
 module.exports = new SafetyController();

@@ -18,4 +18,8 @@ router.post('/sessions/:id/ack', (req, res) => safetyController.acknowledgeSessi
 router.post('/sessions/:id/panic', (req, res) => safetyController.triggerPanic(req, res));
 router.post('/sessions/:id/location', (req, res) => safetyController.updateLocation(req, res));
 
+// Client Departure
+router.post('/sessions/:id/departure-timeout', (req, res) => safetyController.departureTimeout(req, res));
+router.post('/sessions/:id/departure-confirmed', (req, res) => safetyController.departureConfirmed(req, res));
+
 module.exports = router;
