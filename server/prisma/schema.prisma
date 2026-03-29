@@ -30,6 +30,27 @@ model Agency {
   pushDevices PushDevice[]
   deviceBindings DeviceBinding[]
   auditLogs  AuditLog[]
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id           String   @id @default(cuid())
+  agencyId     String
+  agency       Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  plan         String   // MONTHLY | SEMI_ANNUAL | ANNUAL
+  status       String   @default("ACTIVE") // ACTIVE | EXPIRED | CANCELLED | TRIAL
+  startedAt    DateTime @default(now())
+  expiresAt    DateTime
+  cancelledAt  DateTime?
+  amountPaid   Float?
+  currency     String   @default("CZK")
+  paymentRef   String?  // external payment ID (GoPay, Stripe, etc.)
+  note         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([agencyId])
+  @@index([status])
 }
 
 model Role {

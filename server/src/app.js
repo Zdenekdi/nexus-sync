@@ -28,6 +28,7 @@ const vultrRoutes = require('./routes/vultrRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
 const notesRoutes = require('./routes/notesRoutes');
+const subscriptionRoutes = require('./routes/subscriptionRoutes');
 
 const app = express();
 
@@ -129,6 +130,7 @@ app.use('/api/vultr', vultrRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/notes', notesRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 
 // Basic health check
 app.get('/health', (req, res) => {
