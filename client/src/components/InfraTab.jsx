@@ -24,7 +24,7 @@ import {
 function InfraTab({ t }) {
   const { status, bandwidth, stats, loading, cmdOutput, clearCmdOutput, error, serverAction, runCommand, gitPull, apkInfo, uploadApk, uploadProgress } = useVultr();
   const [command, setCommand] = useState("");
-  const [repoPath, setRepoPath] = useState("~/app");
+  const [repoPath, setRepoPath] = useState("~/nexus-backend");
   const [apkError, setApkError] = useState(null);
   const [apkSuccess, setApkSuccess] = useState(false);
   const [apkVersion, setApkVersion] = useState("1.0");
