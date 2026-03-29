@@ -207,6 +207,9 @@ function App() {
   const [sessions, setSessions] = useState([]);
   const [typingProfiles, setTypingProfiles] = useState({});
   const [isShiftActive, setIsShiftActive] = useState(true);
+  const [activeSubscription, setActiveSubscription] = useState(null);
+  const [subscriptionHistory, setSubscriptionHistory] = useState([]);
+  const [isStartingSubscription, setIsStartingSubscription] = useState(false);
   const [subscriptionPlans] = useState([
     {
       id: 'basic',
@@ -1556,6 +1559,18 @@ function App() {
       fetchAgencySettings();
     }
   }, [activeTab, fetchAgencySettings]);
+
+  useEffect(() => {
+    if (activeTab !== 'plans' || !token) return;
+    const headers = { Authorization: `Bearer ${token}` };
+    axios.get(`${API_BASE}/subscriptions/current`, { headers })
+      .then(r => setActiveSubscription(r.data))
+      .catch(() => {});
+    axios.get(`${API_BASE}/subscriptions/history`, { headers })
+      .then(r => setSubscriptionHistory(r.data || []))
+      .catch(() => {});
+  }, [activeTab, token, API_BASE]);
+
 
   const handleSaveAssignees = async (profileId, userIds) => {
     try {
@@ -5752,18 +5767,133 @@ function App() {
           />
         )}
 
-        {/* Subscription Plans (Phase 4/9) */}
-        {activeTab === 'plans' && rolePermissions[activeRole]?.plans && (
-          <PlansDashboard
-            lang={lang}
-            t={t}
-            subscriptionPlans={subscriptionPlans}
-            activeMarket={activeMarket}
-            setActiveMarket={setActiveMarket}
-            activeOperator={activeOperator}
-            currentAgency={currentAgency}
-          />
-        )}
+        {/* Subscription / Billing */}
+        {activeTab === 'plans' && rolePermissions[activeRole]?.plans && (() => {
+          const PLANS = [
+            { id: 'MONTHLY',     label: lang === 'cz' ? 'Měsíční'  : 'Monthly',     price: 990,   priceFmt: '990 Kč',    days: 30,  save: 0 },
+            { id: 'SEMI_ANNUAL', label: lang === 'cz' ? 'Půlroční' : 'Semi-Annual', price: 5490,  priceFmt: '5 490 Kč',  days: 182, save: 8 },
+            { id: 'ANNUAL',      label: lang === 'cz' ? 'Roční'    : 'Annual',      price: 9990,  priceFmt: '9 990 Kč',  days: 365, save: 16 },
+          ];
+          const now = new Date();
+          const daysLeft = activeSubscription ? Math.max(0, Math.ceil((new Date(activeSubscription.expiresAt) - now) / 86400000)) : 0;
+          const statusColor = !activeSubscription ? '#6b7280' : activeSubscription.status === 'ACTIVE' ? '#10b981' : activeSubscription.status === 'TRIAL' ? '#f59e0b' : '#ef4444';
+
+          const handleStart = async (planId) => {
+            setIsStartingSubscription(true);
+            try {
+              const r = await axios.post(`${API_BASE}/subscriptions/start`, { plan: planId }, { headers: { Authorization: `Bearer ${token}` } });
+              setActiveSubscription(r.data);
+              setSubscriptionHistory(prev => [r.data, ...prev]);
+            } catch (e) { console.error(e); }
+            finally { setIsStartingSubscription(false); }
+          };
+          const handleCancel = async () => {
+            if (!window.confirm(lang === 'cz' ? 'Opravdu zrušit předplatné?' : 'Cancel subscription?')) return;
+            try {
+              await axios.post(`${API_BASE}/subscriptions/cancel`, {}, { headers: { Authorization: `Bearer ${token}` } });
+              setActiveSubscription(null);
+            } catch (e) { console.error(e); }
+          };
+
+          return (
+            <div className="fade-in" style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: 'auto' }}>
+              <div style={{ maxWidth: '760px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+
+                {/* Current status card */}
+                <div className="glass-card" style={{ padding: '2rem', borderTop: `3px solid ${statusColor}` }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.1em', marginBottom: '0.4rem' }}>
+                        {lang === 'cz' ? 'AKTUÁLNÍ PŘEDPLATNÉ' : 'CURRENT SUBSCRIPTION'}
+                      </div>
+                      {activeSubscription ? (
+                        <>
+                          <div style={{ fontSize: '1.6rem', fontWeight: '900' }}>{PLANS.find(p => p.id === activeSubscription.plan)?.label || activeSubscription.plan}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                            <span style={{ background: `rgba(${statusColor === '#10b981' ? '16,185,129' : statusColor === '#f59e0b' ? '245,158,11' : '239,68,68'},0.15)`, color: statusColor, border: `1px solid ${statusColor}`, padding: '0.2rem 0.6rem', borderRadius: '6px', fontSize: '0.68rem', fontWeight: '800' }}>
+                              {activeSubscription.status}
+                            </span>
+                            <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                              {lang === 'cz' ? 'Vyprší za' : 'Expires in'} <strong style={{ color: daysLeft <= 7 ? '#ef4444' : 'white' }}>{daysLeft} {lang === 'cz' ? 'dní' : 'days'}</strong>
+                            </span>
+                            <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                              ({new Date(activeSubscription.expiresAt).toLocaleDateString(lang === 'cz' ? 'cs-CZ' : 'en-GB')})
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <div style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                          {lang === 'cz' ? 'Žádné aktivní předplatné' : 'No active subscription'}
+                        </div>
+                      )}
+                    </div>
+                    {activeSubscription && (
+                      <button onClick={handleCancel} style={{ padding: '0.5rem 1rem', borderRadius: '10px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.35)', color: '#ef4444', fontWeight: '800', fontSize: '0.78rem', cursor: 'pointer' }}>
+                        {lang === 'cz' ? 'Zrušit' : 'Cancel'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Plan picker */}
+                <div>
+                  <h3 style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <CreditCard size={18} color="var(--accent-color)" /> {lang === 'cz' ? 'Vybrat / obnovit plán' : 'Select / renew plan'}
+                  </h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1rem' }}>
+                    {PLANS.map(plan => {
+                      const isActive = activeSubscription?.plan === plan.id && activeSubscription?.status === 'ACTIVE';
+                      return (
+                        <div key={plan.id} className="glass-card" style={{ padding: '1.5rem', border: isActive ? '2px solid var(--accent-color)' : '1px solid var(--card-border)', position: 'relative', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                          {isActive && <div style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', background: 'var(--accent-color)', color: 'white', padding: '0.18rem 0.55rem', borderRadius: '6px', fontSize: '0.62rem', fontWeight: '900' }}>AKTIVNÍ</div>}
+                          {plan.save > 0 && <div style={{ position: 'absolute', top: isActive ? '2.2rem' : '0.75rem', right: '0.75rem', background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', padding: '0.18rem 0.55rem', borderRadius: '6px', fontSize: '0.6rem', fontWeight: '900' }}>-{plan.save}%</div>}
+                          <div>
+                            <div style={{ fontWeight: '900', fontSize: '1rem', marginBottom: '0.2rem' }}>{plan.label}</div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{plan.days} {lang === 'cz' ? 'dní' : 'days'}</div>
+                          </div>
+                          <div style={{ fontSize: '1.5rem', fontWeight: '900', color: 'var(--accent-color)' }}>{plan.priceFmt}</div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                            ≈ {Math.round(plan.price / plan.days * 30)} Kč / {lang === 'cz' ? 'měsíc' : 'month'}
+                          </div>
+                          <button onClick={() => handleStart(plan.id)} disabled={isStartingSubscription || isActive} style={{ marginTop: 'auto', padding: '0.6rem', borderRadius: '10px', background: isActive ? 'rgba(59,130,246,0.08)' : 'var(--accent-color)', color: isActive ? 'var(--accent-color)' : 'white', border: isActive ? '1px solid rgba(59,130,246,0.3)' : 'none', fontWeight: '800', fontSize: '0.8rem', cursor: isActive ? 'default' : 'pointer', opacity: isStartingSubscription ? 0.5 : 1 }}>
+                            {isActive ? (lang === 'cz' ? '✓ Aktivní' : '✓ Active') : (lang === 'cz' ? 'Aktivovat' : 'Subscribe')}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* History */}
+                {subscriptionHistory.length > 0 && (
+                  <div>
+                    <h3 style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: '800' }}>{lang === 'cz' ? 'Historie' : 'History'}</h3>
+                    <div className="glass-card" style={{ overflow: 'hidden' }}>
+                      {subscriptionHistory.map((s, i) => (
+                        <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem 1.25rem', borderBottom: i < subscriptionHistory.length - 1 ? '1px solid var(--card-border)' : 'none', flexWrap: 'wrap', gap: '0.5rem' }}>
+                          <div>
+                            <div style={{ fontWeight: '700', fontSize: '0.85rem' }}>{PLANS.find(p => p.id === s.plan)?.label || s.plan}</div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{new Date(s.startedAt).toLocaleDateString()} → {new Date(s.expiresAt).toLocaleDateString()}</div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            {s.amountPaid != null && <div style={{ fontWeight: '700', fontSize: '0.85rem' }}>{s.amountPaid} {s.currency}</div>}
+                            <span style={{ padding: '0.15rem 0.5rem', borderRadius: '5px', fontSize: '0.62rem', fontWeight: '800', background: s.status === 'ACTIVE' ? 'rgba(16,185,129,0.15)' : s.status === 'TRIAL' ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.06)', color: s.status === 'ACTIVE' ? '#10b981' : s.status === 'TRIAL' ? '#f59e0b' : 'var(--text-secondary)' }}>{s.status}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Marketing pricing plans below */}
+                <div style={{ borderTop: '1px solid var(--card-border)', paddingTop: '2rem' }}>
+                  <PlansDashboard lang={lang} t={t} subscriptionPlans={subscriptionPlans} activeMarket={activeMarket} setActiveMarket={setActiveMarket} activeOperator={activeOperator} currentAgency={currentAgency} />
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
 
         {/* Removed redundant QA Hub block */}
       </main>
