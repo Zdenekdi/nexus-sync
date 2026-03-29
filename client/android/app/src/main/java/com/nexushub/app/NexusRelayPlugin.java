@@ -571,6 +571,15 @@ public class NexusRelayPlugin extends Plugin {
     }
 
     private static void forwardDataNative(final String baseUrl, final String deviceId, final String installationId, final String type, final String from, final String content) {
+        // Acquire WakeLock to keep CPU alive during native forward (screen-off safe)
+        android.os.PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+        final PowerManager.WakeLock wakeLock = pm != null
+            ? pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "NexusHub:NativeForward")
+            : null;
+        if (wakeLock != null) {
+            wakeLock.acquire(15_000L); // 15s max (HTTP timeout is 12s)
+        }
+
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -619,6 +628,10 @@ public class NexusRelayPlugin extends Plugin {
                     conn.disconnect();
                 } catch (Exception e) {
                     android.util.Log.e("NexusRelay", "Native Forward Error", e);
+                } finally {
+                    if (wakeLock != null && wakeLock.isHeld()) {
+                        wakeLock.release();
+                    }
                 }
             }
         }).start();
