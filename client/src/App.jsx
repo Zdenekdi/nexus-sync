@@ -3666,7 +3666,7 @@ function App() {
                   {/* Stable Debug Chat Detail */}
                   {selectedChat ? (
                     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', minHeight: 0 }}>
-                      <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-color)' }}>
+                      <div style={{ padding: isMobile ? '0.75rem 1rem' : '1.5rem 2rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-color)', flexShrink: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                           {isMobile && <button onClick={() => setMobileView('list')} style={{ background: 'none', border: 'none', color: 'white' }}><ChevronLeft size={24} /></button>}
                           <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.9rem' }}>
@@ -3696,12 +3696,12 @@ function App() {
                            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Loading history...</div>
                          ) : chatMessages.length > 0 ? (
                            chatMessages.map((msg, i) => (
-                             <div key={msg.id || i} className={msg.direction === 'OUTBOUND' ? 'message-bubble-out' : 'message-bubble-in'} style={{ alignSelf: msg.direction === 'OUTBOUND' ? 'flex-end' : 'flex-start', marginBottom: '1rem' }}>
-                               <div style={{ fontSize: '0.95rem' }}>{msg.text}</div>
-                               <div style={{ fontSize: '0.65rem', opacity: 0.6, marginTop: '4px', textAlign: 'right' }}>
+                             <div key={msg.id || i} className={msg.direction === 'OUTBOUND' ? 'message-bubble-out' : 'message-bubble-in'} style={{ alignSelf: msg.direction === 'OUTBOUND' ? 'flex-end' : 'flex-start', marginBottom: isMobile ? '0.35rem' : '0.6rem' }}>
+                               <div style={{ fontSize: isMobile ? '0.88rem' : '0.95rem' }}>{msg.text}</div>
+                               <div style={{ fontSize: '0.62rem', opacity: 0.5, marginTop: '2px', textAlign: 'right' }}>
                                  {new Date(msg.createdAt).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' })}
                                </div>
-                                                          </div>
+                             </div>
                            ))
                          ) : (
                            <div className="message-bubble-in" style={{ marginBottom: '1rem' }}>{selectedChat.text}</div>
@@ -5674,24 +5674,34 @@ function App() {
         .avatar-circle { width: 48px; height: 48px; background: rgba(59, 130, 246, 0.1); border-radius: 50%; display: flex; alignItems: center; justifyContent: center; }
         .message-bubble-in { 
           align-self: flex-start; 
-          max-width: 75%; 
-          background: rgba(255, 255, 255, 0.04); 
-          padding: 0.8rem 1.2rem; 
-          border-radius: 18px 18px 18px 4px; 
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          max-width: 78%;
+          background: rgba(255, 255, 255, 0.07); 
+          padding: 0.65rem 0.95rem; 
+          border-radius: 4px 18px 18px 18px; 
+          border: 1px solid rgba(255, 255, 255, 0.08);
           color: #e2e8f0;
+          font-size: 0.93rem;
+          line-height: 1.4;
           word-break: break-word;
-          backdrop-filter: blur(10px);
         }
         .message-bubble-out { 
           align-self: flex-end; 
-          max-width: 75%; 
-          background: var(--accent-gradient); 
-          padding: 0.8rem 1.2rem; 
-          border-radius: 18px 18px 4px 18px; 
-          color: white; 
-          box-shadow: 0 4px 15px var(--accent-glow); 
+          max-width: 78%;
+          background: linear-gradient(135deg, #3b82f6, #6366f1);
+          padding: 0.65rem 0.95rem; 
+          border-radius: 18px 4px 18px 18px; 
+          color: white;
+          font-size: 0.93rem;
+          line-height: 1.4;
+          box-shadow: 0 2px 8px rgba(99,102,241,0.35);
           word-break: break-word;
+        }
+        @media (max-width: 768px) {
+          .message-bubble-in, .message-bubble-out {
+            max-width: 82%;
+            padding: 0.55rem 0.8rem;
+            font-size: 0.88rem;
+          }
         }
         .suggestion-chip { background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); color: var(--text-secondary); padding: 0.6rem 1rem; borderRadius: 12px; font-size: 0.85rem; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
         .suggestion-chip:hover { background: rgba(59, 130, 246, 0.1); border-color: var(--accent-color); color: white; }
