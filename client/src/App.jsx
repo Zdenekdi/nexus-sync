@@ -6003,8 +6003,8 @@ function App() {
         </div>
       )}
 
-      {/* Floating Panic Button - Models Only */}
-      {activeOperator?.isModel && !isRelayMode && (
+      {/* Floating Panic Button - Models / Field Staff Only */}
+      {(activeOperator?.isModel || (isMobile && activeOperator && !activeOperator?.isAppOwner && !activeOperator?.isAdmin && !activeOperator?.isManager)) && !isRelayMode && (
         <button
           onContextMenu={(e) => { e.preventDefault(); handlePanic(); }} // Long press simulator for desktop
           onClick={() => setShowPanicConfirm(true)}
