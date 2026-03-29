@@ -3019,7 +3019,7 @@ function App() {
 
   const renderMobileHeader = () => (
     <header className="mobile-app-header" style={{
-      paddingTop: 'calc(env(safe-area-inset-top, 30px) + 1.25rem)',
+      paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1.25rem)',
       paddingBottom: '1.25rem',
       paddingLeft: '1.25rem',
       paddingRight: '1.25rem',
