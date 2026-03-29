@@ -546,14 +546,16 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       const smsListener = window.Capacitor.Plugins.NexusRelay.addListener('onSmsReceived', (data) => {
         try {
           addLocalLog('sms', data.from, data.body, 'inbound', 'pending');
-          // Auto-confirm after 4s: if native plugin doesn't fire relay_event, refresh from server
-          setTimeout(() => { try { refreshLogs(); } catch (e) {} }, 4000);
+          // If native plugin doesn't confirm via relay_event, auto-confirm after 4s
+          const capturedFrom = data.from;
+          setTimeout(() => { try { updateLogStatus(capturedFrom, 'forwarded'); } catch (e) {} }, 4000);
         } catch (e) { console.error('[Relay] onSmsReceived error:', e); }
       });
       const rcsListener = window.Capacitor.Plugins.NexusRelay.addListener('onRcsReceived', (data) => {
         try {
           addLocalLog('rcs', data.from, data.body, 'inbound', 'pending');
-          setTimeout(() => { try { refreshLogs(); } catch (e) {} }, 4000);
+          const capturedFrom = data.from;
+          setTimeout(() => { try { updateLogStatus(capturedFrom, 'forwarded'); } catch (e) {} }, 4000);
         } catch (e) { console.error('[Relay] onRcsReceived error:', e); }
       });
       const callListener = window.Capacitor.Plugins.NexusRelay.addListener('onCallStateChanged', (data) => {
