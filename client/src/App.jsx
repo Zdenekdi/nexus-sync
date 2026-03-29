@@ -4001,6 +4001,7 @@ function App() {
                          </div>
                       </div>
                     </div>
+                    </div>
                   ) : (
                     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
                       <div>
