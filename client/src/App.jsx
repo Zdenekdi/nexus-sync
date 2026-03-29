@@ -183,12 +183,8 @@ function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mobileView, setMobileView] = useState('sidebar');
   const [incomingCall, setIncomingCall] = useState(null);
-  const [clientNotes, setClientNotes] = useState(() => {
-    try {
-      const saved = localStorage.getItem('nexus_client_notes');
-      return saved ? JSON.parse(saved) : {};
-    } catch { return {}; }
-  });
+  const [clientNotes, setClientNotes] = useState({});
+
   const [rolePermissions, setRolePermissions] = useState(DEFAULT_ROLE_PERMISSIONS);
   const [notifications, setNotifications] = useState(() => {
     const saved = localStorage.getItem('nexus_notifications');
@@ -259,9 +255,8 @@ function App() {
     localStorage.setItem('nexus_notifications', JSON.stringify(notifications.slice(0, 50)));
   }, [notifications]);
 
-  useEffect(() => {
-    localStorage.setItem('nexus_client_notes', JSON.stringify(clientNotes));
-  }, [clientNotes]);
+  // Notes are now stored in DB – no localStorage sync needed
+
 
   useEffect(() => {
     localStorage.setItem('nexus_activeTab', activeTab);
@@ -2613,17 +2608,37 @@ function App() {
     setEditingProfileData(null);
   }, [editingProfileData, API_BASE, token]);
 
-  const handleSaveNote = useCallback(() => {
-    if (!internalNote.trim() || !selectedChat?.from) return;
-    setClientNotes(prev => ({
-      ...prev,
-      [selectedChat.from]: [
-        ...(prev[selectedChat.from] || []),
-        { id: Date.now(), text: internalNote, author: activeOperator?.name || 'Operator', timestamp: new Date().toLocaleString() }
-      ]
-    }));
-    setInternalNote('');
-  }, [internalNote, selectedChat, activeOperator]);
+  // Auto-fetch notes from DB when opening a chat
+  useEffect(() => {
+    if (!selectedChat?.from || !activeProfileId || !token) return;
+    const phone = selectedChat.from;
+    if (clientNotes[phone]) return; // already loaded for this chat
+    axios.get(`${API_BASE}/notes/${encodeURIComponent(phone)}?profileId=${activeProfileId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then(res => {
+      setClientNotes(prev => ({ ...prev, [phone]: res.data }));
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedChat?.from, activeProfileId, token]);
+
+  const handleSaveNote = useCallback(async () => {
+    if (!internalNote.trim() || !selectedChat?.from || !activeProfileId) return;
+    try {
+      const res = await axios.post(`${API_BASE}/notes`, {
+        clientPhone: selectedChat.from,
+        text: internalNote,
+        profileId: activeProfileId,
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      setClientNotes(prev => ({
+        ...prev,
+        [selectedChat.from]: [res.data, ...(prev[selectedChat.from] || [])]
+      }));
+      setInternalNote('');
+    } catch (err) {
+      console.error('[Notes] save error:', err.message);
+    }
+  }, [internalNote, selectedChat, activeProfileId, API_BASE, token]);
+
 
   // ── Booking API integration ─────────────────────────────────────────────────
   const fetchBookings = useCallback(async (profileId) => {
@@ -2754,12 +2769,18 @@ function App() {
   }, [activeProfileId, token, fetchBookings]);
 
 
-  const handleDeleteNote = useCallback((from, noteId) => {
-    setClientNotes(prev => ({
-      ...prev,
-      [from]: (prev[from] || []).filter(n => n.id !== noteId)
-    }));
-  }, []);
+  const handleDeleteNote = useCallback(async (from, noteId) => {
+    try {
+      await axios.delete(`${API_BASE}/notes/${noteId}`, { headers: { Authorization: `Bearer ${token}` } });
+      setClientNotes(prev => ({
+        ...prev,
+        [from]: (prev[from] || []).filter(n => n.id !== noteId)
+      }));
+    } catch (err) {
+      console.error('[Notes] delete error:', err.message);
+    }
+  }, [API_BASE, token]);
+
 
   const totalUnread = useMemo(() =>
     messages?.filter(msg =>
