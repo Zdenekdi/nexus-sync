@@ -923,6 +923,7 @@ function App() {
   });
   const [bookingSchedule, setBookingSchedule] = useState([]);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [selectedScheduleEvent, setSelectedScheduleEvent] = useState(null);
   const [newBookingForm, setNewBookingForm] = useState({ title: '', date: new Date().toISOString().split('T')[0], startTime: '10:00', endTime: '11:00' });
   const [calViewDate, setCalViewDate] = useState(new Date());
   const [bioLang, setBioLang] = useState('EN');
@@ -4039,15 +4040,17 @@ function App() {
                         };
                         return timeToMins(a.time) - timeToMins(b.time);
                       }).map((event, idx) => (
-                        <div key={idx} style={{ 
+                        <div key={idx} onClick={() => isMobile && setSelectedScheduleEvent(event)} style={{ 
                           display: 'flex', 
                           alignItems: 'center', 
                           gap: isMobile ? '1rem' : '1.5rem', 
                           padding: isMobile ? '1rem' : '1.25rem', 
-                          background: 'rgba(255,255,255,0.02)', 
+                          background: activeTimerEvent?.id === event.id ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.02)', 
                           borderRadius: '16px', 
-                          border: '1px solid var(--card-border)',
-                          borderLeft: `4px solid ${event.type === 'work' ? 'var(--accent-color)' : 'var(--warning-color)'}`
+                          border: `1px solid ${activeTimerEvent?.id === event.id ? 'rgba(16,185,129,0.3)' : 'var(--card-border)'}`,
+                          borderLeft: `4px solid ${event.type === 'work' ? 'var(--accent-color)' : 'var(--warning-color)'}`,
+                          cursor: isMobile ? 'pointer' : 'default',
+                          userSelect: 'none'
                         }}>
                           <div style={{ width: isMobile ? '70px' : '80px', flexShrink: 0 }}>
                             <div style={{ fontWeight: '800', fontSize: isMobile ? '1rem' : '1.1rem' }}>{event.time}</div>
@@ -5725,6 +5728,57 @@ function App() {
         .toggle-switch.active { box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
         .toggle-switch:hover { border-color: var(--accent-color) !important; }
       `}</style>
+
+      {/* Mobile Schedule Bottom Sheet */}
+      {isMobile && selectedScheduleEvent && (
+        <div
+          onClick={() => setSelectedScheduleEvent(null)}
+          style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'flex-end' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ width: '100%', background: 'var(--bg-secondary, #0f1117)', borderRadius: '24px 24px 0 0', padding: '1.5rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom, 0px))', boxShadow: '0 -8px 40px rgba(0,0,0,0.5)' }}
+          >
+            {/* Handle */}
+            <div style={{ width: '40px', height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.2)', margin: '0 auto 1.25rem' }} />
+            {/* Event info */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <div style={{ fontSize: '1.2rem', fontWeight: '900', marginBottom: '0.3rem' }}>{selectedScheduleEvent.title}</div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span>🕐 {selectedScheduleEvent.time}</span>
+                <span>⏱ {selectedScheduleEvent.duration}</span>
+                <span style={{ color: activeTimerEvent?.id === selectedScheduleEvent.id ? '#10b981' : 'var(--text-secondary)' }}>
+                  {activeTimerEvent?.id === selectedScheduleEvent.id ? '● ACTIVE' : selectedScheduleEvent.status?.toUpperCase()}
+                </span>
+              </div>
+            </div>
+            {/* Action buttons */}
+            {activeTimerEvent?.id === selectedScheduleEvent.id ? (
+              <button
+                onClick={() => { handleCheckOut(); setSelectedScheduleEvent(null); }}
+                disabled={isSafetyLoading}
+                style={{ width: '100%', padding: '1.1rem', borderRadius: '16px', background: '#10b981', border: 'none', color: 'white', fontSize: '1.1rem', fontWeight: '900', cursor: 'pointer', letterSpacing: '0.05em', marginBottom: '0.75rem' }}
+              >
+                ✓ CHECK-OUT
+              </button>
+            ) : (
+              <button
+                onClick={() => { handleCheckIn(selectedScheduleEvent); setSelectedScheduleEvent(null); }}
+                disabled={isTimerActive}
+                style={{ width: '100%', padding: '1.1rem', borderRadius: '16px', background: isTimerActive ? 'rgba(255,255,255,0.06)' : 'var(--accent-color)', border: 'none', color: 'white', fontSize: '1.1rem', fontWeight: '900', cursor: isTimerActive ? 'not-allowed' : 'pointer', opacity: isTimerActive ? 0.5 : 1, letterSpacing: '0.05em', marginBottom: '0.75rem' }}
+              >
+                ▶ CHECK-IN
+              </button>
+            )}
+            <button
+              onClick={() => setSelectedScheduleEvent(null)}
+              style={{ width: '100%', padding: '0.85rem', borderRadius: '16px', background: 'rgba(255,255,255,0.06)', border: 'none', color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: '700', cursor: 'pointer' }}
+            >
+              Zavřít
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Floating Panic Button - Models Only */}
       {activeOperator?.isModel && !isRelayMode && (
