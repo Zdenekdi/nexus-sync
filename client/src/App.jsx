@@ -3637,7 +3637,7 @@ function App() {
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.1)', minWidth: 0 }}>
                   {/* Stable Debug Chat Detail */}
                   {selectedChat ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', minHeight: 0 }}>
                       <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-color)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                           {isMobile && <button onClick={() => setMobileView('list')} style={{ background: 'none', border: 'none', color: 'white' }}><ChevronLeft size={24} /></button>}
@@ -3663,7 +3663,7 @@ function App() {
                           const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
                           isUserScrolled.current = distFromBottom > 100;
                         }}
-                        style={{ flex: 1, padding: '3rem 2rem', overflowY: 'auto', background: 'rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        style={{ flex: 1, padding: isMobile ? '1rem' : '3rem 2rem', overflowY: 'auto', WebkitOverflowScrolling: 'touch', background: 'rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', gap: '0.75rem', minHeight: 0 }}>
                          {isHistoryLoading && chatMessages.length === 0 ? (
                            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Loading history...</div>
                          ) : chatMessages.length > 0 ? (
