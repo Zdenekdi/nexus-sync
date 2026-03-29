@@ -941,6 +941,12 @@ function App() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [safetyAlarmTriggered, setSafetyAlarmTriggered] = useState(false);
+  const [departureCheckActive, setDepartureCheckActive] = useState(false);
+  const [departureTimeLeft, setDepartureTimeLeft] = useState(0);
+  const [departureSessionId, setDepartureSessionId] = useState(null);
+  const [departureIntervalMin, setDepartureIntervalMin] = useState(
+    () => parseInt(localStorage.getItem('nexus_departure_interval') || '15', 10)
+  );
 
   // Safety Guard Timer Logic
   useEffect(() => {
@@ -978,6 +984,45 @@ function App() {
       playNotificationSound('emergency');
     }
   }, [timeLeft, isTimerActive, addNotification, playNotificationSound]);
+
+  // Repeating alarm every 40s during overtime — vibrate + sound + native push
+  useEffect(() => {
+    if (!safetyAlarmTriggered) return;
+    const fire = () => {
+      playNotificationSound('emergency');
+      try { navigator.vibrate?.([600, 200, 600, 200, 600]); } catch (_) {}
+      // Native push for background
+      if (window.Notification?.permission === 'granted' && document.hidden) {
+        try { new window.Notification('⏰ SESSION ENDED', { body: 'Prosím proveď CHECK-OUT!', tag: 'safety-alarm', requireInteraction: true }); } catch (_) {}
+      }
+    };
+    fire(); // immediate first fire
+    const interval = setInterval(fire, 40000);
+    return () => clearInterval(interval);
+  }, [safetyAlarmTriggered, playNotificationSound]);
+
+  // Departure countdown — ticks every second, escalates at 0
+  useEffect(() => {
+    if (!departureCheckActive || departureTimeLeft <= 0) return;
+    const tick = setInterval(() => {
+      setDepartureTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(tick);
+          // Auto-escalate
+          if (departureSessionId) {
+            axios.post(`${API_BASE}/safety/sessions/${departureSessionId}/departure-timeout`, {}, {
+              headers: { Authorization: `Bearer ${token}` }
+            }).catch(e => console.warn('[Departure] escalation failed', e));
+          }
+          setDepartureCheckActive(false);
+          addNotification({ title: '🚨 Odchod klienta nepotvrzeno', message: 'Bezpečnostní alert odeslán operátorce a managerce.', priority: 'emergency', timestamp: new Date().toLocaleTimeString('cs-CZ', { timeZone: 'Europe/Prague' }), read: false });
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(tick);
+  }, [departureCheckActive, departureTimeLeft, departureSessionId, API_BASE, token, addNotification]);
 
   // API Configuration
   // const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
@@ -1042,16 +1087,22 @@ function App() {
         headers: { Authorization: `Bearer ${token}` }
       });
 
+      const sessionId = activeSafetySession.id;
       setIsTimerActive(false);
       setActiveTimerEvent(null);
       setActiveSafetySession(null);
       setSafetyAlarmTriggered(false);
       setTimeLeft(0);
-      
+
+      // Start departure confirmation countdown
+      setDepartureSessionId(sessionId);
+      setDepartureTimeLeft(departureIntervalMin * 60);
+      setDepartureCheckActive(true);
+
       addNotification({ 
         id: Date.now(), 
         title: 'Safety Deactivated', 
-        message: 'Checkout successful. Go home safe!', 
+        message: `Checkout OK. Potvrď odchod klienta do ${departureIntervalMin} min.`, 
         priority: 'success', 
         timestamp: new Date().toLocaleTimeString('cs-CZ', { timeZone: 'Europe/Prague' }), 
         read: false 
@@ -1071,7 +1122,20 @@ function App() {
     }
   };
 
-  const handleSafetyImOk = async () => {
+  const handleDepartureConfirmed = async () => {
+    setDepartureCheckActive(false);
+    if (departureSessionId) {
+      try {
+        await axios.post(`${API_BASE}/safety/sessions/${departureSessionId}/departure-confirmed`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } catch (_) {}
+    }
+    setDepartureSessionId(null);
+    addNotification({ title: '✓ Odchod potvrzen', message: 'Klient odešel bezpečně.', priority: 'success', timestamp: new Date().toLocaleTimeString('cs-CZ', { timeZone: 'Europe/Prague' }), read: false });
+  };
+
+    const handleSafetyImOk = async () => {
     if (!activeSafetySession) return;
 
     try {
@@ -5117,6 +5181,25 @@ function App() {
                             <option value="ASSIGNED_ONLY">{t('modeAssignedOnly') || 'Strictly Assigned Operators Only'}</option>
                         </select>
                     </div>
+                    {/* Departure Interval Setting */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--card-border)', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '0.75rem' : '0' }}>
+                      <div>
+                        <div style={{ fontWeight: '700' }}>Interval odchodu klienta</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Modelka musí potvrdit odchod klienta do X minut po check-outu, jinak jde bezpečnostní alert.</div>
+                      </div>
+                      <select
+                        value={departureIntervalMin}
+                        onChange={(e) => {
+                          const v = parseInt(e.target.value, 10);
+                          setDepartureIntervalMin(v);
+                          localStorage.setItem('nexus_departure_interval', String(v));
+                        }}
+                        className="glass-input"
+                        style={{ width: isMobile ? '100%' : 'auto', padding: '0.5rem 1rem', background: 'rgba(59,130,246,0.1)', border: '1px solid var(--accent-color)', color: 'white', fontWeight: '700' }}
+                      >
+                        {[5, 10, 15, 20, 30].map(m => <option key={m} value={m}>{m} minut</option>)}
+                      </select>
+                    </div>
                 </div>
               </div>
 
@@ -5729,7 +5812,38 @@ function App() {
         .toggle-switch:hover { border-color: var(--accent-color) !important; }
       `}</style>
 
-      {/* Mobile Schedule Bottom Sheet */}
+      {/* Client Departure Confirmation Overlay */}
+      {departureCheckActive && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9500, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+          <div style={{ width: '100%', maxWidth: '420px', background: '#0f1117', borderRadius: '24px', padding: '2rem', border: '1px solid rgba(16,185,129,0.3)', boxShadow: '0 0 40px rgba(16,185,129,0.15)' }}>
+            {/* Icon & Title */}
+            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🚪</div>
+              <div style={{ fontSize: '1.3rem', fontWeight: '900', marginBottom: '0.4rem' }}>Opustil klient bezpečně?</div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Prosím potvrď, že klient odešel. Jinak bude odeslán bezpečnostní alert.</div>
+            </div>
+            {/* Countdown */}
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              <div style={{ fontSize: '3.5rem', fontWeight: '900', fontFamily: 'monospace', color: departureTimeLeft < 60 ? '#ef4444' : '#10b981' }}>
+                {String(Math.floor(departureTimeLeft / 60)).padStart(2, '0')}:{String(departureTimeLeft % 60).padStart(2, '0')}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>DO AUTOMATICKÉHO ALERTU</div>
+            </div>
+            {/* Confirm button */}
+            <button
+              onClick={handleDepartureConfirmed}
+              style={{ width: '100%', padding: '1.1rem', borderRadius: '16px', background: '#10b981', border: 'none', color: 'white', fontSize: '1.1rem', fontWeight: '900', cursor: 'pointer', marginBottom: '0.75rem', letterSpacing: '0.03em' }}
+            >
+              ✓ Klient odešel bezpečně
+            </button>
+            <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>
+              Interval: {departureIntervalMin} min · Nastavitelné v Nastavení
+            </div>
+          </div>
+        </div>
+      )}
+
+            {/* Mobile Schedule Bottom Sheet */}
       {isMobile && selectedScheduleEvent && (
         <div
           onClick={() => setSelectedScheduleEvent(null)}
