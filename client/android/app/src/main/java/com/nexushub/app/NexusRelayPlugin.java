@@ -375,13 +375,24 @@ public class NexusRelayPlugin extends Plugin {
             return;
         }
 
-        String to = data.get("to");
-        String content = data.get("content");
+        String to        = data.get("to");
+        String content   = data.get("content");
+        String messageId = data.get("messageId");
+        String baseUrl   = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                               .getString(KEY_BASE_URL, null);
+
         if (to == null || to.isEmpty() || content == null || content.isEmpty()) {
             android.util.Log.w("NexusRelay", "sendSmsFromData: missing to/content");
             return;
         }
 
+        // Acquire WakeLock to keep CPU alive during send (screen-off safe)
+        android.os.PowerManager pm = (android.os.PowerManager) context.getSystemService(Context.POWER_SERVICE);
+        android.os.PowerManager.WakeLock wakeLock = pm.newWakeLock(
+            android.os.PowerManager.PARTIAL_WAKE_LOCK, "NexusHub::FcmSmsWakeLock");
+        wakeLock.acquire(20_000L); // max 20s
+
+        String finalStatus;
         try {
             SmsManager smsManager;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -391,17 +402,49 @@ public class NexusRelayPlugin extends Plugin {
             }
             if (smsManager == null) {
                 android.util.Log.e("NexusRelay", "sendSmsFromData: SmsManager unavailable");
-                return;
-            }
-            if (content.length() > 160) {
-                java.util.ArrayList<String> parts = smsManager.divideMessage(content);
-                smsManager.sendMultipartTextMessage(to, null, parts, null, null);
+                finalStatus = "failed";
             } else {
-                smsManager.sendTextMessage(to, null, content, null, null);
+                if (content.length() > 160) {
+                    java.util.ArrayList<String> parts = smsManager.divideMessage(content);
+                    smsManager.sendMultipartTextMessage(to, null, parts, null, null);
+                } else {
+                    smsManager.sendTextMessage(to, null, content, null, null);
+                }
+                android.util.Log.d("NexusRelay", "sendSmsFromData: SMS sent to " + to);
+                finalStatus = "sent";
             }
-            android.util.Log.d("NexusRelay", "sendSmsFromData: SMS sent to " + to);
         } catch (Exception e) {
             android.util.Log.e("NexusRelay", "sendSmsFromData: failed to send SMS", e);
+            finalStatus = "failed";
+        } finally {
+            if (wakeLock.isHeld()) wakeLock.release();
+        }
+
+        // Report status back to server so forwarding logs are written correctly
+        if (messageId != null && !messageId.isEmpty() && baseUrl != null) {
+            final String apiBase = baseUrl.replaceAll("/api/device/relay$", "")
+                                          .replaceAll("/api$", "");
+            final String statusToReport = finalStatus;
+            new Thread(() -> {
+                try {
+                    java.net.URL url = new java.net.URL(apiBase + "/api/messages/" + messageId + "/status");
+                    java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                    conn.setRequestMethod("PATCH");
+                    conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                    conn.setDoOutput(true);
+                    conn.setConnectTimeout(8000);
+                    conn.setReadTimeout(8000);
+                    String body = "{\"status\":\"" + statusToReport + "\"}";
+                    try (java.io.OutputStream os = conn.getOutputStream()) {
+                        os.write(body.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    }
+                    int code = conn.getResponseCode();
+                    android.util.Log.d("NexusRelay", "sendSmsFromData: status reported (" + statusToReport + "), HTTP " + code);
+                    conn.disconnect();
+                } catch (Exception ex) {
+                    android.util.Log.w("NexusRelay", "sendSmsFromData: failed to report status", ex);
+                }
+            }).start();
         }
     }
 

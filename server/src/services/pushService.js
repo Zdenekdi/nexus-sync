@@ -288,7 +288,7 @@ const sendRelaySmsPush = async ({ agencyId, profileId, to, text, messageId }) =>
       to: ensureString(to),
       content: ensureString(text),
       profileId: ensureString(profileId),
-      id: ensureString(messageId),
+      messageId: ensureString(messageId),  // ← was 'id' — now consistent with sendSmsFromData
       notificationId: `relay-${messageId || Date.now()}`,
       timestamp: new Date().toISOString()
     },
