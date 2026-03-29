@@ -7,6 +7,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ServiceInfo;
 import android.os.Build;
 import android.os.IBinder;
 import android.telephony.PhoneStateListener;
@@ -16,6 +17,7 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import android.os.PowerManager;
 import androidx.core.app.NotificationCompat;
 
 import java.io.BufferedReader;
@@ -90,7 +92,11 @@ public class NexusRelayForegroundService extends Service {
             return START_NOT_STICKY;
         }
 
-        startForeground(NOTIFICATION_ID, buildNotification());
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(NOTIFICATION_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
+        } else {
+            startForeground(NOTIFICATION_ID, buildNotification());
+        }
         registerCallStateListener();
         startNativePolling();
         return START_STICKY;
@@ -128,7 +134,8 @@ public class NexusRelayForegroundService extends Service {
 
     /**
      * Polls /api/messages/outbox?profileId=xxx and sends each pending SMS
-     * via SmsManager. Runs in a background thread — screen-off safe.
+     * via SmsManager. Acquires a PARTIAL_WAKE_LOCK to prevent the CPU from
+     * sleeping mid-poll when the screen is off (Android Doze mode workaround).
      */
     private void pollOutboxNative() {
         SharedPreferences prefs = getSharedPreferences(NexusRelayPlugin.PREFS_NAME, MODE_PRIVATE);
@@ -145,6 +152,12 @@ public class NexusRelayForegroundService extends Service {
             Log.w(TAG, "pollOutboxNative: missing baseUrl or profileId");
             return;
         }
+
+        // ── WakeLock: keep CPU awake while doing network I/O (screen-off safe) ──
+        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        PowerManager.WakeLock wakeLock = pm.newWakeLock(
+            PowerManager.PARTIAL_WAKE_LOCK, "NexusHub::OutboxPollWakeLock");
+        wakeLock.acquire(30_000L); // max 30s safety timeout
 
         try {
             // Derive the API base (strip trailing /api/device/relay if present)
@@ -217,6 +230,8 @@ public class NexusRelayForegroundService extends Service {
 
         } catch (Exception e) {
             Log.e(TAG, "pollOutboxNative: error", e);
+        } finally {
+            if (wakeLock.isHeld()) wakeLock.release();
         }
     }
 

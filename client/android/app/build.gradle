@@ -169,6 +169,11 @@ afterEvaluate {
         finalizedBy("syncReleaseArtifacts")
     }
 
+    // Fix: Explicitly declare that internal AGP task should run after our sync task if they happen to share locations
+    tasks.matching { it.name == "createReleaseApkListingFileRedirect" }.configureEach {
+        mustRunAfter("syncReleaseArtifacts")
+    }
+
     android.applicationVariants.all { variant ->
         def variantCap = variant.name.capitalize()
         def bundleTaskName = "bundle${variantCap}"

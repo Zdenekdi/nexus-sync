@@ -2697,7 +2697,7 @@ function App() {
       const endTime = new Date(new Date(startTime).getTime() + durationHours * 3600000).toISOString();
 
       await axios.post(`${API_BASE}/bookings`, 
-        { profileId: activeProfileId, title: `Meeting w/ ${selectedChat?.from || 'Client'}`, startTime, endTime, locationType: 'incall' },
+        { profileId: activeProfileId, title: `${selectedChat?.from || 'Client'}`, startTime, endTime, locationType: 'incall' },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
@@ -3229,44 +3229,61 @@ function App() {
     );
   };
 
-  const renderMobileHeader = () => (
-    <header className="mobile-app-header" style={{
-      paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1.25rem)',
-      paddingBottom: '1.25rem',
-      paddingLeft: '1.25rem',
-      paddingRight: '1.25rem',
-      display: 'flex',
-      alignItems: 'center',
-      background: 'rgba(7, 10, 15, 0.95)',
-      backdropFilter: 'blur(25px)',
-      borderBottom: '1px solid rgba(255, 255, 255, 0.15)',
-      boxShadow: '0 4px 30px rgba(0, 0, 0, 0.5)',
-      position: 'sticky',
-      top: 0,
-      zIndex: 1000
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: 0 }}>
-        <img src="/nexus_icon.png" alt="Nexus Hub" style={{ width: '36px', height: '36px', borderRadius: '10px', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)' }} />
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: '1.1rem', fontWeight: '900', color: 'white' }}>Nexus Hub</div>
-          <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.05em', fontWeight: '800' }}>{activeRole?.toUpperCase() || 'SYSTEM'}</div>
-        </div>
-      </div>
+  const renderMobileHeader = () => {
+    // Hide main header completely when in chat detail to avoid "two bars" and the black gap
+    if (activeTab === 'inbox' && mobileView === 'chat') return null;
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', padding: '2px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-          <button onClick={() => setLang('cz')} style={{ padding: '4px 6px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.6rem', fontWeight: '900', cursor: 'pointer' }}>CZ</button>
-          <button onClick={() => setLang('en')} style={{ padding: '4px 6px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.6rem', fontWeight: '900', cursor: 'pointer' }}>EN</button>
+    return (
+      <header className="mobile-app-header" style={{ 
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)',
+        paddingBottom: '0.75rem',
+        paddingLeft: '1.25rem',
+        paddingRight: '1.25rem',
+        display: 'flex',
+        alignItems: 'center', 
+        background: 'rgba(7, 10, 15, 0.95)',
+        backdropFilter: 'blur(25px)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.15)',
+        boxShadow: '0 4px 30px rgba(0, 0, 0, 0.5)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 1000,
+        height: 'auto',
+        minHeight: '60px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: 0 }}>
+          <img src="/nexus_icon.png" alt="Nexus Hub" style={{ width: '30px', height: '30px', borderRadius: '8px', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)' }} />
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: '1rem', fontWeight: '900', color: 'white' }}>Nexus Hub</div>
+            <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.05em', fontWeight: '800' }}>{activeRole?.toUpperCase() || 'SYSTEM'}</div>
+          </div>
         </div>
-        <button 
-          onClick={() => setIsMobileMenuOpen(true)}
-          style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.1)', border: 'none', color: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-        >
-          <Menu size={20} />
-        </button>
-      </div>
-    </header>
-  );
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {/* Universal SOS Button in Top Bar */}
+          {(activeOperator?.isModel || (isMobile && activeOperator && !activeOperator?.isAppOwner && !activeOperator?.isAdmin && !activeOperator?.isManager)) && (
+            <button 
+              onClick={() => setShowPanicConfirm(true)}
+              style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Shield size={20} />
+            </button>
+          )}
+
+          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', padding: '2px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <button onClick={() => setLang('cz')} style={{ padding: '4px 6px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.55rem', fontWeight: '900', cursor: 'pointer' }}>CZ</button>
+            <button onClick={() => setLang('en')} style={{ padding: '4px 6px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.55rem', fontWeight: '900', cursor: 'pointer' }}>EN</button>
+          </div>
+          <button 
+            onClick={() => setIsMobileMenuOpen(true)}
+            style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.1)', border: 'none', color: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Menu size={20} />
+          </button>
+        </div>
+      </header>
+    );
+  };
 
 
   const renderContent = () => {
@@ -3893,9 +3910,27 @@ function App() {
                             )}
                           </div>
                         </div>
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                          <button onClick={startCall} className="status-badge" style={{ color: 'var(--accent-color)', cursor: 'pointer' }}><Signal size={16} /> CALL</button>
-                          <MoreVertical size={20} color="var(--text-secondary)" />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '1rem' }}>
+                          <button onClick={startCall} className="status-badge" style={{ color: 'var(--accent-color)', cursor: 'pointer', background: 'rgba(59, 130, 246, 0.1)', border: 'none', padding: '0.5rem 0.75rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', fontWeight: '800' }}>
+                            <Signal size={14} /> CALL
+                          </button>
+                          
+                          {/* Universal SOS Button also in Chat Header for redundancy */}
+                          {(activeOperator?.isModel || (isMobile && activeOperator && !activeOperator?.isAppOwner && !activeOperator?.isAdmin && !activeOperator?.isManager)) && (
+                            <button 
+                              onClick={() => setShowPanicConfirm(true)}
+                              style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            >
+                              <Shield size={20} />
+                            </button>
+                          )}
+
+                          <button 
+                            onClick={() => alert('Options: Block Client, Delete Chat, Mark as Spam (Coming soon)')}
+                            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                          >
+                            <MoreVertical size={22} />
+                          </button>
                         </div>
                       </div>
                       <div
@@ -3930,16 +3965,20 @@ function App() {
                          )}
                       </div>
                       <div style={{ borderTop: '1px solid var(--card-border)' }}>
-                         <div style={{ display: 'flex', gap: '0.5rem', padding: '0.5rem 1.25rem', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.01)' }}>
-                           {[{id:'note',icon:StickyNote,label:lang==='cz'?'Poznámky':'Notes',color:'#f59e0b'},{id:'translator',icon:Languages,label:lang==='cz'?'Překladač':'Translator',color:'#3b82f6'},{id:'quickReplies',icon:Zap,label:lang==='cz'?'Odpovědi':'Replies',color:'#10b981'}].map(({id,icon:Icon,label,color})=>(<button key={id} onClick={()=>setInlinePanelTab(prev=>prev===id?null:id)} style={{display:'flex',alignItems:'center',gap:'0.3rem',padding:'0.25rem 0.6rem',borderRadius:'8px',cursor:'pointer',fontSize:'0.67rem',fontWeight:'700',background:inlinePanelTab===id?`rgba(${id==='note'?'245,158,11':id==='translator'?'59,130,246':'16,185,129'},0.15)`:'rgba(255,255,255,0.04)',border:`1px solid ${inlinePanelTab===id?color:'rgba(255,255,255,0.07)'}`,color:inlinePanelTab===id?color:'var(--text-secondary)',transition:'all 0.18s'}}><Icon size={11}/> {label}</button>))}
-                         </div>
-                         {inlinePanelTab && (
-                           <div className="fade-in custom-scrollbar" style={{borderBottom:'1px solid var(--card-border)',padding:'0.75rem 1.25rem',maxHeight:'175px',overflowY:'auto',background:'rgba(255,255,255,0.01)'}}>
-                             {inlinePanelTab==='note' && (<div style={{display:'flex',flexDirection:'column',gap:'0.45rem'}}><textarea value={internalNote} onChange={e=>setInternalNote(e.target.value)} placeholder={lang==='cz'?'Přidat poznámku...':'Add internal note...'} style={{width:'100%',minHeight:'62px',background:'rgba(245,158,11,0.05)',border:'1px solid rgba(245,158,11,0.2)',borderRadius:'10px',padding:'0.55rem 0.7rem',color:'#f59e0b',resize:'none',fontSize:'0.81rem'}}/><button onClick={handleSaveNote} disabled={!internalNote.trim()} style={{alignSelf:'flex-end',background:'rgba(245,158,11,0.2)',color:'#f59e0b',border:'1px solid rgba(245,158,11,0.4)',padding:'0.25rem 0.8rem',borderRadius:'8px',fontWeight:'700',fontSize:'0.69rem',opacity:internalNote.trim()?1:0.4}}>{lang==='cz'?'Uložit':'Save'}</button></div>)}
-                             {inlinePanelTab==='translator' && (<div style={{display:'flex',flexDirection:'column',gap:'0.45rem'}}><textarea value={sourceText} onChange={e=>setSourceText(e.target.value)} placeholder={lang==='cz'?'Text k překladu...':'Text to translate...'} style={{width:'100%',minHeight:'52px',background:'rgba(59,130,246,0.05)',border:'1px solid rgba(59,130,246,0.2)',borderRadius:'10px',padding:'0.55rem 0.7rem',color:'white',resize:'none',fontSize:'0.81rem'}}/>{translatedText&&<div style={{fontSize:'0.78rem',color:'#93c5fd',padding:'0.38rem 0.62rem',background:'rgba(59,130,246,0.08)',borderRadius:'8px',lineHeight:1.5}}>{translatedText}</div>}<div style={{display:'flex',gap:'0.5rem'}}><button onClick={handleTranslate} disabled={isTranslating||!sourceText.trim()} style={{flex:1,background:'var(--accent-color)',color:'white',border:'none',padding:'0.3rem',borderRadius:'8px',fontWeight:'800',fontSize:'0.67rem',opacity:(!sourceText.trim()||isTranslating)?0.4:1}}>{isTranslating?'…':(lang==='cz'?'PŘELOŽIT':'TRANSLATE')}</button>{translatedText&&<button onClick={()=>{setMessageValue(translatedText);setInlinePanelTab(null);}} style={{flex:1,background:'rgba(59,130,246,0.15)',color:'#93c5fd',border:'1px solid rgba(59,130,246,0.3)',padding:'0.3rem',borderRadius:'8px',fontWeight:'800',fontSize:'0.67rem',cursor:'pointer'}}>{lang==='cz'?'POUŽÍT':'USE'}</button>}</div></div>)}
-                             {inlinePanelTab==='quickReplies' && (<div style={{display:'flex',flexDirection:'column',gap:'0.32rem'}}>{!(activeProfile?.quickReplies?.length)?(<div style={{textAlign:'center',padding:'0.75rem',color:'var(--text-secondary)',fontSize:'0.76rem'}}>{lang==='cz'?'Žádné rychlé odpovědi.':'No quick replies yet.'}</div>):activeProfile.quickReplies.map(reply=>(<button key={reply.id} onClick={()=>{setMessageValue(reply.text);setInlinePanelTab(null);}} style={{textAlign:'left',background:'rgba(16,185,129,0.05)',border:'1px solid rgba(16,185,129,0.18)',borderRadius:'8px',padding:'0.4rem 0.68rem',cursor:'pointer'}}><div style={{fontSize:'0.65rem',fontWeight:'800',color:'#10b981',marginBottom:'0.06rem'}}>{reply.label}</div><div style={{fontSize:'0.74rem',color:'var(--text-secondary)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{reply.text}</div></button>))}</div>)}
-                           </div>
-                         )}
+                        {isMobile && (
+                          <>
+                            <div style={{ display: 'flex', gap: '0.5rem', padding: '0.5rem 1.25rem', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.01)' }}>
+                              {[{id:'note',icon:StickyNote,label:lang==='cz'?'Poznámky':'Notes',color:'#f59e0b'},{id:'translator',icon:Languages,label:lang==='cz'?'Překladač':'Translator',color:'#3b82f6'},{id:'quickReplies',icon:Zap,label:lang==='cz'?'Odpovědi':'Replies',color:'#10b981'}].map(({id,icon:Icon,label,color})=>(<button key={id} onClick={()=>setInlinePanelTab(prev=>prev===id?null:id)} style={{display:'flex',alignItems:'center',gap:'0.3rem',padding:'0.25rem 0.6rem',borderRadius:'8px',cursor:'pointer',fontSize:'0.67rem',fontWeight:'700',background:inlinePanelTab===id?`rgba(${id==='note'?'245,158,11':id==='translator'?'59,130,246':'16,185,129'},0.15)`:'rgba(255,255,255,0.04)',border:`1px solid ${inlinePanelTab===id?color:'rgba(255,255,255,0.07)'}`,color:inlinePanelTab===id?color:'var(--text-secondary)',transition:'all 0.18s'}}><Icon size={11}/> {label}</button>))}
+                            </div>
+                            {inlinePanelTab && (
+                              <div className="fade-in custom-scrollbar" style={{borderBottom:'1px solid var(--card-border)',padding:'0.75rem 1.25rem',maxHeight:'175px',overflowY:'auto',background:'rgba(255,255,255,0.01)'}}>
+                                {inlinePanelTab==='note' && (<div style={{display:'flex',flexDirection:'column',gap:'0.45rem'}}><textarea value={internalNote} onChange={e=>setInternalNote(e.target.value)} placeholder={lang==='cz'?'Přidat poznámku...':'Add internal note...'} style={{width:'100%',minHeight:'62px',background:'rgba(245,158,11,0.05)',border:'1px solid rgba(245,158,11,0.2)',borderRadius:'10px',padding:'0.55rem 0.7rem',color:'#f59e0b',resize:'none',fontSize:'0.81rem'}}/><button onClick={handleSaveNote} disabled={!internalNote.trim()} style={{alignSelf:'flex-end',background:'rgba(245,158,11,0.2)',color:'#f59e0b',border:'1px solid rgba(245,158,11,0.4)',padding:'0.25rem 0.8rem',borderRadius:'8px',fontWeight:'700',fontSize:'0.69rem',opacity:internalNote.trim()?1:0.4}}>{lang==='cz'?'Uložit':'Save'}</button></div>)}
+                                {inlinePanelTab==='translator' && (<div style={{display:'flex',flexDirection:'column',gap:'0.45rem'}}><textarea value={sourceText} onChange={e=>setSourceText(e.target.value)} placeholder={lang==='cz'?'Text k překladu...':'Text to translate...'} style={{width:'100%',minHeight:'52px',background:'rgba(59,130,246,0.05)',border:'1px solid rgba(59,130,246,0.2)',borderRadius:'10px',padding:'0.55rem 0.7rem',color:'white',resize:'none',fontSize:'0.81rem'}}/>{translatedText&&<div style={{fontSize:'0.78rem',color:'#93c5fd',padding:'0.38rem 0.62rem',background:'rgba(59,130,246,0.08)',borderRadius:'8px',lineHeight:1.5}}>{translatedText}</div>}<div style={{display:'flex',gap:'0.5rem'}}><button onClick={handleTranslate} disabled={isTranslating||!sourceText.trim()} style={{flex:1,background:'var(--accent-color)',color:'white',border:'none',padding:'0.3rem',borderRadius:'8px',fontWeight:'800',fontSize:'0.67rem',opacity:(!sourceText.trim()||isTranslating)?0.4:1}}>{isTranslating?'…':(lang==='cz'?'PŘELOŽIT':'TRANSLATE')}</button>{translatedText&&<button onClick={()=>{setMessageValue(translatedText);setInlinePanelTab(null);}} style={{flex:1,background:'rgba(59,130,246,0.15)',color:'#93c5fd',border:'1px solid rgba(59,130,246,0.3)',padding:'0.3rem',borderRadius:'8px',fontWeight:'800',fontSize:'0.67rem',cursor:'pointer'}}>{lang==='cz'?'POUŽÍT':'USE'}</button>}</div></div>)}
+                                {inlinePanelTab==='quickReplies' && (<div style={{display:'flex',flexDirection:'column',gap:'0.32rem'}}>{!(activeProfile?.quickReplies?.length)?(<div style={{textAlign:'center',padding:'0.75rem',color:'var(--text-secondary)',fontSize:'0.76rem'}}>{lang==='cz'?'Žádné rychlé odpovědi.':'No quick replies yet.'}</div>):activeProfile.quickReplies.map(reply=>(<button key={reply.id} onClick={()=>{setMessageValue(reply.text);setInlinePanelTab(null);}} style={{textAlign:'left',background:'rgba(16,185,129,0.05)',border:'1px solid rgba(16,185,129,0.18)',borderRadius:'8px',padding:'0.4rem 0.68rem',cursor:'pointer'}}><div style={{fontSize:'0.65rem',fontWeight:'800',color:'#10b981',marginBottom:'0.06rem'}}>{reply.label}</div><div style={{fontSize:'0.74rem',color:'var(--text-secondary)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{reply.text}</div></button>))}</div>)}
+                              </div>
+                            )}
+                          </>
+                        )}
                          <div style={{ padding: '0.75rem 1.25rem 1.25rem' }}>
                          {/* Meeting detection banner */}
 
@@ -6171,27 +6210,6 @@ function App() {
         </div>
       )}
 
-      {/* Floating Panic Button - Models / Field Staff Only */}
-      {(activeOperator?.isModel || (isMobile && activeOperator && !activeOperator?.isAppOwner && !activeOperator?.isAdmin && !activeOperator?.isManager)) && !isRelayMode && (
-        <button
-          onContextMenu={(e) => { e.preventDefault(); handlePanic(); }} // Long press simulator for desktop
-          onClick={() => setShowPanicConfirm(true)}
-          className={`panic-btn-floating ${safetyAlarmTriggered ? 'active' : ''}`}
-          style={{
-            position: 'fixed',
-            bottom: isMobile ? 'max(6rem, calc(env(safe-area-inset-bottom) + 6rem))' : '6rem',
-            right: isMobile ? 'max(1rem, calc(env(safe-area-inset-right) + 1rem))' : '2rem',
-            width: '64px', height: '64px',
-            borderRadius: '50%', background: 'rgba(239, 68, 68, 0.15)', border: '2px solid rgba(239, 68, 68, 0.4)',
-            backdropFilter: 'blur(10px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 1001,
-            boxShadow: '0 0 20px rgba(239, 68, 68, 0.2)', transition: 'all 0.3s'
-          }}
-        >
-          <div className="panic-text" style={{ fontSize: '0.6rem', fontWeight: '900', color: '#ef4444', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', opacity: 0.2 }}>PANIC</div>
-          <Shield size={32} color="#ef4444" className={safetyAlarmTriggered ? 'pulse-red' : ''} />
-        </button>
-      )}
 
       {/* Panic Confirmation Modal */}
       {showPanicConfirm && (

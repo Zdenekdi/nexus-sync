@@ -241,7 +241,7 @@ const DashboardHome = ({ user, t, lang, agencies = [], profiles = [], calendar =
               <div key={i} style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: '15px', borderLeft: `4px solid ${event.status === 'confirmed' ? 'var(--success-color)' : 'var(--accent-color)'}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <div style={{ fontWeight: '800', fontSize: '1rem' }}>{event.time}</div>
-                  <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{event.title}</div>
+                  <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{(event.title || '').replace('Meeting w/ ', '')}</div>
                 </div>
                 <div style={{ fontSize: '0.75rem', fontWeight: '900', color: 'var(--text-secondary)' }}>{event.duration}</div>
               </div>

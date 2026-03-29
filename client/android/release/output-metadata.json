@@ -11,9 +11,9 @@
       "type": "SINGLE",
       "filters": [],
       "attributes": [],
-      "versionCode": 10016,
-      "versionName": "1.16",
-      "outputFile": "Nexus-Relay-v1.16.apk"
+      "versionCode": 10021,
+      "versionName": "1.21",
+      "outputFile": "Nexus-Relay-v1.21.apk"
     }
   ],
   "elementType": "File",
@@ -22,14 +22,14 @@
       "minApi": 28,
       "maxApi": 30,
       "baselineProfiles": [
-        "baselineProfiles/1/Nexus-Relay-v1.16.dm"
+        "baselineProfiles/1/Nexus-Relay-v1.21.dm"
       ]
     },
     {
       "minApi": 31,
       "maxApi": 2147483647,
       "baselineProfiles": [
-        "baselineProfiles/0/Nexus-Relay-v1.16.dm"
+        "baselineProfiles/0/Nexus-Relay-v1.21.dm"
       ]
     }
   ],
