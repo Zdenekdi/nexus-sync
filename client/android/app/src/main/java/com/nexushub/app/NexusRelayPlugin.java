@@ -534,7 +534,7 @@ public class NexusRelayPlugin extends Plugin {
 
         // 2. Native Background Forwarding
         if (isActive && baseUrl != null) {
-            forwardDataNative(baseUrl, deviceId, installationId, safeTransport, safeFrom, safeBody);
+            forwardDataNative(context, baseUrl, deviceId, installationId, safeTransport, safeFrom, safeBody);
         }
     }
 
@@ -566,11 +566,11 @@ public class NexusRelayPlugin extends Plugin {
 
         // 2. Native Background Forwarding
         if (isActive && baseUrl != null) {
-            forwardDataNative(baseUrl, deviceId, installationId, "call", from, "State: " + state);
+            forwardDataNative(context, baseUrl, deviceId, installationId, "call", from, "State: " + state);
         }
     }
 
-    private static void forwardDataNative(final String baseUrl, final String deviceId, final String installationId, final String type, final String from, final String content) {
+    private static void forwardDataNative(final Context context, final String baseUrl, final String deviceId, final String installationId, final String type, final String from, final String content) {
         // Acquire WakeLock to keep CPU alive during native forward (screen-off safe)
         android.os.PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
         final PowerManager.WakeLock wakeLock = pm != null
