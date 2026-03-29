@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "275193002193",
+    "project_id": "nexus-sync-8d50b",
+    "storage_bucket": "nexus-sync-8d50b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:275193002193:android:6555c456f2b06249a6edf0",
+        "android_client_info": {
+          "package_name": "com.nexushub.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAG23484bXwFUqCumWEuFg6WZiWcRLGtAM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
