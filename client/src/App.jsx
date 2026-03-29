@@ -3258,7 +3258,7 @@ function App() {
               </div>
 
               {/* Assigned Profiles in Mobile Menu */}
-              {!activeOperator?.isModel && activeRole !== 'App Owner' && !activeOperator?.isAdmin && myProfiles.length > 0 && (
+              {activeRole !== 'Model' && activeRole !== 'App Owner' && !activeOperator?.isAdmin && myProfiles.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ fontSize: '0.7rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{t('myAssignedGirls').toUpperCase()}</div>
@@ -3691,7 +3691,7 @@ function App() {
                           const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
                           isUserScrolled.current = distFromBottom > 100;
                         }}
-                        style={{ flex: 1, padding: isMobile ? '1rem' : '3rem 2rem', overflowY: 'auto', WebkitOverflowScrolling: 'touch', background: 'rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', gap: '0.75rem', minHeight: 0 }}>
+                        style={{ flex: 1, padding: isMobile ? '0.5rem 0.75rem' : '2rem', overflowY: 'auto', WebkitOverflowScrolling: 'touch', background: 'rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', gap: isMobile ? '0' : '0.25rem', minHeight: 0, justifyContent: 'flex-end' }}>
                          {isHistoryLoading && chatMessages.length === 0 ? (
                            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Loading history...</div>
                          ) : chatMessages.length > 0 ? (
