@@ -126,11 +126,12 @@ model Booking {
   title       String
   startTime   DateTime
   endTime     DateTime
-  status      String    @default("scheduled")
+  locationType  String    @default("incall") // incall or outcall
+  source        String?   // "manual", "ical"
   
   safetySession SafetySession?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 model SafetySession {
@@ -140,6 +141,7 @@ model SafetySession {
   profile       Profile   @relation(fields: [profileId], references: [id])
   bookingId     String?   @unique
   booking       Booking?  @relation(fields: [bookingId], references: [id])
+  locationType  String    @default("incall") 
   
   state         String    @default("PLANNED") // PLANNED, CHECKED_IN, GRACE, ESCALATED, RESOLVED
   plannedEndAt  DateTime?
