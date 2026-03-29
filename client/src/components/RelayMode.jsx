@@ -20,6 +20,7 @@ import {
 
 const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, requestRelayPermissions, processRelayOutbox, syncSmsHistory }) => {
   const RELAY_API_BASE = (import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api').replace(/\/api$/, '');
+  const lang = localStorage.getItem('nexus_lang') || 'cz';
   const [isActive, setIsActive] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState('connecting');
   const [signalStrength, setSignalStrength] = useState(85);
