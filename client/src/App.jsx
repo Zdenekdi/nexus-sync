@@ -2020,6 +2020,10 @@ function App() {
         setIsLoggedIn(true);
         void verifyNativeDeviceBinding(data.token, data.user);
         void maybePromptRcsAccessOnFirstLogin(data.user);
+        // Request browser notification permission for background alerts
+        if (window.Notification && window.Notification.permission === 'default') {
+          window.Notification.requestPermission().catch(() => {});
+        }
         if (shouldAutoRelay(data.user)) {
           setIsRelayMode(true);
         } else {
@@ -2056,17 +2060,35 @@ function App() {
       // Find profile for notification
       const profile = profiles.find(p => normalizeProfileId(p.id) === normalizeProfileId(normalizedMessageForNotification.profileId));
       if (profile) {
+        const chatId = normalizedMessageForNotification.chatId || normalizedMessageForNotification.id;
+        const msgText = normalizedMessageForNotification.text || normalizedMessageForNotification.from || '';
         addNotification({
           title: (normalizedMessageForNotification.transport || normalizedMessageForNotification.type) === 'rcs' ? 'New RCS message' : (t('newInboxMessage') || 'New message'),
-          message: `${profile.name}: ${normalizedMessageForNotification.text || normalizedMessageForNotification.from || ''}`,
+          message: `${profile.name}: ${msgText}`,
           type: 'info',
           profileId: profile.id,
-          chatId: normalizedMessageForNotification.chatId || normalizedMessageForNotification.id,
+          chatId,
           from: normalizedMessageForNotification.from,
           targetType: 'inbox',
         });
+        // Browser notification when tab is not focused
+        if (document.hidden && window.Notification?.permission === 'granted') {
+          try {
+            const n = new window.Notification(`📩 ${profile.name}`, {
+              body: msgText,
+              icon: '/favicon.ico',
+              tag: `nexus-msg-${chatId}`,
+              requireInteraction: false,
+            });
+            n.onclick = () => {
+              window.focus();
+              setActiveTab('inbox');
+              setSelectedChatId(String(chatId));
+            };
+          } catch (e) { console.warn('[Notif] Browser notification failed', e); }
+        }
       }
-    }, [profiles, t, addNotification, normalizeProfileId, upsertIncomingMessage]),
+    }, [profiles, t, addNotification, normalizeProfileId, upsertIncomingMessage, setActiveTab, setSelectedChatId]),
     useCallback((updatedMsg) => {
       setMessages(prev => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m));
     }, []),
@@ -3892,37 +3914,19 @@ function App() {
                                 );
                               })}
                             </div>
-                            {/* add booking footer aligned with chat input */}
-                            <div style={{ 
-                              padding: '0.75rem', 
-                              borderTop: '1px solid var(--card-border)',
-                              background: 'var(--bg-primary)',
-                              flexShrink: 0
-                            }}>
-                              <button 
-                                onClick={() => { setNewBookingForm(f => ({ ...f, date: calDateStr })); setBookingModalOpen(true); }} 
-                                style={{ 
-                                  width: '100%',
-                                  padding: '0.85rem', 
-                                  borderRadius: '12px', 
-                                  background: 'var(--accent-color)', 
-                                  border: 'none',
-                                  color: 'white', 
-                                  fontSize: '0.85rem', 
-                                  fontWeight: '800', 
-                                  cursor: 'pointer', 
-                                  display: 'flex', 
-                                  alignItems: 'center', 
-                                  justifyContent: 'center', 
-                                  gap: '0.5rem' 
-                                }}
-                              >
-                                <PlusCircle size={16} /> {lang === 'cz' ? 'Přidat schůzku' : 'Add booking'}
-                              </button>
-                            </div>
+                             </div>
                           </div>
                         );
                       })()}
+                      {/* Přidat schůzku — pinned at bottom of right panel */}
+                      <div style={{ padding: '0.75rem', borderTop: '1px solid var(--card-border)', background: 'var(--bg-secondary, #0f1117)', flexShrink: 0 }}>
+                        <button
+                          onClick={() => { const d = calViewDate.toISOString().split('T')[0]; setNewBookingForm(f => ({ ...f, date: d })); setBookingModalOpen(true); }}
+                          style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', background: 'var(--accent-color)', border: 'none', color: 'white', fontSize: '0.85rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                        >
+                          <PlusCircle size={16} /> {lang === 'cz' ? 'Přidat schůzku' : 'Add booking'}
+                        </button>
+                      </div>
                       </div>
                     ) : (
                       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
