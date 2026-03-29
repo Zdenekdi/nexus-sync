@@ -3,8 +3,54 @@ import { DollarSign, Building2, Zap, Activity, TrendingUp, Users, Server, Shield
 import { RevenueLineChart, ConversionDonutChart, MiniSparkline } from './AnalyticsCharts';
 import { useVultr } from '../hooks/useVultr';
 
-const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], isShiftActive, setIsShiftActive, isMobile, stats = {} }) => {
+const DashboardHome = ({ user, t, lang, agencies = [], profiles = [], calendar = [], isShiftActive, setIsShiftActive, isMobile, stats = {}, activeSubscription }) => {
   const { status: vultrStatus } = useVultr();
+
+  const renderSubscriptionBanner = () => {
+    if (!activeSubscription) return null;
+    const now = new Date();
+    const expiresAt = new Date(activeSubscription.expiresAt);
+    const daysLeft = Math.max(0, Math.ceil((expiresAt - now) / 86400000));
+    const status = activeSubscription.status;
+    
+    let statusColor = '#6b7280';
+    if (status === 'ACTIVE') statusColor = '#10b981';
+    else if (status === 'TRIAL') statusColor = '#f59e0b';
+    else if (status === 'EXPIRED') statusColor = '#ef4444';
+
+    return (
+      <div className="glass-card" style={{ 
+        padding: '1rem 1.5rem', 
+        marginBottom: '1.5rem', 
+        borderLeft: `4px solid ${statusColor}`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '0.75rem'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <ShieldCheck size={20} color={statusColor} />
+          <div>
+            <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)' }}>
+              {lang === 'cz' ? 'PŘEDPLATNÉ' : 'SUBSCRIPTION'}
+            </div>
+            <div style={{ fontWeight: '800', fontSize: '1.1rem' }}>
+              {activeSubscription.plan}
+            </div>
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: '800', color: daysLeft <= 7 ? '#ef4444' : 'var(--text-secondary)' }}>
+            {lang === 'cz' ? 'Vyprší za' : 'Expires in'} {daysLeft} {lang === 'cz' ? 'dní' : 'days'}
+          </div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
+            {expiresAt.toLocaleDateString(lang === 'cz' ? 'cs-CZ' : 'en-GB')}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderSuperAdmin = () => {
     const statusColor = {
@@ -20,6 +66,8 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
         <h2 style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '900', letterSpacing: '0.05em' }}>{t('globalOverview').toUpperCase()}</h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1rem' }}>{t('globalHealthDesc')}</p>
       </div>
+
+      {renderSubscriptionBanner()}
       
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(240px, 1fr))', gap: isMobile ? '1rem' : '1.5rem', marginBottom: isMobile ? '1.5rem' : '3rem' }}>
         {[
@@ -94,6 +142,8 @@ const DashboardHome = ({ user, t, agencies = [], profiles = [], calendar = [], i
         <h2 style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '900' }}>{t('agencyOverview').toUpperCase()}</h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1rem' }}>{t('agencyOverviewDesc')}</p>
       </div>
+
+      {renderSubscriptionBanner()}
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
         <div className="glass-card" style={{ padding: '1.5rem', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), transparent)' }}>

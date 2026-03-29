@@ -3782,6 +3782,7 @@ function App() {
           <DashboardHome 
             user={activeOperator} 
             t={t} 
+            lang={lang}
             agencies={agencies} 
             profiles={profiles}
             calendar={bookingSchedule}
@@ -3789,6 +3790,7 @@ function App() {
             setIsShiftActive={setIsShiftActive}
             isMobile={isMobile}
             stats={stats}
+            activeSubscription={activeSubscription}
           />
         )}
 
