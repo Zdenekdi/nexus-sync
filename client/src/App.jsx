@@ -6250,14 +6250,22 @@ function App() {
                   <h2 style={{ fontSize: '1.8rem', fontWeight: '800', color: '#ef4444', marginBottom: '2rem' }}>{emergencyAlert.profileName}</h2>
                   
                   <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '20px', marginBottom: '3rem', textAlign: 'left' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                          <span style={{ color: 'var(--text-secondary)' }}>Event Type:</span>
-                          <span style={{ fontWeight: '800', color: 'white' }}>{emergencyAlert.type?.toUpperCase()}</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', gap: '1rem' }}>
+                          <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', flexShrink: 0 }}>Event Type:</span>
+                          <span style={{ fontWeight: '800', color: 'white', wordBreak: 'break-word', textAlign: 'right' }}>{emergencyAlert.type?.toUpperCase()}</span>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span style={{ color: 'var(--text-secondary)' }}>Session ID:</span>
-                          <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>#{emergencyAlert.sessionId}</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: (emergencyAlert.notes || emergencyAlert.message) ? '1rem' : 0 }}>
+                          <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', flexShrink: 0 }}>Session ID:</span>
+                          <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', wordBreak: 'break-all', textAlign: 'right' }}>#{emergencyAlert.sessionId}</span>
                       </div>
+                      {(emergencyAlert.notes || emergencyAlert.message) && (
+                          <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                              <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', marginBottom: '0.4rem' }}>Notes</div>
+                              <div style={{ color: 'white', fontSize: '0.9rem', lineHeight: '1.5', wordBreak: 'break-word', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+                                  {emergencyAlert.notes || emergencyAlert.message}
+                              </div>
+                          </div>
+                      )}
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
