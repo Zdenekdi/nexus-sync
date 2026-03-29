@@ -3376,16 +3376,14 @@ function App() {
             margin-left: 0 !important;
             padding-top: 0 !important;
             padding-bottom: calc(3.5rem + max(env(safe-area-inset-bottom), 0px)) !important;
-            height: calc(100dvh - 70px - max(env(safe-area-inset-top), 0px)) !important;
-            min-height: calc(100dvh - 70px - max(env(safe-area-inset-top), 0px)) !important;
+            flex: 1 !important;
+            height: 0 !important;
+            min-height: 0 !important;
             overflow-y: auto !important;
             overflow-x: hidden !important;
           }
-          .mobile-header {
-            display: flex !important;
-            height: 70px !important;
-            padding-top: max(env(safe-area-inset-top), 0px) !important;
-            z-index: 9600 !important;
+          .mobile-app-header {
+            flex-shrink: 0 !important;
           }
           }
         }
@@ -3897,7 +3895,7 @@ function App() {
                   {/* Stable Debug Chat Detail */}
                   {selectedChat ? (
                     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', minHeight: 0 }}>
-                      <div style={{ padding: isMobile ? '0.75rem 1rem' : '1.5rem 2rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-color)', flexShrink: 0 }}>
+                      <div style={{ paddingTop: isMobile ? 'calc(env(safe-area-inset-top, 0px) + 0.75rem)' : '1.5rem', paddingBottom: isMobile ? '0.75rem' : '1.5rem', paddingLeft: isMobile ? '1rem' : '2rem', paddingRight: isMobile ? '1rem' : '2rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-color)', flexShrink: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                           {isMobile && <button onClick={() => setMobileView('list')} style={{ background: 'none', border: 'none', color: 'white' }}><ChevronLeft size={24} /></button>}
                           <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.9rem' }}>
