@@ -948,6 +948,8 @@ function App() {
     () => parseInt(localStorage.getItem('nexus_departure_interval') || '15', 10)
   );
 
+  const lastLocationUpdateRef = useRef(0);
+
   // Safety Guard Timer Logic
   useEffect(() => {
     let interval = null;
@@ -1023,6 +1025,72 @@ function App() {
     }, 1000);
     return () => clearInterval(tick);
   }, [departureCheckActive, departureTimeLeft, departureSessionId, API_BASE, token, addNotification]);
+
+  // Real-time GPS Tracking during active Safety Sessions
+  useEffect(() => {
+    // Only track during an active session on mobile
+    if (!isTimerActive || !activeSafetySession || !isMobile) return;
+
+    let watchId = null;
+
+    const startTracking = async () => {
+      try {
+        // 1. Check/Request permissions gracefully
+        const permStatus = await Geolocation.checkPermissions();
+        if (permStatus.location !== 'granted' && permStatus.location !== 'limited') {
+          const req = await Geolocation.requestPermissions();
+          if (req.location !== 'granted' && req.location !== 'limited') {
+            console.warn('[GPS] Location permission denied. Tracking disabled.');
+            return;
+          }
+        }
+
+        // 2. Start high-accuracy watcher
+        watchId = await Geolocation.watchPosition({
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 5000
+        }, (position, err) => {
+          if (err) {
+            console.warn('[GPS] Position watch error:', err.message);
+            return;
+          }
+          if (!position || !position.coords) return;
+
+          const now = Date.now();
+          // Battery optimization: Send update only every 60 seconds
+          if (now - lastLocationUpdateRef.current < 60000) return;
+
+          lastLocationUpdateRef.current = now;
+          axios.post(`${API_BASE}/safety/sessions/${activeSafetySession.id}/location`, {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            capturedAt: new Date(position.timestamp).toISOString()
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
+          }).catch(e => {
+            // Non-critical background failure, just log to console
+            console.debug('[GPS] Background update failed:', e.message);
+          });
+        });
+        
+        console.log('[GPS] Tracking started for session:', activeSafetySession.id);
+      } catch (e) {
+        console.error('[GPS] Failed to initialize tracking:', e);
+      }
+    };
+
+    startTracking();
+
+    return () => {
+      // 3. CLEANUP: Always clear the watch when session ends or component unmounts
+      if (watchId) {
+        Geolocation.clearWatch({ id: watchId });
+        console.log('[GPS] Tracking stopped.');
+      }
+    };
+  }, [isTimerActive, activeSafetySession, isMobile, API_BASE, token]);
 
   // API Configuration
   // const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
