@@ -286,17 +286,42 @@ function App() {
     }
   }, [selectedChatId]);
 
-  // Detect meeting time in most recent inbound message → offer to save to calendar
+  // Detect meeting time and duration in most recent inbound message → offer to save to calendar
   useEffect(() => {
     if (!chatMessages.length || !selectedChatId) { setDetectedMeeting(null); return; }
     const last = [...chatMessages].reverse().find(m => (m.direction || '').toUpperCase() === 'INBOUND');
     if (!last) { setDetectedMeeting(null); return; }
-    const text = last.text || '';
-    const timeMatch = text.match(/\b(\d{1,2})[:\.]?(\d{2})?\s*(AM|PM|am|pm)?\b/i);
+    
+    const text = (last.text || '').toLowerCase();
+    
+    // Improved time regex: 13:00, 13h, 1pm, 1 am, etc.
+    const timeMatch = text.match(/\b(\d{1,2})[:\.]?(\d{2})?\s*(am|pm|h)?\b/i);
     if (timeMatch && timeMatch[1]) {
       const hour = parseInt(timeMatch[1]);
       if (hour >= 0 && hour <= 24) {
-        setDetectedMeeting({ time: timeMatch[0], messageId: last.id, text });
+        // Look for duration: 30min, 1h, 1.5h, pul hodiny
+        let duration = '1h';
+        if (text.includes('30 min') || text.includes('půl') || text.includes('pul')) duration = '0.5h';
+        if (text.includes('15 min') || text.includes('čvrt') || text.includes('ctvrt')) duration = '0.25h';
+        if (text.includes('45 min')) duration = '0.75h';
+        if (text.includes('1.5h') || text.includes('hodinu a pul')) duration = '1.5h';
+        if (text.includes('2h') || text.includes('dvě hod') || text.includes('dve hod')) duration = '2h';
+        
+        // Look for day: dnes, zitra
+        let date = new Date().toISOString().split('T')[0];
+        if (text.includes('zitra') || text.includes('zítra')) {
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          date = tomorrow.toISOString().split('T')[0];
+        }
+
+        setDetectedMeeting({ 
+          time: timeMatch[0], 
+          messageId: last.id, 
+          text: last.text,
+          duration,
+          date
+        });
       } else {
         setDetectedMeeting(null);
       }
@@ -2634,12 +2659,13 @@ function App() {
       if (ampm === 'PM' && hh < 12) hh += 12;
       if (ampm === 'AM' && hh === 12) hh = 0;
 
-      const dateStr = new Date().toISOString().split('T')[0];
+      const dateStr = detectedMeeting.date || new Date().toISOString().split('T')[0];
       const startTime = new Date(`${dateStr}T${String(hh).padStart(2,'0')}:${mm}:00`).toISOString();
-      const endTime = new Date(new Date(startTime).getTime() + 3600000).toISOString(); // +1 hour
+      const durationHours = parseFloat(detectedMeeting.duration || '1');
+      const endTime = new Date(new Date(startTime).getTime() + durationHours * 3600000).toISOString();
 
       await axios.post(`${API_BASE}/bookings`, 
-        { profileId: activeProfileId, title: `Meeting w/ ${selectedChat?.from || 'Client'}`, startTime, endTime },
+        { profileId: activeProfileId, title: `Meeting w/ ${selectedChat?.from || 'Client'}`, startTime, endTime, locationType: 'incall' },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
@@ -6304,16 +6330,48 @@ function App() {
                     : (lang === 'cz' ? '🛡️ Incall: GPS tracking jen při emergency alertu.' : '🛡️ Incall: GPS tracking only on emergency.')}
                 </p>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{lang === 'cz' ? 'OD' : 'START'}</label>
-                  <input type="time" value={newBookingForm.startTime} onChange={e => setNewBookingForm(p => ({ ...p, startTime: e.target.value }))} style={{ width: '100%', marginTop: '0.5rem', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontSize: '0.95rem', colorScheme: 'dark' }} />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{lang === 'cz' ? 'OD' : 'START'}</label>
+                    <input type="time" value={newBookingForm.startTime} onChange={e => setNewBookingForm(p => ({ ...p, startTime: e.target.value }))} style={{ width: '100%', marginTop: '0.5rem', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontSize: '0.95rem', colorScheme: 'dark' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{lang === 'cz' ? 'DO' : 'END'}</label>
+                    <input type="time" value={newBookingForm.endTime} onChange={e => setNewBookingForm(p => ({ ...p, endTime: e.target.value }))} style={{ width: '100%', marginTop: '0.5rem', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontSize: '0.95rem', colorScheme: 'dark' }} />
+                  </div>
                 </div>
+
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{lang === 'cz' ? 'DO' : 'END'}</label>
-                  <input type="time" value={newBookingForm.endTime} onChange={e => setNewBookingForm(p => ({ ...p, endTime: e.target.value }))} style={{ width: '100%', marginTop: '0.5rem', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontSize: '0.95rem', colorScheme: 'dark' }} />
+                  <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em', display: 'block', marginBottom: '0.5rem' }}>{lang === 'cz' ? 'RYCHLÁ DOBA' : 'QUICK DURATION'}</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                    {[15, 30, 45, 60, 90, 120].map(mins => {
+                      const label = mins >= 60 ? `${mins / 60}h` : `${mins}m`;
+                      return (
+                        <button 
+                          key={mins}
+                          onClick={() => {
+                            const [h, m] = newBookingForm.startTime.split(':').map(Number);
+                            const start = new Date(2000, 0, 1, h, m);
+                            const end = new Date(start.getTime() + mins * 60000);
+                            setNewBookingForm(p => ({ ...p, endTime: `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}` }));
+                          }}
+                          style={{ 
+                            padding: '0.4rem 0.6rem', 
+                            borderRadius: '8px', 
+                            border: '1px solid var(--card-border)', 
+                            background: 'rgba(255,255,255,0.03)', 
+                            color: 'white', 
+                            fontSize: '0.7rem', 
+                            fontWeight: '700',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
                 <button onClick={() => setBookingModalOpen(false)} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--card-border)', background: 'transparent', color: 'white', fontWeight: '700', cursor: 'pointer' }}>{lang === 'cz' ? 'Zrušit' : 'Cancel'}</button>
                 <button onClick={handleCreateBooking} disabled={!newBookingForm.title || !newBookingForm.date} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: 'none', background: 'var(--accent-color)', color: 'white', fontWeight: '800', cursor: 'pointer', opacity: (!newBookingForm.title || !newBookingForm.date) ? 0.5 : 1 }}>{lang === 'cz' ? 'Uložit akci' : 'Save Booking'}</button>
