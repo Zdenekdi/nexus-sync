@@ -269,16 +269,20 @@ function App() {
 
   // Auto-scroll: scroll to bottom on new messages unless user scrolled up
   useEffect(() => {
-    if (!isUserScrolled.current && messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (!isUserScrolled.current && chatScrollRef.current) {
+      const el = chatScrollRef.current;
+      // Direct scrollTop is more reliable than scrollIntoView in Android WebView
+      el.scrollTop = el.scrollHeight;
     }
   }, [chatMessages]);
 
   // Reset scroll position when switching to different chat
   useEffect(() => {
     isUserScrolled.current = false;
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'instant' });
+    if (chatScrollRef.current) {
+      const el = chatScrollRef.current;
+      // Small timeout to let DOM render first
+      setTimeout(() => { el.scrollTop = el.scrollHeight; }, 50);
     }
   }, [selectedChatId]);
 
@@ -3658,7 +3662,7 @@ function App() {
             {/* Column 2 & 3 Container */}
             {(!isMobile || mobileView !== 'list') && (
               <div className={`inbox-panel ${selectedChatId ? 'active' : ''} ${isMobile && !selectedChatId ? 'hidden-mobile' : ''}`} style={{ flex: 1, display: 'flex', flexDirection: isMobile ? 'column' : 'row', minWidth: 0, overflow: 'hidden' }}>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.1)', minWidth: 0 }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.1)', minWidth: 0, overflow: 'hidden', minHeight: 0 }}>
                   {/* Stable Debug Chat Detail */}
                   {selectedChat ? (
                     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', minHeight: 0 }}>
