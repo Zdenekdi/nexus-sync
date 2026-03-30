@@ -100,8 +100,9 @@ const LandingPage = ({ onLoginClick, lang, setLang, isMobile }) => {
 
   return (
     <div className="landing-container fade-in" style={{ 
-      minHeight: '100vh', 
-      background: 'var(--bg-primary)',
+      minHeight: '100dvh',
+      height: '-webkit-fill-available',
+      background: '#080a0f',
       color: 'white',
       fontFamily: 'inherit',
       overflowX: 'hidden',
@@ -116,42 +117,48 @@ const LandingPage = ({ onLoginClick, lang, setLang, isMobile }) => {
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center', 
-        padding: isMobile ? 'calc(1rem + env(safe-area-inset-top)) calc(0.5rem + env(safe-area-inset-left)) 1rem calc(0.5rem + env(safe-area-inset-right))' : '1.5rem 5%',
+        padding: isMobile
+          ? `env(safe-area-inset-top, 0px) 1rem 0`
+          : '0 5%',
+        paddingBottom: 0,
+        flexDirection: 'column',
         position: 'sticky',
         top: 0, 
         zIndex: 100, 
         backdropFilter: 'blur(10px)',
-        background: 'rgba(10, 11, 14, 0.8)',
-        borderBottom: '1px solid var(--card-border)'
+        background: 'rgba(8, 10, 15, 0.95)',
+        borderBottom: '1px solid rgba(255,255,255,0.06)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <img src="/nexus_icon.png" alt="Nexus" style={{ width: '30px', height: '30px', borderRadius: '8px' }} />
-          <span style={{ fontWeight: '900', fontSize: '1.3rem', letterSpacing: '0.1em' }}>NEXUS</span>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '1.5rem' }}>
-          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '20px', padding: '3px', border: '1px solid var(--card-border)' }}>
-            <button 
-              onClick={() => setLang('cz')}
-              style={{ padding: '0.4rem 0.85rem', borderRadius: '18px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}
-            >CZ</button>
-            <button 
-              onClick={() => setLang('en')}
-              style={{ padding: '0.4rem 0.85rem', borderRadius: '18px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}
-            >EN</button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: isMobile ? '0.6rem 0' : '1.2rem 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <img src="/nexus_icon.png" alt="Nexus" style={{ width: '26px', height: '26px', borderRadius: '7px' }} />
+            <span style={{ fontWeight: '900', fontSize: '1.1rem', letterSpacing: '0.1em' }}>NEXUS</span>
           </div>
-          <button 
-            onClick={onLoginClick}
-            className="premium-button"
-            style={{ padding: isMobile ? '0.6rem 1rem' : '0.75rem 1.5rem', borderRadius: '12px', border: 'none', background: 'var(--accent-color)', color: 'white', fontWeight: '800', fontSize: isMobile ? '0.75rem' : '0.85rem', cursor: 'pointer', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)' }}
-          >
-            {t.enterBtn}
-          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '20px', padding: '2px', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <button 
+                onClick={() => setLang('cz')}
+                style={{ padding: '0.3rem 0.7rem', borderRadius: '18px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', fontSize: '0.68rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}
+              >CZ</button>
+              <button 
+                onClick={() => setLang('en')}
+                style={{ padding: '0.3rem 0.7rem', borderRadius: '18px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', fontSize: '0.68rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}
+              >EN</button>
+            </div>
+            <button 
+              onClick={onLoginClick}
+              className="premium-button"
+              style={{ padding: isMobile ? '0.45rem 0.9rem' : '0.65rem 1.4rem', borderRadius: '10px', border: 'none', background: 'var(--accent-color)', color: 'white', fontWeight: '800', fontSize: isMobile ? '0.72rem' : '0.82rem', cursor: 'pointer', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)' }}
+            >
+              {t.enterBtn}
+            </button>
+          </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section style={{ padding: isMobile ? '5rem 5% 3rem' : '8rem 5% 4rem', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+      <section style={{ padding: isMobile ? '2.5rem 5% 2.5rem' : '8rem 5% 4rem', textAlign: 'center', position: 'relative', zIndex: 1 }}>
         <div className="glass-card fade-in-up" style={{ display: 'inline-block', padding: '0.5rem 1.5rem', borderRadius: '30px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', color: 'var(--accent-color)', fontWeight: '800', fontSize: isMobile ? '0.65rem' : '0.75rem', letterSpacing: '0.1em', marginBottom: '2rem' }}>
           {t.tagline.toUpperCase()}
         </div>
