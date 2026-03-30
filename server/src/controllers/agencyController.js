@@ -191,39 +191,6 @@ exports.getAgencies = async (req, res) => {
   }
 };
 
-/**
- * EMERGENCY DATABASE MIGRATION (SERVER-SIDE)
- */
-exports.emergencyPatch = async (req, res) => {
-  try {
-    const role = req.user?.role;
-    // DOČASNĚ: Povolit všem pro tento jeden nouzový krok, jinak by to bez tokenu selhalo
-    const isOwner = true; 
-    
-    if (!isOwner) return res.status(403).json({ message: 'Forbidden' });
-
-    const queries = [
-      `ALTER TABLE Agency ADD COLUMN extraFeatures TEXT;`,
-      `ALTER TABLE Agency ADD COLUMN tier TEXT DEFAULT 'Standard';`,
-      `ALTER TABLE Role ADD COLUMN isAppOwner BOOLEAN DEFAULT 0;`,
-      `ALTER TABLE Role ADD COLUMN minTier TEXT;`
-    ];
-
-    const results = [];
-    for (const q of queries) {
-      try {
-        await prisma.$executeRawUnsafe(q);
-        results.push(`SUCCESS: ${q}`);
-      } catch (e) {
-        results.push(`SKIPPED: ${q} (Maybe exists?)`);
-      }
-    }
-
-    res.json({ message: 'Patch completed', results });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
 
 exports.getAgency = async (req, res) => {
   try {

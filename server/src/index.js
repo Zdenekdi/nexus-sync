@@ -11,7 +11,7 @@ const http = require('http');
 const socketService = require('./services/socket');
 const safetyService = require('./services/safetyService');
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
 
 // Initialize Socket.io

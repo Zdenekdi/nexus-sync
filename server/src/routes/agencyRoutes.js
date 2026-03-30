@@ -3,11 +3,9 @@ const router = express.Router();
 const agencyController = require('../controllers/agencyController');
 const roleController = require('../controllers/roleController');
 const profileController = require('../controllers/profileController');
-const authenticate = require('../middleware/authMiddleware');
+const authMiddleware = require('../middleware/authMiddleware');
 
-router.get('/sysadmin/db-patch', agencyController.emergencyPatch);
-
-router.use(authenticate);
+router.use(authMiddleware);
 
 router.patch('/settings', agencyController.updateSettings);
 router.get('/settings', agencyController.getSettings);

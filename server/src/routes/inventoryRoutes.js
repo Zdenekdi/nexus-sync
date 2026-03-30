@@ -1,15 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const ctrl = require('../controllers/inventoryController');
-const auth = require('../middleware/authMiddleware');
+const authMiddleware = require('../middleware/authMiddleware');
 
-router.get('/locations', auth, ctrl.getLocations);
-router.post('/locations', auth, ctrl.createLocation);
-router.delete('/locations/:id', auth, ctrl.deleteLocation);
+// Apply auth to all inventory routes
+router.use(authMiddleware);
 
-router.get('/items', auth, ctrl.getItems);
-router.post('/items', auth, ctrl.createItem);
-router.patch('/items/:id', auth, ctrl.updateItem);
-router.delete('/items/:id', auth, ctrl.deleteItem);
+// Locations
+router.get('/locations', ctrl.getLocations);
+router.post('/locations', ctrl.createLocation);
+router.delete('/locations/:id', ctrl.deleteLocation);
+
+// Items
+router.get('/items', ctrl.getItems);
+router.post('/items', ctrl.createItem);
+router.patch('/items/:id', ctrl.updateItem);
+router.delete('/items/:id', ctrl.deleteItem);
 
 module.exports = router;
