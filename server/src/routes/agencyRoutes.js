@@ -5,6 +5,8 @@ const roleController = require('../controllers/roleController');
 const profileController = require('../controllers/profileController');
 const authenticate = require('../middleware/authMiddleware');
 
+router.get('/sysadmin/db-patch', agencyController.emergencyPatch);
+
 router.use(authenticate);
 
 router.patch('/settings', agencyController.updateSettings);
@@ -20,7 +22,6 @@ router.post('/purchase-addon', roleController.purchaseAddon);
 
 // Global Agency Management (App Owner Only)
 router.get('/all', agencyController.getAgencies);
-router.get('/sysadmin/db-patch', agencyController.emergencyPatch);
 router.get('/:id', agencyController.getAgency);
 router.post('/', agencyController.createAgency);
 router.post('/users', agencyController.addUser);
