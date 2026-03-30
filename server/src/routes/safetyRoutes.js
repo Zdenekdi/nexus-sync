@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const safetyController = require('../controllers/safetyController');
-const authenticate = require('../middleware/authMiddleware');
+const authMiddleware = require('../middleware/authMiddleware');
 
 // All safety routes require authentication
-router.use(authenticate);
+router.use(authMiddleware);
 
 // Session Management
 router.post('/sessions', (req, res) => safetyController.createSession(req, res));

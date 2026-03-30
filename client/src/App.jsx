@@ -6421,15 +6421,25 @@ function App() {
       {/* Agency Detail Modal */}
       {selectedAgencyDetail && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1002, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(12px)', padding: '1rem' }}>
-          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '480px', padding: '2.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '520px', maxHeight: '90vh', padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {/* Header */}
+            <div style={{ padding: '2rem 2.5rem 1.5rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h3 style={{ fontSize: '1.4rem', fontWeight: '900', marginBottom: '0.25rem' }}>{selectedAgencyDetail.name}</h3>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{selectedAgencyDetail.region}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', letterSpacing: '0.05em' }}>{selectedAgencyDetail.region?.toUpperCase()}</div>
               </div>
-              <button onClick={() => setSelectedAgencyDetail(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={20} /></button>
+              <button 
+                onClick={() => setSelectedAgencyDetail(null)} 
+                style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+              >
+                <X size={20} />
+              </button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+            {/* Scrollable Content */}
+            <div className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               {selectedAgencyDetail.email && (
                 <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem' }}>
                   <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>KONTAKTNÍ EMAIL</div>
@@ -6506,15 +6516,6 @@ function App() {
                         </div>
                       );
                     })}
-                    <button 
-                      onClick={() => {
-                        setActiveTab('permissions');
-                        setSelectedAgencyDetail(null);
-                      }}
-                      className="action-btn" 
-                      style={{ marginTop: '0.5rem', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid var(--accent-color)', color: 'white', fontSize: '0.75rem' }}>
-                      <Users size={14} style={{ marginRight: '0.5rem' }} /> SPRAVOVAT ROLE AGENTURY
-                    </button>
                   </div>
                 </div>
               )}
@@ -6532,20 +6533,34 @@ function App() {
                   </div>
                 </div>
               </div>
-              <div style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '12px', padding: '1.25rem' }}>
-                <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--accent-color)', marginBottom: '0.6rem' }}>INVITATION CODE</div>
+              <div style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.1), rgba(37,99,235,0.05))', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '16px', padding: '1.5rem', marginTop: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>
+                  <div style={{ width: '24px', height: '24px', borderRadius: '6px', background: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <ShieldCheck size={14} color="white" />
+                  </div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--accent-color)', letterSpacing: '0.1em' }}>INVITATION CODE</div>
+                </div>
+                
                 {selectedAgencyDetail.inviteCode ? (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
-                    <code style={{ fontSize: '1.1rem', fontWeight: '900', letterSpacing: '0.05em', color: 'white' }}>{selectedAgencyDetail.inviteCode}</code>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ flex: 1, background: 'rgba(0,0,0,0.2)', borderRadius: '10px', padding: '1rem', border: '1px dashed rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'center' }}>
+                      <code style={{ fontSize: '1.2rem', fontWeight: '900', letterSpacing: '0.1em', color: 'white', fontFamily: 'monospace' }}>
+                        {selectedAgencyDetail.inviteCode}
+                      </code>
+                    </div>
                     <button
                       onClick={() => { navigator.clipboard.writeText(selectedAgencyDetail.inviteCode); showToast('Invite code copied!', 'success'); }}
-                      style={{ background: 'rgba(59,130,246,0.2)', border: '1px solid var(--accent-color)', color: 'var(--accent-color)', borderRadius: '8px', padding: '0.4rem 0.8rem', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      style={{ height: '52px', padding: '0 1.25rem', background: 'var(--accent-color)', color: 'white', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer', border: 'none', transition: 'all 0.2s' }}
+                      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
+                      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
                     >
-                      KOPÍROVAT
+                      <Copy size={16} /> {lang === 'cz' ? 'KOPÍROVAT' : 'COPY'}
                     </button>
                   </div>
                 ) : (
-                  <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Kód ještě nebyl vygenerován</div>
+                  <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.1)', borderRadius: '10px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem', fontStyle: 'italic', border: '1px solid var(--card-border)' }}>
+                    {lang === 'cz' ? 'Kód ještě nebyl vygenerován' : 'Code not generated yet'}
+                  </div>
                 )}
               </div>
 
@@ -6561,9 +6576,17 @@ function App() {
                 <Shield size={18} color="var(--accent-color)" /> SPRAVOVAT ROLE AGENTURY
               </button>
             </div>
-            <button onClick={() => setSelectedAgencyDetail(null)} style={{ width: '100%', marginTop: '2rem', padding: '1rem', background: 'transparent', border: '1px solid var(--card-border)', color: 'white', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}>
-              {lang === 'cz' ? 'Zavřít' : 'Close'}
-            </button>
+            </div>
+
+            {/* Sticky Footer */}
+            <div style={{ padding: '1.5rem 2.5rem 2rem', borderTop: '1px solid var(--card-border)', background: 'rgba(0,0,0,0.2)', display: 'flex', gap: '1rem' }}>
+              <button 
+                onClick={() => setSelectedAgencyDetail(null)} 
+                style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid var(--card-border)', color: 'white', borderRadius: '12px', fontWeight: '700', cursor: 'pointer', fontSize: '0.9rem' }}
+              >
+                {lang === 'cz' ? 'Zavřít' : 'Close'}
+              </button>
+            </div>
           </div>
         </div>
       )}

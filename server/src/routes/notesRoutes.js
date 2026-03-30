@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
-const authenticate = require('../middleware/authMiddleware');
+const authMiddleware = require('../middleware/authMiddleware');
 
 const prisma = new PrismaClient();
 
-router.use(authenticate);
+router.use(authMiddleware);
 
 // GET /api/notes/:clientPhone  – get all notes for a client (scoped to agency)
 router.get('/:clientPhone', async (req, res) => {
