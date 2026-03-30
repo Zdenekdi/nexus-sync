@@ -78,15 +78,15 @@ const DEFAULT_ROLE_PERMISSIONS = {
     plans: false,
     global_features: false,
     hierarchy: false,
-    analytics: true,
+    analytics: false,
     messaging: true,
     calendar: true,
     profiles: true,
     web_profiles: true,
-    device_setup: true,
+    device_setup: false,
     audit_logs: false,
-    qa_hub: true,
-    settings: true,
+    qa_hub: false,
+    settings: false,
     inventory: true
   },
   'Operator': {
@@ -186,7 +186,15 @@ function App() {
   const [incomingCall, setIncomingCall] = useState(null);
   const [clientNotes, setClientNotes] = useState({});
 
-  const [rolePermissions, setRolePermissions] = useState(DEFAULT_ROLE_PERMISSIONS);
+  const [dbPermissions, setDbPermissions] = useState(null);
+  const rolePermissions = useMemo(() => {
+    if (activeOperator?.role === 'App Owner') return DEFAULT_ROLE_PERMISSIONS['App Owner'];
+    return dbPermissions || DEFAULT_ROLE_PERMISSIONS[activeOperator?.role] || DEFAULT_ROLE_PERMISSIONS['Operator'];
+  }, [activeOperator?.role, dbPermissions]);
+
+  const isAllowed = (permission) => {
+    return rolePermissions[permission] === true;
+  };
   const [notifications, setNotifications] = useState(() => {
     const saved = localStorage.getItem('nexus_notifications');
     return saved ? JSON.parse(saved) : [];
@@ -200,7 +208,7 @@ function App() {
       const saved = localStorage.getItem('nexus_activeOperator');
       if (saved) {
         const parsed = JSON.parse(saved);
-        return parsed.role === 'App Owner' || parsed.role === 'App Owner' || parsed.role === 'App Owner';
+        return parsed.role === 'App Owner';
       }
       return false;
     } catch { return false; }
@@ -253,6 +261,43 @@ function App() {
   const [activeMarket, setActiveMarket] = useState(lang === 'cz' ? 'cz' : 'eu');
   const SAFETY_SUGGESTIONS = ['10:00', '14:00', '18:00', '22:00'];
   const [detectedMeeting, setDetectedMeeting] = useState(null);
+
+  // DB Permission Sync
+  const fetchUserPermissions = useCallback(async () => {
+    if (!token || !activeOperator) return;
+    try {
+      const res = await axios.get(`${API_BASE}/agency/roles`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const currentRole = res.data.find(r => r.name === activeOperator.role);
+      if (currentRole) {
+        setDbPermissions(currentRole.permissions);
+      }
+    } catch (err) {
+      console.error('Failed to sync permissions:', err);
+    }
+  }, [token, activeOperator?.role]);
+
+  const fetchAgencies = useCallback(async () => {
+    if (!isLoggedIn || !token || !activeOperator) return;
+    try {
+      if (activeOperator.role?.toUpperCase() === 'APP OWNER') {
+        const res = await axios.get(`${API_BASE}/agency/all`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setAgencies(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch agencies:', err);
+    }
+  }, [isLoggedIn, token, activeOperator?.role]);
+
+  useEffect(() => {
+    if (isLoggedIn && activeOperator) {
+      fetchUserPermissions();
+      fetchAgencies();
+    }
+  }, [isLoggedIn, activeOperator?.role, fetchUserPermissions, fetchAgencies]);
 
   // Persistence Effects
   useEffect(() => {
@@ -1637,6 +1682,8 @@ function App() {
   const [sessionHistories] = useState({});
   const [isBugReportOpen, setIsBugReportOpen] = useState(false);
   const [bugDescription, setBugDescription] = useState('');
+  const [isAgencyRolesModalOpen, setIsAgencyRolesModalOpen] = useState(false);
+  const [agencyToManage, setAgencyToManage] = useState(null);
   const [showOnlyOnline, setShowOnlyOnline] = useState(false);
 
   const emergencySafetyAlerts = useMemo(() => {
@@ -3688,7 +3735,7 @@ function App() {
                         { id: 'activity', icon: Activity, label: t('auditLog'), perm: 'audit_logs' },
                         { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub' },
                         { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
-                      ].filter(item => (rolePermissions[activeRole] || {})[item.perm]).map(item => (
+                      ].filter(item => isAllowed(item.perm)).map(item => (
                         <button key={item.id} 
                           onClick={() => {
                             setActiveTab(item.id);
@@ -4766,7 +4813,7 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'hierarchy' && (rolePermissions[activeRole]?.hierarchy || activeOperator?.isAdmin) && (
+        {activeTab === 'hierarchy' && isAllowed('hierarchy') && (
           <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
             <h2 style={{ fontSize: isMobile ? '1.75rem' : '2.5rem', fontWeight: '900', marginBottom: '0.5rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('teamHierarchy')}</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: isMobile ? '1.5rem' : '3rem', fontSize: isMobile ? '0.9rem' : '1.1rem' }}>{t('teamHierarchyDesc')}</p>
@@ -4960,7 +5007,7 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'analytics' && rolePermissions[activeRole]?.analytics && (
+        {activeTab === 'analytics' && isAllowed('analytics') && (
           <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
             <h2 style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '800', marginBottom: isMobile ? '1.5rem' : '2.5rem' }}>{t('agencyOverview')}</h2>
 
@@ -5424,13 +5471,13 @@ function App() {
                 </div>
               </div>
 
-              {rolePermissions[activeRole]?.global_features && (
+              {isAllowed('global_features') && (
                 <div className="settings-section">
                   <h3 style={{ marginBottom: '1.5rem' }}>{t('simulationTools')}</h3>
                   <button onClick={simulateIncomingCall} className="action-btn" style={{ maxWidth: '300px' }}><Phone size={16} /> {t('simulateCall')}</button>
                 </div>
               )}
-            {rolePermissions[activeRole]?.analytics && !rolePermissions[activeRole]?.infrastructure && (
+            {isAllowed('analytics') && !isAllowed('infrastructure') && (
               <div className="glass-card" style={{ padding: '2rem', marginTop: '3rem' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '2rem' }}>{t('operatorPerformance')}</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -5483,7 +5530,7 @@ function App() {
           <InventoryView t={TRANSLATIONS[lang]} token={token} />
         )}
 
-        {activeTab === 'infra' && rolePermissions[activeRole]?.infrastructure && (
+        {activeTab === 'infra' && isAllowed('infrastructure') && (
           <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
             <h2 style={{ fontSize: isMobile ? '2rem' : '2.5rem', fontWeight: '900', marginBottom: '0.5rem', background: 'linear-gradient(to right, #6366f1, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               {t('infraTitle') || 'Infrastructure Control'}
@@ -5495,7 +5542,7 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'agencies' && rolePermissions[activeRole]?.agencies && (
+        {activeTab === 'agencies' && isAllowed('agencies') && (
           <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
             <h2 style={{ fontSize: isMobile ? '2rem' : '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #8b5cf6, #d946ef)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('agencyMgmtTitle')}</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: isMobile ? '1.5rem' : '3rem', fontSize: isMobile ? '0.95rem' : '1.1rem' }}>{t('agencyMgmtSubtitle')}</p>
@@ -5697,7 +5744,7 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'features' && rolePermissions[activeRole]?.global_features && (
+        {activeTab === 'features' && isAllowed('global_features') && (
           <div style={{ padding: '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
             <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #f59e0b, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('featuresTitle')}</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>{t('featuresSubtitle')}</p>
@@ -5820,7 +5867,7 @@ function App() {
         )}
 
         {/* Permissions Dashboard (Phase 3) */}
-        {activeTab === 'permissions' && rolePermissions[activeRole]?.permissions && (
+        {activeTab === 'permissions' && isAllowed('permissions') && (
           <PermissionsDashboard
             t={t}
             rolePermissions={rolePermissions}
@@ -5830,7 +5877,7 @@ function App() {
         )}
 
         {/* Subscription / Billing */}
-        {activeTab === 'plans' && rolePermissions[activeRole]?.plans && (() => {
+        {activeTab === 'plans' && isAllowed('plans') && (() => {
           const PLANS = [
             { id: 'MONTHLY',     label: lang === 'cz' ? 'Měsíční'  : 'Monthly',     price: 990,   priceFmt: '990 Kč',    days: 30,  save: 0 },
             { id: 'SEMI_ANNUAL', label: lang === 'cz' ? 'Půlroční' : 'Semi-Annual', price: 5490,  priceFmt: '5 490 Kč',  days: 182, save: 8 },
@@ -6385,7 +6432,7 @@ function App() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {selectedAgencyDetail.email && (
                 <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem' }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>EMAIL</div>
+                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>KONTAKTNÍ EMAIL</div>
                   <div style={{ fontWeight: '700' }}>{selectedAgencyDetail.email}</div>
                 </div>
               )}
@@ -6397,6 +6444,92 @@ function App() {
                 <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem' }}>
                   <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>STAFF</div>
                   <div style={{ fontWeight: '700' }}>{operators.filter(o => o.agencyId === selectedAgencyDetail.id).length} uživatelů</div>
+                </div>
+              </div>
+
+              {/* Manager Details */}
+              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem' }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>PRIMARY MANAGER</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: '800' }}>
+                    {selectedAgencyDetail.managerName?.charAt(0) || 'M'}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{selectedAgencyDetail.managerName || 'N/A'}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{selectedAgencyDetail.managerEmail || 'No email provided'}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bonus Features (Management for App Owner) */}
+              {activeOperator?.role?.toUpperCase() === 'APP OWNER' && (
+                <div style={{ marginTop: '0.5rem' }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.1em' }}>BONUSOVÉ FUNKCE (PRO APP OWNERA)</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {[
+                      { key: 'ai_chatbot', label: 'AI Chatbot Support' },
+                      { key: 'priority_infra', label: 'Global Priority Infra' },
+                      { key: 'adv_analytics', label: 'Advanced Analytics (BETA)' }
+                    ].map(bonus => {
+                      const isEnabled = (selectedAgencyDetail.extraFeatures || '').includes(bonus.key);
+                      return (
+                        <div key={bonus.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.8rem', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid var(--card-border)' }}>
+                          <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>{bonus.label}</span>
+                          <button 
+                            onClick={async () => {
+                              try {
+                                const currentExtras = JSON.parse(selectedAgencyDetail.extraFeatures || '[]');
+                                const newExtras = currentExtras.includes(bonus.key) 
+                                  ? currentExtras.filter(k => k !== bonus.key)
+                                  : [...currentExtras, bonus.key];
+                                
+                                await axios.patch(`${API_BASE}/agency/settings`, {
+                                  agencyId: selectedAgencyDetail.id,
+                                  extraFeatures: JSON.stringify(newExtras)
+                                }, { headers: { Authorization: `Bearer ${token}` } });
+                                
+                                setSelectedAgencyDetail(prev => ({ ...prev, extraFeatures: JSON.stringify(newExtras) }));
+                                fetchAgencies();
+                                addNotification({ title: 'Success', message: 'Bonus features updated.', priority: 'success' });
+                              } catch (e) {
+                                console.error('Failed to update bonuses:', e);
+                              }
+                            }}
+                            style={{ 
+                              width: '36px', height: '20px', borderRadius: '10px', 
+                              background: isEnabled ? 'var(--success-color)' : 'rgba(255,255,255,0.1)',
+                              border: 'none', cursor: 'pointer', position: 'relative', transition: 'all 0.3s'
+                            }}
+                          >
+                            <div style={{ position: 'absolute', top: '2px', left: isEnabled ? '18px' : '2px', width: '16px', height: '16px', borderRadius: '50%', background: 'white', transition: 'all 0.3s' }} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                    <button 
+                      onClick={() => {
+                        setActiveTab('permissions');
+                        setSelectedAgencyDetail(null);
+                      }}
+                      className="action-btn" 
+                      style={{ marginTop: '0.5rem', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid var(--accent-color)', color: 'white', fontSize: '0.75rem' }}>
+                      <Users size={14} style={{ marginRight: '0.5rem' }} /> SPRAVOVAT ROLE AGENTURY
+                    </button>
+                  </div>
+                </div>
+              )}
+              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1.25rem' }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.8rem', letterSpacing: '0.05em' }}>MANAŽER AGENTURY</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: '800' }}>
+                      {selectedAgencyDetail.managerName?.charAt(0) || '?'}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.9rem', fontWeight: '700' }}>{selectedAgencyDetail.managerName || 'Neznámý'}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{selectedAgencyDetail.managerEmail || 'E-mail nedostupný'}</div>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '12px', padding: '1.25rem' }}>
@@ -6415,10 +6548,61 @@ function App() {
                   <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Kód ještě nebyl vygenerován</div>
                 )}
               </div>
+
+              {/* Action Button for Managing Roles */}
+              <button 
+                onClick={() => {
+                  setAgencyToManage(selectedAgencyDetail);
+                  setIsAgencyRolesModalOpen(true);
+                }}
+                className="action-btn"
+                style={{ background: 'rgba(139, 92, 246, 0.1)', border: '1px solid var(--accent-color)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', fontWeight: '800' }}
+              >
+                <Shield size={18} color="var(--accent-color)" /> SPRAVOVAT ROLE AGENTURY
+              </button>
             </div>
             <button onClick={() => setSelectedAgencyDetail(null)} style={{ width: '100%', marginTop: '2rem', padding: '1rem', background: 'transparent', border: '1px solid var(--card-border)', color: 'white', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}>
               {lang === 'cz' ? 'Zavřít' : 'Close'}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Specific Agency Roles Management Modal */}
+      {isAgencyRolesModalOpen && agencyToManage && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 1005, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(20px)', padding: '1rem' }}>
+          <div className="glass-card fade-in" style={{ width: '95%', maxWidth: '1280px', height: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 }}>
+            <div style={{ padding: '1.5rem 2.5rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)' }}>
+              <div>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: '900' }}>Individuální nastavení práv: {agencyToManage.name}</h3>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Tyto změny ovlivní pouze role v rámci této konkrétní agentury (slouží pro bonusy a akce).</p>
+              </div>
+              <button 
+                onClick={() => setIsAgencyRolesModalOpen(false)} 
+                style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              <PermissionsDashboard 
+                t={t} 
+                activeOperator={activeOperator} 
+                agencyId={agencyToManage.id} 
+                onUpdate={() => showToast('Práva agentury byla úspěšně aktualizována', 'success')}
+              />
+            </div>
+
+            <div style={{ padding: '1.5rem 2.5rem', borderTop: '1px solid var(--card-border)', display: 'flex', justifyContent: 'flex-end', background: 'rgba(0,0,0,0.3)' }}>
+              <button 
+                onClick={() => setIsAgencyRolesModalOpen(false)}
+                className="action-btn"
+                style={{ width: 'auto', padding: '0.8rem 2.5rem' }}
+              >
+                HOTOVO
+              </button>
+            </div>
           </div>
         </div>
       )}

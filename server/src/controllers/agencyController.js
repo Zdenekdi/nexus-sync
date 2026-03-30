@@ -137,12 +137,27 @@ exports.getStats = async (req, res) => {
 exports.getAgencies = async (req, res) => {
   try {
     const { role } = req.user;
-    if (!role?.isAppOwner) {
+    // Povolit přístup, pokud je role App Owner (case-insensitive)
+    const isOwner = role?.isAppOwner || (typeof role === 'string' && role.toUpperCase() === 'APP OWNER') || role?.name?.toUpperCase() === 'APP OWNER';
+    
+    if (!isOwner) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
     const agencies = await prisma.agency.findMany({
       include: {
+        users: {
+          where: {
+            role: {
+              isManager: true
+            }
+          },
+          select: {
+            name: true,
+            email: true
+          },
+          take: 1
+        },
         _count: {
           select: { users: true, profiles: true }
         }
@@ -150,23 +165,62 @@ exports.getAgencies = async (req, res) => {
     });
 
     // Map to frontend expectation
-    const mapped = agencies.map(a => ({
-      id: a.id,
-      name: a.name,
-      email: a.email || null,
-      region: a.region || 'EU',
-      status: a.status || 'active',
-      inviteCode: a.inviteCode || null,
-      subscription: {
-        plan: a.tier || 'Pro',
+    const mapped = agencies.map(a => {
+      const manager = a.users[0] || null;
+      return {
+        id: a.id,
+        name: a.name,
+        email: a.email || null,
+        region: a.region || 'EU',
         status: a.status || 'active',
-        endDate: 'Unlimited'
-      }
-    }));
+        inviteCode: a.inviteCode || null,
+        managerName: manager?.name || 'N/A',
+        managerEmail: manager?.email || 'N/A',
+        subscription: {
+          plan: a.tier || a.plan || 'Pro',
+          status: a.status || 'active',
+          endDate: 'Unlimited'
+        }
+      };
+    });
 
     res.json(mapped);
   } catch (error) {
+    console.error('CRITICAL ERROR IN getAgencies:', error);
     res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * EMERGENCY DATABASE MIGRATION (SERVER-SIDE)
+ */
+exports.emergencyPatch = async (req, res) => {
+  try {
+    const { role } = req.user;
+    const isOwner = role?.isAppOwner || (typeof role === 'string' && role.toUpperCase() === 'APP OWNER') || role?.name?.toUpperCase() === 'APP OWNER';
+    
+    if (!isOwner) return res.status(403).json({ message: 'Forbidden' });
+
+    const queries = [
+      `ALTER TABLE Agency ADD COLUMN extraFeatures TEXT;`,
+      `ALTER TABLE Agency ADD COLUMN tier TEXT DEFAULT 'Standard';`,
+      `ALTER TABLE Role ADD COLUMN isAppOwner BOOLEAN DEFAULT 0;`,
+      `ALTER TABLE Role ADD COLUMN minTier TEXT;`
+    ];
+
+    const results = [];
+    for (const q of queries) {
+      try {
+        await prisma.$executeRawUnsafe(q);
+        results.push(`SUCCESS: ${q}`);
+      } catch (e) {
+        results.push(`SKIPPED: ${q} (Maybe exists?)`);
+      }
+    }
+
+    res.json({ message: 'Patch completed', results });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -177,9 +231,25 @@ exports.getAgency = async (req, res) => {
 
     const agency = await prisma.agency.findUnique({
       where: { id: req.params.id },
-      include: { _count: { select: { users: true, profiles: true } } }
+      include: { 
+        users: {
+          where: {
+            role: {
+              isManager: true
+            }
+          },
+          select: {
+            name: true,
+            email: true
+          },
+          take: 1
+        },
+        _count: { select: { users: true, profiles: true } } 
+      }
     });
     if (!agency) return res.status(404).json({ message: 'Agency not found' });
+
+    const manager = agency.users[0] || null;
 
     res.json({
       id: agency.id,
@@ -188,6 +258,8 @@ exports.getAgency = async (req, res) => {
       region: agency.region,
       tier: agency.tier,
       inviteCode: agency.inviteCode || null,
+      managerName: manager?.name || 'N/A',
+      managerEmail: manager?.email || 'N/A',
       usersCount: agency._count.users,
       profilesCount: agency._count.profiles
     });

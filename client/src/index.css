@@ -44,6 +44,7 @@ body {
 
 body.android-webview {
   padding-top: 0 !important;
+  background: #07080a !important;
 }
 
 .dashboard-container {
