@@ -124,13 +124,14 @@ exports.verifyDeviceBinding = async (req, res) => {
       throw new Error('LIMIT_EXCEEDED');
     }
 
-    // Upsert the device binding (single write, no transaction needed)
+    // Upsert the device binding
     await prisma.deviceBinding.upsert({
       where: { installationId },
       update: {
         userId,
         agencyId,
-        profileId: resolvedProfileId,
+        // DONT clear profileId if it already exists and we have no new one
+        ...(resolvedProfileId ? { profileId: resolvedProfileId } : {}),
         platform: typeof platform === 'string' && platform.length <= 32 ? platform : 'android',
         active: true,
         model: typeof model === 'string' && model.length <= 128 ? model : null,
@@ -398,23 +399,41 @@ exports.handleRelay = async (req, res) => {
     console.log(`[Relay] ${messageTransport.toUpperCase()} from ${from} (Installation: ${installationId})`);
 
     let finalBinding = binding;
+    const incomingProfileId = req.body.profileId;
+
     if (!finalBinding && isAuthorized) {
-      console.info(`[Relay] Attempting auto-registration for installationId=${installationId} deviceId=${deviceId}`);
+      console.info(`[Relay] Attempting auto-registration for installationId=${installationId} deviceId=${deviceId} profileId=${incomingProfileId}`);
       // Find operator/user to bind to
       const user = await prisma.user.findUnique({
         where: { id: deviceId || 'none' },
-        include: { assignedProfiles: { take: 1 } }
+        include: { 
+          assignedProfiles: { 
+            orderBy: { createdAt: 'asc' } // Deterministic order
+          } 
+        }
       });
 
       if (user) {
-        const profileId = user.assignedProfiles?.[0]?.id || null;
+        // Prefer the profile suggested by the phone if user is assigned to it, otherwise take first assigned
+        let profileIdToBind = null;
+        if (incomingProfileId) {
+          const isAssignedToRequested = user.assignedProfiles.some(p => p.id === incomingProfileId);
+          if (isAssignedToRequested) {
+            profileIdToBind = incomingProfileId;
+          }
+        }
+        
+        if (!profileIdToBind) {
+          profileIdToBind = user.assignedProfiles?.[0]?.id || null;
+        }
+
         finalBinding = await prisma.deviceBinding.upsert({
           where: { installationId },
           create: {
             installationId,
             userId: user.id,
             agencyId: user.agencyId,
-            profileId: profileId,
+            profileId: profileIdToBind,
             active: true,
             platform: 'android',
             deviceName: 'Auto-Registered Relay'
@@ -422,11 +441,26 @@ exports.handleRelay = async (req, res) => {
           update: {
             userId: user.id,
             agencyId: user.agencyId,
-            profileId: profileId,
+            profileId: profileIdToBind,
             active: true
           }
         });
-        console.info(`[Relay] Auto-registered device for user=${user.email} profileId=${profileId}`);
+        console.info(`[Relay] Auto-registered device for user=${user.email} profileId=${profileIdToBind}`);
+      }
+    } else if (finalBinding && incomingProfileId && !finalBinding.profileId) {
+      // FIX: If binding exists but has NO profile, and phone is now telling us which profile it is, update it.
+      // This recovers "broken" bindings where profileId was somehow set to null.
+      const user = await prisma.user.findUnique({
+        where: { id: finalBinding.userId },
+        include: { assignedProfiles: true }
+      });
+      if (user && user.assignedProfiles.some(p => p.id === incomingProfileId)) {
+        await prisma.deviceBinding.update({
+          where: { installationId },
+          data: { profileId: incomingProfileId }
+        });
+        finalBinding.profileId = incomingProfileId;
+        console.info(`[Relay] Recovered missing profileId for installationId=${installationId} -> profileId=${incomingProfileId}`);
       }
     }
 

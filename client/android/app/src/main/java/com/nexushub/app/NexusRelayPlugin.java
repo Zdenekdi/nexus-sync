@@ -580,6 +580,9 @@ public class NexusRelayPlugin extends Plugin {
             wakeLock.acquire(15_000L); // 15s max (HTTP timeout is 12s)
         }
 
+        android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        final String profileId = prefs.getString(KEY_PROFILE_ID, null);
+
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -597,6 +600,9 @@ public class NexusRelayPlugin extends Plugin {
                     jsonParam.put("deviceId", deviceId);
                     if (installationId != null && !installationId.isEmpty()) {
                         jsonParam.put("installationId", installationId);
+                    }
+                    if (profileId != null && !profileId.isEmpty()) {
+                        jsonParam.put("profileId", profileId);
                     }
                     jsonParam.put("transport", type);
                     jsonParam.put("type", type);

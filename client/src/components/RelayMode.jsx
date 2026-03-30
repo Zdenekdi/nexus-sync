@@ -509,12 +509,17 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
         console.warn('[Relay] Could not resolve installationId from device plugin', error);
       }
     }
+    const currentProfileId = operator?.profileId || localStorage.getItem('nexus_last_profile_id');
+    if (operator?.profileId) {
+      localStorage.setItem('nexus_last_profile_id', operator.profileId);
+    }
+
     try {
       await window.Capacitor.Plugins.NexusRelay.configureRelay({
         baseUrl: `${RELAY_API_BASE}/api/device/relay`,
         deviceId: operator?.id || 'RELAY-01',
         installationId: installationId || null,
-        profileId: operator?.profileId || null,
+        profileId: currentProfileId || null,
         isActive: active
       });
 
