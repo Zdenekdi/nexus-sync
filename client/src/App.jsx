@@ -1365,7 +1365,7 @@ function App() {
     const s = absSec % 60;
     return `${seconds < 0 ? '-' : ''}${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
-  const [showLanding, setShowLanding] = useState(!isLoggedIn);
+  const [showLanding, setShowLanding] = useState(!isLoggedIn && !Capacitor.isNativePlatform());
 
   // Native app onboarding — show once after install, skip on web
   const [showOnboarding, setShowOnboarding] = useState(() => {
@@ -3350,7 +3350,7 @@ function App() {
           onRegisterAgency={handleRegisterAgency}
           onRegisterUser={handleRegisterUser}
           onResetRequest={handleResetRequest}
-          onBackToLanding={() => setShowLanding(true)}
+          onBackToLanding={isNativeApp ? null : () => setShowLanding(true)}
           operators={operators}
           lang={lang} 
           setLang={setLang} 
