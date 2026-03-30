@@ -5870,9 +5870,8 @@ function App() {
         {activeTab === 'permissions' && isAllowed('permissions') && (
           <PermissionsDashboard
             t={t}
-            rolePermissions={rolePermissions}
-            setRolePermissions={setRolePermissions}
             activeOperator={activeOperator}
+            onUpdate={fetchUserPermissions}
           />
         )}
 
