@@ -131,6 +131,33 @@ const PlansDashboard = ({ t, lang, subscriptionPlans, activeMarket, setActiveMar
           );
         })}
       </div>
+
+      {/* ADD-ON MARKETPLACE */}
+      <div style={{ marginTop: '4rem' }}>
+        <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <Zap size={24} color="var(--accent-color)" /> {t('addOnMarketplaceTitle') || 'Doplňkové funkce & Role'}
+        </h3>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
+          {[
+            { id: 'role_senior_operator', name: 'Role: Senior Operator', price: '500 CZK', desc: 'Pokročilé řízení práv a dohled nad týmem.' },
+            { id: 'mod_ai_optimizer', name: 'AI Optimizer Pack', price: '1200 CZK', desc: 'Automatická optimalizace kampaní přes AI.' },
+            { id: 'feat_priority_support', name: 'Priority VIP Support', price: '2000 CZK', desc: 'Garantovaná podpora do 2 hodin.' }
+          ].map(addon => (
+            <div key={addon.id} className="glass-card" style={{ padding: '1.5rem', border: '1px solid rgba(255,255,255,0.05)', transition: 'all 0.3s' }}>
+              <div style={{ fontWeight: '800', marginBottom: '0.5rem', fontSize: '1.1rem' }}>{addon.name}</div>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>{addon.desc}</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'var(--accent-color)', fontWeight: '800' }}>{addon.price}</span>
+                <button 
+                  onClick={() => alert('Platba bude integrována via GoPay.')}
+                  style={{ padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--accent-color)', borderRadius: '8px', color: 'white', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer' }}>
+                  AKTIVOVAT
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

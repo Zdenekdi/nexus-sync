@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -16,6 +16,7 @@ model Agency {
   tier      String   @default("Standard")
   inviteCode String?  @unique
   safetyAlertMode String @default("MANAGERS_AND_ASSIGNED") // MANAGERS_AND_ASSIGNED, ASSIGNED_ONLY
+  extraFeatures String?  // JSON string for purchased add-ons or bonuses
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
@@ -58,6 +59,7 @@ model Role {
   name        String
   description String?
   permissions String   // JSON string
+  minTier     String?  // Optional minimum tier required to use this role
   isAppOwner   Boolean  @default(false)
   isManager    Boolean  @default(false)
   agencyId    String?
