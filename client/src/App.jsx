@@ -13,6 +13,7 @@ import {
     History, Terminal, Mail, ArrowUpRight, PlusCircle, BarChart, PieChart, Download, EyeOff, Radio
   } from 'lucide-react';
 import LandingPage from './components/LandingPage';
+import Onboarding, { ONBOARDING_STORAGE_KEY } from './components/Onboarding';
 import RelayMode from './components/RelayMode';
 // Mock data imports removed for production hardening
 import { TRANSLATIONS } from './translations';
@@ -1365,6 +1366,19 @@ function App() {
     return `${seconds < 0 ? '-' : ''}${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
   const [showLanding, setShowLanding] = useState(!isLoggedIn);
+
+  // Native app onboarding — show once after install, skip on web
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    if (!isLoggedIn && Capacitor.isNativePlatform()) {
+      return localStorage.getItem(ONBOARDING_STORAGE_KEY) !== 'true';
+    }
+    return false;
+  });
+
+  const handleOnboardingComplete = useCallback(() => {
+    setShowOnboarding(false);
+  }, []);
+
   // Relay mode – persisted so the phone stays in relay after restart
   const [isRelayMode, setIsRelayMode] = useState(() => {
     return localStorage.getItem('nexus_relay_mode') === 'true';
@@ -3309,6 +3323,14 @@ function App() {
       );
     }
     if (!isLoggedIn) {
+      if (showOnboarding) {
+        return (
+          <Onboarding
+            onComplete={handleOnboardingComplete}
+            lang={lang}
+          />
+        );
+      }
       if (showLanding) {
         return (
           <LandingPage 

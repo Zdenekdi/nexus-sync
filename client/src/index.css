@@ -42,6 +42,10 @@ body {
   padding-right: env(safe-area-inset-right, 0px);
 }
 
+body.android-webview {
+  padding-top: 0 !important;
+}
+
 .dashboard-container {
   max-width: 1400px;
   margin: 0 auto;
