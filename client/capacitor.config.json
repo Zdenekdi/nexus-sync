@@ -1,5 +1,15 @@
 {
   "appId": "com.nexushub.app",
   "appName": "Nexus Relay",
-  "webDir": "dist"
+  "webDir": "dist",
+  "plugins": {
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#080a0f",
+      "overlaysWebView": true
+    }
+  },
+  "android": {
+    "backgroundColor": "#080a0f"
+  }
 }
