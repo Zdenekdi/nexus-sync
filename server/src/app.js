@@ -29,6 +29,7 @@ const bookingRoutes = require('./routes/bookingRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
 const notesRoutes = require('./routes/notesRoutes');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 
@@ -131,6 +132,7 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/notes', notesRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Basic health check
 app.get('/health', (req, res) => {
