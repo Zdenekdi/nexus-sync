@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  DollarSign, Users, TrendingUp, ArrowUpRight, 
+  Wallet, Users, TrendingUp, ArrowUpRight, 
   CreditCard, Activity, Calendar, Download,
   ExternalLink, ArrowDownRight, Zap, Target
 } from 'lucide-react';
@@ -97,7 +97,7 @@ const AppOwnerPlansDashboard = ({ t, lang, token, API_BASE, activeMarket, setAct
       {/* Header Stat Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '1rem' }}>
         <StatCard 
-          icon={<DollarSign color="#10b981" />}
+          icon={<Wallet color="#10b981" />}
           label={lang === 'cz' ? 'MRR' : 'MRR'}
           value={`${currentMRR.toLocaleString()} ${getCurrencySymbol(activeMarket)}`}
           trend="+12%"
