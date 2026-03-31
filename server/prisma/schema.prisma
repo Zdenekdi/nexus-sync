@@ -348,3 +348,10 @@ model DailyStat {
 
   @@unique([agencyId, date])
 }
+
+model GlobalSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   // Stores "true"/"false" or JSON strings
+  updatedAt DateTime @updatedAt
+}

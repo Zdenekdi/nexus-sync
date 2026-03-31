@@ -187,6 +187,12 @@ function App() {
   const [incomingCall, setIncomingCall] = useState(null);
   const [clientNotes, setClientNotes] = useState({});
   const [dbPermissions, setDbPermissions] = useState(null);
+  const [globalFeatures, setGlobalFeatures] = useState([
+    { id: 'ai_trans', label: 'AI Voice Relay (Beta)', desc: 'Enable neural speech-to-speech routing', active: true },
+    { id: 'vc_hub', label: 'Cross-Agency Analytics', desc: 'Enable view of aggregated data', active: true },
+    { id: 'crm_adv', label: 'Proxy Pooling', desc: 'Allow sharing device nodes', active: true },
+    { id: 'stats_bi', label: 'Payout Processing', desc: 'Automate weekly commission transfers', active: false }
+  ]);
 
   const normalizeRole = useCallback((role) => {
     if (!role) return role;
@@ -331,12 +337,29 @@ function App() {
     }
   }, [isLoggedIn, token, activeOperator?.role]);
 
+  const fetchGlobalFeatures = useCallback(async () => {
+    if (!token || !activeOperator) return;
+    try {
+      const res = await axios.get(`${API_BASE}/admin/features`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (Array.isArray(res.data)) {
+        setGlobalFeatures(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch global features:', err);
+    }
+  }, [token, activeOperator]);
+
   useEffect(() => {
     if (isLoggedIn && activeOperator) {
       fetchUserPermissions();
       fetchAgencies();
+      if (activeOperator.role?.toUpperCase() === 'APP OWNER') {
+        fetchGlobalFeatures();
+      }
     }
-  }, [isLoggedIn, activeOperator?.role, fetchUserPermissions, fetchAgencies]);
+  }, [isLoggedIn, activeOperator?.role, fetchUserPermissions, fetchAgencies, fetchGlobalFeatures]);
 
   // Persistence Effects
   useEffect(() => {
@@ -5844,19 +5867,33 @@ function App() {
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '700' }}>{t('systemCapabilities').toUpperCase()}</div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '2rem' }}>
-                  {[
-                    { id: 'ai_trans', label: t('ai_voice_relay'), desc: t('ai_voice_relay_desc'), active: true },
-                    { id: 'vc_hub', label: t('cross_agency_analytics'), desc: t('cross_agency_analytics_desc'), active: true },
-                    { id: 'crm_adv', label: t('proxy_pooling'), desc: t('proxy_pooling_desc'), active: true },
-                    { id: 'stats_bi', label: t('payout_processing'), desc: t('payout_processing_desc'), active: false }
-                  ].map((feature, i) => (
+                  {globalFeatures.map((feature, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--card-border)' }}>
                       <div>
-                        <div style={{ fontWeight: '700', marginBottom: '0.25rem' }}>{feature.label}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{feature.desc}</div>
+                        <div style={{ fontWeight: '700', marginBottom: '0.25rem' }}>{feature.label || t(feature.id) || feature.id}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{feature.desc || t(`${feature.id}_desc`)}</div>
                       </div>
                       <div
-                        onClick={() => {}} // Local simulation
+                        onClick={async () => {
+                          const newActiveState = !feature.active;
+                          // Optimistic update
+                          const newFeatures = [...globalFeatures];
+                          newFeatures[i].active = newActiveState;
+                          setGlobalFeatures(newFeatures);
+                          
+                          try {
+                            await axios.patch(`${API_BASE}/admin/features/${feature.id}`, { active: newActiveState }, {
+                              headers: { Authorization: `Bearer ${token}` }
+                            });
+                          } catch (err) {
+                            console.error('Failed to update feature state', err);
+                            // Revert on error
+                            const reverted = [...globalFeatures];
+                            reverted[i].active = !newActiveState;
+                            setGlobalFeatures(reverted);
+                            alert(lang === 'cz' ? 'Chyba při ukládání nastavení funkcí.' : 'Error saving feature settings.');
+                          }
+                        }}
                         className={`toggle-switch ${feature.active ? 'active' : ''}`}
                         style={{
                           width: '40px', height: '20px', background: feature.active ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)',
