@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 
-const AppOwnerPlansDashboard = ({ t, lang, token, API_BASE, activeMarket }) => {
+const AppOwnerPlansDashboard = ({ t, lang, token, API_BASE, activeMarket, setActiveMarket }) => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const isMobile = window.innerWidth < 768;
@@ -18,6 +18,16 @@ const AppOwnerPlansDashboard = ({ t, lang, token, API_BASE, activeMarket }) => {
       case 'uk': return '£';
       case 'us': return '$';
       default: return 'Kč';
+    }
+  };
+
+  const getApiCurrency = (m) => {
+    switch(m?.toLowerCase()) {
+      case 'cz': return 'CZK';
+      case 'eu': return 'EUR';
+      case 'uk': return 'GBP';
+      case 'us': return 'USD';
+      default: return 'CZK';
     }
   };
 
@@ -44,17 +54,44 @@ const AppOwnerPlansDashboard = ({ t, lang, token, API_BASE, activeMarket }) => {
     </div>
   );
 
+  const currentMRR = stats?.revenueByCurrency?.[getApiCurrency(activeMarket)] || 0;
+
   return (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem', padding: '1rem' }}>
       
       {/* Header Info */}
-      <div style={{ marginBottom: '1rem' }}>
-        <h2 style={{ fontSize: '1.75rem', fontWeight: '900', background: 'linear-gradient(to right, #6366f1, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '0.5rem' }}>
-          {lang === 'cz' ? 'Administrace Plateb' : 'Billing Administration'}
-        </h2>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          {lang === 'cz' ? 'Kompletní přehled tržeb, aktivních tarifů a transakční historie celé platformy.' : 'Complete overview of revenue, active plans, and platform-wide transaction history.'}
-        </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '1rem', flexDirection: isMobile ? 'column' : 'row', gap: '1.5rem' }}>
+        <div>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: '900', background: 'linear-gradient(to right, #6366f1, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '0.5rem' }}>
+            {lang === 'cz' ? 'Administrace Plateb' : 'Billing Administration'}
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+            {lang === 'cz' ? 'Kompletní přehled tržeb, aktivních tarifů a transakční historie celé platformy.' : 'Complete overview of revenue, active plans, and platform-wide transaction history.'}
+          </p>
+        </div>
+
+        {/* Market Switcher */}
+        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '0.5rem', display: 'flex', gap: '0.25rem' }}>
+          {['cz', 'eu', 'uk', 'us'].map(market => (
+            <button
+              key={market}
+              onClick={() => setActiveMarket(market)}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '8px',
+                background: activeMarket === market ? 'var(--accent-color)' : 'transparent',
+                color: activeMarket === market ? 'white' : 'var(--text-secondary)',
+                border: 'none',
+                fontSize: '0.8rem',
+                fontWeight: '700',
+                cursor: 'pointer',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+            >
+              {market.toUpperCase()} ({getCurrencySymbol(market)})
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Header Stat Cards */}
@@ -62,7 +99,7 @@ const AppOwnerPlansDashboard = ({ t, lang, token, API_BASE, activeMarket }) => {
         <StatCard 
           icon={<DollarSign color="#10b981" />}
           label={lang === 'cz' ? 'MRR' : 'MRR'}
-          value={`${(stats?.totalMRR || 0).toLocaleString()} ${getCurrencySymbol(activeMarket)}`}
+          value={`${currentMRR.toLocaleString()} ${getCurrencySymbol(activeMarket)}`}
           trend="+12%"
           trendUp={true}
         />

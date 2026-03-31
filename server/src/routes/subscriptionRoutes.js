@@ -204,14 +204,17 @@ router.get('/admin/stats', async (req, res) => {
       where: { status: 'ACTIVE' }
     });
 
-    // Simple MRR approximation (could be more complex if mix of plans)
-    const mrrSum = revenueByCurrency.find(r => r.currency === 'CZK')?._sum.amountPaid || 0;
+    // Convert revenueByCurrency to a clean object map
+    const revenueMap = {};
+    revenueByCurrency.forEach(r => {
+      revenueMap[r.currency] = r._sum.amountPaid || 0;
+    });
 
     res.json({
       totalAgencies: totalActive + totalTrial,
       activeSubscriptions: totalActive,
       trialPeriods: totalTrial,
-      totalMRR: mrrSum, // Default MRR for simplified reporting
+      revenueByCurrency: revenueMap,
       recentPayments: await prisma.subscription.findMany({
         take: 10,
         orderBy: { startedAt: 'desc' },
