@@ -69,7 +69,7 @@ const DEFAULT_ROLE_PERMISSIONS = {
     audit_logs: true,
     qa_hub: true,
     settings: true,
-    inventory: true
+    inventory: false
   },
   'Senior Operator': {
     infrastructure: false,
@@ -6470,54 +6470,17 @@ function App() {
                 </div>
               </div>
 
-              {/* Bonus Features (Management for App Owner) */}
-              {activeOperator?.role?.toUpperCase() === 'APP OWNER' && (
-                <div style={{ marginTop: '0.5rem' }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.1em' }}>BONUSOVÉ FUNKCE (PRO APP OWNERA)</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {[
-                      { key: 'ai_chatbot', label: 'AI Chatbot Support' },
-                      { key: 'priority_infra', label: 'Global Priority Infra' },
-                      { key: 'adv_analytics', label: 'Advanced Analytics (BETA)' }
-                    ].map(bonus => {
-                      const isEnabled = (selectedAgencyDetail.extraFeatures || '').includes(bonus.key);
-                      return (
-                        <div key={bonus.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.8rem', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid var(--card-border)' }}>
-                          <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>{bonus.label}</span>
-                          <button 
-                            onClick={async () => {
-                              try {
-                                const currentExtras = JSON.parse(selectedAgencyDetail.extraFeatures || '[]');
-                                const newExtras = currentExtras.includes(bonus.key) 
-                                  ? currentExtras.filter(k => k !== bonus.key)
-                                  : [...currentExtras, bonus.key];
-                                
-                                await axios.patch(`${API_BASE}/agency/settings`, {
-                                  agencyId: selectedAgencyDetail.id,
-                                  extraFeatures: JSON.stringify(newExtras)
-                                }, { headers: { Authorization: `Bearer ${token}` } });
-                                
-                                setSelectedAgencyDetail(prev => ({ ...prev, extraFeatures: JSON.stringify(newExtras) }));
-                                fetchAgencies();
-                                addNotification({ title: 'Success', message: 'Bonus features updated.', priority: 'success' });
-                              } catch (e) {
-                                console.error('Failed to update bonuses:', e);
-                              }
-                            }}
-                            style={{ 
-                              width: '36px', height: '20px', borderRadius: '10px', 
-                              background: isEnabled ? 'var(--success-color)' : 'rgba(255,255,255,0.1)',
-                              border: 'none', cursor: 'pointer', position: 'relative', transition: 'all 0.3s'
-                            }}
-                          >
-                            <div style={{ position: 'absolute', top: '2px', left: isEnabled ? '18px' : '2px', width: '16px', height: '16px', borderRadius: '50%', background: 'white', transition: 'all 0.3s' }} />
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+              {/* Action Button for Managing Roles (Moved Up) */}
+              <button 
+                onClick={() => {
+                  setAgencyToManage(selectedAgencyDetail);
+                  setIsAgencyRolesModalOpen(true);
+                }}
+                className="action-btn"
+                style={{ background: 'rgba(139, 92, 246, 0.1)', border: '1px solid var(--accent-color)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', fontWeight: '800', width: '100%', marginBottom: '1.25rem', padding: '1rem', borderRadius: '12px' }}
+              >
+                <Shield size={18} color="var(--accent-color)" /> SPRAVOVAT ROLE AGENTURY
+              </button>
               <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1.25rem' }}>
                 <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.8rem', letterSpacing: '0.05em' }}>MANAŽER AGENTURY</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -6563,18 +6526,7 @@ function App() {
                 )}
               </div>
 
-              {/* Action Button for Managing Roles */}
-              <button 
-                onClick={() => {
-                  setAgencyToManage(selectedAgencyDetail);
-                  setIsAgencyRolesModalOpen(true);
-                }}
-                className="action-btn"
-                style={{ background: 'rgba(139, 92, 246, 0.1)', border: '1px solid var(--accent-color)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', fontWeight: '800' }}
-              >
-                <Shield size={18} color="var(--accent-color)" /> SPRAVOVAT ROLE AGENTURY
-              </button>
-            </div>
+
 
             {/* Sticky Footer */}
             <div style={{ padding: '1.5rem 2.5rem 2rem', borderTop: '1px solid var(--card-border)', background: 'rgba(0,0,0,0.2)', display: 'flex', gap: '1rem' }}>

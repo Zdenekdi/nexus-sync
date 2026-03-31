@@ -22,10 +22,28 @@ exports.getRoles = async (req, res) => {
             orderBy: { createdAt: 'asc' }
         });
 
-        res.json(roles.map(r => ({
-            ...r,
-            permissions: typeof r.permissions === 'string' ? JSON.parse(r.permissions) : r.permissions
-        })));
+        const parsedRoles = roles.map(r => {
+            let perms = {};
+            if (typeof r.permissions === 'string') {
+                try {
+                    perms = JSON.parse(r.permissions);
+                } catch (e) {
+                    // Fallback for older non-JSON roles like '*' or 'messaging,profiles'
+                    if (r.name === 'Agency Admin') {
+                        perms = { permissions: true, hierarchy: true, analytics: true, messaging: true, calendar: true, profiles: true, web_profiles: true, device_setup: true, audit_logs: true, qa_hub: true, settings: true, inventory: false };
+                    } else if (r.name === 'Model') {
+                        perms = { messaging: true, calendar: true };
+                    } else if (r.name === 'Operator') {
+                        perms = { messaging: true, calendar: true, profiles: true, device_setup: true, settings: true };
+                    }
+                }
+            } else {
+                perms = r.permissions;
+            }
+            return { ...r, permissions: perms };
+        });
+
+        res.json(parsedRoles);
     } catch (error) {
         logger.error('Error fetching roles:', error);
         res.status(500).json({ message: 'Failed to fetch roles' });
@@ -38,8 +56,20 @@ exports.updateRolePermissions = async (req, res) => {
         const { permissions } = req.body;
         const { role: userRole } = req.user;
 
-        if (!userRole?.isAppOwner) {
-            return res.status(403).json({ message: 'Only App Owner can modify role templates' });
+        if (!userRole?.isAppOwner && !userRole?.isManager) {
+            return res.status(403).json({ message: 'Not authorized to modify roles' });
+        }
+
+        const existingRole = await prisma.role.findUnique({ where: { id } });
+        if (!existingRole) {
+            return res.status(404).json({ message: 'Role not found' });
+        }
+
+        if (!userRole.isAppOwner) {
+            // Agency managers can only modify roles belonging to their agency, and never global templates
+            if (!existingRole.agencyId || existingRole.agencyId !== req.user.agencyId) {
+                return res.status(403).json({ message: 'Can only modify roles for your own agency' });
+            }
         }
 
         const role = await prisma.role.update({

@@ -152,6 +152,9 @@ exports.getAgencies = async (req, res) => {
               isManager: true
             }
           },
+          orderBy: {
+            role: { name: 'asc' }
+          },
           select: {
             name: true,
             email: true
@@ -205,6 +208,9 @@ exports.getAgency = async (req, res) => {
             role: {
               isManager: true
             }
+          },
+          orderBy: {
+            role: { name: 'asc' }
           },
           select: {
             name: true,
