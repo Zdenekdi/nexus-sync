@@ -197,11 +197,15 @@ function App() {
   const activeRole = normalizeRole(activeOperator?.role);
 
   const rolePermissions = useMemo(() => {
-    // Prioritize DB permissions if they exist, even for App Owner
-    if (dbPermissions) return dbPermissions;
+    // We return a mapping of role names to permission objects, as expected by the UI
+    const permissionsMap = { ...DEFAULT_ROLE_PERMISSIONS };
     
-    // Fallback to defaults
-    return DEFAULT_ROLE_PERMISSIONS[activeRole] || DEFAULT_ROLE_PERMISSIONS['Operator'];
+    // If we have dynamic permissions for the current role from the DB, override them
+    if (dbPermissions) {
+      permissionsMap[activeRole] = dbPermissions;
+    }
+    
+    return permissionsMap;
   }, [activeRole, dbPermissions]);
 
   const isAllowed = (permission) => {
