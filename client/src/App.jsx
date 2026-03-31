@@ -51,7 +51,7 @@ const DEFAULT_ROLE_PERMISSIONS = {
     qa_hub: true,
     settings: true,
     referrals: true,
-    inventory: true
+    inventory: false
   },
   'Agency Admin': {
     infrastructure: false,
@@ -188,9 +188,12 @@ function App() {
 
   const [dbPermissions, setDbPermissions] = useState(null);
   const rolePermissions = useMemo(() => {
-    if (activeOperator?.role === 'App Owner') return DEFAULT_ROLE_PERMISSIONS['App Owner'];
-    return dbPermissions || DEFAULT_ROLE_PERMISSIONS[activeOperator?.role] || DEFAULT_ROLE_PERMISSIONS['Operator'];
-  }, [activeOperator?.role, dbPermissions]);
+    // Prioritize DB permissions if they exist, even for App Owner
+    if (dbPermissions) return dbPermissions;
+    
+    // Fallback to defaults
+    return DEFAULT_ROLE_PERMISSIONS[activeRole] || DEFAULT_ROLE_PERMISSIONS['Operator'];
+  }, [activeRole, dbPermissions]);
 
   const isAllowed = (permission) => {
     return rolePermissions[permission] === true;
