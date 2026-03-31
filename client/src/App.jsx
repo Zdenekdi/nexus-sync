@@ -6525,8 +6525,7 @@ function App() {
                   </div>
                 )}
               </div>
-
-
+            </div>
 
             {/* Sticky Footer */}
             <div style={{ padding: '1.5rem 2.5rem 2rem', borderTop: '1px solid var(--card-border)', background: 'rgba(0,0,0,0.2)', display: 'flex', gap: '1rem' }}>
