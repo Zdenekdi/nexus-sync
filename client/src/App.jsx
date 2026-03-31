@@ -185,8 +185,17 @@ function App() {
   const [mobileView, setMobileView] = useState('sidebar');
   const [incomingCall, setIncomingCall] = useState(null);
   const [clientNotes, setClientNotes] = useState({});
-
   const [dbPermissions, setDbPermissions] = useState(null);
+
+  const normalizeRole = useCallback((role) => {
+    if (!role) return role;
+    const roleName = typeof role === 'object' ? role.name : role;
+    if (roleName === 'App Owner' || roleName === 'SUPER_ADMIN' || roleName === 'ROOT') return 'App Owner';
+    return roleName;
+  }, []);
+
+  const activeRole = normalizeRole(activeOperator?.role);
+
   const rolePermissions = useMemo(() => {
     // Prioritize DB permissions if they exist, even for App Owner
     if (dbPermissions) return dbPermissions;
@@ -424,14 +433,6 @@ function App() {
     }
   };
 
-  const normalizeRole = useCallback((role) => {
-    if (!role) return role;
-    const roleName = typeof role === 'object' ? role.name : role;
-    if (roleName === 'App Owner' || roleName === 'SUPER_ADMIN' || roleName === 'ROOT') return 'App Owner';
-    return roleName;
-  }, []);
-
-  const activeRole = normalizeRole(activeOperator?.role);
   const isNativeApp = Capacitor.isNativePlatform();
 
   // Notification Logic
