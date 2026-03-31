@@ -48,7 +48,7 @@ const DEFAULT_ROLE_PERMISSIONS = {
     web_profiles: false,
     device_setup: false,
     audit_logs: false,
-    qa_hub: true,
+    qa_hub: false,
     settings: true,
     referrals: true,
     inventory: false
@@ -5772,10 +5772,10 @@ function App() {
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '2rem' }}>
                   {[
-                    { id: 'ai_trans', label: 'Global AI Voice Relay', desc: 'Auto-provision secure voice corridors for phone simulation.', active: true },
-                    { id: 'vc_hub', label: 'Cross-Agency Analytics', desc: 'Allow managers to view performance trends across multiple regions.', active: true },
-                    { id: 'crm_adv', label: 'Enterprise Proxy Pooling', desc: 'Dynamic residential proxy allocation for enhanced privacy.', active: true },
-                    { id: 'stats_bi', label: 'Automatic Payout Processing', desc: 'Scheduled generation of agency-wide billing reports.', active: false }
+                    { id: 'ai_trans', label: t('ai_voice_relay'), desc: t('ai_voice_relay_desc'), active: true },
+                    { id: 'vc_hub', label: t('cross_agency_analytics'), desc: t('cross_agency_analytics_desc'), active: true },
+                    { id: 'crm_adv', label: t('proxy_pooling'), desc: t('proxy_pooling_desc'), active: true },
+                    { id: 'stats_bi', label: t('payout_processing'), desc: t('payout_processing_desc'), active: false }
                   ].map((feature, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--card-border)' }}>
                       <div>
