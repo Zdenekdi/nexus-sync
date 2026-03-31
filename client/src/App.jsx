@@ -240,11 +240,11 @@ function App() {
   const [activeSubscription, setActiveSubscription] = useState(null);
   const [subscriptionHistory, setSubscriptionHistory] = useState([]);
   const [isStartingSubscription, setIsStartingSubscription] = useState(false);
-  const [subscriptionPlans] = useState([
+  const [subscriptionPlans, setSubscriptionPlans] = useState([
     {
       id: 'basic',
       name: 'Basic Node',
-      prices: { cz: '2,900 Kč', eu: '120 €', uk: '110 £' },
+      prices: { cz: '2,900 Kč', eu: '120 €', uk: '110 £', us: '125 $' },
       description: 'Standard relay capabilities for small teams.',
       profilesLimit: 5,
       features: ['feat_sms', 'feat_calls', 'feat_analytics']
@@ -252,7 +252,7 @@ function App() {
     {
       id: 'pro',
       name: 'Professional',
-      prices: { cz: '7,500 Kč', eu: '300 €', uk: '280 £' },
+      prices: { cz: '7,500 Kč', eu: '300 €', uk: '280 £', us: '325 $' },
       description: 'Advanced features for growing agencies.',
       profilesLimit: 25,
       features: ['feat_sms', 'feat_calls', 'feat_smart_replies', 'feat_proxies', 'feat_priority', 'feat_audit']
@@ -260,7 +260,7 @@ function App() {
     {
       id: 'enterprise',
       name: 'Enterprise',
-      prices: { cz: '15,000 Kč', eu: '600 €', uk: '550 £' },
+      prices: { cz: '15,000 Kč', eu: '600 €', uk: '550 £', us: '650 $' },
       description: 'Full-scale infrastructure control and customization.',
       profilesLimit: 100,
       features: ['feat_sms', 'feat_calls', 'feat_gateway', 'feat_voice', 'feat_whitelabel', 'feat_training']
@@ -279,7 +279,25 @@ function App() {
   const [targetAgencyId, setTargetAgencyId] = useState(null);
   const [canNavigateToNotification, setCanNavigateToNotification] = useState(false);
   const [relayApkInfo, setRelayApkInfo] = useState(null);
-  const [activeMarket, setActiveMarket] = useState(lang === 'cz' ? 'cz' : 'eu');
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(() => localStorage.getItem('nexus_maintenance') === 'true');
+  const [globalAnnouncement, setGlobalAnnouncement] = useState(() => localStorage.getItem('nexus_announcement') || '');
+  const [activeMarket, setActiveMarket] = useState(() => {
+    const saved = localStorage.getItem('nexus_activeMarket');
+    if (saved) return saved;
+    return lang === 'cz' ? 'cz' : 'eu';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('nexus_activeMarket', activeMarket);
+  }, [activeMarket]);
+
+  useEffect(() => {
+    localStorage.setItem('nexus_maintenance', isMaintenanceMode);
+  }, [isMaintenanceMode]);
+
+  useEffect(() => {
+    localStorage.setItem('nexus_announcement', globalAnnouncement);
+  }, [globalAnnouncement]);
   const SAFETY_SUGGESTIONS = ['10:00', '14:00', '18:00', '22:00'];
   const [detectedMeeting, setDetectedMeeting] = useState(null);
 
@@ -5374,8 +5392,28 @@ function App() {
             <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem' }}>{t('configSubtitle')}</p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem', maxWidth: '800px' }}>
+              {activeRole === 'App Owner' && (
+                <div className="settings-section">
+                  <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Activity size={20} color="var(--success-color)" /> Platform Health Snapshot</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1rem' }}>
+                    <div className="glass-card" style={{ padding: '1.25rem', textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>ACTIVE SESSIONS</div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>32</div>
+                    </div>
+                    <div className="glass-card" style={{ padding: '1.25rem', textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>DB LATENCY</div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: '900', color: 'var(--success-color)' }}>12ms</div>
+                    </div>
+                    <div className="glass-card" style={{ padding: '1.25rem', textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>OUTGOING NODES</div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>4</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="settings-section">
-                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Building2 size={20} color="var(--accent-color)" /> {t('agencyInsight')}: {activeClient?.name || t('global')}</h3>
+                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Building2 size={20} color="var(--accent-color)" /> {activeRole === 'App Owner' ? 'Agency Information' : t('agencyInsight')}: {activeClient?.name || t('global')}</h3>
                 <div className="grid" style={{ gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1.5rem' }}>
                   <div className="glass-card" style={{ padding: '1.5rem' }}>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('teamSeats')}</div>
@@ -5483,6 +5521,40 @@ function App() {
                     </div>
                 </div>
               </div>
+
+              {activeRole === 'App Owner' && (
+                <div className="settings-section">
+                  <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Lock size={20} color="var(--accent-color)" /> Platform Management (App Owner Only)</h3>
+                  <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontWeight: '700' }}>Maintenance Mode</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Restrict access to all non-admin users for scheduled maintenance.</div>
+                      </div>
+                      <div 
+                        className={`status-badge ${isMaintenanceMode ? 'active' : ''}`} 
+                        style={{ cursor: 'pointer', background: isMaintenanceMode ? 'var(--error-color)' : 'rgba(255,255,255,0.06)' }}
+                        onClick={() => setIsMaintenanceMode(!isMaintenanceMode)}
+                      >
+                        {isMaintenanceMode ? 'ACTIVE' : 'INACTIVE'}
+                      </div>
+                    </div>
+                    <div style={{ borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem' }}>
+                      <div style={{ fontWeight: '700', marginBottom: '0.75rem' }}>Global Announcement Banner</div>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <input 
+                          className="glass-input" 
+                          placeholder="Type an announcement to show to all users..." 
+                          style={{ flex: 1, padding: '0.75rem' }}
+                          value={globalAnnouncement}
+                          onChange={(e) => setGlobalAnnouncement(e.target.value)}
+                        />
+                        <button className="action-btn" style={{ width: 'auto', padding: '0 1.5rem' }} onClick={() => showToast('Announcement published!', 'success')}>PUBLISH</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {isAllowed('global_features') && (
                 <div className="settings-section">
@@ -5898,6 +5970,7 @@ function App() {
                   lang={lang} 
                   token={token} 
                   API_BASE={API_BASE} 
+                  activeMarket={activeMarket}
                 />
               </div>
             );
@@ -6021,7 +6094,7 @@ function App() {
 
                 {/* Marketing pricing plans below */}
                 <div style={{ borderTop: '1px solid var(--card-border)', paddingTop: '2rem' }}>
-                  <PlansDashboard lang={lang} t={t} subscriptionPlans={subscriptionPlans} activeMarket={activeMarket} setActiveMarket={setActiveMarket} activeOperator={activeOperator} currentAgency={currentAgency} />
+                  <PlansDashboard lang={lang} t={t} subscriptionPlans={subscriptionPlans} setSubscriptionPlans={setSubscriptionPlans} activeMarket={activeMarket} setActiveMarket={setActiveMarket} activeOperator={activeOperator} currentAgency={currentAgency} />
                 </div>
               </div>
             </div>

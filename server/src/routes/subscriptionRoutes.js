@@ -12,11 +12,11 @@ const PLAN_DURATIONS = {
   ANNUAL:      365,
 };
 
-// Plan pricing in CZK
+// Multi-currency plan pricing
 const PLAN_PRICES = {
-  MONTHLY:     990,
-  SEMI_ANNUAL: 5490,
-  ANNUAL:      9990,
+  MONTHLY:     { CZK: 990,  EUR: 39,  GBP: 35,  USD: 45 },
+  SEMI_ANNUAL: { CZK: 5490, EUR: 219, GBP: 189, USD: 249 },
+  ANNUAL:      { CZK: 9990, EUR: 399, GBP: 349, USD: 449 },
 };
 
 router.use(authMiddleware);
@@ -66,7 +66,7 @@ router.get('/history', async (req, res) => {
 // Body: { plan: 'MONTHLY'|'SEMI_ANNUAL'|'ANNUAL', paymentRef?, amountPaid?, note? }
 router.post('/start', async (req, res) => {
   try {
-    const { plan, paymentRef, amountPaid, note } = req.body;
+    const { plan, paymentRef, amountPaid, currency = 'CZK', note } = req.body;
     const agencyId = req.user.agencyId;
 
     if (!PLAN_DURATIONS[plan]) {
@@ -90,8 +90,8 @@ router.post('/start', async (req, res) => {
         status:     'ACTIVE',
         startedAt:  now,
         expiresAt,
-        amountPaid: amountPaid ?? PLAN_PRICES[plan],
-        currency:   'CZK',
+        amountPaid: amountPaid ?? PLAN_PRICES[plan][currency],
+        currency,
         paymentRef: paymentRef ?? null,
         note:       note ?? null,
       },
@@ -184,6 +184,43 @@ router.post('/trial', async (req, res) => {
   } catch (err) {
     console.error('POST /subscriptions/trial error:', err);
     res.status(500).json({ error: 'Failed to start trial' });
+  }
+});
+
+// ── GET /api/subscriptions/admin/stats (App Owner only)
+// Platform-wide metrics for the administration dashboard
+router.get('/admin/stats', async (req, res) => {
+  try {
+    if (!req.user.isAppOwner && !req.user.isAdmin) {
+      return res.status(403).json({ error: 'App Owner access required' });
+    }
+
+    const totalActive = await prisma.subscription.count({ where: { status: 'ACTIVE' } });
+    const totalTrial = await prisma.subscription.count({ where: { status: 'TRIAL' } });
+    
+    const revenueByCurrency = await prisma.subscription.groupBy({
+      by: ['currency'],
+      _sum: { amountPaid: true },
+      where: { status: 'ACTIVE' }
+    });
+
+    // Simple MRR approximation (could be more complex if mix of plans)
+    const mrrSum = revenueByCurrency.find(r => r.currency === 'CZK')?._sum.amountPaid || 0;
+
+    res.json({
+      totalAgencies: totalActive + totalTrial,
+      activeSubscriptions: totalActive,
+      trialPeriods: totalTrial,
+      totalMRR: mrrSum, // Default MRR for simplified reporting
+      recentPayments: await prisma.subscription.findMany({
+        take: 10,
+        orderBy: { startedAt: 'desc' },
+        include: { agency: true }
+      })
+    });
+  } catch (err) {
+    console.error('GET /subscriptions/admin/stats error:', err);
+    res.status(500).json({ error: 'Failed to fetch admin stats' });
   }
 });
 

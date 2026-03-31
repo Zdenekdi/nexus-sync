@@ -1,10 +1,22 @@
 import React from 'react';
 import { CreditCard, Users, Check, FileEdit, CheckCheck, Zap } from 'lucide-react';
 
-const PlansDashboard = ({ t, lang, subscriptionPlans, activeMarket, setActiveMarket, activeOperator, currentAgency }) => {
+const PlansDashboard = ({ t, lang, subscriptionPlans, setSubscriptionPlans, activeMarket, setActiveMarket, activeOperator, currentAgency }) => {
   const isMobile = window.innerWidth < 768;
+  const [editingPlan, setEditingPlan] = React.useState(null);
+
+  const getCurrencySymbol = (m) => {
+    switch(m.toLowerCase()) {
+      case 'cz': return 'Kč';
+      case 'eu': return '€';
+      case 'uk': return '£';
+      case 'us': return '$';
+      default: return '€';
+    }
+  };
+
   return (
-    <div style={{ padding: isMobile ? 'calc(1rem + env(safe-area-inset-left)) 1rem calc(1rem + max(env(safe-area-inset-bottom), 1rem) + env(safe-area-inset-right))' : '2rem', flex: 1, overflowY: 'auto', maxHeight: isMobile ? 'calc(100dvh - max(env(safe-area-inset-top), 1rem) - 3rem)' : '100%' }} className="fade-in custom-scrollbar">
+    <div style={{ padding: isMobile ? 'calc(1rem + env(safe-area-inset-left)) 1rem calc(1rem + max(env(safe-area-inset-bottom), 1rem) + env(safe-area-inset-right))' : '2rem', flex: 1, overflowY: isMobile ? 'scroll' : 'auto', maxHeight: isMobile ? 'calc(100dvh - max(env(safe-area-inset-top), 1rem) - 3rem)' : '100%' }} className="fade-in custom-scrollbar">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'flex-end', marginBottom: isMobile ? '2rem' : '3rem', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : 0 }}>
         <div>
           <h2 style={{ fontSize: isMobile ? '1.75rem' : '2.5rem', fontWeight: '900', marginBottom: '0.5rem', background: 'linear-gradient(to right, #6366f1, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('subscriptionPlansTitle')}</h2>
@@ -12,7 +24,7 @@ const PlansDashboard = ({ t, lang, subscriptionPlans, activeMarket, setActiveMar
         </div>
         
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '0.5rem', display: 'flex', gap: '0.25rem', width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'center' : 'flex-start' }}>
-          {['cz', 'eu', 'uk'].map(market => (
+          {['cz', 'eu', 'uk', 'us'].map(market => (
             <button
               key={market}
               onClick={() => setActiveMarket(market)}
@@ -28,7 +40,7 @@ const PlansDashboard = ({ t, lang, subscriptionPlans, activeMarket, setActiveMar
                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
               }}
             >
-              {market === 'cz' ? 'CZ (Kč)' : market === 'uk' ? 'UK (£)' : 'EU (€)'}
+              {market.toUpperCase()} ({getCurrencySymbol(market)})
             </button>
           ))}
         </div>
@@ -95,12 +107,12 @@ const PlansDashboard = ({ t, lang, subscriptionPlans, activeMarket, setActiveMar
                 </div>
               </div>
               
-              {activeOperator?.isAppOwner ? (
+              {activeOperator?.role === 'App Owner' ? (
                 <button 
-                  onClick={() => {}} // Simulation only
+                  onClick={() => setEditingPlan(plan)}
                   style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                 >
-                  <FileEdit size={16} /> {t('editPlanDetails')}
+                  <FileEdit size={16} /> {t('editPlanDetails') || 'Upravit tarif'}
                 </button>
               ) : (
                 <button 
@@ -158,6 +170,52 @@ const PlansDashboard = ({ t, lang, subscriptionPlans, activeMarket, setActiveMar
           ))}
         </div>
       </div>
+      {/* Plan Editor Modal */}
+      {editingPlan && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '500px', padding: '2.5rem', border: '1px solid var(--accent-color)' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '2rem' }}>Upravit tarif: {editingPlan.name}</h2>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>NÁZEV TARIFU</label>
+                <input className="glass-input" value={editingPlan.name} onChange={(e) => setEditingPlan({...editingPlan, name: e.target.value})} style={{ width: '100%', padding: '0.75rem' }} />
+              </div>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>CENA CZK</label>
+                  <input className="glass-input" value={editingPlan.prices.cz} onChange={(e) => setEditingPlan({...editingPlan, prices: {...editingPlan.prices, cz: e.target.value}})} style={{ width: '100%', padding: '0.75rem' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>CENA USD</label>
+                   <input className="glass-input" value={editingPlan.prices.us} onChange={(e) => setEditingPlan({...editingPlan, prices: {...editingPlan.prices, us: e.target.value}})} style={{ width: '100%', padding: '0.75rem' }} />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>LIMIT PROFILŮ</label>
+                <input type="number" className="glass-input" value={editingPlan.profilesLimit} onChange={(e) => setEditingPlan({...editingPlan, profilesLimit: parseInt(e.target.value)})} style={{ width: '100%', padding: '0.75rem' }} />
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                <button 
+                  className="action-btn" 
+                  style={{ flex: 1, background: 'var(--accent-color)' }} 
+                  onClick={() => {
+                    const newPlans = subscriptionPlans.map(p => p.id === editingPlan.id ? editingPlan : p);
+                    setSubscriptionPlans(newPlans);
+                    setEditingPlan(null);
+                  }}
+                >
+                  ULOŽIT ZMĚNY
+                </button>
+                <button className="action-btn" style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)' }} onClick={() => setEditingPlan(null)}>ZRUŠIT</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
