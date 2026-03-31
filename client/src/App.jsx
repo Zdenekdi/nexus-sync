@@ -20,6 +20,7 @@ import { TRANSLATIONS } from './translations';
 import { useSocket } from './hooks/useSocket';
 import QAView from './components/QAView';
 import PermissionsDashboard from './components/PermissionsDashboard';
+import AppOwnerPlansDashboard from './components/AppOwnerPlansDashboard';
 import PlansDashboard from './components/PlansDashboard';
 import DashboardHome from './components/DashboardHome';
 import LoginScreen from './components/LoginScreen';
@@ -5889,6 +5890,19 @@ function App() {
 
         {/* Subscription / Billing */}
         {activeTab === 'plans' && isAllowed('plans') && (() => {
+          if (activeOperator?.role === 'App Owner') {
+            return (
+              <div className="fade-in" style={{ padding: isMobile ? '1rem' : '2rem', flex: 1, overflowY: 'auto' }}>
+                <AppOwnerPlansDashboard 
+                  t={t} 
+                  lang={lang} 
+                  token={token} 
+                  API_BASE={API_BASE} 
+                />
+              </div>
+            );
+          }
+
           const PLANS = [
             { id: 'MONTHLY',     label: lang === 'cz' ? 'Měsíční'  : 'Monthly',     price: 990,   priceFmt: '990 Kč',    days: 30,  save: 0 },
             { id: 'SEMI_ANNUAL', label: lang === 'cz' ? 'Půlroční' : 'Semi-Annual', price: 5490,  priceFmt: '5 490 Kč',  days: 182, save: 8 },
