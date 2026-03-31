@@ -209,7 +209,8 @@ function App() {
   }, [activeRole, dbPermissions]);
 
   const isAllowed = (permission) => {
-    return rolePermissions[permission] === true;
+    const currentPerms = rolePermissions[activeRole] || rolePermissions['Operator'] || {};
+    return currentPerms[permission] === true;
   };
   const [notifications, setNotifications] = useState(() => {
     const saved = localStorage.getItem('nexus_notifications');
