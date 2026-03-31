@@ -200,9 +200,12 @@ function App() {
     // We return a mapping of role names to permission objects, as expected by the UI
     const permissionsMap = { ...DEFAULT_ROLE_PERMISSIONS };
     
-    // If we have dynamic permissions for the current role from the DB, override them
+    // If we have dynamic permissions for the current role from the DB, merge them
     if (dbPermissions) {
-      permissionsMap[activeRole] = dbPermissions;
+      permissionsMap[activeRole] = {
+        ...(permissionsMap[activeRole] || {}),
+        ...dbPermissions
+      };
     }
     
     return permissionsMap;
