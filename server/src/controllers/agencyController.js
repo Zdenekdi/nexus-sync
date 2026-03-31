@@ -303,11 +303,16 @@ exports.addUser = async (req, res) => {
     // Find or create role
     let targetRole = await prisma.role.findFirst({ where: { name: roleName, agencyId: targetAgencyId } });
     if (!targetRole) {
+      const globalTemplate = await prisma.role.findFirst({
+        where: { name: roleName, agencyId: null }
+      });
+      const defaultPerms = JSON.stringify(roleName === 'Agency Admin' ? { all: true } : { messaging: true });
+
       targetRole = await prisma.role.create({
         data: {
           name: roleName,
           agencyId: targetAgencyId,
-          permissions: roleName === 'Agency Admin' ? '*' : 'messaging,profiles'
+          permissions: globalTemplate ? globalTemplate.permissions : defaultPerms
         }
       });
     }
