@@ -72,15 +72,21 @@ exports.registerAgency = async (req, res) => {
         }
       });
 
+      const globalTemplate = await tx.role.findFirst({
+        where: { name: 'Agency Admin', agencyId: null }
+      });
+
+      const defaultPerms = JSON.stringify({
+        permissions: true, hierarchy: true, analytics: true, messaging: true,
+        calendar: true, profiles: true, web_profiles: true, device_setup: true,
+        audit_logs: true, qa_hub: true, settings: true, inventory: false
+      });
+
       const role = await tx.role.create({
         data: {
           name: 'Agency Admin',
           description: 'Full access to agency resources',
-          permissions: JSON.stringify({
-            permissions: true, hierarchy: true, analytics: true, messaging: true,
-            calendar: true, profiles: true, web_profiles: true, device_setup: true,
-            audit_logs: true, qa_hub: true, settings: true, inventory: false
-          }),
+          permissions: globalTemplate ? globalTemplate.permissions : defaultPerms,
           isAppOwner: false,
           agencyId: agency.id
         }
@@ -136,10 +142,14 @@ exports.registerUser = async (req, res) => {
     });
 
     if (!role) {
+      const globalTemplate = await prisma.role.findFirst({
+        where: { name: requestedRole, agencyId: null }
+      });
+
       role = await prisma.role.create({
         data: {
           name: requestedRole,
-          permissions: rolePermissions,
+          permissions: globalTemplate ? globalTemplate.permissions : rolePermissions,
           agencyId: agency.id
         }
       });

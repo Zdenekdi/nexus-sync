@@ -15,12 +15,40 @@ exports.getRoles = async (req, res) => {
             return res.status(403).json({ message: 'Access denied' });
         }
 
-        // If agencyId is provided, fetch specific agency roles. 
-        // Otherwise fetch global templates (agencyId: null)
-        const roles = await prisma.role.findMany({
+        let roles = await prisma.role.findMany({
             where: agencyId ? { agencyId } : { agencyId: null },
             orderBy: { createdAt: 'asc' }
         });
+
+        // Auto-seed global templates if they are missing
+        if (!agencyId) {
+            const expectedTemplates = [
+                { name: 'App Owner', isAppOwner: true, isManager: true, permissions: JSON.stringify({ all: true }) },
+                { name: 'Agency Admin', isAppOwner: false, isManager: true, permissions: JSON.stringify({ permissions: true, hierarchy: true, analytics: true, messaging: true, calendar: true, profiles: true, web_profiles: true, device_setup: true, audit_logs: true, qa_hub: true, settings: true, inventory: false }) },
+                { name: 'Senior Operator', isAppOwner: false, isManager: true, permissions: JSON.stringify({ messaging: true, calendar: true, profiles: true, device_setup: true, settings: true, qa_hub: true, analytics: true, inventory: false }) },
+                { name: 'Operator', isAppOwner: false, isManager: false, permissions: JSON.stringify({ messaging: true, calendar: true, profiles: true, device_setup: true, settings: true, inventory: false }) },
+                { name: 'Model', isAppOwner: false, isManager: false, permissions: JSON.stringify({ messaging: true, calendar: true, inventory: false }) }
+            ];
+
+            const existingNames = roles.map(r => r.name);
+            const toCreate = expectedTemplates.filter(t => !existingNames.includes(t.name));
+
+            if (toCreate.length > 0) {
+                // Bulk create missing templates
+                for (const t of toCreate) {
+                    await prisma.role.upsert({
+                        where: { id: `global-${t.name}` },
+                        update: {},
+                        create: { ...t, id: `global-${t.name.toLowerCase().replace(' ', '-')}` }
+                    }).catch(e => console.error('Upsert warn:', e));
+                }
+                
+                roles = await prisma.role.findMany({
+                    where: { agencyId: null },
+                    orderBy: { createdAt: 'asc' }
+                });
+            }
+        }
 
         const parsedRoles = roles.map(r => {
             let perms = {};
@@ -72,12 +100,21 @@ exports.updateRolePermissions = async (req, res) => {
             }
         }
 
+        const serializedPerms = typeof permissions === 'object' ? JSON.stringify(permissions) : permissions;
+
         const role = await prisma.role.update({
             where: { id },
-            data: {
-                permissions: typeof permissions === 'object' ? JSON.stringify(permissions) : permissions
-            }
+            data: { permissions: serializedPerms }
         });
+
+        // Cascade global template updates down to all agencies using this role
+        if (!existingRole.agencyId) {
+            await prisma.role.updateMany({
+                where: { name: existingRole.name, agencyId: { not: null } },
+                data: { permissions: serializedPerms }
+            });
+            logger.info(`Global role template "${existingRole.name}" edited. Changes cascaded to all agencies.`);
+        }
 
         logger.info(`Role ${id} permissions updated by ${req.user.userId}`);
         res.json(role);
