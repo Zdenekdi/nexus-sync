@@ -152,7 +152,7 @@ const PermissionsDashboard = ({ t, activeOperator, agencyId = null, onUpdate = n
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                 {CATEGORIES.map(category => {
-                  const categoryPerms = category.perms.filter(p => p in perms);
+                  const categoryPerms = category.perms;
                   if (categoryPerms.length === 0 && !isAppOwner) return null;
 
                   return (

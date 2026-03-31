@@ -76,7 +76,11 @@ exports.registerAgency = async (req, res) => {
         data: {
           name: 'Agency Admin',
           description: 'Full access to agency resources',
-          permissions: '*',
+          permissions: JSON.stringify({
+            permissions: true, hierarchy: true, analytics: true, messaging: true,
+            calendar: true, profiles: true, web_profiles: true, device_setup: true,
+            audit_logs: true, qa_hub: true, settings: true, inventory: false
+          }),
           isAppOwner: false,
           agencyId: agency.id
         }
@@ -124,8 +128,8 @@ exports.registerUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     
     const rolePermissions = requestedRole === 'Model'
-      ? 'profiles:read,messaging:read'
-      : 'messaging,profiles';
+      ? JSON.stringify({ messaging: true, calendar: true })
+      : JSON.stringify({ messaging: true, calendar: true, profiles: true, device_setup: true, settings: true });
 
     let role = await prisma.role.findFirst({ 
       where: { agencyId: agency.id, name: requestedRole } 
