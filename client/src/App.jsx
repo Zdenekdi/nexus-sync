@@ -5971,6 +5971,7 @@ function App() {
                   token={token} 
                   API_BASE={API_BASE} 
                   activeMarket={activeMarket}
+                  setActiveMarket={setActiveMarket}
                 />
               </div>
             );
