@@ -6,10 +6,20 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 
-const AppOwnerPlansDashboard = ({ t, lang, token, API_BASE }) => {
+const AppOwnerPlansDashboard = ({ t, lang, token, API_BASE, activeMarket }) => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const isMobile = window.innerWidth < 768;
+
+  const getCurrencySymbol = (m) => {
+    switch(m?.toLowerCase()) {
+      case 'cz': return 'Kč';
+      case 'eu': return '€';
+      case 'uk': return '£';
+      case 'us': return '$';
+      default: return 'Kč';
+    }
+  };
 
   useEffect(() => {
     fetchStats();
@@ -52,7 +62,7 @@ const AppOwnerPlansDashboard = ({ t, lang, token, API_BASE }) => {
         <StatCard 
           icon={<DollarSign color="#10b981" />}
           label={lang === 'cz' ? 'MRR' : 'MRR'}
-          value={`${stats?.totalMRR?.toLocaleString()} Kč`}
+          value={`${(stats?.totalMRR || 0).toLocaleString()} ${getCurrencySymbol(activeMarket)}`}
           trend="+12%"
           trendUp={true}
         />
