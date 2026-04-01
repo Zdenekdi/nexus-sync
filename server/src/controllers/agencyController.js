@@ -257,7 +257,6 @@ exports.createAgency = async (req, res) => {
         region,
         tier: tier || 'Professional',
         plan: tier || 'Professional',
-        status: 'active',
         inviteCode
       }
     });
