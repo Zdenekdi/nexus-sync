@@ -3,13 +3,13 @@ import { io } from 'socket.io-client';
 
 const SOCKET_URL = (import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api').replace(/\/api$/, '');
 
-export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert) => {
+export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert, onSipIncomingCall) => {
   const socketRef = useRef(null);
-  const handlersRef = useRef({ onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert });
+  const handlersRef = useRef({ onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert, onSipIncomingCall });
 
   // Update refs when handlers change without re-triggering the socket effect
   useEffect(() => {
-    handlersRef.current = { onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert };
+    handlersRef.current = { onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert, onSipIncomingCall };
   }, [onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert]);
 
   useEffect(() => {
@@ -60,6 +60,14 @@ export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall,
         console.log('Received emergency_alert:', data);
         if (handlersRef.current.onEmergencyAlert) {
           handlersRef.current.onEmergencyAlert(data);
+        }
+      });
+
+      // SIP příchozí hovor od relay zařízení — obsahuje profileName (jméno modelky)
+      socketRef.current.on('sip_incoming_call', (data) => {
+        console.log('[SIP] 📞 sip_incoming_call:', data);
+        if (handlersRef.current.onSipIncomingCall) {
+          handlersRef.current.onSipIncomingCall(data);
         }
       });
 
