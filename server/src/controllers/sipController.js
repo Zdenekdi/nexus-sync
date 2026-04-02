@@ -3,8 +3,10 @@
  *
  * Endpointy:
  *   GET  /api/sip/config          — relay zařízení si stáhne vlastní SIP config (JWT auth)
+ *                                   AUTO-PROVISIONING: pokud binding nemá credentials, vygeneruje je
  *   POST /api/sip/config/:bindingId — admin nastaví SIP credentials pro DeviceBinding
  *   DELETE /api/sip/config/:bindingId — admin smaže SIP credentials
+ *   POST /api/sip/reset-config/:bindingId — reset credentials (nové auto-generated)
  *   GET  /api/sip/status          — stav SIP registrací per relay (ping table)
  */
 
@@ -20,8 +22,16 @@ const sipStatusMap = new Map();
 // Relay zařízení sem zapíše info o hovoru → web operátor ho přečte přes Socket.IO
 const callMetaMap  = new Map();
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function generateSipPassword(len = 20) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789@#$!';
+  return Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
 // ─── GET /api/sip/config ─────────────────────────────────────────────────────
-// Volá relay zařízení po přihlášení — vrátí SIP konfiguraci pro tento DeviceBinding
+// Volá relay zařízení po přihlášení.
+// AUTO-PROVISIONING: pokud binding ještě nemá SIP údaje, server je vygeneruje,
+// uloží do DB a pošle příkaz k reloadu Asterisku — telefon dostane hotové credentials.
 exports.getMyConfig = async (req, res) => {
   try {
     const userId = req.user?.userId;
@@ -148,6 +158,36 @@ exports.deleteConfig = async (req, res) => {
 
     return res.json({ ok: true });
   } catch (err) {
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+// ─── POST /api/sip/reset-config/:bindingId ────────────────────────────────────
+// Vymaže SIP credentials pro daný binding → při příštím GET /api/sip/config
+// proběhne auto-provisioning (nový user + nové heslo).
+// Určeno pro adminy nebo selbytnou resetovací akci v dashboardu.
+exports.resetConfig = async (req, res) => {
+  try {
+    const { bindingId } = req.params;
+    const agencyId = req.user?.agencyId;
+    const role     = req.user?.role;
+    const where    = { id: bindingId };
+    if (role !== 'App Owner' && agencyId) where.agencyId = agencyId;
+
+    const binding = await prisma.deviceBinding.findFirst({ where, select: { id: true, agencyId: true } });
+    if (!binding) return res.status(404).json({ ok: false, message: 'Nenalezen' });
+
+    await prisma.deviceBinding.update({
+      where: { id: bindingId },
+      data: { sipUser: null, sipPassword: null, sipServer: null, sipPort: null },
+    });
+
+    sipStatusMap.delete(bindingId);
+    console.log(`[SIP] 🔄 Reset credentials pro binding ${bindingId} — auto-provisioning při příštím připojení`);
+
+    return res.json({ ok: true, message: 'Credentials resetovány. Nové se vygenerují při příštím připojení telefonu.' });
+  } catch (err) {
+    console.error('[SIP] resetConfig error:', err);
     return res.status(500).json({ ok: false, message: 'Internal server error' });
   }
 };

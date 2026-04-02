@@ -3,7 +3,60 @@ import { DollarSign, Building2, Zap, Activity, TrendingUp, Users, Server, Shield
 import { RevenueLineChart, ConversionDonutChart, MiniSparkline } from './AnalyticsCharts';
 import { useVultr } from '../hooks/useVultr';
 
-const DashboardHome = ({ user, t, lang, agencies = [], profiles = [], calendar = [], isShiftActive, setIsShiftActive, isMobile, stats = {}, activeSubscription }) => {
+const DashboardHome = ({ user, t, lang, agencies = [], profiles = [], calendar = [], isShiftActive, setIsShiftActive, isMobile, stats = {}, activeSubscription, isRelayVariant = false }) => {
+  if (isRelayVariant) {
+    return (
+      <div style={{ 
+        padding: '1.5rem 1rem',
+        maxWidth: '100%',
+        margin: '0 auto',
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '2rem'
+      }}>
+        <div className="fade-in">
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h2 style={{ fontSize: '1.75rem', fontWeight: '900', letterSpacing: '0.05em' }}>{t('dailyAgenda').toUpperCase()}</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t('dailyAgendaDesc')}</p>
+          </div>
+
+          <div className="glass-card" style={{ padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: '800' }}>{t('todaysBookings')}</h3>
+              <span style={{ fontSize: '0.75rem', color: 'var(--accent-color)', fontWeight: '800' }}>{calendar.length} {t('total').toUpperCase()}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {calendar.length > 0 ? calendar.map((event, i) => (
+                <div key={i} style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: '15px', borderLeft: `4px solid ${event.status === 'confirmed' ? 'var(--success-color)' : 'var(--accent-color)'}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontWeight: '800', fontSize: '1rem' }}>{event.time}</div>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{(event.title || '').replace('Meeting w/ ', '')}</div>
+                  </div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: '900', color: 'var(--text-secondary)' }}>{event.duration}</div>
+                </div>
+              )) : <div style={{ color: 'var(--text-secondary)', padding: '1rem', textAlign: 'center', border: '1px dashed var(--card-border)', borderRadius: '12px' }}>{t('noBookingsToday') || 'No bookings for today.'}</div>}
+            </div>
+          </div>
+
+          <div className="glass-card" style={{ padding: '1.5rem', marginTop: '1.5rem' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1rem' }}>{t('quickStats')}</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('messages').toUpperCase()}</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{stats.totalMessages || 0}</div>
+              </div>
+              <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('calls').toUpperCase()}</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{stats.totalCalls || 0}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const { status: vultrStatus } = useVultr();
 
   const renderSubscriptionBanner = () => {
@@ -228,14 +281,14 @@ const DashboardHome = ({ user, t, lang, agencies = [], profiles = [], calendar =
 
   const renderModel = () => (
     <div className="fade-in">
-      <div style={{ marginBottom: '2.5rem' }}>
-        <h2 style={{ fontSize: '2rem', fontWeight: '900' }}>{t('dailyAgenda')}</h2>
-        <p style={{ color: 'var(--text-secondary)' }}>{t('dailyAgendaDesc')}</p>
+      <div style={{ marginBottom: isMobile ? '1.1rem' : '2.5rem' }}>
+        <h2 style={{ fontSize: isMobile ? '1.35rem' : '2rem', fontWeight: '900', lineHeight: 1.15 }}>{t('dailyAgenda')}</h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1rem', marginTop: isMobile ? '0.35rem' : '0.5rem' }}>{t('dailyAgendaDesc')}</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr', gap: '2rem' }}>
-        <div className="glass-card" style={{ padding: '2rem' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.5rem' }}>{t('todaysBookings')}</h3>
+        <div className="glass-card" style={{ padding: isMobile ? '1.15rem' : '2rem' }}>
+          <h3 style={{ fontSize: isMobile ? '0.95rem' : '1.1rem', fontWeight: '800', marginBottom: isMobile ? '0.9rem' : '1.5rem' }}>{t('todaysBookings')}</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {calendar.length > 0 ? calendar.map((event, i) => (
               <div key={i} style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: '15px', borderLeft: `4px solid ${event.status === 'confirmed' ? 'var(--success-color)' : 'var(--accent-color)'}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -260,11 +313,11 @@ const DashboardHome = ({ user, t, lang, agencies = [], profiles = [], calendar =
 
   return (
     <div style={{ 
-      padding: isMobile ? '1.25rem 1rem' : '3rem', 
-      maxWidth: '1400px', 
+      padding: isMobile ? '0.75rem 0.9rem 1rem' : '3rem',
+      maxWidth: '1400px',
       margin: '0 auto',
       width: '100%',
-      minHeight: '100vh',
+      minHeight: '100%',
       display: 'flex',
       flexDirection: 'column'
     }}>

@@ -120,6 +120,10 @@ model DeviceBinding {
   active         Boolean  @default(true)
   model          String?
   deviceName     String?
+  sipUser        String?
+  sipPassword    String?
+  sipServer      String?
+  sipPort        Int?     @default(5060)
   lastSeenAt     DateTime @default(now())
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

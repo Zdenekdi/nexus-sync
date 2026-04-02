@@ -292,8 +292,8 @@ const QAView = ({ t, messages = [], clientNotes = {}, clientNames = {}, updateCl
                   {visibleMessages.filter(m => m.from === currentClientData.phoneNumber).map(m => (
                     <div key={m.id} style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.01)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.03)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: '800', color: m.status === 'read' ? 'var(--success-color)' : 'var(--accent-color)' }}>
-                          {m.status.toUpperCase()}
+                        <span style={{ fontSize: '0.65rem', fontWeight: '800', color: (m.status || '').toLowerCase() === 'read' ? 'var(--success-color)' : 'var(--accent-color)', padding: '2px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)' }}>
+                          {(m.status || 'UNKNOWN').toUpperCase()}
                         </span>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{m.time}</span>
                       </div>
