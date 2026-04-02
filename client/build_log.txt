@@ -1,0 +1,27 @@
+
+> client@0.0.0 build
+> vite build
+
+vite v7.3.1 building client environment for production...
+transforming...
+✓ 1882 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   1.75 kB │ gzip:   0.76 kB
+dist/assets/index-BVo-pDGO.css   10.11 kB │ gzip:   2.89 kB
+dist/assets/web-DliOOjZ6.js       0.80 kB │ gzip:   0.39 kB │ map:     1.96 kB
+dist/assets/web-CuOBzgPp.js       0.94 kB │ gzip:   0.50 kB │ map:     2.65 kB
+dist/assets/web-jgGYdMwL.js       2.48 kB │ gzip:   1.11 kB │ map:     9.03 kB
+dist/assets/web-CXN-iqQz.js       3.49 kB │ gzip:   1.15 kB │ map:     9.93 kB
+dist/assets/index-DWsR7iDL.js   695.45 kB │ gzip: 193.62 kB │ map: 2,348.53 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 1.93s
+npm notice
+npm notice New minor version of npm available! 11.6.2 -> 11.12.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.12.1
+npm notice To update run: npm install -g npm@11.12.1
+npm notice
