@@ -3,7 +3,15 @@ import { DollarSign, Building2, Zap, Activity, TrendingUp, Users, Server, Shield
 import { RevenueLineChart, ConversionDonutChart, MiniSparkline } from './AnalyticsCharts';
 import { useVultr } from '../hooks/useVultr';
 
-const DashboardHome = ({ user, t, lang, agencies = [], profiles = [], calendar = [], isShiftActive, setIsShiftActive, isMobile, stats = {}, activeSubscription, isRelayVariant = false }) => {
+import { useNexus } from '../context/NexusContext';
+
+const DashboardHome = () => {
+  const nexus = useNexus();
+  const { 
+    activeOperator: user, t, lang, agencies, profiles, 
+    calendar, isShiftActive, setIsShiftActive, isMobile, 
+    stats, activeSubscription, isRelayVariant 
+  } = nexus;
   if (isRelayVariant) {
     return (
       <div style={{ 

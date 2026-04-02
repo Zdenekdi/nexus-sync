@@ -1,12 +1,16 @@
 import React from 'react';
 import { Activity, UserPlus, Trophy, Clock, Link, Copy, Check } from 'lucide-react';
 
-const ReferralsView = ({
-  isMobile,
-  t,
-  lang,
-  activeOperator
-}) => {
+import { useNexus } from '../../context/NexusContext';
+
+const ReferralsView = () => {
+  const nexus = useNexus();
+  const {
+    isMobile,
+    t,
+    lang,
+    activeOperator
+  } = nexus;
   const referralLink = `https://nexus.sync/ref/${activeOperator?.id || 'default'}`;
 
   return (

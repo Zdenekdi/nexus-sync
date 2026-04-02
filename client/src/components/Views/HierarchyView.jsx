@@ -1,14 +1,18 @@
 import React from 'react';
 
-const HierarchyView = ({
-  isMobile,
-  t,
-  activeRole,
-  activeOperator,
-  operators,
-  profiles,
-  agencies
-}) => {
+import { useNexus } from '../../context/NexusContext';
+
+const HierarchyView = () => {
+  const nexus = useNexus();
+  const {
+    isMobile,
+    t,
+    activeRole,
+    activeOperator,
+    operators,
+    profiles,
+    agencies
+  } = nexus;
   return (
     <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
       <h2 style={{ fontSize: isMobile ? '1.75rem' : '2.5rem', fontWeight: '900', marginBottom: '0.5rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('teamHierarchy')}</h2>

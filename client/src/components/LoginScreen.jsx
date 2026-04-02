@@ -1,7 +1,23 @@
 import React, { useState } from 'react';
 import { Zap, User, Lock, Building, UserPlus, ChevronLeft, Globe, ArrowRight, ShieldCheck, Mail, Eye, EyeOff } from 'lucide-react';
 
-const LoginScreen = ({ onLogin, onRegisterAgency, onRegisterUser, onResetRequest, onBackToLanding, operators, lang, setLang, t, isMobile }) => {
+import { useNexus } from '../context/NexusContext';
+
+const LoginScreen = () => {
+  const { 
+    onLogin, 
+    onRegisterAgency, 
+    onRegisterUser, 
+    onResetRequest, 
+    setShowLanding, 
+    operators, 
+    lang, 
+    setLang, 
+    t, 
+    isMobile 
+  } = useNexus();
+
+  const onBackToLanding = () => setShowLanding(true);
   const [mode, setMode] = useState('login'); // login, register_agency, register_user, reset
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

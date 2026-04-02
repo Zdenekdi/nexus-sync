@@ -2,17 +2,21 @@
 import React from 'react';
 import { Zap, Cpu, Check } from 'lucide-react';
 
-const GlobalFeaturesView = ({ 
-  t, 
-  lang, 
-  isMobile, 
-  globalFeatures, 
-  onFeatureToggle, 
-  isTraining, 
-  trainingProgress, 
-  onStartTraining, 
-  onResetTraining 
-}) => {
+import { useNexus } from '../../context/NexusContext';
+
+const GlobalFeaturesView = () => {
+  const nexus = useNexus();
+  const { 
+    t, 
+    lang, 
+    isMobile, 
+    globalFeatures, 
+    handleFeatureToggle: onFeatureToggle, 
+    isTraining, 
+    trainingProgress, 
+    onStartTraining, 
+    onResetTraining 
+  } = nexus;
   return (
     <div style={{ padding: '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
       <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #f59e0b, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>

@@ -11,7 +11,12 @@ import {
   ChevronDown
 } from 'lucide-react';
 
-const LandingPage = ({ onLoginClick, lang, setLang, isMobile }) => {
+import { useNexus } from '../context/NexusContext';
+
+const LandingPage = () => {
+  const { setShowLanding, lang, setLang, isMobile } = useNexus();
+
+  const onLoginClick = () => setShowLanding(false);
 
   const content = {
     cz: {

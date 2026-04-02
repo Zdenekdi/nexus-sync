@@ -1,17 +1,14 @@
 import React from 'react';
 import { Smartphone, Signal, Info, Globe, ShieldCheck, MapPin, X, Radio, Server, Lock } from 'lucide-react';
 
-const RelayControlCenter = ({ 
-  sessions, 
-  profiles, 
-  activeRole, 
-  activeOperator, 
-  handleRevokeBinding, 
-  showToast, 
-  t, 
-  lang, 
-  isMobile 
-}) => {
+import { useNexus } from '../context/NexusContext';
+
+const RelayControlCenter = () => {
+  const nexus = useNexus();
+  const { 
+    sessions, profiles, activeRole, activeOperator, 
+    handleRevokeBinding, showToast, t, lang, isMobile 
+  } = nexus;
   const isManager = activeRole === 'App Owner' || activeRole === 'Agency Admin' || activeRole === 'Agency Manager' || activeOperator?.role?.isManager;
 
   // Icons used for status badges

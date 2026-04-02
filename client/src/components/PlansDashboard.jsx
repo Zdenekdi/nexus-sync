@@ -1,8 +1,22 @@
 import React from 'react';
 import { CreditCard, Users, Check, FileEdit, CheckCheck, Zap } from 'lucide-react';
 
-const PlansDashboard = ({ t, lang, subscriptionPlans, setSubscriptionPlans, activeMarket, setActiveMarket, activeOperator, currentAgency }) => {
-  const isMobile = window.innerWidth < 768;
+import { useNexus } from '../context/NexusContext';
+
+const PlansDashboard = () => {
+  const nexus = useNexus();
+  const { 
+    t, 
+    lang, 
+    plans: subscriptionPlans, 
+    setPlans: setSubscriptionPlans, 
+    activeMarket, 
+    setActiveMarket, 
+    activeOperator, 
+    agencies,
+    isMobile
+  } = nexus;
+  const currentAgency = agencies[0];
   const [editingPlan, setEditingPlan] = React.useState(null);
 
   const getCurrencySymbol = (m) => {

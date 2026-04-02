@@ -4,27 +4,31 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 
-const ProfilesView = ({
-  isMobile,
-  t,
-  lang,
-  token,
-  activeRole,
-  activeOperator,
-  allAgencyProfiles,
-  setProfiles,
-  myProfiles,
-  operators,
-  assigningProfile,
-  setAssigningProfile,
-  setActiveProfileId,
-  setActiveTab,
-  toggleOperatorStatus,
-  handleEditProfile,
-  handleSaveAssignees,
-  showToast,
-  API_BASE
-}) => {
+import { useNexus } from '../../context/NexusContext';
+
+const ProfilesView = () => {
+  const nexus = useNexus();
+  const {
+    isMobile,
+    t,
+    lang,
+    token,
+    activeRole,
+    activeOperator,
+    profiles: allAgencyProfiles,
+    setProfiles,
+    myProfiles,
+    operators,
+    assigningProfile,
+    setAssigningProfile,
+    setActiveProfileId,
+    setActiveTab,
+    toggleOperatorStatus,
+    handleEditProfile,
+    handleSaveAssignees,
+    showToast,
+    API_BASE
+  } = nexus;
   return (
     <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto' }} className="fade-in custom-scrollbar">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>

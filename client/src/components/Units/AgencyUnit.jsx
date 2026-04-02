@@ -1,77 +1,25 @@
 import React from 'react';
+import { useNexus } from '../../context/NexusContext';
 import HierarchyView from '../Views/HierarchyView';
 import AnalyticsView from '../Views/AnalyticsView';
 import ActivityView from '../Views/ActivityView';
 import SettingsView from '../Views/SettingsView';
 
-const AgencyUnit = ({
-  activeTab,
-  isMobile,
-  t,
-  lang,
-  // Common Props
-  activeOperator,
-  activeRole,
-  operators,
-  profiles,
-  agencies,
-  allAgencyProfiles,
-  availableOperators,
-  activeClient,
-  auditLogs,
-  // Settings Props
-  token,
-  API_BASE,
-  showToast,
-  saveSettings
-}) => {
+/**
+ * Agency Unit: Management hub for agencies and global activity.
+ */
+const AgencyUnit = () => {
+  const { activeTab } = useNexus();
+
   switch (activeTab) {
     case 'hierarchy':
-      return (
-        <HierarchyView
-          isMobile={isMobile}
-          t={t}
-          activeRole={activeRole}
-          activeOperator={activeOperator}
-          operators={operators}
-          profiles={profiles}
-          agencies={agencies}
-        />
-      );
+      return <HierarchyView />;
     case 'analytics':
-      return (
-        <AnalyticsView
-          isMobile={isMobile}
-          t={t}
-          agencies={agencies}
-          allAgencyProfiles={allAgencyProfiles}
-          availableOperators={availableOperators}
-        />
-      );
+      return <AnalyticsView />;
     case 'activity':
-      return (
-        <ActivityView
-          isMobile={isMobile}
-          t={t}
-          activeClient={activeClient}
-          auditLogs={auditLogs}
-          availableOperators={availableOperators}
-        />
-      );
+      return <ActivityView />;
     case 'settings':
-      return (
-        <SettingsView
-          isMobile={isMobile}
-          t={t}
-          lang={lang}
-          activeOperator={activeOperator}
-          activeRole={activeRole}
-          token={token}
-          API_BASE={API_BASE}
-          showToast={showToast}
-          saveSettings={saveSettings}
-        />
-      );
+      return <SettingsView />;
     default:
       return null;
   }

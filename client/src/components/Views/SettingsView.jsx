@@ -3,28 +3,34 @@ import {
   Activity, Building2, Smartphone, ShieldCheck, Lock 
 } from 'lucide-react';
 
-const SettingsView = ({
-  isMobile,
-  t,
-  lang,
-  activeRole,
-  activeOperator,
-  activeClient,
-  availableOperators,
-  sessions,
-  profiles,
-  handleRevokeBinding,
-  agencySettings,
-  updateAgencySettings,
-  departureIntervalMin,
-  setDepartureIntervalMin,
-  isMaintenanceMode,
-  setIsMaintenanceMode,
-  globalAnnouncement,
-  setGlobalAnnouncement,
-  isAllowed,
-  showToast
-}) => {
+import { useNexus } from '../../context/NexusContext';
+
+const SettingsView = () => {
+  const nexus = useNexus();
+  const {
+    isMobile,
+    t,
+    lang,
+    activeRole,
+    activeOperator,
+    agencies,
+    operators: availableOperators,
+    sessions,
+    profiles,
+    handleRevokeBinding,
+    agencySettings,
+    updateAgencySettings,
+    departureIntervalMin,
+    setDepartureIntervalMin,
+    isMaintenanceMode,
+    setIsMaintenanceMode,
+    globalAnnouncement,
+    setGlobalAnnouncement,
+    isAllowed,
+    showToast
+  } = nexus;
+
+  const activeClient = agencies[0]; // Logic for multi-agency can be added later
   return (
     <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto' }} className="fade-in custom-scrollbar">
       <h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('controlCenter')}</h2>

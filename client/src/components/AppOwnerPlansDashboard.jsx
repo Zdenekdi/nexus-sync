@@ -6,7 +6,11 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 
-const AppOwnerPlansDashboard = ({ t, lang, token, API_BASE, activeMarket, setActiveMarket }) => {
+import { useNexus } from '../context/NexusContext';
+
+const AppOwnerPlansDashboard = () => {
+  const nexus = useNexus();
+  const { t, lang, token, API_BASE, activeMarket, setActiveMarket } = nexus;
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const isMobile = window.innerWidth < 768;

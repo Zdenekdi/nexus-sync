@@ -6,14 +6,16 @@ import {
 } from 'lucide-react';
 import { useNexus } from '../../context/NexusContext';
 
-const Sidebar = ({ 
-  activeOperator, activeRole, activeTab, totalUnread, rolePermissions,
-  myProfiles, showOnlyOnline, lang, isSidebarCollapsed, isMobileMenuOpen,
-  isToolsExpanded, activeProfile, getUnreadForProfile, messages,
-  setIsMobileMenuOpen, handleNavigation, setShowOnlyOnline, setIsRelayMode,
-  setNotificationPanelOpen, handleLogout, setIsToolsExpanded, setActiveProfileId,
-  setSelectedChatId, setMobileView, setLang, setIsSidebarCollapsed, t, isMobile, isAllowed 
-}) => {
+const Sidebar = () => {
+  const nexus = useNexus();
+  const { 
+    activeOperator, activeRole, activeTab, totalUnread, rolePermissions,
+    myProfiles, showOnlyOnline, lang, isSidebarCollapsed, isMobileMenuOpen,
+    isToolsExpanded, activeProfile, getUnreadForProfile, messages,
+    setIsMobileMenuOpen, handleNavigation, setShowOnlyOnline, setIsRelayMode,
+    setNotificationPanelOpen, handleLogout, setIsToolsExpanded, setActiveProfileId,
+    setSelectedChatId, setMobileView, setLang, setIsSidebarCollapsed, setActiveTab, t, isMobile, isAllowed 
+  } = nexus;
 
   const handleMobileProfileClick = (p) => {
     setActiveProfileId(p.id);
@@ -210,7 +212,7 @@ const Sidebar = ({
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: '35vh', overflowY: 'auto' }} className="custom-scrollbar">
-                  {myProfiles.filter(p => !showOnlyOnline || p.status === 'online').map(p => {
+                  {(myProfiles || []).filter(p => !showOnlyOnline || p.status === 'online').map(p => {
                     const unread = getUnreadForProfile(p.id);
                     const isActive = activeProfile?.id === p.id;
                     return (

@@ -2,15 +2,15 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Shield, Lock, Globe, Building2, Users, Package, Activity, MessageSquare, Save, RefreshCw, AlertCircle } from 'lucide-react';
 
-const PermissionsDashboard = ({ t, activeOperator, agencyId = null, onUpdate = null }) => {
+import { useNexus } from '../context/NexusContext';
+
+const PermissionsDashboard = ({ agencyId = null, onUpdate = null }) => {
+  const nexus = useNexus();
+  const { t, activeOperator, isMobile, API_BASE, token } = nexus;
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState(null);
   const [error, setError] = useState(null);
-  const isMobile = window.innerWidth < 768;
-
-  const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
-  const token = localStorage.getItem('nexus_token');
 
   useEffect(() => {
     fetchRoles();
