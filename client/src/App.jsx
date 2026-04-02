@@ -147,6 +147,7 @@ const DEFAULT_ROLE_PERMISSIONS = {
 // API Configuration
 const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
 
+function App() {
   const [appVariant, setAppVariant] = useState('full'); // 'full' or 'relay'
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [tempUser, setTempUser] = useState(null);
@@ -4022,87 +4023,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/ap
           </div>
         )}
 
-        {activeTab === 'profiles' && (
-          <ProfilesView 
-            isMobile={isMobile}
-            t={t}
-            lang={lang}
-            token={token}
-            activeRole={activeRole}
-            activeOperator={activeOperator}
-            allAgencyProfiles={allAgencyProfiles}
-        {/* UNIT: OPERATIONS */}
-        <OperationsUnit
-          activeTab={activeTab}
-          isMobile={isMobile}
-          t={t}
-          lang={lang}
-          token={localStorage.getItem('nexus_token')}
-          activeOperator={activeOperator}
-          activeRole={activeRole}
-          activeProfileId={activeProfileId}
-          setActiveProfileId={setActiveProfileId}
-          allAgencyProfiles={allAgencyProfiles}
-          myProfiles={myProfiles}
-          profiles={profiles}
-          setProfiles={setProfiles}
-          operators={operators}
-          assignedProfiles={assignedProfiles}
-          showToast={showToast}
-          API_BASE={API_BASE}
-          contacts={contacts}
-          setContacts={setContacts}
-          activeContactId={activeContactId}
-          setActiveContactId={setActiveContactId}
-          messages={messages}
-          setMessages={setMessages}
-          newMessage={newMessage}
-          setNewMessage={setNewMessage}
-          handleSendMessage={handleSendMessage}
-          handleRefreshMessages={handleRefreshMessages}
-          isDrafting={isDrafting}
-          setIsDrafting={setIsDrafting}
-          setIsBookingModalOpen={setIsBookingModalOpen}
-          handleExportICS={handleExportICS}
-          isCalendarSyncOpen={isCalendarSyncOpen}
-          setIsCalendarSyncOpen={setIsCalendarSyncOpen}
-          calendarSyncUrl={calendarSyncUrl}
-          setCalendarSyncUrl={setCalendarSyncUrl}
-          handleSaveCalendarSync={handleSaveCalendarSync}
-          bookingSchedule={bookingSchedule}
-          activeTimerEvent={activeTimerEvent}
-          isTimerActive={isTimerActive}
-          openBookingMenuId={openBookingMenuId}
-          setOpenBookingMenuId={setOpenBookingMenuId}
-          handleCheckIn={handleCheckIn}
-          handleCheckOut={handleCheckOut}
-          handleEditBooking={handleEditBooking}
-          handleDeleteBooking={handleDeleteBooking}
-          timeLeft={timeLeft}
-          formatSafetyTime={formatSafetyTime}
-          isSafetyLoading={isSafetyLoading}
-          handleSafetyImOk={handleSafetyImOk}
-          SAFETY_SUGGESTIONS={SAFETY_SUGGESTIONS}
-          setSelectedScheduleEvent={setSelectedScheduleEvent}
-          bioText={bioText}
-          setBioText={setBioText}
-          handleSaveBio={handleSaveBio}
-          isSyncing={isSyncing}
-          syncStatus={syncStatus}
-          syncProgress={syncProgress}
-          handleSyncAll={handleSyncAll}
-          relayApkInfo={relayApkInfo}
-          setRelayApkInfo={setRelayApkInfo}
-          clientNotes={clientNotes}
-          clientNames={clientNames}
-          updateClientName={updateClientName}
-          assigningProfile={assigningProfile}
-          setAssigningProfile={setAssigningProfile}
-          setActiveTab={setActiveTab}
-          toggleOperatorStatus={toggleOperatorStatus}
-          handleEditProfile={handleEditProfile}
-          handleSaveAssignees={handleSaveAssignees}
-        />
+
 
         {/* UNIT: AGENCY */}
         <AgencyUnit
@@ -4155,12 +4076,6 @@ const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/ap
         />
         {activeTab === 'relay' && (
           <RelayControlCenter t={t} isMobile={isMobile} />
-        )}
-
-            setActiveMarket={setActiveMarket} 
-            activeOperator={activeOperator} 
-            currentAgency={currentAgency} 
-          />
         )}
 
 
