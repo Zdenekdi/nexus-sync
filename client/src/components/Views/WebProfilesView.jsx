@@ -3,22 +3,26 @@ import {
   ChevronDown, Image, FileEdit, RefreshCw, Check, X, AlertTriangle 
 } from 'lucide-react';
 
-const WebProfilesView = ({
-  isMobile,
-  t,
-  lang,
-  activeProfile,
-  activeProfileId,
-  setActiveProfileId,
-  assignedProfiles,
-  bioText,
-  setBioText,
-  handleSaveBio,
-  isSyncing,
-  syncStatus,
-  syncProgress,
-  handleSyncAll
-}) => {
+import { useNexus } from '../../context/NexusContext';
+
+const WebProfilesView = () => {
+  const nexus = useNexus();
+  const {
+    isMobile,
+    t,
+    lang,
+    activeProfile,
+    activeProfileId,
+    setActiveProfileId,
+    assignedProfiles,
+    bioText,
+    setBioText,
+    handleSaveBio,
+    isSyncing,
+    syncStatus,
+    syncProgress,
+    handleSyncAll
+  } = nexus;
   const [bioLang, setBioLang] = useState('EN');
 
   return (

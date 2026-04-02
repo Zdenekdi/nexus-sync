@@ -1,13 +1,17 @@
 import React from 'react';
 import { Shield, User } from 'lucide-react';
 
-const ActivityView = ({ 
-  isMobile, 
-  t, 
-  activeClient, 
-  auditLogs, 
-  availableOperators 
-}) => {
+import { useNexus } from '../../context/NexusContext';
+
+const ActivityView = () => {
+  const nexus = useNexus();
+  const { 
+    isMobile, 
+    t, 
+    activeClient, // assumed in context or stubs
+    auditLogs, 
+    operators: availableOperators 
+  } = nexus;
   const filteredLogs = auditLogs.filter(log => 
     availableOperators.some(op => op.name === log.operator)
   );

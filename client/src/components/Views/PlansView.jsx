@@ -2,17 +2,21 @@
 import React from 'react';
 import { CreditCard, Check } from 'lucide-react';
 
-const PlansView = ({ 
-  t, 
-  lang, 
-  isMobile, 
-  activeSubscription, 
-  subscriptionHistory, 
-  isStartingSubscription, 
-  onStartSubscription, 
-  onCancelSubscription,
-  daysLeft 
-}) => {
+import { useNexus } from '../../context/NexusContext';
+
+const PlansView = () => {
+  const nexus = useNexus();
+  const { 
+    t, 
+    lang, 
+    isMobile, 
+    activeSubscription, 
+    subscriptionHistory, 
+    isStartingSubscription, 
+    onStartSubscription, 
+    onCancelSubscription,
+    daysLeft 
+  } = nexus;
   const PLANS = [
     { id: 'MONTHLY',     label: lang === 'cz' ? 'Měsíční'  : 'Monthly',     priceFmt: '990 Kč',    days: 30 },
     { id: 'SEMI_ANNUAL', label: lang === 'cz' ? 'Půlroční' : 'Semi-Annual', priceFmt: '5 490 Kč',  days: 182 },

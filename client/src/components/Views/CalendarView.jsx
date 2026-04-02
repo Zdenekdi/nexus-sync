@@ -3,38 +3,21 @@ import {
   Plus, Share2, Link, X, RefreshCw, Calendar, MoreVertical, Clock, Zap 
 } from 'lucide-react';
 
-const CalendarView = ({
-  isMobile,
-  t,
-  lang,
-  activeProfileId,
-  setActiveProfileId,
-  allAgencyProfiles,
-  myProfiles,
-  activeRole,
-  setIsBookingModalOpen,
-  handleExportICS,
-  isCalendarSyncOpen,
-  setIsCalendarSyncOpen,
-  calendarSyncUrl,
-  setCalendarSyncUrl,
-  handleSaveCalendarSync,
-  bookingSchedule,
-  activeTimerEvent,
-  isTimerActive,
-  openBookingMenuId,
-  setOpenBookingMenuId,
-  handleCheckIn,
-  handleCheckOut,
-  handleEditBooking,
-  handleDeleteBooking,
-  timeLeft,
-  formatSafetyTime,
-  isSafetyLoading,
-  handleSafetyImOk,
-  SAFETY_SUGGESTIONS,
-  setSelectedScheduleEvent
-}) => {
+import { useNexus } from '../../context/NexusContext';
+
+const CalendarView = () => {
+  const nexus = useNexus();
+  const {
+    isMobile, t, lang, activeProfileId, setActiveProfileId,
+    profiles: allAgencyProfiles, myProfiles, activeRole, 
+    setIsBookingModalOpen, handleExportICS, isCalendarSyncOpen, setIsCalendarSyncOpen,
+    calendarSyncUrl, setCalendarSyncUrl, handleSaveCalendarSync,
+    bookingSchedule, activeTimerEvent, isTimerActive,
+    openBookingMenuId, setOpenBookingMenuId, handleCheckIn, handleCheckOut,
+    handleEditBooking, handleDeleteBooking, timeLeft, formatSafetyTime,
+    isSafetyLoading, handleSafetyImOk, SAFETY_SUGGESTIONS,
+    setSelectedScheduleEvent
+  } = nexus;
   return (
     <div style={{ padding: isMobile ? '1.5rem 1rem' : '3rem', paddingBottom: '8rem', flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }} className="fade-in custom-scrollbar">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '2.5rem', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : '0' }}>

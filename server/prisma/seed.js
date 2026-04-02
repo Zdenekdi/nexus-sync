@@ -153,7 +153,6 @@ async function main() {
       title: 'Private Dinner - Mayfair',
       startTime: new Date(now.getTime() + 3600000), // In 1 hour
       endTime: new Date(now.getTime() + 3600000 * 3), // 2 hours duration
-      status: 'scheduled'
     },
     {
       id: 'book-02',
@@ -162,7 +161,6 @@ async function main() {
       title: 'Studio Session',
       startTime: new Date(now.getTime() - 3600000 * 2), // 2 hours ago
       endTime: new Date(now.getTime() - 3600000), // 1 hour ago
-      status: 'completed'
     }
   ];
 

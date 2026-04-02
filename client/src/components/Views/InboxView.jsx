@@ -5,55 +5,24 @@ import {
   Signal, MoreVertical, StickyNote, Languages, Sparkles 
 } from 'lucide-react';
 
-const InboxView = ({
-  isMobile,
-  mobileView,
-  setMobileView,
-  activeProfileId,
-  setActiveProfileId,
-  assignedProfiles,
-  selectedChatId,
-  setSelectedChatId,
-  isTranslating,
-  sourceText,
-  setSourceText,
-  translatedText,
-  internalNote,
-  setInternalNote,
-  clientNotes,
-  clientNames,
-  filteredMessages,
-  selectedChat,
-  chatMessages,
-  isHistoryLoading,
-  chatScrollRef,
-  isUserScrolled,
-  typingProfiles,
-  inlinePanelTab,
-  setInlinePanelTab,
-  activeOperator,
-  setShowPanicConfirm,
-  detectedMeeting,
-  setDetectedMeeting,
-  messageValue,
-  setMessageValue,
-  bookingSchedule,
-  calViewDate,
-  setCalViewDate,
-  setIsBookingModalOpen,
-  setNewBookingForm,
-  activeContextTab,
-  setActiveContextTab,
-  lang,
-  t,
-  activeProfile,
-  handleSendMessage,
-  handleTranslate,
-  handleSaveNote,
-  handleDeleteNote,
-  startCall,
-  handleQuickSaveMeeting
-}) => {
+import { useNexus } from '../../context/NexusContext';
+
+const InboxView = () => {
+  const nexus = useNexus();
+  const {
+    isMobile, mobileView, setMobileView, activeProfileId, setActiveProfileId,
+    myProfiles: assignedProfiles, selectedChatId, setSelectedChatId,
+    isTranslating, sourceText, setSourceText, translatedText,
+    internalNote, setInternalNote, clientNotes, clientNames,
+    filteredMessages, selectedChat, chatMessages, isHistoryLoading,
+    chatScrollRef, isUserScrolled, typingProfiles, inlinePanelTab,
+    setInlinePanelTab, activeOperator, setShowPanicConfirm,
+    detectedMeeting, setDetectedMeeting, messageValue, setMessageValue,
+    bookingSchedule, calViewDate, setCalViewDate, setIsBookingModalOpen,
+    setNewBookingForm, activeContextTab, setActiveContextTab, lang, t,
+    activeProfile, handleSendMessage, handleTranslate, handleSaveNote,
+    handleDeleteNote, startCall, handleQuickSaveMeeting
+  } = nexus;
   return (
     <div style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden', position: 'relative' }} className="fade-in inbox-grid">
       {/* Column 1: Inbox List */}

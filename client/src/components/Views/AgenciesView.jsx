@@ -2,18 +2,22 @@
 import React from 'react';
 import { Building2, Users, ShieldCheck } from 'lucide-react';
 
-const AgenciesView = ({ 
-  agencies, 
-  profiles, 
-  operators, 
-  t, 
-  isMobile, 
-  onAddAgency, 
-  onDetail, 
-  onImpersonate, 
-  onDelete, 
-  onToggleStatus 
-}) => {
+import { useNexus } from '../../context/NexusContext';
+
+const AgenciesView = () => {
+  const nexus = useNexus();
+  const { 
+    agencies, 
+    profiles, 
+    operators, 
+    t, 
+    isMobile, 
+    handleAddAgency: onAddAgency, 
+    handleAgencyDetail: onDetail, 
+    handleImpersonateAgency: onImpersonate, 
+    handleDeleteAgency: onDelete, 
+    handleToggleAgencyStatus: onToggleStatus 
+  } = nexus;
   return (
     <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
       <h2 style={{ fontSize: isMobile ? '2rem' : '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #8b5cf6, #d946ef)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>

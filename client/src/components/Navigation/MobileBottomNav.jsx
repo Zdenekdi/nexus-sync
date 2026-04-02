@@ -1,7 +1,10 @@
-import React from 'react';
 import { LayoutDashboard, MessageSquare, Zap, Calendar } from 'lucide-react';
+import { useNexus } from '../../context/NexusContext';
 
-const MobileBottomNav = ({ activeTab, setActiveTab, t, unreadCount = 0 }) => {
+const MobileBottomNav = () => {
+  const nexus = useNexus();
+  const { activeTab, setActiveTab, t, totalUnread } = nexus;
+  const unreadCount = totalUnread || 0;
   const tabs = [
     { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard') },
     { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: unreadCount },

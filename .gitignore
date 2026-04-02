@@ -56,3 +56,8 @@ client/android/release/output-metadata.json
 client/android/app/release/output-metadata.json
 server/prisma/*.db
 server/prisma/*.db-journal
+
+# Server runtime/cache (from HOME override)
+server/.cache/
+server/.npm/
+server/Library/

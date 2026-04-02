@@ -70,9 +70,14 @@ const slides = [
   },
 ];
 
+import { useNexus } from '../context/NexusContext';
+
 const STORAGE_KEY = 'nexus_onboarding_seen';
 
-const Onboarding = ({ onComplete, lang }) => {
+const Onboarding = () => {
+  const { setShowOnboarding, lang } = useNexus();
+  
+  const onComplete = () => setShowOnboarding(false);
   const [current, setCurrent] = useState(0);
   const [animating, setAnimating] = useState(false);
   const touchStartX = useRef(null);

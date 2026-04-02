@@ -1,8 +1,21 @@
 import React, { useState, useMemo } from 'react';
 import { FileSearch, StickyNote, User, Phone, Edit2, Check, X, Search, ChevronDown } from 'lucide-react';
 
-const QAView = ({ t, messages = [], clientNotes = {}, clientNames = {}, updateClientName, activeOperator, profiles = [], operators = [] }) => {
-  const isMobile = window.innerWidth < 768;
+import { useNexus } from '../context/NexusContext';
+
+const QAView = () => {
+  const nexus = useNexus();
+  const { 
+    t, 
+    messages, 
+    clientNotes, 
+    clientNames, 
+    updateClientName, 
+    activeOperator, 
+    profiles, 
+    operators,
+    isMobile 
+  } = nexus;
   const [mobileView, setMobileView] = useState('list');
   const [selectedClient, setSelectedClient] = useState(null);
   const [editingName, setEditingName] = useState(null);
