@@ -30,6 +30,7 @@ const inventoryRoutes = require('./routes/inventoryRoutes');
 const notesRoutes = require('./routes/notesRoutes');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const sipRoutes = require('./routes/sipRoutes');
 
 const app = express();
 
@@ -133,6 +134,7 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/notes', notesRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/sip', sipRoutes);
 
 // Basic health check
 app.get('/health', (req, res) => {

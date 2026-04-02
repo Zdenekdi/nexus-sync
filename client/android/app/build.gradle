@@ -104,6 +104,32 @@ android {
     buildFeatures {
         buildConfig = true
     }
+
+    flavorDimensions "version"
+
+    productFlavors {
+        nexusFull {
+            dimension "version"
+            applicationId "com.nexushub.app"
+            versionNameSuffix "-full"
+            buildConfigField "String", "APP_VARIANT", "\"full\""
+            manifestPlaceholders = [
+                appName: "Nexus Hub",
+                appId: "com.nexushub.app"
+            ]
+        }
+        nexusRelay {
+            dimension "version"
+            applicationId "com.nexushub.relay"
+            versionNameSuffix "-relay"
+            buildConfigField "String", "APP_VARIANT", "\"relay\""
+            manifestPlaceholders = [
+                appName: "Nexus Relay",
+                appId: "com.nexushub.relay"
+            ]
+        }
+    }
+
     defaultConfig {
         applicationId "com.nexushub.app"
         minSdkVersion rootProject.ext.minSdkVersion

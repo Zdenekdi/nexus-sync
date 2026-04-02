@@ -1,17 +1,35 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import {
-  Shield, Laptop, Smartphone, Globe, Activity, Building2, MapPin,
-  Search, Send, MessageCircle, Clock, Check, MoreVertical,
-  AlertCircle, ChevronRight, User, Settings, LogOut, Layout,
-  Calendar, Inbox, MessageSquare, Briefcase, Hash, DollarSign,
-  TrendingUp, Users, UserPlus, UserCheck, ShieldCheck, CreditCard,
-  Zap, Building, LayoutDashboard, Database,
-    Phone, Server, Cpu, FileEdit, CheckCheck, FileSearch, Trash2,
-    Eye, Save, X, RotateCcw, Lock, Share2, Filter, Menu, UserCircle, Plus, Info, ChevronDown, ChevronUp, ChevronLeft,
-    BarChart2 as BarChart3, HardDrive, Gift, Trophy, RefreshCw, Bug, Copy, Signal, Mic, MicOff, Sparkles,
-    StickyNote, AlertTriangle, Image, Link, Star, CheckCircle, Languages, Package, Bell,
-    History, Terminal, Mail, ArrowUpRight, PlusCircle, BarChart, PieChart, Download, EyeOff, Radio
-  } from 'lucide-react';
+import { 
+  X, Search, MessageSquare, Phone, Plus, History, Settings, MoreVertical, 
+  Send, User, Clock, Trash2, Edit2, Link, Copy, Globe, Shield, Check, 
+  CreditCard, Zap, Cpu, Calendar, AlertTriangle, Building2, Users, 
+  ShieldCheck, Mic, MicOff, Bug, LayoutDashboard
+} from 'lucide-react';
+import { NexusProvider } from './context/NexusContext';
+import Sidebar from './components/Navigation/Sidebar';
+import RelayControlCenter from './components/RelayControlCenter';
+import AgenciesView from './components/Views/AgenciesView';
+import GlobalFeaturesView from './components/Views/GlobalFeaturesView';
+import InboxView from './components/Views/InboxView';
+import ProfilesView from './components/Views/ProfilesView';
+import ActivityView from './components/Views/ActivityView';
+import SettingsView from './components/Views/SettingsView';
+import CalendarView from './components/Views/CalendarView';
+import PlansView from './components/Views/PlansView';
+import BugReportModal from './components/Modals/BugReportModal';
+import EmergencyAlert from './components/Modals/EmergencyAlert';
+import AgencyDetailModal from './components/Modals/AgencyDetailModal';
+import BookingModal from './components/Modals/BookingModal';
+import EditProfileModal from './components/Modals/EditProfileModal';
+import AddOperatorModal from './components/Modals/AddOperatorModal';
+import AddAgencyModal from './components/Modals/AddAgencyModal';
+
+import OperationsUnit from './components/Units/OperationsUnit';
+import AgencyUnit from './components/Units/AgencyUnit';
+import InfrastructureUnit from './components/Units/InfrastructureUnit';
+import MobileBottomNav from './components/Navigation/MobileBottomNav';
+
+
 import LandingPage from './components/LandingPage';
 import Onboarding, { ONBOARDING_STORAGE_KEY } from './components/Onboarding';
 import RelayMode from './components/RelayMode';
@@ -129,9 +147,33 @@ const DEFAULT_ROLE_PERMISSIONS = {
 // API Configuration
 const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
 
-function App() {
+  const [appVariant, setAppVariant] = useState('full'); // 'full' or 'relay'
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [tempUser, setTempUser] = useState(null);
+
+  // Detect App Variant (Full vs Relay)
+  useEffect(() => {
+    const detectVariant = async () => {
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const info = await Device.getInfo();
+          // If native package is relay, force relay variant
+          if (info.id === 'com.nexushub.relay') {
+            setAppVariant('relay');
+            console.log('Native variant detected: RELAY');
+          }
+        } catch (e) { console.error('Variant detection failed', e); }
+      } else {
+        // Web detection via URL
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('mode') === 'relay') {
+          setAppVariant('relay');
+          console.log('Web variant detected: RELAY');
+        }
+      }
+    };
+    detectVariant();
+  }, []);
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem('nexus_isLoggedIn') === 'true';
   });
@@ -179,7 +221,7 @@ function App() {
     // Return raw value to support alphanumeric IDs like 'ldn-01'
     return (saved && saved !== 'undefined' && saved !== 'null') ? saved : null;
   });
-  const [selectedChatId, setSelectedChatId] = useState(null);
+  const [selectedChatId, setSelectedChatId] = useState(() => localStorage.getItem('nexus_lastSelectedChatId') || null);
   const [lang, setLang] = useState(() => localStorage.getItem('nexus_language') || 'en');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -1038,14 +1080,7 @@ function App() {
   const [isTraining, setIsTraining] = useState(false);
   const [trainingProgress, setTrainingProgress] = useState(0);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
-  const [bookingDetails, setBookingDetails] = useState({
-    date: new Date().toISOString().split('T')[0],
-    time: '14:00',
-    duration: '60',
-    type: 'work'
-  });
   const [bookingSchedule, setBookingSchedule] = useState([]);
-  const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [selectedScheduleEvent, setSelectedScheduleEvent] = useState(null);
   const [newBookingForm, setNewBookingForm] = useState({ title: '', date: new Date().toISOString().split('T')[0], startTime: '10:00', endTime: '11:00', locationType: 'incall' });
   const [calViewDate, setCalViewDate] = useState(new Date());
@@ -2664,6 +2699,14 @@ function App() {
     }
   }, [filteredMessages, selectedChatId, setSelectedChatId]);
 
+  useEffect(() => {
+    if (selectedChatId == null) {
+      localStorage.removeItem('nexus_lastSelectedChatId');
+      return;
+    }
+    localStorage.setItem('nexus_lastSelectedChatId', String(selectedChatId));
+  }, [selectedChatId]);
+
   const currentAgency = useMemo(() => agencies.find(a => a.id === activeClient?.id) || agencies[0], [activeClient, agencies]);
 
 
@@ -2821,7 +2864,7 @@ function App() {
       await fetchBookings(activeProfileId);
     } catch (e) {
       console.error('[Booking] Direct save error:', e.message);
-      setBookingModalOpen(true); // Fallback to modal on error
+      setIsBookingModalOpen(true); // Fallback to modal on error
     }
   }, [detectedMeeting, activeProfileId, selectedChat, API_BASE, token, lang, fetchBookings]);
 
@@ -2838,7 +2881,7 @@ function App() {
         locationType: newBookingForm.locationType || 'incall'
       },
         { headers: { Authorization: `Bearer ${token}` } });
-      setBookingModalOpen(false);
+      setIsBookingModalOpen(false);
       setNewBookingForm({ title: '', date: new Date().toISOString().split('T')[0], startTime: '10:00', endTime: '11:00', locationType: 'incall' });
       await fetchBookings(activeProfileId);
     } catch (e) { console.error('[Booking] create error:', e.message); }
@@ -2891,7 +2934,7 @@ function App() {
       editId: event.id
     });
     setOpenBookingMenuId(null);
-    setBookingModalOpen(true);
+    setIsBookingModalOpen(true);
   }, []);
 
   useEffect(() => {
@@ -2979,15 +3022,16 @@ function App() {
 
   const handleConfirmBooking = useCallback(() => {
     const newEvent = {
-        time: `${bookingDetails.time} ${parseInt(bookingDetails.time) >= 12 ? 'PM' : 'AM'}`,
-        duration: `${parseInt(bookingDetails.duration) / 60}h`,
-        title: `Private Booking - ${selectedChat?.from || 'Client'}`,
-        status: 'busy',
-        type: bookingDetails.type
+        title: newBookingForm.title || `Private Booking - ${selectedChat?.from || 'Client'}`,
+        date: newBookingForm.date,
+        startTime: newBookingForm.startTime,
+        endTime: newBookingForm.endTime,
+        locationType: newBookingForm.locationType,
+        status: 'busy'
     };
     setBookingSchedule(prev => [...prev, newEvent]);
     setIsBookingModalOpen(false);
-  }, [bookingDetails, selectedChat, bookingSchedule]);
+  }, [newBookingForm, selectedChat, bookingSchedule]);
 
   const handleExportICS = useCallback(() => {
     const events = bookingSchedule.map(event => {
@@ -3055,6 +3099,7 @@ function App() {
     localStorage.removeItem('nexus_activeOperator');
     localStorage.removeItem('nexus_activeClient');
     localStorage.removeItem('nexus_token');
+    localStorage.removeItem('nexus_lastSelectedChatId');
     localStorage.removeItem('nexus_relay_mode'); // Reset so next login auto-activates relay again
     setToken(null);
   }, []);
@@ -3260,15 +3305,27 @@ function App() {
   };
 
   const handleNavigation = useCallback((nextTab) => {
-    setActiveTab(nextTab);
-    if (isMobile && nextTab === 'inbox') {
-      setSelectedChatId(null);
-      setMobileView('list');
-    }
-    if (isMobile) {
+    if (nextTab === 'inbox') {
+      const selectedInProfile = filteredMessages.find(m => String(m.id) === String(selectedChatId));
+      const targetChatId = selectedInProfile?.id ?? filteredMessages[0]?.id ?? selectedChatId ?? null;
+
+      setActiveTab('inbox');
+      if (isMobile) {
+        if (targetChatId != null) {
+          setSelectedChatId(targetChatId);
+          setMobileView('chat');
+        } else {
+          setSelectedChatId(null);
+          setMobileView('list');
+        }
+      }
       setIsMobileMenuOpen(false);
+      return;
     }
-  }, [isMobile]);
+
+    setActiveTab(nextTab);
+    if (isMobile) setIsMobileMenuOpen(false);
+  }, [filteredMessages, isMobile, selectedChatId]);
 
   const handleMobileProfileSelection = useCallback((profileId) => {
     setActiveProfileId(profileId);
@@ -3345,55 +3402,53 @@ function App() {
   };
 
   const renderMobileHeader = () => {
-    // Hide main header completely when in chat detail to avoid "two bars" and the black gap
-    if (activeTab === 'inbox' && mobileView === 'chat') return null;
+    // Keep app header always visible on mobile.
 
     return (
       <header className="mobile-app-header" style={{ 
-        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)',
-        paddingBottom: '0.75rem',
-        paddingLeft: '1.25rem',
-        paddingRight: '1.25rem',
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        paddingBottom: '0.3rem',
+        paddingLeft: '0.75rem',
+        paddingRight: '0.75rem',
         display: 'flex',
         alignItems: 'center', 
         background: 'rgba(7, 10, 15, 0.95)',
         backdropFilter: 'blur(25px)',
         borderBottom: '1px solid rgba(255, 255, 255, 0.15)',
         boxShadow: '0 4px 30px rgba(0, 0, 0, 0.5)',
-        position: 'sticky',
-        top: 0,
+        position: 'relative',
         zIndex: 1000,
         height: 'auto',
-        minHeight: '60px'
+        minHeight: '32px'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: 0 }}>
-          <img src="/nexus_icon.png" alt="Nexus Hub" style={{ width: '30px', height: '30px', borderRadius: '8px', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flex: 1, minWidth: 0 }}>
+          <img src="/nexus_icon.png" alt="Nexus Hub" style={{ width: '18px', height: '18px', borderRadius: '5px', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.25)' }} />
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '1rem', fontWeight: '900', color: 'white' }}>Nexus Hub</div>
-            <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.05em', fontWeight: '800' }}>{activeRole?.toUpperCase() || 'SYSTEM'}</div>
+            <div style={{ fontSize: '0.82rem', lineHeight: 1.05, fontWeight: '900', color: 'white' }}>Nexus Hub</div>
+            <div style={{ fontSize: '0.42rem', lineHeight: 1, color: 'rgba(255,255,255,0.45)', letterSpacing: '0.04em', fontWeight: '800' }}>{activeRole?.toUpperCase() || 'SYSTEM'}</div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
           {/* Universal SOS Button in Top Bar */}
           {(activeOperator?.isModel || (isMobile && activeOperator && !activeOperator?.isAppOwner && !activeOperator?.isAdmin && !activeOperator?.isManager)) && (
             <button 
               onClick={() => setShowPanicConfirm(true)}
-              style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: '26px', height: '26px', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
-              <Shield size={20} />
+              <Shield size={15} />
             </button>
           )}
 
-          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', padding: '2px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <button onClick={() => setLang('cz')} style={{ padding: '4px 6px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.55rem', fontWeight: '900', cursor: 'pointer' }}>CZ</button>
-            <button onClick={() => setLang('en')} style={{ padding: '4px 6px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.55rem', fontWeight: '900', cursor: 'pointer' }}>EN</button>
+          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', padding: '1px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <button onClick={() => setLang('cz')} style={{ padding: '3px 5px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '5px', fontSize: '0.45rem', fontWeight: '900', cursor: 'pointer' }}>CZ</button>
+            <button onClick={() => setLang('en')} style={{ padding: '3px 5px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '5px', fontSize: '0.45rem', fontWeight: '900', cursor: 'pointer' }}>EN</button>
           </div>
           <button 
             onClick={() => setIsMobileMenuOpen(true)}
-            style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.1)', border: 'none', color: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            style={{ width: '26px', height: '26px', borderRadius: '6px', background: 'rgba(59, 130, 246, 0.1)', border: 'none', color: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            <Menu size={20} />
+            <Menu size={15} />
           </button>
         </div>
       </header>
@@ -3423,6 +3478,7 @@ function App() {
         />
       );
     }
+
     if (!isLoggedIn) {
       if (showOnboarding) {
         return (
@@ -3461,56 +3517,180 @@ function App() {
       );
     }
     
-    // Authenticated UI
+    // Authenticated UI - Special Relay Variant
+    if (appVariant === 'relay') {
+      return (
+        <div style={{ 
+          height: '100dvh', 
+          width: '100dvw', 
+          backgroundColor: 'var(--bg-color)', 
+          color: 'var(--text-primary)',
+          display: 'flex', 
+          flexDirection: 'column',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          <main style={{ 
+            flex: 1, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            overflow: 'hidden',
+            paddingBottom: '70px'
+          }}>
+            {activeTab === 'dashboard' && (
+              <div style={{ flex: 1, overflowY: 'auto' }}>
+                <DashboardHome
+                  t={t}
+                  activeOperator={activeOperator}
+                  activeRole={activeRole}
+                  profiles={profiles}
+                  operators={operators}
+                  agencies={agencies}
+                  isMobile={true}
+                  isRelayVariant={true}
+                  token={token}
+                  API_BASE={API_BASE}
+                />
+              </div>
+            )}
+            
+            <OperationsUnit
+              activeTab={activeTab}
+              isMobile={true}
+              t={t}
+              lang={lang}
+              token={token}
+              activeOperator={activeOperator}
+              activeRole={activeRole}
+              activeProfileId={activeProfileId}
+              setActiveProfileId={setActiveProfileId}
+              allAgencyProfiles={allAgencyProfiles}
+              myProfiles={myProfiles}
+              profiles={profiles}
+              setProfiles={setProfiles}
+              operators={operators}
+              assignedProfiles={assignedProfiles}
+              showToast={showToast}
+              API_BASE={API_BASE}
+              contacts={contacts}
+              setContacts={setContacts}
+              activeContactId={activeContactId}
+              setActiveContactId={setActiveContactId}
+              messages={messages}
+              setMessages={setMessages}
+              newMessage={newMessage}
+              setNewMessage={setNewMessage}
+              handleSendMessage={handleSendMessage}
+              handleRefreshMessages={handleRefreshMessages}
+              isDrafting={isDrafting}
+              setIsDrafting={setIsDrafting}
+              setIsBookingModalOpen={setIsBookingModalOpen}
+              handleExportICS={handleExportICS}
+              isCalendarSyncOpen={isCalendarSyncOpen}
+              setIsCalendarSyncOpen={setIsCalendarSyncOpen}
+              calendarSyncUrl={calendarSyncUrl}
+              setCalendarSyncUrl={setCalendarSyncUrl}
+              handleSaveCalendarSync={handleSaveCalendarSync}
+              bookingSchedule={bookingSchedule}
+              activeTimerEvent={activeTimerEvent}
+              isTimerActive={isTimerActive}
+              openBookingMenuId={openBookingMenuId}
+              setOpenBookingMenuId={setOpenBookingMenuId}
+              handleCheckIn={handleCheckIn}
+              handleCheckOut={handleCheckOut}
+              handleEditBooking={handleEditBooking}
+              handleDeleteBooking={handleDeleteBooking}
+              timeLeft={timeLeft}
+              formatSafetyTime={formatSafetyTime}
+              isSafetyLoading={isSafetyLoading}
+              handleSafetyImOk={handleSafetyImOk}
+              SAFETY_SUGGESTIONS={SAFETY_SUGGESTIONS}
+              setSelectedScheduleEvent={setSelectedScheduleEvent}
+              bioText={bioText}
+              setBioText={setBioText}
+              handleSaveBio={handleSaveBio}
+              isSyncing={isSyncing}
+              syncStatus={syncStatus}
+              syncProgress={syncProgress}
+              handleSyncAll={handleSyncAll}
+              relayApkInfo={relayApkInfo}
+              setRelayApkInfo={setRelayApkInfo}
+              clientNotes={clientNotes}
+              clientNames={clientNames}
+              updateClientName={updateClientName}
+              assigningProfile={assigningProfile}
+              setAssigningProfile={setAssigningProfile}
+              setActiveTab={setActiveTab}
+              toggleOperatorStatus={toggleOperatorStatus}
+              handleEditProfile={handleEditProfile}
+              handleSaveAssignees={handleSaveAssignees}
+            />
+          </main>
+
+          <MobileBottomNav 
+            activeTab={activeTab} 
+            setActiveTab={setActiveTab} 
+            t={t} 
+            unreadCount={0} 
+          />
+        </div>
+      );
+    }
+
+    // Default Authenticated UI (Full Hub)
     return (
       <div className="mobile-container" style={{ 
         display: 'flex', 
         flexDirection: isMobile ? 'column' : 'row',
-        minHeight: '100dvh', 
-        height: '100vh', 
-        width: '100%', 
+        minHeight: '100dvh',
+        height: '100vh',
+        width: '100%',
         maxWidth: '100%', 
-        overflowX: 'hidden', 
-        overflowY: 'hidden', 
-        background: 'var(--bg-color)', 
+        overflow: 'hidden',
+        background: 'var(--bg-color)',
         color: 'white', 
         position: 'relative' 
       }}>
         {/* ... child content remains here, we just moved the return into this function ... */}
         <style dangerouslySetInnerHTML={{ __html: `
           @media (max-width: 768px) {
-          .desktop-sidebar {
-            position: fixed !important;
-            left: 0;
-            top: 0;
-            height: 100dvh;
-            width: 100% !important;
-            max-width: 100% !important;
-            z-index: 10000 !important;
-            background: rgba(8, 10, 15, 0.98) !important;
-            backdrop-filter: blur(50px) saturate(180%) !important;
-            -webkit-backdrop-filter: blur(50px) saturate(180%) !important;
-            padding: 0 !important;
-            display: flex;
-            flex-direction: column;
-            border-right: none !important;
+            .desktop-sidebar {
+              position: fixed !important;
+              left: 0;
+              top: 0;
+              height: 100dvh;
+              width: 100% !important;
+              max-width: 100% !important;
+              z-index: 10000 !important;
+              background: rgba(8, 10, 15, 0.98) !important;
+              backdrop-filter: blur(50px) saturate(180%) !important;
+              -webkit-backdrop-filter: blur(50px) saturate(180%) !important;
+              padding: 0 !important;
+              display: flex;
+              flex-direction: column;
+              border-right: none !important;
+            }
+            .main-content {
+              margin-left: 0 !important;
+              padding-top: 0 !important;
+              padding-bottom: calc(3.5rem + max(env(safe-area-inset-bottom, 0px), 0px)) !important;
+              flex: 1 1 0% !important;
+              min-height: 0 !important;
+              height: 0 !important;
+              overflow-y: auto !important;
+              overflow-x: hidden !important;
+            }
+            .mobile-app-header {
+              position: relative !important;
+              top: auto !important;
+              flex-shrink: 0 !important;
+            }
+            .mobile-container {
+              height: 100dvh !important;
+              overflow: hidden !important;
+            }
           }
-          .main-content {
-            margin-left: 0 !important;
-            padding-top: 0 !important;
-            padding-bottom: calc(3.5rem + max(env(safe-area-inset-bottom), 0px)) !important;
-            flex: 1 !important;
-            height: 0 !important;
-            min-height: 0 !important;
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
-          }
-          .mobile-app-header {
-            flex-shrink: 0 !important;
-          }
-          }
-        }
-      ` }} />
+        ` }} />
 
       {isMobile && renderMobileHeader()}
 
@@ -3523,381 +3703,49 @@ function App() {
       )}
 
       {/* Sidebar Navigation */}
-      {(!isMobile || isMobileMenuOpen) && (
-        <nav className={`desktop-sidebar ${isMobileMenuOpen ? 'open' : ''} ${isSidebarCollapsed ? 'collapsed' : ''}`} style={{
-          width: isMobile ? '100vw' : (isSidebarCollapsed ? '80px' : '280px'),
-          flexShrink: 0,
-          borderRight: isMobile ? 'none' : '1px solid var(--card-border)',
-          padding: isMobile ? '0' : (isSidebarCollapsed ? '1.5rem 0.75rem' : '2.5rem 1.25rem'),
-          background: isMobile ? 'rgba(7, 10, 15, 0.98)' : 'rgba(7, 10, 15, 0.7)',
-          backdropFilter: isMobile ? 'blur(20px)' : 'blur(40px)',
-          display: 'flex',
-          flexDirection: 'column',
-          position: isMobile ? 'fixed' : 'sticky',
-          top: 0,
-          left: 0,
-          height: '100dvh',
-          transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-          zIndex: 10000,
-          overflow: 'hidden'
-        }}>
-        {isMobile ? (
-          /* Full Screen Mobile Menu Content */
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            height: '100%', 
-            width: '100%',
-            padding: 'max(env(safe-area-inset-top), 2rem) 1.5rem calc(max(env(safe-area-inset-bottom), 0px) + 3.25rem)'
-          }}>
-            {/* Mobile Menu Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ width: '50px', height: '50px', background: 'linear-gradient(135deg, var(--accent-color) 0%, #1d4ed8 100%)', borderRadius: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'white', fontSize: '1.1rem', boxShadow: '0 10px 25px rgba(59, 130, 246, 0.3)' }}>{activeOperator?.avatar}</div>
-                <div>
-                  <div style={{ fontSize: '1.2rem', fontWeight: '900', color: 'white' }}>{activeOperator?.name}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', fontWeight: '800', letterSpacing: '0.05em' }}>{activeRole?.toUpperCase() || ''}</div>
-                </div>
-              </div>
-              <button onClick={() => setIsMobileMenuOpen(false)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', width: '44px', height: '44px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <X size={24} />
-              </button>
-            </div>
-
-            {/* Mobile Menu Grid */}
-            <div style={{ 
-              flex: 1, 
-              overflowY: 'auto', 
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '2rem',
-              paddingBottom: '2rem'
-            }} className="custom-scrollbar">
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(2, 1fr)', 
-                gap: '1rem'
-              }}>
-                {[
-                  { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard') },
-                  { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: totalUnread },
-                  { id: 'calendar', icon: Calendar, label: t('schedule') },
-                  { id: 'analytics', icon: BarChart3, label: t('analytics'), perm: 'analytics' },
-                  { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
-                  { id: 'agencies', icon: Building2, label: t('agencies'), perm: 'agencies' },
-                  { id: 'infra', icon: HardDrive, label: t('infra'), perm: 'infrastructure' },
-                  { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
-                ].filter(item => !item.perm || (rolePermissions[activeRole] || {})[item.perm]).map(item => (
-                  <button 
-                    key={item.id}
-                    onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
-                    style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
-                      padding: '1.25rem 1rem', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255,255,255,0.03)',
-                      border: activeTab === item.id ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(255,255,255,0.05)',
-                      borderRadius: '20px', cursor: 'pointer', transition: 'all 0.2s', position: 'relative'
-                    }}
-                  >
-                    <item.icon size={26} color={activeTab === item.id ? 'var(--accent-color)' : 'rgba(255,255,255,0.6)'} />
-                    <span style={{ fontSize: '0.8rem', fontWeight: '800', color: activeTab === item.id ? 'white' : 'rgba(255,255,255,0.6)', textAlign: 'center' }}>{item.label}</span>
-                    {item.badge > 0 && (
-                      <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'var(--error-color)', color: 'white', fontSize: '0.6rem', minWidth: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '950' }}>{item.badge}</div>
-                    )}
-                  </button>
-                ))}
-              </div>
-
-              {/* Assigned Profiles in Mobile Menu */}
-              {activeRole !== 'Model' && activeRole !== 'App Owner' && !activeOperator?.isAdmin && myProfiles.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ fontSize: '0.7rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{t('myAssignedGirls').toUpperCase()}</div>
-                    <div onClick={() => setShowOnlyOnline(!showOnlyOnline)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: showOnlyOnline ? 'var(--success-color)' : 'rgba(255,255,255,0.2)' }}></div>
-                      <span style={{ fontSize: '0.62rem', fontWeight: '900', color: showOnlyOnline ? 'var(--success-color)' : 'rgba(255,255,255,0.3)' }}>ONLINE</span>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {myProfiles.filter(p => !showOnlyOnline || p.status === 'online').slice(0, 10).map(p => {
-                      const unread = getUnreadForProfile(p.id);
-                      return (
-                        <button key={p.id} onClick={() => { 
-                          setActiveProfileId(p.id); 
-                          setActiveTab('inbox'); 
-                          const firstUnread = messages.find(m => m.profileId === p.id && m.status === 'unread');
-                          if (firstUnread) {
-                            setSelectedChatId(firstUnread.id);
-                            setMobileView('chat');
-                          }
-                          setIsMobileMenuOpen(false); 
-                        }}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.85rem 1rem', border: '1px solid rgba(255,255,255,0.05)',
-                            borderRadius: '15px', cursor: 'pointer', background: 'rgba(255,255,255,0.02)', width: '100%', textAlign: 'left'
-                          }}
-                        >
-                          <div style={{ width: '8px', height: '8px', background: p.status === 'online' ? 'var(--success-color)' : 'rgba(255,255,255,0.1)', borderRadius: '50%' }}></div>
-                          <span style={{ flex: 1, fontSize: '0.9rem', fontWeight: '700', color: 'white' }}>{p.name}</span>
-                          {unread > 0 && <div style={{ background: 'var(--error-color)', color: 'white', fontSize: '0.6rem', minWidth: '18px', height: '18px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '950' }}>{unread}</div>}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Relay Mode Button */}
-              <button
-                onClick={() => {
-                  localStorage.setItem('nexus_relay_mode', 'true');
-                  setIsRelayMode(true);
-                  setIsMobileMenuOpen(false);
-                }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.25rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '18px', cursor: 'pointer', width: '100%', color: 'var(--accent-color)', fontWeight: '950'
-                }}
-              >
-                <Radio size={22} />
-                <span>RELAY MODE</span>
-              </button>
-            </div>
-
-            {/* Mobile Menu Footer */}
-            <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', gap: '1rem' }}>
-              <button 
-                onClick={() => { setNotificationPanelOpen(true); setIsMobileMenuOpen(false); }}
-                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '15px', color: 'white', fontWeight: '800', fontSize: '0.9rem' }}
-              >
-                <Bell size={18} /> {t('notifications') || 'Alerts'}
-              </button>
-              <button 
-                onClick={handleLogout}
-                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '15px', color: 'var(--error-color)', fontWeight: '800', fontSize: '0.9rem' }}
-              >
-                <LogOut size={18} /> {t('logout') || 'Exit'}
-              </button>
-            </div>
-          </div>
-        ) : (
-          /* Desktop Sidebar Content */
-          <>
-            <div style={{ 
-              marginTop: isMobile ? 'calc(env(safe-area-inset-top, 0px) + 1rem)' : 0,
-              marginBottom: '2rem', 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: '1rem', 
-              alignItems: isSidebarCollapsed ? 'center' : 'stretch' 
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: isSidebarCollapsed ? 'center' : 'space-between', width: '100%', marginBottom: isSidebarCollapsed ? '1.5rem' : '0.5rem' }}>
-                <div 
-                  onClick={() => setActiveTab('dashboard')}
-                  style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', cursor: 'pointer' }}
-                >
-                  <div style={{ 
-                    width: isSidebarCollapsed ? '42px' : '48px', 
-                    height: isSidebarCollapsed ? '42px' : '48px', 
-                    transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-                    position: 'relative'
-                  }}>
-                    <img src="/nexus_icon.png" alt="Nexus Hub" style={{ width: '100%', height: '100%', borderRadius: '12px', boxShadow: '0 8px 25px rgba(59, 130, 246, 0.25)' }} />
-                  </div>
-                  {!isSidebarCollapsed && (
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontSize: '1.25rem', fontWeight: '900', color: 'white', letterSpacing: '-0.01em', lineHeight: 1.1 }}>Nexus Hub</span>
-                      <span style={{ fontSize: '0.6rem', color: 'var(--accent-color)', fontWeight: '800', letterSpacing: '0.15em', marginTop: '0.15rem' }}>PREMIUM SYNC</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {!isSidebarCollapsed && (
-                <div style={{ display: 'flex', background: 'rgba(255,255,255,0.02)', padding: '3px', borderRadius: '12px', border: '1px solid var(--card-border)', gap: '0.5rem' }}>
-                  <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', padding: '2px', borderRadius: '9px', flex: 1 }}>
-                    <button onClick={() => setLang('cz')} style={{ flex: 1, padding: '5px 0', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '7px', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}>CZ</button>
-                    <button onClick={() => setLang('en')} style={{ flex: 1, padding: '5px 0', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '7px', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}>EN</button>
-                  </div>
-                  <button 
-                    onClick={() => setNotificationPanelOpen(true)} 
-                    style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', color: 'white', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <Bell size={16} />
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1.5rem', marginRight: '-0.75rem', paddingRight: '0.75rem' }} className="custom-scrollbar">
-              {/* Main Navigation */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '1.5rem' }}>
-                {[
-                  { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard') },
-                  { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator?.isModel ? 0 : totalUnread, perm: 'messaging' },
-                  { id: 'calendar', icon: Calendar, label: t('schedule'), perm: 'calendar' },
-                  { id: 'analytics', icon: BarChart3, label: t('analytics'), perm: 'analytics' },
-                  { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
-                ].filter(item => !item.perm || (rolePermissions[activeRole] || {})[item.perm]).map(item => (
-                  <button key={item.id} 
-                    onClick={() => {
-                      setActiveTab(item.id);
-                      if (isMobile) setIsMobileMenuOpen(false);
-                    }}
-                    className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.85rem 1.15rem', borderRadius: '14px',
-                      background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
-                      cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s',
-                      justifyContent: isSidebarCollapsed ? 'center' : 'flex-start',
-                      border: activeTab === item.id ? '1px solid rgba(59, 130, 246, 0.15)' : '1px solid transparent'
-                    }}
-                  >
-                    <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
-                    {!isSidebarCollapsed && (
-                      <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '900' : '500', fontSize: '0.95rem' }}>
-                        {item.label}
-                      </span>
-                    )}
-                    {item.badge > 0 && !isSidebarCollapsed && (
-                      <div style={{ marginLeft: 'auto', background: 'var(--accent-color)', color: 'white', fontSize: '0.65rem', padding: '2px 8px', borderRadius: '20px', fontWeight: '950' }}>{item.badge}</div>
-                    )}
-                  </button>
-                ))}
-
-                {/* Collapsible System Tools */}
-                <div style={{ marginTop: '0.75rem' }}>
-                  {!isSidebarCollapsed && (
-                    <button 
-                      onClick={() => setIsToolsExpanded(!isToolsExpanded)}
-                      style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 1.15rem', background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', fontSize: '0.7rem', fontWeight: '900', letterSpacing: '0.12em' }}
-                    >
-                      {t('global_features').toUpperCase() || 'SYSTEM TOOLS'}
-                      {isToolsExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                    </button>
-                  )}
-                  
-                  {(isToolsExpanded || isSidebarCollapsed) && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.25rem', paddingLeft: isSidebarCollapsed ? '0' : '0.5rem' }}>
-                      {[
-                        { id: 'infra', icon: HardDrive, label: t('infra'), perm: 'infrastructure' },
-                        { id: 'agencies', icon: Building2, label: t('agencies'), perm: 'agencies' },
-                        { id: 'permissions', icon: Shield, label: t('permissions'), perm: 'permissions' },
-                        { id: 'plans', icon: CreditCard, label: t('plans'), perm: 'plans' },
-                        { id: 'features', icon: Zap, label: t('features'), perm: 'global_features' },
-                        { id: 'inventory', icon: Package, label: t('stockCard') || 'Sklad', perm: 'inventory' },
-                        { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles' },
-                        { id: 'device-setup', icon: Smartphone, label: t('deviceSetup'), perm: 'device_setup' },
-                        { id: 'activity', icon: Activity, label: t('auditLog'), perm: 'audit_logs' },
-                        { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub' },
-                        { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
-                      ].filter(item => isAllowed(item.perm)).map(item => (
-                        <button key={item.id} 
-                          onClick={() => {
-                            setActiveTab(item.id);
-                            if (isMobile) setIsMobileMenuOpen(false);
-                          }}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '0.95rem', padding: '0.7rem 1.15rem', border: 'none', borderRadius: '12px',
-                            background: activeTab === item.id ? 'rgba(255, 255, 255, 0.04)' : 'transparent',
-                            cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s',
-                            justifyContent: isSidebarCollapsed ? 'center' : 'flex-start'
-                          }}
-                          title={isSidebarCollapsed ? item.label : ''}
-                        >
-                          <item.icon size={19} color={activeTab === item.id ? 'var(--accent-color)' : 'rgba(255,255,255,0.45)'} />
-                          {!isSidebarCollapsed && (
-                            <span style={{ color: activeTab === item.id ? 'white' : 'rgba(255,255,255,0.45)', fontWeight: activeTab === item.id ? '700' : '500', fontSize: '0.88rem' }}>
-                              {item.label}
-                            </span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Assigned Girls Section */}
-              {!activeOperator?.isModel && activeRole !== 'App Owner' && !activeOperator?.isAdmin && !isSidebarCollapsed && (
-                <div style={{ marginTop: '1.25rem', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem', padding: '0 0.85rem' }}>
-                    <div style={{ fontSize: '0.65rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{t('myAssignedGirls').toUpperCase()}</div>
-                    <div onClick={() => setShowOnlyOnline(!showOnlyOnline)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: showOnlyOnline ? 'var(--success-color)' : 'rgba(255,255,255,0.2)' }}></div>
-                      <span style={{ fontSize: '0.6rem', fontWeight: '900', color: showOnlyOnline ? 'var(--success-color)' : 'rgba(255,255,255,0.3)' }}>ONLINE</span>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: '35vh', overflowY: 'auto' }} className="custom-scrollbar">
-                    {myProfiles.filter(p => !showOnlyOnline || p.status === 'online').map(p => {
-                      const unread = getUnreadForProfile(p.id);
-                      const isActive = activeProfile?.id === p.id;
-                      return (
-                        <button key={p.id} onClick={() => {
-                          setActiveProfileId(p.id);
-                          setActiveTab('inbox');
-                          const firstUnread = messages.find(m => m.profileId === p.id && m.status === 'unread');
-                          if (firstUnread) {
-                            setSelectedChatId(firstUnread.id);
-                            if (isMobile) setMobileView('chat');
-                          } else {
-                            setSelectedChatId(null);
-                          }
-                          if (isMobile) setIsMobileMenuOpen(false);
-                        }}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.7rem 0.85rem', border: '1px solid',
-                            borderRadius: '14px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                            background: isActive ? 'rgba(59, 130, 246, 0.08)' : 'rgba(255,255,255,0.02)',
-                            borderColor: isActive ? 'rgba(59, 130, 246, 0.25)' : 'transparent',
-                          }}
-                        >
-                          <div style={{ width: '8px', height: '8px', background: p.status === 'online' ? 'var(--success-color)' : 'rgba(255,255,255,0.1)', borderRadius: '50%', flexShrink: 0 }}></div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: '0.88rem', fontWeight: isActive ? '800' : '600', color: isActive ? 'white' : 'rgba(255,255,255,0.6)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-                          </div>
-                          {unread > 0 && <div style={{ background: 'var(--error-color)', color: 'white', fontSize: '0.62rem', minWidth: '18px', height: '18px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '950' }}>{unread}</div>}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Bottom Section */}
-            <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.85rem', borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: isSidebarCollapsed ? '0' : '0 0.5rem', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start', marginBottom: '0.5rem' }}>
-                <div style={{ width: '38px', height: '38px', background: 'linear-gradient(135deg, var(--accent-color) 0%, #1d4ed8 100%)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'white', fontSize: '0.85rem', flexShrink: 0, boxShadow: '0 6px 15px rgba(0,0,0,0.4)' }}>{activeOperator?.avatar}</div>
-                {!isSidebarCollapsed && (
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '0.88rem', fontWeight: '900', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'white' }}>{activeOperator?.name}</div>
-                    <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', fontWeight: '800', letterSpacing: '0.05em' }}>{activeRole?.toUpperCase() || ''}</div>
-                  </div>
-                )}
-                {!isSidebarCollapsed && (
-                  <button 
-                    onClick={handleLogout}
-                    style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: 'var(--error-color)', width: '30px', height: '30px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <LogOut size={16} />
-                  </button>
-                )}
-              </div>
-            </div>
-          </>
-        )}
-      </nav>
-      )}
+      <Sidebar 
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          isMobile={isMobile}
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+          isSidebarCollapsed={isSidebarCollapsed}
+          setIsSidebarCollapsed={setIsSidebarCollapsed}
+          activeOperator={activeOperator}
+          activeRole={activeRole}
+          isAllowed={isAllowed}
+          t={t}
+          lang={lang}
+          setLang={setLang}
+          totalUnread={totalUnread}
+          rolePermissions={rolePermissions}
+          handleNavigation={handleNavigation}
+          handleLogout={handleLogout}
+          myProfiles={myProfiles}
+          showOnlyOnline={showOnlyOnline}
+          setShowOnlyOnline={setShowOnlyOnline}
+          getUnreadForProfile={getUnreadForProfile}
+          setActiveProfileId={setActiveProfileId}
+          messages={messages}
+          setSelectedChatId={setSelectedChatId}
+          setMobileView={setMobileView}
+          setIsRelayMode={setIsRelayMode}
+          setNotificationPanelOpen={setNotificationPanelOpen}
+      />
 
       {/* Main Area */}
       <main className="main-content custom-scrollbar" style={{
         flex: 1,
         display: 'flex', 
         flexDirection: 'column', 
-        height: isMobile ? 'calc(100dvh - 70px - max(env(safe-area-inset-top), 0px))' : '100vh',
+        minHeight: 0,
+        height: 0,
         minWidth: 0,
         width: '100%',
         overflowY: 'auto',
         overflowX: 'hidden',
+        overscrollBehavior: 'contain',
+        WebkitOverflowScrolling: 'touch',
         paddingTop: 0,
         paddingBottom: isMobile ? 'calc(3.5rem + max(env(safe-area-inset-bottom), 0px))' : '0',
         position: 'relative',
@@ -3919,1147 +3767,118 @@ function App() {
         {activeTab === 'dashboard' && (
           <DashboardHome 
             user={activeOperator} 
-            t={t} 
+            translatedText={translatedText}
+            internalNote={internalNote}
+            setInternalNote={setInternalNote}
+            clientNotes={clientNotes}
+            clientNames={clientNames}
+            filteredMessages={filteredMessages}
+            selectedChat={selectedChat}
+            chatMessages={chatMessages}
+            isHistoryLoading={isHistoryLoading}
+            chatScrollRef={chatScrollRef}
+            isUserScrolled={isUserScrolled}
+            typingProfiles={typingProfiles}
+            inlinePanelTab={inlinePanelTab}
+            setInlinePanelTab={setInlinePanelTab}
+            activeOperator={activeOperator}
+            setShowPanicConfirm={setShowPanicConfirm}
+            detectedMeeting={detectedMeeting}
+            setDetectedMeeting={setDetectedMeeting}
+            messageValue={messageValue}
+            setMessageValue={setMessageValue}
+            bookingSchedule={bookingSchedule}
+            calViewDate={calViewDate}
+            setCalViewDate={setCalViewDate}
+            setIsBookingModalOpen={setIsBookingModalOpen}
+            setNewBookingForm={setNewBookingForm}
+            activeContextTab={activeContextTab}
+            setActiveContextTab={setActiveContextTab}
             lang={lang}
-            agencies={agencies} 
-            profiles={profiles}
-            calendar={bookingSchedule}
-            isShiftActive={isShiftActive}
-            setIsShiftActive={setIsShiftActive}
-            isMobile={isMobile}
-            stats={stats}
-            activeSubscription={activeSubscription}
+            t={t}
+            activeProfile={activeProfile}
+            handleSendMessage={handleSendMessage}
+            handleTranslate={handleTranslate}
+            handleSaveNote={handleSaveNote}
+            handleDeleteNote={handleDeleteNote}
+            startCall={startCall}
+            handleQuickSaveMeeting={handleQuickSaveMeeting}
           />
         )}
 
-        {activeTab === 'inbox' && (
-          <div style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden', position: 'relative' }} className="fade-in inbox-grid">
-            {/* Column 1: Inbox List */}
-            {(!isMobile || mobileView === 'list') && (
-              <div className={`inbox-panel ${!selectedChatId ? 'active' : ''}`} style={{ width: isMobile ? '100%' : '380px', flexShrink: 0, borderRight: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ padding: '2rem 1.5rem', borderBottom: '1px solid var(--card-border)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', gap: '1rem' }}>
-                    <h2 style={{ fontSize: '1.5rem', whiteSpace: 'nowrap' }}>{t('inbox')}</h2>
-                    <div style={{ position: 'relative', flex: 1, maxWidth: '200px' }}>
-                      <select 
-                        value={activeProfileId} 
-                        onChange={(e) => {
-                          setActiveProfileId(e.target.value);
-                          setSelectedChatId(null); // Reset selection when switching model
-                        }}
-                        style={{ 
-                          width: '100%',
-                          background: 'rgba(255,255,255,0.05)', 
-                          border: '1px solid var(--card-border)', 
-                          padding: '0.4rem 2rem 0.4rem 0.85rem', 
-                          borderRadius: '10px', 
-                          color: 'white',
-                          fontSize: '0.8rem',
-                          fontWeight: '800',
-                          appearance: 'none',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {assignedProfiles.map(p => (
-                          <option key={p.id} value={p.id}>{p.name}</option>
-                        ))}
-                      </select>
-                      <ChevronDown size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-secondary)' }} />
-                    </div>
-                  </div>
-                  <div style={{ position: 'relative' }}>
-                    <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                    <input type="text" placeholder={t('searchPlaceholder')} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.85rem 0.85rem 0.85rem 2.5rem', borderRadius: '12px', color: 'white' }} />
-                  </div>
-                </div>
-                <div style={{ overflowY: 'auto', flex: 1 }}>
-                  {filteredMessages.length > 0 ? filteredMessages.map(msg => (
-                    <div key={msg.id} onClick={() => { 
-                      setSelectedChatId(msg.id); 
-                      if (isMobile) setMobileView('chat');
-                      if (!isTranslating) {
-                        setSourceText("");
-                        setTranslatedText("");
-                      }
-                      setInternalNote("");
-                      if (msg.from && !clientNotes[msg.from]) {
-                        setClientNotes(prev => ({ ...prev, [msg.from]: [] }));
-                      }
-                    }}
-                      style={{ 
-                        padding: '1.5rem', 
-                        borderBottom: '1px solid var(--card-border)', 
-                        background: selectedChat?.id === msg.id ? 'rgba(59, 130, 246, 0.2)' : 'transparent', 
-                        cursor: 'pointer', 
-                        position: 'relative',
-                        borderLeft: selectedChat?.id === msg.id ? '6px solid var(--accent-color)' : '6px solid transparent',
-                        boxShadow: selectedChat?.id === msg.id ? 'inset 0 0 20px rgba(59, 130, 246, 0.1)' : 'none',
-                        transition: 'all 0.2s ease'
-                      }}>
-                      {msg.status === 'unread' && <div className="dot"></div>}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                        <span style={{ fontWeight: selectedChat?.id === msg.id ? '800' : '700', fontSize: '1.1rem', color: selectedChat?.id === msg.id ? 'white' : 'inherit' }}>
-                          {clientNames[msg.from] || msg.from}
-                        </span>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{msg.time}</span>
-                      </div>
-                      <div className="truncate-text" style={{ opacity: selectedChat?.id === msg.id ? 1 : 0.7 }}>{msg.text}</div>
-                    </div>
-                  )) : <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>{t('noMessages')}</div>}
-                  <div style={{ height: isMobile ? '80px' : '0' }}></div>
-                </div>
-              </div>
-            )}
+        {/* UNIT: OPERATIONS */}
+        <OperationsUnit
+          activeTab={activeTab}
+          isMobile={isMobile}
+          t={t}
+          lang={lang}
+          token={localStorage.getItem('nexus_token')}
+          activeOperator={activeOperator}
+          activeRole={activeRole}
+          activeProfileId={activeProfileId}
+          setActiveProfileId={setActiveProfileId}
+          allAgencyProfiles={allAgencyProfiles}
+          myProfiles={myProfiles}
+          profiles={profiles}
+          setProfiles={setProfiles}
+          operators={operators}
+          assignedProfiles={assignedProfiles}
+          showToast={showToast}
+          API_BASE={API_BASE}
+          contacts={contacts}
+          setContacts={setContacts}
+          activeContactId={activeContactId}
+          setActiveContactId={setActiveContactId}
+          messages={messages}
+          setMessages={setMessages}
+          newMessage={newMessage}
+          setNewMessage={setNewMessage}
+          handleSendMessage={handleSendMessage}
+          handleRefreshMessages={handleRefreshMessages}
+          isDrafting={isDrafting}
+          setIsDrafting={setIsDrafting}
+          setIsBookingModalOpen={setIsBookingModalOpen}
+          handleExportICS={handleExportICS}
+          isCalendarSyncOpen={isCalendarSyncOpen}
+          setIsCalendarSyncOpen={setIsCalendarSyncOpen}
+          calendarSyncUrl={calendarSyncUrl}
+          setCalendarSyncUrl={setCalendarSyncUrl}
+          handleSaveCalendarSync={handleSaveCalendarSync}
+          bookingSchedule={bookingSchedule}
+          activeTimerEvent={activeTimerEvent}
+          isTimerActive={isTimerActive}
+          openBookingMenuId={openBookingMenuId}
+          setOpenBookingMenuId={setOpenBookingMenuId}
+          handleCheckIn={handleCheckIn}
+          handleCheckOut={handleCheckOut}
+          handleEditBooking={handleEditBooking}
+          handleDeleteBooking={handleDeleteBooking}
+          timeLeft={timeLeft}
+          formatSafetyTime={formatSafetyTime}
+          isSafetyLoading={isSafetyLoading}
+          handleSafetyImOk={handleSafetyImOk}
+          SAFETY_SUGGESTIONS={SAFETY_SUGGESTIONS}
+          setSelectedScheduleEvent={setSelectedScheduleEvent}
+          bioText={bioText}
+          setBioText={setBioText}
+          handleSaveBio={handleSaveBio}
+          isSyncing={isSyncing}
+          syncStatus={syncStatus}
+          syncProgress={syncProgress}
+          handleSyncAll={handleSyncAll}
+          relayApkInfo={relayApkInfo}
+          setRelayApkInfo={setRelayApkInfo}
+          clientNotes={clientNotes}
+          clientNames={clientNames}
+          updateClientName={updateClientName}
+          assigningProfile={assigningProfile}
+          setAssigningProfile={setAssigningProfile}
+          setActiveTab={setActiveTab}
+          toggleOperatorStatus={toggleOperatorStatus}
+          handleEditProfile={handleEditProfile}
+          handleSaveAssignees={handleSaveAssignees}
+        />
 
-            {/* Column 2 & 3 Container */}
-            {(!isMobile || mobileView !== 'list') && (
-              <div className={`inbox-panel ${selectedChatId ? 'active' : ''} ${isMobile && !selectedChatId ? 'hidden-mobile' : ''}`} style={{ flex: 1, display: 'flex', flexDirection: isMobile ? 'column' : 'row', minWidth: 0, overflow: 'hidden' }}>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.1)', minWidth: 0, overflow: 'hidden', minHeight: 0 }}>
-                  {/* Stable Debug Chat Detail */}
-                  {selectedChat ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', minHeight: 0 }}>
-                      <div style={{ paddingTop: isMobile ? 'calc(env(safe-area-inset-top, 0px) + 0.75rem)' : '1.5rem', paddingBottom: isMobile ? '0.75rem' : '1.5rem', paddingLeft: isMobile ? '1rem' : '2rem', paddingRight: isMobile ? '1rem' : '2rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-color)', flexShrink: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                          {isMobile && <button onClick={() => setMobileView('list')} style={{ background: 'none', border: 'none', color: 'white' }}><ChevronLeft size={24} /></button>}
-                          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.9rem' }}>
-                            {(clientNames[selectedChat.from] || selectedChat.from).slice(-2)}
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: '800', fontSize: '1.2rem' }}>{clientNames[selectedChat.from] || selectedChat.from}</div>
-                            {clientNames[selectedChat.from] && (
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{selectedChat.from}</div>
-                            )}
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '1rem' }}>
-                          <button onClick={startCall} className="status-badge" style={{ color: 'var(--accent-color)', cursor: 'pointer', background: 'rgba(59, 130, 246, 0.1)', border: 'none', padding: '0.5rem 0.75rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', fontWeight: '800' }}>
-                            <Signal size={14} /> CALL
-                          </button>
-                          
-                          {/* Universal SOS Button also in Chat Header for redundancy */}
-                          {(activeOperator?.isModel || (isMobile && activeOperator && !activeOperator?.isAppOwner && !activeOperator?.isAdmin && !activeOperator?.isManager)) && (
-                            <button 
-                              onClick={() => setShowPanicConfirm(true)}
-                              style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                            >
-                              <Shield size={20} />
-                            </button>
-                          )}
-
-                          <button 
-                            onClick={() => alert('Options: Block Client, Delete Chat, Mark as Spam (Coming soon)')}
-                            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                          >
-                            <MoreVertical size={22} />
-                          </button>
-                        </div>
-                      </div>
-                      <div
-                        ref={chatScrollRef}
-                        onScroll={(e) => {
-                          const el = e.currentTarget;
-                          const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-                          isUserScrolled.current = distFromBottom > 100;
-                        }}
-                        style={{ flex: 1, padding: isMobile ? '0.5rem 0.75rem' : '2rem', overflowY: 'auto', WebkitOverflowScrolling: 'touch', background: 'rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', gap: isMobile ? '0' : '0.25rem', minHeight: 0, justifyContent: 'flex-end' }}>
-                         {isHistoryLoading && chatMessages.length === 0 ? (
-                           <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Loading history...</div>
-                         ) : chatMessages.length > 0 ? (
-                           chatMessages.map((msg, i) => (
-                             <div key={msg.id || i} className={msg.direction === 'OUTBOUND' ? 'message-bubble-out' : 'message-bubble-in'} style={{ alignSelf: msg.direction === 'OUTBOUND' ? 'flex-end' : 'flex-start', marginBottom: isMobile ? '0.35rem' : '0.6rem' }}>
-                               <div style={{ fontSize: isMobile ? '0.88rem' : '0.95rem' }}>{msg.text}</div>
-                               <div style={{ fontSize: '0.62rem', opacity: 0.5, marginTop: '2px', textAlign: 'right' }}>
-                                 {new Date(msg.createdAt).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' })}
-                               </div>
-                             </div>
-                           ))
-                         ) : (
-                           <div className="message-bubble-in" style={{ marginBottom: '1rem' }}>{selectedChat.text}</div>
-                         )}
-
-                         {typingProfiles[activeProfileId] === selectedChat.from && (
-                           <div className="message-bubble-in fade-in" style={{ alignSelf: 'flex-start', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '8px', width: 'fit-content' }}>
-                             <div className="typing-dot" style={{ width: '6px', height: '6px', background: 'var(--accent-color)', borderRadius: '50%', animation: 'bounce 0.6s infinite alternate' }}></div>
-                             <div className="typing-dot" style={{ width: '6px', height: '6px', background: 'var(--accent-color)', borderRadius: '50%', animation: 'bounce 0.6s infinite alternate 0.2s' }}></div>
-                             <div className="typing-dot" style={{ width: '6px', height: '6px', background: 'var(--accent-color)', borderRadius: '50%', animation: 'bounce 0.6s infinite alternate 0.4s' }}></div>
-                           </div>
-                         )}
-                      </div>
-                      <div style={{ borderTop: '1px solid var(--card-border)' }}>
-                        {isMobile && (
-                          <>
-                            <div style={{ display: 'flex', gap: '0.5rem', padding: '0.5rem 1.25rem', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.01)' }}>
-                              {[{id:'note',icon:StickyNote,label:lang==='cz'?'Poznámky':'Notes',color:'#f59e0b'},{id:'translator',icon:Languages,label:lang==='cz'?'Překladač':'Translator',color:'#3b82f6'},{id:'quickReplies',icon:Zap,label:lang==='cz'?'Odpovědi':'Replies',color:'#10b981'}].map(({id,icon:Icon,label,color})=>(<button key={id} onClick={()=>setInlinePanelTab(prev=>prev===id?null:id)} style={{display:'flex',alignItems:'center',gap:'0.3rem',padding:'0.25rem 0.6rem',borderRadius:'8px',cursor:'pointer',fontSize:'0.67rem',fontWeight:'700',background:inlinePanelTab===id?`rgba(${id==='note'?'245,158,11':id==='translator'?'59,130,246':'16,185,129'},0.15)`:'rgba(255,255,255,0.04)',border:`1px solid ${inlinePanelTab===id?color:'rgba(255,255,255,0.07)'}`,color:inlinePanelTab===id?color:'var(--text-secondary)',transition:'all 0.18s'}}><Icon size={11}/> {label}</button>))}
-                            </div>
-                            {inlinePanelTab && (
-                              <div className="fade-in custom-scrollbar" style={{borderBottom:'1px solid var(--card-border)',padding:'0.75rem 1.25rem',maxHeight:'175px',overflowY:'auto',background:'rgba(255,255,255,0.01)'}}>
-                                {inlinePanelTab==='note' && (<div style={{display:'flex',flexDirection:'column',gap:'0.45rem'}}><textarea value={internalNote} onChange={e=>setInternalNote(e.target.value)} placeholder={lang==='cz'?'Přidat poznámku...':'Add internal note...'} style={{width:'100%',minHeight:'62px',background:'rgba(245,158,11,0.05)',border:'1px solid rgba(245,158,11,0.2)',borderRadius:'10px',padding:'0.55rem 0.7rem',color:'#f59e0b',resize:'none',fontSize:'0.81rem'}}/><button onClick={handleSaveNote} disabled={!internalNote.trim()} style={{alignSelf:'flex-end',background:'rgba(245,158,11,0.2)',color:'#f59e0b',border:'1px solid rgba(245,158,11,0.4)',padding:'0.25rem 0.8rem',borderRadius:'8px',fontWeight:'700',fontSize:'0.69rem',opacity:internalNote.trim()?1:0.4}}>{lang==='cz'?'Uložit':'Save'}</button></div>)}
-                                {inlinePanelTab==='translator' && (<div style={{display:'flex',flexDirection:'column',gap:'0.45rem'}}><textarea value={sourceText} onChange={e=>setSourceText(e.target.value)} placeholder={lang==='cz'?'Text k překladu...':'Text to translate...'} style={{width:'100%',minHeight:'52px',background:'rgba(59,130,246,0.05)',border:'1px solid rgba(59,130,246,0.2)',borderRadius:'10px',padding:'0.55rem 0.7rem',color:'white',resize:'none',fontSize:'0.81rem'}}/>{translatedText&&<div style={{fontSize:'0.78rem',color:'#93c5fd',padding:'0.38rem 0.62rem',background:'rgba(59,130,246,0.08)',borderRadius:'8px',lineHeight:1.5}}>{translatedText}</div>}<div style={{display:'flex',gap:'0.5rem'}}><button onClick={handleTranslate} disabled={isTranslating||!sourceText.trim()} style={{flex:1,background:'var(--accent-color)',color:'white',border:'none',padding:'0.3rem',borderRadius:'8px',fontWeight:'800',fontSize:'0.67rem',opacity:(!sourceText.trim()||isTranslating)?0.4:1}}>{isTranslating?'…':(lang==='cz'?'PŘELOŽIT':'TRANSLATE')}</button>{translatedText&&<button onClick={()=>{setMessageValue(translatedText);setInlinePanelTab(null);}} style={{flex:1,background:'rgba(59,130,246,0.15)',color:'#93c5fd',border:'1px solid rgba(59,130,246,0.3)',padding:'0.3rem',borderRadius:'8px',fontWeight:'800',fontSize:'0.67rem',cursor:'pointer'}}>{lang==='cz'?'POUŽÍT':'USE'}</button>}</div></div>)}
-                                {inlinePanelTab==='quickReplies' && (<div style={{display:'flex',flexDirection:'column',gap:'0.32rem'}}>{!(activeProfile?.quickReplies?.length)?(<div style={{textAlign:'center',padding:'0.75rem',color:'var(--text-secondary)',fontSize:'0.76rem'}}>{lang==='cz'?'Žádné rychlé odpovědi.':'No quick replies yet.'}</div>):activeProfile.quickReplies.map(reply=>(<button key={reply.id} onClick={()=>{setMessageValue(reply.text);setInlinePanelTab(null);}} style={{textAlign:'left',background:'rgba(16,185,129,0.05)',border:'1px solid rgba(16,185,129,0.18)',borderRadius:'8px',padding:'0.4rem 0.68rem',cursor:'pointer'}}><div style={{fontSize:'0.65rem',fontWeight:'800',color:'#10b981',marginBottom:'0.06rem'}}>{reply.label}</div><div style={{fontSize:'0.74rem',color:'var(--text-secondary)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{reply.text}</div></button>))}</div>)}
-                              </div>
-                            )}
-                          </>
-                        )}
-                         <div style={{ padding: '0.75rem 1.25rem 1.25rem' }}>
-                         {/* Meeting detection banner */}
-
-                         {detectedMeeting && (
-                           <div className="fade-in" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0.85rem', marginBottom: '0.75rem', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: '10px' }}>
-                             <Calendar size={14} color="var(--success-color)" />
-                             <span style={{ flex: 1, fontSize: '0.72rem', color: 'var(--success-color)', fontWeight: '700' }}>Detekován čas: <strong>{detectedMeeting.time}</strong> — Uložit schůzku?</span>
-                             <button
-                               onClick={handleQuickSaveMeeting}
-                               style={{ padding: '0.3rem 0.65rem', borderRadius: '6px', background: 'rgba(16,185,129,0.2)', border: '1px solid rgba(16,185,129,0.35)', color: 'var(--success-color)', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer' }}
-                             >Uložit</button>
-                             <button onClick={() => setDetectedMeeting(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, padding: '0 2px' }}>×</button>
-                           </div>
-                         )}
-                         {selectedChat && activeProfile?.quickReplies?.length > 0 && (
-                           <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', overflowX: 'auto', paddingBottom: '0.5rem' }} className="custom-scrollbar">
-                             {activeProfile.quickReplies.map((reply) => (
-                               <button
-                                 key={reply.id}
-                                 onClick={() => setMessageValue(reply.text)}
-                                 style={{ 
-                                   whiteSpace: 'nowrap',
-                                   background: 'rgba(59, 130, 246, 0.1)',
-                                   border: '1px solid rgba(59, 130, 246, 0.3)',
-                                   color: 'var(--accent-color)',
-                                   padding: '0.4rem 0.8rem',
-                                   borderRadius: '8px',
-                                   fontSize: '0.75rem',
-                                   fontWeight: '700',
-                                   cursor: 'pointer'
-                                 }}
-                               >
-                                 {reply.label}
-                               </button>
-                             ))}
-                           </div>
-                         )}
-                         <div style={{ display: 'flex', gap: '1rem' }}>
-                            <input 
-                              type="text" 
-                              value={messageValue}
-                              onChange={(e) => setMessageValue(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' && messageValue.trim()) {
-                                  handleSendMessage(messageValue);
-                                }
-                              }}
-                              placeholder="Type a message..." 
-                              style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '1rem', borderRadius: '12px', color: 'white' }} 
-                            />
-                            <button 
-                              onClick={() => {
-                                if (messageValue.trim()) {
-                                  handleSendMessage(messageValue);
-                                }
-                              }}
-                              style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '12px', fontWeight: '800', cursor: 'pointer' }}
-                            >
-                              SEND
-                            </button>
-                         </div>
-                      </div>
-                    </div>
-                    </div>
-                  ) : (
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
-                      <div>
-                        <MessageSquare size={64} style={{ opacity: 0.2, marginBottom: '1.5rem' }} />
-                        <h3 style={{ color: 'var(--text-secondary)' }}>Select a conversation</h3>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Column 3: Notes / Details */}
-                {(!isMobile || mobileView === 'details') && (
-                  <div className="notes-panel-container" style={{ 
-                    width: isMobile ? '100%' : '400px', 
-                    flexShrink: 0, 
-                    borderLeft: isMobile ? 'none' : '1px solid var(--card-border)', 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    background: 'var(--bg-color)', 
-                    overflow: 'hidden',
-                    position: isMobile ? 'absolute' : 'static',
-                    top: 0, right: 0, bottom: 0, zIndex: 1100
-                  }}>
-                    {isMobile && (
-                      <div style={{ padding: '1rem', borderBottom: '1px solid var(--card-border)' }}>
-                        <button onClick={() => setMobileView('chat')} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <ChevronLeft size={20} /> {t('backToChat')}
-                        </button>
-                      </div>
-                    )}
-                    {selectedChat ? (
-                      <div style={{ display: 'flex', flex: 1, flexDirection: 'column', overflow: 'hidden' }}>
-                         {/* Tab bar */}
-                         <div style={{ display: 'flex', borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)' }}>
-                           <button onClick={() => setActiveContextTab('translator')} style={{ flex: 1, padding: '0.6rem 0.25rem', border: 'none', background: 'transparent', color: activeContextTab === 'translator' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.7rem' }}>
-                             <Languages size={13} /> {lang === 'cz' ? 'Překladač' : 'Translator'}
-                           </button>
-                           <button onClick={() => setActiveContextTab('note')} style={{ flex: 1, padding: '0.6rem 0.25rem', border: 'none', background: 'transparent', color: activeContextTab === 'note' ? '#f59e0b' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.7rem' }}>
-                             <StickyNote size={13} /> {lang === 'cz' ? 'Poznámky' : 'Notes'}
-                           </button>
-                           <button onClick={() => setActiveContextTab('quickReplies')} style={{ flex: 1, padding: '0.6rem 0.25rem', border: 'none', background: 'transparent', color: activeContextTab === 'quickReplies' ? '#10b981' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.7rem' }}>
-                             <Zap size={13} /> {lang === 'cz' ? 'Odpovědi' : 'Replies'}
-                           </button>
-                         </div>
-                        {/* Tab content */}
-                        <div style={{ padding: '1.25rem', flex: '1 1 0', minHeight: 0, maxHeight: '45%', overflowY: 'auto' }}>
-                          {activeContextTab === 'translator' ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                              <textarea value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder={t('typeResponse')} style={{ width: '100%', height: '100px', background: 'rgba(0, 0, 0, 0.2)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem', color: 'white', resize: 'none' }} />
-                              <button onClick={handleTranslate} disabled={isTranslating} style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0.75rem 1rem', borderRadius: '12px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                                {isTranslating ? (<><div className="loader-dots" style={{ display: 'flex', gap: '4px' }}><span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span><span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span><span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span></div>{t('translating')}</>) : (<><Sparkles size={16} /> {lang === 'cz' ? 'PŘELOŽIT PŘES AI' : 'TRANSLATE VIA AI'}</>)}
-                              </button>
-                              {translatedText && (
-                                <div className="fade-in" style={{ padding: '1rem', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '12px', position: 'relative' }}>
-                                  <div style={{ position: 'absolute', top: '-8px', right: '12px', background: 'var(--accent-color)', color: 'white', fontSize: '0.6rem', fontWeight: '900', padding: '2px 8px', borderRadius: '4px' }}>{t('poweredByAi')}</div>
-                                  <div style={{ fontSize: '0.9rem', color: 'white', lineHeight: '1.5' }}>{translatedText}</div>
-                                  <button onClick={() => { setMessageValue(translatedText); setActiveContextTab('note'); }} style={{ marginTop: '0.75rem', width: '100%', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', padding: '0.4rem', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer' }}>
-                                    {lang === 'cz' ? 'POUŽÍT PŘEKLAD' : 'USE TRANSLATION'}
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          ) : activeContextTab === 'note' ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                              <textarea value={internalNote} onChange={(e) => setInternalNote(e.target.value)} placeholder="Add internal note..." style={{ width: '100%', minHeight: '100px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '12px', padding: '1rem', color: '#f59e0b' }} />
-                              <button onClick={handleSaveNote} disabled={!internalNote.trim()} style={{ alignSelf: 'flex-end', background: 'rgba(245,158,11,0.2)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.4)', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: '700' }}>Save Note</button>
-                              {(clientNotes[selectedChat?.from] || []).length > 0 && (
-                                <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>SAVED NOTES</div>
-                                  {(clientNotes[selectedChat.from] || []).slice().reverse().map(note => (
-                                    <div key={note.id} style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: '10px', padding: '0.75rem', position: 'relative' }}>
-                                      <button onClick={() => handleDeleteNote(selectedChat.from, note.id)} style={{ position: 'absolute', top: '6px', right: '8px', background: 'none', border: 'none', color: 'rgba(245,158,11,0.5)', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, padding: '2px 4px' }}>×</button>
-                                      <div style={{ fontSize: '0.85rem', color: '#f59e0b', lineHeight: '1.5', paddingRight: '1.5rem' }}>{note.text}</div>
-                                      <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>{note.author} · {note.timestamp}</div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            /* Quick Replies tab */
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                              {(activeProfile?.quickReplies || []).length === 0 ? (
-                                <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                                  <Zap size={32} style={{ opacity: 0.2, marginBottom: '0.75rem', display: 'block', margin: '0 auto 0.75rem' }} />
-                                  {lang === 'cz' ? 'Žádné rychlé odpovědi. Přidej je v nastavení profilu.' : 'No quick replies yet. Add them in Profile Settings.'}
-                                </div>
-                              ) : (
-                                (activeProfile.quickReplies || []).map(reply => (
-                                  <button key={reply.id} onClick={() => setMessageValue(reply.text)} style={{ textAlign: 'left', background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '10px', padding: '0.75rem 1rem', cursor: 'pointer' }}>
-                                    <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#10b981', marginBottom: '0.2rem' }}>{reply.label}</div>
-                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{reply.text}</div>
-                                  </button>
-                                ))
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      {/* Calendar mini-panel below tabs */}
-                      {(() => {
-                        const calDateStr = calViewDate.toISOString().split('T')[0];
-                        const bookingsForDate = bookingSchedule.filter(b => b.startTime?.startsWith(calDateStr));
-                        const isToday = calDateStr === new Date().toISOString().split('T')[0];
-                        const dayName = calViewDate.toLocaleDateString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { weekday: 'long' });
-                        const dayDate = calViewDate.toLocaleDateString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { day: 'numeric', month: 'long' });
-                        return (
-                          <div style={{ borderTop: '1px solid var(--card-border)', flex: '0 0 auto', display: 'flex', flexDirection: 'column', height: '340px' }}>
-                            {/* day nav header */}
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.75rem', background: 'rgba(99,102,241,0.05)', borderBottom: '1px solid var(--card-border)', flexShrink: 0 }}>
-                              <button onClick={() => { const d = new Date(calViewDate); d.setDate(d.getDate()-1); setCalViewDate(d); }} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--card-border)', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.25rem 0.5rem', borderRadius: '6px', display: 'flex', alignItems: 'center' }}><ChevronLeft size={13} /></button>
-                              <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: '0.62rem', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{isToday ? (lang === 'cz' ? 'DNES' : 'TODAY') : dayName}</div>
-                                <div style={{ fontSize: '0.8rem', fontWeight: '900', color: isToday ? 'var(--accent-color)' : 'white', lineHeight: 1.2 }}>{dayDate}</div>
-                              </div>
-                              <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center' }}>
-                                {!isToday && <button onClick={() => setCalViewDate(new Date())} style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '5px', color: '#a5b4fc', fontSize: '0.58rem', fontWeight: '800', cursor: 'pointer', padding: '0.2rem 0.45rem' }}>Dnes</button>}
-                                <button onClick={() => { const d = new Date(calViewDate); d.setDate(d.getDate()+1); setCalViewDate(d); }} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--card-border)', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.25rem 0.5rem', borderRadius: '6px', display: 'flex', alignItems: 'center' }}><ChevronRight size={13} /></button>
-                              </div>
-                            </div>
-                            {/* bookings list */}
-                            <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                              {bookingsForDate.length === 0 ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '0.5rem', color: 'var(--text-secondary)' }}>
-                                  <Calendar size={24} style={{ opacity: 0.25 }} />
-                                  <span style={{ fontSize: '0.72rem', fontStyle: 'italic' }}>{lang === 'cz' ? 'Žádné schůzky' : 'No bookings'}</span>
-                                </div>
-                              ) : bookingsForDate.map(b => {
-                                const timeStr = b.startTime ? new Date(b.startTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' }) : (b.time || '');
-                                const endStr = b.endTime ? new Date(b.endTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' }) : '';
-                                return (
-                                  <div key={b.id} style={{ display: 'flex', gap: '0.6rem', padding: '0.5rem 0.65rem', background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '8px', borderLeft: '3px solid var(--accent-color)', alignItems: 'flex-start' }}>
-                                    <div style={{ flexShrink: 0, textAlign: 'right', minWidth: '42px' }}>
-                                      <div style={{ fontSize: '0.67rem', fontWeight: '900', color: 'var(--accent-color)', lineHeight: 1.3 }}>{timeStr}</div>
-                                      {endStr && <div style={{ fontSize: '0.57rem', color: 'var(--text-secondary)', lineHeight: 1 }}>{endStr}</div>}
-                                    </div>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                      <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.title}</div>
-                                      {b.profileName && <div style={{ fontSize: '0.62rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>{b.profileName}</div>}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })()}
-                      {/* Přidat schůzku — pinned at bottom of right panel */}
-                      <div style={{ padding: '0.75rem', borderTop: '1px solid var(--card-border)', background: 'var(--bg-secondary, #0f1117)', flexShrink: 0 }}>
-                        <button
-                          onClick={() => { const d = calViewDate.toISOString().split('T')[0]; setNewBookingForm(f => ({ ...f, date: d })); setBookingModalOpen(true); }}
-                          style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', background: 'var(--accent-color)', border: 'none', color: 'white', fontSize: '0.85rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                        >
-                          <PlusCircle size={16} /> {lang === 'cz' ? 'Přidat schůzku' : 'Add booking'}
-                        </button>
-                      </div>
-                      </div>
-                    ) : (
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
-                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t('selectConversationDesc')}</div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-   
-        {activeTab === 'calendar' && (
-          <div style={{ padding: isMobile ? '1.5rem 1rem' : '3rem', paddingBottom: '8rem', flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }} className="fade-in custom-scrollbar">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '2.5rem', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : '0' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                  <h2 style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '800' }}>{t('bookingSchedule')}</h2>
-                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>•</span>
-                    <select 
-                      value={activeProfileId} 
-                      onChange={(e) => setActiveProfileId(e.target.value)}
-                      style={{
-                        background: 'rgba(255,255,255,0.05)', 
-                        border: '1px solid var(--card-border)', 
-                        color: 'var(--accent-color)', 
-                        padding: '0.4rem 1rem', 
-                        borderRadius: '8px', 
-                        fontSize: '0.9rem', 
-                        fontWeight: '700',
-                        cursor: 'pointer',
-                        outline: 'none'
-                      }}
-                    >
-                      {(activeRole === 'App Owner' || activeRole === 'Agency Admin' || activeRole === 'Manager' ? allAgencyProfiles : myProfiles).map(p => (
-                        <option key={p.id} value={p.id} style={{ background: '#0a0c10', color: 'white' }}>{p.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('bookingScheduleDesc')}</p>
-              </div>
-              <div style={{ display: 'flex', gap: '0.75rem', width: isMobile ? '100%' : 'auto', flexDirection: isMobile ? 'column' : 'row' }}>
-                 <button onClick={() => setBookingModalOpen(true)} style={{ padding: '0.85rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', color: 'white', border: 'none', background: 'var(--accent-color)', borderRadius: '15px', fontWeight: '800', fontSize: '0.85rem' }}>
-                   <Plus size={16} /> {lang === 'cz' ? 'Přidat akci' : 'Add Booking'}
-                 </button>
-                 <button 
-                   onClick={handleExportICS}
-                   className="glass-card" 
-                   style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '0.75rem', cursor: 'pointer', color: 'white', border: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', flex: isMobile ? 1 : 'none' }}
-                 >
-                   <Share2 size={18} /> <span>{t('exportCalendar')}</span>
-                 </button>
-                 <button 
-                   onClick={() => setIsCalendarSyncOpen(!isCalendarSyncOpen)}
-                   className="glass-card" 
-                   style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '0.75rem', cursor: 'pointer', color: 'var(--accent-color)', border: '1px solid var(--accent-color)', background: 'rgba(59,130,246,0.1)', borderRadius: '15px', flex: isMobile ? 1 : 'none' }}
-                 >
-                   <Link size={18} /> <span>{t('syncCalendar')}</span>
-                 </button>
-              </div>
-            </div>
-
-            {isCalendarSyncOpen && (
-              <div className="glass-card fade-in" style={{ position: 'relative', padding: '1.5rem 1.5rem 2rem', marginBottom: '2rem', background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.2)' }}>
-                <button onClick={() => setIsCalendarSyncOpen(false)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                  <X size={20} />
-                </button>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-                  <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <RefreshCw size={18} /> {t('syncCalendar')}
-                  </h3>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', maxWidth: '480px' }}>{t('syncDesc')}</p>
-                  <div style={{ display: 'flex', gap: '1rem', width: '100%', maxWidth: '560px', flexDirection: isMobile ? 'column' : 'row' }}>
-                    <input
-                      type="text"
-                      placeholder="https://calendar.google.com/calendar/ical/..."
-                      value={calendarSyncUrl}
-                      onChange={(e) => setCalendarSyncUrl(e.target.value)}
-                      style={{ flex: 1, padding: '0.75rem 1.25rem' }}
-                      className="glass-input"
-                    />
-                    <button className="action-btn" onClick={handleSaveCalendarSync} style={{ whiteSpace: 'nowrap' }}>{t('add')}</button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div style={{ display: isMobile ? 'flex' : 'grid', flexDirection: isMobile ? 'column' : 'row', gridTemplateColumns: isMobile ? '1fr' : '1fr 350px', gap: '2rem', flex: isMobile ? 'none' : 1, minHeight: isMobile ? 'auto' : 0 }}>
-              <div className="glass-card" style={{ padding: isMobile ? '1.25rem' : '2rem', overflowY: isMobile ? 'visible' : 'auto' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    {bookingSchedule.length === 0 ? (
-                      <div style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                        <Calendar size={48} style={{ opacity: 0.1, marginBottom: '1rem' }} />
-                        <p>{t('noEventsToday') || 'No bookings scheduled for today.'}</p>
-                      </div>
-                    ) : (
-                      bookingSchedule.sort((a,b) => {
-                        const timeToMins = (t) => {
-                          const [h, m] = t.split(' ')[0].split(':').map(Number);
-                          const isPm = t.includes('PM') && h !== 12;
-                          return (isPm ? h + 12 : (t.includes('AM') && h === 12 ? 0 : h)) * 60 + (m || 0);
-                        };
-                        return timeToMins(a.time) - timeToMins(b.time);
-                      }).map((event, idx) => (
-                        <div key={idx} onClick={() => isMobile && setSelectedScheduleEvent(event)} style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          gap: isMobile ? '1rem' : '1.5rem', 
-                          padding: isMobile ? '1rem' : '1.25rem', 
-                          background: activeTimerEvent?.id === event.id ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.02)', 
-                          borderRadius: '16px', 
-                          border: `1px solid ${activeTimerEvent?.id === event.id ? 'rgba(16,185,129,0.3)' : 'var(--card-border)'}`,
-                          borderLeft: `4px solid ${event.type === 'work' ? 'var(--accent-color)' : 'var(--warning-color)'}`,
-                          cursor: isMobile ? 'pointer' : 'default',
-                          userSelect: 'none'
-                        }}>
-                          <div style={{ width: isMobile ? '70px' : '80px', flexShrink: 0 }}>
-                            <div style={{ fontWeight: '800', fontSize: isMobile ? '1rem' : '1.1rem' }}>{event.time}</div>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{event.duration}</div>
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontWeight: '700', fontSize: isMobile ? '0.9rem' : '1rem', marginBottom: '0.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.title}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: event.status === 'busy' ? 'var(--error-color)' : 'var(--success-color)' }}></div>
-                              {event.status.toUpperCase()}
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '1rem' }}>
-                            {activeTimerEvent?.id === event.id ? (
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); handleCheckOut(); }}
-                                className="action-btn" 
-                                style={{ margin: 0, padding: isMobile ? '0.4rem 0.6rem' : '0.5rem 1rem', background: 'var(--success-color)', fontSize: '0.7rem' }}
-                              >
-                                {isMobile ? 'OUT' : 'CHECK-OUT'}
-                              </button>
-                            ) : (
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); handleCheckIn(event); }}
-                                className="action-btn" 
-                                style={{ margin: 0, padding: isMobile ? '0.4rem 0.6rem' : '0.5rem 1rem', background: isTimerActive ? 'rgba(255,255,255,0.05)' : 'var(--accent-color)', fontSize: '0.7rem', opacity: isTimerActive ? 0.5 : 1 }}
-                                disabled={isTimerActive}
-                              >
-                                {isMobile ? 'IN' : 'CHECK-IN'}
-                              </button>
-                            )}
-                            <div style={{ position: 'relative' }}>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setOpenBookingMenuId(openBookingMenuId === event.id ? null : event.id); }}
-                                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.35rem', borderRadius: '6px', display: 'flex', alignItems: 'center' }}
-                                onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.07)'}
-                                onMouseLeave={e => e.currentTarget.style.background='none'}
-                              >
-                                <MoreVertical size={16} />
-                              </button>
-                              {openBookingMenuId === event.id && (
-                                <div
-                                  style={{ position: 'absolute', right: 0, top: '100%', zIndex: 999, minWidth: '140px', background: '#1a1d27', border: '1px solid var(--card-border)', borderRadius: '10px', boxShadow: '0 8px 24px rgba(0,0,0,0.4)', padding: '0.35rem', marginTop: '4px' }}
-                                  onClick={e => e.stopPropagation()}
-                                >
-                                  <button onClick={() => handleEditBooking(event)} style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', color: 'white', padding: '0.5rem 0.75rem', borderRadius: '7px', cursor: 'pointer', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }} onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.07)'} onMouseLeave={e => e.currentTarget.style.background='none'}>
-                                    ✏️ Upravit
-                                  </button>
-                                  <button onClick={() => handleDeleteBooking(event.id)} style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', color: '#ef4444', padding: '0.5rem 0.75rem', borderRadius: '7px', cursor: 'pointer', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }} onMouseEnter={e => e.currentTarget.style.background='rgba(239,68,68,0.1)'} onMouseLeave={e => e.currentTarget.style.background='none'}>
-                                    🗑 Smazat
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  
-                  {isTimerActive && (
-                    <div className="glass-card fade-in" style={{ marginTop: '2rem', padding: '1.5rem', background: timeLeft <= 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.05)', border: `1px solid ${timeLeft <= 0 ? '#ef4444' : '#10b981'}` }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                          <div className={`pulse-${timeLeft <= 0 ? 'red' : 'green'}`} style={{ width: '12px', height: '12px', borderRadius: '50%', background: timeLeft <= 0 ? '#ef4444' : '#10b981' }} />
-                          <div>
-                            <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Safety Guard Active</div>
-                            <div style={{ fontSize: '1.1rem', fontWeight: '800' }}>{activeTimerEvent?.title}</div>
-                          </div>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '1.5rem', fontWeight: '900', color: timeLeft <= 0 ? '#ef4444' : 'white', fontFamily: 'monospace' }}>
-                            {formatSafetyTime(timeLeft)}
-                          </div>
-                          <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{timeLeft <= 0 ? 'OVERTIME' : 'TIME REMAINING'}</div>
-                        </div>
-                      </div>
-                      {timeLeft <= 0 && (
-                        <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.6rem' }}>
-                          <button
-                            onClick={handleCheckOut}
-                            disabled={isSafetyLoading}
-                            className="action-btn"
-                            style={{
-                              margin: 0,
-                              padding: '0.55rem 0.9rem',
-                              fontSize: '0.72rem',
-                              background: 'rgba(239, 68, 68, 0.25)',
-                              border: '1px solid rgba(239, 68, 68, 0.55)',
-                              color: '#fecaca',
-                              opacity: isSafetyLoading ? 0.7 : 1,
-                            }}
-                          >
-                            {isSafetyLoading ? 'SAVING...' : 'CHECK-OUT NOW'}
-                          </button>
-                          <button
-                            onClick={handleSafetyImOk}
-                            disabled={isSafetyLoading}
-                            className="action-btn"
-                            style={{
-                              margin: 0,
-                              padding: '0.55rem 0.9rem',
-                              fontSize: '0.72rem',
-                              background: 'rgba(16, 185, 129, 0.2)',
-                              border: '1px solid rgba(16, 185, 129, 0.5)',
-                              color: '#86efac',
-                              opacity: isSafetyLoading ? 0.7 : 1,
-                            }}
-                          >
-                            {isSafetyLoading ? 'SAVING...' : "I'M OK (+10m)"}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                <div className="glass-card" style={{ padding: '1.5rem' }}>
-                  <h3 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Clock size={18} color="var(--warning-color)" /> {t('recommendedSlots')}
-                  </h3>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-                    {SAFETY_SUGGESTIONS.map(s => (
-                      <div key={s} className="status-badge" style={{ background: 'rgba(245, 158, 11, 0.1)', cursor: 'pointer', border: '1px solid var(--warning-color)', color: 'white' }}>{s}</div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="glass-card" style={{ padding: '1.5rem', background: 'rgba(59, 130, 246, 0.05)', border: '1px dashed var(--accent-color)' }}>
-                  <h3 style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '1rem' }}>{t('operatorTip')}</h3>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-                    {t('operatorTipDesc')}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'web-profiles' && (
-          <div style={{ padding: isMobile ? '1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem', maxHeight: '100%' }} className="fade-in custom-scrollbar">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '1.5rem', gap: '2rem' }}>
-              <div>
-                <h2 style={{ fontSize: '2rem', fontWeight: '900', background: 'linear-gradient(to right, #fff, var(--accent-color))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>
-                  {activeProfile?.name || '...'}
-                </h2>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>{t('webProfilesDesc')}</p>
-              </div>
-              
-              <div style={{ position: 'relative', width: '220px' }}>
-                <select 
-                  value={activeProfileId} 
-                  onChange={(e) => setActiveProfileId(e.target.value)}
-                  style={{ 
-                    width: '100%',
-                    background: 'rgba(255,255,255,0.05)', 
-                    border: '1px solid var(--card-border)', 
-                    padding: '0.6rem 2.5rem 0.6rem 1rem', 
-                    borderRadius: '12px', 
-                    color: 'white',
-                    fontSize: '0.9rem',
-                    fontWeight: '700',
-                    appearance: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  {assignedProfiles.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
-                <ChevronDown size={18} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-secondary)' }} />
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '1.5rem', flex: 1, flexDirection: isMobile ? 'column' : 'row' }}>
-              {/* Left Content Area (Gallery & Bio) */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-
-              <div className="glass-card" style={{ padding: '2rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Image size={20} color="var(--accent-color)" /> {t('gallery')}</h3>
-                  <>
-                   <input type="file" id="photo-upload-input" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
-                     const file = e.target.files?.[0];
-                     if (file) alert((lang === 'cz' ? 'Foto vybráno: ' : 'Photo selected: ') + file.name);
-                   }} />
-                   <button className="action-btn" onClick={() => document.getElementById('photo-upload-input').click()} style={{ width: 'auto', padding: '0.5rem 1rem', marginTop: 0, fontSize: '0.8rem' }}>+ {t('uploadPhoto')}</button>
-                 </>
-                </div>
-
-                <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem', flexDirection: isMobile ? 'column' : 'row' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-secondary)' }}>{t('publicGalleryCap')}</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '1rem' }}>
-                      <div className="placeholder-img" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200)' }}></div>
-                      <div className="placeholder-img" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=200)' }}></div>
-                      <div className="placeholder-img" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=200)' }}></div>
-                    </div>
-                  </div>
-                  {!isMobile && <div style={{ width: '1px', background: 'var(--card-border)' }}></div>}
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-secondary)' }}>{t('privateGalleryCap')} (VIP)</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '1rem' }}>
-                      <div className="placeholder-img" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=200)' }}></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="glass-card" style={{ padding: '2rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '0.6rem', background: 'linear-gradient(to right, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                    <FileEdit size={20} color="var(--accent-color)" /> {t('biography')} & {t('services')}
-                  </h3>
-                  <div style={{ display: 'flex', gap: '0.4rem', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '10px', border: '1px solid var(--card-border)' }}>
-                    <button onClick={() => setBioLang('EN')} style={{ padding: '6px 12px', border: 'none', background: bioLang === 'EN' ? 'var(--accent-color)' : 'transparent', color: bioLang === 'EN' ? 'white' : 'var(--text-secondary)', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}>EN</button>
-                    <button onClick={() => setBioLang('CZ')} style={{ padding: '6px 12px', border: 'none', background: bioLang === 'CZ' ? 'var(--accent-color)' : 'transparent', color: bioLang === 'CZ' ? 'white' : 'var(--text-secondary)', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}>CZ</button>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                  <div className="input-group-premium">
-                    <label className="input-label-premium">{t('mottoLabel')}</label>
-                    <input 
-                      type="text" 
-                      defaultValue={activeProfile?.bio || ''} 
-                      className="note-input" 
-                      style={{ 
-                        fontSize: '1.25rem', 
-                        fontWeight: '700', 
-                        letterSpacing: '-0.01em',
-                        borderBottom: '2px solid rgba(255, 255, 255, 0.1)'
-                      }}
-                      placeholder="Enter a catchy headline..."
-                    />
-                  </div>
-                  
-                  <div className="input-group-premium">
-                    <label className="input-label-premium">{t('fullBioLabel')}</label>
-                    <textarea 
-                      className="note-input custom-scrollbar" 
-                      style={{ 
-                        height: '220px', 
-                        lineHeight: '1.6', 
-                        fontSize: '1rem',
-                        borderBottom: '2px solid rgba(59, 130, 246, 0.3)',
-                        paddingBottom: '1rem'
-                      }} 
-                      value={bioText || activeProfile?.description || ''}
-                      onChange={e => setBioText(e.target.value)}
-                      placeholder={t('bioPlaceholder')}
-                    ></textarea>
-                    <div style={{ marginTop: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', fontWeight: '600' }}>
-                      <span>{t('bioFormattingNote')}</span>
-                      <span style={{ color: 'var(--accent-color)' }}>128 / 2000</span>
-                    </div>
-                  </div>
-                  
-                  <button onClick={handleSaveBio} className="action-btn" style={{ width: 'fit-content', padding: '1rem 2.5rem', fontSize: '1rem', marginTop: '1rem', boxShadow: '0 10px 20px rgba(59, 130, 246, 0.2)' }}>
-                    {t('saveChanges')}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Sync Area */}
-            <div style={{ width: '300px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div className="glass-card" style={{ padding: '1.5rem', background: 'rgba(5,7,10,0.6)' }}>
-                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '1.1rem' }}>
-                  <RefreshCw size={18} color="var(--success-color)" className={isSyncing ? "spin-animation" : ""} /> {t('syncStatus')}
-                </h3>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
-                  <div className="sync-platform-row" style={{ padding: '0.75rem', borderRadius: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <div className="platform-icon" style={{ width: '28px', height: '28px', fontSize: '0.6rem' }}>AW</div>
-                      <div>
-                        <div style={{ fontWeight: '700', fontSize: '0.8rem' }}>AdultWork.com</div>
-                        <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{t('ukPrimary')}</div>
-                      </div>
-                    </div>
-                    <div className={`sync-badge ${syncStatus.aw}`} style={{ fontSize: '0.6rem', padding: '2px 6px' }}>
-                      {syncStatus.aw === 'syncing' ? <RefreshCw size={10} className="spin-animation" /> : (syncStatus.aw === 'synced' ? <Check size={10} /> : <X size={10} />)}
-                      {syncStatus.aw.toUpperCase()}
-                    </div>
-                  </div>
-
-                  <div className="sync-platform-row" style={{ padding: '0.75rem', borderRadius: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <div className="platform-icon" style={{ width: '28px', height: '28px', fontSize: '0.6rem' }}>EG</div>
-                      <div>
-                        <div style={{ fontWeight: '700', fontSize: '0.8rem' }}>EuroGirlsEscort</div>
-                        <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{t('euWide')}</div>
-                      </div>
-                    </div>
-                    <div className={`sync-badge ${syncStatus.ege}`} style={{ fontSize: '0.6rem', padding: '2px 6px' }}>
-                      {syncStatus.ege === 'syncing' ? <RefreshCw size={10} className="spin-animation" /> : (syncStatus.ege === 'synced' ? <Check size={10} /> : <X size={10} />)}
-                      {syncStatus.ege.toUpperCase()}
-                    </div>
-                  </div>
-
-                  <div className="sync-platform-row" style={{ padding: '0.75rem', borderRadius: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <div className="platform-icon" style={{ width: '28px', height: '28px', fontSize: '0.6rem' }}>TP</div>
-                      <div>
-                        <div style={{ fontWeight: '700', fontSize: '0.8rem' }}>ThePuntersB...</div>
-                        <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{t('reviewSync')}</div>
-                      </div>
-                    </div>
-                    <div className={`sync-badge ${syncStatus.tpb}`} style={{ fontSize: '0.6rem', padding: '2px 6px' }}>
-                      {syncStatus.tpb === 'syncing' ? <RefreshCw size={10} className="spin-animation" /> : (syncStatus.tpb === 'synced' ? <Check size={10} /> : <AlertTriangle size={10} />)}
-                      {syncStatus.tpb.toUpperCase()}
-                    </div>
-                  </div>
-                </div>
-
-                {isSyncing ? (
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.5rem', fontWeight: '700' }}><span>{t('syncingProfileData')}</span><span>{syncProgress}%</span></div>
-                    <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-                      <div style={{ width: `${syncProgress}%`, height: '100%', background: 'var(--accent-color)', transition: 'width 0.2s ease' }}></div>
-                    </div>
-                  </div>
-                ) : (
-                  <button onClick={handleSyncAll} className="action-btn" style={{ background: 'var(--success-color)', boxShadow: '0 5px 15px rgba(16, 185, 129, 0.3)' }}><RefreshCw size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.5rem' }} /> {t('syncAll')}</button>
-                )}
-
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-        {activeTab === 'device-setup' && (
-          <div style={{ padding: isMobile ? '1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMobile ? '1.5rem' : '2.5rem' }}>
-              <div>
-                <h2 style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <Smartphone size={isMobile ? 24 : 28} color="var(--accent-color)" /> {t('deviceSetup')}
-                </h2>
-                <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', fontSize: isMobile ? '0.85rem' : '1rem' }}>{t('deviceSetupDesc')}</p>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
-              {/* Nexus Relay Setup */}
-              <div className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2.5rem', display: 'flex', flexDirection: 'column', gap: isMobile ? '1.5rem' : '2rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: '200px' }}>
-                    <div style={{ width: isMobile ? '48px' : '64px', height: isMobile ? '48px' : '64px', background: 'rgba(96, 165, 250, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Smartphone size={isMobile ? 24 : 32} color="#60a5fa" />
-                    </div>
-                    <div>
-                      <h3 style={{ fontSize: isMobile ? '1.2rem' : '1.5rem', fontWeight: '800', marginBottom: '0.25rem' }}>{t('nexusRelayTitle')}</h3>
-                      <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.85rem' : '1rem' }}>{t('nexusRelayDesc')}</p>
-                    </div>
-                  </div>
-                  
-                  <a 
-                    href={relayApkInfo?.available ? relayApkInfo.downloadUrl : `${API_BASE.replace(/\/api$/, '')}/downloads/nexus-relay.apk`} 
-                    target="_blank"
-                    rel="noreferrer"
-                    className="action-btn" 
-                    style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '0.75rem', 
-                      background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', 
-                      color: 'white', 
-                      padding: isMobile ? '0.75rem 1.25rem' : '1rem 2rem', 
-                      borderRadius: '12px',
-                      textDecoration: 'none',
-                      fontWeight: '800',
-                      boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)',
-                      fontSize: isMobile ? '0.85rem' : '1rem',
-                      width: isMobile ? '100%' : 'auto',
-                      justifyContent: 'center'
-                    }}
-                    onClick={async (e) => {
-                      if (!relayApkInfo) {
-                        try {
-                          const token = localStorage.getItem('nexus_token');
-                          const r = await fetch(`${API_BASE}/vultr/apk-info`, { headers: { Authorization: `Bearer ${token}` } });
-                          const d = await r.json();
-                          setRelayApkInfo(d);
-                        } catch {}
-                      }
-                    }}
-                  >
-                    <Download size={20} /> {t('downloadApp')} (v{relayApkInfo?.version || '0.1'})
-                  </a>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '2rem', borderTop: '1px solid var(--card-border)', paddingTop: '2rem' }}>
-                   <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--card-border)' }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#60a5fa', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('webhookLabel')}</div>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>{t('proxyNote')}</p>
-                    <code style={{ fontSize: '0.9rem', color: '#60a5fa', wordBreak: 'break-all', display: 'block', padding: '0.75rem', background: 'rgba(0,0,0,0.3)', borderRadius: '8px' }}>
-                      {`${API_BASE}/device/relay`}
-                    </code>
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <div style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '0.5rem', color: 'var(--accent-color)' }}>{t('relayGuideTitle')}</div>
-                    {[1, 2, 3, 4, 5, 6].map(step => (
-                      <div key={step} style={{ display: 'flex', gap: '1rem', alignItems: 'center', color: 'var(--text-secondary)' }}>
-                        <div style={{ minWidth: '24px', height: '24px', background: 'rgba(96, 165, 250, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: '800', color: '#60a5fa' }}>{step}</div>
-                        <div style={{ fontSize: '0.9rem' }}>{t(`relayStep${step}`)}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="glass-card" style={{ marginTop: '2rem', padding: '2rem' }}>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <Zap size={20} color="var(--accent-color)" /> {t('whyTheseApps')}
-              </h3>
-              <ul style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.8', paddingLeft: '1.5rem' }}>
-                <li><strong>{t('safetyLabel')}:</strong> {t('safetyReason')}</li>
-                <li><strong>{t('stabilityLabel')}:</strong> {t('stabilityReason')}</li>
-                <li><strong>{t('flexibilityLabel')}:</strong> {t('flexibilityReason')}</li>
-              </ul>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'hierarchy' && isAllowed('hierarchy') && (
-          <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
-            <h2 style={{ fontSize: isMobile ? '1.75rem' : '2.5rem', fontWeight: '900', marginBottom: '0.5rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('teamHierarchy')}</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: isMobile ? '1.5rem' : '3rem', fontSize: isMobile ? '0.9rem' : '1.1rem' }}>{t('teamHierarchyDesc')}</p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              {operators.filter(op => {
-                if (activeRole === 'App Owner') return true;
-                return op.agencyId === activeOperator?.agencyId;
-              }).map(op => {
-                const assignedModels = profiles.filter(p => (p.operators || p.assignees || []).some(o => o.id === op.id || o === op.id));
-                const agency = agencies.find(a => a.id === op.agencyId);
-                return (
-                  <div key={op.id} className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '2rem', flexDirection: isMobile ? 'column' : 'row', gap: '1.5rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                        <div style={{ width: isMobile ? '48px' : '60px', height: isMobile ? '48px' : '60px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isMobile ? '1.2rem' : '1.5rem', fontWeight: '800', color: 'var(--accent-color)' }}>
-                          {op.avatar}
-                        </div>
-                        <div>
-                          <h3 style={{ fontSize: isMobile ? '1.2rem' : '1.5rem', fontWeight: '800' }}>
-                            {op.name}
-                            {activeRole === 'App Owner' && agency && (
-                              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '400', marginLeft: '0.5rem' }}>
-                                ({agency.name})
-                              </span>
-                            )}
-                          </h3>
-                          <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{op.role === 'Night Shift' ? t('nightShift') : op.role} • {assignedModels.length} {t('assignedModels')}</div>
-                        </div>
-                      </div>
-                      <div style={{ textAlign: isMobile ? 'left' : 'right', width: isMobile ? '100%' : 'auto', paddingTop: isMobile ? '1rem' : 0, borderTop: isMobile ? '1px solid var(--card-border)' : 'none' }}>
-                        <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.75rem', letterSpacing: '0.1em' }}>{t('todaysPerformance')}</div>
-                        <div style={{ display: 'flex', gap: '2.5rem' }}>
-                          <div>
-                            <div style={{ fontSize: '1.1rem', fontWeight: '800' }}>{op.metrics?.messages || 0}</div>
-                            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{t('messages').toUpperCase()}</div>
-                          </div>
-                          <div>
-                            <div style={{ fontSize: '1.1rem', fontWeight: '800' }}>{op.metrics?.conversion || '0%'}</div>
-                            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{(t('conversion') || 'CONV.').toUpperCase()}</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.85rem' }}>
-                      {assignedModels.map(model => (
-                        <div key={model.id} style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                          <div style={{ width: '36px', height: '36px', background: 'var(--accent-color)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '0.75rem' }}>
-                            {model.username?.substring(0,2).toUpperCase() || model.name.substring(0,2).toUpperCase()}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontWeight: '700', fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{model.name}</div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: model.status === 'online' ? 'var(--success-color)' : 'var(--text-secondary)' }} />
-                              <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{(t(model.status) || 'OFFLINE').toString().toUpperCase()}</span>
-                            </div>
-                          </div>
-                          <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: '0.85rem', fontWeight: '800' }}>{model.unreadCount || 0}</div>
-                            <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{(t('unread') || 'UNREAD').toUpperCase()}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'referrals' && (
-          <div style={{ padding: '2rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
-            <div style={{ marginBottom: '3rem' }}>
-              <h2 style={{ fontSize: isMobile ? '1.8rem' : '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #f59e0b, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                {t('referralProgram')}
-              </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>{t('referralsSubtitle')}</p>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
-              {[
-                { label: (t('clicks') || '').toUpperCase(), value: 0, icon: Activity, color: '#3b82f6' },
-                { label: (t('signups') || '').toUpperCase(), value: 0, icon: UserPlus, color: '#10b981' },
-                { label: (t('earned') || '').toUpperCase(), value: '£0', icon: Trophy, color: '#f59e0b' },
-                { label: (t('pending') || '').toUpperCase(), value: '£0', icon: Clock, color: 'var(--text-secondary)' }
-              ].map((stat, i) => (
-                <div key={i} className="glass-card" style={{ padding: '1.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                    <stat.icon size={18} color={stat.color} />
-                    <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{stat.label}</span>
-                  </div>
-                  <div style={{ fontSize: '1.75rem', fontWeight: '900' }}>{stat.value}</div>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '2rem', marginBottom: '3rem' }}>
-              <div className="glass-card" style={{ flex: 1, padding: '2rem', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
-                <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Link size={20} color="#f59e0b" /> {t('referralLinkHeader')}
-                </h3>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-                  {t('referralLinkDesc')}
-                </p>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <div style={{ flex: 1, background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--card-border)', fontFamily: 'monospace', fontSize: '0.9rem', color: '#f59e0b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {'https://nexus.sync/ref/' + (activeOperator?.id || 'default')}
-                  </div>
-                  <button onClick={() => navigator.clipboard.writeText('https://nexus.sync/ref/' + (activeOperator?.id || 'default')).then(() => alert(lang === 'cz' ? 'Odkaz zkopírován ✓' : 'Link copied ✓'))} className="action-btn" style={{ width: 'auto', padding: '0 1.5rem', marginTop: 0, background: 'var(--accent-color)' }}>
-                    <Copy size={18} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="glass-card" style={{ width: isMobile ? '100%' : '400px', padding: '2rem' }}>
-                <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '1.5rem' }}>{t('whyRefer')}</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Check size={18} color="#10b981" />
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: '700', fontSize: '0.95rem' }}>{t('recurringCommission')}</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('recurringCommissionDesc')}</div>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Zap size={18} color="#3b82f6" />
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: '700', fontSize: '0.95rem' }}>{t('instantCredits')}</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('instantCreditsDesc')}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="glass-card custom-scrollbar" style={{ padding: 0, overflowX: 'auto' }}>
-              <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)' }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: '800' }}>{t('activeReferralsHistory')}</h3>
-              </div>
-              <div style={{ padding: '0 1rem' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                  <thead>
-                    <tr style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>
-                      <th style={{ padding: '1.25rem 1rem' }}>{t('entity').toUpperCase()}</th>
-                      <th style={{ padding: '1.25rem 1rem' }}>{t('date').toUpperCase()}</th>
-                      <th style={{ padding: '1.25rem 1rem' }}>{t('status').toUpperCase()}</th>
-                      <th style={{ padding: '1.25rem 1rem', textAlign: 'right' }}>{t('reward').toUpperCase()}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {([]).map((item) => (
-                      <tr key={item.id} style={{ borderTop: '1px solid var(--card-border)' }}>
-                        <td style={{ padding: '1.25rem 1rem' }}>
-                          <div style={{ fontWeight: '700' }}>{item.entity}</div>
-                          <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>ID: REF-{item.id}</div>
-                        </td>
-                        <td style={{ padding: '1.25rem 1rem', fontSize: '0.85rem' }}>{item.date}</td>
-                        <td style={{ padding: '1.25rem 1rem' }}>
-                          <span style={{
-                            padding: '0.25rem 0.6rem',
-                            borderRadius: '6px',
-                            fontSize: '0.7rem',
-                            fontWeight: '800',
-                            background: 'rgba(16, 185, 129, 0.1)',
-                            color: '#10b981',
-                            border: '1px solid rgba(16, 185, 129, 0.2)'
-                          }}>
-                            ACTIVE
-                          </span>
-                        </td>
-                        <td style={{ padding: '1.25rem 1rem', textAlign: 'right', fontWeight: '800', color: '#f59e0b' }}>£0</td>
-                      </tr>
-                    ))}
-                    {true && (
-                      <tr>
-                        <td colSpan="4" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                          {t('noReferralActivity')}
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
 
         {activeTab === 'analytics' && isAllowed('analytics') && (
           <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
@@ -5202,1029 +4021,152 @@ function App() {
             </div>
           </div>
         )}
+
         {activeTab === 'profiles' && (
-          <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto' }} className="fade-in custom-scrollbar">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-              <h2 style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '800' }}>{t('managedProfiles')}</h2>
-              {(activeRole === 'App Owner' || activeRole === 'Agency Manager' || activeRole === 'Agency Admin' || activeOperator?.role?.isManager) && (
-                <button
-                  onClick={async () => {
-                    const name = window.prompt(lang === 'cz' ? 'Jméno nového profilu (pracovní jméno):' : 'New profile name (stage name):');
-                    if (!name) return;
-                    const phone = window.prompt(lang === 'cz' ? 'Telefonní číslo (nebo ponech prázdné):' : 'Phone number (or leave empty):') || '';
-                    try {
-                      const resp = await axios.post(`${API_BASE}/profiles`, { name, phoneNumber: phone || null }, { headers: { Authorization: `Bearer ${token}` } });
-                      setProfiles(prev => [...prev, resp.data]);
-                      showToast(lang === 'cz' ? `Profil "${name}" byl vytvořen` : `Profile "${name}" created`, 'success');
-                    } catch (e) { showToast('Failed to create profile', 'error'); }
-                  }}
-                  style={{ padding: '0.75rem 1.25rem', background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                >
-                  + {lang === 'cz' ? 'Přidat profil' : 'Add Profile'}
-                </button>
-              )}
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              {allAgencyProfiles.map((profile, i) => {
-                const isMyProfile = myProfiles.find(p => p.id === profile.id);
-                const activeCount = (profile.operators?.filter(op => op.active).length || 0) + (profile.assignees?.length || 0);
-
-                return (
-                  <div key={i} className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2rem', display: 'flex', gap: isMobile ? '1.5rem' : '2.5rem', borderColor: isMyProfile ? 'rgba(59, 130, 246, 0.4)' : 'var(--card-border)', flexDirection: isMobile ? 'column' : 'row' }}>
-                    <div style={{ flex: isMobile ? '1 1 auto' : '0 0 250px' }}>
-                      <div style={{ fontSize: '1.75rem', fontWeight: '900', marginBottom: '0.5rem' }}>{profile.name}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.5rem' }}>
-                        <div style={{ padding: '0.2rem 0.6rem', borderRadius: '4px', background: activeCount > 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: activeCount > 0 ? 'var(--success-color)' : 'var(--error-color)', fontSize: '0.7rem', fontWeight: '900', border: '1px solid currentColor' }}>
-                          {activeCount > 0 ? `${activeCount} ${t('operatorsActive')}` : t('noCoverage')}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => toggleOperatorStatus(profile.id, activeOperator?.id)}
-                        className={`action-btn ${isMyProfile ? 'active' : ''}`}
-                        style={{ background: isMyProfile ? 'rgba(239, 68, 68, 0.2)' : 'var(--accent-color)', color: isMyProfile ? 'var(--error-color)' : 'white' }}
-                      >
-                        {isMyProfile ? t('deactivateMySeat') : t('activateMySeat')}
-                      </button>
-                      <button
-                        onClick={() => handleEditProfile(profile)}
-                        style={{ width: '100%', marginTop: '0.75rem', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--accent-color)', background: 'rgba(59, 130, 246, 0.1)', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                      >
-                        <Settings size={16} /> {t('editProfile')}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setActiveProfileId(profile.id);
-                          setActiveTab('inbox');
-                        }}
-                        style={{ width: '100%', marginTop: '0.75rem', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--card-border)', background: 'transparent', color: 'white', fontWeight: '700', cursor: 'pointer' }}
-                      >
-                        {t('openContext')}
-                      </button>
-
-                    </div>
-
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.05em' }}>{t('assignedTeam') || 'PROTECTIVE TEAM / ASSIGNEES'}</div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
-                        {(profile.assignees || profile.operators || []).map(profileOp => {
-                          const opData = operators.find(o => o.id === profileOp.id);
-                          const displayName = opData?.name || profileOp.name || profileOp.id;
-                          const displayRole = opData?.role || '';
-                          return (
-                            <div key={profileOp.id} style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                              <div style={{ width: '32px', height: '32px', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-color)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: '900' }}>{(opData?.avatar) || displayName.substring(0,2).toUpperCase()}</div>
-                              <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>{displayName}</div>
-                                {displayRole && <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{displayRole}</div>}
-                              </div>
-                              <ShieldCheck size={16} color="var(--accent-color)" />
-                            </div>
-                          );
-                        })}
-                        <div 
-                          onClick={() => setAssigningProfile(profile)}
-                          style={{ padding: '1rem', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '15px', border: '1px dashed var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--accent-color)' }}
-                        >
-                           <UserPlus size={16} /> <span style={{ fontSize: '0.8rem', fontWeight: '700' }}>{t('manageTeam') || 'Manage Team'}</span>
-                         </div>
-                      </div>
-                    </div>
-
-                    {/* Quick Replies for this profile */}
-                    {(profile.quickReplies || []).length > 0 && (
-                      <div style={{ marginTop: isMobile ? '1.5rem' : 0, flex: '0 0 auto', minWidth: isMobile ? '100%' : '220px' }}>
-                        <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#10b981', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>RYCHLÉ ODPOVĚDI</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                          {(profile.quickReplies || []).map(reply => (
-                            <div key={reply.id} style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: '8px', padding: '0.5rem 0.75rem' }}>
-                              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#10b981' }}>{reply.label}</div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>{reply.text}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Simple Inline User Selection Modal (as a sibling for easier coding) */}
-                    {assigningProfile?.id === profile.id && (
-                        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-                            <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '500px', padding: '2rem' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                                    <h3 style={{ fontSize: '1.2rem', fontWeight: '800' }}>Assign Operators to {profile.name}</h3>
-                                    <button onClick={() => setAssigningProfile(null)} style={{ background: 'transparent', border: 'none', color: 'white' }}><X size={24} /></button>
-                                </div>
-                                <div style={{ maxHeight: '400px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem' }}>
-                                    {operators.filter(op => !op.isAppOwner && op.role !== 'Model').map(op => {
-                                        const isAssigned = profile.assignees?.some(a => a.id === op.id) || profile.operators?.some(o => o.id === op.id);
-                                        return (
-                                            <div 
-                                                key={op.id} 
-                                                onClick={() => {
-                                                    const current = profile.assignees?.map(a => a.id) || [];
-                                                    const next = current.includes(op.id) ? current.filter(id => id !== op.id) : [...current, op.id];
-                                                    handleSaveAssignees(profile.id, next);
-                                                }}
-                                                style={{ 
-                                                    padding: '1rem', 
-                                                    background: isAssigned ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255,255,255,0.03)', 
-                                                    borderRadius: '12px', 
-                                                    border: `1px solid ${isAssigned ? 'var(--accent-color)' : 'var(--card-border)'}`, 
-                                                    display: 'flex', 
-                                                    justifyContent: 'space-between',
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                                    <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem' }}>{op.avatar}</div>
-                                                    <div>
-                                                        <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{op.name}</div>
-                                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{op.role}</div>
-                                                    </div>
-                                                </div>
-                                                {isAssigned ? <CheckCircle size={20} color="var(--accent-color)" /> : <PlusCircle size={20} color="var(--text-secondary)" />}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                                <button 
-                                    onClick={() => setAssigningProfile(null)}
-                                    className="action-btn" 
-                                    style={{ background: 'var(--accent-color)', color: 'white', width: '100%', margin: 0 }}
-                                >
-                                    DONE
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'activity' && (
-          <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto' }} className="fade-in custom-scrollbar">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '2.5rem', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : 0 }}>
-              <div><h2 style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '800' }}>{t('auditTrail')} - {activeClient?.name || t('system')}</h2><p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', fontSize: isMobile ? '0.85rem' : '1rem' }}>{t('auditSubtitle')}</p></div>
-              <div className="status-badge" style={{ borderColor: 'var(--accent-color)', color: 'var(--accent-color)' }}><Shield size={14} /> {t('encryptedLog')}</div>
-            </div>
-            {isMobile ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {auditLogs.filter(log => availableOperators.some(op => op.name === log.operator)).map(log => (
-                  <div key={log.id} className="glass-card" style={{ padding: '1.25rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '700' }}>{log.timestamp}</span>
-                      <code className="hash-code" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>{log.hash}</code>
-                    </div>
-                    <div style={{ fontWeight: '800', fontSize: '1rem', marginBottom: '0.5rem' }}>{log.action}</div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                        <User size={12} /> {log.operator}
-                      </div>
-                      {log.profile !== 'N/A' && <div className="status-badge-small" style={{ fontSize: '0.65rem' }}>{log.profile}</div>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="glass-card custom-scrollbar" style={{ padding: 0, overflowX: 'auto' }}>
-                <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
-                  <thead><tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--card-border)' }}>
-                    {[t('timestamp'), t('event'), t('handledBy'), t('target'), t('hash')].map(h => <th key={h} style={{ padding: '1.25rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{h}</th>)}
-                  </tr></thead>
-                  <tbody>{auditLogs.filter(log => availableOperators.some(op => op.name === log.operator)).map(log => (
-                    <tr key={log.id} style={{ borderBottom: '1px solid var(--card-border)' }}>
-                      <td style={{ padding: '1.25rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{log.timestamp}</td>
-                      <td style={{ padding: '1.25rem', fontWeight: '700' }}>{log.action}</td>
-                      <td style={{ padding: '1.25rem' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><User size={14} /> {log.operator}</div></td>
-                      <td style={{ padding: '1.25rem' }}>{log.profile !== 'N/A' ? <div className="status-badge-small">{log.profile}</div> : '-'}</td>
-                      <td style={{ padding: '1.25rem' }}><code className="hash-code">{log.hash}</code></td>
-                    </tr>
-                  ))}</tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'settings' && (
-          <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto' }} className="fade-in custom-scrollbar">
-            <h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('controlCenter')}</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem' }}>{t('configSubtitle')}</p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem', maxWidth: '800px' }}>
-              {activeRole === 'App Owner' && (
-                <div className="settings-section">
-                  <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Activity size={20} color="var(--success-color)" /> Platform Health Snapshot</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1rem' }}>
-                    <div className="glass-card" style={{ padding: '1.25rem', textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>ACTIVE SESSIONS</div>
-                      <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>32</div>
-                    </div>
-                    <div className="glass-card" style={{ padding: '1.25rem', textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>DB LATENCY</div>
-                      <div style={{ fontSize: '1.5rem', fontWeight: '900', color: 'var(--success-color)' }}>12ms</div>
-                    </div>
-                    <div className="glass-card" style={{ padding: '1.25rem', textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>OUTGOING NODES</div>
-                      <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>4</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="settings-section">
-                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Building2 size={20} color="var(--accent-color)" /> {activeRole === 'App Owner' ? 'Agency Information' : t('agencyInsight')}: {activeClient?.name || t('global')}</h3>
-                <div className="grid" style={{ gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1.5rem' }}>
-                  <div className="glass-card" style={{ padding: '1.5rem' }}>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('teamSeats')}</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{availableOperators.length} / 10</div>
-                  </div>
-                  <div className="glass-card" style={{ padding: '1.5rem' }}>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('regionalReach')}</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{activeClient?.region || t('global')}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="settings-section">
-                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Smartphone size={20} color="var(--accent-color)" /> {t('sessionTopology')}</h3>
-                <div className="glass-card" style={{ padding: 0 }}>
-                  {(() => {
-                    const isManager = activeRole === 'App Owner' || activeRole === 'Agency Admin' || activeRole === 'Agency Manager' || activeOperator?.role?.isManager;
-                    // Operators see all devices in their agency; managers see all
-                    const visibleSessions = sessions.filter(s => {
-                      if (isManager) return true;
-                      // Operator: show sessions for profiles in same agency
-                      const sessionProfile = profiles.find(p => p.id === s.profileId);
-                      return sessionProfile?.agencyId === activeOperator?.agencyId;
-                    });
-                    if (visibleSessions.length === 0) return (
-                      <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>{t('noDevicesConnected') || 'No active device bindings found.'}</div>
-                    );
-                    return visibleSessions.map((s, i) => (
-                    <div key={i} style={{ padding: '1.5rem', borderBottom: i < visibleSessions.length - 1 ? '1px solid var(--card-border)' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-                    {!s.profileId && (
-                      <div style={{ width: '100%', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '8px', padding: '0.5rem 0.75rem', fontSize: '0.75rem', color: '#f59e0b', fontWeight: '700', marginBottom: '0.5rem' }}>
-                        ⚠️ {lang === 'cz' ? 'Žádný profil přiřazen — SMS relay nefunguje. Přiřaďte profil a spárujte znovu.' : 'No profile assigned — SMS relay disabled. Assign a profile then re-pair.'}
-                      </div>
-                    )}
-                      <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
-                        <div style={{ background: !s.profileId ? 'rgba(245,158,11,0.1)' : (s.current || s.status === 'Active') ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '12px' }}><Smartphone size={20} color={!s.profileId ? '#f59e0b' : (s.current || s.status === 'Active') ? 'var(--accent-color)' : 'var(--text-secondary)'} /></div>
-                        <div><div style={{ fontWeight: '700' }}>{s.device} {s.current && <span style={{ color: 'var(--success-color)', fontSize: '0.7rem' }}>({t('thisDevice')})</span>}</div><div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{s.location} • {s.status}</div></div>
-                      </div>
-                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                        <button
-                          title={lang === 'cz' ? 'Zobrazit polohu zařízení' : 'Show device location'}
-                          onClick={() => {
-                            if (s.lat && s.lng) {
-                              window.open(`https://www.google.com/maps?q=${s.lat},${s.lng}`, '_blank');
-                            } else {
-                              showToast(lang === 'cz' ? 'Poloha momentálně není k dispozici' : 'Location not available', 'info');
-                            }
-                          }}
-                          style={{ padding: '0.4rem 0.75rem', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.3)', color: '#a78bfa', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
-                        >
-                          📍 {lang === 'cz' ? 'Poloha' : 'Location'}
-                        </button>
-                        {(isManager || s.profileId === activeOperator?.profileId) && (
-                          <div
-                            className="status-badge"
-                            style={{ cursor: s.status === 'Active' ? 'pointer' : 'default', opacity: s.status === 'Active' ? 1 : 0.5 }}
-                            onClick={() => s.status === 'Active' && handleRevokeBinding(s.installationId)}
-                          >
-                            {s.status === 'Active' ? t('revoke') : t('revoked') || 'REVOKED'}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    ));
-                  })()}
-                </div>
-              </div>
-
-              <div className="settings-section">
-                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><ShieldCheck size={20} color="var(--accent-color)" /> {t('safetyGuardHeading') || 'Safety Guard Configuration'}</h3>
-                <div className="glass-card" style={{ padding: '1.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '1rem', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : '0' }}>
-                        <div>
-                            <div style={{ fontWeight: '700' }}>{t('safetyAlertMode') || 'Emergency Alert Routing'}</div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('safetyAlertModeDesc') || 'Choose who receives push notifications during a panic alert.'}</div>
-                        </div>
-                        <select 
-                            value={agencySettings?.safetyAlertMode || 'MANAGERS_AND_ASSIGNED'}
-                            onChange={(e) => updateAgencySettings({ safetyAlertMode: e.target.value })}
-                            className="glass-input"
-                            style={{ width: isMobile ? '100%' : 'auto', padding: '0.5rem 1rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid var(--accent-color)', color: 'white', fontWeight: '700' }}
-                        >
-                            <option value="MANAGERS_AND_ASSIGNED">{t('modeManagersAndAssigned') || 'Managers + Assigned Operators'}</option>
-                            <option value="ASSIGNED_ONLY">{t('modeAssignedOnly') || 'Strictly Assigned Operators Only'}</option>
-                        </select>
-                    </div>
-                    {/* Departure Interval Setting */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--card-border)', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '0.75rem' : '0' }}>
-                      <div>
-                        <div style={{ fontWeight: '700' }}>Interval odchodu klienta</div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Modelka musí potvrdit odchod klienta do X minut po check-outu, jinak jde bezpečnostní alert.</div>
-                      </div>
-                      <select
-                        value={departureIntervalMin}
-                        onChange={(e) => {
-                          const v = parseInt(e.target.value, 10);
-                          setDepartureIntervalMin(v);
-                          localStorage.setItem('nexus_departure_interval', String(v));
-                        }}
-                        className="glass-input"
-                        style={{ width: isMobile ? '100%' : 'auto', padding: '0.5rem 1rem', background: 'rgba(59,130,246,0.1)', border: '1px solid var(--accent-color)', color: 'white', fontWeight: '700' }}
-                      >
-                        {[5, 10, 15, 20, 30].map(m => <option key={m} value={m}>{m} minut</option>)}
-                      </select>
-                    </div>
-                </div>
-              </div>
-
-              {activeRole === 'App Owner' && (
-                <div className="settings-section">
-                  <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Lock size={20} color="var(--accent-color)" /> Platform Management (App Owner Only)</h3>
-                  <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <div style={{ fontWeight: '700' }}>Maintenance Mode</div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Restrict access to all non-admin users for scheduled maintenance.</div>
-                      </div>
-                      <div 
-                        className={`status-badge ${isMaintenanceMode ? 'active' : ''}`} 
-                        style={{ cursor: 'pointer', background: isMaintenanceMode ? 'var(--error-color)' : 'rgba(255,255,255,0.06)' }}
-                        onClick={() => setIsMaintenanceMode(!isMaintenanceMode)}
-                      >
-                        {isMaintenanceMode ? 'ACTIVE' : 'INACTIVE'}
-                      </div>
-                    </div>
-                    <div style={{ borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem' }}>
-                      <div style={{ fontWeight: '700', marginBottom: '0.75rem' }}>Global Announcement Banner</div>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <input 
-                          className="glass-input" 
-                          placeholder="Type an announcement to show to all users..." 
-                          style={{ flex: 1, padding: '0.75rem' }}
-                          value={globalAnnouncement}
-                          onChange={(e) => setGlobalAnnouncement(e.target.value)}
-                        />
-                        <button className="action-btn" style={{ width: 'auto', padding: '0 1.5rem' }} onClick={() => showToast('Announcement published!', 'success')}>PUBLISH</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {isAllowed('global_features') && (
-                <div className="settings-section">
-                  <h3 style={{ marginBottom: '1.5rem' }}>{t('simulationTools')}</h3>
-                  <button onClick={simulateIncomingCall} className="action-btn" style={{ maxWidth: '300px' }}><Phone size={16} /> {t('simulateCall')}</button>
-                </div>
-              )}
-            {isAllowed('analytics') && !isAllowed('infrastructure') && (
-              <div className="glass-card" style={{ padding: '2rem', marginTop: '3rem' }}>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '2rem' }}>{t('operatorPerformance')}</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {operators.filter(op => (activeRole === 'App Owner' || op?.agencyId === activeOperator?.agencyId) && op?.role?.name !== 'App Owner').map(op => (
-                    <div key={op.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <div style={{ width: '40px', height: '40px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: 'var(--accent-color)' }}>{op.avatar}</div>
-                        <div>
-                          <div style={{ fontWeight: '700' }}>{op.name}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{op.role === 'Night Shift' ? t('nightShift') : op.role}</div>
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: '3rem', textAlign: 'right' }}>
-                        <div>
-                          <div style={{ fontSize: '1rem', fontWeight: '800' }}>{op.metrics?.messages || 0}</div>
-                          <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{(t('messages') || 'MESSAGES').toUpperCase()}</div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '1rem', fontWeight: '800' }}>{op.metrics?.calls || 0}</div>
-                          <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{(t('calls') || 'CALLS').toUpperCase()}</div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--success-color)' }}>{op.metrics?.conversion || '0%'}</div>
-                          <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{(t('convRate') || 'CONV. RATE').toUpperCase()}</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-        )}
-
-        {activeTab === 'qa' && (
-          <QAView
+          <ProfilesView 
+            isMobile={isMobile}
             t={t}
-            messages={messages}
-            clientNotes={clientNotes}
-            clientNames={clientNames}
-            updateClientName={updateClientName}
+            lang={lang}
+            token={token}
+            activeRole={activeRole}
             activeOperator={activeOperator}
-            profiles={profiles}
-            operators={operators}
+            allAgencyProfiles={allAgencyProfiles}
+        {/* UNIT: OPERATIONS */}
+        <OperationsUnit
+          activeTab={activeTab}
+          isMobile={isMobile}
+          t={t}
+          lang={lang}
+          token={localStorage.getItem('nexus_token')}
+          activeOperator={activeOperator}
+          activeRole={activeRole}
+          activeProfileId={activeProfileId}
+          setActiveProfileId={setActiveProfileId}
+          allAgencyProfiles={allAgencyProfiles}
+          myProfiles={myProfiles}
+          profiles={profiles}
+          setProfiles={setProfiles}
+          operators={operators}
+          assignedProfiles={assignedProfiles}
+          showToast={showToast}
+          API_BASE={API_BASE}
+          contacts={contacts}
+          setContacts={setContacts}
+          activeContactId={activeContactId}
+          setActiveContactId={setActiveContactId}
+          messages={messages}
+          setMessages={setMessages}
+          newMessage={newMessage}
+          setNewMessage={setNewMessage}
+          handleSendMessage={handleSendMessage}
+          handleRefreshMessages={handleRefreshMessages}
+          isDrafting={isDrafting}
+          setIsDrafting={setIsDrafting}
+          setIsBookingModalOpen={setIsBookingModalOpen}
+          handleExportICS={handleExportICS}
+          isCalendarSyncOpen={isCalendarSyncOpen}
+          setIsCalendarSyncOpen={setIsCalendarSyncOpen}
+          calendarSyncUrl={calendarSyncUrl}
+          setCalendarSyncUrl={setCalendarSyncUrl}
+          handleSaveCalendarSync={handleSaveCalendarSync}
+          bookingSchedule={bookingSchedule}
+          activeTimerEvent={activeTimerEvent}
+          isTimerActive={isTimerActive}
+          openBookingMenuId={openBookingMenuId}
+          setOpenBookingMenuId={setOpenBookingMenuId}
+          handleCheckIn={handleCheckIn}
+          handleCheckOut={handleCheckOut}
+          handleEditBooking={handleEditBooking}
+          handleDeleteBooking={handleDeleteBooking}
+          timeLeft={timeLeft}
+          formatSafetyTime={formatSafetyTime}
+          isSafetyLoading={isSafetyLoading}
+          handleSafetyImOk={handleSafetyImOk}
+          SAFETY_SUGGESTIONS={SAFETY_SUGGESTIONS}
+          setSelectedScheduleEvent={setSelectedScheduleEvent}
+          bioText={bioText}
+          setBioText={setBioText}
+          handleSaveBio={handleSaveBio}
+          isSyncing={isSyncing}
+          syncStatus={syncStatus}
+          syncProgress={syncProgress}
+          handleSyncAll={handleSyncAll}
+          relayApkInfo={relayApkInfo}
+          setRelayApkInfo={setRelayApkInfo}
+          clientNotes={clientNotes}
+          clientNames={clientNames}
+          updateClientName={updateClientName}
+          assigningProfile={assigningProfile}
+          setAssigningProfile={setAssigningProfile}
+          setActiveTab={setActiveTab}
+          toggleOperatorStatus={toggleOperatorStatus}
+          handleEditProfile={handleEditProfile}
+          handleSaveAssignees={handleSaveAssignees}
+        />
+
+        {/* UNIT: AGENCY */}
+        <AgencyUnit
+          activeTab={activeTab}
+          isMobile={isMobile}
+          t={t}
+          lang={lang}
+          activeOperator={activeOperator}
+          activeRole={activeRole}
+          agencies={agencies}
+          profiles={profiles}
+          operators={operators}
+          activityLogs={activityLogs}
+          isAllowed={isAllowed}
+          settings={settings}
+          setSettings={setSettings}
+          handleSaveSettings={handleSaveSettings}
+          theme={theme}
+          setTheme={setTheme}
+        />
+
+        {/* UNIT: INFRASTRUCTURE */}
+        <InfrastructureUnit
+          activeTab={activeTab}
+          isMobile={isMobile}
+          t={t}
+          lang={lang}
+          activeRole={activeRole}
+          activeOperator={activeOperator}
+          agencies={agencies}
+          setAgencies={setAgencies}
+          setIsAgencyDetailOpen={setIsAgencyDetailOpen}
+          setSelectedAgency={setSelectedAgency}
+          setIsAddAgencyOpen={setIsAddAgencyOpen}
+          handleDeleteAgency={handleDeleteAgency}
+          infraData={infraData}
+          setInfraData={setInfraData}
+          infraStats={infraStats}
+          setInfraStats={setInfraStats}
+          saveInfraConfig={saveInfraConfig}
+          plans={subscriptionPlans}
+          setPlans={setSubscriptionPlans}
+          activeMarket={activeMarket}
+          setActiveMarket={setActiveMarket}
+          currentAgency={currentAgency}
+          inventoryItems={inventoryItems}
+          setInventoryItems={setInventoryItems}
+          isAllowed={isAllowed}
+          fetchUserPermissions={fetchUserPermissions}
+        />
+        {activeTab === 'relay' && (
+          <RelayControlCenter t={t} isMobile={isMobile} />
+        )}
+
+            setActiveMarket={setActiveMarket} 
+            activeOperator={activeOperator} 
+            currentAgency={currentAgency} 
           />
         )}
-
-        {activeTab === 'inventory' && (
-          <InventoryView t={TRANSLATIONS[lang]} token={token} />
-        )}
-
-        {activeTab === 'infra' && isAllowed('infrastructure') && (
-          <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
-            <h2 style={{ fontSize: isMobile ? '2rem' : '2.5rem', fontWeight: '900', marginBottom: '0.5rem', background: 'linear-gradient(to right, #6366f1, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              {t('infraTitle') || 'Infrastructure Control'}
-            </h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '1rem' }}>
-              {t('infraSubtitle') || 'Global oversight of system health and core service stability.'}
-            </p>
-            <InfraTab t={t} />
-          </div>
-        )}
-
-        {activeTab === 'agencies' && isAllowed('agencies') && (
-          <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
-            <h2 style={{ fontSize: isMobile ? '2rem' : '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #8b5cf6, #d946ef)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('agencyMgmtTitle')}</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: isMobile ? '1.5rem' : '3rem', fontSize: isMobile ? '0.95rem' : '1.1rem' }}>{t('agencyMgmtSubtitle')}</p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
-              {/* Agency Manager */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Building2 size={24} color="#8b5cf6" /> {t('portfolioManager')}
-                  </h3>
-                  <button
-                    onClick={() => setIsAddAgencyModalOpen(true)}
-                    className="action-btn"
-                    style={{ width: 'auto', padding: '0.6rem 1.25rem' }}
-                  >
-                    {t('provisionNew')}
-                  </button>
-                </div>
-
-                {isMobile ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    {agencies.map((agency) => {
-                      const agencyProfilesCount = profiles.filter(p => p.agencyId === agency.id).length;
-                      const agencyOps = operators.filter(o => o.agencyId === agency.id);
-                      return (
-                        <div key={agency.id} className="glass-card" style={{ padding: '1.5rem' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                            <div>
-                              <div style={{ fontWeight: '800', fontSize: '1.1rem' }}>{agency.name}</div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('regionLabel')}: {agency.region}</div>
-                            </div>
-                            <div style={{
-                              display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.2rem 0.6rem', borderRadius: '6px',
-                              background: agency.subscription.status === 'active' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                              color: agency.subscription.status === 'active' ? 'var(--success-color)' : 'var(--error-color)',
-                              fontSize: '0.7rem', fontWeight: '800'
-                            }}>
-                              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }}></div>
-                              {agency.subscription.status.toUpperCase()}
-                            </div>
-                          </div>
-
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.25rem' }}>
-                            <div style={{ display: 'flex', gap: '1.5rem' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <Users size={16} color="var(--accent-color)" />
-                                <div>
-                                  <div style={{ fontSize: '0.9rem', fontWeight: '700' }}>{agencyProfilesCount}</div>
-                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>PROFILES</div>
-                                </div>
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <ShieldCheck size={16} color="var(--accent-color)" />
-                                <div>
-                                  <div style={{ fontSize: '0.9rem', fontWeight: '700' }}>{agencyOps.length}</div>
-                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>STAFF</div>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div>
-                              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{agency.subscription.plan.toUpperCase()} PLAN</div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('nextRenewal')}: {agency.subscription.endDate}</div>
-                            </div>
-                          </div>
-
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingTop: '1rem', borderTop: '1px solid var(--card-border)' }}>
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                              <button
-                                onClick={() => {
-                                  setAgencies(prev => prev.map(a => a.id === agency.id ? { ...a, status: a.status === 'suspended' ? 'active' : 'suspended' } : a));
-                                }}
-                                className="status-badge"
-                                style={{
-                                  flex: 1, padding: '0.6rem', background: agency.status !== 'suspended' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                                  color: agency.status !== 'suspended' ? 'var(--success-color)' : 'var(--error-color)', border: 'none'
-                                }}
-                              >
-                                {agency.status === 'suspended' ? t('unsuspend') : t('suspend')}
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setOriginalOperator(activeOperator);
-                                  setActiveClient(agency);
-                                  const agencyOps = operators.filter(o => o.agencyId === agency.id);
-                                  const best = agencyOps.find(o => o.role?.isManager || o.role?.name?.includes("Manager") || o.role?.name?.includes("Admin")) || agencyOps[0];
-                                  if (best) setActiveOperator(best);
-                                  setActiveTab('dashboard');
-                                }}
-                              >
-                                {t('impersonate')}
-                              </button>
-                            </div>
-                            <button
-                              onClick={() => deleteAgency(agency.id)}
-                              style={{ width: '100%', padding: '0.6rem', background: 'transparent', border: '1px solid rgba(239, 68, 68, 0.3)', color: 'var(--error-color)', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800' }}
-                            >
-                              {t('delete').toUpperCase()}
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="glass-card custom-scrollbar" style={{ padding: 0, overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                      <thead>
-                        <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--card-border)' }}>
-                          <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>{t('agencyRegion')}</th>
-                          <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>{t('status')}</th>
-                          <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800' }}>{t('billingTier')}</th>
-                          <th style={{ padding: '1rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textAlign: 'right' }}>{t('actions')}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {agencies.map((agency, i) => {
-                          const agencyProfilesCount = profiles.filter(p => p.agencyId === agency.id).length;
-                          const agencyOps = operators.filter(o => o.agencyId === agency.id);
-                          const subscription = agency.subscription || { status: 'active', plan: 'Pro', endDate: 'Unlimited' };
-                          
-                          return (
-                            <tr key={agency.id} style={{ borderBottom: i < agencies.length - 1 ? '1px solid var(--card-border)' : 'none' }}>
-                              <td style={{ padding: '1.25rem 1.5rem' }}>
-                                <div style={{ fontWeight: '700', fontSize: '1rem' }}>{agency.name}</div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('regionLabel')}: {agency.region || 'EU'}</div>
-                              </td>
-                              <td style={{ padding: '1.25rem 1.5rem' }}>
-                                <div style={{
-                                  display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.2rem 0.6rem', borderRadius: '6px',
-                                  background: (subscription.status || 'active') === 'active' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                                  color: (subscription.status || 'active') === 'active' ? 'var(--success-color)' : 'var(--error-color)',
-                                  fontSize: '0.7rem', fontWeight: '800'
-                                }}>
-                                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }}></div>
-                                  {(subscription.status || 'active').toUpperCase()}
-                                </div>
-                              </td>
-                              <td style={{ padding: '1.25rem 1.5rem' }}>
-                                <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{subscription.plan || 'Pro'} {t('planLabel')}</div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('nextRenewal')}: {subscription.endDate || 'N/A'}</div>
-                              </td>
-                              <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
-                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                                  <button
-                                    onClick={() => {
-                                      // Toggle status logic
-                                    }}
-                                    className="status-badge"
-                                    style={{
-                                      background: agency.status !== 'suspended' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                                      color: agency.status !== 'suspended' ? 'var(--success-color)' : 'var(--error-color)',
-                                      cursor: 'pointer'
-                                    }}
-                                  >
-                                    {agency.status === 'suspended' ? t('unsuspend').toUpperCase() : t('suspend').toUpperCase()}
-                                  </button>
-                                  <button
-                                    className="status-badge"
-                                    style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', cursor: 'pointer', borderColor: 'var(--card-border)' }}
-                                    onClick={() => setSelectedAgencyDetail(agency)}
-                                  >
-                                    DETAIL
-                                  </button>
-                                  <button
-                                    className="status-badge"
-                                    style={{ fontSize: '0.7rem', color: 'var(--accent-color)', cursor: 'pointer' }}
-                                    onClick={() => {
-                                      setOriginalOperator(activeOperator);
-                                      setActiveClient(agency);
-                                      // Pick best operator: prefer manager/admin, fallback to first
-                                      const agencyOps = operators.filter(o => o.agencyId === agency.id);
-                                      const best = agencyOps.find(o => o.role?.isManager || o.role?.name?.includes('Manager') || o.role?.name?.includes('Admin')) || agencyOps[0];
-                                      if (best) setActiveOperator(best);
-                                      setActiveTab('dashboard');
-                                    }}
-                                  >
-                                    {t('impersonate')}
-                                  </button>
-                                  <button
-                                    onClick={() => deleteAgency(agency.id)}
-                                    className="status-badge"
-                                    style={{ fontSize: '0.7rem', color: '#ef4444', borderColor: '#ef4444', cursor: 'pointer' }}
-                                  >
-                                    {t('delete').toUpperCase()}
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'features' && isAllowed('global_features') && (
-          <div style={{ padding: '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
-            <h2 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #f59e0b, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('featuresTitle')}</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.1rem' }}>{t('featuresSubtitle')}</p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
-              {/* Global Feature Provisioning */}
-              <div className="glass-card" style={{ padding: '2rem', background: 'rgba(5,7,10,0.4)', border: '1px dashed var(--accent-color)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Zap size={24} color="#f59e0b" /> {t('masterFeatureProvisioning')}
-                  </h3>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '700' }}>{t('systemCapabilities').toUpperCase()}</div>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '2rem' }}>
-                  {globalFeatures.map((feature, i) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--card-border)' }}>
-                      <div>
-                        <div style={{ fontWeight: '700', marginBottom: '0.25rem' }}>{feature.label || t(feature.id) || feature.id}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{feature.desc || t(`${feature.id}_desc`)}</div>
-                      </div>
-                      <div
-                        onClick={async () => {
-                          const newActiveState = !feature.active;
-                          // Optimistic update
-                          const newFeatures = [...globalFeatures];
-                          newFeatures[i].active = newActiveState;
-                          setGlobalFeatures(newFeatures);
-                          
-                          try {
-                            await axios.patch(`${API_BASE}/admin/features/${feature.id}`, { active: newActiveState }, {
-                              headers: { Authorization: `Bearer ${token}` }
-                            });
-                          } catch (err) {
-                            console.error('Failed to update feature state', err);
-                            // Revert on error
-                            const reverted = [...globalFeatures];
-                            reverted[i].active = !newActiveState;
-                            setGlobalFeatures(reverted);
-                            alert(lang === 'cz' ? 'Chyba při ukládání nastavení funkcí.' : 'Error saving feature settings.');
-                          }
-                        }}
-                        className={`toggle-switch ${feature.active ? 'active' : ''}`}
-                        style={{
-                          width: '40px', height: '20px', background: feature.active ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)',
-                          borderRadius: '20px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s'
-                        }}
-                      >
-                        <div style={{
-                          width: '14px', height: '14px', background: 'white', borderRadius: '50%',
-                          position: 'absolute', top: '2px', left: feature.active ? '22px' : '3px', transition: 'all 0.3s'
-                        }}></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Enterprise AI Training Simulation */}
-              <div className="glass-card" style={{ padding: '2rem', border: '1px solid rgba(139, 92, 246, 0.3)', background: 'rgba(139, 92, 246, 0.05)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <Cpu size={24} color="#a855f7" /> {t('aiTrainingEngine')}
-                  </h3>
-                  <div className="status-badge" style={{ borderColor: '#a855f7', color: '#a855f7' }}>{t('premiumModule').toUpperCase()}</div>
-                </div>
-
-                {!isTraining && trainingProgress === 0 && (
-                  <div style={{ textAlign: 'center', padding: '2rem' }}>
-                    <div style={{ fontSize: '3rem', marginBottom: '1.5rem' }}>🧠</div>
-                    <h4 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '0.75rem' }}>{t('trainAiTitle')}</h4>
-                    <p style={{ color: 'var(--text-secondary)', maxWidth: '500px', margin: '0 auto 2rem' }}>
-                      {t('trainAiDesc')}
-                    </p>
-                    <button
-                      onClick={() => {
-                        setIsTraining(true);
-                        const interval = setInterval(() => {
-                          setTrainingProgress(prev => {
-                            if (prev >= 100) {
-                              clearInterval(interval);
-                              setIsTraining(false);
-                              return 100;
-                            }
-                            return prev + 5;
-                          });
-                        }, 200);
-                      }}
-                      className="action-btn"
-                      style={{ width: 'auto', padding: '1rem 2.5rem', background: 'var(--accent-color)' }}
-                    >
-                      {t('uploadTrainingSet')}
-                    </button>
-                  </div>
-                )}
-
-                {(isTraining || (trainingProgress > 0 && trainingProgress < 100)) && (
-                  <div style={{ padding: '2rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', fontSize: '0.9rem', fontWeight: '700' }}>
-                      <span>{t('analyzingPatterns')}</span>
-                      <span>{trainingProgress}%</span>
-                    </div>
-                    <div style={{ width: '100%', height: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', overflow: 'hidden' }}>
-                      <div style={{ width: `${trainingProgress}%`, height: '100%', background: 'linear-gradient(to right, #6366f1, #a855f7)', transition: 'width 0.2s linear' }}></div>
-                    </div>
-                    <div style={{ marginTop: '1.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', gap: '1rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Check size={14} color="var(--success-color)" /> {t('dataValidated')}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Check size={14} color={trainingProgress > 40 ? 'var(--success-color)' : 'var(--text-secondary)'} /> {t('patternExtraction')}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Check size={14} color={trainingProgress > 80 ? 'var(--success-color)' : 'var(--text-secondary)'} /> {t('weightOptimization')}</div>
-                    </div>
-                  </div>
-                )}
-
-                {trainingProgress === 100 && !isTraining && (
-                  <div style={{ textAlign: 'center', padding: '2rem' }}>
-                    <div style={{ width: '60px', height: '60px', background: 'var(--success-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', boxShadow: '0 0 30px rgba(34, 197, 94, 0.4)' }}>
-                      <Check size={32} color="white" strokeWidth={4} />
-                    </div>
-                    <h4 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('modelOptimizationComplete')}</h4>
-                    <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-                      {t('aiModelUpdated', { agency: 'Elite Talent Management' })}
-                    </p>
-                    <button
-                      onClick={() => setTrainingProgress(0)}
-                      className="status-badge"
-                      style={{ cursor: 'pointer', border: '1px solid var(--card-border)' }}
-                    >
-                      {t('resetTrainingEnv')}
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Permissions Dashboard (Phase 3) */}
-        {activeTab === 'permissions' && isAllowed('permissions') && (
-          <PermissionsDashboard
-            t={t}
-            activeOperator={activeOperator}
-            onUpdate={fetchUserPermissions}
-          />
-        )}
-
-        {/* Subscription / Billing */}
-        {activeTab === 'plans' && isAllowed('plans') && (() => {
-          if (activeOperator?.role === 'App Owner') {
-            return (
-              <div className="fade-in" style={{ padding: isMobile ? '1rem' : '2rem', flex: 1, overflowY: 'auto' }}>
-                <AppOwnerPlansDashboard 
-                  t={t} 
-                  lang={lang} 
-                  token={token} 
-                  API_BASE={API_BASE} 
-                  activeMarket={activeMarket}
-                  setActiveMarket={setActiveMarket}
-                />
-              </div>
-            );
-          }
-
-          const PLANS = [
-            { id: 'MONTHLY',     label: lang === 'cz' ? 'Měsíční'  : 'Monthly',     price: 990,   priceFmt: '990 Kč',    days: 30,  save: 0 },
-            { id: 'SEMI_ANNUAL', label: lang === 'cz' ? 'Půlroční' : 'Semi-Annual', price: 5490,  priceFmt: '5 490 Kč',  days: 182, save: 8 },
-            { id: 'ANNUAL',      label: lang === 'cz' ? 'Roční'    : 'Annual',      price: 9990,  priceFmt: '9 990 Kč',  days: 365, save: 16 },
-          ];
-          const now = new Date();
-          const daysLeft = activeSubscription ? Math.max(0, Math.ceil((new Date(activeSubscription.expiresAt) - now) / 86400000)) : 0;
-          const statusColor = !activeSubscription ? '#6b7280' : activeSubscription.status === 'ACTIVE' ? '#10b981' : activeSubscription.status === 'TRIAL' ? '#f59e0b' : '#ef4444';
-
-          const handleStart = async (planId) => {
-            setIsStartingSubscription(true);
-            try {
-              const r = await axios.post(`${API_BASE}/subscriptions/start`, { plan: planId }, { headers: { Authorization: `Bearer ${token}` } });
-              setActiveSubscription(r.data);
-              setSubscriptionHistory(prev => [r.data, ...prev]);
-            } catch (e) { console.error(e); }
-            finally { setIsStartingSubscription(false); }
-          };
-          const handleCancel = async () => {
-            if (!window.confirm(lang === 'cz' ? 'Opravdu zrušit předplatné?' : 'Cancel subscription?')) return;
-            try {
-              await axios.post(`${API_BASE}/subscriptions/cancel`, {}, { headers: { Authorization: `Bearer ${token}` } });
-              setActiveSubscription(null);
-            } catch (e) { console.error(e); }
-          };
-
-          return (
-            <div className="fade-in" style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: 'auto' }}>
-              <div style={{ maxWidth: '760px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-
-                {/* Current status card */}
-                <div className="glass-card" style={{ padding: '2rem', borderTop: `3px solid ${statusColor}` }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-                    <div>
-                      <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.1em', marginBottom: '0.4rem' }}>
-                        {lang === 'cz' ? 'AKTUÁLNÍ PŘEDPLATNÉ' : 'CURRENT SUBSCRIPTION'}
-                      </div>
-                      {activeSubscription ? (
-                        <>
-                          <div style={{ fontSize: '1.6rem', fontWeight: '900' }}>{PLANS.find(p => p.id === activeSubscription.plan)?.label || activeSubscription.plan}</div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-                            <span style={{ background: `rgba(${statusColor === '#10b981' ? '16,185,129' : statusColor === '#f59e0b' ? '245,158,11' : '239,68,68'},0.15)`, color: statusColor, border: `1px solid ${statusColor}`, padding: '0.2rem 0.6rem', borderRadius: '6px', fontSize: '0.68rem', fontWeight: '800' }}>
-                              {activeSubscription.status}
-                            </span>
-                            <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                              {lang === 'cz' ? 'Vyprší za' : 'Expires in'} <strong style={{ color: daysLeft <= 7 ? '#ef4444' : 'white' }}>{daysLeft} {lang === 'cz' ? 'dní' : 'days'}</strong>
-                            </span>
-                            <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                              ({new Date(activeSubscription.expiresAt).toLocaleDateString(lang === 'cz' ? 'cs-CZ' : 'en-GB')})
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        <div style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                          {lang === 'cz' ? 'Žádné aktivní předplatné' : 'No active subscription'}
-                        </div>
-                      )}
-                    </div>
-                    {activeSubscription && (
-                      <button onClick={handleCancel} style={{ padding: '0.5rem 1rem', borderRadius: '10px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.35)', color: '#ef4444', fontWeight: '800', fontSize: '0.78rem', cursor: 'pointer' }}>
-                        {lang === 'cz' ? 'Zrušit' : 'Cancel'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Plan picker */}
-                <div>
-                  <h3 style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <CreditCard size={18} color="var(--accent-color)" /> {lang === 'cz' ? 'Vybrat / obnovit plán' : 'Select / renew plan'}
-                  </h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1rem' }}>
-                    {PLANS.map(plan => {
-                      const isActive = activeSubscription?.plan === plan.id && activeSubscription?.status === 'ACTIVE';
-                      return (
-                        <div key={plan.id} className="glass-card" style={{ padding: '1.5rem', border: isActive ? '2px solid var(--accent-color)' : '1px solid var(--card-border)', position: 'relative', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                          {isActive && <div style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', background: 'var(--accent-color)', color: 'white', padding: '0.18rem 0.55rem', borderRadius: '6px', fontSize: '0.62rem', fontWeight: '900' }}>AKTIVNÍ</div>}
-                          {plan.save > 0 && <div style={{ position: 'absolute', top: isActive ? '2.2rem' : '0.75rem', right: '0.75rem', background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', padding: '0.18rem 0.55rem', borderRadius: '6px', fontSize: '0.6rem', fontWeight: '900' }}>-{plan.save}%</div>}
-                          <div>
-                            <div style={{ fontWeight: '900', fontSize: '1rem', marginBottom: '0.2rem' }}>{plan.label}</div>
-                            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{plan.days} {lang === 'cz' ? 'dní' : 'days'}</div>
-                          </div>
-                          <div style={{ fontSize: '1.5rem', fontWeight: '900', color: 'var(--accent-color)' }}>{plan.priceFmt}</div>
-                          <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                            ≈ {Math.round(plan.price / plan.days * 30)} Kč / {lang === 'cz' ? 'měsíc' : 'month'}
-                          </div>
-                          <button onClick={() => handleStart(plan.id)} disabled={isStartingSubscription || isActive} style={{ marginTop: 'auto', padding: '0.6rem', borderRadius: '10px', background: isActive ? 'rgba(59,130,246,0.08)' : 'var(--accent-color)', color: isActive ? 'var(--accent-color)' : 'white', border: isActive ? '1px solid rgba(59,130,246,0.3)' : 'none', fontWeight: '800', fontSize: '0.8rem', cursor: isActive ? 'default' : 'pointer', opacity: isStartingSubscription ? 0.5 : 1 }}>
-                            {isActive ? (lang === 'cz' ? '✓ Aktivní' : '✓ Active') : (lang === 'cz' ? 'Aktivovat' : 'Subscribe')}
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* History */}
-                {subscriptionHistory.length > 0 && (
-                  <div>
-                    <h3 style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: '800' }}>{lang === 'cz' ? 'Historie' : 'History'}</h3>
-                    <div className="glass-card" style={{ overflow: 'hidden' }}>
-                      {subscriptionHistory.map((s, i) => (
-                        <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem 1.25rem', borderBottom: i < subscriptionHistory.length - 1 ? '1px solid var(--card-border)' : 'none', flexWrap: 'wrap', gap: '0.5rem' }}>
-                          <div>
-                            <div style={{ fontWeight: '700', fontSize: '0.85rem' }}>{PLANS.find(p => p.id === s.plan)?.label || s.plan}</div>
-                            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{new Date(s.startedAt).toLocaleDateString()} → {new Date(s.expiresAt).toLocaleDateString()}</div>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            {s.amountPaid != null && <div style={{ fontWeight: '700', fontSize: '0.85rem' }}>{s.amountPaid} {s.currency}</div>}
-                            <span style={{ padding: '0.15rem 0.5rem', borderRadius: '5px', fontSize: '0.62rem', fontWeight: '800', background: s.status === 'ACTIVE' ? 'rgba(16,185,129,0.15)' : s.status === 'TRIAL' ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.06)', color: s.status === 'ACTIVE' ? '#10b981' : s.status === 'TRIAL' ? '#f59e0b' : 'var(--text-secondary)' }}>{s.status}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Marketing pricing plans below */}
-                <div style={{ borderTop: '1px solid var(--card-border)', paddingTop: '2rem' }}>
-                  <PlansDashboard lang={lang} t={t} subscriptionPlans={subscriptionPlans} setSubscriptionPlans={setSubscriptionPlans} activeMarket={activeMarket} setActiveMarket={setActiveMarket} activeOperator={activeOperator} currentAgency={currentAgency} />
-                </div>
-              </div>
-            </div>
-          );
-        })()}
 
 
         {/* Removed redundant QA Hub block */}
       </main>
 
-      {/* Booking Modal */}
-      {isBookingModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '500px', padding: '2.5rem', border: '1px solid var(--accent-color)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <Calendar size={28} color="var(--accent-color)" /> {t('createBooking')}
-              </h2>
-              <X size={24} color="var(--text-secondary)" cursor="pointer" onClick={() => setIsBookingModalOpen(false)} />
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('clientAndGirl').toUpperCase()}</label>
-                <div style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', display: 'flex', gap: '1rem' }}>
-                   <div style={{ fontWeight: '700' }}>{selectedChat?.from || 'Unknown Client'}</div>
-                   <div style={{ color: 'var(--text-secondary)' }}>→</div>
-                   <div style={{ fontWeight: '700', color: 'var(--accent-color)' }}>{activeProfile?.name || '...'}</div>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('date').toUpperCase()}</label>
-                  <input type="date" value={bookingDetails.date} onChange={(e) => setBookingDetails({...bookingDetails, date: e.target.value})} style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.75rem', borderRadius: '12px', color: 'white' }} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('time').toUpperCase()}</label>
-                  <input type="time" value={bookingDetails.time} onChange={(e) => setBookingDetails({...bookingDetails, time: e.target.value})} style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.75rem', borderRadius: '12px', color: 'white' }} />
-                </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('duration').toUpperCase()}</label>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  {['30', '60', '90', '120'].map(mins => (
-                    <button key={mins} onClick={() => setBookingDetails({...bookingDetails, duration: mins})} style={{ flex: 1, padding: '0.6rem', borderRadius: '10px', border: '1px solid', borderColor: bookingDetails.duration === mins ? 'var(--accent-color)' : 'var(--card-border)', background: bookingDetails.duration === mins ? 'rgba(59, 130, 246, 0.1)' : 'transparent', color: bookingDetails.duration === mins ? 'white' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer' }}>{mins}m</button>
-                  ))}
-                </div>
-              </div>
-
-              {bookingCollision && (
-                <div style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--error-color)', borderRadius: '12px', display: 'flex', gap: '0.75rem' }}>
-                  <AlertTriangle size={20} color="var(--error-color)" style={{ flexShrink: 0 }} />
-                  <div>
-                    <div style={{ color: 'var(--error-color)', fontWeight: '800', fontSize: '0.85rem', marginBottom: '0.25rem' }}>{t('collisionDetected').toUpperCase()}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('overlapsWith')}: <strong>{bookingCollision.title} ({bookingCollision.time})</strong></div>
-                    <button
-                      onClick={() => {
-                        // Simple logic for next slot: exact end of collision
-                        const [h, m] = bookingCollision.time.split(' ')[0].split(':').map(Number);
-                        const isPm = bookingCollision.time.includes('PM') && h !== 12;
-                        const hCorrected = isPm ? h + 12 : (bookingCollision.time.includes('AM') && h === 12 ? 0 : h);
-                        const dur = parseFloat(bookingCollision.duration) * 60;
-                        const startTotal = hCorrected * 60 + (m || 0);
-                        const endTotal = startTotal + dur;
-                        const nextH = Math.floor(endTotal / 60);
-                        const nextM = endTotal % 60;
-                        const nextTime = `${String(nextH).padStart(2, '0')}:${String(nextM).padStart(2, '0')}`;
-                        setBookingDetails({...bookingDetails, time: nextTime});
-                        setBookingCollision(null);
-                      }}
-                      style={{ marginTop: '0.75rem', background: 'white', color: 'black', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer' }}
-                    >
-                      MOVE TO NEXT SLOT
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <button
-                onClick={handleConfirmBooking}
-                className="action-btn"
-                style={{ background: bookingCollision ? 'rgba(255,255,255,0.1)' : 'var(--accent-color)', color: 'white', marginTop: '1rem', opacity: bookingCollision ? 0.5 : 1 }}
-                disabled={!!bookingCollision}
-              >
-                {t('confirmBooking').toUpperCase()}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Overlays */}
       {incomingCall && (
@@ -6335,731 +4277,94 @@ function App() {
       {departureCheckActive && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9500, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
           <div style={{ width: '100%', maxWidth: '420px', background: '#0f1117', borderRadius: '24px', padding: '2rem', border: '1px solid rgba(16,185,129,0.3)', boxShadow: '0 0 40px rgba(16,185,129,0.15)' }}>
-            {/* Icon & Title */}
             <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
               <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🚪</div>
               <div style={{ fontSize: '1.3rem', fontWeight: '900', marginBottom: '0.4rem' }}>Opustil klient bezpečně?</div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Prosím potvrď, že klient odešel. Jinak bude odeslán bezpečnostní alert.</div>
             </div>
-            {/* Countdown */}
             <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              <div style={{ fontSize: '3.5rem', fontWeight: '900', fontFamily: 'monospace', color: departureTimeLeft < 60 ? '#ef4444' : '#10b981' }}>
+              <div style={{ fontSize: '3.5rem', fontWeight: '900', color: departureTimeLeft < 60 ? '#ef4444' : '#10b981' }}>
                 {String(Math.floor(departureTimeLeft / 60)).padStart(2, '0')}:{String(departureTimeLeft % 60).padStart(2, '0')}
               </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>DO AUTOMATICKÉHO ALERTU</div>
             </div>
-            {/* Confirm button */}
-            <button
-              onClick={handleDepartureConfirmed}
-              style={{ width: '100%', padding: '1.1rem', borderRadius: '16px', background: '#10b981', border: 'none', color: 'white', fontSize: '1.1rem', fontWeight: '900', cursor: 'pointer', marginBottom: '0.75rem', letterSpacing: '0.03em' }}
-            >
-              ✓ Klient odešel bezpečně
-            </button>
-            <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>
-              Interval: {departureIntervalMin} min · Nastavitelné v Nastavení
-            </div>
-          </div>
-        </div>
-      )}
-
-            {/* Mobile Schedule Bottom Sheet */}
-      {isMobile && selectedScheduleEvent && (
-        <div
-          onClick={() => setSelectedScheduleEvent(null)}
-          style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'flex-end' }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{ width: '100%', background: 'var(--bg-secondary, #0f1117)', borderRadius: '24px 24px 0 0', padding: '1.5rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom, 0px))', boxShadow: '0 -8px 40px rgba(0,0,0,0.5)' }}
-          >
-            {/* Handle */}
-            <div style={{ width: '40px', height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.2)', margin: '0 auto 1.25rem' }} />
-            {/* Event info */}
-            <div style={{ marginBottom: '1.5rem' }}>
-              <div style={{ fontSize: '1.2rem', fontWeight: '900', marginBottom: '0.3rem' }}>{selectedScheduleEvent.title}</div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span>🕐 {selectedScheduleEvent.time}</span>
-                <span>⏱ {selectedScheduleEvent.duration}</span>
-                <span style={{ color: activeTimerEvent?.id === selectedScheduleEvent.id ? '#10b981' : 'var(--text-secondary)' }}>
-                  {activeTimerEvent?.id === selectedScheduleEvent.id ? '● ACTIVE' : selectedScheduleEvent.status?.toUpperCase()}
-                </span>
-              </div>
-            </div>
-            {/* Action buttons */}
-            {activeTimerEvent?.id === selectedScheduleEvent.id ? (
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '2.5rem' }}>
               <button
-                onClick={() => { handleCheckOut(); setSelectedScheduleEvent(null); }}
-                disabled={isSafetyLoading}
-                style={{ width: '100%', padding: '1.1rem', borderRadius: '16px', background: '#10b981', border: 'none', color: 'white', fontSize: '1.1rem', fontWeight: '900', cursor: 'pointer', letterSpacing: '0.05em', marginBottom: '0.75rem' }}
-              >
-                ✓ CHECK-OUT
-              </button>
-            ) : (
-              <button
-                onClick={() => { handleCheckIn(selectedScheduleEvent); setSelectedScheduleEvent(null); }}
-                disabled={isTimerActive}
-                style={{ width: '100%', padding: '1.1rem', borderRadius: '16px', background: isTimerActive ? 'rgba(255,255,255,0.06)' : 'var(--accent-color)', border: 'none', color: 'white', fontSize: '1.1rem', fontWeight: '900', cursor: isTimerActive ? 'not-allowed' : 'pointer', opacity: isTimerActive ? 0.5 : 1, letterSpacing: '0.05em', marginBottom: '0.75rem' }}
-              >
-                ▶ CHECK-IN
-              </button>
-            )}
-            <button
-              onClick={() => setSelectedScheduleEvent(null)}
-              style={{ width: '100%', padding: '0.85rem', borderRadius: '16px', background: 'rgba(255,255,255,0.06)', border: 'none', color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: '700', cursor: 'pointer' }}
-            >
-              Zavřít
-            </button>
-          </div>
-        </div>
-      )}
-
-
-      {/* Panic Confirmation Modal */}
-      {showPanicConfirm && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(239, 68, 68, 0.2)', backdropFilter: 'blur(20px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
-          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', textAlign: 'center', border: '2px solid #ef4444' }}>
-            <AlertTriangle size={64} color="#ef4444" style={{ marginBottom: '1.5rem', animation: 'bounce 1s infinite' }} />
-            <h2 style={{ fontSize: '1.8rem', fontWeight: '900', color: 'white', marginBottom: '1rem' }}>EMERGENCY ALERT?</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '2.5rem' }}>This will immediately dispatch emergency signals to all agency managers. Use only in real danger.</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <button 
-                onClick={() => setShowPanicConfirm(false)} 
-                className="glass-card" 
-                style={{ padding: '1rem', border: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.05)', color: 'white', fontWeight: '700' }}
-              >
-                CANCEL
-              </button>
-              <button 
-                onClick={() => { handlePanic(); setShowPanicConfirm(false); }} 
-                className="action-btn" 
-                style={{ background: '#ef4444', color: 'white', fontWeight: '900', margin: 0 }}
-              >
-                SEND SOS
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Emergency Alert Overlay for Operators/Managers */}
-      {emergencyAlert && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(20px)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-              <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '600px', padding: '3.5rem', textAlign: 'center', border: '5px solid #ef4444', background: 'rgba(239, 68, 68, 0.05)', boxShadow: '0 0 50px rgba(239, 68, 68, 0.5)' }}>
-                  <div className="pulse-red" style={{ margin: '0 auto 2.5rem', width: '120px', height: '120px', borderRadius: '50%', background: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <AlertTriangle size={70} color="white" />
-                  </div>
-                  
-                  <h1 style={{ fontSize: '3rem', fontWeight: '900', color: 'white', marginBottom: '1rem', letterSpacing: '-1px' }}>EMERGENCY</h1>
-                  <h2 style={{ fontSize: '1.8rem', fontWeight: '800', color: '#ef4444', marginBottom: '2rem' }}>{emergencyAlert.profileName}</h2>
-                  
-                  <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '20px', marginBottom: '3rem', textAlign: 'left' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', gap: '1rem' }}>
-                          <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', flexShrink: 0 }}>Event Type:</span>
-                          <span style={{ fontWeight: '800', color: 'white', wordBreak: 'break-word', textAlign: 'right' }}>{emergencyAlert.type?.toUpperCase()}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: (emergencyAlert.notes || emergencyAlert.message) ? '1rem' : 0 }}>
-                          <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', flexShrink: 0 }}>Session ID:</span>
-                          <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', wordBreak: 'break-all', textAlign: 'right' }}>#{emergencyAlert.sessionId}</span>
-                      </div>
-                      {(emergencyAlert.notes || emergencyAlert.message) && (
-                          <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                              <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', marginBottom: '0.4rem' }}>Notes</div>
-                              <div style={{ color: 'white', fontSize: '0.9rem', lineHeight: '1.5', wordBreak: 'break-word', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-                                  {emergencyAlert.notes || emergencyAlert.message}
-                              </div>
-                          </div>
-                      )}
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
-                      <button
-                          onClick={handleManagerEmergencyAcknowledge}
-                          disabled={isEmergencyAckLoading}
-                          className="action-btn"
-                          style={{ background: 'rgba(16, 185, 129, 0.2)', border: '1px solid rgba(16, 185, 129, 0.55)', color: '#86efac', fontWeight: '900', fontSize: '1rem', padding: '1rem', margin: 0, opacity: isEmergencyAckLoading ? 0.7 : 1 }}
-                      >
-                          {isEmergencyAckLoading ? 'ACKNOWLEDGING...' : 'ACKNOWLEDGE SAFE (+10m)'}
-                      </button>
-                      <button
-                          onClick={() => setEmergencyAlert(null)}
-                          className="action-btn" 
-                          style={{ background: 'white', color: '#ef4444', fontWeight: '900', fontSize: '1.2rem', padding: '1.5rem', margin: 0 }}
-                      >
-                          ACKNOWLEDGE & DISMISS
-                      </button>
-                  </div>
-              </div>
-          </div>
-      )}
-      {!isBugReportOpen && !isMobile && (
-        <button
-          onClick={() => setIsBugReportOpen(true)}
-          style={{
-            position: 'fixed',
-            bottom: isMobile ? 'max(1rem, calc(env(safe-area-inset-bottom) + 1rem))' : '2rem',
-            right: isMobile ? 'max(1rem, calc(env(safe-area-inset-right) + 1rem))' : '2rem',
-            width: '50px', height: '50px',
-            borderRadius: '50%', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 1000,
-            boxShadow: '0 10px 30px rgba(239, 68, 68, 0.3)', transition: 'all 0.3s'
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'; }}
-        >
-          <Bug size={ 24 } color="#ef4444" />
-        </button>
-      )}
-
-      {/* Bug Report Modal */}
-      {isBugReportOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '500px', padding: '2.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <Bug size={24} color="#ef4444" /> {t('reportBugTitle')}
-              </h2>
-              <button onClick={() => setIsBugReportOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={24} /></button>
-            </div>
-
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-              {t('bugReportSubtitle')}
-            </p>
-
-            <textarea
-              value={bugDescription}
-              onChange={(e) => setBugDescription(e.target.value)}
-              placeholder={t('bugPlaceholder')}
-              style={{
-                width: '100%', height: '150px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)',
-                borderRadius: '12px', padding: '1rem', color: 'white', fontSize: '0.9rem', resize: 'none', marginBottom: '1.5rem',
-                outline: 'none'
-              }}
-            />
-
-            <button
-              onClick={() => {
-                const subject = encodeURIComponent(`[BUG] Issue reported by ${activeOperator?.name || 'Unknown'}`);
-                const body = encodeURIComponent(`Operator: ${activeOperator?.name || 'Unknown'}\nRole: ${activeOperator?.role || 'Unknown'}\nClient: ${activeClient?.name || 'App Owner'}\n\nDescription:\n${bugDescription}`);
-                window.location.href = `mailto:support@nexus-hub.ai?subject=${subject}&body=${body}`;
-                setIsBugReportOpen(false);
-                setBugDescription('');
-              }}
-              className="action-btn"
-              style={{ background: 'var(--accent-color)', color: 'white', fontWeight: '800' }}
-            >
-              {t('reportToGithub')}
-            </button>
-          </div>
-        </div>
-      )}
-
-
-      {/* Agency Detail Modal */}
-      {selectedAgencyDetail && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1002, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(12px)', padding: '1rem' }}>
-          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '520px', maxHeight: '90vh', padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            {/* Header */}
-            <div style={{ padding: '2rem 2.5rem 1.5rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <h3 style={{ fontSize: '1.4rem', fontWeight: '900', marginBottom: '0.25rem' }}>{selectedAgencyDetail.name}</h3>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', letterSpacing: '0.05em' }}>{selectedAgencyDetail.region?.toUpperCase()}</div>
-              </div>
-              <button 
-                onClick={() => setSelectedAgencyDetail(null)} 
-                style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Scrollable Content */}
-            <div className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              {selectedAgencyDetail.email && (
-                <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem' }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>KONTAKTNÍ EMAIL</div>
-                  <div style={{ fontWeight: '700' }}>{selectedAgencyDetail.email}</div>
-                </div>
-              )}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem' }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>PLÁN</div>
-                  <div style={{ fontWeight: '700' }}>{selectedAgencyDetail.subscription?.plan || 'Standard'}</div>
-                </div>
-                <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem' }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>STAFF</div>
-                  <div style={{ fontWeight: '700' }}>{operators.filter(o => o.agencyId === selectedAgencyDetail.id).length} uživatelů</div>
-                </div>
-              </div>
-
-              {/* Manager Details */}
-              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem' }}>
-                <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>PRIMARY MANAGER</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: '800' }}>
-                    {selectedAgencyDetail.managerName?.charAt(0) || 'M'}
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{selectedAgencyDetail.managerName || 'N/A'}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{selectedAgencyDetail.managerEmail || 'No email provided'}</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Button for Managing Roles (Moved Up) */}
-              <button 
                 onClick={() => {
-                  setAgencyToManage(selectedAgencyDetail);
-                  setIsAgencyRolesModalOpen(true);
+                  setDepartureCheckActive(false);
+                  axios.post(`${API_BASE}/safety/sessions/${departureSessionId || activeSafetySession?.id}/departure-confirm`, {}, { headers: { Authorization: `Bearer ${token}` } });
                 }}
                 className="action-btn"
-                style={{ background: 'rgba(139, 92, 246, 0.1)', border: '1px solid var(--accent-color)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', fontWeight: '800', width: '100%', marginBottom: '1.25rem', padding: '1rem', borderRadius: '12px' }}
+                style={{ flex: 1, background: 'var(--success-color)', color: 'white', fontWeight: '800' }}
               >
-                <Shield size={18} color="var(--accent-color)" /> SPRAVOVAT ROLE AGENTURY
+                Safe Departure
               </button>
-              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1.25rem' }}>
-                <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.8rem', letterSpacing: '0.05em' }}>MANAŽER AGENTURY</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: '800' }}>
-                      {selectedAgencyDetail.managerName?.charAt(0) || '?'}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '0.9rem', fontWeight: '700' }}>{selectedAgencyDetail.managerName || 'Neznámý'}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{selectedAgencyDetail.managerEmail || 'E-mail nedostupný'}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.1), rgba(37,99,235,0.05))', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '16px', padding: '1.5rem', marginTop: '0.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>
-                  <div style={{ width: '24px', height: '24px', borderRadius: '6px', background: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <ShieldCheck size={14} color="white" />
-                  </div>
-                  <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--accent-color)', letterSpacing: '0.1em' }}>INVITATION CODE</div>
-                </div>
-                
-                {selectedAgencyDetail.inviteCode ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ flex: 1, background: 'rgba(0,0,0,0.2)', borderRadius: '10px', padding: '1rem', border: '1px dashed rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'center' }}>
-                      <code style={{ fontSize: '1.2rem', fontWeight: '900', letterSpacing: '0.1em', color: 'white', fontFamily: 'monospace' }}>
-                        {selectedAgencyDetail.inviteCode}
-                      </code>
-                    </div>
-                    <button
-                      onClick={() => { navigator.clipboard.writeText(selectedAgencyDetail.inviteCode); showToast('Invite code copied!', 'success'); }}
-                      style={{ height: '52px', padding: '0 1.25rem', background: 'var(--accent-color)', color: 'white', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer', border: 'none', transition: 'all 0.2s' }}
-                      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
-                      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                    >
-                      <Copy size={16} /> {lang === 'cz' ? 'KOPÍROVAT' : 'COPY'}
-                    </button>
-                  </div>
-                ) : (
-                  <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.1)', borderRadius: '10px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem', fontStyle: 'italic', border: '1px solid var(--card-border)' }}>
-                    {lang === 'cz' ? 'Kód ještě nebyl vygenerován' : 'Code not generated yet'}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Sticky Footer */}
-            <div style={{ padding: '1.5rem 2.5rem 2rem', borderTop: '1px solid var(--card-border)', background: 'rgba(0,0,0,0.2)', display: 'flex', gap: '1rem' }}>
-              <button 
-                onClick={() => setSelectedAgencyDetail(null)} 
-                style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid var(--card-border)', color: 'white', borderRadius: '12px', fontWeight: '700', cursor: 'pointer', fontSize: '0.9rem' }}
-              >
-                {lang === 'cz' ? 'Zavřít' : 'Close'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Specific Agency Roles Management Modal */}
-      {isAgencyRolesModalOpen && agencyToManage && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 1005, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(20px)', padding: '1rem' }}>
-          <div className="glass-card fade-in" style={{ width: '95%', maxWidth: '1280px', height: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 }}>
-            <div style={{ padding: '1.5rem 2.5rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)' }}>
-              <div>
-                <h3 style={{ fontSize: '1.4rem', fontWeight: '900' }}>Individuální nastavení práv: {agencyToManage.name}</h3>
-                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Tyto změny ovlivní pouze role v rámci této konkrétní agentury (slouží pro bonusy a akce).</p>
-              </div>
-              <button 
-                onClick={() => setIsAgencyRolesModalOpen(false)} 
-                style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <X size={24} />
-              </button>
-            </div>
-            
-            <div style={{ flex: 1, overflowY: 'auto' }}>
-              <PermissionsDashboard 
-                t={t} 
-                activeOperator={activeOperator} 
-                agencyId={agencyToManage.id} 
-                onUpdate={() => showToast('Práva agentury byla úspěšně aktualizována', 'success')}
-              />
-            </div>
-
-            <div style={{ padding: '1.5rem 2.5rem', borderTop: '1px solid var(--card-border)', display: 'flex', justifyContent: 'flex-end', background: 'rgba(0,0,0,0.3)' }}>
-              <button 
-                onClick={() => setIsAgencyRolesModalOpen(false)}
+              <button
+                onClick={() => {
+                  setDepartureCheckActive(false);
+                  axios.post(`${API_BASE}/safety/sessions/${departureSessionId || activeSafetySession?.id}/panic`, {}, { headers: { Authorization: `Bearer ${token}` } });
+                }}
                 className="action-btn"
-                style={{ width: 'auto', padding: '0.8rem 2.5rem' }}
+                style={{ flex: 1, background: 'var(--error-color)', color: 'white', fontWeight: '800' }}
               >
-                HOTOVO
+                PANIC ALERT
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Provision New Agency Modal */}
-      {isAddAgencyModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', padding: '1rem' }}>
-          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: '900' }}>{t('provisionAgency')}</h3>
-              <button onClick={() => setIsAddAgencyModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={20} /></button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('agencyName').toUpperCase()}</label>
-                <input
-                  type="text"
-                  value={newAgencyData.name}
-                  onChange={e => setNewAgencyData({...newAgencyData, name: e.target.value})}
-                  placeholder="e.g. Diamond Stars UK"
-                  style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('region').toUpperCase()}</label>
-                <select
-                  value={newAgencyData.region}
-                  onChange={e => setNewAgencyData({...newAgencyData, region: e.target.value})}
-                  style={{ width: '100%', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
-                >
-                  <option value="UK/Europe">UK/Europe</option>
-                  <option value="International">International</option>
-                  <option value="US/North America">US/North America</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('subscriptionTier').toUpperCase()}</label>
-                <select
-                  value={newAgencyData.tier}
-                  onChange={e => setNewAgencyData({...newAgencyData, tier: e.target.value})}
-                  style={{ width: '100%', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
-                >
-                  <option value="Standard">Standard</option>
-                  <option value="Professional">Professional</option>
-                  <option value="Enterprise">Enterprise</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>EMAIL AGENTURY</label>
-                <input
-                  type="email"
-                  value={newAgencyData.email}
-                  onChange={e => setNewAgencyData({...newAgencyData, email: e.target.value})}
-                  placeholder="agency@example.com"
-                  style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
-                />
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '2.5rem' }}>
-              <button onClick={() => setIsAddAgencyModalOpen(false)} style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid var(--card-border)', color: 'white', borderRadius: '12px', fontWeight: '700' }}>{t('cancel')}</button>
-              <button onClick={addAgency} className="action-btn" style={{ flex: 1, background: 'var(--accent-color)', color: 'white', fontWeight: '800' }}>{t('provision')}</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <BookingModal 
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        form={newBookingForm}
+        onFormChange={setNewBookingForm}
+        onSave={handleConfirmBooking}
+        lang={lang}
+      />
 
-      {/* Add Booking Modal */}
-      {bookingModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1002, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', padding: '1rem' }}>
-          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '480px', padding: '2.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-              <h3 style={{ fontSize: '1.3rem', fontWeight: '800' }}>{lang === 'cz' ? 'Přidat akci do kalendáře' : 'Add Booking'}</h3>
-              <button onClick={() => setBookingModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{lang === 'cz' ? 'NÁZEV' : 'TITLE'}</label>
-                <input value={newBookingForm.title} onChange={e => setNewBookingForm(p => ({ ...p, title: e.target.value }))} placeholder={lang === 'cz' ? 'např. Schůzka s klientem' : 'e.g. Meeting with client'} style={{ width: '100%', marginTop: '0.5rem', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontSize: '0.95rem' }} />
-              </div>
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{lang === 'cz' ? 'DATUM' : 'DATE'}</label>
-                <input type="date" value={newBookingForm.date} onChange={e => setNewBookingForm(p => ({ ...p, date: e.target.value }))} style={{ width: '100%', marginTop: '0.5rem', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontSize: '0.95rem', colorScheme: 'dark' }} />
-              </div>
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{lang === 'cz' ? 'TYP SCHŮZKY' : 'LOCATION TYPE'}</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.5rem' }}>
-                  <button 
-                    onClick={() => setNewBookingForm(p => ({ ...p, locationType: 'incall' }))}
-                    style={{ 
-                      padding: '0.75rem', 
-                      borderRadius: '10px', 
-                      border: '1px solid var(--card-border)', 
-                      background: newBookingForm.locationType === 'incall' ? 'var(--accent-color)' : 'rgba(255,255,255,0.05)',
-                      color: 'white',
-                      fontWeight: '700',
-                      fontSize: '0.85rem',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    Incall
-                  </button>
-                  <button 
-                    onClick={() => setNewBookingForm(p => ({ ...p, locationType: 'outcall' }))}
-                    style={{ 
-                      padding: '0.75rem', 
-                      borderRadius: '10px', 
-                      border: '1px solid var(--card-border)', 
-                      background: newBookingForm.locationType === 'outcall' ? 'var(--accent-color)' : 'rgba(255,255,255,0.05)',
-                      color: 'white',
-                      fontWeight: '700',
-                      fontSize: '0.85rem',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    Outcall
-                  </button>
-                </div>
-                <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.5rem', fontStyle: 'italic' }}>
-                  {newBookingForm.locationType === 'outcall' 
-                    ? (lang === 'cz' ? '💡 Outcall: GPS tracking aktivní celou dobu.' : '💡 Outcall: GPS tracking active throughout.')
-                    : (lang === 'cz' ? '🛡️ Incall: GPS tracking jen při emergency alertu.' : '🛡️ Incall: GPS tracking only on emergency.')}
-                </p>
-              </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{lang === 'cz' ? 'OD' : 'START'}</label>
-                    <input type="time" value={newBookingForm.startTime} onChange={e => setNewBookingForm(p => ({ ...p, startTime: e.target.value }))} style={{ width: '100%', marginTop: '0.5rem', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontSize: '0.95rem', colorScheme: 'dark' }} />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{lang === 'cz' ? 'DO' : 'END'}</label>
-                    <input type="time" value={newBookingForm.endTime} onChange={e => setNewBookingForm(p => ({ ...p, endTime: e.target.value }))} style={{ width: '100%', marginTop: '0.5rem', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontSize: '0.95rem', colorScheme: 'dark' }} />
-                  </div>
-                </div>
+      <AddOperatorModal 
+        isOpen={isAddOperatorModalOpen}
+        onClose={() => setIsAddOperatorModalOpen(false)}
+        data={newOperatorData}
+        onDataChange={setNewOperatorData}
+        onAdd={addOperator}
+        t={t}
+        lang={lang}
+        activeRole={activeRole}
+        activeOperator={activeOperator}
+      />
 
-                <div>
-                  <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em', display: 'block', marginBottom: '0.5rem' }}>{lang === 'cz' ? 'RYCHLÁ DOBA' : 'QUICK DURATION'}</label>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                    {[15, 30, 45, 60, 90, 120].map(mins => {
-                      const label = mins >= 60 ? `${mins / 60}h` : `${mins}m`;
-                      return (
-                        <button 
-                          key={mins}
-                          onClick={() => {
-                            const [h, m] = newBookingForm.startTime.split(':').map(Number);
-                            const start = new Date(2000, 0, 1, h, m);
-                            const end = new Date(start.getTime() + mins * 60000);
-                            setNewBookingForm(p => ({ ...p, endTime: `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}` }));
-                          }}
-                          style={{ 
-                            padding: '0.4rem 0.6rem', 
-                            borderRadius: '8px', 
-                            border: '1px solid var(--card-border)', 
-                            background: 'rgba(255,255,255,0.03)', 
-                            color: 'white', 
-                            fontSize: '0.7rem', 
-                            fontWeight: '700',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          {label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-                <button onClick={() => setBookingModalOpen(false)} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--card-border)', background: 'transparent', color: 'white', fontWeight: '700', cursor: 'pointer' }}>{lang === 'cz' ? 'Zrušit' : 'Cancel'}</button>
-                <button onClick={handleCreateBooking} disabled={!newBookingForm.title || !newBookingForm.date} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: 'none', background: 'var(--accent-color)', color: 'white', fontWeight: '800', cursor: 'pointer', opacity: (!newBookingForm.title || !newBookingForm.date) ? 0.5 : 1 }}>{lang === 'cz' ? 'Uložit akci' : 'Save Booking'}</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <EditProfileModal 
+        isOpen={isEditProfileModalOpen}
+        onClose={() => setIsEditProfileModalOpen(false)}
+        data={editingProfileData}
+        onDataChange={setEditingProfileData}
+        onSave={handleSaveProfile}
+        t={t}
+        lang={lang}
+        isMobile={isMobile}
+      />
 
-      {/* Edit Profile Modal */}
-      {isEditProfileModalOpen && editingProfileData && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', padding: '1rem' }}>
-          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '600px', padding: '2.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: '900' }}>{t('editProfile')}</h3>
-              <button
-                onClick={() => {
-                  setIsEditProfileModalOpen(false);
-                  setEditingProfileData(null);
-                }}
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1.5rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('profileName').toUpperCase()}</label>
-                  <input
-                    type="text"
-                    value={editingProfileData.name}
-                    onChange={e => setEditingProfileData({...editingProfileData, name: e.target.value})}
-                    style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('phoneNumber').toUpperCase()}</label>
-                  <input
-                    type="text"
-                    value={editingProfileData.phoneNumber || ''}
-                    onChange={e => setEditingProfileData({...editingProfileData, phoneNumber: e.target.value})}
-                    placeholder="+44 ..."
-                    style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
-                  />
-                </div>
-              </div>
+      <AddAgencyModal 
+        isOpen={isAddAgencyModalOpen}
+        onClose={() => setIsAddAgencyModalOpen(false)}
+        token={token}
+        onAdd={(newAgency) => {
+          setAgencies([...agencies, newAgency]);
+          setIsAddAgencyModalOpen(false);
+        }}
+      />
 
-              <div style={{ borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>{t('quickReplies').toUpperCase()}</label>
-                  <button
-                    onClick={() => {
-                      const newReply = { id: `q-${Date.now()}`, label: 'New Reply', text: '' };
-                      setEditingProfileData({
-                        ...editingProfileData,
-                        quickReplies: [...(editingProfileData.quickReplies || []), newReply]
-                      });
-                    }}
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', padding: '0.4rem 0.8rem', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer' }}
-                  >
-                    + {t('addQuickReply')}
-                  </button>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {(editingProfileData.quickReplies || []).map((reply, index) => (
-                    <div key={reply.id} style={{ background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
-                      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                        <input
-                          type="text"
-                          placeholder={t('replyLabel')}
-                          value={reply.label}
-                          onChange={e => {
-                            const newReplies = [...editingProfileData.quickReplies];
-                            newReplies[index].label = e.target.value;
-                            setEditingProfileData({ ...editingProfileData, quickReplies: newReplies });
-                          }}
-                          style={{ flex: 1, background: 'rgba(0,0,0,0.2)', border: '1px solid var(--card-border)', padding: '0.5rem', borderRadius: '6px', color: 'white', fontSize: '0.8rem' }}
-                        />
-                        <button
-                          onClick={() => {
-                            const newReplies = editingProfileData.quickReplies.filter((_, i) => i !== index);
-                            setEditingProfileData({ ...editingProfileData, quickReplies: newReplies });
-                          }}
-                          style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '0.5rem', borderRadius: '6px', cursor: 'pointer' }}
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                      <textarea
-                        placeholder={t('replyText')}
-                        value={reply.text}
-                        onChange={e => {
-                          const newReplies = [...editingProfileData.quickReplies];
-                          newReplies[index].text = e.target.value;
-                          setEditingProfileData({ ...editingProfileData, quickReplies: newReplies });
-                        }}
-                        style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--card-border)', padding: '0.5rem', borderRadius: '6px', color: 'white', fontSize: '0.8rem', minHeight: '60px', resize: 'vertical' }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '2.5rem' }}>
-              <button
-                onClick={() => {
-                  setIsEditProfileModalOpen(false);
-                  setEditingProfileData(null);
-                }}
-                style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid var(--card-border)', color: 'white', borderRadius: '12px', fontWeight: '700' }}
-              >
-                {t('cancel')}
-              </button>
-              <button onClick={handleSaveProfile} className="action-btn" style={{ flex: 1, background: 'var(--accent-color)', color: 'white', fontWeight: '800' }}>{t('saveProfileChanges')}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add Operator Modal */}
-      {isAddOperatorModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', padding: '1rem' }}>
-          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: '900' }}>{t('addTeamMember')}</h3>
-              <button onClick={() => setIsAddOperatorModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={20} /></button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('fullName').toUpperCase()}</label>
-                <input
-                  type="text"
-                  value={newOperatorData.name}
-                  onChange={e => setNewOperatorData({...newOperatorData, name: e.target.value})}
-                  placeholder="e.g. John Doe"
-                  style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('emailAddress').toUpperCase()}</label>
-                <input
-                  type="email"
-                  value={newOperatorData.email}
-                  onChange={e => setNewOperatorData({...newOperatorData, email: e.target.value})}
-                  placeholder="operator@nexus.sync"
-                  style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('assignRole').toUpperCase()}</label>
-                <select
-                  value={newOperatorData.role}
-                  onChange={e => setNewOperatorData({...newOperatorData, role: e.target.value})}
-                  style={{ width: '100%', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
-                >
-                  <option value="Model">{lang === 'cz' ? 'Modelka' : 'Model'}</option>
-                  <option value="Operator">{lang === 'cz' ? 'Operátorka' : 'Operator'}</option>
-                  <option value="Senior Operator">Senior Operator</option>
-                  <option value="Agency Manager">{lang === 'cz' ? 'Manažer agentury' : 'Agency Manager'}</option>
-                  {(activeRole === 'App Owner' || activeOperator?.role?.isManager) && (
-                    <option value="Agency Admin">Agency Admin</option>
-                  )}
-                </select>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '2.5rem' }}>
-              <button onClick={() => setIsAddOperatorModalOpen(false)} style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid var(--card-border)', color: 'white', borderRadius: '12px', fontWeight: '700' }}>{t('cancel')}</button>
-              <button onClick={addOperator} className="action-btn" style={{ flex: 1, background: 'var(--accent-color)', color: 'white', fontWeight: '800' }}>{t('addToTeam')}</button>
-            </div>
-          </div>
-        </div>
-      )}
       {renderNotifications()}
       {renderNotificationPanel()}
     </div>
     );
   };
 
-  return renderContent();
+  return (
+    <NexusProvider>
+      {renderContent()}
+    </NexusProvider>
+  );
 }
 
 export default App;

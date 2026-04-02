@@ -683,10 +683,10 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
 
   return (
     <div className="relay-container fade-in" style={{ 
-      minHeight: '100vh', 
-      background: '#07080a', 
+      minHeight: '100dvh',
+      background: '#07080a',
       color: 'white', 
-      paddingTop: (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android') ? '0.5rem' : 'calc(env(safe-area-inset-top, 0px) + 0.5rem)',
+      paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.5rem)',
       paddingLeft: '1.5rem',
       paddingRight: '1.5rem',
       paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 5.5rem)',
