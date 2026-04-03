@@ -112,6 +112,13 @@ export function useNexusData({
       if (selfRes && selfRes.data) {
         setActiveOperator(selfRes.data);
         localStorage.setItem('nexus_activeOperator', JSON.stringify(selfRes.data));
+      } else if (selfRes?.status === 401) {
+        console.warn('[Auth] Session invalid, redirecting to login...');
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('nexus_token');
+          localStorage.removeItem('nexus_isLoggedIn');
+          // We let the App component handle redirection based on isLoggedIn state
+        }
       }
 
       if (statsRes && statsRes.data) {

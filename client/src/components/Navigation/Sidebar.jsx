@@ -141,7 +141,7 @@ const Sidebar = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginBottom: '1.5rem' }}>
               {/* UNIT: OPERATIONS */}
               <div>
-                {!isSidebarCollapsed && <div style={{ fontSize: '0.8rem', fontWeight: '950', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.12em', padding: '0 1.15rem', marginBottom: '0.6rem' }}>{t('operationsUnit') || 'OPERATIVA'}</div>}
+                {!isSidebarCollapsed && <div style={{ fontSize: '0.85rem', fontWeight: '950', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.12em', padding: '0 1.15rem', marginBottom: '0.6rem' }}>{t('operationsUnit') || 'OPERATIVA'}</div>}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                   {[
                     { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard') },
@@ -154,9 +154,11 @@ const Sidebar = () => {
                     { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub' },
                     { id: 'referrals', icon: Copy, label: t('referralProgram') || 'Referrals', perm: 'referrals', hideForOwner: true },
                   ].filter(item => {
+                    const hasPerm = !item.perm || isAllowed(item.perm);
+                    if (!hasPerm) return false;
                     if (item.nativeOnly && !isNativeApp) return false;
                     if (item.hideForOwner && activeRole === 'App Owner') return false;
-                    return !item.perm || isAllowed(item.perm);
+                    return true;
                   }).map(item => (
                     <button key={item.id} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
                       <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
@@ -170,7 +172,7 @@ const Sidebar = () => {
               {/* UNIT: AGENCY */}
               {(isAllowed('analytics') || isAllowed('hierarchy') || isAllowed('audit_logs') || isAllowed('settings')) && (
                 <div>
-                  {!isSidebarCollapsed && <div style={{ fontSize: '0.8rem', fontWeight: '950', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.12em', padding: '0 1.15rem', marginBottom: '0.6rem', marginTop: '0.85rem' }}>{t('agencyUnit') || 'SPRÁVA AGENTURY'}</div>}
+                  {!isSidebarCollapsed && <div style={{ fontSize: '0.85rem', fontWeight: '950', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.12em', padding: '0 1.15rem', marginBottom: '0.6rem', marginTop: '0.85rem' }}>{t('agencyUnit') || 'SPRÁVA AGENTURY'}</div>}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                     {[
                       { id: 'hierarchy', icon: Users, label: t('teamHierarchy'), perm: 'hierarchy', hideForOwner: true },
@@ -193,7 +195,7 @@ const Sidebar = () => {
               {/* UNIT: INFRASTRUCTURE */}
               {(isAllowed('agencies') || isAllowed('infrastructure') || isAllowed('permissions') || isAllowed('plans') || isAllowed('global_features')) && (
                 <div>
-                  {!isSidebarCollapsed && <div style={{ fontSize: '0.8rem', fontWeight: '950', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.12em', padding: '0 1.15rem', marginBottom: '0.6rem', marginTop: '0.85rem' }}>{t('infraUnit') || 'INFRASTRUKTURA A ŘÍZENÍ'}</div>}
+                  {!isSidebarCollapsed && <div style={{ fontSize: '0.85rem', fontWeight: '950', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.12em', padding: '0 1.15rem', marginBottom: '0.6rem', marginTop: '0.85rem' }}>{t('infraUnit') || 'INFRASTRUKTURA A ŘÍZENÍ'}</div>}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                     {[
                       { id: 'agencies', icon: Building2, label: t('agencies'), perm: 'agencies' },

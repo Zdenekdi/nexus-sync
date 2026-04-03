@@ -48,7 +48,7 @@ export const NexusProvider = ({ children }) => {
 
   const auth = useAuth({ 
     API_BASE, 
-    t: (key) => key, 
+    t: (key, data) => t(key, data), 
     setIsRelayMode,
     setSelectedChatId: (id) => localStorage.setItem('nexus_lastSelectedChatId', id), 
     setActiveProfileId,
@@ -245,6 +245,7 @@ export const NexusProvider = ({ children }) => {
     isEmergencyAckLoading, setIsEmergencyAckLoading,
     toggleSidebar,
     toggleMobileMenu,
+    isNativeApp,
     handleNavigation: setActiveTab
   }), [
     auth, data, permissions, notifications, safety, chatLogic, ui, t,
@@ -252,7 +253,7 @@ export const NexusProvider = ({ children }) => {
     globalAnnouncement, activeMarket, activeSafetySession, activeTimerEvent,
     isTimerActive, timeLeft, messages, activeTab, setActiveTab, isSidebarCollapsed,
     isMobileMenuOpen, isToolsExpanded, lang, showOnlyOnline, dbPermissions,
-    incomingCall, sipIncomingCall, emergencyAlert, isEmergencyAckLoading
+    incomingCall, sipIncomingCall, emergencyAlert, isEmergencyAckLoading, isNativeApp
   ]);
 
   return <NexusContext.Provider value={value}>{children}</NexusContext.Provider>;
