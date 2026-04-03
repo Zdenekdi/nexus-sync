@@ -67,7 +67,7 @@ const SettingsView = () => {
           <div className="grid" style={{ gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1.5rem' }}>
             <div className="glass-card" style={{ padding: '1.5rem' }}>
               <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('teamSeats')}</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{availableOperators.length} / 10</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{(availableOperators || []).length} / 10</div>
             </div>
             <div className="glass-card" style={{ padding: '1.5rem' }}>
               <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('regionalReach')}</div>
@@ -83,9 +83,9 @@ const SettingsView = () => {
           <div className="glass-card" style={{ padding: 0 }}>
             {(() => {
               const isManager = activeRole === 'App Owner' || activeRole === 'Agency Admin' || activeRole === 'Agency Manager' || activeOperator?.role?.isManager;
-              const visibleSessions = sessions.filter(s => {
+              const visibleSessions = (sessions || []).filter(s => {
                 if (isManager) return true;
-                const sessionProfile = profiles.find(p => p.id === s.profileId);
+                const sessionProfile = (profiles || []).find(p => p.id === s.profileId);
                 return sessionProfile?.agencyId === activeOperator?.agencyId;
               });
               if (visibleSessions.length === 0) return (

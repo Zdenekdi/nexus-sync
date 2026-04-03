@@ -53,9 +53,9 @@ const ProfilesView = () => {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-        {allAgencyProfiles.map((profile, i) => {
-          const isMyProfile = myProfiles.find(p => p.id === profile.id);
-          const activeCount = (profile.operators?.filter(op => op.active).length || 0) + (profile.assignees?.length || 0);
+        {(allAgencyProfiles || []).map((profile, i) => {
+          const isMyProfile = (myProfiles || []).find(p => p.id === profile.id);
+          const activeCount = ((profile.operators || []).filter(op => op.active).length || 0) + ((profile.assignees || []).length || 0);
 
           return (
             <div key={i} className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2rem', display: 'flex', gap: isMobile ? '1.5rem' : '2.5rem', borderColor: isMyProfile ? 'rgba(59, 130, 246, 0.4)' : 'var(--card-border)', flexDirection: isMobile ? 'column' : 'row' }}>
@@ -142,8 +142,8 @@ const ProfilesView = () => {
                               <button onClick={() => setAssigningProfile(null)} style={{ background: 'transparent', border: 'none', color: 'white' }}><X size={24} /></button>
                           </div>
                           <div style={{ maxHeight: '400px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem' }}>
-                              {operators.filter(op => !op.isAppOwner && op.role !== 'Model').map(op => {
-                                  const isAssigned = profile.assignees?.some(a => a.id === op.id) || profile.operators?.some(o => o.id === op.id);
+                              {(operators || []).filter(op => !op.isAppOwner && op.role !== 'Model').map(op => {
+                                  const isAssigned = (profile.assignees || []).some(a => a.id === op.id) || (profile.operators || []).some(o => o.id === op.id);
                                   return (
                                       <div 
                                           key={op.id} 
