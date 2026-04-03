@@ -299,7 +299,7 @@ const DashboardHome = () => {
         <div className="glass-card" style={{ padding: isMobile ? '1.15rem' : '2rem' }}>
           <h3 style={{ fontSize: isMobile ? '0.95rem' : '1.1rem', fontWeight: '800', marginBottom: isMobile ? '0.9rem' : '1.5rem' }}>{t('todaysBookings')}</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {calendar.length > 0 ? calendar.map((event, i) => (
+            {(calendar || []).length > 0 ? (calendar || []).map((event, i) => (
               <div key={i} style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: '15px', borderLeft: `4px solid ${event.status === 'confirmed' ? 'var(--success-color)' : 'var(--accent-color)'}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <div style={{ fontWeight: '800', fontSize: '1rem' }}>{event.time}</div>

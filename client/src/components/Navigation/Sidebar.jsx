@@ -97,7 +97,7 @@ const Sidebar = () => {
                 </button>
               ))}
             </div>
-            {activeRole !== 'Model' && activeRole !== 'App Owner' && !activeOperator?.isAdmin && myProfiles.length > 0 && (
+            {activeRole !== 'Model' && activeRole !== 'App Owner' && !activeOperator?.isAdmin && (myProfiles || []).length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ fontSize: '0.7rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{capitalize(t('myAssignedGirls'))}</div>
@@ -107,7 +107,7 @@ const Sidebar = () => {
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {myProfiles.filter(p => !showOnlyOnline || p.status === 'online').slice(0, 10).map(p => {
+                  {(myProfiles || []).filter(p => !showOnlyOnline || p.status === 'online').slice(0, 10).map(p => {
                     const unread = getUnreadForProfile(p.id);
                     return (
                       <button key={p.id} onClick={() => handleMobileProfileClick(p)} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.85rem 1rem', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '15px', cursor: 'pointer', background: 'rgba(255,255,255,0.02)', width: '100%', textAlign: 'left' }}>

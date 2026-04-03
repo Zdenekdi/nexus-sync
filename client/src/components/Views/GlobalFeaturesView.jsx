@@ -29,7 +29,7 @@ const GlobalFeaturesView = () => {
             <Zap size={24} color="#f59e0b" /> {t('masterFeatureProvisioning')}
           </h3>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '2rem' }}>
-            {globalFeatures.map((feature, i) => (
+            {(globalFeatures || []).map((feature, i) => (
               <div key={feature.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px' }}>
                 <div>
                   <div style={{ fontWeight: '700' }}>{t(`feat_${feature.id}_label`) || feature.label}</div>
