@@ -255,6 +255,7 @@ export const NexusProvider = ({ children }) => {
     toggleSidebar,
     toggleMobileMenu,
     isNativeApp,
+    calendar: (data.bookingSchedule || []),
     handleNavigation: setActiveTab
   }), [
     auth, data, permissions, notifications, safety, chatLogic, ui, t,

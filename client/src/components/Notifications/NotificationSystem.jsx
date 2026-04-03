@@ -14,7 +14,7 @@ const NotificationSystem = () => {
   
   const renderToasts = () => (
     <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: '10px', pointerEvents: 'none' }}>
-      {toasts.filter(n => {
+      {(toasts || []).filter(n => {
         if (activeOperator?.isModel) {
           return n.profileId === activeOperator.profileId;
         }
@@ -92,7 +92,7 @@ const NotificationSystem = () => {
           </div>
           <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? `1rem 1rem calc(env(safe-area-inset-bottom, 0px) + 1rem)` : '1rem' }} className="custom-scrollbar">
             {(() => {
-              const filteredNotifications = notifications.filter(n => {
+              const filteredNotifications = (notifications || []).filter(n => {
                 if (activeOperator?.isModel) {
                   return n.profileId === activeOperator.profileId;
                 }
@@ -107,7 +107,7 @@ const NotificationSystem = () => {
                 );
               }
 
-              return filteredNotifications.map(n => {
+              return (filteredNotifications || []).map(n => {
                 const isInteractive = hasNotificationTarget(n);
                 return (
                 <div key={n.id} style={{

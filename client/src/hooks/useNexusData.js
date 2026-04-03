@@ -136,8 +136,8 @@ export function useNexusData({
       }
 
       // 2. Process Profiles
-      if (profileRes?.data && profileRes.data.length > 0) {
-        const sanitizedProfiles = profileRes.data.map(p => {
+      if (profileRes?.data) {
+        const sanitizedProfiles = (profileRes.data || []).map(p => {
           let name = p.name;
           if (p.id === 'ldn-01' && (p.name?.includes('Sophie') || !p.name)) {
             name = 'Diana (Central London)';
@@ -148,9 +148,9 @@ export function useNexusData({
       }
 
       // 3. Process Chats/Messages
-      if (chatRes?.data && chatRes.data.length > 0) {
-        const mappedMessages = chatRes.data.map(chat => {
-          const latestMessage = chat.messages?.[0] || {};
+      if (chatRes?.data) {
+        const mappedMessages = (chatRes.data || []).map(chat => {
+          const latestMessage = (chat.messages || [])[0] || {};
           const resolvedText = latestMessage.text || latestMessage.content || latestMessage.body || latestMessage.message || 'No messages yet';
           const resolvedTransport = latestMessage.transport || latestMessage.type || 'sms';
           const resolvedTimestamp = chat.lastMessageAt || latestMessage.timestamp || latestMessage.createdAt || new Date().toISOString();
@@ -181,7 +181,7 @@ export function useNexusData({
 
       // 5. Process Device Bindings
       if (bindingRes?.data && bindingRes.data.ok) {
-        setSessions(bindingRes.data.bindings.map(b => ({
+        setSessions((bindingRes.data.bindings || []).map(b => ({
           id: b.id,
           installationId: b.installationId,
           profileId: b.profileId || b.profile?.id || null,
