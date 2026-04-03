@@ -14,7 +14,7 @@ const Sidebar = () => {
     isToolsExpanded, activeProfile, getUnreadForProfile, messages,
     setIsMobileMenuOpen, handleNavigation, setShowOnlyOnline, setIsRelayMode,
     setNotificationPanelOpen, handleLogout, setIsToolsExpanded, setActiveProfileId,
-    setSelectedChatId, setMobileView, setLang, setIsSidebarCollapsed, setActiveTab, t, isMobile, isAllowed 
+    setSelectedChatId, setMobileView, setLang, setIsSidebarCollapsed, setActiveTab, t, isMobile, isAllowed, isNativeApp 
   } = nexus;
 
   const handleMobileProfileClick = (p) => {
