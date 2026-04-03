@@ -122,7 +122,7 @@ const InventoryView = ({ t, token }) => {
                 <MapPin size={14} color="var(--text-secondary)" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
                 <select value={selectedLocation} onChange={e => setSelectedLocation(e.target.value)} style={{ padding: '0.6rem 1.5rem 0.6rem 2rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontSize: '0.85rem', cursor: 'pointer', minWidth: '140px' }}>
                   <option value="all">Vše</option>
-                  {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                  {(locations || []).map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                 </select>
               </div>
               <button onClick={() => setIsAddingLocation(true)} title="Přidat lokaci" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.55rem', borderRadius: '10px', color: 'white', cursor: 'pointer', display: 'flex' }}>

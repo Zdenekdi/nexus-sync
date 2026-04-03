@@ -3,9 +3,16 @@ import { DEFAULT_ROLE_PERMISSIONS } from '../constants/permissions';
 
 export const usePermissions = (activeOperator, dbPermissions) => {
   const normalizeRole = useCallback((role) => {
-    if (!role) return role;
+    if (!role) return 'Operator'; // Default fallback
     const roleName = typeof role === 'object' ? role.name : role;
-    if (roleName === 'App Owner' || roleName === 'SUPER_ADMIN' || roleName === 'ROOT') return 'App Owner';
+    const r = roleName ? roleName.toUpperCase() : '';
+
+    if (r === 'APP OWNER' || r === 'SUPER_ADMIN' || r === 'ROOT') return 'App Owner';
+    if (r === 'AGENCY ADMIN' || r === 'AGENCY OWNER' || r === 'OWNER') return 'Agency Admin';
+    if (r === 'MANAGER' || r === 'SENIOR MANAGER' || r === 'MANAGERKA') return 'Manager';
+    if (r === 'OPERATOR' || r === 'SENIOR OPERATOR' || r === 'OP') return 'Operator';
+    if (r === 'MODELKA' || r === 'MODEL' || r === 'MODELA') return 'Model';
+    
     return roleName;
   }, []);
 
