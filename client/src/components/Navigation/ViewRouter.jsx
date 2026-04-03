@@ -1,11 +1,31 @@
 import React, { lazy, Suspense } from 'react';
 import { useNexus } from '../../context/NexusContext';
 
+/**
+ * Helper to handle dynamic import failures (e.g. after a new deployment)
+ */
+const lazyWithRetry = (componentImport) => 
+  lazy(async () => {
+    const pageHasAlreadyBeenReloaded = JSON.parse(window.sessionStorage.getItem('page-has-been-reloaded') || 'false');
+    try {
+      return await componentImport();
+    } catch (error) {
+      if (error instanceof TypeError || error.name === 'ChunkLoadError' || error.message.includes('fetch')) {
+        if (!pageHasAlreadyBeenReloaded) {
+          window.sessionStorage.setItem('page-has-been-reloaded', 'true');
+          console.error('Chunk load failed, reloading local window...', error);
+          window.location.reload();
+        }
+      }
+      throw error;
+    }
+  });
+
 // Views
-const DashboardHome = lazy(() => import('../DashboardHome'));
-const OperationsUnit = lazy(() => import('../Units/OperationsUnit'));
-const AgencyUnit = lazy(() => import('../Units/AgencyUnit'));
-const InfrastructureUnit = lazy(() => import('../Units/InfrastructureUnit'));
+const DashboardHome = lazyWithRetry(() => import('../DashboardHome'));
+const OperationsUnit = lazyWithRetry(() => import('../Units/OperationsUnit'));
+const AgencyUnit = lazyWithRetry(() => import('../Units/AgencyUnit'));
+const InfrastructureUnit = lazyWithRetry(() => import('../Units/InfrastructureUnit'));
 
 const LoadingFallback = () => (
   <div style={{ 
@@ -25,29 +45,36 @@ const ViewRouter = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      // Operations Unit Views
-      case 'dashboard': 
+      case 'dashboard':
         return <DashboardHome />;
+
+      // Operations Unit Views
       case 'inbox':
       case 'calendar':
-      case 'analytics':
+      case 'relay':
+      case 'profiles':
+      case 'web-profiles':
+      case 'device-setup':
+      case 'qa':
+      case 'referrals':
         return <OperationsUnit />;
 
       // Agency Unit Views
-      case 'agencies':
-      case 'profiles':
+      case 'hierarchy':
+      case 'analytics':
       case 'activity':
       case 'settings':
         return <AgencyUnit />;
 
       // Infrastructure Unit Views
-      case 'inventory':
+      case 'agencies':
+      case 'infra':
       case 'infrastructure':
+      case 'inventory':
       case 'features':
       case 'plans':
       case 'plans-owner':
       case 'permissions':
-      case 'qa':
         return <InfrastructureUnit />;
 
       default: 

@@ -17,18 +17,10 @@ import Onboarding from './components/Onboarding';
 import LoginScreen from './components/LoginScreen';
 
 /**
- * Nexus Hub Root Component
- * Handles the Provider wrapper and directs to the main content.
+ * Nexus Hub Root Content Component
+ * Handles the main app structure once context is available.
  */
-const App = () => {
-  return (
-    <NexusProvider>
-      <AppContent />
-    </NexusProvider>
-  );
-};
-
-const AppContent = () => {
+function AppContent() {
   const {
     isLoggedIn,
     showLanding,
@@ -72,6 +64,18 @@ const AppContent = () => {
       <SystemBanners />
     </div>
   );
-};
+}
+
+/**
+ * Nexus Hub Root Component
+ * Handles the Provider wrapper and directs to the main content.
+ */
+function App() {
+  return (
+    <NexusProvider>
+      <AppContent />
+    </NexusProvider>
+  );
+}
 
 export default App;

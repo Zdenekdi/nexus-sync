@@ -6,17 +6,17 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     plans: true,
     global_features: true,
     hierarchy: true,
-    analytics: false,
-    messaging: false,
-    calendar: false,
-    profiles: false,
-    web_profiles: false,
-    device_setup: false,
-    audit_logs: false,
-    qa_hub: false,
+    analytics: true,
+    messaging: true,
+    calendar: true,
+    profiles: true,
+    web_profiles: true,
+    device_setup: true,
+    audit_logs: true,
+    qa_hub: true,
     settings: true,
     referrals: true,
-    inventory: false
+    inventory: true
   },
   'Agency Admin': {
     infrastructure: false,
@@ -34,7 +34,8 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     audit_logs: true,
     qa_hub: true,
     settings: true,
-    inventory: false
+    referrals: true,
+    inventory: true
   },
   'Senior Operator': {
     infrastructure: false,
