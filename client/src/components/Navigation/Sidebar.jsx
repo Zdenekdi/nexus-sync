@@ -137,22 +137,26 @@ const Sidebar = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginBottom: '1.5rem' }}>
               {/* UNIT: OPERATIONS */}
               <div>
-                {!isSidebarCollapsed && <div style={{ fontSize: '0.65rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.12em', padding: '0 1.15rem', marginBottom: '0.5rem' }}>{t('operationsUnit') || 'OPERATIVA'}</div>}
+                {!isSidebarCollapsed && <div style={{ fontSize: '0.8rem', fontWeight: '950', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.12em', padding: '0 1.15rem', marginBottom: '0.6rem' }}>{t('operationsUnit') || 'OPERATIVA'}</div>}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                   {[
                     { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard') },
                     { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator?.isModel ? 0 : totalUnread, perm: 'messaging' },
                     { id: 'calendar', icon: Calendar, label: t('schedule'), perm: 'calendar' },
-                    { id: 'relay', icon: Radio, label: 'Relay System' },
+                    { id: 'relay', icon: Radio, label: 'Relay System', nativeOnly: true },
                     { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
                     { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles' },
                     { id: 'device-setup', icon: Smartphone, label: t('deviceSetup'), perm: 'device_setup' },
                     { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub' },
-                    { id: 'referrals', icon: Copy, label: t('referralProgram') || 'Referrals', perm: 'referrals' },
-                  ].filter(item => !item.perm || isAllowed(item.perm)).map(item => (
+                    { id: 'referrals', icon: Copy, label: t('referralProgram') || 'Referrals', perm: 'referrals', hideForOwner: true },
+                  ].filter(item => {
+                    if (item.nativeOnly && !isNativeApp) return false;
+                    if (item.hideForOwner && activeRole === 'App Owner') return false;
+                    return !item.perm || isAllowed(item.perm);
+                  }).map(item => (
                     <button key={item.id} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
-                      <item.icon size={19} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
-                      {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '500', fontSize: '0.9rem' }}>{item.label}</span>}
+                      <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
+                      {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '1rem' }}>{item.label}</span>}
                       {item.badge > 0 && !isSidebarCollapsed && <div style={{ marginLeft: 'auto', background: 'var(--accent-color)', color: 'white', fontSize: '0.62rem', padding: '1px 7px', borderRadius: '20px', fontWeight: '950' }}>{item.badge}</div>}
                     </button>
                   ))}
@@ -162,14 +166,17 @@ const Sidebar = () => {
               {/* UNIT: AGENCY */}
               {(isAllowed('analytics') || isAllowed('hierarchy') || isAllowed('audit_logs') || isAllowed('settings')) && (
                 <div>
-                  {!isSidebarCollapsed && <div style={{ fontSize: '0.65rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.12em', padding: '0 1.15rem', marginBottom: '0.5rem', marginTop: '0.5rem' }}>{t('agencyUnit') || 'SPRÁVA AGENTURY'}</div>}
+                  {!isSidebarCollapsed && <div style={{ fontSize: '0.8rem', fontWeight: '950', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.12em', padding: '0 1.15rem', marginBottom: '0.6rem', marginTop: '0.85rem' }}>{t('agencyUnit') || 'SPRÁVA AGENTURY'}</div>}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                     {[
-                      { id: 'hierarchy', icon: Users, label: t('teamHierarchy'), perm: 'hierarchy' },
+                      { id: 'hierarchy', icon: Users, label: t('teamHierarchy'), perm: 'hierarchy', hideForOwner: true },
                       { id: 'analytics', icon: BarChart3, label: t('analytics'), perm: 'analytics' },
                       { id: 'activity', icon: Activity, label: t('auditLog'), perm: 'audit_logs' },
                       { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
-                    ].filter(item => isAllowed(item.perm)).map(item => (
+                    ].filter(item => {
+                      if (item.hideForOwner && activeRole === 'App Owner') return false;
+                      return isAllowed(item.perm);
+                    }).map(item => (
                       <button key={item.id} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
                         <item.icon size={19} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
                         {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '500', fontSize: '0.9rem' }}>{item.label}</span>}
@@ -182,7 +189,7 @@ const Sidebar = () => {
               {/* UNIT: INFRASTRUCTURE */}
               {(isAllowed('agencies') || isAllowed('infrastructure') || isAllowed('permissions') || isAllowed('plans') || isAllowed('global_features')) && (
                 <div>
-                  {!isSidebarCollapsed && <div style={{ fontSize: '0.65rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.12em', padding: '0 1.15rem', marginBottom: '0.5rem', marginTop: '0.5rem' }}>{t('infraUnit') || 'INFRASTRUKTURA A ŘÍZENÍ'}</div>}
+                  {!isSidebarCollapsed && <div style={{ fontSize: '0.8rem', fontWeight: '950', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.12em', padding: '0 1.15rem', marginBottom: '0.6rem', marginTop: '0.85rem' }}>{t('infraUnit') || 'INFRASTRUKTURA A ŘÍZENÍ'}</div>}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                     {[
                       { id: 'agencies', icon: Building2, label: t('agencies'), perm: 'agencies' },
