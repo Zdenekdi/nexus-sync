@@ -212,19 +212,17 @@ export const MOCK_CALENDAR = {
 
 export const MOCK_STATS = {
     activeHubs: 0,
+    totalMessages: 0,
     messagesToday: 0,
-    uptime: '100%',
+    uptime: '100% UP',
     avgResponse: '---',
-    revenue: {
-        total: '£0',
-        today: '+£0',
-        chart: [0, 0, 0, 0, 0, 0, 0]
-    },
-    engagement: {
-        total: '0%',
-        trend: '0%',
-        chart: [0, 0, 0, 0, 0, 0, 0]
-    }
+    revenue: '£0.00',
+    commissionGrowth: 'STABLE',
+    chartData: [0, 0, 0, 0, 0, 0, 0],
+    totalAgencies: 1,
+    totalProfiles: 8,
+    totalUsers: 5,
+    totalBookings: 0
 };
 
 export const MOCK_CHART_DATA = [

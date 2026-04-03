@@ -4,6 +4,7 @@ import AgenciesView from '../Views/AgenciesView';
 import GlobalFeaturesView from '../Views/GlobalFeaturesView';
 import PermissionsDashboard from '../PermissionsDashboard';
 import PlansDashboard from '../PlansDashboard';
+import InventoryView from '../InventoryView';
 import InfraTab from '../InfraTab';
 
 /**
@@ -16,11 +17,15 @@ const InfrastructureUnit = () => {
     case 'agencies':
       return <AgenciesView />;
     case 'infra':
+    case 'infrastructure':
       return <InfraTab />;
     case 'permissions':
       return <PermissionsDashboard />;
     case 'plans':
+    case 'plans-owner':
       return <PlansDashboard />;
+    case 'inventory':
+      return <InventoryView />;
     case 'features':
       return <GlobalFeaturesView />;
     default:

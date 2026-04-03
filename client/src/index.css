@@ -59,6 +59,39 @@ body.android-webview {
   padding: 2rem;
 }
 
+/* Base Layout */
+.nexus-app {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.nexus-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.nexus-main {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg-color);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  .nexus-layout {
+    flex-direction: column;
+  }
+}
+
 header {
   margin-bottom: 3rem;
   display: flex;

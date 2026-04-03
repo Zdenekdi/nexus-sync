@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
+import * as MOCK from '../DemoData';
 
 /**
  * Custom hook to manage data fetching and global data state for Nexus Hub.
@@ -16,13 +17,13 @@ export function useNexusData({
   setIsTimerActive,
   setTimeLeft
 }) {
-  const [profiles, setProfiles] = useState([]);
-  const [agencies, setAgencies] = useState([]);
+  const [profiles, setProfiles] = useState(MOCK.MOCK_PROFILES || []);
+  const [agencies, setAgencies] = useState(MOCK.MOCK_AGENCIES || []);
   const [agencySettings, setAgencySettings] = useState({ safetyAlertMode: 'MANAGERS_AND_ASSIGNED' });
-  const [operators, setOperators] = useState([]);
-  const [sessions, setSessions] = useState([]);
-  const [stats, setStats] = useState({});
-  const [activeSubscription, setActiveSubscription] = useState(null);
+  const [operators, setOperators] = useState(MOCK.MOCK_OPERATORS || []);
+  const [sessions, setSessions] = useState(MOCK.MOCK_SESSIONS || []);
+  const [stats, setStats] = useState(MOCK.MOCK_STATS || {});
+  const [activeSubscription, setActiveSubscription] = useState(MOCK.MOCK_AGENCIES?.[0]?.subscription || null);
   const [subscriptionHistory, setSubscriptionHistory] = useState([]);
   const [globalFeatures, setGlobalFeatures] = useState([
     { id: 'ai_trans', label: 'AI Voice Relay (Beta)', desc: 'Enable neural speech-to-speech routing', active: true },

@@ -6,6 +6,7 @@ import WebProfilesView from '../Views/WebProfilesView';
 import DeviceSetupView from '../Views/DeviceSetupView';
 import ReferralsView from '../Views/ReferralsView';
 import QAView from '../QAView';
+import RelayControlCenter from '../RelayControlCenter';
 
 import { useNexus } from '../../context/NexusContext';
 
@@ -20,6 +21,8 @@ const OperationsUnit = () => {
       return <InboxView />;
     case 'calendar':
       return <CalendarView />;
+    case 'relay':
+      return <RelayControlCenter />;
     case 'profiles':
       return <ProfilesView />;
     case 'web-profiles':
