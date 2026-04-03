@@ -202,6 +202,11 @@ export const NexusProvider = ({ children }) => {
 
   const value = useMemo(() => ({
     ...auth, // isLoggedIn, token, activeOperator, etc.
+    onLogin: auth.handleLogin,
+    onLogout: auth.handleLogout,
+    onRegisterAgency: auth.handleRegisterAgency,
+    onRegisterUser: auth.handleRegisterUser,
+    onResetRequest: auth.handleResetRequest,
     ...data, // profiles, agencies, operators, initData, etc.
     ...permissions, // activeRole, rolePermissions, isAllowed
     ...notifications, // addNotification, showToast, etc.
