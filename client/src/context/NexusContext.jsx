@@ -39,6 +39,15 @@ export const NexusProvider = ({ children }) => {
   const [messages, setMessages] = useState([]);
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
   const [dbPermissions, setDbPermissions] = useState(null);
+  const isNativeApp = Capacitor.isNativePlatform();
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   // 3.1 Global Overlay States
   const [incomingCall, setIncomingCall] = useState(null);

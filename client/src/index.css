@@ -14,6 +14,9 @@
   --error-color: #ef4444;
   --glass-blur: blur(25px);
   --premium-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+
+  /* Responsive Font Size: 14px base, scales to ~20px on large monitors / 100% zoom */
+  font-size: clamp(14px, 0.9rem + 0.25vw, 20px);
 }
 
 * {
