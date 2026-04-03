@@ -63,13 +63,13 @@ const LoginScreen = () => {
   };
 
   const renderHeader = () => (
-    <div style={{ textAlign: 'center', marginBottom: isMobile ? '1.5rem' : '2.5rem' }}>
-      <div style={{ position: 'relative', width: isMobile ? '60px' : '80px', height: isMobile ? '60px' : '80px', margin: '0 auto 1.25rem' }}>
-        <div style={{ position: 'absolute', inset: -12, background: 'var(--accent-color)', opacity: 0.2, filter: 'blur(20px)', borderRadius: '50%' }}></div>
-        <img src="/nexus_icon.png" alt="Nexus" style={{ position: 'relative', width: '100%', height: '100%', borderRadius: isMobile ? '18px' : '22px', boxShadow: '0 10px 30px var(--accent-glow)' }} />
+    <div style={{ textAlign: 'center', marginBottom: isMobile ? '1rem' : '1.5rem' }}>
+      <div style={{ position: 'relative', width: isMobile ? '48px' : '64px', height: isMobile ? '48px' : '64px', margin: '0 auto 0.75rem' }}>
+        <div style={{ position: 'absolute', inset: -10, background: 'var(--accent-color)', opacity: 0.2, filter: 'blur(15px)', borderRadius: '50%' }}></div>
+        <img src="/nexus_icon.png" alt="Nexus" style={{ position: 'relative', width: '100%', height: '100%', borderRadius: isMobile ? '12px' : '16px', boxShadow: '0 8px 20px var(--accent-glow)' }} />
       </div>
-      <h1 style={{ fontSize: isMobile ? '1.8rem' : '2.4rem', fontWeight: '900', letterSpacing: '-0.02em', marginBottom: '0.25rem', background: 'linear-gradient(to bottom, #ffffff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>NEXUS SYSTEMS</h1>
-      <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: '500', letterSpacing: '0.05em' }}>NEXUS SYSTEMS S.R.O. • PREMIUM ENGINE</p>
+      <h1 style={{ fontSize: isMobile ? '1.5rem' : '2.1rem', fontWeight: '900', letterSpacing: '-0.02em', marginBottom: '0.15rem', background: 'linear-gradient(to bottom, #ffffff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>NEXUS SYSTEMS</h1>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '500', letterSpacing: '0.05em' }}>NEXUS SYSTEMS S.R.O. • PREMIUM ENGINE</p>
     </div>
   );
 
@@ -91,9 +91,9 @@ const LoginScreen = () => {
       <div style={{ position: 'absolute', top: '10%', left: '10%', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%)', filter: 'blur(80px)' }}></div>
       <div style={{ position: 'absolute', bottom: '10%', right: '10%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)', filter: 'blur(100px)' }}></div>
       
-      <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '480px', padding: isMobile ? '1.25rem' : '3.5rem', position: 'relative', zIndex: 1, border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', maxHeight: isMobile ? 'calc(100dvh - max(1rem, env(safe-area-inset-top)) - 2.5rem)' : 'none', overflowY: isMobile ? 'auto' : 'visible' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', marginBottom: isMobile ? '1rem' : '0.75rem', paddingRight: isMobile ? 'calc(0.5rem + env(safe-area-inset-right))' : '0', paddingLeft: isMobile ? 'calc(0.5rem + env(safe-area-inset-left))' : '0' }}>
-          <button onClick={handleTopAction} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: isMobile ? '0.8rem' : '0.85rem', fontWeight: '600', cursor: 'pointer', transition: 'color 0.2s', padding: 0, textAlign: 'left' }}>
+      <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '440px', padding: isMobile ? '1.25rem' : '2.5rem', position: 'relative', zIndex: 1, border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', maxHeight: isMobile ? '95vh' : 'auto', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', marginBottom: isMobile ? '0.75rem' : '1rem' }}>
+          <button onClick={handleTopAction} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer', transition: 'color 0.2s', padding: 0, textAlign: 'left' }}>
             <ChevronLeft size={16} /> {topActionLabel}
           </button>
         </div>
@@ -143,7 +143,7 @@ const LoginScreen = () => {
                   required 
                   autoComplete="current-password"
                   className="glass-input" 
-                  style={{ width: '100%', paddingLeft: '3rem', paddingRight: '3.5rem' }} 
+                  style={{ width: '100%', paddingLeft: '3rem', paddingRight: '3.5rem', paddingBottom: '0.9rem', paddingTop: '0.9rem' }} 
                 />
                 <button
                   type="button"
@@ -181,10 +181,10 @@ const LoginScreen = () => {
             </div>
           )}
 
-          {error && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', fontWeight: '700', textAlign: 'center', background: 'rgba(239,68,68,0.1)', padding: '0.75rem', borderRadius: '8px' }}>{error}</div>}
-          {message && <div style={{ color: 'var(--accent-color)', fontSize: '0.85rem', fontWeight: '700', textAlign: 'center', background: 'rgba(59,130,246,0.1)', padding: '0.75rem', borderRadius: '8px' }}>{message}</div>}
+          {error && <div style={{ color: 'var(--error-color)', fontSize: '0.8rem', fontWeight: '700', textAlign: 'center', background: 'rgba(239,68,68,0.1)', padding: '0.6rem', borderRadius: '8px' }}>{error}</div>}
+          {message && <div style={{ color: 'var(--accent-color)', fontSize: '0.8rem', fontWeight: '700', textAlign: 'center', background: 'rgba(59,130,246,0.1)', padding: '0.6rem', borderRadius: '8px' }}>{message}</div>}
 
-          <button type="submit" disabled={loading} className="action-btn" style={{ background: 'var(--accent-color)', color: 'white', padding: '1.1rem', fontSize: '1rem', fontWeight: '800', boxShadow: '0 10px 25px var(--accent-glow)', marginTop: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
+          <button type="submit" disabled={loading} className="action-btn" style={{ background: 'var(--accent-color)', color: 'white', padding: '0.9rem', fontSize: '0.95rem', fontWeight: '800', boxShadow: '0 10px 25px var(--accent-glow)', marginTop: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
             {loading ? <div className="spinner"></div> : (
               <>
                 {mode === 'login' && t('loginButton')}
@@ -197,21 +197,21 @@ const LoginScreen = () => {
           </button>
 
           {mode === 'login' && (
-            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
-              <button type="button" onClick={() => setMode('reset')} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.85rem', cursor: 'pointer', fontWeight: '500' }}>{t('forgotPassword')}</button>
-              <div style={{ height: '1px', background: 'var(--card-border)', margin: '0.5rem 0' }}></div>
-              <div style={{ display: 'flex', gap: isMobile ? '1.25rem' : '1.5rem', justifyContent: 'center', alignItems: 'center', flexDirection: isMobile ? 'column' : 'row', flexWrap: 'wrap' }}>
-                <button type="button" onClick={() => setMode('register_agency')} style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '0.85rem', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', textAlign: 'center' }}><Building size={16}/> {t('registerAgency')}</button>
-                {!isMobile && <div style={{ width: '1px', height: '16px', background: 'var(--card-border)' }}></div>}
-                <button type="button" onClick={() => setMode('register_user')} style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '0.85rem', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', textAlign: 'center' }}><UserPlus size={16}/> {t('registerUser')}</button>
+            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.25rem' }}>
+              <button type="button" onClick={() => setMode('reset')} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.8rem', cursor: 'pointer', fontWeight: '500' }}>{t('forgotPassword')}</button>
+              <div style={{ height: '1px', background: 'var(--card-border)', margin: '0.25rem 0' }}></div>
+              <div style={{ display: 'flex', gap: isMobile ? '0.75rem' : '1.25rem', justifyContent: 'center', alignItems: 'center', flexDirection: isMobile ? 'column' : 'row' }}>
+                <button type="button" onClick={() => setMode('register_agency')} style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '0.8rem', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}><Building size={14}/> {t('registerAgency')}</button>
+                {!isMobile && <div style={{ width: '1px', height: '14px', background: 'var(--card-border)' }}></div>}
+                <button type="button" onClick={() => setMode('register_user')} style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '0.8rem', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}><UserPlus size={14}/> {t('registerUser')}</button>
               </div>
             </div>
           )}
         </form>
 
-        <div style={{ marginTop: isMobile ? '1.5rem' : '2.5rem', display: 'flex', justifyContent: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.03)', padding: isMobile ? '6px 6px calc(6px + env(safe-area-inset-bottom))' : '6px', borderRadius: '12px', border: '1px solid var(--card-border)', width: 'fit-content', margin: `${isMobile ? '1.5rem' : '2.5rem'} auto calc(${isMobile ? '1.5rem' : '2.5rem'} + env(safe-area-inset-bottom))` }}>
-          <button onClick={() => setLang('cz')} style={{ padding: '8px 16px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}>CZ</button>
-          <button onClick={() => setLang('en')} style={{ padding: '8px 16px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}>EN</button>
+        <div style={{ marginTop: isMobile ? '1rem' : '1.5rem', display: 'flex', justifyContent: 'center', gap: '0.4rem', background: 'rgba(255,255,255,0.03)', padding: '4px', borderRadius: '10px', border: '1px solid var(--card-border)', width: 'fit-content', margin: '1rem auto 0' }}>
+          <button onClick={() => setLang('cz')} style={{ padding: '6px 12px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer' }}>CZ</button>
+          <button onClick={() => setLang('en')} style={{ padding: '6px 12px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer' }}>EN</button>
         </div>
       </div>
 
@@ -220,8 +220,8 @@ const LoginScreen = () => {
           width: 100%;
           background: rgba(255,255,255,0.03);
           border: 1px solid var(--card-border);
-          padding: 1.1rem;
-          border-radius: 14px;
+          padding: 0.8rem 1.1rem;
+          border-radius: 12px;
           color: white;
           font-size: 0.95rem;
           transition: all 0.2s;

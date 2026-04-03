@@ -32,6 +32,8 @@ export const NexusProvider = ({ children }) => {
   const [lang, setLang] = useState('cz');
   const [activeTab, setActiveTab] = useState('dashboard');
   const [activeProfileId, setActiveProfileId] = useState(null);
+  const [showLanding, setShowLanding] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   
   // Data State - Initialized with empty arrays to prevent mapping crashes
   const [data, setData] = useState({
@@ -46,6 +48,27 @@ export const NexusProvider = ({ children }) => {
 
   const [loading, setLoading] = useState(true);
   const [isShiftActive, setIsShiftActive] = useState(false);
+
+  // Auth methods wrapper
+  const onLogin = async (email, password) => {
+    const success = await auth.handleLogin(email, password);
+    if (success) {
+      setShowLanding(false);
+      setActiveTab('dashboard');
+    }
+  };
+
+  const onRegisterAgency = async (data) => {
+    return await auth.handleRegisterAgency(data);
+  };
+
+  const onRegisterUser = async (data) => {
+    return await auth.handleRegisterUser(data);
+  };
+
+  const onResetRequest = async (email) => {
+    return await auth.handleResetRequest(email);
+  };
 
   // Sync auth user to context
   const activeOperator = useMemo(() => {
@@ -173,7 +196,24 @@ export const NexusProvider = ({ children }) => {
         features: 'Globální Funkce',
         stockCard: 'Sklad',
         referralProgram: 'Referraly',
-        bookingSchedule: 'Plán rezervací'
+        bookingSchedule: 'Plán rezervací',
+
+        // Login Screen Keys
+        emailLabel: 'E-mail',
+        passwordLabel: 'Heslo',
+        loginButton: 'Přihlásit se',
+        forgotPassword: 'Zapomenuté heslo?',
+        registerAgency: 'Registrovat Agenturu',
+        registerUser: 'Registrovat Uživatele',
+        backToLogin: 'Zpět na přihlášení',
+        agencyNameLabel: 'Název Agentury',
+        fullNameLabel: 'Celé Jméno',
+        registrationSuccess: 'Registrace proběhla úspěšně! Nyní se můžete přihlásit.',
+        loginError: 'Neplatné přihlašovací údaje.',
+        resetSent: 'Instrukce k resetu hesla byly zaslány na váš e-mail.',
+        inviteCodeLabel: 'Pozvánkový Kód',
+        resetRequestButton: 'Resetovat Heslo',
+        registerButton: 'Registrovat'
       },
       en: {
         dashboard: 'Dashboard',
@@ -223,7 +263,24 @@ export const NexusProvider = ({ children }) => {
         features: 'Global Features',
         stockCard: 'Inventory',
         referralProgram: 'Referrals',
-        bookingSchedule: 'Booking Schedule'
+        bookingSchedule: 'Booking Schedule',
+
+        // Login Screen Keys
+        emailLabel: 'Email',
+        passwordLabel: 'Password',
+        loginButton: 'Login',
+        forgotPassword: 'Forgot Password?',
+        registerAgency: 'Register Agency',
+        registerUser: 'Register User',
+        backToLogin: 'Back to Login',
+        agencyNameLabel: 'Agency Name',
+        fullNameLabel: 'Full Name',
+        registrationSuccess: 'Registration successful! You can now login.',
+        loginError: 'Invalid credentials.',
+        resetSent: 'Reset instructions sent to your email.',
+        inviteCodeLabel: 'Invite Code',
+        resetRequestButton: 'Reset Password',
+        registerButton: 'Register'
       }
     };
     return translations[lang][key] || key;
@@ -245,7 +302,17 @@ export const NexusProvider = ({ children }) => {
     getPermissions,
     token,
     logout,
+    onLogin,
+    onRegisterAgency,
+    onRegisterUser,
+    onResetRequest,
     API_BASE,
+
+    // Navigation state
+    showLanding,
+    setShowLanding,
+    showOnboarding,
+    setShowOnboarding,
 
     // Profile & Visibility
     activeProfile,
