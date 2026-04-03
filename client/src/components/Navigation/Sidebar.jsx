@@ -154,55 +154,74 @@ const Sidebar = () => {
           </div>
           <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1.5rem', marginRight: '-0.75rem', paddingRight: '0.75rem' }} className="custom-scrollbar">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginBottom: '1.5rem' }}>
-              {/* UNIT: OPERATIONS */}
+              {/* TOP LEVEL: DASHBOARD */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                {!isSidebarCollapsed && (
-                  <button 
-                    onClick={() => toggleUnit('operations')}
-                    style={{ 
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '0 1.15rem', marginBottom: '0.6rem', background: 'none', border: 'none',
-                      width: '100%', cursor: 'pointer', textAlign: 'left'
-                    }}
-                  >
-                    <span style={{ fontSize: '0.85rem', fontWeight: '950', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.05em' }}>
-                      {capitalize(t('operationsUnit') || 'Operativa')}
-                    </span>
-                    {expandedUnits.operations ? <ChevronUp size={14} color="rgba(255,255,255,0.3)" /> : <ChevronDown size={14} color="rgba(255,255,255,0.3)" />}
-                  </button>
-                )}
-                
-                {(isSidebarCollapsed || expandedUnits.operations) && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                    {[
-                      { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard') },
-                      { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator?.isModel ? 0 : totalUnread, perm: 'messaging' },
-                      { id: 'calendar', icon: Calendar, label: t('schedule'), perm: 'calendar' },
-                      { id: 'relay', icon: Radio, label: 'Relay System', nativeOnly: true },
-                      { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
-                      { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles' },
-                      { id: 'device-setup', icon: Smartphone, label: t('deviceSetup'), perm: 'device_setup', hideForOwner: true },
-                      { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub', hideForOwner: true },
-                      { id: 'referrals', icon: Copy, label: t('referralProgram') || 'Referrals', perm: 'referrals', hideForOwner: true },
-                    ].filter(item => {
-                      const hasPerm = !item.perm || isAllowed(item.perm);
-                      if (!hasPerm) return false;
-                      if (item.nativeOnly && !isNativeApp) return false;
-                      if (item.hideForOwner && activeRole === 'App Owner') return false;
-                      return true;
-                    }).map(item => (
-                      <button key={item.id} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
-                        <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
-                        {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '1rem' }}>{capitalize(item.label)}</span>}
-                        {item.badge > 0 && !isSidebarCollapsed && <div style={{ marginLeft: 'auto', background: 'var(--accent-color)', color: 'white', fontSize: '0.62rem', padding: '1px 7px', borderRadius: '20px', fontWeight: '950' }}>{item.badge}</div>}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <button 
+                  onClick={() => handleNavigation('dashboard')} 
+                  className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} 
+                  style={{ 
+                    display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', 
+                    padding: '0.75rem 1.15rem', borderRadius: '12px', 
+                    background: activeTab === 'dashboard' ? 'rgba(59, 130, 246, 0.12)' : 'transparent', 
+                    border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s', 
+                    justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' 
+                  }}
+                >
+                  <LayoutDashboard size={20} color={activeTab === 'dashboard' ? 'var(--accent-color)' : 'var(--text-secondary)'} />
+                  {!isSidebarCollapsed && <span style={{ color: activeTab === 'dashboard' ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === 'dashboard' ? '800' : '600', fontSize: '1rem' }}>{capitalize(t('dashboard'))}</span>}
+                </button>
               </div>
 
+              {/* UNIT: OPERATIONS */}
+              {activeRole !== 'App Owner' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                  {!isSidebarCollapsed && (
+                    <button 
+                      onClick={() => toggleUnit('operations')}
+                      style={{ 
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '0 1.15rem', marginBottom: '0.6rem', background: 'none', border: 'none',
+                        width: '100%', cursor: 'pointer', textAlign: 'left'
+                      }}
+                    >
+                      <span style={{ fontSize: '0.85rem', fontWeight: '950', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.05em' }}>
+                        {capitalize(t('operationsUnit') || 'Operativa')}
+                      </span>
+                      {expandedUnits.operations ? <ChevronUp size={14} color="rgba(255,255,255,0.3)" /> : <ChevronDown size={14} color="rgba(255,255,255,0.3)" />}
+                    </button>
+                  )}
+                  
+                  {(isSidebarCollapsed || expandedUnits.operations) && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                      {[
+                        { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator?.isModel ? 0 : totalUnread, perm: 'messaging' },
+                        { id: 'calendar', icon: Calendar, label: t('schedule'), perm: 'calendar' },
+                        { id: 'relay', icon: Radio, label: 'Relay System', nativeOnly: true },
+                        { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
+                        { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles' },
+                        { id: 'device-setup', icon: Smartphone, label: t('deviceSetup'), perm: 'device_setup', hideForOwner: true },
+                        { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub', hideForOwner: true },
+                        { id: 'referrals', icon: Copy, label: t('referralProgram') || 'Referrals', perm: 'referrals', hideForOwner: true },
+                      ].filter(item => {
+                        const hasPerm = !item.perm || isAllowed(item.perm);
+                        if (!hasPerm) return false;
+                        if (item.nativeOnly && !isNativeApp) return false;
+                        if (item.hideForOwner && activeRole === 'App Owner') return false;
+                        return true;
+                      }).map(item => (
+                        <button key={item.id} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
+                          <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
+                          {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '1rem' }}>{capitalize(item.label)}</span>}
+                          {item.badge > 0 && !isSidebarCollapsed && <div style={{ marginLeft: 'auto', background: 'var(--accent-color)', color: 'white', fontSize: '0.62rem', padding: '1px 7px', borderRadius: '20px', fontWeight: '950' }}>{item.badge}</div>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* UNIT: AGENCY */}
-              {(isAllowed('analytics') || isAllowed('hierarchy') || isAllowed('audit_logs') || isAllowed('settings')) && (
+              {activeRole !== 'App Owner' && (isAllowed('analytics') || isAllowed('hierarchy') || isAllowed('audit_logs') || isAllowed('settings')) && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                   {!isSidebarCollapsed && (
                     <button 
@@ -266,10 +285,13 @@ const Sidebar = () => {
                         { id: 'agencies', icon: Building2, label: t('agencies'), perm: 'agencies' },
                         { id: 'infra', icon: HardDrive, label: t('infra'), perm: 'infrastructure' },
                         { id: 'permissions', icon: Shield, label: t('permissions'), perm: 'permissions' },
-                        { id: 'plans', icon: CreditCard, label: t('plans'), perm: 'plans' },
+                        { id: 'plans', icon: CreditCard, label: t('plans'), perm: 'plans', hideForOwner: true },
                         { id: 'features', icon: Zap, label: t('features'), perm: 'global_features' },
-                        { id: 'inventory', icon: Package, label: t('stockCard') || 'Sklad', perm: 'inventory' },
-                      ].filter(item => isAllowed(item.perm)).map(item => (
+                        { id: 'inventory', icon: Package, label: t('stockCard') || 'Sklad', perm: 'inventory', hideForOwner: true },
+                      ].filter(item => {
+                        if (item.hideForOwner && activeRole === 'App Owner') return false;
+                        return isAllowed(item.perm);
+                      }).map(item => (
                         <button key={item.id} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
                           <item.icon size={19} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
                           {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '500', fontSize: '0.9rem' }}>{capitalize(item.label)}</span>}
@@ -307,6 +329,25 @@ const Sidebar = () => {
             )}
           </div>
           <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.85rem', borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem' }}>
+            {/* STANDALONE SETTINGS FOR OWNER/MANAGERS */}
+            {(activeRole === 'App Owner' || isAllowed('settings')) && (
+              <button 
+                onClick={() => handleNavigation('settings')} 
+                className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`} 
+                style={{ 
+                  display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', 
+                  padding: '0.75rem 1.15rem', borderRadius: '12px', 
+                  background: activeTab === 'settings' ? 'rgba(59, 130, 246, 0.12)' : 'transparent', 
+                  border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s', 
+                  justifyContent: isSidebarCollapsed ? 'center' : 'flex-start',
+                  marginBottom: '0.5rem'
+                }}
+              >
+                <Settings size={20} color={activeTab === 'settings' ? 'var(--accent-color)' : 'var(--text-secondary)'} />
+                {!isSidebarCollapsed && <span style={{ color: activeTab === 'settings' ? 'white' : 'var(--text-secondary)', fontWeight: '600', fontSize: '0.9rem' }}>{capitalize(t('settings'))}</span>}
+              </button>
+            )}
+
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: isSidebarCollapsed ? '0' : '0 0.5rem', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start', marginBottom: '0.5rem' }}>
               <div style={{ width: '38px', height: '38px', background: 'linear-gradient(135deg, var(--accent-color) 0%, #1d4ed8 100%)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'white', fontSize: '0.85rem', flexShrink: 0, boxShadow: '0 6px 15px rgba(0,0,0,0.4)' }}>{activeOperator?.avatar}</div>
               {!isSidebarCollapsed && <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: '0.88rem', fontWeight: '900', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'white' }}>{activeOperator?.name}</div><div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', fontWeight: '800', letterSpacing: '0.05em' }}>{activeRole?.toUpperCase() || ''}</div></div>}
