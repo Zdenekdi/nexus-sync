@@ -22,7 +22,7 @@ export const NexusProvider = ({ children }) => {
     const saved = localStorage.getItem('nexus_activeProfileId');
     return (saved && saved !== 'undefined' && saved !== 'null') ? saved : null;
   });
-  const [showLanding, setShowLanding] = useState(true);
+  const [showLanding, setShowLanding] = useState(() => localStorage.getItem('nexus_showLanding') !== 'false');
   const [showOnboarding, setShowOnboarding] = useState(() => localStorage.getItem('nexus_onboarding_done') !== 'true');
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(() => localStorage.getItem('nexus_maintenance') === 'true');
   const [globalAnnouncement, setGlobalAnnouncement] = useState(() => localStorage.getItem('nexus_announcement') || '');
@@ -195,6 +195,9 @@ export const NexusProvider = ({ children }) => {
   useEffect(() => localStorage.setItem('nexus_maintenance', isMaintenanceMode), [isMaintenanceMode]);
   useEffect(() => localStorage.setItem('nexus_announcement', globalAnnouncement), [globalAnnouncement]);
   useEffect(() => localStorage.setItem('nexus_activeMarket', activeMarket), [activeMarket]);
+  useEffect(() => {
+    localStorage.setItem('nexus_showLanding', showLanding);
+  }, [showLanding]);
 
   // 8. Handlers
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
