@@ -1,7 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { usePermissions } from '../hooks/usePermissions';
-import { demoData } from '../DemoData';
+import { 
+  MOCK_PROFILES, 
+  MOCK_AGENCIES, 
+  MOCK_OPERATORS, 
+  MOCK_MESSAGES, 
+  MOCK_CALENDAR, 
+  MOCK_STATS 
+} from '../DemoData';
 
 const NexusContext = createContext();
 
@@ -46,13 +53,13 @@ export const NexusProvider = ({ children }) => {
         
         // Ensure every field is at least an empty array/object
         const hydratedData = {
-          profiles: demoData.profiles || [],
-          agencies: demoData.agencies || [],
-          operators: demoData.operators || [],
-          bookingSchedule: demoData.bookingSchedule || [],
-          messages: demoData.messages || [],
-          stats: demoData.stats || {},
-          activeSubscription: demoData.activeSubscription || null
+          profiles: MOCK_PROFILES || [],
+          agencies: MOCK_AGENCIES || [],
+          operators: MOCK_OPERATORS || [],
+          bookingSchedule: MOCK_CALENDAR?.events || [],
+          messages: MOCK_MESSAGES || [],
+          stats: MOCK_STATS || {},
+          activeSubscription: MOCK_AGENCIES?.[0]?.subscription || null
         };
         
         setData(hydratedData);
@@ -155,7 +162,16 @@ export const NexusProvider = ({ children }) => {
         plans: 'Tarify',
         features: 'Globální Funkce',
         stockCard: 'Sklad',
-        referralProgram: 'Referraly'
+        referralProgram: 'Referraly',
+        bookingSchedule: 'Plán rezervací',
+        bookingScheduleDesc: 'Správa dnešních výjezdů a bezpečnosti.',
+        exportCalendar: 'Export (.ics)',
+        syncCalendar: 'Synchronizace',
+        recommendedSlots: 'Doporučené časy',
+        operatorTip: 'Tip pro operátora',
+        operatorTipDesc: 'Nezapomeňte kontrolovat stav Safety Guard u aktivních výjezdů.',
+        noEventsToday: 'Dnes nejsou naplánovány žádné akce.',
+        add: 'Přidat'
       },
       en: {
         dashboard: 'Dashboard',
@@ -204,7 +220,16 @@ export const NexusProvider = ({ children }) => {
         plans: 'Plans',
         features: 'Global Features',
         stockCard: 'Inventory',
-        referralProgram: 'Referrals'
+        referralProgram: 'Referrals',
+        bookingSchedule: 'Booking Schedule',
+        bookingScheduleDesc: 'Manage today\'s outcalls and safety.',
+        exportCalendar: 'Export (.ics)',
+        syncCalendar: 'Sync Calendar',
+        recommendedSlots: 'Recommended Slots',
+        operatorTip: 'Operator Tip',
+        operatorTipDesc: 'Remember to check Safety Guard status for active bookings.',
+        noEventsToday: 'No events scheduled for today.',
+        add: 'Add'
       }
     };
     return translations[lang][key] || key;
