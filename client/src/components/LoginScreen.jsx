@@ -63,13 +63,13 @@ const LoginScreen = () => {
   };
 
   const renderHeader = () => (
-    <div style={{ textAlign: 'center', marginBottom: isMobile ? '1rem' : '1.5rem' }}>
-      <div style={{ position: 'relative', width: isMobile ? '48px' : '64px', height: isMobile ? '48px' : '64px', margin: '0 auto 0.75rem' }}>
-        <div style={{ position: 'absolute', inset: -10, background: 'var(--accent-color)', opacity: 0.2, filter: 'blur(15px)', borderRadius: '50%' }}></div>
-        <img src="/nexus_icon.png" alt="Nexus" style={{ position: 'relative', width: '100%', height: '100%', borderRadius: isMobile ? '12px' : '16px', boxShadow: '0 8px 20px var(--accent-glow)' }} />
+    <div style={{ textAlign: 'center', marginBottom: isMobile ? '0.75rem' : '1.25rem' }}>
+      <div style={{ position: 'relative', width: isMobile ? '40px' : '52px', height: isMobile ? '40px' : '52px', margin: '0 auto 0.5rem' }}>
+        <div style={{ position: 'absolute', inset: -8, background: 'var(--accent-color)', opacity: 0.2, filter: 'blur(12px)', borderRadius: '50%' }}></div>
+        <img src="/nexus_icon.png" alt="Nexus" style={{ position: 'relative', width: '100%', height: '100%', borderRadius: isMobile ? '10px' : '14px', boxShadow: '0 6px 15px var(--accent-glow)' }} />
       </div>
-      <h1 style={{ fontSize: isMobile ? '1.5rem' : '2.1rem', fontWeight: '900', letterSpacing: '-0.02em', marginBottom: '0.15rem', background: 'linear-gradient(to bottom, #ffffff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>NEXUS SYSTEMS</h1>
-      <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '500', letterSpacing: '0.05em' }}>NEXUS SYSTEMS S.R.O. • PREMIUM ENGINE</p>
+      <h1 style={{ fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: '900', letterSpacing: '-0.02em', marginBottom: '0.1rem', background: 'linear-gradient(to bottom, #ffffff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>NEXUS SYSTEMS</h1>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '500', letterSpacing: '0.04em' }}>NEXUS SYSTEMS S.R.O. • PREMIUM ENGINE</p>
     </div>
   );
 
@@ -91,9 +91,9 @@ const LoginScreen = () => {
       <div style={{ position: 'absolute', top: '10%', left: '10%', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%)', filter: 'blur(80px)' }}></div>
       <div style={{ position: 'absolute', bottom: '10%', right: '10%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)', filter: 'blur(100px)' }}></div>
       
-      <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '440px', padding: isMobile ? '1.25rem' : '2.5rem', position: 'relative', zIndex: 1, border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', maxHeight: isMobile ? '95vh' : 'auto', overflowY: 'auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', marginBottom: isMobile ? '0.75rem' : '1rem' }}>
-          <button onClick={handleTopAction} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer', transition: 'color 0.2s', padding: 0, textAlign: 'left' }}>
+      <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '400px', padding: isMobile ? '1rem' : '1.75rem', position: 'relative', zIndex: 1, border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', maxHeight: isMobile ? '98vh' : 'auto', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: isMobile ? '0.5rem' : '0.85rem' }}>
+          <button onClick={handleTopAction} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer', transition: 'color 0.2s', padding: 0, textAlign: 'left' }}>
             <ChevronLeft size={16} /> {topActionLabel}
           </button>
         </div>
@@ -143,7 +143,7 @@ const LoginScreen = () => {
                   required 
                   autoComplete="current-password"
                   className="glass-input" 
-                  style={{ width: '100%', paddingLeft: '3rem', paddingRight: '3.5rem', paddingBottom: '0.9rem', paddingTop: '0.9rem' }} 
+                  style={{ width: '100%', paddingLeft: '2.8rem', paddingRight: '2.8rem', paddingBottom: '0.75rem', paddingTop: '0.75rem' }} 
                 />
                 <button
                   type="button"
@@ -181,10 +181,10 @@ const LoginScreen = () => {
             </div>
           )}
 
-          {error && <div style={{ color: 'var(--error-color)', fontSize: '0.8rem', fontWeight: '700', textAlign: 'center', background: 'rgba(239,68,68,0.1)', padding: '0.6rem', borderRadius: '8px' }}>{error}</div>}
-          {message && <div style={{ color: 'var(--accent-color)', fontSize: '0.8rem', fontWeight: '700', textAlign: 'center', background: 'rgba(59,130,246,0.1)', padding: '0.6rem', borderRadius: '8px' }}>{message}</div>}
+          {error && <div style={{ color: 'var(--error-color)', fontSize: '0.75rem', fontWeight: '700', textAlign: 'center', background: 'rgba(239,68,68,0.1)', padding: '0.5rem', borderRadius: '8px' }}>{error}</div>}
+          {message && <div style={{ color: 'var(--accent-color)', fontSize: '0.75rem', fontWeight: '700', textAlign: 'center', background: 'rgba(59,130,246,0.1)', padding: '0.5rem', borderRadius: '8px' }}>{message}</div>}
 
-          <button type="submit" disabled={loading} className="action-btn" style={{ background: 'var(--accent-color)', color: 'white', padding: '0.9rem', fontSize: '0.95rem', fontWeight: '800', boxShadow: '0 10px 25px var(--accent-glow)', marginTop: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
+          <button type="submit" disabled={loading} className="action-btn" style={{ background: 'var(--accent-color)', color: 'white', padding: '0.8rem', fontSize: '0.9rem', fontWeight: '800', boxShadow: '0 10px 25px var(--accent-glow)', marginTop: '0.15rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
             {loading ? <div className="spinner"></div> : (
               <>
                 {mode === 'login' && t('loginButton')}
@@ -197,21 +197,21 @@ const LoginScreen = () => {
           </button>
 
           {mode === 'login' && (
-            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.25rem' }}>
-              <button type="button" onClick={() => setMode('reset')} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.8rem', cursor: 'pointer', fontWeight: '500' }}>{t('forgotPassword')}</button>
-              <div style={{ height: '1px', background: 'var(--card-border)', margin: '0.25rem 0' }}></div>
-              <div style={{ display: 'flex', gap: isMobile ? '0.75rem' : '1.25rem', justifyContent: 'center', alignItems: 'center', flexDirection: isMobile ? 'column' : 'row' }}>
-                <button type="button" onClick={() => setMode('register_agency')} style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '0.8rem', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}><Building size={14}/> {t('registerAgency')}</button>
-                {!isMobile && <div style={{ width: '1px', height: '14px', background: 'var(--card-border)' }}></div>}
-                <button type="button" onClick={() => setMode('register_user')} style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '0.8rem', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}><UserPlus size={14}/> {t('registerUser')}</button>
+            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.15rem' }}>
+              <button type="button" onClick={() => setMode('reset')} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.75rem', cursor: 'pointer', fontWeight: '500' }}>{t('forgotPassword')}</button>
+              <div style={{ height: '1px', background: 'var(--card-border)', margin: '0.15rem 0' }}></div>
+              <div style={{ display: 'flex', gap: isMobile ? '0.5rem' : '1rem', justifyContent: 'center', alignItems: 'center', flexDirection: isMobile ? 'column' : 'row' }}>
+                <button type="button" onClick={() => setMode('register_agency')} style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '0.75rem', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}><Building size={14}/> {t('registerAgency')}</button>
+                {!isMobile && <div style={{ width: '1px', height: '12px', background: 'var(--card-border)' }}></div>}
+                <button type="button" onClick={() => setMode('register_user')} style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '0.75rem', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}><UserPlus size={14}/> {t('registerUser')}</button>
               </div>
             </div>
           )}
         </form>
 
-        <div style={{ marginTop: isMobile ? '1rem' : '1.5rem', display: 'flex', justifyContent: 'center', gap: '0.4rem', background: 'rgba(255,255,255,0.03)', padding: '4px', borderRadius: '10px', border: '1px solid var(--card-border)', width: 'fit-content', margin: '1rem auto 0' }}>
-          <button onClick={() => setLang('cz')} style={{ padding: '6px 12px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer' }}>CZ</button>
-          <button onClick={() => setLang('en')} style={{ padding: '6px 12px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer' }}>EN</button>
+        <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'center', gap: '0.3rem', background: 'rgba(255,255,255,0.03)', padding: '3px', borderRadius: '8px', border: '1px solid var(--card-border)', width: 'fit-content', margin: '0.75rem auto 0' }}>
+          <button onClick={() => setLang('cz')} style={{ padding: '4px 10px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '5px', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer' }}>CZ</button>
+          <button onClick={() => setLang('en')} style={{ padding: '4px 10px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '5px', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer' }}>EN</button>
         </div>
       </div>
 

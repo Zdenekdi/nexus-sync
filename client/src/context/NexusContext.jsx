@@ -49,26 +49,27 @@ export const NexusProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isShiftActive, setIsShiftActive] = useState(false);
 
-  // Auth methods wrapper
-  const onLogin = async (email, password) => {
+  // Auth methods wrapper - ensuring they are functions
+  const onLogin = useCallback(async (email, password) => {
     const success = await auth.handleLogin(email, password);
     if (success) {
       setShowLanding(false);
       setActiveTab('dashboard');
     }
-  };
+    return success;
+  }, [auth]);
 
-  const onRegisterAgency = async (data) => {
+  const onRegisterAgency = useCallback(async (data) => {
     return await auth.handleRegisterAgency(data);
-  };
+  }, [auth]);
 
-  const onRegisterUser = async (data) => {
+  const onRegisterUser = useCallback(async (data) => {
     return await auth.handleRegisterUser(data);
-  };
+  }, [auth]);
 
-  const onResetRequest = async (email) => {
+  const onResetRequest = useCallback(async (email) => {
     return await auth.handleResetRequest(email);
-  };
+  }, [auth]);
 
   // Sync auth user to context
   const activeOperator = useMemo(() => {
@@ -78,7 +79,7 @@ export const NexusProvider = ({ children }) => {
   }, [authUser, data.operators]);
 
   // Permissions logic
-  const { activeRole, isAllowed, getPermissions } = usePermissions(activeOperator);
+  const { activeRole, isAllowed, rolePermissions } = usePermissions(activeOperator);
 
   // Load Data
   useEffect(() => {
@@ -299,7 +300,8 @@ export const NexusProvider = ({ children }) => {
     activeOperator,
     activeRole,
     isAllowed,
-    getPermissions,
+    rolePermissions,
+    isLoggedIn: auth.isLoggedIn,
     token,
     logout,
     onLogin,
