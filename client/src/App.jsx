@@ -34,7 +34,8 @@ const AppContent = () => {
     showLanding,
     showOnboarding,
     isSidebarCollapsed,
-    isMobile
+    isMobile,
+    isNativeApp
   } = useNexus();
 
   // 1. Initial Access Control
@@ -48,7 +49,7 @@ const AppContent = () => {
   }
 
   // 2. Foundation Steps
-  if (showLanding) return <LandingPage />;
+  if (showLanding && isNativeApp) return <LandingPage />;
   if (showOnboarding) return <Onboarding />;
 
   // 3. Core Application Shell
