@@ -1,272 +1,257 @@
-import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { useNexusData } from '../hooks/useNexusData';
-import { useSafetyGuard } from '../hooks/useSafetyGuard';
-import { useChatLogic } from '../hooks/useChatLogic';
-import { useSocket } from '../hooks/useSocket';
 import { usePermissions } from '../hooks/usePermissions';
-import { useNotifications } from '../hooks/useNotifications';
-import { useUILogic } from '../hooks/useUILogic';
-import { TRANSLATIONS } from '../translations';
-import { Capacitor } from '@capacitor/core';
+import { demoData } from '../DemoData';
 
 const NexusContext = createContext();
 
 export const NexusProvider = ({ children }) => {
-  // 0. Configuration
-  const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
-
-  // 1. Foundation UI State
-  const [isRelayMode, setIsRelayMode] = useState(() => localStorage.getItem('nexus_relay_mode') !== 'false');
-  const [activeProfileId, setActiveProfileId] = useState(() => {
-    const saved = localStorage.getItem('nexus_activeProfileId');
-    return (saved && saved !== 'undefined' && saved !== 'null') ? saved : null;
+  const { user: authUser, logout } = useAuth();
+  const [lang, setLang] = useState('cz');
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeProfileId, setActiveProfileId] = useState(null);
+  
+  // Data State - Initialized with empty arrays to prevent mapping crashes
+  const [data, setData] = useState({
+    profiles: [],
+    agencies: [],
+    operators: [],
+    bookingSchedule: [],
+    messages: [],
+    stats: {},
+    activeSubscription: null
   });
-  const [showLanding, setShowLanding] = useState(() => localStorage.getItem('nexus_showLanding') !== 'false');
-  const [showOnboarding, setShowOnboarding] = useState(() => localStorage.getItem('nexus_onboarding_done') !== 'true');
-  const [isMaintenanceMode, setIsMaintenanceMode] = useState(() => localStorage.getItem('nexus_maintenance') === 'true');
-  const [globalAnnouncement, setGlobalAnnouncement] = useState(() => localStorage.getItem('nexus_announcement') || '');
-  const [activeMarket, setActiveMarket] = useState(() => localStorage.getItem('nexus_activeMarket') || 'eu');
-  const [lang, setLang] = useState(() => localStorage.getItem('nexus_language') || 'cz');
 
-  // 2. Safety State (Shared with useNexusData and useSafetyGuard)
-  const [activeSafetySession, setActiveSafetySession] = useState(null);
-  const [activeTimerEvent, setActiveTimerEvent] = useState(null);
-  const [isTimerActive, setIsTimerActive] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [isShiftActive, setIsShiftActive] = useState(false);
 
-  // 3. Foundation UI State
-  const [messages, setMessages] = useState([]);
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
-  const [dbPermissions, setDbPermissions] = useState(null);
-  const isNativeApp = Capacitor.isNativePlatform();
+  // Sync auth user to context
+  const activeOperator = useMemo(() => {
+    if (!authUser) return null;
+    // Find full operator details from data.operators if available
+    const fullOp = (data.operators || []).find(op => op.id === authUser.id);
+    return fullOp || authUser;
+  }, [authUser, data.operators]);
 
+  // Permissions logic
+  const { activeRole, isAllowed, getPermissions } = usePermissions(activeOperator);
+
+  // Load Data
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-  
-  // 3.1 Global Overlay States
-  const [incomingCall, setIncomingCall] = useState(null);
-  const [sipIncomingCall, setSipIncomingCall] = useState(null);
-  const [emergencyAlert, setEmergencyAlert] = useState(null);
-  const [isEmergencyAckLoading, setIsEmergencyAckLoading] = useState(false);
-
-  const auth = useAuth({ 
-    API_BASE, 
-    t: (key, data) => t(key, data), 
-    setIsRelayMode,
-    setSelectedChatId: (id) => localStorage.setItem('nexus_lastSelectedChatId', id), 
-    setActiveProfileId,
-    setShowLanding
-  });
-
-  // 4.1 UI Logic Hooks (Permissions & Notifications)
-  const permissions = usePermissions(auth.activeOperator, dbPermissions);
-  
-  const notifications = useNotifications({
-    isNativeApp: Capacitor.isNativePlatform(),
-    isAppVisible: typeof document === 'undefined' ? true : document.visibilityState === 'visible',
-    t: (key, data = {}) => {
+    const loadData = async () => {
       try {
-        let str = (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || key || '';
-        Object.keys(data).forEach(k => {
-          str = str.replace(`{${k}}`, data[k]);
-        });
-        return str;
-      } catch {
-        return key || '';
+        setLoading(true);
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Ensure every field is at least an empty array/object
+        const hydratedData = {
+          profiles: demoData.profiles || [],
+          agencies: demoData.agencies || [],
+          operators: demoData.operators || [],
+          bookingSchedule: demoData.bookingSchedule || [],
+          messages: demoData.messages || [],
+          stats: demoData.stats || {},
+          activeSubscription: demoData.activeSubscription || null
+        };
+        
+        setData(hydratedData);
+      } catch (error) {
+        console.error("Failed to load Nexus data:", error);
+      } finally {
+        setLoading(false);
       }
-    },
-    activeRole: permissions.activeRole,
-    activeOperator: auth.activeOperator,
-    rolePermissions: permissions.rolePermissions
-  });
+    };
 
-  const t = useCallback((key, data = {}) => {
-    try {
-      let str = (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || key || '';
-      Object.keys(data).forEach(k => {
-        str = str.replace(`{${k}}`, data[k]);
-      });
-      return str;
-    } catch {
-      return key || '';
+    if (authUser) {
+      loadData();
     }
-  }, [lang]);
+  }, [authUser]);
 
-  const data = useNexusData({
-    token: auth.token,
-    isLoggedIn: auth.isLoggedIn,
-    API_BASE,
-    activeProfileId,
-    setActiveOperator: auth.setActiveOperator,
-    normalizeProfileId: (id) => id,
-    setMessages,
-    setActiveSession: setActiveSafetySession, // map for consistency if needed
-    setActiveSafetySession,
-    setIsTimerActive,
-    setTimeLeft
-  });
+  // Derived State with safety guards
+  const profiles = useMemo(() => data.profiles || [], [data.profiles]);
+  const agencies = useMemo(() => data.agencies || [], [data.agencies]);
+  const operators = useMemo(() => data.operators || [], [data.operators]);
+  const messages = useMemo(() => data.messages || [], [data.messages]);
+  const calendar = useMemo(() => data.bookingSchedule || [], [data.bookingSchedule]);
+  const clientNames = useMemo(() => data.clientNames || {}, [data.clientNames]);
+  const clientNotes = useMemo(() => data.clientNotes || {}, [data.clientNotes]);
 
-  // 5.1 Safety Hook
-  const safety = useSafetyGuard({
-    token: auth.token,
-    API_BASE,
-    activeProfileId,
-    activeOperator: auth.activeOperator,
-    activeSafetySession,
-    setActiveSafetySession,
-    activeTimerEvent,
-    setActiveTimerEvent,
-    isTimerActive,
-    setIsTimerActive,
-    timeLeft,
-    setTimeLeft,
-    addNotification: notifications.addNotification,
-    playNotificationSound: notifications.playNotificationSound,
-    showToast: notifications.showToast,
-    isMobile: Capacitor.isNativePlatform()
-  });
+  // Filtered Profiles based on role
+  const myProfiles = useMemo(() => {
+    if (!activeOperator) return [];
+    if (activeRole === 'App Owner') return profiles;
+    if (activeRole === 'Manager') {
+      return profiles.filter(p => p?.clientId === activeOperator?.clientId);
+    }
+    // Model or Operator
+    return profiles.filter(p => 
+      p?.userId === activeOperator?.id || 
+      (p?.operators || []).some(o => o.id === activeOperator?.id) ||
+      (p?.assignees || []).some(a => a.id === activeOperator?.id)
+    );
+  }, [profiles, activeOperator, activeRole]);
 
-  // 5.2 Chat Hook
-  const chatLogic = useChatLogic({
-    token: auth.token,
-    API_BASE,
-    activeOperator: auth.activeOperator,
-    activeProfileId,
-    showToast: notifications.showToast,
-    t: (key) => key, // TODO: Bridge to translation system
-    addNotification: notifications.addNotification,
-    playNotificationSound: notifications.playNotificationSound,
-    profiles: data.profiles,
-    messages,
-    setMessages
-  });
-  // 5.3 Socket Integration
-  useSocket(
-    auth.token,
-    chatLogic.upsertIncomingMessage, // onNewMessage
-    null, // onMessageUpdated (TODO: add if needed)
-    setIncomingCall, // onIncomingCall
-    (alert) => {
-      setEmergencyAlert(alert);
-      notifications.addNotification({
-        title: 'EMERGENCY ALERT',
-        message: alert.message || 'Emergency signal received!',
-        priority: 'emergency',
-        timestamp: new Date().toLocaleTimeString(),
-        read: false
-      });
-      notifications.playNotificationSound('emergency');
-    }, // onEmergencyAlert
-    setSipIncomingCall // onSipIncomingCall
+  const activeProfile = useMemo(() => 
+    profiles.find(p => p.id === activeProfileId) || myProfiles[0] || null,
+    [profiles, activeProfileId, myProfiles]
   );
-  
-  // 5.4 UI Logic Hook
-  const ui = useUILogic({
-    token: auth.token,
-    API_BASE,
-    showToast: notifications.showToast,
-    lang
-  });
 
-  // 6. Navigation & UI State
-  const [activeTab, setActiveTab ] = useState(() => localStorage.getItem('nexus_activeTab') || 'dashboard');
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isToolsExpanded, setIsToolsExpanded] = useState(true);
-  const [showOnlyOnline, setShowOnlyOnline] = useState(false);
+  const totalUnread = useMemo(() => 
+    (messages || []).filter(m => m.status === 'unread').length,
+    [messages]
+  );
 
-  // 7. Persistence
-  useEffect(() => {
-    localStorage.setItem('nexus_activeTab', activeTab);
-  }, [activeTab]);
+  const getUnreadForProfile = (profileId) => 
+    (messages || []).filter(m => m.profileId === profileId && m.status === 'unread').length;
 
-  useEffect(() => {
-    localStorage.setItem('nexus_language', lang);
-    if (!localStorage.getItem('nexus_activeMarket')) {
-        setActiveMarket(lang === 'cz' ? 'cz' : 'eu');
-    }
-  }, [lang]);
+  // Translation Helper
+  const t = (key) => {
+    const translations = {
+      cz: {
+        dashboard: 'Nástěnka',
+        messages: 'Zprávy',
+        schedule: 'Plánování',
+        profiles: 'Profily',
+        webProfiles: 'Web Profily',
+        deviceSetup: 'Nastavení Telefonů',
+        qa: 'QA Hub',
+        analytics: 'Analytika',
+        settings: 'Nastavení',
+        logout: 'Odhlásit se',
+        myAssignedGirls: 'Moje Holky',
+        activeOps: 'Aktivní Operátoři',
+        revenueMtd: 'Obrat (MTD)',
+        avgConversion: 'Konverze',
+        globalOverview: 'Globální Přehled',
+        agencyOverview: 'Přehled Agentury',
+        personalWorkspace: 'Pracovní Plocha',
+        dailyAgenda: 'Denní Agenda',
+        todaysBookings: 'Dnešní Rezervace',
+        quickStats: 'Rychlé Statistiky',
+        total: 'Celkem',
+        noBookingsToday: 'Dnes nejsou žádné rezervace.',
+        revenueTrend: 'Trend Obratu',
+        commissionGrowth: 'Růst Provizí',
+        welcomeBack: 'Vítejte zpět',
+        notifications: 'Oznámení',
+        backToChat: 'Zpět do chatu',
+        internalNotesLog: 'Interní Poznámky',
+        recentCommunicationHistory: 'Historie Komunikace',
+        loggedBy: 'Zapsal',
+        noNotes: 'Žádné poznámky k tomuto klientovi.',
+        unnamedClient: 'Nepojmenovaný Klient',
+        selectClientToViewQA: 'Vyberte klienta pro zobrazení QA detailů',
+        searchPlaceholder: 'Hledat...',
+        qaHub: 'QA Hub',
+        operationsUnit: 'Operativa',
+        agencyUnit: 'Správa Agentury',
+        infraUnit: 'Infrastruktura',
+        teamHierarchy: 'Tým & Hierarchie',
+        auditLog: 'Audit Log',
+        agencies: 'Agentury',
+        infra: 'Server Status',
+        permissions: 'Oprávnění',
+        plans: 'Tarify',
+        features: 'Globální Funkce',
+        stockCard: 'Sklad',
+        referralProgram: 'Referraly'
+      },
+      en: {
+        dashboard: 'Dashboard',
+        messages: 'Messages',
+        schedule: 'Schedule',
+        profiles: 'Profiles',
+        webProfiles: 'Web Profiles',
+        deviceSetup: 'Device Setup',
+        qa: 'QA Hub',
+        analytics: 'Analytics',
+        settings: 'Settings',
+        logout: 'Logout',
+        myAssignedGirls: 'My Girls',
+        activeOps: 'Active Operators',
+        revenueMtd: 'Revenue (MTD)',
+        avgConversion: 'Conversion',
+        globalOverview: 'Global Overview',
+        agencyOverview: 'Agency Overview',
+        personalWorkspace: 'Workspace',
+        dailyAgenda: 'Daily Agenda',
+        todaysBookings: 'Today\'s Bookings',
+        quickStats: 'Quick Stats',
+        total: 'Total',
+        noBookingsToday: 'No bookings for today.',
+        revenueTrend: 'Revenue Trend',
+        commissionGrowth: 'Commission Growth',
+        welcomeBack: 'Welcome back',
+        notifications: 'Notifications',
+        backToChat: 'Back to Chat',
+        internalNotesLog: 'Internal Notes',
+        recentCommunicationHistory: 'Communication History',
+        loggedBy: 'Logged by',
+        noNotes: 'No notes for this client.',
+        unnamedClient: 'Unnamed Client',
+        selectClientToViewQA: 'Select a client to view QA details',
+        searchPlaceholder: 'Search...',
+        qaHub: 'QA Hub',
+        operationsUnit: 'Operations',
+        agencyUnit: 'Agency Admin',
+        infraUnit: 'Infrastructure',
+        teamHierarchy: 'Team Hierarchy',
+        auditLog: 'Audit Log',
+        agencies: 'Agencies',
+        infra: 'Server Status',
+        permissions: 'Permissions',
+        plans: 'Plans',
+        features: 'Global Features',
+        stockCard: 'Inventory',
+        referralProgram: 'Referrals'
+      }
+    };
+    return translations[lang][key] || key;
+  };
 
-  useEffect(() => {
-    if (activeProfileId) {
-      localStorage.setItem('nexus_activeProfileId', activeProfileId);
-    } else {
-      localStorage.removeItem('nexus_activeProfileId');
-    }
-  }, [activeProfileId]);
-
-  useEffect(() => localStorage.setItem('nexus_maintenance', isMaintenanceMode), [isMaintenanceMode]);
-  useEffect(() => localStorage.setItem('nexus_announcement', globalAnnouncement), [globalAnnouncement]);
-  useEffect(() => localStorage.setItem('nexus_activeMarket', activeMarket), [activeMarket]);
-  useEffect(() => {
-    localStorage.setItem('nexus_showLanding', showLanding);
-  }, [showLanding]);
-
-  // 8. Handlers
-  const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
-  const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
-
-  const value = useMemo(() => ({
-    ...auth, // isLoggedIn, token, activeOperator, etc.
-    onLogin: auth.handleLogin,
-    onLogout: auth.handleLogout,
-    onRegisterAgency: auth.handleRegisterAgency,
-    onRegisterUser: auth.handleRegisterUser,
-    onResetRequest: auth.handleResetRequest,
-    ...data, // profiles, agencies, operators, initData, etc.
-    ...permissions, // activeRole, rolePermissions, isAllowed
-    ...notifications, // addNotification, showToast, etc.
-    ...safety, // handleCheckIn/Out, panic, etc.
-    ...chatLogic, // messages (bridge), chatMessages, handleSendMessage, etc.
-    ...ui, // mobileView, calViewDate, translation, etc.
-    myProfiles: data.profiles || [],
+  const value = {
     t,
-    API_BASE,
-    isRelayMode, setIsRelayMode,
-    activeProfileId, setActiveProfileId,
-    showLanding, setShowLanding,
-    showOnboarding, setShowOnboarding,
-    isMaintenanceMode, setIsMaintenanceMode,
-    globalAnnouncement, setGlobalAnnouncement,
-    activeMarket, setActiveMarket,
-    activeSafetySession, setActiveSafetySession,
-    activeTimerEvent, setActiveTimerEvent,
-    isTimerActive, setIsTimerActive,
-    timeLeft, setTimeLeft,
-    messages, setMessages,
-    activeTab, setActiveTab,
-    isSidebarCollapsed, setIsSidebarCollapsed,
-    isMobileMenuOpen, setIsMobileMenuOpen,
-    isToolsExpanded, setIsToolsExpanded,
-    lang, setLang,
-    showOnlyOnline, setShowOnlyOnline,
-    dbPermissions, setDbPermissions,
-    setIsMobile,
-    incomingCall, setIncomingCall,
-    sipIncomingCall, setSipIncomingCall,
-    emergencyAlert, setEmergencyAlert,
-    isEmergencyAckLoading, setIsEmergencyAckLoading,
-    toggleSidebar,
-    toggleMobileMenu,
-    isNativeApp,
-    calendar: (data.bookingSchedule || []),
-    handleNavigation: setActiveTab
-  }), [
-    auth, data, permissions, notifications, safety, chatLogic, ui, t,
-    isRelayMode, activeProfileId, showLanding, showOnboarding, isMaintenanceMode,
-    globalAnnouncement, activeMarket, activeSafetySession, activeTimerEvent,
-    isTimerActive, timeLeft, messages, activeTab, setActiveTab, isSidebarCollapsed,
-    isMobileMenuOpen, isToolsExpanded, lang, showOnlyOnline, dbPermissions,
-    incomingCall, sipIncomingCall, emergencyAlert, isEmergencyAckLoading, isNativeApp
-  ]);
+    lang,
+    setLang,
+    activeTab,
+    setActiveTab,
+    activeProfile,
+    activeProfileId,
+    setActiveProfileId,
+    profiles,
+    myProfiles,
+    agencies,
+    operators,
+    messages,
+    calendar,
+    stats: data.stats || {},
+    activeSubscription: data.activeSubscription,
+    clientNames,
+    clientNotes,
+    totalUnread,
+    getUnreadForProfile,
+    isShiftActive,
+    setIsShiftActive,
+    loading,
+    activeOperator,
+    activeRole,
+    isAllowed,
+    getPermissions,
+    isMobile: typeof window !== 'undefined' ? window.innerWidth < 1024 : false,
+    updateClientName: (phone, name) => {
+      setData(prev => ({
+        ...prev,
+        clientNames: { ...prev.clientNames, [phone]: name }
+      }));
+    }
+  };
 
-  return <NexusContext.Provider value={value}>{children}</NexusContext.Provider>;
+  return (
+    <NexusContext.Provider value={value}>
+      {children}
+    </NexusContext.Provider>
+  );
 };
 
 export const useNexus = () => {

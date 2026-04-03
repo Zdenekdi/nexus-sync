@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { FileSearch, StickyNote, User, Phone, Edit2, Check, X, Search, ChevronDown } from 'lucide-react';
-
 import { useNexus } from '../context/NexusContext';
 
 const QAView = () => {
@@ -14,8 +13,10 @@ const QAView = () => {
     activeOperator, 
     profiles, 
     operators,
-    isMobile 
+    isMobile,
+    activeRole
   } = nexus;
+
   const [mobileView, setMobileView] = useState('list');
   const [selectedClient, setSelectedClient] = useState(null);
   const [editingName, setEditingName] = useState(null);
@@ -26,41 +27,51 @@ const QAView = () => {
   const [filterOperatorId, setFilterOperatorId] = useState('all');
   const [filterProfileId, setFilterProfileId] = useState('all');
 
-  // Determine which profiles are visible based on filters
+  // Determine which profiles are visible based on filters and roles
   const visibleProfileIds = useMemo(() => {
-    // If a specific profile is selected, use only that
+    // 1. Privacy Check: If Model, only allow seeing own profile
+    if (activeRole === 'Model') {
+      const myProfileIds = (profiles || [])
+        .filter(p => p?.userId === activeOperator?.id || p?.id === activeOperator?.profileId)
+        .map(p => p.id);
+      return myProfileIds;
+    }
+
+    // 2. Specific profile requested
     if (filterProfileId !== 'all') return [filterProfileId];
 
-    // If a specific operator is selected, use all profiles assigned to that operator
+    // 3. Specific operator requested
     if (filterOperatorId !== 'all') {
       return (profiles || [])
         .filter(p => 
-          (p.operators || []).some(o => o.id === filterOperatorId) || 
-          (p.assignees || []).some(a => a.id === filterOperatorId)
+          (p?.operators || []).some(o => o.id === filterOperatorId) || 
+          (p?.assignees || []).some(a => a.id === filterOperatorId)
         )
         .map(p => p.id);
     }
 
-    // Default: show all profiles for the current operator's agency
+    // 4. Default: Admin/Manager view (all agency)
     return (profiles || [])
       .filter(p => activeOperator?.isAppOwner || p.clientId === activeOperator?.clientId)
       .map(p => p.id);
-  }, [filterOperatorId, filterProfileId, profiles, activeOperator]);
+  }, [filterOperatorId, filterProfileId, profiles, activeOperator, activeRole]);
 
   // Build list of visible messages filtered by visible profiles
   const visibleMessages = useMemo(() => {
-    if ((visibleProfileIds || []).length === 0) return (messages || []);
-    return (messages || []).filter(m => (visibleProfileIds || []).includes(m.profileId));
-  }, [messages, visibleProfileIds]);
+    const pIds = (visibleProfileIds || []);
+    const msgs = (messages || []);
+    if (pIds.length === 0) return activeRole === 'Model' ? [] : msgs;
+    return msgs.filter(m => pIds.includes(m?.profileId));
+  }, [messages, visibleProfileIds, activeRole]);
 
   // Extract unique clients from filtered messages
   const clients = useMemo(() => {
     const clientsMap = new Map();
     (visibleMessages || []).forEach(msg => {
-      if (msg.from && !clientsMap.has(msg.from)) {
+      if (msg?.from && !clientsMap.has(msg.from)) {
         clientsMap.set(msg.from, {
           phoneNumber: msg.from,
-          name: clientNames[msg.from] || null,
+          name: clientNames?.[msg.from] || null,
           lastMessage: msg.text,
           time: msg.time
         });
@@ -70,8 +81,8 @@ const QAView = () => {
   }, [visibleMessages, clientNames]);
 
   const filteredClients = (clients || []).filter(c =>
-    c.phoneNumber.includes(searchQuery) ||
-    (c.name && c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    (c?.phoneNumber || '').includes(searchQuery) ||
+    (c?.name && c.name.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const activeClient = selectedClient || (filteredClients.length > 0 ? filteredClients[0].phoneNumber : null);
@@ -95,14 +106,15 @@ const QAView = () => {
 
   // Profiles for the selected operator (or all agency profiles)
   const operatorProfiles = useMemo(() => {
+    if (activeRole === 'Model') return (profiles || []).filter(p => p.userId === activeOperator?.id);
     if (filterOperatorId === 'all') {
       return (profiles || []).filter(p => activeOperator?.isAppOwner || p.clientId === activeOperator?.clientId);
     }
     return (profiles || []).filter(p => 
-      (p.operators || []).some(o => o.id === filterOperatorId) || 
-      (p.assignees || []).some(a => a.id === filterOperatorId)
+      (p?.operators || []).some(o => o.id === filterOperatorId) || 
+      (p?.assignees || []).some(a => a.id === filterOperatorId)
     );
-  }, [filterOperatorId, profiles, activeOperator]);
+  }, [filterOperatorId, profiles, activeOperator, activeRole]);
 
   return (
     <div style={{ display: 'flex', height: isMobile ? 'calc(100dvh - max(env(safe-area-inset-top), 1rem) - 3rem)' : '100%', background: 'rgba(0,0,0,0.2)', position: 'relative', overflow: 'hidden' }}>
@@ -124,36 +136,38 @@ const QAView = () => {
             <FileSearch size={20} color="var(--accent-color)" /> {t('qa')}
           </h2>
 
-          {/* Operator / Model filter */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
-            <div style={{ position: 'relative' }}>
-              <select
-                value={filterOperatorId}
-                onChange={e => { setFilterOperatorId(e.target.value); setFilterProfileId('all'); setSelectedClient(null); }}
-                style={{ width: '100%', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--card-border)', padding: '0.55rem 2rem 0.55rem 0.75rem', borderRadius: '10px', color: 'white', fontSize: '0.8rem', fontWeight: '700', appearance: 'none', cursor: 'pointer' }}
-              >
-                <option value="all">All Operators</option>
-                {agencyOperators.map(op => (
-                  <option key={op.id} value={op.id}>{op.name} — {op.role}</option>
-                ))}
-              </select>
-              <ChevronDown size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)', pointerEvents: 'none' }} />
-            </div>
+          {/* Role-based Filter Visibility */}
+          {activeRole !== 'Model' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
+              <div style={{ position: 'relative' }}>
+                <select
+                  value={filterOperatorId}
+                  onChange={e => { setFilterOperatorId(e.target.value); setFilterProfileId('all'); setSelectedClient(null); }}
+                  style={{ width: '100%', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--card-border)', padding: '0.55rem 2rem 0.55rem 0.75rem', borderRadius: '10px', color: 'white', fontSize: '0.8rem', fontWeight: '700', appearance: 'none', cursor: 'pointer' }}
+                >
+                  <option value="all">All Operators</option>
+                  {(agencyOperators || []).map(op => (
+                    <option key={op.id} value={op.id}>{op.name} — {op.role}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)', pointerEvents: 'none' }} />
+              </div>
 
-            <div style={{ position: 'relative' }}>
-              <select
-                value={filterProfileId}
-                onChange={e => { setFilterProfileId(e.target.value); setSelectedClient(null); }}
-                style={{ width: '100%', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--card-border)', padding: '0.55rem 2rem 0.55rem 0.75rem', borderRadius: '10px', color: 'white', fontSize: '0.8rem', fontWeight: '700', appearance: 'none', cursor: 'pointer' }}
-              >
-                <option value="all">All Models</option>
-                {operatorProfiles.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-              <ChevronDown size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)', pointerEvents: 'none' }} />
+              <div style={{ position: 'relative' }}>
+                <select
+                  value={filterProfileId}
+                  onChange={e => { setFilterProfileId(e.target.value); setSelectedClient(null); }}
+                  style={{ width: '100%', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--card-border)', padding: '0.55rem 2rem 0.55rem 0.75rem', borderRadius: '10px', color: 'white', fontSize: '0.8rem', fontWeight: '700', appearance: 'none', cursor: 'pointer' }}
+                >
+                  <option value="all">All Models</option>
+                  {(operatorProfiles || []).map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)', pointerEvents: 'none' }} />
+              </div>
             </div>
-          </div>
+          )}
 
           <div style={{ position: 'relative' }}>
             <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
@@ -168,7 +182,7 @@ const QAView = () => {
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto' }} className="custom-scrollbar">
-          {filteredClients.map(client => (
+          {(filteredClients || []).map(client => (
             <button
               key={client.phoneNumber}
               onClick={() => {
@@ -280,7 +294,7 @@ const QAView = () => {
                 </h3>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {(clientNotes[currentClientData.phoneNumber] || []).length > 0 ? (
+                  {(clientNotes?.[currentClientData.phoneNumber] || []).length > 0 ? (
                     clientNotes[currentClientData.phoneNumber].map(note => (
                       <div key={note.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--card-border)', padding: '1.5rem', borderRadius: '16px' }}>
                         <div style={{ fontSize: '1.1rem', color: 'white', marginBottom: '1rem', lineHeight: '1.6' }}>{note.text}</div>

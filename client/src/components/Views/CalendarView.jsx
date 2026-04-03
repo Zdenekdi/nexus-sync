@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Plus, Share2, Link, X, RefreshCw, Calendar, MoreVertical, Clock, Zap 
+  Plus, Share2, Link, X, RefreshCw, Calendar, MoreVertical, Clock
 } from 'lucide-react';
 
 import { useNexus } from '../../context/NexusContext';
@@ -12,12 +12,18 @@ const CalendarView = () => {
     profiles: allAgencyProfiles, myProfiles, activeRole, 
     setIsBookingModalOpen, handleExportICS, isCalendarSyncOpen, setIsCalendarSyncOpen,
     calendarSyncUrl, setCalendarSyncUrl, handleSaveCalendarSync,
-    bookingSchedule, activeTimerEvent, isTimerActive,
+    calendar: bookingSchedule, activeTimerEvent, isTimerActive,
     openBookingMenuId, setOpenBookingMenuId, handleCheckIn, handleCheckOut,
     handleEditBooking, handleDeleteBooking, timeLeft, formatSafetyTime,
     isSafetyLoading, handleSafetyImOk, SAFETY_SUGGESTIONS,
-    setSelectedScheduleEvent
+    setSelectedScheduleEvent, activeOperator
   } = nexus;
+
+  // Final Safety Check for Mapping
+  const safeSchedule = Array.isArray(bookingSchedule) ? bookingSchedule : [];
+  const safeProfiles = Array.isArray(allAgencyProfiles) ? allAgencyProfiles : [];
+  const safeMyProfiles = Array.isArray(myProfiles) ? myProfiles : [];
+
   return (
     <div style={{ padding: isMobile ? '1.5rem 1rem' : '3rem', paddingBottom: '8rem', flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }} className="fade-in custom-scrollbar">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '2.5rem', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : '0' }}>
@@ -27,7 +33,7 @@ const CalendarView = () => {
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>•</span>
               <select 
-                value={activeProfileId} 
+                value={activeProfileId || ''} 
                 onChange={(e) => setActiveProfileId(e.target.value)}
                 style={{
                   background: 'rgba(255,255,255,0.05)', 
@@ -41,7 +47,7 @@ const CalendarView = () => {
                   outline: 'none'
                 }}
               >
-                {(activeRole === 'App Owner' || activeRole === 'Agency Admin' || activeRole === 'Manager' ? allAgencyProfiles : myProfiles).map(p => (
+                {((activeRole === 'App Owner' || activeRole === 'Agency Admin' || activeRole === 'Manager') ? safeProfiles : safeMyProfiles).map(p => (
                   <option key={p.id} value={p.id} style={{ background: '#0a0c10', color: 'white' }}>{p.name}</option>
                 ))}
               </select>
@@ -84,7 +90,7 @@ const CalendarView = () => {
               <input
                 type="text"
                 placeholder="https://calendar.google.com/calendar/ical/..."
-                value={calendarSyncUrl}
+                value={calendarSyncUrl || ''}
                 onChange={(e) => setCalendarSyncUrl(e.target.value)}
                 style={{ flex: 1, padding: '0.75rem 1.25rem' }}
                 className="glass-input"
@@ -98,16 +104,18 @@ const CalendarView = () => {
       <div style={{ display: isMobile ? 'flex' : 'grid', flexDirection: isMobile ? 'column' : 'row', gridTemplateColumns: isMobile ? '1fr' : '1fr 350px', gap: '2rem', flex: isMobile ? 'none' : 1, minHeight: isMobile ? 'auto' : 0 }}>
         <div className="glass-card" style={{ padding: isMobile ? '1.25rem' : '2rem', overflowY: isMobile ? 'visible' : 'auto' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {bookingSchedule.length === 0 ? (
+              {safeSchedule.length === 0 ? (
                 <div style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
                   <Calendar size={48} style={{ opacity: 0.1, marginBottom: '1rem' }} />
                   <p>{t('noEventsToday') || 'No bookings scheduled for today.'}</p>
                 </div>
               ) : (
-                bookingSchedule.sort((a,b) => {
+                safeSchedule.sort((a,b) => {
                   const timeToMins = (ti) => {
                     if (!ti) return 0;
-                    const [h, m] = ti.split(' ')[0].split(':').map(Number);
+                    const parts = ti.split(' ');
+                    const time = parts[0];
+                    const [h, m] = time.split(':').map(Number);
                     const isPm = ti.includes('PM') && h !== 12;
                     return (isPm ? h + 12 : (ti.includes('AM') && h === 12 ? 0 : h)) * 60 + (m || 0);
                   };
@@ -245,7 +253,7 @@ const CalendarView = () => {
               <Clock size={18} color="var(--warning-color)" /> {t('recommendedSlots')}
             </h3>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-              {SAFETY_SUGGESTIONS.map(s => (
+              {(SAFETY_SUGGESTIONS || []).map(s => (
                 <div key={s} className="status-badge" style={{ background: 'rgba(245, 158, 11, 0.1)', cursor: 'pointer', border: '1px solid var(--warning-color)', color: 'white' }}>{s}</div>
               ))}
             </div>

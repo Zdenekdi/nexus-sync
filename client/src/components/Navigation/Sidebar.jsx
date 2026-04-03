@@ -1,102 +1,110 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
-  X, LayoutDashboard, MessageSquare, Calendar, BarChart3, Users, Building2, HardDrive, 
-  Settings, Radio, Bell, LogOut, ChevronUp, ChevronDown, Package, Globe, Smartphone, 
-  Activity, FileSearch, Shield, CreditCard, Zap, Copy
+  LayoutDashboard, MessageSquare, Calendar, Users, BarChart3, 
+  Settings, Activity, Radio, Globe, Smartphone, FileSearch, 
+  Shield, Building2, HardDrive, CreditCard, Zap, Package, 
+  Bell, LogOut, ChevronDown, ChevronUp, Copy, Menu, X
 } from 'lucide-react';
 import { useNexus } from '../../context/NexusContext';
 
 const Sidebar = () => {
   const nexus = useNexus();
   const { 
-    activeOperator, activeRole, activeTab, totalUnread, rolePermissions,
-    myProfiles, showOnlyOnline, lang, isSidebarCollapsed, isMobileMenuOpen,
-    isToolsExpanded, activeProfile, getUnreadForProfile, messages,
-    setIsMobileMenuOpen, handleNavigation, setShowOnlyOnline, setIsRelayMode,
-    setNotificationPanelOpen, handleLogout, setIsToolsExpanded, setActiveProfileId,
-    setSelectedChatId, setMobileView, setLang, setIsSidebarCollapsed, setActiveTab, t, isMobile, isAllowed, isNativeApp 
+    activeTab, setActiveTab, t, lang, setLang, 
+    activeOperator, logout, isMobile, 
+    totalUnread, getUnreadForProfile, myProfiles,
+    activeProfile, setActiveProfileId, isNativeApp, activeRole,
+    isSidebarCollapsed, setIsSidebarCollapsed, isAllowed
   } = nexus;
 
-  const [expandedUnits, setExpandedUnits] = React.useState({
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [expandedUnits, setExpandedUnits] = useState({
     operations: true,
-    agency: false,
-    infrastructure: false
+    agency: true,
+    infrastructure: true
   });
+  const [showOnlyOnline, setShowOnlyOnline] = useState(false);
 
   const toggleUnit = (unit) => {
     setExpandedUnits(prev => ({ ...prev, [unit]: !prev[unit] }));
   };
 
-  const capitalize = (str) => {
-    if (!str) return '';
-    return str.charAt(0).toUpperCase() + str.slice(1);
+  const handleNavigation = (tabId) => {
+    setActiveTab(tabId);
+    if (isMobile) setIsMobileMenuOpen(false);
   };
 
   const handleMobileProfileClick = (p) => {
     setActiveProfileId(p.id);
     setActiveTab('inbox');
-    const firstUnread = (messages || []).find(m => m.profileId === p.id && m.status === 'unread');
-    if (firstUnread) {
-      setSelectedChatId(firstUnread.id);
-      setMobileView('chat');
-    }
     setIsMobileMenuOpen(false);
   };
 
+  const handleLogout = () => {
+    logout();
+    if (isMobile) setIsMobileMenuOpen(false);
+  };
+
+  const capitalize = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+
+  // MOBILE OVERLAY
+  if (isMobile && !isMobileMenuOpen) {
+    return (
+      <div style={{ position: 'fixed', top: '1rem', left: '1rem', zIndex: 1000, display: 'flex', gap: '0.75rem' }}>
+        <button onClick={() => setIsMobileMenuOpen(true)} className="glass-card" style={{ padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', border: '1px solid var(--card-border)' }}>
+          <Menu size={20} />
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <nav className={`desktop-sidebar ${isMobileMenuOpen ? 'open' : ''} ${isSidebarCollapsed ? 'collapsed' : ''}`} style={{
+    <nav className={isSidebarCollapsed ? 'sidebar-collapsed' : 'sidebar-expanded'} style={{
       width: isMobile ? '100vw' : (isSidebarCollapsed ? '80px' : '280px'),
-      flexShrink: 0,
+      height: isMobile ? '100dvh' : '100%',
+      background: 'rgba(10, 12, 16, 0.98)',
+      backdropFilter: 'blur(20px)',
       borderRight: isMobile ? 'none' : '1px solid var(--card-border)',
-      padding: isMobile ? '0' : (isSidebarCollapsed ? '1.5rem 0.75rem' : '2.5rem 1.25rem'),
-      background: isMobile ? 'rgba(7, 10, 15, 0.98)' : 'rgba(7, 10, 15, 0.7)',
-      backdropFilter: isMobile ? 'blur(20px)' : 'blur(40px)',
+      padding: isSidebarCollapsed ? '1.5rem 0' : '1.5rem',
       display: 'flex',
       flexDirection: 'column',
-      position: isMobile ? 'fixed' : 'sticky',
+      position: isMobile ? 'fixed' : 'relative',
       top: 0,
       left: 0,
-      height: '100dvh',
+      zIndex: 1100,
       transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-      zIndex: 10000,
-      overflow: 'hidden'
+      overflowY: 'hidden'
     }}>
       {isMobile ? (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', padding: 'max(env(safe-area-inset-top), 2rem) 1.5rem calc(max(env(safe-area-inset-bottom), 0px) + 3.25rem)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '1.5rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <div style={{ width: '50px', height: '50px', background: 'linear-gradient(135deg, var(--accent-color) 0%, #1d4ed8 100%)', borderRadius: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'white', fontSize: '1.1rem', boxShadow: '0 10px 25px rgba(59, 130, 246, 0.3)' }}>{activeOperator?.avatar}</div>
-              <div>
-                <div style={{ fontSize: '1.2rem', fontWeight: '900', color: 'white' }}>{activeOperator?.name}</div>
-                <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', fontWeight: '800', letterSpacing: '0.05em' }}>{activeRole?.toUpperCase() || ''}</div>
-              </div>
+              <img src="/nexus_icon.png" alt="Nexus" style={{ width: '32px', height: '32px', borderRadius: '8px' }} />
+              <span style={{ fontSize: '1.25rem', fontWeight: '900', color: 'white' }}>Nexus Hub</span>
             </div>
-            <button onClick={() => setIsMobileMenuOpen(false)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', width: '44px', height: '44px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={24} /></button>
+            <button onClick={() => setIsMobileMenuOpen(false)} style={{ background: 'none', border: 'none', color: 'white' }}><X size={24} /></button>
           </div>
-          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '2rem', paddingBottom: '2rem' }} className="custom-scrollbar">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+          <div style={{ flex: 1, overflowY: 'auto' }} className="custom-scrollbar">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem' }}>
               {[
                 { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard') },
-                { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: totalUnread },
-                { id: 'calendar', icon: Calendar, label: t('schedule') },
-                { id: 'relay', icon: Radio, label: 'Relay System', nativeOnly: true },
-                { id: 'analytics', icon: BarChart3, label: t('analytics'), perm: 'analytics' },
-                { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
-                { id: 'agencies', icon: Building2, label: t('agencies'), perm: 'agencies' },
-                { id: 'infra', icon: HardDrive, label: t('infra'), perm: 'infrastructure' },
-                { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
+                { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeRole === 'Model' ? 0 : totalUnread, perm: 'messaging' },
+                { id: 'calendar', icon: Calendar, label: t('schedule'), perm: 'calendar' },
+                { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub', hideForOwner: true },
+                { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' }
               ].filter(item => {
-                if (item.nativeOnly && !isNativeApp) return false;
                 if (item.hideForOwner && activeRole === 'App Owner') return false;
+                if (activeRole === 'Model' && item.id === 'qa') return false;
                 return !item.perm || isAllowed(item.perm);
               }).map(item => (
-                <button key={item.id} onClick={() => handleNavigation(item.id)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', padding: '1.25rem 1rem', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255,255,255,0.03)', border: activeTab === item.id ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(255,255,255,0.05)', borderRadius: '20px', cursor: 'pointer', transition: 'all 0.2s', position: 'relative' }}>
-                  <item.icon size={26} color={activeTab === item.id ? 'var(--accent-color)' : 'rgba(255,255,255,0.6)'} />
-                  <span style={{ fontSize: '0.8rem', fontWeight: '800', color: activeTab === item.id ? 'white' : 'rgba(255,255,255,0.6)', textAlign: 'center' }}>{capitalize(item.label)}</span>
-                  {item.badge > 0 && <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'var(--error-color)', color: 'white', fontSize: '0.6rem', minWidth: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '950' }}>{item.badge}</div>}
+                <button key={item.id} onClick={() => handleNavigation(item.id)} style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1.15rem', borderRadius: '18px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255,255,255,0.02)', border: activeTab === item.id ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid transparent', color: activeTab === item.id ? 'white' : 'rgba(255,255,255,0.6)', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s' }}>
+                  <item.icon size={22} color={activeTab === item.id ? 'var(--accent-color)' : 'currentColor'} />
+                  <span style={{ fontSize: '1.1rem', fontWeight: '800' }}>{capitalize(item.label)}</span>
+                  {item.badge > 0 && <div style={{ marginLeft: 'auto', background: 'var(--accent-color)', color: 'white', fontSize: '0.7rem', padding: '2px 8px', borderRadius: '20px', fontWeight: '900' }}>{item.badge}</div>}
                 </button>
               ))}
             </div>
+            {/* PRIVACY FIX: Hide assigned girls from Models */}
             {activeRole !== 'Model' && activeRole !== 'App Owner' && !activeOperator?.isAdmin && (myProfiles || []).length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -154,147 +162,40 @@ const Sidebar = () => {
           </div>
           <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1.5rem', marginRight: '-0.75rem', paddingRight: '0.75rem' }} className="custom-scrollbar">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginBottom: '1.5rem' }}>
-              {/* TOP LEVEL: DASHBOARD */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                <button 
-                  onClick={() => handleNavigation('dashboard')} 
-                  className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} 
-                  style={{ 
-                    display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', 
-                    padding: '0.75rem 1.15rem', borderRadius: '12px', 
-                    background: activeTab === 'dashboard' ? 'rgba(59, 130, 246, 0.12)' : 'transparent', 
-                    border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s', 
-                    justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' 
-                  }}
-                >
+                <button onClick={() => handleNavigation('dashboard')} className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === 'dashboard' ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
                   <LayoutDashboard size={20} color={activeTab === 'dashboard' ? 'var(--accent-color)' : 'var(--text-secondary)'} />
                   {!isSidebarCollapsed && <span style={{ color: activeTab === 'dashboard' ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === 'dashboard' ? '800' : '600', fontSize: '1rem' }}>{capitalize(t('dashboard'))}</span>}
                 </button>
               </div>
 
-              {/* UNIT: OPERATIONS */}
               {activeRole !== 'App Owner' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                   {!isSidebarCollapsed && (
-                    <button 
-                      onClick={() => toggleUnit('operations')}
-                      style={{ 
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '0 1.15rem', marginBottom: '0.6rem', background: 'none', border: 'none',
-                        width: '100%', cursor: 'pointer', textAlign: 'left'
-                      }}
-                    >
-                      <span style={{ fontSize: '0.85rem', fontWeight: '950', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.05em' }}>
-                        {capitalize(t('operationsUnit') || 'Operativa')}
-                      </span>
+                    <button onClick={() => toggleUnit('operations')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.15rem', marginBottom: '0.6rem', background: 'none', border: 'none', width: '100%', cursor: 'pointer', textAlign: 'left' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: '950', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.05em' }}>{capitalize(t('operationsUnit'))}</span>
                       {expandedUnits.operations ? <ChevronUp size={14} color="rgba(255,255,255,0.3)" /> : <ChevronDown size={14} color="rgba(255,255,255,0.3)" />}
                     </button>
                   )}
-                  
                   {(isSidebarCollapsed || expandedUnits.operations) && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                       {[
-                        { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeOperator?.isModel ? 0 : totalUnread, perm: 'messaging' },
+                        { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeRole === 'Model' ? 0 : totalUnread, perm: 'messaging' },
                         { id: 'calendar', icon: Calendar, label: t('schedule'), perm: 'calendar' },
-                        { id: 'relay', icon: Radio, label: 'Relay System', nativeOnly: true },
                         { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
                         { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles' },
                         { id: 'device-setup', icon: Smartphone, label: t('deviceSetup'), perm: 'device_setup', hideForOwner: true },
                         { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub', hideForOwner: true },
-                        { id: 'referrals', icon: Copy, label: t('referralProgram') || 'Referrals', perm: 'referrals', hideForOwner: true },
                       ].filter(item => {
                         const hasPerm = !item.perm || isAllowed(item.perm);
                         if (!hasPerm) return false;
-                        if (item.nativeOnly && !isNativeApp) return false;
                         if (item.hideForOwner && activeRole === 'App Owner') return false;
+                        if (activeRole === 'Model' && (item.id === 'profiles' || item.id === 'web-profiles' || item.id === 'qa')) return false;
                         return true;
                       }).map(item => (
                         <button key={item.id} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
                           <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
                           {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '1rem' }}>{capitalize(item.label)}</span>}
-                          {item.badge > 0 && !isSidebarCollapsed && <div style={{ marginLeft: 'auto', background: 'var(--accent-color)', color: 'white', fontSize: '0.62rem', padding: '1px 7px', borderRadius: '20px', fontWeight: '950' }}>{item.badge}</div>}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* UNIT: AGENCY */}
-              {activeRole !== 'App Owner' && (isAllowed('analytics') || isAllowed('hierarchy') || isAllowed('audit_logs') || isAllowed('settings')) && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                  {!isSidebarCollapsed && (
-                    <button 
-                      onClick={() => toggleUnit('agency')}
-                      style={{ 
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '0 1.15rem', marginBottom: '0.6rem', marginTop: '0.85rem', background: 'none', border: 'none',
-                        width: '100%', cursor: 'pointer', textAlign: 'left'
-                      }}
-                    >
-                      <span style={{ fontSize: '0.85rem', fontWeight: '950', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.05em' }}>
-                        {capitalize(t('agencyUnit') || 'Správa agentury')}
-                      </span>
-                      {expandedUnits.agency ? <ChevronUp size={14} color="rgba(255,255,255,0.3)" /> : <ChevronDown size={14} color="rgba(255,255,255,0.3)" />}
-                    </button>
-                  )}
-
-                  {(isSidebarCollapsed || expandedUnits.agency) && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                      {[
-                        { id: 'hierarchy', icon: Users, label: t('teamHierarchy'), perm: 'hierarchy', hideForOwner: true },
-                        { id: 'analytics', icon: BarChart3, label: t('analytics'), perm: 'analytics' },
-                        { id: 'activity', icon: Activity, label: t('auditLog'), perm: 'audit_logs' },
-                        { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
-                      ].filter(item => {
-                        if (item.hideForOwner && activeRole === 'App Owner') return false;
-                        return isAllowed(item.perm);
-                      }).map(item => (
-                        <button key={item.id} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
-                          <item.icon size={19} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
-                          {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '500', fontSize: '0.9rem' }}>{capitalize(item.label)}</span>}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* UNIT: INFRASTRUCTURE */}
-              {(isAllowed('agencies') || isAllowed('infrastructure') || isAllowed('permissions') || isAllowed('plans') || isAllowed('global_features')) && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                  {!isSidebarCollapsed && (
-                    <button 
-                      onClick={() => toggleUnit('infrastructure')}
-                      style={{ 
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '0 1.15rem', marginBottom: '0.6rem', marginTop: '0.85rem', background: 'none', border: 'none',
-                        width: '100%', cursor: 'pointer', textAlign: 'left'
-                      }}
-                    >
-                      <span style={{ fontSize: '0.85rem', fontWeight: '950', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.05em' }}>
-                        {capitalize(t('infraUnit') || 'Infrastruktura')}
-                      </span>
-                      {expandedUnits.infrastructure ? <ChevronUp size={14} color="rgba(255,255,255,0.3)" /> : <ChevronDown size={14} color="rgba(255,255,255,0.3)" />}
-                    </button>
-                  )}
-
-                  {(isSidebarCollapsed || expandedUnits.infrastructure) && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                      {[
-                        { id: 'agencies', icon: Building2, label: t('agencies'), perm: 'agencies' },
-                        { id: 'infra', icon: HardDrive, label: t('infra'), perm: 'infrastructure' },
-                        { id: 'permissions', icon: Shield, label: t('permissions'), perm: 'permissions' },
-                        { id: 'plans', icon: CreditCard, label: t('plans'), perm: 'plans', hideForOwner: true },
-                        { id: 'features', icon: Zap, label: t('features'), perm: 'global_features' },
-                        { id: 'inventory', icon: Package, label: t('stockCard') || 'Sklad', perm: 'inventory', hideForOwner: true },
-                      ].filter(item => {
-                        if (item.hideForOwner && activeRole === 'App Owner') return false;
-                        return isAllowed(item.perm);
-                      }).map(item => (
-                        <button key={item.id} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
-                          <item.icon size={19} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
-                          {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '500', fontSize: '0.9rem' }}>{capitalize(item.label)}</span>}
                         </button>
                       ))}
                     </div>
@@ -303,24 +204,19 @@ const Sidebar = () => {
               )}
             </div>
 
-            {!activeOperator?.isModel && activeRole !== 'App Owner' && !activeOperator?.isAdmin && !isSidebarCollapsed && (
+            {/* PRIVACY FIX: Strictly hidden for Models */}
+            {activeRole !== 'Model' && activeRole !== 'App Owner' && !activeOperator?.isAdmin && !isSidebarCollapsed && (myProfiles || []).length > 0 && (
               <div style={{ marginTop: '1.25rem', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem', padding: '0 0.85rem' }}>
                   <div style={{ fontSize: '0.65rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{capitalize(t('myAssignedGirls'))}</div>
-                  <div onClick={() => setShowOnlyOnline(!showOnlyOnline)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: showOnlyOnline ? 'var(--success-color)' : 'rgba(255,255,255,0.2)' }}></div>
-                    <span style={{ fontSize: '0.6rem', fontWeight: '900', color: showOnlyOnline ? 'var(--success-color)' : 'rgba(255,255,255,0.3)' }}>ONLINE</span>
-                  </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: '35vh', overflowY: 'auto' }} className="custom-scrollbar">
-                  {(myProfiles || []).filter(p => !showOnlyOnline || p.status === 'online').map(p => {
-                    const unread = getUnreadForProfile(p.id);
+                  {(myProfiles || []).map(p => {
                     const isActive = activeProfile?.id === p.id;
                     return (
                       <button key={p.id} onClick={() => { setActiveProfileId(p.id); setActiveTab('inbox'); }} style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.7rem 0.85rem', border: '1px solid', borderRadius: '14px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)', background: isActive ? 'rgba(59, 130, 246, 0.08)' : 'rgba(255,255,255,0.02)', borderColor: isActive ? 'rgba(59, 130, 246, 0.25)' : 'transparent' }}>
-                        <div style={{ width: '8px', height: '8px', background: p.status === 'online' ? 'var(--success-color)' : 'rgba(255,255,255,0.1)', borderRadius: '50%', flexShrink: 0 }}></div>
+                        <div style={{ width: '8px', height: '8px', background: p.status === 'online' ? 'var(--success-color)' : 'rgba(255,255,255,0.1)', borderRadius: '50%' }}></div>
                         <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: '0.88rem', fontWeight: isActive ? '800' : '600', color: isActive ? 'white' : 'rgba(255,255,255,0.6)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div></div>
-                        {unread > 0 && <div style={{ background: 'var(--error-color)', color: 'white', fontSize: '0.62rem', minWidth: '18px', height: '18px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '950' }}>{unread}</div>}
                       </button>
                     );
                   })}
@@ -329,29 +225,10 @@ const Sidebar = () => {
             )}
           </div>
           <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.85rem', borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem' }}>
-            {/* STANDALONE SETTINGS FOR OWNER/MANAGERS */}
-            {(activeRole === 'App Owner' || isAllowed('settings')) && (
-              <button 
-                onClick={() => handleNavigation('settings')} 
-                className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`} 
-                style={{ 
-                  display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', 
-                  padding: '0.75rem 1.15rem', borderRadius: '12px', 
-                  background: activeTab === 'settings' ? 'rgba(59, 130, 246, 0.12)' : 'transparent', 
-                  border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s', 
-                  justifyContent: isSidebarCollapsed ? 'center' : 'flex-start',
-                  marginBottom: '0.5rem'
-                }}
-              >
-                <Settings size={20} color={activeTab === 'settings' ? 'var(--accent-color)' : 'var(--text-secondary)'} />
-                {!isSidebarCollapsed && <span style={{ color: activeTab === 'settings' ? 'white' : 'var(--text-secondary)', fontWeight: '600', fontSize: '0.9rem' }}>{capitalize(t('settings'))}</span>}
-              </button>
-            )}
-
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: isSidebarCollapsed ? '0' : '0 0.5rem', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start', marginBottom: '0.5rem' }}>
-              <div style={{ width: '38px', height: '38px', background: 'linear-gradient(135deg, var(--accent-color) 0%, #1d4ed8 100%)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'white', fontSize: '0.85rem', flexShrink: 0, boxShadow: '0 6px 15px rgba(0,0,0,0.4)' }}>{activeOperator?.avatar}</div>
-              {!isSidebarCollapsed && <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: '0.88rem', fontWeight: '900', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'white' }}>{activeOperator?.name}</div><div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', fontWeight: '800', letterSpacing: '0.05em' }}>{activeRole?.toUpperCase() || ''}</div></div>}
-              {!isSidebarCollapsed && <button onClick={handleLogout} style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: 'var(--error-color)', width: '30px', height: '30px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><LogOut size={16} /></button>}
+              <div style={{ width: '38px', height: '38px', background: 'linear-gradient(135deg, var(--accent-color) 0%, #1d4ed8 100%)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'white', fontSize: '0.85rem', flexShrink: 0 }}>{activeOperator?.avatar}</div>
+              {!isSidebarCollapsed && <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: '0.88rem', fontWeight: '900', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'white' }}>{activeOperator?.name}</div><div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', fontWeight: '800' }}>{activeRole?.toUpperCase() || ''}</div></div>}
+              {!isSidebarCollapsed && <button onClick={handleLogout} style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: 'var(--error-color)', width: '30px', height: '30px', borderRadius: '10px', cursor: 'pointer' }}><LogOut size={16} /></button>}
             </div>
           </div>
         </>
