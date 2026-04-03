@@ -19,12 +19,12 @@ const HierarchyView = () => {
       <p style={{ color: 'var(--text-secondary)', marginBottom: isMobile ? '1.5rem' : '3rem', fontSize: isMobile ? '0.9rem' : '1.1rem' }}>{t('teamHierarchyDesc')}</p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-        {operators.filter(op => {
+        {(operators || []).filter(op => {
           if (activeRole === 'App Owner') return true;
           return op.agencyId === activeOperator?.agencyId;
         }).map(op => {
-          const assignedModels = profiles.filter(p => (p.operators || p.assignees || []).some(o => o.id === op.id || o === op.id));
-          const agency = agencies.find(a => a.id === op.agencyId);
+          const assignedModels = (profiles || []).filter(p => (p.operators || p.assignees || []).some(o => o.id === op.id || o === op.id));
+          const agency = (agencies || []).find(a => a.id === op.agencyId);
           return (
             <div key={op.id} className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '2rem', flexDirection: isMobile ? 'column' : 'row', gap: '1.5rem' }}>

@@ -12,8 +12,8 @@ const ActivityView = () => {
     auditLogs, 
     operators: availableOperators 
   } = nexus;
-  const filteredLogs = auditLogs.filter(log => 
-    availableOperators.some(op => op.name === log.operator)
+  const filteredLogs = (auditLogs || []).filter(log => 
+    (availableOperators || []).some(op => op.name === log.operator)
   );
 
   return (
