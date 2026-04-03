@@ -12,8 +12,23 @@ import {
 
 const NexusContext = createContext();
 
+// Centralized API Base URL
+const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
+
 export const NexusProvider = ({ children }) => {
-  const { user: authUser, logout } = useAuth();
+  // We get token and basic auth state from useAuth
+  // Note: useAuth also needs API_BASE if it makes its own calls
+  const auth = useAuth({ 
+    API_BASE,
+    t: (k) => k, // Minimal t for useAuth internal needs
+    setIsRelayMode: () => {}, 
+    setSelectedChatId: () => {}, 
+    setActiveProfileId: () => {}, 
+    setShowLanding: () => {} 
+  });
+  
+  const { user: authUser, token, logout } = auth;
+  
   const [lang, setLang] = useState('cz');
   const [activeTab, setActiveTab] = useState('dashboard');
   const [activeProfileId, setActiveProfileId] = useState(null);
@@ -35,7 +50,6 @@ export const NexusProvider = ({ children }) => {
   // Sync auth user to context
   const activeOperator = useMemo(() => {
     if (!authUser) return null;
-    // Find full operator details from data.operators if available
     const fullOp = (data.operators || []).find(op => op.id === authUser.id);
     return fullOp || authUser;
   }, [authUser, data.operators]);
@@ -51,7 +65,6 @@ export const NexusProvider = ({ children }) => {
         // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 800));
         
-        // Ensure every field is at least an empty array/object
         const hydratedData = {
           profiles: MOCK_PROFILES || [],
           agencies: MOCK_AGENCIES || [],
@@ -81,8 +94,6 @@ export const NexusProvider = ({ children }) => {
   const operators = useMemo(() => data.operators || [], [data.operators]);
   const messages = useMemo(() => data.messages || [], [data.messages]);
   const calendar = useMemo(() => data.bookingSchedule || [], [data.bookingSchedule]);
-  const clientNames = useMemo(() => data.clientNames || {}, [data.clientNames]);
-  const clientNotes = useMemo(() => data.clientNotes || {}, [data.clientNotes]);
 
   // Filtered Profiles based on role
   const myProfiles = useMemo(() => {
@@ -91,7 +102,6 @@ export const NexusProvider = ({ children }) => {
     if (activeRole === 'Manager') {
       return profiles.filter(p => p?.clientId === activeOperator?.clientId);
     }
-    // Model or Operator
     return profiles.filter(p => 
       p?.userId === activeOperator?.id || 
       (p?.operators || []).some(o => o.id === activeOperator?.id) ||
@@ -163,15 +173,7 @@ export const NexusProvider = ({ children }) => {
         features: 'Globální Funkce',
         stockCard: 'Sklad',
         referralProgram: 'Referraly',
-        bookingSchedule: 'Plán rezervací',
-        bookingScheduleDesc: 'Správa dnešních výjezdů a bezpečnosti.',
-        exportCalendar: 'Export (.ics)',
-        syncCalendar: 'Synchronizace',
-        recommendedSlots: 'Doporučené časy',
-        operatorTip: 'Tip pro operátora',
-        operatorTipDesc: 'Nezapomeňte kontrolovat stav Safety Guard u aktivních výjezdů.',
-        noEventsToday: 'Dnes nejsou naplánovány žádné akce.',
-        add: 'Přidat'
+        bookingSchedule: 'Plán rezervací'
       },
       en: {
         dashboard: 'Dashboard',
@@ -221,53 +223,55 @@ export const NexusProvider = ({ children }) => {
         features: 'Global Features',
         stockCard: 'Inventory',
         referralProgram: 'Referrals',
-        bookingSchedule: 'Booking Schedule',
-        bookingScheduleDesc: 'Manage today\'s outcalls and safety.',
-        exportCalendar: 'Export (.ics)',
-        syncCalendar: 'Sync Calendar',
-        recommendedSlots: 'Recommended Slots',
-        operatorTip: 'Operator Tip',
-        operatorTipDesc: 'Remember to check Safety Guard status for active bookings.',
-        noEventsToday: 'No events scheduled for today.',
-        add: 'Add'
+        bookingSchedule: 'Booking Schedule'
       }
     };
     return translations[lang][key] || key;
   };
 
   const value = {
+    // Basic state
     t,
     lang,
     setLang,
     activeTab,
     setActiveTab,
+    loading,
+    
+    // Auth & Identity
+    activeOperator,
+    activeRole,
+    isAllowed,
+    getPermissions,
+    token,
+    logout,
+    API_BASE,
+
+    // Profile & Visibility
     activeProfile,
     activeProfileId,
     setActiveProfileId,
     profiles,
     myProfiles,
+    
+    // Data collections
     agencies,
     operators,
     messages,
     calendar,
     stats: data.stats || {},
     activeSubscription: data.activeSubscription,
-    clientNames,
-    clientNotes,
-    totalUnread,
-    getUnreadForProfile,
+    
+    // Status
     isShiftActive,
     setIsShiftActive,
-    loading,
-    activeOperator,
-    activeRole,
-    isAllowed,
-    getPermissions,
     isMobile: typeof window !== 'undefined' ? window.innerWidth < 1024 : false,
-    updateClientName: (phone, name) => {
-      setData(prev => ({
-        ...prev,
-        clientNames: { ...prev.clientNames, [phone]: name }
+    
+    // Handlers
+    updateClientName: (phoneNumber, name) => {
+      setData(prev => ({ 
+        ...prev, 
+        clientNames: { ...prev.clientNames, [phoneNumber]: name } 
       }));
     }
   };
