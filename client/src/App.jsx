@@ -50,7 +50,7 @@ const AppContent = () => {
 
   // 2. Foundation Steps
   if (showLanding && isNativeApp) return <LandingPage />;
-  if (showOnboarding) return <Onboarding />;
+  if (showOnboarding && isNativeApp) return <Onboarding />;
 
   // 3. Core Application Shell
   return (
