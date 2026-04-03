@@ -39,7 +39,7 @@ const RelayControlCenter = () => {
         </div>
         <div className="glass-card" style={{ padding: '1.5rem', borderLeft: '4px solid var(--success-color)' }}>
           <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>VOIP NODES</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{sessions.filter(s => s.status === 'Active').length} <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>ONLINE</span></div>
+          <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{(sessions || []).filter(s => s.status === 'Active').length} <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>ONLINE</span></div>
         </div>
         <div className="glass-card" style={{ padding: '1.5rem', borderLeft: '4px solid #f59e0b' }}>
           <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>AUTO-PROVISIONING</div>
@@ -53,9 +53,9 @@ const RelayControlCenter = () => {
         </h3>
         <div className="glass-card" style={{ padding: 0 }}>
           {(() => {
-            const visibleSessions = sessions.filter(s => {
+            const visibleSessions = (sessions || []).filter(s => {
               if (isManager) return true;
-              const sessionProfile = profiles.find(p => p.id === s.profileId);
+              const sessionProfile = (profiles || []).find(p => p.id === s.profileId);
               return sessionProfile?.agencyId === activeOperator?.agencyId;
             });
 
@@ -88,7 +88,7 @@ const RelayControlCenter = () => {
                     <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', gap: '0.75rem' }}>
                       <span>{s.location}</span>
                       <span>•</span>
-                      <span>{profiles.find(p => p.id === s.profileId)?.name || 'UNASSIGNED'}</span>
+                      <span>{(profiles || []).find(p => p.id === s.profileId)?.name || 'UNASSIGNED'}</span>
                     </div>
                   </div>
                 </div>

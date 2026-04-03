@@ -35,7 +35,7 @@ const Sidebar = () => {
   const handleMobileProfileClick = (p) => {
     setActiveProfileId(p.id);
     setActiveTab('inbox');
-    const firstUnread = messages.find(m => m.profileId === p.id && m.status === 'unread');
+    const firstUnread = (messages || []).find(m => m.profileId === p.id && m.status === 'unread');
     if (firstUnread) {
       setSelectedChatId(firstUnread.id);
       setMobileView('chat');

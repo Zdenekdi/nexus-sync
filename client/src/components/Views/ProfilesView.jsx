@@ -95,9 +95,9 @@ const ProfilesView = () => {
                 <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.05em' }}>{t('assignedTeam') || 'PROTECTIVE TEAM / ASSIGNEES'}</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
                   {(profile.assignees || profile.operators || []).map(profileOp => {
-                    const opData = operators.find(o => o.id === profileOp.id);
+                    const opData = (operators || []).find(o => o.id === profileOp.id);
                     const displayName = opData?.name || profileOp.name || profileOp.id;
-                    const displayRole = opData?.role || '';
+                    const displayRole = (opData?.role?.name || opData?.role || '');
                     return (
                       <div key={profileOp.id} style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <div style={{ width: '32px', height: '32px', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-color)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: '900' }}>{(opData?.avatar) || displayName.substring(0,2).toUpperCase()}</div>
@@ -148,7 +148,7 @@ const ProfilesView = () => {
                                       <div 
                                           key={op.id} 
                                           onClick={() => {
-                                              const current = profile.assignees?.map(a => a.id) || [];
+                                              const current = (profile.assignees || []).map(a => a.id) || [];
                                               const next = current.includes(op.id) ? current.filter(id => id !== op.id) : [...current, op.id];
                                               handleSaveAssignees(profile.id, next);
                                           }}

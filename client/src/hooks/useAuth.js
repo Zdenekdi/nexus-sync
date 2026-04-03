@@ -247,16 +247,19 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
     setShowResetPassword(true);
   };
 
-  const handleResetComplete = (newPassword, operators, setOperators) => {
+  const handleResetComplete = (newPassword, operators = [], setOperators) => {
     if (!tempUser) return;
     
-    const updatedOperators = operators.map(op => 
+    const operatorsList = operators || [];
+    const updatedOperators = operatorsList.map(op => 
       op.id === tempUser.id ? { ...op, password: newPassword, mustResetPassword: false } : op
     );
     setOperators(updatedOperators);
     
-    const updatedUser = updatedOperators.find(op => op.id === tempUser.id);
-    handleLogin(updatedUser.email, newPassword); // Simplified for hook context
+    const updatedUser = (updatedOperators || []).find(op => op.id === tempUser.id);
+    if (updatedUser) {
+      handleLogin(updatedUser.email, newPassword);
+    }
     
     setShowResetPassword(false);
     setTempUser(null);
