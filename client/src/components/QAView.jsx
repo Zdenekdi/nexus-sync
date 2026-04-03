@@ -33,30 +33,30 @@ const QAView = () => {
 
     // If a specific operator is selected, use all profiles assigned to that operator
     if (filterOperatorId !== 'all') {
-      return profiles
+      return (profiles || [])
         .filter(p => 
-          p.operators?.some(o => o.id === filterOperatorId) || 
-          p.assignees?.some(a => a.id === filterOperatorId)
+          (p.operators || []).some(o => o.id === filterOperatorId) || 
+          (p.assignees || []).some(a => a.id === filterOperatorId)
         )
         .map(p => p.id);
     }
 
     // Default: show all profiles for the current operator's agency
-    return profiles
+    return (profiles || [])
       .filter(p => activeOperator?.isAppOwner || p.clientId === activeOperator?.clientId)
       .map(p => p.id);
   }, [filterOperatorId, filterProfileId, profiles, activeOperator]);
 
   // Build list of visible messages filtered by visible profiles
   const visibleMessages = useMemo(() => {
-    if (visibleProfileIds.length === 0) return messages;
-    return messages.filter(m => visibleProfileIds.includes(m.profileId));
+    if ((visibleProfileIds || []).length === 0) return (messages || []);
+    return (messages || []).filter(m => (visibleProfileIds || []).includes(m.profileId));
   }, [messages, visibleProfileIds]);
 
   // Extract unique clients from filtered messages
   const clients = useMemo(() => {
     const clientsMap = new Map();
-    visibleMessages.forEach(msg => {
+    (visibleMessages || []).forEach(msg => {
       if (msg.from && !clientsMap.has(msg.from)) {
         clientsMap.set(msg.from, {
           phoneNumber: msg.from,
@@ -69,13 +69,13 @@ const QAView = () => {
     return Array.from(clientsMap.values());
   }, [visibleMessages, clientNames]);
 
-  const filteredClients = clients.filter(c =>
+  const filteredClients = (clients || []).filter(c =>
     c.phoneNumber.includes(searchQuery) ||
     (c.name && c.name.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const activeClient = selectedClient || (filteredClients.length > 0 ? filteredClients[0].phoneNumber : null);
-  const currentClientData = clients.find(c => c.phoneNumber === activeClient);
+  const currentClientData = (clients || []).find(c => c.phoneNumber === activeClient);
 
   const handleStartEdit = (client) => {
     setEditingName(client.phoneNumber);
@@ -89,18 +89,18 @@ const QAView = () => {
 
   // Operators scoped to current agency
   const agencyOperators = useMemo(() =>
-    operators.filter(op => !op.isAppOwner && !op.isModel && (activeOperator?.isAppOwner || op.clientId === activeOperator?.clientId)),
+    (operators || []).filter(op => !op.isAppOwner && !op.isModel && (activeOperator?.isAppOwner || op.clientId === activeOperator?.clientId)),
     [operators, activeOperator]
   );
 
   // Profiles for the selected operator (or all agency profiles)
   const operatorProfiles = useMemo(() => {
     if (filterOperatorId === 'all') {
-      return profiles.filter(p => activeOperator?.isAppOwner || p.clientId === activeOperator?.clientId);
+      return (profiles || []).filter(p => activeOperator?.isAppOwner || p.clientId === activeOperator?.clientId);
     }
-    return profiles.filter(p => 
-      p.operators?.some(o => o.id === filterOperatorId) || 
-      p.assignees?.some(a => a.id === filterOperatorId)
+    return (profiles || []).filter(p => 
+      (p.operators || []).some(o => o.id === filterOperatorId) || 
+      (p.assignees || []).some(a => a.id === filterOperatorId)
     );
   }, [filterOperatorId, profiles, activeOperator]);
 
@@ -302,7 +302,7 @@ const QAView = () => {
                   <Search size={18} /> {t('recentCommunicationHistory')}
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {visibleMessages.filter(m => m.from === currentClientData.phoneNumber).map(m => (
+                  {(visibleMessages || []).filter(m => m.from === currentClientData.phoneNumber).map(m => (
                     <div key={m.id} style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.01)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.03)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                         <span style={{ fontSize: '0.65rem', fontWeight: '800', color: (m.status || '').toLowerCase() === 'read' ? 'var(--success-color)' : 'var(--accent-color)', padding: '2px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)' }}>

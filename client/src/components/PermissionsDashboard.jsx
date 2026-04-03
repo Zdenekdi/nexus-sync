@@ -50,7 +50,9 @@ const PermissionsDashboard = ({ agencyId = null, onUpdate = null }) => {
   const handleSave = async (id) => {
     try {
       setSavingId(id);
-      const role = roles.find(r => r.id === id);
+      const role = (roles || []).find(r => r.id === id);
+      if (!role) return;
+      
       await axios.patch(`${API_BASE}/agency/roles/${id}/permissions`, {
         permissions: role.permissions
       }, {

@@ -85,11 +85,12 @@ export function useChatLogic({
     };
 
     setMessages(prev => {
+      const messagesList = prev || [];
       const existingByChatId = normalizedMessage.chatId != null
-        ? prev.findIndex(msg => (msg.chatId || msg.id) === normalizedMessage.chatId)
+        ? messagesList.findIndex(msg => (msg.chatId || msg.id) === normalizedMessage.chatId)
         : -1;
       const existingByProfileAndFrom = existingByChatId === -1
-        ? prev.findIndex(msg => normalizeProfileId(msg.profileId) === normalizedMessage.profileId && msg.from === normalizedMessage.from)
+        ? messagesList.findIndex(msg => normalizeProfileId(msg.profileId) === normalizedMessage.profileId && msg.from === normalizedMessage.from)
         : -1;
       const existingIndex = existingByChatId !== -1 ? existingByChatId : existingByProfileAndFrom;
 
@@ -117,26 +118,27 @@ export function useChatLogic({
       const realMessageId = incomingMessage.id;
 
       setChatMessages(prev => {
+        const messagesList = prev || [];
         if (isOutbound && realMessageId) {
-          const existingIdx = prev.findIndex(m =>
+          const existingIdx = messagesList.findIndex(m =>
             m.id === realMessageId ||
             (m.text === resolvedText && Math.abs(new Date(m.createdAt || m.timestamp || 0) - new Date(resolvedTimestamp)) < 10000)
           );
           if (existingIdx !== -1) {
-            const updated = [...prev];
+            const updated = [...messagesList];
             updated[existingIdx] = { ...updated[existingIdx], ...incomingMessage, id: realMessageId };
             return updated;
           }
-          return [...prev, { ...normalizedMessage, id: realMessageId }];
+          return [...messagesList, { ...normalizedMessage, id: realMessageId }];
         }
 
         const msgId = realMessageId || normalizedMessage.id;
-        const exists = prev.some(m =>
+        const exists = messagesList.some(m =>
           m.id === msgId ||
           (m.text === resolvedText && Math.abs(new Date(m.createdAt || m.timestamp || 0) - new Date(resolvedTimestamp)) < 10000)
         );
-        if (exists) return prev;
-        return [...prev, { ...normalizedMessage, id: msgId }];
+        if (exists) return messagesList;
+        return [...messagesList, { ...normalizedMessage, id: msgId }];
       });
     }
 
@@ -276,8 +278,8 @@ export function useChatLogic({
 
   // Meeting detection
   useEffect(() => {
-    if (!chatMessages.length || !selectedChatId) { setDetectedMeeting(null); return; }
-    const last = [...chatMessages].reverse().find(m => (m.direction || '').toUpperCase() === 'INBOUND');
+    if (!(chatMessages || []).length || !selectedChatId) { setDetectedMeeting(null); return; }
+    const last = [...(chatMessages || [])].reverse().find(m => (m.direction || '').toUpperCase() === 'INBOUND');
     if (!last) { setDetectedMeeting(null); return; }
     
     const text = (last.text || '').toLowerCase();
@@ -336,7 +338,7 @@ export function useChatLogic({
     selectedChat,
     totalUnread: useMemo(() =>
       (messages || []).filter(msg =>
-        msg && (profiles || []).map(p => p.id).includes(msg.profileId) &&
+        msg && (profiles || []).some(p => p.id === msg.profileId) &&
         msg.status === 'unread'
       ).length || 0,
       [messages, profiles]
