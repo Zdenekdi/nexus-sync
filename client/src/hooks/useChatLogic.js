@@ -141,7 +141,7 @@ export function useChatLogic({
     }
 
     return normalizedMessage;
-  }, [selectedChatId, activeOperator?.profileId, activeProfileId, normalizeProfileId, parseChatId]);
+  }, [selectedChatId, activeOperator?.profileId, activeProfileId, normalizeProfileId, parseChatId, setMessages]);
 
   const fetchChatMessages = useCallback(async (chatId) => {
     if (!token || !chatId) return;
@@ -166,7 +166,7 @@ export function useChatLogic({
     };
 
     const effectiveActiveProfileId = normalizeProfileId(activeProfileId ?? activeOperator?.profileId ?? null);
-    const base = messages.filter(m => normalizeProfileId(m.profileId) === effectiveActiveProfileId);
+    const base = (messages || []).filter(m => normalizeProfileId(m.profileId) === effectiveActiveProfileId);
     return [...base].sort((a, b) => toTimestamp(b) - toTimestamp(a));
   }, [messages, activeProfileId, activeOperator?.profileId, normalizeProfileId]);
 
@@ -335,14 +335,14 @@ export function useChatLogic({
     filteredMessages,
     selectedChat,
     totalUnread: useMemo(() =>
-      messages?.filter(msg =>
-        msg && (profiles.map(p => p.id)).includes(msg.profileId) &&
+      (messages || []).filter(msg =>
+        msg && (profiles || []).map(p => p.id).includes(msg.profileId) &&
         msg.status === 'unread'
       ).length || 0,
       [messages, profiles]
     ),
     getUnreadForProfile: (profileId) => {
-      return messages.filter(msg => msg.profileId === profileId && msg.status === 'unread').length;
+      return (messages || []).filter(msg => msg.profileId === profileId && msg.status === 'unread').length;
     },
     chatScrollRef,
     isUserScrolled,

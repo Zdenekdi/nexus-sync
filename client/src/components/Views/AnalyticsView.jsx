@@ -62,7 +62,7 @@ const AnalyticsView = () => {
             <Users size={20} color="var(--accent-color)" /> {t('perfByProfile')}
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {isMobile ? agencies.flatMap(a => a.profiles || []).slice(0, 10).map((p, i) => (
+            {isMobile ? (agencies || []).flatMap(a => a.profiles || []).slice(0, 10).map((p, i) => (
               <div key={p.id || i} className="glass-card" style={{ padding: '1.25rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -94,7 +94,7 @@ const AnalyticsView = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {[...allAgencyProfiles].sort((a,b) => parseInt((b.earnings || '£0').replace(/\D/g,'')) - parseInt((a.earnings || '£0').replace(/\D/g,''))).map((p, idx) => (
+                    {[...(allAgencyProfiles || [])].sort((a,b) => parseInt((b.earnings || '£0').replace(/\D/g,'')) - parseInt((a.earnings || '£0').replace(/\D/g,''))).map((p, idx) => (
                       <tr key={p.id} style={{ borderBottom: '1px solid var(--card-border)' }}>
                         <td style={{ padding: '1rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -134,8 +134,8 @@ const AnalyticsView = () => {
                 </tr>
               </thead>
               <tbody>
-                {[...availableOperators].sort((a,b) => (b.metrics?.messages || 0) - (a.metrics?.messages || 0)).map((op, i) => (
-                  <tr key={op.id} style={{ borderBottom: i < availableOperators.length - 1 ? '1px solid var(--card-border)' : 'none' }}>
+                {[...(availableOperators || [])].sort((a,b) => (b.metrics?.messages || 0) - (a.metrics?.messages || 0)).map((op, i) => (
+                  <tr key={op.id} style={{ borderBottom: i < (availableOperators || []).length - 1 ? '1px solid var(--card-border)' : 'none' }}>
                     <td style={{ padding: '1rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <div style={{ width: '28px', height: '28px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: '900' }}>{op.avatar}</div>
