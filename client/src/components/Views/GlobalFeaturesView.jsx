@@ -32,8 +32,8 @@ const GlobalFeaturesView = () => {
             {globalFeatures.map((feature, i) => (
               <div key={feature.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px' }}>
                 <div>
-                  <div style={{ fontWeight: '700' }}>{feature.label || feature.id}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{feature.desc}</div>
+                  <div style={{ fontWeight: '700' }}>{t(`feat_${feature.id}_label`) || feature.label}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t(`feat_${feature.id}_desc`) || feature.desc}</div>
                 </div>
                 <div 
                   onClick={() => onFeatureToggle(feature, i)}
@@ -55,11 +55,11 @@ const GlobalFeaturesView = () => {
             <div style={{ textAlign: 'center' }}>
               <Check size={48} color="var(--success-color)" style={{ marginBottom: '1rem' }} />
               <h4>{t('modelOptimizationComplete')}</h4>
-              <button onClick={onResetTraining} className="status-badge" style={{ marginTop: '1rem' }}>RESET</button>
+              <button onClick={onResetTraining} className="status-badge" style={{ marginTop: '1rem' }}>{t('trainingReset') || 'RESET'}</button>
             </div>
           ) : (
             <button onClick={onStartTraining} disabled={isTraining} className="action-btn" style={{ background: 'var(--accent-color)' }}>
-              {isTraining ? `TRAINING ${trainingProgress}%` : t('uploadTrainingSet')}
+              {isTraining ? `${t('trainingInProgress') || 'TRAINING'} ${trainingProgress}%` : t('uploadTrainingSet')}
             </button>
           )}
         </div>

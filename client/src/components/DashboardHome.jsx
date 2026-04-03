@@ -128,8 +128,6 @@ const DashboardHome = () => {
         <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1rem' }}>{t('globalHealthDesc')}</p>
       </div>
 
-      {renderSubscriptionBanner()}
-      
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(240px, 1fr))', gap: isMobile ? '1rem' : '1.5rem', marginBottom: isMobile ? '1.5rem' : '3rem' }}>
         {[
           { label: t('totalRevenue'), value: stats.revenue || '£0.00', icon: <DollarSign color="#10b981" />, growth: stats.commissionGrowth || 'STABLE', chart: stats.chartData || [0,0,0,0,0,0,0] },
@@ -194,6 +192,9 @@ const DashboardHome = () => {
            {t('mapViz') || 'Global Infrastructure Map Enabled'}
         </div>
       </div>
+      
+      {/* Professional spacing at bottom */}
+      <div style={{ height: '4rem', opacity: 0 }} aria-hidden="true" />
     </div>
   ); };
 
@@ -321,7 +322,7 @@ const DashboardHome = () => {
 
   return (
     <div style={{ 
-      padding: isMobile ? '0.75rem 0.9rem 1rem' : '3rem',
+      padding: isMobile ? '0.75rem 0.9rem 2rem' : '3rem 3rem 6rem',
       maxWidth: '1400px',
       margin: '0 auto',
       width: '100%',
