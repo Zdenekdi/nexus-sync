@@ -64,13 +64,17 @@ const Sidebar = () => {
                 { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard') },
                 { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: totalUnread },
                 { id: 'calendar', icon: Calendar, label: t('schedule') },
-                { id: 'relay', icon: Radio, label: lang === 'cz' ? 'Relay System' : 'Relay System' }, // Our New Tab
+                { id: 'relay', icon: Radio, label: 'Relay System', nativeOnly: true },
                 { id: 'analytics', icon: BarChart3, label: t('analytics'), perm: 'analytics' },
                 { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
                 { id: 'agencies', icon: Building2, label: t('agencies'), perm: 'agencies' },
                 { id: 'infra', icon: HardDrive, label: t('infra'), perm: 'infrastructure' },
                 { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
-              ].filter(item => !item.perm || (rolePermissions[activeRole] || {})[item.perm]).map(item => (
+              ].filter(item => {
+                if (item.nativeOnly && !isNativeApp) return false;
+                if (item.hideForOwner && activeRole === 'App Owner') return false;
+                return !item.perm || isAllowed(item.perm);
+              }).map(item => (
                 <button key={item.id} onClick={() => handleNavigation(item.id)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', padding: '1.25rem 1rem', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255,255,255,0.03)', border: activeTab === item.id ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(255,255,255,0.05)', borderRadius: '20px', cursor: 'pointer', transition: 'all 0.2s', position: 'relative' }}>
                   <item.icon size={26} color={activeTab === item.id ? 'var(--accent-color)' : 'rgba(255,255,255,0.6)'} />
                   <span style={{ fontSize: '0.8rem', fontWeight: '800', color: activeTab === item.id ? 'white' : 'rgba(255,255,255,0.6)', textAlign: 'center' }}>{item.label}</span>
