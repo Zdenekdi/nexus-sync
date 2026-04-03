@@ -126,7 +126,7 @@ const LoginScreen = () => {
             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.05em' }}>{t('emailLabel').toUpperCase()}</label>
             <div style={{ position: 'relative' }}>
               <Mail size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" required className="glass-input" style={{ width: '100%', paddingLeft: '3rem' }} />
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" required autoComplete="email" className="glass-input" style={{ width: '100%', paddingLeft: '3rem' }} />
             </div>
           </div>
 
@@ -141,15 +141,16 @@ const LoginScreen = () => {
                   onChange={(e) => setPassword(e.target.value)} 
                   placeholder="••••••••" 
                   required 
+                  autoComplete="current-password"
                   className="glass-input" 
-                  style={{ width: '100%', paddingLeft: '3rem', paddingRight: '3rem' }} 
+                  style={{ width: '100%', paddingLeft: '3rem', paddingRight: '3.5rem' }} 
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }}
+                  style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '8px', padding: '6px', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'all 0.2s', zIndex: 2 }}
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
@@ -199,10 +200,10 @@ const LoginScreen = () => {
             <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
               <button type="button" onClick={() => setMode('reset')} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.85rem', cursor: 'pointer', fontWeight: '500' }}>{t('forgotPassword')}</button>
               <div style={{ height: '1px', background: 'var(--card-border)', margin: '0.5rem 0' }}></div>
-              <div style={{ display: 'flex', gap: isMobile ? '0.75rem' : '1rem', justifyContent: 'center', alignItems: 'center', flexDirection: isMobile ? 'column' : 'row' }}>
-                <button type="button" onClick={() => setMode('register_agency')} style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '0.85rem', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', flexWrap: 'wrap', textAlign: 'center' }}><Building size={14}/> {t('registerAgency')}</button>
-                <div style={{ width: isMobile ? '100%' : '1px', height: isMobile ? '1px' : 'auto', background: 'var(--card-border)', maxWidth: isMobile ? '180px' : 'none' }}></div>
-                <button type="button" onClick={() => setMode('register_user')} style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '0.85rem', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', flexWrap: 'wrap', textAlign: 'center' }}><UserPlus size={14}/> {t('registerUser')}</button>
+              <div style={{ display: 'flex', gap: isMobile ? '1.25rem' : '1.5rem', justifyContent: 'center', alignItems: 'center', flexDirection: isMobile ? 'column' : 'row', flexWrap: 'wrap' }}>
+                <button type="button" onClick={() => setMode('register_agency')} style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '0.85rem', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', textAlign: 'center' }}><Building size={16}/> {t('registerAgency')}</button>
+                {!isMobile && <div style={{ width: '1px', height: '16px', background: 'var(--card-border)' }}></div>}
+                <button type="button" onClick={() => setMode('register_user')} style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '0.85rem', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', textAlign: 'center' }}><UserPlus size={16}/> {t('registerUser')}</button>
               </div>
             </div>
           )}
