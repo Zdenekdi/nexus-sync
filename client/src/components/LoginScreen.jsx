@@ -1,214 +1,181 @@
 import React, { useState } from 'react';
 import { useNexus } from '../context/NexusContext';
-import { Mail, Lock, Shield, ArrowRight, UserPlus, Building2, Ticket } from 'lucide-react';
+import { 
+  Lock, Mail, ArrowRight, Loader2, ShieldCheck, 
+  Globe, Smartphone, Zap, CheckCircle2 
+} from 'lucide-react';
 
 const LoginScreen = () => {
-  const nexus = useNexus();
-  const { onLogin, onRegisterAgency, onRegisterUser, onResetRequest, t } = nexus;
-  
-  const [mode, setMode] = useState('login'); // 'login', 'register-agency', 'register-user', 'forgot'
+  const { onLogin, t, setLang, lang } = useNexus();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    name: '',
-    agencyName: '',
-    inviteCode: ''
-  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess('');
-
     try {
-      if (mode === 'login') {
-        const ok = await onLogin(formData.email, formData.password);
-        if (!ok) setError(t('loginError'));
-      } else if (mode === 'register-agency') {
-        const ok = await onRegisterAgency({ 
-          email: formData.email, 
-          password: formData.password, 
-          name: formData.name, 
-          agencyName: formData.agencyName 
-        });
-        if (ok) { setSuccess(t('registrationSuccess')); setMode('login'); }
-        else setError('Registration failed');
-      } else if (mode === 'register-user') {
-        const ok = await onRegisterUser({ 
-          email: formData.email, 
-          password: formData.password, 
-          name: formData.name, 
-          inviteCode: formData.inviteCode 
-        });
-        if (ok) { setSuccess(t('registrationSuccess')); setMode('login'); }
-        else setError('Invalid invite code or registration failed');
-      } else if (mode === 'forgot') {
-        const ok = await onResetRequest(formData.email);
-        if (ok) setSuccess(t('resetSent'));
-        else setError('Reset request failed');
-      }
+      await onLogin(email, password);
     } catch (err) {
-      setError(err.message || 'Action failed');
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const inputStyle = {
-    width: '100%',
-    padding: '0.75rem 1rem 0.75rem 2.75rem',
-    background: 'rgba(255,255,255,0.03)',
-    border: '1px solid var(--card-border)',
-    borderRadius: '10px',
-    color: 'white',
-    fontSize: '0.9rem',
-    outline: 'none',
-    transition: 'border-color 0.2s',
-  };
-
-  const iconStyle = {
-    position: 'absolute',
-    left: '1rem',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    color: 'rgba(255,255,255,0.3)',
-  };
-
-  const buttonStyle = {
-    width: '100%',
-    padding: '0.85rem',
-    background: 'var(--accent-color)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '10px',
-    fontWeight: '800',
-    fontSize: '0.9rem',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '0.5rem',
-    marginTop: '0.5rem'
-  };
-
-  const cardStyle = {
-    width: '100%',
-    maxWidth: '380px',
-    padding: '1.5rem',
-    background: 'rgba(15, 17, 23, 0.8)',
-    backdropFilter: 'blur(15px)',
-    borderRadius: '20px',
-    border: '1px solid var(--card-border)',
-    boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1rem',
-    margin: 'auto'
-  };
-
   return (
-    <div style={{ 
-      minHeight: '100dvh', 
-      width: '100%', 
-      display: 'flex', 
-      background: '#050608',
-      backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 50%)',
-      padding: '1rem',
-      overflow: 'hidden'
+    <div className="login-page" style={{
+      minHeight: '100dvh',
+      width: '100vw',
+      background: '#040507',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+      padding: '0.5rem',
+      position: 'fixed'
     }}>
-      <div style={cardStyle}>
+      <div style={{
+        width: '100%',
+        maxWidth: '360px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.75rem',
+        animation: 'fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1)'
+      }}>
+        {/* LOGO AREA - ULTRA COMPACT */}
         <div style={{ textAlign: 'center' }}>
-          <img src="/nexus_icon.png" style={{ width: '40px', marginBottom: '0.5rem' }} alt="Nexus" />
-          <h2 style={{ fontSize: '1.25rem', fontWeight: '900', color: 'white' }}>
-            {mode === 'login' && 'Nexus Hub'}
-            {mode === 'forgot' && t('forgotPassword')}
-            {mode === 'register-agency' && t('registerAgency')}
-            {mode === 'register-user' && t('registerUser')}
-          </h2>
-          <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.25rem' }}>
-            {mode === 'login' ? 'The Industry Standard for Syncing' : 'Enter your details to proceed'}
-          </p>
+          <div style={{
+            width: '44px',
+            height: '44px',
+            background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+            borderRadius: '12px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 0 20px rgba(59, 130, 246, 0.3)',
+            marginBottom: '0.5rem'
+          }}>
+            <Zap color="white" size={22} fill="white" />
+          </div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: '950', color: 'white', letterSpacing: '-0.03em', margin: 0 }}>
+            Nexus Hub
+          </h1>
         </div>
 
-        {error && <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--error-color)', padding: '0.75rem', borderRadius: '10px', fontSize: '0.8rem', border: '1px solid rgba(239, 68, 68, 0.2)' }}>{error}</div>}
-        {success && <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success-color)', padding: '0.75rem', borderRadius: '10px', fontSize: '0.8rem', border: '1px solid rgba(16, 185, 129, 0.2)' }}>{success}</div>}
-
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {(mode === 'register-agency' || mode === 'register-user') && (
-            <div style={{ position: 'relative' }}>
-              <Users size={18} style={iconStyle} />
-              <input 
-                style={inputStyle} type="text" placeholder={t('fullNameLabel')} required 
-                value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
-              />
-            </div>
-          )}
-          {mode === 'register-agency' && (
-            <div style={{ position: 'relative' }}>
-              <Building2 size={18} style={iconStyle} />
-              <input 
-                style={inputStyle} type="text" placeholder={t('agencyNameLabel')} required 
-                value={formData.agencyName} onChange={e => setFormData({...formData, agencyName: e.target.value})}
-              />
-            </div>
-          )}
-          {mode === 'register-user' && (
-            <div style={{ position: 'relative' }}>
-              <Ticket size={18} style={iconStyle} />
-              <input 
-                style={inputStyle} type="text" placeholder={t('inviteCodeLabel')} required 
-                value={formData.inviteCode} onChange={e => setFormData({...formData, inviteCode: e.target.value})}
-              />
-            </div>
-          )}
-          
-          <div style={{ position: 'relative' }}>
-            <Mail size={18} style={iconStyle} />
-            <input 
-              style={inputStyle} type="email" placeholder={t('emailLabel')} required 
-              value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
-            />
-          </div>
-
-          {mode !== 'forgot' && (
-            <div style={{ position: 'relative' }}>
-              <Lock size={18} style={iconStyle} />
-              <input 
-                style={inputStyle} type="password" placeholder={t('passwordLabel')} required 
-                value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})}
-              />
-            </div>
-          )}
-
-          <button type="submit" disabled={loading} style={{ ...buttonStyle, opacity: loading ? 0.7 : 1 }}>
-            {loading ? '...' : (
-              <>
-                {mode === 'login' ? t('loginButton') : mode === 'forgot' ? t('resetRequestButton') : t('registerButton')}
-                <ArrowRight size={18} />
-              </>
-            )}
-          </button>
-        </form>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
-          {mode === 'login' ? (
-            <>
-              <button onClick={() => setMode('forgot')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', cursor: 'pointer' }}>{t('forgotPassword')}</button>
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                <button onClick={() => setMode('register-agency')} style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer' }}>{t('registerAgency')}</button>
-                <button onClick={() => setMode('register-user')} style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer' }}>{t('registerUser')}</button>
+        {/* LOGIN CARD */}
+        <div className="glass-card" style={{
+          padding: '1.25rem',
+          borderRadius: '20px',
+          background: 'rgba(15, 23, 42, 0.6)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          backdropFilter: 'blur(20px)'
+        }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div className="input-group">
+              <label style={{ fontSize: '0.65rem', fontWeight: '800', color: '#64748b', marginBottom: '0.3rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {t('emailLabel')}
+              </label>
+              <div style={{ position: 'relative' }}>
+                <Mail size={14} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@agency.com"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.85rem 0.6rem 2.4rem',
+                    background: 'rgba(0,0,0,0.3)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '10px',
+                    color: 'white',
+                    fontSize: '0.85rem',
+                    outline: 'none'
+                  }}
+                />
               </div>
-            </>
-          ) : (
-            <button onClick={() => setMode('login')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', cursor: 'pointer' }}>{t('backToLogin')}</button>
-          )}
+            </div>
+
+            <div className="input-group">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                <label style={{ fontSize: '0.65rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  {t('passwordLabel')}
+                </label>
+              </div>
+              <div style={{ position: 'relative' }}>
+                <Lock size={14} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.85rem 0.6rem 2.4rem',
+                    background: 'rgba(0,0,0,0.3)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '10px',
+                    color: 'white',
+                    fontSize: '0.85rem',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="hover-bright"
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '10px',
+                fontSize: '0.85rem',
+                fontWeight: '900',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                marginTop: '0.25rem'
+              }}
+            >
+              {loading ? <Loader2 className="animate-spin" size={16} /> : (
+                <>
+                  {t('loginButton')}
+                  <ArrowRight size={16} />
+                </>
+              )}
+            </button>
+          </form>
+        </div>
+
+        {/* LANG & EXIT */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', alignItems: 'center' }}>
+          <div style={{ display: 'inline-flex', background: 'rgba(255,255,255,0.03)', padding: '2px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <button onClick={() => setLang('cz')} style={{ padding: '3px 10px', border: 'none', background: lang === 'cz' ? '#3b82f6' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer' }}>CZ</button>
+            <button onClick={() => setLang('en')} style={{ padding: '3px 10px', border: 'none', background: lang === 'en' ? '#3b82f6' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer' }}>EN</button>
+          </div>
         </div>
       </div>
+
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .hover-bright:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        .hover-bright:active { transform: translateY(0); }
+      `}</style>
     </div>
   );
 };

@@ -12,7 +12,7 @@ const Sidebar = () => {
   const { 
     activeTab, setActiveTab, t, lang, setLang, 
     activeOperator, logout, isMobile, 
-    totalUnread, getUnreadForProfile, myProfiles,
+    totalUnread, myProfiles,
     activeProfile, setActiveProfileId, activeRole,
     isSidebarCollapsed, isAllowed
   } = nexus;
@@ -23,7 +23,6 @@ const Sidebar = () => {
     agency: true,
     infrastructure: true
   });
-  const [showOnlyOnline, setShowOnlyOnline] = useState(false);
 
   const toggleUnit = (unit) => {
     setExpandedUnits(prev => ({ ...prev, [unit]: !prev[unit] }));
@@ -47,10 +46,13 @@ const Sidebar = () => {
 
   const capitalize = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
 
-  // MOBILE OVERLAY
+  // Get display name with safe fallbacks
+  const displayName = activeOperator?.name || activeOperator?.fullname || activeOperator?.username || 'Operator';
+  const displayAvatar = activeOperator?.avatar || (displayName ? displayName.charAt(0) : 'U');
+
   if (isMobile && !isMobileMenuOpen) {
     return (
-      <div style={{ position: 'fixed', top: '1rem', left: '1rem', zIndex: 1000, display: 'flex', gap: '0.75rem' }}>
+      <div style={{ position: 'fixed', top: '1rem', left: '1rem', zIndex: 1000 }}>
         <button onClick={() => setIsMobileMenuOpen(true)} className="glass-card" style={{ padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', border: '1px solid var(--card-border)' }}>
           <Menu size={20} />
         </button>
@@ -88,14 +90,16 @@ const Sidebar = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem' }}>
               {[
                 { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard') },
-                { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: activeRole === 'Model' ? 0 : totalUnread, perm: 'messaging' },
+                { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: totalUnread, perm: 'messaging' },
                 { id: 'calendar', icon: Calendar, label: t('schedule'), perm: 'calendar' },
                 { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub', hideForOwner: true },
                 { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' }
               ].filter(item => {
-                if (item.hideForOwner && activeRole === 'App Owner') return false;
-                if (activeRole === 'Model' && item.id === 'qa') return false;
-                return !item.perm || isAllowed(item.perm);
+                const hasPerm = !item.perm || isAllowed(item.perm);
+                if (!hasPerm) return false;
+                if (item.hideForOwner && activeRole === 'APP OWNER') return false;
+                if (activeRole === 'MODEL' && item.id === 'qa') return false;
+                return true;
               }).map(item => (
                 <button key={item.id} onClick={() => handleNavigation(item.id)} style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1.15rem', borderRadius: '18px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255,255,255,0.02)', border: activeTab === item.id ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid transparent', color: activeTab === item.id ? 'white' : 'rgba(255,255,255,0.6)', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s' }}>
                   <item.icon size={22} color={activeTab === item.id ? 'var(--accent-color)' : 'currentColor'} />
@@ -105,29 +109,22 @@ const Sidebar = () => {
               ))}
             </div>
             
-            {/* PRVACY & VISIBILITY FIX: Operators and Managers see assigned models */}
-            {activeRole !== 'Model' && activeRole !== 'App Owner' && (myProfiles || []).length > 0 && (
+            {activeRole !== 'MODEL' && activeRole !== 'APP OWNER' && (myProfiles || []).length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{capitalize(t('myAssignedGirls'))}</div>
-                </div>
+                <div style={{ fontSize: '0.7rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{capitalize(t('myAssignedGirls'))}</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {(myProfiles || []).map(p => {
-                    const unread = getUnreadForProfile ? getUnreadForProfile(p.id) : 0;
-                    return (
+                  {(myProfiles || []).map(p => (
                       <button key={p.id} onClick={() => handleMobileProfileClick(p)} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.85rem 1rem', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '15px', cursor: 'pointer', background: 'rgba(255,255,255,0.02)', width: '100%', textAlign: 'left' }}>
                         <div style={{ width: '8px', height: '8px', background: p.status === 'online' ? 'var(--success-color)' : 'rgba(255,255,255,0.1)', borderRadius: '50%' }}></div>
                         <span style={{ flex: 1, fontSize: '0.9rem', fontWeight: '700', color: 'white' }}>{p.name}</span>
-                        {unread > 0 && <div style={{ background: 'var(--error-color)', color: 'white', fontSize: '0.6rem', minWidth: '18px', height: '18px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '950' }}>{unread}</div>}
                       </button>
-                    );
-                  })}
+                    ))}
                 </div>
               </div>
             )}
           </div>
-          <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', gap: '1rem' }}>
-            <button onClick={handleLogout} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '15px', color: 'var(--error-color)', fontWeight: '800', fontSize: '0.9rem' }}><LogOut size={18} /> {t('logout') || 'Exit'}</button>
+          <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+            <button onClick={handleLogout} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '15px', color: 'var(--error-color)', fontWeight: '800', fontSize: '0.9rem' }}><LogOut size={18} /> {t('logout') || 'Exit'}</button>
           </div>
         </div>
       ) : (
@@ -162,7 +159,7 @@ const Sidebar = () => {
                 {!isSidebarCollapsed && <span style={{ color: activeTab === 'dashboard' ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === 'dashboard' ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(t('dashboard'))}</span>}
               </button>
 
-              {activeRole !== 'Model' && activeRole !== 'App Owner' && (
+              {activeRole !== 'MODEL' && activeRole !== 'APP OWNER' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                   {!isSidebarCollapsed && (
                     <div style={{ padding: '0.5rem 1.15rem', fontSize: '0.75rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.05em' }}>{capitalize(t('operationsUnit'))}</div>
@@ -177,7 +174,7 @@ const Sidebar = () => {
                     ].filter(item => {
                       const hasPerm = !item.perm || isAllowed(item.perm);
                       if (!hasPerm) return false;
-                      if (item.hideForOwner && activeRole === 'App Owner') return false;
+                      if (item.hideForOwner && activeRole === 'APP OWNER') return false;
                       return true;
                     }).map(item => (
                       <button key={item.id} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
@@ -189,8 +186,7 @@ const Sidebar = () => {
                 </div>
               )}
 
-              {/* ASSIGNED GIRLS VISIBILITY FIX */}
-              {activeRole !== 'Model' && activeRole !== 'App Owner' && !isSidebarCollapsed && (myProfiles || []).length > 0 && (
+              {activeRole !== 'MODEL' && activeRole !== 'APP OWNER' && !isSidebarCollapsed && (myProfiles || []).length > 0 && (
                 <div style={{ marginTop: '1rem', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                   <div style={{ fontSize: '0.65rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em', padding: '0 1.15rem', marginBottom: '0.5rem' }}>{capitalize(t('myAssignedGirls'))}</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', maxHeight: '30vh', overflowY: 'auto' }} className="custom-scrollbar">
@@ -211,10 +207,10 @@ const Sidebar = () => {
           
           <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.85rem', borderTop: '1px solid var(--card-border)', paddingTop: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: isSidebarCollapsed ? '0' : '0 0.5rem', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
-              <div style={{ width: '36px', height: '36px', background: 'linear-gradient(135deg, var(--accent-color) 0%, #1d4ed8 100%)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'white', fontSize: '0.8rem', flexShrink: 0 }}>{activeOperator?.avatar || '👤'}</div>
+              <div style={{ width: '36px', height: '36px', background: 'linear-gradient(135deg, var(--accent-color) 0%, #1d4ed8 100%)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'white', fontSize: '0.8rem', flexShrink: 0 }}>{displayAvatar}</div>
               {!isSidebarCollapsed && (
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '0.85rem', fontWeight: '900', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'white' }}>{activeOperator?.name || 'Operator'}</div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: '900', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'white' }}>{displayName}</div>
                   <div style={{ fontSize: '0.6rem', color: 'var(--accent-color)', fontWeight: '800' }}>{activeRole?.toUpperCase() || ''}</div>
                 </div>
               )}
