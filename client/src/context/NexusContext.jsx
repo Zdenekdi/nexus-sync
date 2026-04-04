@@ -1,14 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { usePermissions } from '../hooks/usePermissions';
-import { 
-  MOCK_PROFILES, 
-  MOCK_AGENCIES, 
-  MOCK_OPERATORS, 
-  MOCK_MESSAGES, 
-  MOCK_CALENDAR, 
-  MOCK_STATS 
-} from '../DemoData';
+import { useNexusData } from '../hooks/useNexusData';
 
 const NexusContext = createContext();
 
@@ -16,40 +9,64 @@ const NexusContext = createContext();
 const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
 
 export const NexusProvider = ({ children }) => {
-  // We get token and basic auth state from useAuth
-  // Note: useAuth also needs API_BASE if it makes its own calls
-  const auth = useAuth({ 
-    API_BASE,
-    t: (k) => k, // Minimal t for useAuth internal needs
-    setIsRelayMode: () => {}, 
-    setSelectedChatId: () => {}, 
-    setActiveProfileId: () => {}, 
-    setShowLanding: () => {} 
-  });
-  
-  const { user: authUser, token, logout } = auth;
-  
   const [lang, setLang] = useState('cz');
   const [activeTab, setActiveTab] = useState('dashboard');
   const [activeProfileId, setActiveProfileId] = useState(null);
   const [showLanding, setShowLanding] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
-  // Data State - Initialized with empty arrays to prevent mapping crashes
-  const [data, setData] = useState({
-    profiles: [],
-    agencies: [],
-    operators: [],
-    bookingSchedule: [],
-    messages: [],
-    stats: {},
-    activeSubscription: null
+  // Auth
+  const auth = useAuth({ 
+    API_BASE,
+    t: (k) => k,
+    setIsRelayMode: () => {}, 
+    setSelectedChatId: () => {}, 
+    setActiveProfileId, 
+    setShowLanding 
+  });
+  
+  const { user: authUser, token, logout, isLoggedIn } = auth;
+  const [activeOperator, setActiveOperator] = useState(null);
+
+  // Messages & UI State
+  const [messages, setMessages] = useState([]);
+  const [selectedChatId, setSelectedChatId] = useState(null);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [sourceText, setSourceText] = useState("");
+  const [translatedText, setTranslatedText] = useState("");
+  const [internalNote, setInternalNote] = useState("");
+  const [messageValue, setMessageValue] = useState("");
+  const [calViewDate, setCalViewDate] = useState(new Date());
+  const [activeContextTab, setActiveContextTab] = useState('translator');
+  const [mobileView, setMobileView] = useState('list');
+  const [inlinePanelTab, setInlinePanelTab] = useState(null);
+
+  // Safety Timer
+  const [activeSafetySession, setActiveSafetySession] = useState(null);
+  const [isTimerActive, setIsTimerActive] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const chatScrollRef = useRef(null);
+  const isUserScrolled = useRef(false);
+
+  // Data Engine integration
+  const nexusData = useNexusData({
+    token,
+    isLoggedIn,
+    API_BASE,
+    activeProfileId,
+    setActiveOperator,
+    normalizeProfileId: (id) => id, 
+    setMessages,
+    setActiveSafetySession,
+    setIsTimerActive,
+    setTimeLeft
   });
 
-  const [loading, setLoading] = useState(true);
-  const [isShiftActive, setIsShiftActive] = useState(false);
+  // Business Logic
+  const { activeRole, isAllowed, rolePermissions } = usePermissions(activeOperator || authUser);
 
-  // Auth methods wrapper - ensuring they are functions
+  // Handlers for App Actions
   const onLogin = useCallback(async (email, password) => {
     const success = await auth.handleLogin(email, password);
     if (success) {
@@ -71,80 +88,73 @@ export const NexusProvider = ({ children }) => {
     return await auth.handleResetRequest(email);
   }, [auth]);
 
-  // Sync auth user to context
-  const activeOperator = useMemo(() => {
-    if (!authUser) return null;
-    const fullOp = (data.operators || []).find(op => op.id === authUser.id);
-    return fullOp || authUser;
-  }, [authUser, data.operators]);
-
-  // Permissions logic
-  const { activeRole, isAllowed, rolePermissions } = usePermissions(activeOperator);
-
-  // Load Data
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        const hydratedData = {
-          profiles: MOCK_PROFILES || [],
-          agencies: MOCK_AGENCIES || [],
-          operators: MOCK_OPERATORS || [],
-          bookingSchedule: MOCK_CALENDAR?.events || [],
-          messages: MOCK_MESSAGES || [],
-          stats: MOCK_STATS || {},
-          activeSubscription: MOCK_AGENCIES?.[0]?.subscription || null
-        };
-        
-        setData(hydratedData);
-      } catch (error) {
-        console.error("Failed to load Nexus data:", error);
-      } finally {
-        setLoading(false);
-      }
+  const handleSendMessage = (text) => {
+    if (!text.trim()) return;
+    const newMessage = {
+      id: Date.now().toString(),
+      profileId: activeProfileId,
+      direction: 'OUTBOUND',
+      text,
+      createdAt: new Date().toISOString()
     };
+    setMessages(prev => [...prev, newMessage]);
+    setMessageValue("");
+  };
 
-    if (authUser) {
-      loadData();
-    }
-  }, [authUser]);
+  const handleTranslate = async () => {
+    if (!sourceText.trim()) return;
+    setIsTranslating(true);
+    await new Promise(r => setTimeout(r, 1000));
+    setTranslatedText(`[translated] ${sourceText}`);
+    setIsTranslating(false);
+  };
 
-  // Derived State with safety guards
-  const profiles = useMemo(() => data.profiles || [], [data.profiles]);
-  const agencies = useMemo(() => data.agencies || [], [data.agencies]);
-  const operators = useMemo(() => data.operators || [], [data.operators]);
-  const messages = useMemo(() => data.messages || [], [data.messages]);
-  const calendar = useMemo(() => data.bookingSchedule || [], [data.bookingSchedule]);
+  const handleSaveNote = () => {
+    if (!internalNote.trim()) return;
+    alert(`Note saved: ${internalNote}`);
+    setInternalNote("");
+  };
 
-  // Filtered Profiles based on role
+  // Filtered profiles based on global Profiles array
+  const profiles = nexusData.profiles || [];
   const myProfiles = useMemo(() => {
-    if (!activeOperator) return [];
+    const op = activeOperator || authUser;
+    if (!op) return [];
     if (activeRole === 'App Owner') return profiles;
-    if (activeRole === 'Manager') {
-      return profiles.filter(p => p?.clientId === activeOperator?.clientId);
+    if (activeRole === 'Agency Admin') {
+      return profiles.filter(p => p?.clientId === op?.clientId);
     }
+    // Everyone else (Manager, Senior Operator, Operator) only sees girls they are assigned to
     return profiles.filter(p => 
-      p?.userId === activeOperator?.id || 
-      (p?.operators || []).some(o => o.id === activeOperator?.id) ||
-      (p?.assignees || []).some(a => a.id === activeOperator?.id)
+      p?.userId === op?.id || 
+      (p?.operators || []).some(o => o.id === op?.id) ||
+      (p?.assignees || []).some(a => a.id === op?.id)
     );
-  }, [profiles, activeOperator, activeRole]);
+  }, [profiles, activeOperator, authUser, activeRole]);
 
   const activeProfile = useMemo(() => 
-    profiles.find(p => p.id === activeProfileId) || myProfiles[0] || null,
+    profiles.find(p => p.id === (activeProfileId || (myProfiles[0]?.id))) || myProfiles[0] || null,
     [profiles, activeProfileId, myProfiles]
   );
 
-  const totalUnread = useMemo(() => 
-    (messages || []).filter(m => m.status === 'unread').length,
-    [messages]
+  const selectedChat = useMemo(() => 
+    messages.find(m => m.id === selectedChatId) || null,
+    [messages, selectedChatId]
   );
 
-  const getUnreadForProfile = (profileId) => 
-    (messages || []).filter(m => m.profileId === profileId && m.status === 'unread').length;
+  const filteredMessages = useMemo(() => 
+    messages.filter(m => m.profileId === activeProfile?.id),
+    [messages, activeProfile]
+  );
+
+  // Unread counts logic
+  const getUnreadForProfile = useCallback((pid) => 
+    messages.filter(m => m.profileId === pid && m.status === 'unread').length
+  , [messages]);
+
+  const totalUnread = useMemo(() => 
+    messages.filter(m => m.status === 'unread').length
+  , [messages]);
 
   // Translation Helper
   const t = (key) => {
@@ -198,8 +208,27 @@ export const NexusProvider = ({ children }) => {
         stockCard: 'Sklad',
         referralProgram: 'Referraly',
         bookingSchedule: 'Plán rezervací',
+        syncStatus: 'Stav synchronizace',
+        gallery: 'Galerie',
+        uploadPhoto: 'Nahrát foto',
+        publicGalleryCap: 'Veřejná Galerie',
+        privateGalleryCap: 'Soukromá Galerie',
+        biography: 'Biografie',
+        services: 'Služby',
+        mottoLabel: 'Motto',
+        fullBioLabel: 'Celá Biografie',
+        bioPlaceholder: 'Zadej biografii...',
+        bioFormattingNote: 'Podporuje Emoji',
+        saveChanges: 'Uložit změny',
+        syncAll: 'Synchronizovat vše',
+        syncingProfileData: 'Synchronizace...',
+        webProfilesDesc: 'Správa veřejných profilů a biografií.',
+        inbox: 'Inbox',
+        noMessages: 'Žádné zprávy.',
+        typeResponse: 'Napiš odpověď...',
+        translating: 'Překládám...',
+        poweredByAi: 'AI POWERED',
 
-        // Login Screen Keys
         emailLabel: 'E-mail',
         passwordLabel: 'Heslo',
         loginButton: 'Přihlásit se',
@@ -265,8 +294,27 @@ export const NexusProvider = ({ children }) => {
         stockCard: 'Inventory',
         referralProgram: 'Referrals',
         bookingSchedule: 'Booking Schedule',
+        syncStatus: 'Sync Status',
+        gallery: 'Gallery',
+        uploadPhoto: 'Upload Photo',
+        publicGalleryCap: 'Public Gallery',
+        privateGalleryCap: 'Private Gallery',
+        biography: 'Biography',
+        services: 'Services',
+        mottoLabel: 'Headline',
+        fullBioLabel: 'Full Biography',
+        bioPlaceholder: 'Enter bio...',
+        bioFormattingNote: 'Emojis supported',
+        saveChanges: 'Save Changes',
+        syncAll: 'Sync All',
+        syncingProfileData: 'Syncing...',
+        webProfilesDesc: 'Manage public profiles and bios.',
+        inbox: 'Inbox',
+        noMessages: 'No messages.',
+        typeResponse: 'Type response...',
+        translating: 'Translating...',
+        poweredByAi: 'AI POWERED',
 
-        // Login Screen Keys
         emailLabel: 'Email',
         passwordLabel: 'Password',
         loginButton: 'Login',
@@ -288,20 +336,18 @@ export const NexusProvider = ({ children }) => {
   };
 
   const value = {
-    // Basic state
     t,
     lang,
     setLang,
     activeTab,
     setActiveTab,
-    loading,
+    loading: nexusData.isDataLoading,
     
-    // Auth & Identity
-    activeOperator,
+    activeOperator: activeOperator || authUser,
     activeRole,
     isAllowed,
     rolePermissions,
-    isLoggedIn: auth.isLoggedIn,
+    isLoggedIn,
     token,
     logout,
     onLogin,
@@ -310,39 +356,80 @@ export const NexusProvider = ({ children }) => {
     onResetRequest,
     API_BASE,
 
-    // Navigation state
     showLanding,
     setShowLanding,
     showOnboarding,
     setShowOnboarding,
+    isSidebarCollapsed,
+    setIsSidebarCollapsed,
 
-    // Profile & Visibility
     activeProfile,
     activeProfileId,
     setActiveProfileId,
     profiles,
     myProfiles,
+    assignedProfiles: myProfiles, 
     
-    // Data collections
-    agencies,
-    operators,
+    isSyncing: nexusData.isSyncing,
+    syncStatus: nexusData.syncStatus,
+    syncProgress: nexusData.syncProgress,
+    handleSaveBio: nexusData.handleSaveBio,
+    handleSyncAll: nexusData.handleSyncAll,
+    bioText: nexusData.bioText,
+    setBioText: nexusData.setBioText,
+
+    selectedChatId,
+    setSelectedChatId,
+    selectedChat,
+    filteredMessages,
     messages,
-    calendar,
-    stats: data.stats || {},
-    activeSubscription: data.activeSubscription,
+    messageValue,
+    setMessageValue,
+    handleSendMessage,
+    isTranslating,
+    handleTranslate,
+    sourceText,
+    setSourceText,
+    translatedText,
+    internalNote,
+    setInternalNote,
+    handleSaveNote,
+    activeContextTab,
+    setActiveContextTab,
+    mobileView,
+    setMobileView,
+    inlinePanelTab,
+    setInlinePanelTab,
+    chatMessages: filteredMessages, 
+    typingProfiles: {}, 
+    clientNames: nexusData.clientNames || {},
+    clientNotes: nexusData.clientNotes || {},
+    chatScrollRef,
+    isUserScrolled,
+
+    agencies: nexusData.agencies || [],
+    operators: nexusData.operators || [],
+    calendar: nexusData.calendar || [],
+    bookingSchedule: nexusData.calendar || [],
+    stats: nexusData.stats || {},
+    activeSubscription: nexusData.activeSubscription,
     
-    // Status
-    isShiftActive,
-    setIsShiftActive,
+    isShiftActive: nexusData.isShiftActive,
+    setIsShiftActive: nexusData.setIsShiftActive,
     isMobile: typeof window !== 'undefined' ? window.innerWidth < 1024 : false,
     
-    // Handlers
-    updateClientName: (phoneNumber, name) => {
-      setData(prev => ({ 
-        ...prev, 
-        clientNames: { ...prev.clientNames, [phoneNumber]: name } 
-      }));
-    }
+    activeSafetySession,
+    isTimerActive,
+    timeLeft,
+    setShowPanicConfirm: () => {}, 
+    
+    calViewDate,
+    setCalViewDate,
+    setIsBookingModalOpen: nexusData.setIsBookingModalOpen,
+    setNewBookingForm: nexusData.setNewBookingForm,
+    handleQuickSaveMeeting: nexusData.handleQuickSaveMeeting,
+
+    ...nexusData
   };
 
   return (
