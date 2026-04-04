@@ -13,6 +13,7 @@ export const NexusProvider = ({ children }) => {
   const [activeProfileId, setActiveProfileId] = useState(null);
   const [showLanding, setShowLanding] = useState(true);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [onlineOnly, setOnlineOnly] = useState(false);
   
   // Auth state from custom hook
   const auth = useAuth({ 
@@ -62,11 +63,13 @@ export const NexusProvider = ({ children }) => {
     const rawRole = (combined.role?.name || combined.role || 'OPERATOR').toUpperCase();
     const name = combined.fullname || combined.name || combined.username || (combined.email ? combined.email.split('@')[0] : 'Alice');
 
+    // Return extended object to preserve the ORIGINAL role name for display
     return {
       ...combined,
       id: combined.id || combined._id || combined.userId,
       name,
       role: rawRole,
+      originalRole: combined.role?.name || combined.role || 'Operator', // Use this for display
       avatar: combined.avatar || (name ? name.charAt(0) : 'U')
     };
   }, [activeOperatorState, authUser, isLoggedIn]);
@@ -85,41 +88,48 @@ export const NexusProvider = ({ children }) => {
 
   // Filtering profiles
   const profiles = nexusData.profiles || [];
+  
+  // Updated myProfiles to respect onlineOnly
   const myProfiles = useMemo(() => {
     if (!activeOperator) return [];
     
-    // Normalize role string for comparison - use the one from usePermissions
-    const normalizedRole = activeRole; // e.g. "App Owner", "Agency Admin", "Manager", "Operator"
+    const normalizedRole = activeRole;
     const opId = String(activeOperator.id);
 
-    if (normalizedRole === 'App Owner') return profiles;
-    
-    if (normalizedRole === 'Agency Admin') {
-      return profiles.filter(p => p?.clientId === activeOperator?.clientId);
+    let filtered = profiles;
+
+    if (normalizedRole !== 'App Owner') {
+      if (normalizedRole === 'Agency Admin') {
+        filtered = profiles.filter(p => p?.clientId === activeOperator?.clientId);
+      } else {
+        filtered = profiles.filter(p => {
+          if (!p) return false;
+          const ops = p.operators || [];
+          const asgs = p.assignees || [];
+          
+          const isOperatorMatch = ops.some(o => {
+            const id = String(typeof o === 'object' ? (o.id || o._id || o.operatorId) : o);
+            return id === opId;
+          });
+          
+          const isAssigneeMatch = asgs.some(a => {
+            const id = String(typeof a === 'object' ? (a.id || a._id) : a);
+            return id === opId;
+          });
+          
+          const isOwnerMatch = String(p.userId) === opId || String(p.ownerId) === opId;
+
+          return isOwnerMatch || isOperatorMatch || isAssigneeMatch;
+        });
+      }
     }
 
-    // Manager, Senior Operator, Operator logic
-    // We want to be extremely inclusive here to ensure staff see their models
-    return profiles.filter(p => {
-      if (!p) return false;
-      const ops = p.operators || [];
-      const asgs = p.assignees || [];
-      
-      const isOperatorMatch = ops.some(o => {
-        const id = String(typeof o === 'object' ? (o.id || o._id || o.operatorId) : o);
-        return id === opId;
-      });
-      
-      const isAssigneeMatch = asgs.some(a => {
-        const id = String(typeof a === 'object' ? (a.id || a._id) : a);
-        return id === opId;
-      });
-      
-      const isOwnerMatch = String(p.userId) === opId || String(p.ownerId) === opId;
+    if (onlineOnly) {
+      filtered = filtered.filter(p => p.status === 'online');
+    }
 
-      return isOwnerMatch || isOperatorMatch || isAssigneeMatch;
-    });
-  }, [profiles, activeOperator, activeRole]);
+    return filtered;
+  }, [profiles, activeOperator, activeRole, onlineOnly]);
 
   const activeProfile = useMemo(() => 
     profiles.find(p => p.id === activeProfileId) || myProfiles[0] || null,
@@ -154,6 +164,7 @@ export const NexusProvider = ({ children }) => {
         loginButton: 'Přihlásit se',
         forgotPassword: 'Zapomenuté heslo?',
         loginError: 'Neplatné přihlašovací údaje.',
+        onlineOnly: 'Dostupné holky',
       },
       en: {
         dashboard: 'Dashboard',
@@ -171,6 +182,7 @@ export const NexusProvider = ({ children }) => {
         loginButton: 'Login',
         forgotPassword: 'Forgot Password?',
         loginError: 'Invalid credentials.',
+        onlineOnly: 'Online only',
       }
     };
     return tr[lang]?.[key] || key;
@@ -187,6 +199,7 @@ export const NexusProvider = ({ children }) => {
     isSidebarCollapsed, setIsSidebarCollapsed,
     activeProfile, activeProfileId, setActiveProfileId,
     profiles, myProfiles,
+    onlineOnly, setOnlineOnly,
     totalUnread, messages, filteredMessages,
     messageValue, setMessageValue,
     ...nexusData
