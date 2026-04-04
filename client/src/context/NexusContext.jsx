@@ -113,8 +113,8 @@ export const NexusProvider = ({ children }) => {
     let filtered = profiles;
 
     if (normalizedRole !== 'App Owner') {
-      if (normalizedRole === 'Agency Admin') {
-        filtered = profiles.filter(p => p?.clientId === activeOperator?.clientId);
+      if (normalizedRole === 'Agency Admin' || normalizedRole === 'Manager') {
+        filtered = profiles.filter(p => !p || p?.clientId === activeOperator?.clientId);
       } else {
         filtered = profiles.filter(p => {
           if (!p) return false;

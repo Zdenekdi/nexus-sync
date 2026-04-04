@@ -9,8 +9,8 @@ export const usePermissions = (activeOperator, dbPermissions) => {
 
     if (r === 'APP OWNER' || r === 'SUPER_ADMIN' || r === 'ROOT') return 'App Owner';
     if (r === 'AGENCY ADMIN' || r === 'AGENCY OWNER' || r === 'OWNER') return 'Agency Admin';
-    if (r === 'MANAGER' || r === 'SENIOR MANAGER' || r === 'MANAGERKA') return 'Manager';
-    if (r === 'OPERATOR' || r === 'SENIOR OPERATOR' || r === 'OP') return 'Operator';
+    if (r === 'MANAGER' || r === 'SENIOR MANAGER' || r === 'MANAGERKA' || r === 'SENIOR OPERATOR') return 'Manager';
+    if (r === 'OPERATOR' || r === 'OP') return 'Operator';
     if (r === 'MODELKA' || r === 'MODEL' || r === 'MODELA') return 'Model';
     
     return roleName;
