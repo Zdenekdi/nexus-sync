@@ -14,6 +14,18 @@ export const NexusProvider = ({ children }) => {
   const [showLanding, setShowLanding] = useState(true);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [onlineOnly, setOnlineOnly] = useState(false);
+  const [mobileView, setMobileView] = useState('list'); // 'list', 'chat', 'details'
+  const [inlinePanelTab, setInlinePanelTab] = useState(null);
+  const [activeContextTab, setActiveContextTab] = useState('translator');
+  const [sourceText, setSourceText] = useState("");
+  const [translatedText, setTranslatedText] = useState("");
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [internalNote, setInternalNote] = useState("");
+  const [detectedMeeting, setDetectedMeeting] = useState(null);
+  const [typingProfiles, setTypingProfiles] = useState({});
+  const [showPanicConfirm, setShowPanicConfirm] = useState(false);
+  const chatScrollRef = React.useRef(null);
+  const isUserScrolled = React.useRef(false);
   
   // Auth state from custom hook
   const auth = useAuth({ 
@@ -146,6 +158,56 @@ export const NexusProvider = ({ children }) => {
   , [messages]);
 
   // Translation Helper
+  // Inbox Handlers
+  const handleSendMessage = useCallback((text) => {
+    if (!text.trim() || !selectedChatId) return;
+    const newMessage = {
+      id: Date.now(),
+      profileId: activeProfileId,
+      chatId: selectedChatId,
+      from: 'Nexus Hub',
+      direction: 'OUTBOUND',
+      text: text.trim(),
+      createdAt: new Date().toISOString(),
+      status: 'sent'
+    };
+    setMessages(prev => [...prev, newMessage]);
+    setMessageValue("");
+  }, [selectedChatId, activeProfileId, setMessages]);
+
+  const handleTranslate = useCallback(async () => {
+    if (!sourceText.trim()) return;
+    setIsTranslating(true);
+    // Mock translation
+    setTimeout(() => {
+      setTranslatedText(`[Translated to EN]: ${sourceText}`);
+      setIsTranslating(false);
+    }, 1000);
+  }, [sourceText]);
+
+  const handleSaveNote = useCallback(() => {
+    if (!internalNote.trim() || !selectedChatId) return;
+    // Mock logic
+    alert('Note saved locally: ' + internalNote);
+    setInternalNote("");
+  }, [internalNote, selectedChatId]);
+
+  const handleDeleteNote = useCallback((client, noteId) => {
+    alert(`Deleting note ${noteId} for ${client}`);
+  }, []);
+
+  const startCall = useCallback(() => {
+    alert('Initializing secure VoIP relay...');
+  }, []);
+
+  const handleQuickSaveMeeting = useCallback(() => {
+    if (!detectedMeeting) return;
+    handleQuickSaveMeetingFromData(detectedMeeting);
+    setDetectedMeeting(null);
+  }, [detectedMeeting]);
+
+  const { handleQuickSaveMeeting: handleQuickSaveMeetingFromData } = nexusData;
+
   const t = (key) => {
     const tr = {
       cz: {
@@ -154,6 +216,22 @@ export const NexusProvider = ({ children }) => {
         schedule: 'Plánování',
         profiles: 'Profily',
         webProfiles: 'Web Profily',
+        webProfilesDesc: 'Správa biografie a synchronizace galerií',
+        gallery: 'Galerie',
+        uploadPhoto: 'Nahrát foto',
+        biography: 'Biografie',
+        services: 'Služby',
+        mottoLabel: 'Motto (Nadpis)',
+        fullBioLabel: 'Celý text biografie',
+        bioPlaceholder: 'Napiš něco o sobě...',
+        bioFormattingNote: 'Podporuje základní stylování.',
+        saveChanges: 'Uložit změny',
+        syncStatus: 'Stav synchronizace',
+        ukPrimary: 'Hlavní pro UK',
+        euWide: 'Evropský dosah',
+        reviewSync: 'Synchronizace recenzí',
+        syncingProfileData: 'Synchronizuji data...',
+        syncAll: 'Fsynchronizovat vše',
         deviceSetup: 'Nastavení Telefonů',
         qa: 'QA Hub',
         logout: 'Odhlásit se',
@@ -165,6 +243,13 @@ export const NexusProvider = ({ children }) => {
         forgotPassword: 'Zapomenuté heslo?',
         loginError: 'Neplatné přihlašovací údaje.',
         onlineOnly: 'Dostupné holky',
+        backToChat: 'Zpět do chatu',
+        typeResponse: 'Napiš odpověď k překladu...',
+        translating: 'Překládám...',
+        poweredByAi: 'Umělá inteligence',
+        selectConversationDesc: 'Vyberte konverzaci pro zobrazení detailů.',
+        noMessages: 'Žádné zprávy.',
+        searchPlaceholder: 'Hledat v konverzacích...',
       },
       en: {
         dashboard: 'Dashboard',
@@ -172,6 +257,22 @@ export const NexusProvider = ({ children }) => {
         schedule: 'Schedule',
         profiles: 'Profiles',
         webProfiles: 'Web Profiles',
+        webProfilesDesc: 'Manage bio and gallery synchronization',
+        gallery: 'Gallery',
+        uploadPhoto: 'Upload Photo',
+        biography: 'Biography',
+        services: 'Services',
+        mottoLabel: 'Motto (Headline)',
+        fullBioLabel: 'Full Biography',
+        bioPlaceholder: 'Write something about yourself...',
+        bioFormattingNote: 'Supports basic formatting.',
+        saveChanges: 'Save Changes',
+        syncStatus: 'Sync Status',
+        ukPrimary: 'Primary for UK',
+        euWide: 'European reach',
+        reviewSync: 'Review sync',
+        syncingProfileData: 'Syncing profile data...',
+        syncAll: 'Sync All',
         deviceSetup: 'Device Setup',
         qa: 'QA Hub',
         logout: 'Logout',
@@ -183,6 +284,13 @@ export const NexusProvider = ({ children }) => {
         forgotPassword: 'Forgot Password?',
         loginError: 'Invalid credentials.',
         onlineOnly: 'Online only',
+        backToChat: 'Back to Chat',
+        typeResponse: 'Type response to translate...',
+        translating: 'Translating...',
+        poweredByAi: 'Powered by AI',
+        selectConversationDesc: 'Select a conversation to see details.',
+        noMessages: 'No messages.',
+        searchPlaceholder: 'Search conversations...',
       }
     };
     return tr[lang]?.[key] || key;
@@ -197,6 +305,20 @@ export const NexusProvider = ({ children }) => {
     API_BASE,
     showLanding, setShowLanding,
     isSidebarCollapsed, setIsSidebarCollapsed,
+    mobileView, setMobileView,
+    inlinePanelTab, setInlinePanelTab,
+    activeContextTab, setActiveContextTab,
+    sourceText, setSourceText,
+    translatedText, setTranslatedText,
+    isTranslating, setIsTranslating,
+    internalNote, setInternalNote,
+    detectedMeeting, setDetectedMeeting,
+    typingProfiles, setTypingProfiles,
+    showPanicConfirm, setShowPanicConfirm,
+    chatScrollRef, isUserScrolled,
+    handleSendMessage, handleTranslate,
+    handleSaveNote, handleDeleteNote,
+    startCall, handleQuickSaveMeeting,
     activeProfile, activeProfileId, setActiveProfileId,
     profiles, myProfiles,
     onlineOnly, setOnlineOnly,
