@@ -26,6 +26,12 @@ export const NexusProvider = ({ children }) => {
   const [showPanicConfirm, setShowPanicConfirm] = useState(false);
   const chatScrollRef = React.useRef(null);
   const isUserScrolled = React.useRef(false);
+  const [messages, setMessages] = useState([]);
+  const [selectedChatId, setSelectedChatId] = useState(null);
+  const [messageValue, setMessageValue] = useState("");
+  const [clientNotes, setClientNotes] = useState({});
+  const [calViewDate, setCalViewDate] = useState(new Date());
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   
   const auth = useAuth({ 
     API_BASE,
@@ -38,9 +44,6 @@ export const NexusProvider = ({ children }) => {
   
   const { activeOperator: authUser, token, logout, isLoggedIn } = auth;
   const [activeOperatorState, setActiveOperatorState] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [selectedChatId, setSelectedChatId] = useState(null);
-  const [messageValue, setMessageValue] = useState("");
 
   const nexusData = useNexusData({
     token,
@@ -131,6 +134,17 @@ export const NexusProvider = ({ children }) => {
     [messages, activeProfile]
   );
 
+  const selectedChat = useMemo(() => 
+     messages.find(m => m.id === selectedChatId) || null,
+    [messages, selectedChatId]
+  );
+
+  const chatMessages = useMemo(() => {
+    if (!selectedChatId) return [];
+    // Just returning mock messages for now filtered by chatId if you have them
+    return messages.filter(m => m.chatId === selectedChatId);
+  }, [messages, selectedChatId]);
+
   const totalUnread = useMemo(() => {
     const myProfileIds = new Set(myProfiles.map(p => p.id));
     return messages.filter(m => m.status === 'unread' && myProfileIds.has(m.profileId)).length;
@@ -162,13 +176,21 @@ export const NexusProvider = ({ children }) => {
   }, [sourceText]);
 
   const handleSaveNote = useCallback(() => {
-    if (!internalNote.trim() || !selectedChatId) return;
-    alert('Note saved locally: ' + internalNote);
+    if (!internalNote.trim() || !selectedChatId || !selectedChat) return;
+    const from = selectedChat.from;
+    const newNote = { id: Date.now(), text: internalNote, author: activeOperator.name, timestamp: new Date().toLocaleTimeString() };
+    setClientNotes(prev => ({
+      ...prev,
+      [from]: [...(prev[from] || []), newNote]
+    }));
     setInternalNote("");
-  }, [internalNote, selectedChatId]);
+  }, [internalNote, selectedChatId, selectedChat, activeOperator]);
 
   const handleDeleteNote = useCallback((client, noteId) => {
-    alert(`Deleting note ${noteId} for ${client}`);
+    setClientNotes(prev => ({
+      ...prev,
+      [client]: (prev[client] || []).filter(n => n.id !== noteId)
+    }));
   }, []);
 
   const startCall = useCallback(() => {
@@ -197,7 +219,7 @@ export const NexusProvider = ({ children }) => {
         mottoLabel: 'Motto (Nadpis)',
         fullBioLabel: 'Celý text biografie',
         bioPlaceholder: 'Napiš něco o sobě...',
-        bioFormattingNote: 'Podporuje základní stylování...',
+        bioFormattingNote: 'Podporuje základní stylování.',
         saveChanges: 'Uložit změny',
         syncStatus: 'Stav synchronizace',
         ukPrimary: 'Hlavní pro UK',
@@ -233,7 +255,7 @@ export const NexusProvider = ({ children }) => {
         totalMessages: 'Celkem zpráv',
         acrossAllProfiles: 'napříč profily',
         conversionRate: 'Konverze',
-        trend: 'trend',
+        trend: ' trend',
         perfByProfile: 'Výkon dle profilu',
         rank: 'Pořadí',
         earnings: 'Výdělky',
@@ -243,6 +265,10 @@ export const NexusProvider = ({ children }) => {
         noBookingsToday: 'Dnes nejsou žádné rezervace.',
         todaysBookings: 'Dnešní rezervace',
         revenueTrend: 'Trend obratu',
+        personalWorkspace: 'Osobní Pracoviště',
+        welcomeBack: 'Vítej zpět',
+        commissionGrowth: 'Růst provizí',
+        stable: 'Stabilní',
       },
       en: {
         dashboard: 'Dashboard',
@@ -258,7 +284,7 @@ export const NexusProvider = ({ children }) => {
         mottoLabel: 'Motto (Headline)',
         fullBioLabel: 'Full Biography',
         bioPlaceholder: 'Write something...',
-        bioFormattingNote: 'Supports basic styling...',
+        bioFormattingNote: 'Supports basic styling.',
         saveChanges: 'Save Changes',
         syncStatus: 'Sync Status',
         ukPrimary: 'Primary for UK',
@@ -304,6 +330,10 @@ export const NexusProvider = ({ children }) => {
         noBookingsToday: 'No bookings today.',
         todaysBookings: 'Today\'s Bookings',
         revenueTrend: 'Revenue Trend',
+        personalWorkspace: 'Personal Workspace',
+        welcomeBack: 'Welcome back',
+        commissionGrowth: 'Commission Growth',
+        stable: 'Stable',
       }
     };
     return tr[lang]?.[key] || key;
@@ -325,6 +355,7 @@ export const NexusProvider = ({ children }) => {
     translatedText, setTranslatedText,
     isTranslating, setIsTranslating,
     internalNote, setInternalNote,
+    clientNotes,
     detectedMeeting, setDetectedMeeting,
     typingProfiles, setTypingProfiles,
     showPanicConfirm, setShowPanicConfirm,
@@ -336,7 +367,10 @@ export const NexusProvider = ({ children }) => {
     profiles, myProfiles,
     onlineOnly, setOnlineOnly,
     totalUnread, messages, filteredMessages,
+    selectedChatId, setSelectedChatId,
+    selectedChat, chatMessages, isHistoryLoading, setIsHistoryLoading,
     messageValue, setMessageValue,
+    calViewDate, setCalViewDate,
     ...nexusData
   };
 
