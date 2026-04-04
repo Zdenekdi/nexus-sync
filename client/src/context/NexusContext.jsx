@@ -27,7 +27,6 @@ export const NexusProvider = ({ children }) => {
   const chatScrollRef = React.useRef(null);
   const isUserScrolled = React.useRef(false);
   
-  // Auth state from custom hook
   const auth = useAuth({ 
     API_BASE,
     t: (k) => k,
@@ -39,22 +38,16 @@ export const NexusProvider = ({ children }) => {
   
   const { activeOperator: authUser, token, logout, isLoggedIn } = auth;
   const [activeOperatorState, setActiveOperatorState] = useState(null);
-
-  // Messages & UI State
   const [messages, setMessages] = useState([]);
   const [selectedChatId, setSelectedChatId] = useState(null);
   const [messageValue, setMessageValue] = useState("");
 
-  // Data Engine initialization
   const nexusData = useNexusData({
     token,
     isLoggedIn,
     API_BASE,
     activeProfileId,
-    setActiveOperator: (op) => {
-      console.log("[NexusContext] SetActiveOperator received fresh data:", op);
-      setActiveOperatorState(op);
-    },
+    setActiveOperator: (op) => setActiveOperatorState(op),
     normalizeProfileId: (id) => id, 
     setMessages,
     setActiveSafetySession: () => {},
@@ -62,35 +55,27 @@ export const NexusProvider = ({ children }) => {
     setTimeLeft: () => {}
   });
 
-  // ROBUST OPERATOR RESOLUTION - Merge authUser and activeOperatorState
   const activeOperator = useMemo(() => {
-    // Merge the auth user (from long-term storage/session) with the freshly fetched operator data
     const base = authUser || {};
     const update = activeOperatorState || {};
     const combined = { ...base, ...update };
-
     if (!combined.id && !combined._id && !combined.userId && !isLoggedIn) return null;
     
-    // EXHAUSTIVE NAME CHECK: Prefer fullname, then name, then email prefix, then fallback
     const rawRole = (combined.role?.name || combined.role || '').toUpperCase();
     const name = combined.fullname || combined.name || combined.username || (combined.email ? combined.email.split('@')[0] : '');
     
-    if (!name && !isLoggedIn) return null;
-
-    // Return extended object to preserve the ORIGINAL role name for display
     return {
       ...combined,
       id: combined.id || combined._id || combined.userId,
-      name: name || '',
+      name: name || 'User',
       role: rawRole,
-      originalRole: combined.role?.name || combined.role || '', // Use this for display
-      avatar: combined.avatar || (name ? name.charAt(0) : '')
+      originalRole: combined.role?.name || combined.role || rawRole,
+      avatar: combined.avatar || (name ? name.charAt(0) : 'U')
     };
   }, [activeOperatorState, authUser, isLoggedIn]);
 
-  const { activeRole, isAllowed } = usePermissions(activeOperator);
+  const { activeRole, isAllowed } = usePermissions(activeOperator, nexusData.rolePermissions);
 
-  // Login handler
   const onLogin = useCallback(async (email, password) => {
     const success = await auth.handleLogin(email, password);
     if (success) {
@@ -100,43 +85,34 @@ export const NexusProvider = ({ children }) => {
     return success;
   }, [auth]);
 
-  // Filtering profiles
   const profiles = nexusData.profiles || [];
   
-  // Updated myProfiles to respect onlineOnly
   const myProfiles = useMemo(() => {
     if (!activeOperator) return [];
     
-    const normalizedRole = activeRole;
+    if (activeRole === 'App Owner') return profiles;
+
+    const userAgencyId = activeOperator?.clientId || activeOperator?.agencyId;
     const opId = String(activeOperator.id);
 
-    let filtered = profiles;
-
-    if (normalizedRole !== 'App Owner') {
-      if (normalizedRole === 'Agency Admin' || normalizedRole === 'Manager' || normalizedRole === 'Operator') {
-        // In this production environment, Senior Operators/Managers should see all agency models
-        // We look for any match on clientId or agencyId
-        const userAgencyId = activeOperator?.clientId || activeOperator?.agencyId;
-        
-        filtered = profiles.filter(p => {
-          if (!p) return false;
-          const profileAgencyId = p.clientId || p.agencyId;
-          
-          // If we have an agency association, show all models in that agency
-          if (userAgencyId && profileAgencyId === userAgencyId) return true;
-          
-          // Fallback to explicit assignment for safety
-          const opId = String(activeOperator.id || activeOperator._id || activeOperator.userId);
-          const ops = p.operators || [];
-          const asgs = p.assignees || [];
-          
-          const isOperatorMatch = ops.some(o => String(typeof o === 'object' ? (o.id || o._id || o.operatorId) : o) === opId);
-          const isAssigneeMatch = asgs.some(a => String(typeof a === 'object' ? (a.id || a._id) : a) === opId);
-          
-          return isOperatorMatch || isAssigneeMatch;
-        });
+    let filtered = profiles.filter(p => {
+      if (!p) return false;
+      const profileAgencyId = p.clientId || p.agencyId;
+      
+      // Agency-wide visibility for Admins/Managers/Senior Operators
+      if (userAgencyId && profileAgencyId === userAgencyId && 
+          (activeRole === 'Agency Admin' || activeRole === 'Manager' || activeRole === 'Senior Operator')) {
+        return true;
       }
-    }
+      
+      // Explicit assignment for anyone (fallback/legacy)
+      const ops = Array.isArray(p.operators) ? p.operators : [];
+      const asgs = Array.isArray(p.assignees) ? p.assignees : [];
+      const isOperatorMatch = ops.some(o => String(typeof o === 'object' ? (o.id || o._id || o.operatorId) : o) === opId);
+      const isAssigneeMatch = asgs.some(a => String(typeof a === 'object' ? (a.id || a._id) : a) === opId);
+      
+      return isOperatorMatch || isAssigneeMatch || String(p.userId) === opId || String(p.ownerId) === opId;
+    });
 
     if (onlineOnly) {
       filtered = filtered.filter(p => p.status === 'online');
@@ -160,8 +136,6 @@ export const NexusProvider = ({ children }) => {
     return messages.filter(m => m.status === 'unread' && myProfileIds.has(m.profileId)).length;
   }, [messages, myProfiles]);
 
-  // Translation Helper
-  // Inbox Handlers
   const handleSendMessage = useCallback((text) => {
     if (!text.trim() || !selectedChatId) return;
     const newMessage = {
@@ -176,12 +150,11 @@ export const NexusProvider = ({ children }) => {
     };
     setMessages(prev => [...prev, newMessage]);
     setMessageValue("");
-  }, [selectedChatId, activeProfileId, setMessages]);
+  }, [selectedChatId, activeProfileId]);
 
   const handleTranslate = useCallback(async () => {
     if (!sourceText.trim()) return;
     setIsTranslating(true);
-    // Mock translation
     setTimeout(() => {
       setTranslatedText(`[Translated to EN]: ${sourceText}`);
       setIsTranslating(false);
@@ -190,7 +163,6 @@ export const NexusProvider = ({ children }) => {
 
   const handleSaveNote = useCallback(() => {
     if (!internalNote.trim() || !selectedChatId) return;
-    // Mock logic
     alert('Note saved locally: ' + internalNote);
     setInternalNote("");
   }, [internalNote, selectedChatId]);
@@ -205,11 +177,9 @@ export const NexusProvider = ({ children }) => {
 
   const handleQuickSaveMeeting = useCallback(() => {
     if (!detectedMeeting) return;
-    handleQuickSaveMeetingFromData(detectedMeeting);
+    nexusData.handleQuickSaveMeeting(detectedMeeting);
     setDetectedMeeting(null);
-  }, [detectedMeeting]);
-
-  const { handleQuickSaveMeeting: handleQuickSaveMeetingFromData } = nexusData;
+  }, [detectedMeeting, nexusData]);
 
   const t = (key) => {
     const tr = {
@@ -227,7 +197,7 @@ export const NexusProvider = ({ children }) => {
         mottoLabel: 'Motto (Nadpis)',
         fullBioLabel: 'Celý text biografie',
         bioPlaceholder: 'Napiš něco o sobě...',
-        bioFormattingNote: 'Podporuje základní stylování.',
+        bioFormattingNote: 'Podporuje základní stylování...',
         saveChanges: 'Uložit změny',
         syncStatus: 'Stav synchronizace',
         ukPrimary: 'Hlavní pro UK',
@@ -254,32 +224,58 @@ export const NexusProvider = ({ children }) => {
         forgotPassword: 'Zapomenuté heslo?',
         loginError: 'Neplatné přihlašovací údaje.',
         onlineOnly: 'Dostupné holky',
+        agencyOverview: 'Nástěnka agentury',
+        agencyOverviewDesc: 'Přehled výkonu vaší agentury a aktuální stav.',
+        totalRevenue: 'Celkový obrat',
+        vsLastWeek: 'oproti min. týdnu',
+        activeBookings: 'Aktivní rezervace',
+        thisWeek: 'tento týden',
+        totalMessages: 'Celkem zpráv',
+        acrossAllProfiles: 'napříč profily',
+        conversionRate: 'Konverze',
+        trend: 'trend',
+        perfByProfile: 'Výkon dle profilu',
+        rank: 'Pořadí',
+        earnings: 'Výdělky',
+        perfByOperator: 'Aktivita operátorů',
+        callsHandled: 'Hovory',
+        viewMore: 'Zobrazit více',
+        noBookingsToday: 'Dnes nejsou žádné rezervace.',
+        todaysBookings: 'Dnešní rezervace',
+        revenueTrend: 'Trend obratu',
       },
       en: {
         dashboard: 'Dashboard',
         messages: 'Messages',
-        inbox: 'Inbox',
         schedule: 'Schedule',
         profiles: 'Profiles',
         webProfiles: 'Web Profiles',
-        webProfilesDesc: 'Manage bio and gallery synchronization',
+        webProfilesDesc: 'Manage bio and gallery sync',
         gallery: 'Gallery',
         uploadPhoto: 'Upload Photo',
         biography: 'Biography',
         services: 'Services',
         mottoLabel: 'Motto (Headline)',
         fullBioLabel: 'Full Biography',
-        bioPlaceholder: 'Write something about yourself...',
-        bioFormattingNote: 'Supports basic formatting.',
+        bioPlaceholder: 'Write something...',
+        bioFormattingNote: 'Supports basic styling...',
         saveChanges: 'Save Changes',
         syncStatus: 'Sync Status',
         ukPrimary: 'Primary for UK',
         euWide: 'European reach',
-        reviewSync: 'Review sync',
-        syncingProfileData: 'Syncing profile data...',
+        reviewSync: 'Review Sync',
+        syncingProfileData: 'Syncing data...',
         syncAll: 'Sync All',
         deviceSetup: 'Device Setup',
         qa: 'QA Hub',
+        inbox: 'Inbox',
+        searchPlaceholder: 'Search conversations...',
+        noMessages: 'No messages.',
+        selectConversationDesc: 'Select a conversation.',
+        backToChat: 'Back to chat',
+        typeResponse: 'Type a response...',
+        translating: 'Translating...',
+        poweredByAi: 'Powered by AI',
         logout: 'Logout',
         myAssignedGirls: 'My Girls',
         operationsUnit: 'Operations',
@@ -288,14 +284,26 @@ export const NexusProvider = ({ children }) => {
         loginButton: 'Login',
         forgotPassword: 'Forgot Password?',
         loginError: 'Invalid credentials.',
-        onlineOnly: 'Online only',
-        backToChat: 'Back to Chat',
-        typeResponse: 'Type response to translate...',
-        translating: 'Translating...',
-        poweredByAi: 'Powered by AI',
-        selectConversationDesc: 'Select a conversation to see details.',
-        noMessages: 'No messages.',
-        searchPlaceholder: 'Search conversations...',
+        onlineOnly: 'Online Only',
+        agencyOverview: 'Agency Overview',
+        agencyOverviewDesc: 'Performance overview and current status.',
+        totalRevenue: 'Total Revenue',
+        vsLastWeek: 'vs last week',
+        activeBookings: 'Active Bookings',
+        thisWeek: 'this week',
+        totalMessages: 'Total Messages',
+        acrossAllProfiles: 'across all profiles',
+        conversionRate: 'Conversion Rate',
+        trend: 'trend',
+        perfByProfile: 'Performance by Profile',
+        rank: 'Rank',
+        earnings: 'Earnings',
+        perfByOperator: 'Operator Activity',
+        callsHandled: 'Calls',
+        viewMore: 'View More',
+        noBookingsToday: 'No bookings today.',
+        todaysBookings: 'Today\'s Bookings',
+        revenueTrend: 'Revenue Trend',
       }
     };
     return tr[lang]?.[key] || key;
