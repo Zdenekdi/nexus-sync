@@ -206,7 +206,7 @@ export function useOperatorSip(config, handlers = {}) {
       const info = {
         callerId:      session.remote_identity?.uri?.user || 'Neznámé',
         callerName:    session.remote_identity?.display_name || '',
-        targetModel,   // jméno modelky (např. "Alice") — z Asterisk X-Model-Name
+        targetModel,   // jméno modelky — z Asterisk X-Model-Name
         relayExtension, // např. "relay1"
         session,
       };

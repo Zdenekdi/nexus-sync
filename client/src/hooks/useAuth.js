@@ -115,31 +115,6 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
 
   const handleLogin = async (email, password) => {
     setIsLoginLoading(true);
-    
-    // Bypass for local testing
-    if (email === 'dias.zd@gmail.com' && password === 'Nexus2024!') {
-      const mockUser = {
-        id: 'user_001',
-        name: 'Zdenek Dias',
-        email: 'dias.zd@gmail.com',
-        role: 'App Owner',
-        avatar: 'ZD',
-        agencyId: 'agency_001'
-      };
-      const mockToken = 'mock_token_12345';
-      
-      localStorage.setItem('nexus_token', mockToken);
-      localStorage.setItem('nexus_isLoggedIn', 'true');
-      localStorage.setItem('nexus_activeOperator', JSON.stringify(mockUser));
-      
-      setToken(mockToken);
-      setActiveOperator(mockUser);
-      setIsLoggedIn(true);
-      window.history.replaceState(null, '', '/dashboard');
-      setIsLoginLoading(false);
-      return true;
-    }
-
     try {
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',

@@ -72,17 +72,19 @@ export const NexusProvider = ({ children }) => {
     if (!combined.id && !combined._id && !combined.userId && !isLoggedIn) return null;
     
     // EXHAUSTIVE NAME CHECK: Prefer fullname, then name, then email prefix, then fallback
-    const rawRole = (combined.role?.name || combined.role || 'OPERATOR').toUpperCase();
-    const name = combined.fullname || combined.name || combined.username || (combined.email ? combined.email.split('@')[0] : 'Alice');
+    const rawRole = (combined.role?.name || combined.role || '').toUpperCase();
+    const name = combined.fullname || combined.name || combined.username || (combined.email ? combined.email.split('@')[0] : '');
+    
+    if (!name && !isLoggedIn) return null;
 
     // Return extended object to preserve the ORIGINAL role name for display
     return {
       ...combined,
       id: combined.id || combined._id || combined.userId,
-      name,
+      name: name || '',
       role: rawRole,
-      originalRole: combined.role?.name || combined.role || 'Operator', // Use this for display
-      avatar: combined.avatar || (name ? name.charAt(0) : 'U')
+      originalRole: combined.role?.name || combined.role || '', // Use this for display
+      avatar: combined.avatar || (name ? name.charAt(0) : '')
     };
   }, [activeOperatorState, authUser, isLoggedIn]);
 
@@ -153,9 +155,10 @@ export const NexusProvider = ({ children }) => {
     [messages, activeProfile]
   );
 
-  const totalUnread = useMemo(() => 
-    messages.filter(m => m.status === 'unread').length
-  , [messages]);
+  const totalUnread = useMemo(() => {
+    const myProfileIds = new Set(myProfiles.map(p => p.id));
+    return messages.filter(m => m.status === 'unread' && myProfileIds.has(m.profileId)).length;
+  }, [messages, myProfiles]);
 
   // Translation Helper
   // Inbox Handlers
@@ -231,9 +234,17 @@ export const NexusProvider = ({ children }) => {
         euWide: 'Evropský dosah',
         reviewSync: 'Synchronizace recenzí',
         syncingProfileData: 'Synchronizuji data...',
-        syncAll: 'Fsynchronizovat vše',
-        deviceSetup: 'Nastavení Telefonů',
+        syncAll: 'Synchronizovat vše',
+        deviceSetup: 'Nastavení telefonů',
         qa: 'QA Hub',
+        inbox: 'Doručené',
+        searchPlaceholder: 'Hledat v konverzacích...',
+        noMessages: 'Žádné zprávy.',
+        selectConversationDesc: 'Vyberte konverzaci pro zobrazení detailů.',
+        backToChat: 'Zpět do chatu',
+        typeResponse: 'Napiš odpověď k překladu...',
+        translating: 'Překládám...',
+        poweredByAi: 'Umělá inteligence',
         logout: 'Odhlásit se',
         myAssignedGirls: 'Moje Holky',
         operationsUnit: 'Operativa',
@@ -243,17 +254,11 @@ export const NexusProvider = ({ children }) => {
         forgotPassword: 'Zapomenuté heslo?',
         loginError: 'Neplatné přihlašovací údaje.',
         onlineOnly: 'Dostupné holky',
-        backToChat: 'Zpět do chatu',
-        typeResponse: 'Napiš odpověď k překladu...',
-        translating: 'Překládám...',
-        poweredByAi: 'Umělá inteligence',
-        selectConversationDesc: 'Vyberte konverzaci pro zobrazení detailů.',
-        noMessages: 'Žádné zprávy.',
-        searchPlaceholder: 'Hledat v konverzacích...',
       },
       en: {
         dashboard: 'Dashboard',
         messages: 'Messages',
+        inbox: 'Inbox',
         schedule: 'Schedule',
         profiles: 'Profiles',
         webProfiles: 'Web Profiles',
