@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
-import * as MOCK from '../DemoData';
 
 /**
  * Custom hook to manage data fetching and global data state for Nexus Hub.
@@ -17,25 +16,16 @@ export function useNexusData({
   setIsTimerActive,
   setTimeLeft
 }) {
-  const [profiles, setProfiles] = useState(MOCK.MOCK_PROFILES || []);
-  const [agencies, setAgencies] = useState(MOCK.MOCK_AGENCIES || []);
+  const [profiles, setProfiles] = useState([]);
+  const [agencies, setAgencies] = useState([]);
   const [agencySettings, setAgencySettings] = useState({ safetyAlertMode: 'MANAGERS_AND_ASSIGNED' });
-  const [operators, setOperators] = useState(MOCK.MOCK_OPERATORS || []);
-  const [sessions, setSessions] = useState(MOCK.MOCK_SESSIONS || []);
-  const [stats, setStats] = useState(MOCK.MOCK_STATS || {});
-  const [activeSubscription, setActiveSubscription] = useState(MOCK.MOCK_AGENCIES?.[0]?.subscription || null);
+  const [operators, setOperators] = useState([]);
+  const [sessions, setSessions] = useState([]);
+  const [stats, setStats] = useState({});
+  const [activeSubscription, setActiveSubscription] = useState(null);
   const [subscriptionHistory, setSubscriptionHistory] = useState([]);
-  const [globalFeatures, setGlobalFeatures] = useState([
-    { id: 'ai_trans', label: 'AI Voice Relay (Beta)', desc: 'Enable neural speech-to-speech routing', active: true },
-    { id: 'vc_hub', label: 'Cross-Agency Analytics', desc: 'Enable view of aggregated data', active: true },
-    { id: 'CRM_adv', label: 'Proxy Pooling', desc: 'Allow sharing device nodes', active: true },
-    { id: 'stats_bi', label: 'Payout Processing', desc: 'Automate weekly commission transfers', active: false }
-  ]);
-  const [auditLogs, setAuditLogs] = useState([
-    { id: 1, timestamp: '14:22:15', action: 'Login Success', operator: 'Alice (Agency Admin)', profile: 'N/A', hash: '0x8f2d...4a1b' },
-    { id: 2, timestamp: '14:25:32', action: 'Message Sent', operator: 'Alice (Agency Admin)', profile: 'Diana (London)', hash: '0x4e9a...9c2d' },
-    { id: 3, timestamp: '14:30:05', action: 'Status Changed', operator: 'Bob (Night Shift)', profile: 'N/A', hash: '0x3b1c...2f5e' }
-  ]);
+  const [globalFeatures, setGlobalFeatures] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
   const [isDataLoading, setIsDataLoading] = useState(false);
 
   // Business UI States (Moved from App.jsx)
@@ -64,12 +54,7 @@ export function useNexusData({
     { id: 'enterprise', name: 'Enterprise', prices: { cz: '9990 Kč', eu: '399€', uk: '£345', us: '$449' }, description: 'Full control for large organizations', features: ['messaging', 'calendar', 'analytics', 'audit_logs', 'infrastructure', 'permissions'], profilesLimit: 100 }
   ]);
   const [activeMarket, setActiveMarket] = useState('eu');
-  const [clientNotes, setClientNotes] = useState({
-    '+420777111222': [
-      { id: 1, text: 'Vip client, always tips well.', author: 'Alice', timestamp: 'Yesterday 14:00' },
-      { id: 2, text: 'Requires incall only.', author: 'Bob', timestamp: '2 days ago' }
-    ]
-  });
+  const [clientNotes, setClientNotes] = useState({});
 
   useEffect(() => {
     localStorage.setItem('nexus_client_names', JSON.stringify(clientNames));
@@ -137,14 +122,7 @@ export function useNexusData({
 
       // 2. Process Profiles
       if (profileRes?.data) {
-        const sanitizedProfiles = (profileRes.data || []).map(p => {
-          let name = p.name;
-          if (p.id === 'ldn-01' && (p.name?.includes('Sophie') || !p.name)) {
-            name = 'Diana (Central London)';
-          }
-          return { ...p, name, status: 'online' }; 
-        });
-        setProfiles(sanitizedProfiles);
+        setProfiles(profileRes.data || []);
       }
 
       // 3. Process Chats/Messages

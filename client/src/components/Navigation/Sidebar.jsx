@@ -39,9 +39,9 @@ const Sidebar = () => {
   const capitalize = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
 
   // Get display name and role with safe fallbacks
-  const displayName = activeOperator?.name || 'Operator';
-  const displayRoleString = activeOperator?.originalRole || activeRole || 'Operator';
-  const displayAvatar = activeOperator?.avatar || (displayName ? displayName.charAt(0) : 'U');
+  const displayName = activeOperator?.name || '';
+  const displayRoleString = activeOperator?.originalRole || activeRole || '';
+  const displayAvatar = activeOperator?.avatar || (displayName ? displayName.charAt(0) : '');
 
   if (isMobile && !isMobileMenuOpen) {
     return (
