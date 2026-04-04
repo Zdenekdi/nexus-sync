@@ -113,27 +113,27 @@ export const NexusProvider = ({ children }) => {
     let filtered = profiles;
 
     if (normalizedRole !== 'App Owner') {
-      if (normalizedRole === 'Agency Admin' || normalizedRole === 'Manager') {
-        filtered = profiles.filter(p => !p || p?.clientId === activeOperator?.clientId);
-      } else {
+      if (normalizedRole === 'Agency Admin' || normalizedRole === 'Manager' || normalizedRole === 'Operator') {
+        // In this production environment, Senior Operators/Managers should see all agency models
+        // We look for any match on clientId or agencyId
+        const userAgencyId = activeOperator?.clientId || activeOperator?.agencyId;
+        
         filtered = profiles.filter(p => {
           if (!p) return false;
+          const profileAgencyId = p.clientId || p.agencyId;
+          
+          // If we have an agency association, show all models in that agency
+          if (userAgencyId && profileAgencyId === userAgencyId) return true;
+          
+          // Fallback to explicit assignment for safety
+          const opId = String(activeOperator.id || activeOperator._id || activeOperator.userId);
           const ops = p.operators || [];
           const asgs = p.assignees || [];
           
-          const isOperatorMatch = ops.some(o => {
-            const id = String(typeof o === 'object' ? (o.id || o._id || o.operatorId) : o);
-            return id === opId;
-          });
+          const isOperatorMatch = ops.some(o => String(typeof o === 'object' ? (o.id || o._id || o.operatorId) : o) === opId);
+          const isAssigneeMatch = asgs.some(a => String(typeof a === 'object' ? (a.id || a._id) : a) === opId);
           
-          const isAssigneeMatch = asgs.some(a => {
-            const id = String(typeof a === 'object' ? (a.id || a._id) : a);
-            return id === opId;
-          });
-          
-          const isOwnerMatch = String(p.userId) === opId || String(p.ownerId) === opId;
-
-          return isOwnerMatch || isOperatorMatch || isAssigneeMatch;
+          return isOperatorMatch || isAssigneeMatch;
         });
       }
     }
