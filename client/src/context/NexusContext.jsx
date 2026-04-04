@@ -73,7 +73,12 @@ export const NexusProvider = ({ children }) => {
       name: name || 'User',
       role: rawRole,
       originalRole: combined.role?.name || combined.role || rawRole,
-      avatar: combined.avatar || (name ? name.charAt(0) : 'U')
+      avatar: combined.avatar || (name ? name.charAt(0) : 'U'),
+      // Add explicit permission flags for UI components like InboxView
+      isAdmin: rawRole === 'AGENCY ADMIN' || rawRole === 'OWNER',
+      isManager: rawRole === 'MANAGER' || rawRole === 'SENIOR MANAGER' || rawRole === 'SENIOR OPERATOR',
+      isAppOwner: rawRole === 'APP OWNER' || rawRole === 'SUPER_ADMIN',
+      isModel: rawRole === 'MODEL' || rawRole === 'MODELKA'
     };
   }, [activeOperatorState, authUser, isLoggedIn]);
 
@@ -141,7 +146,6 @@ export const NexusProvider = ({ children }) => {
 
   const chatMessages = useMemo(() => {
     if (!selectedChatId) return [];
-    // Just returning mock messages for now filtered by chatId if you have them
     return messages.filter(m => m.chatId === selectedChatId);
   }, [messages, selectedChatId]);
 
@@ -340,6 +344,7 @@ export const NexusProvider = ({ children }) => {
   };
 
   const value = {
+    // Basic UI and Logic
     t, lang, setLang,
     activeTab, setActiveTab,
     loading: nexusData.isDataLoading,
@@ -360,17 +365,27 @@ export const NexusProvider = ({ children }) => {
     typingProfiles, setTypingProfiles,
     showPanicConfirm, setShowPanicConfirm,
     chatScrollRef, isUserScrolled,
+    
+    // Crucial handlers that were causing "not a function" errors
     handleSendMessage, handleTranslate,
     handleSaveNote, handleDeleteNote,
     startCall, handleQuickSaveMeeting,
+    
+    // Profiles and Selection
     activeProfile, activeProfileId, setActiveProfileId,
     profiles, myProfiles,
     onlineOnly, setOnlineOnly,
+    
+    // Chat Logic
     totalUnread, messages, filteredMessages,
     selectedChatId, setSelectedChatId,
     selectedChat, chatMessages, isHistoryLoading, setIsHistoryLoading,
     messageValue, setMessageValue,
+    
+    // Calendar logic
     calViewDate, setCalViewDate,
+    
+    // Data from useNexusData
     ...nexusData
   };
 
