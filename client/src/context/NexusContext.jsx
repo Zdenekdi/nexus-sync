@@ -98,7 +98,10 @@ export const NexusProvider = ({ children }) => {
   const myProfiles = useMemo(() => {
     if (!activeOperator) return [];
     
-    if (activeRole === 'App Owner') return profiles;
+    const roleName = String(activeRole || '').toLowerCase();
+    const isHighLevel = roleName === 'app owner' || roleName === 'agency admin' || roleName === 'manager' || roleName === 'senior operator';
+    
+    if (roleName === 'app owner') return profiles;
 
     const userAgencyId = activeOperator?.clientId || activeOperator?.agencyId;
     const opId = String(activeOperator.id);
@@ -108,8 +111,7 @@ export const NexusProvider = ({ children }) => {
       const profileAgencyId = p.clientId || p.agencyId;
       
       // Agency-wide visibility for Admins/Managers/Senior Operators
-      if (userAgencyId && profileAgencyId === userAgencyId && 
-          (activeRole === 'Agency Admin' || activeRole === 'Manager' || activeRole === 'Senior Operator')) {
+      if (userAgencyId && profileAgencyId === userAgencyId && isHighLevel) {
         return true;
       }
       
