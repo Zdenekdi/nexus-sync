@@ -100,7 +100,15 @@ export const ConversionDonutChart = ({ data, size = 200 }) => {
   const radius = 70;
   const stroke = 25;
   const circumference = 2 * Math.PI * radius;
-  let currentOffset = 0;
+
+  // Calculate offsets in a pure functional way
+  const circleData = data.reduce((acc, d) => {
+    const dash = (d.value / total) * circumference;
+    const offset = acc.currentOffset;
+    acc.circles.push({ ...d, dash, offset });
+    acc.currentOffset -= dash;
+    return acc;
+  }, { circles: [], currentOffset: 0 }).circles;
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', flexWrap: 'wrap' }}>
@@ -113,26 +121,21 @@ export const ConversionDonutChart = ({ data, size = 200 }) => {
           stroke="rgba(255,255,255,0.05)" 
           strokeWidth={stroke} 
         />
-        {data.map((d, i) => {
-          const dash = (d.value / total) * circumference;
-          const offset = currentOffset;
-          currentOffset -= dash;
-          return (
-            <circle 
-              key={i}
-              cx={size / 2} 
-              cy={size / 2} 
-              r={radius} 
-              fill="none" 
-              stroke={d.color} 
-              strokeWidth={stroke} 
-              strokeDasharray={`${dash} ${circumference}`}
-              strokeDashoffset={offset}
-              transform={`rotate(-90 ${size / 2} ${size / 2})`}
-              style={{ transition: 'stroke-dashoffset 1s ease' }}
-            />
-          );
-        })}
+        {circleData.map((d, i) => (
+          <circle 
+            key={i}
+            cx={size / 2} 
+            cy={size / 2} 
+            r={radius} 
+            fill="none" 
+            stroke={d.color} 
+            strokeWidth={stroke} 
+            strokeDasharray={`${d.dash} ${circumference}`}
+            strokeDashoffset={d.offset}
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+            style={{ transition: 'stroke-dashoffset 1s ease' }}
+          />
+        ))}
         <text x="50%" y="45%" textAnchor="middle" fill="white" fontSize="18" fontWeight="800">100%</text>
         <text x="50%" y="60%" textAnchor="middle" fill="var(--text-secondary)" fontSize="10" fontWeight="700">CONVERSION</text>
       </svg>

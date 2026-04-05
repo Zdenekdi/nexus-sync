@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 
 // Neon glow icons rendered as SVG for maximum visual impact
 const slides = [

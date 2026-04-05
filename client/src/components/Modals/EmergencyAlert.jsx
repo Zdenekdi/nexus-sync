@@ -2,7 +2,7 @@
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 
-const EmergencyAlert = ({ alert, onAcknowledge, isAcknowledgeLoading, t, onDismiss }) => {
+const EmergencyAlert = ({ alert, onAcknowledge, isAcknowledgeLoading, t: _t, onDismiss }) => {
   if (!alert) return null;
 
   return (

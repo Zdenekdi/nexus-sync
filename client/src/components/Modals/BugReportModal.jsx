@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Bug, X } from 'lucide-react';
 
-const BugReportModal = ({ isOpen, onClose, activeOperator, activeClient, t, lang }) => {
+const BugReportModal = ({ isOpen, onClose, activeOperator, activeClient, t, lang: _lang }) => {
   const [bugDescription, setBugDescription] = useState('');
 
   if (!isOpen) return null;

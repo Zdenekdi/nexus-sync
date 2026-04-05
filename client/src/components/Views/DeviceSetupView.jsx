@@ -57,7 +57,7 @@ const DeviceSetupView = () => {
                 width: isMobile ? '100%' : 'auto',
                 justifyContent: 'center'
               }}
-              onClick={async (e) => {
+              onClick={async (_e) => {
                 if (!relayApkInfo) {
                   try {
                     const token = localStorage.getItem('nexus_token');

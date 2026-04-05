@@ -16,7 +16,7 @@ const CalendarView = () => {
     openBookingMenuId, setOpenBookingMenuId, handleCheckIn, handleCheckOut,
     handleEditBooking, handleDeleteBooking, timeLeft, formatSafetyTime,
     isSafetyLoading, handleSafetyImOk, SAFETY_SUGGESTIONS,
-    setSelectedScheduleEvent, activeOperator
+    setSelectedScheduleEvent, activeOperator: _activeOperator
   } = nexus;
 
   // Final Safety Check for Mapping

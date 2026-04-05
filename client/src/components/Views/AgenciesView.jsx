@@ -8,15 +8,15 @@ const AgenciesView = () => {
   const nexus = useNexus();
   const { 
     agencies, 
-    profiles, 
-    operators, 
+    profiles: _profiles, 
+    operators: _operators, 
     t, 
     isMobile, 
     handleAddAgency: onAddAgency, 
     handleAgencyDetail: onDetail, 
     handleImpersonateAgency: onImpersonate, 
     handleDeleteAgency: onDelete, 
-    handleToggleAgencyStatus: onToggleStatus 
+    handleToggleAgencyStatus: _onToggleStatus 
   } = nexus;
   return (
     <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">

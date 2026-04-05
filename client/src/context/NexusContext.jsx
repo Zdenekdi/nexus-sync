@@ -103,16 +103,18 @@ export const NexusProvider = ({ children }) => {
     const userAgencyId = activeOperator?.agencyId || activeOperator?.clientId;
     const rawRoleStr = String(activeRole || '').toLowerCase();
     
-    // High-level roles (App Owner, Agency Admin, Manager, Senior Operator)
+    // High-level roles (Agency Admin, Manager, Senior Operator)
     // should see all profiles returned by the backend (which are already agency-scoped).
-    const isHighLevel = 
-      rawRoleStr === 'app owner' || 
+    const isAgencyLevel = 
       rawRoleStr === 'agency admin' || 
       rawRoleStr === 'manager' || 
       rawRoleStr === 'senior operator';
     
-    // If App Owner or high-level role, skip further manual filtering (API already scopes it)
-    if (isHighLevel) return profiles;
+    // If Agency-level role, skip further manual filtering (API already scopes it)
+    if (isAgencyLevel) return profiles;
+    
+    // App Owner should see 0 models (unless explicitly assigned)
+    if (rawRoleStr === 'app owner') return [];
 
     // For standard Operators, only show explicitly assigned or owned profiles
     let filtered = profiles.filter(p => {

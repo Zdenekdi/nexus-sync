@@ -11,7 +11,7 @@ const PlansView = () => {
     lang, 
     isMobile, 
     activeSubscription, 
-    subscriptionHistory, 
+    subscriptionHistory: _subscriptionHistory, 
     isStartingSubscription, 
     onStartSubscription, 
     onCancelSubscription,

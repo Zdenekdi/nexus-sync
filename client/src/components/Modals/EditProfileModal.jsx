@@ -2,7 +2,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 
-const EditProfileModal = ({ isOpen, onClose, data, onDataChange, onSave, t, lang, isMobile }) => {
+const EditProfileModal = ({ isOpen, onClose, data, onDataChange, onSave, t, lang: _lang, isMobile: _isMobile }) => {
   if (!isOpen || !data) return null;
 
   return (
