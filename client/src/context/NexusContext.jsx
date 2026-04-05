@@ -98,30 +98,35 @@ export const NexusProvider = ({ children }) => {
   const myProfiles = useMemo(() => {
     if (!activeOperator) return [];
     
-    const roleName = String(activeRole || '').toLowerCase();
-    const isHighLevel = roleName === 'app owner' || roleName === 'agency admin' || roleName === 'manager' || roleName === 'senior operator';
+    // Normalize IDs and role for matching
+    const opId = String(activeOperator.id || activeOperator._id || '');
+    const userAgencyId = activeOperator?.agencyId || activeOperator?.clientId;
+    const rawRoleStr = String(activeRole || '').toLowerCase();
     
-    if (roleName === 'app owner') return profiles;
+    // High-level roles (App Owner, Agency Admin, Manager, Senior Operator)
+    // should see all profiles returned by the backend (which are already agency-scoped).
+    const isHighLevel = 
+      rawRoleStr === 'app owner' || 
+      rawRoleStr === 'agency admin' || 
+      rawRoleStr === 'manager' || 
+      rawRoleStr === 'senior operator';
+    
+    // If App Owner or high-level role, skip further manual filtering (API already scopes it)
+    if (isHighLevel) return profiles;
 
-    const userAgencyId = activeOperator?.clientId || activeOperator?.agencyId;
-    const opId = String(activeOperator.id);
-
+    // For standard Operators, only show explicitly assigned or owned profiles
     let filtered = profiles.filter(p => {
       if (!p) return false;
-      const profileAgencyId = p.clientId || p.agencyId;
       
-      // Agency-wide visibility for Admins/Managers/Senior Operators
-      if (userAgencyId && profileAgencyId === userAgencyId && isHighLevel) {
-        return true;
-      }
-      
-      // Explicit assignment for anyone (fallback/legacy)
-      const ops = Array.isArray(p.operators) ? p.operators : [];
       const asgs = Array.isArray(p.assignees) ? p.assignees : [];
-      const isOperatorMatch = ops.some(o => String(typeof o === 'object' ? (o.id || o._id || o.operatorId) : o) === opId);
-      const isAssigneeMatch = asgs.some(a => String(typeof a === 'object' ? (a.id || a._id) : a) === opId);
+      const ops = Array.isArray(p.operators) ? p.operators : [];
       
-      return isOperatorMatch || isAssigneeMatch || String(p.userId) === opId || String(p.ownerId) === opId;
+      const isAssigneeMatch = asgs.some(a => String(a?.id || a?._id || a) === opId);
+      const isOperatorMatch = ops.some(o => String(o?.id || o?._id || o) === opId);
+      
+      const isOwnerMatch = String(p.userId || p.ownerId || '') === opId;
+      
+      return isAssigneeMatch || isOperatorMatch || isOwnerMatch;
     });
 
     if (onlineOnly) {

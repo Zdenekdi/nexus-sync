@@ -1,6 +1,7 @@
 const prisma = require('../services/db');
 const logger = require('../services/logger');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 /**
  * Agency Controller
@@ -42,9 +43,11 @@ exports.getSettings = async (req, res) => {
       where: { id: agencyId },
       select: { safetyAlertMode: true }
     });
+    if (!agency) return res.status(404).json({ message: 'Agency not found' });
     res.json(agency);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    logger.error('Error fetching agency settings:', error);
+    res.status(500).json({ message: 'Failed to fetch agency settings' });
   }
 };
 
@@ -238,11 +241,9 @@ exports.getAgency = async (req, res) => {
       profilesCount: agency._count.profiles
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    logger.error('Error fetching agency with profiles:', error);
+    res.status(500).json({ message: 'Failed to fetch agency details' });
   }
-};
-
-exports.createAgency = async (req, res) => {
   try {
     const { role } = req.user;
     if (!role?.isAppOwner) return res.status(403).json({ message: 'Access denied' });

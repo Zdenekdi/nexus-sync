@@ -1,6 +1,23 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const prisma = require('../services/db');
+
+function validatePassword(password) {
+  if (!password || typeof password !== 'string') {
+    return 'Password is required';
+  }
+  if (password.length < 8) {
+    return 'Password must be at least 8 characters long';
+  }
+  if (!/[A-Z]/.test(password)) {
+    return 'Password must contain at least one uppercase letter';
+  }
+  if (!/[0-9]/.test(password)) {
+    return 'Password must contain at least one number';
+  }
+  return null; // Valid
+}
 
 exports.login = async (req, res) => {
   try {
@@ -55,6 +72,12 @@ exports.registerAgency = async (req, res) => {
     const { agencyName, fullName, email: rawEmail2, password } = req.body;
     const email = rawEmail2?.toLowerCase();
     
+    // Validate password
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      return res.status(400).json({ message: passwordError });
+    }
+    
     // 1. Check if user exists
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) return res.status(400).json({ message: 'User already exists' });
@@ -68,7 +91,7 @@ exports.registerAgency = async (req, res) => {
           name: agencyName,
           region: 'Global',
           plan: 'Standard',
-          inviteCode: `NEXUS-${Math.random().toString(36).substring(2, 6).toUpperCase()}`
+          inviteCode: `NEXUS-${crypto.randomBytes(6).toString('hex').toUpperCase()}`
         }
       });
 
@@ -120,6 +143,12 @@ exports.registerUser = async (req, res) => {
   try {
     const { fullName, email: rawEmail3, password, inviteCode, roleName } = req.body;
     const email = rawEmail3?.toLowerCase();
+
+    // Validate password
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      return res.status(400).json({ message: passwordError });
+    }
 
     // Only allow self-registration for safe roles
     const allowedRoles = ['Operator', 'Model'];
