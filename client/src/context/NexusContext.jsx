@@ -42,7 +42,7 @@ export const NexusProvider = ({ children }) => {
     setShowLanding 
   });
   
-  const { activeOperator: authUser, token, logout, isLoggedIn } = auth;
+  const { activeOperator: authUser, token, handleLogout: logout, isLoggedIn } = auth;
   const [activeOperatorState, setActiveOperatorState] = useState(null);
 
   const nexusData = useNexusData({
