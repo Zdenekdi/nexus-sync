@@ -175,9 +175,9 @@ const PlansDashboard = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ color: 'var(--accent-color)', fontWeight: '800' }}>{addon.price}</span>
                 <button 
-                  onClick={() => alert('Platba bude integrována via GoPay.')}
+                  onClick={() => activeOperator?.role === 'App Owner' ? setEditingPlan({ name: addon.name, id: addon.id, prices: { cz: addon.price }, isAddon: true }) : alert('Platba bude integrována via GoPay.')}
                   style={{ padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--accent-color)', borderRadius: '8px', color: 'white', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer' }}>
-                  AKTIVOVAT
+                  {activeOperator?.role === 'App Owner' ? t('configure') : 'AKTIVOVAT'}
                 </button>
               </div>
             </div>
