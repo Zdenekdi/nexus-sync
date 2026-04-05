@@ -284,6 +284,9 @@ export const NexusProvider = ({ children }) => {
         welcomeBack: 'Vítej zpět',
         commissionGrowth: 'Růst provizí',
         stable: 'Stabilní',
+        loggedOutSuccess: 'Byl(a) jste úspěšně odhlášen(a).',
+        backToHome: 'Zpět na úvod',
+        backToProduct: 'Produktové představení'
       },
       en: {
         dashboard: 'Dashboard',
@@ -349,6 +352,9 @@ export const NexusProvider = ({ children }) => {
         welcomeBack: 'Welcome back',
         commissionGrowth: 'Commission Growth',
         stable: 'Stable',
+        loggedOutSuccess: 'Successfully logged out.',
+        backToHome: 'Back to home',
+        backToProduct: 'Product Presentation'
       }
     };
     return tr[lang]?.[key] || key;
