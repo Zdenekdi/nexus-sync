@@ -145,8 +145,8 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   }, []);
 
   const checkRelayStatusFromApi = async () => {
-    const installationId = localStorage.getItem('nexus_installation_id');
-    const token = localStorage.getItem('nexus_token');
+    const installationId = getStoredInstallationId();
+    const token = getStoredToken();
     if (!installationId || !token) {
       return { available: false, connected: false, reason: 'missing-installation-or-token' };
     }
@@ -494,29 +494,17 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
 
   const syncRelayToNative = async (active) => {
     if (!window.Capacitor?.Plugins?.NexusRelay) return;
-    let installationId = localStorage.getItem('nexus_installation_id');
-    if (!installationId) {
-      try {
-        const devicePlugin = window.Capacitor?.Plugins?.Device;
-        if (devicePlugin?.getId) {
-          const info = await devicePlugin.getId();
-          installationId = info?.identifier || null;
-          if (installationId) {
-            localStorage.setItem('nexus_installation_id', installationId);
-          }
-        }
-      } catch (error) {
-        console.warn('[Relay] Could not resolve installationId from device plugin', error);
-      }
-    }
+    let installationId = getStoredInstallationId();
     const currentProfileId = operator?.profileId || localStorage.getItem('nexus_last_profile_id');
     if (operator?.profileId) {
       localStorage.setItem('nexus_last_profile_id', operator.profileId);
     }
 
     try {
+      const baseUrl = `${RELAY_API_BASE}/api/device/relay`;
+      const token = getStoredToken();
       await window.Capacitor.Plugins.NexusRelay.configureRelay({
-        baseUrl: `${RELAY_API_BASE}/api/device/relay`,
+        baseUrl: baseUrl,
         deviceId: operator?.id || 'RELAY-01',
         installationId: installationId || null,
         profileId: currentProfileId || null,

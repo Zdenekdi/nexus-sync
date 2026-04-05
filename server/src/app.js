@@ -74,8 +74,8 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
 const CAPACITOR_ORIGINS = [
   'https://localhost',
   'capacitor://localhost',
-  'http://localhost',
-  'http://localhost',
+  'http://localhost:5173',
+  'http://localhost:3000'
 ];
 
 app.use(cors({
@@ -83,10 +83,15 @@ app.use(cors({
     // Allow requests with no origin (mobile app, curl)
     if (!origin) return callback(null, true);
     
+    // Exact allowlist for Firebase domains
+    const FIREBASE_ORIGINS = [
+      'https://nexus-hub.firebaseapp.com',
+      'https://nexus-hub.web.app'
+    ];
+    
     // Always allow known patterns
     const isAllowed = allowedOrigins.includes(origin) || 
-                      origin.includes('firebaseapp.com') || 
-                      origin.includes('web.app') ||
+                      FIREBASE_ORIGINS.includes(origin) ||
                       CAPACITOR_ORIGINS.includes(origin);
 
     if (isAllowed) {

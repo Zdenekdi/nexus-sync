@@ -3,6 +3,12 @@ import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
 import { Device } from '@capacitor/device';
 
+function generateSecureInstallationId() {
+  const array = new Uint8Array(12);
+  crypto.getRandomValues(array);
+  return `inst_${Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('')}`;
+}
+
 /**
  * Custom hook to manage authentication state and logic for Nexus Hub.
  */
@@ -75,8 +81,11 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
     try {
       const info = await Device.getInfo();
       const deviceId = (await Device.getId()).identifier;
-      const installationId = localStorage.getItem('nexus_installation_id') || `inst_${Math.random().toString(36).substr(2, 9)}`;
-      localStorage.setItem('nexus_installation_id', installationId);
+      let installationId = localStorage.getItem('nexus_installation_id');
+      if (!installationId) {
+        installationId = generateSecureInstallationId();
+        localStorage.setItem('nexus_installation_id', installationId);
+      }
 
       await axios.post(`${API_BASE}/device/bind`, {
         deviceId,

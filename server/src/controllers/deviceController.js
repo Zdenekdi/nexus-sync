@@ -78,6 +78,10 @@ exports.verifyDeviceBinding = async (req, res) => {
         },
         select: { id: true },
       });
+      
+      if (!profile) {
+        return res.status(404).json({ ok: false, message: 'Profile not found' });
+      }
 
       if (!profile) {
         return res.status(403).json({ ok: false, message: 'Profile does not belong to your agency' });
@@ -363,7 +367,7 @@ exports.handleRelay = async (req, res) => {
     const messageTransport = normalizeTransport(transport || type);
 
     // ── Auth: Allow DEVICE_SECRET OR valid installationId binding ─────────────
-    let isAuthorized = (secret === process.env.DEVICE_SECRET && process.env.DEVICE_SECRET);
+    let isAuthorized = (secret === process.env.DEVICE_SECRET);
     
     // Strict mapping: relay traffic must come from a previously verified installation.
     const binding = await prisma.deviceBinding.findUnique({
@@ -381,7 +385,7 @@ exports.handleRelay = async (req, res) => {
     }
 
     if (!isAuthorized) {
-      console.warn(`[Relay] Unauthorized relay attempt from IP=${req.ip}. Headers: ${JSON.stringify(req.headers)} Body: ${JSON.stringify(req.body)}`);
+      console.warn(`[Relay] Unauthorized relay attempt from IP=${req.ip}`);
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
@@ -401,7 +405,9 @@ exports.handleRelay = async (req, res) => {
     let finalBinding = binding;
     const incomingProfileId = req.body.profileId;
 
-    if (!finalBinding && isAuthorized) {
+    // Only allow auto-registration if authenticated via DEVICE_SECRET
+    // Don't auto-register based on binding alone (too permissive)
+    if (!finalBinding && isAuthorized && secret === process.env.DEVICE_SECRET) {
       console.info(`[Relay] Attempting auto-registration for installationId=${installationId} deviceId=${deviceId} profileId=${incomingProfileId}`);
       // Find operator/user to bind to
       const user = await prisma.user.findUnique({

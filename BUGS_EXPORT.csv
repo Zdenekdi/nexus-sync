@@ -1,0 +1,31 @@
+ID,Severity,Type,File,Line,Description,Recommendation
+crit-001,CRITICAL,Security - Authorization,server/src/controllers/deviceController.js,366,Weak authorization check in relay endpoint - DEVICE_SECRET could be empty,Add length check && typeof secret === 'string'
+crit-002,CRITICAL,Security - Missing Auth,server/src/controllers/messageController.js,85,simulateInbound endpoint has NO authentication - allows creating fake messages,Add authMiddleware to route
+crit-003,CRITICAL,Security - Command Injection,server/src/routes/vultrRoutes.js,103,SSH command execution with incomplete blocking list,Use whitelisted commands only
+crit-004,CRITICAL,Security - Info Disclosure,server/src/controllers/deviceController.js,384,Logging full request headers and body with tokens,Remove sensitive fields from logs
+crit-005,CRITICAL,Security - Path Traversal,server/src/routes/vultrRoutes.js,116,Git pull path not validated - allows ../ traversal,Validate path is absolute and whitelist directories
+crit-006,CRITICAL,Error Handling - Silent,server/src/middleware/authMiddleware.js,15,Generic catch block hides JWT errors,Log specific error information
+high-001,HIGH,Async Error,server/src/controllers/sipController.js,119,Unhandled promise - user gets 200 even if config generation fails,Use async/await and communicate errors
+high-002,HIGH,Logic Bug - Null Reference,server/src/controllers/agencyController.js,237,req.user.id accessed without checking if req.user exists,Add null checks: if (!req.user?.id)
+high-003,HIGH,Logic Bug - Null Reference,server/src/controllers/profileController.js,72,req.user.role.isManager accessed without null check,Add safe access: if (!req.user?.role?.isManager)
+high-004,HIGH,Logic Bug - Inconsistency,server/src/controllers/deviceController.js,237,Uses req.user.id but should use req.user.userId - inconsistent naming,Standardize property names across codebase
+high-005,HIGH,Error Handling - Silent,server/src/services/pushService.js,17,Firebase init failures return null - silent push failures,Throw error or queue notifications for retry
+high-006,HIGH,Logic Bug - Inconsistency,server/src/controllers/messageController.js,29,Multiple property names used: userId id sub - can cause undefined,Standardize to single property name
+high-007,HIGH,Logic Bug - Race Condition,server/src/controllers/deviceController.js,404,Auto-registration reads user then creates binding - race condition,Use Prisma transaction for atomic operation
+high-008,HIGH,Logic Bug - Null Reference,server/src/controllers/safetyController.js,21,profile?.agencyId accessed without null check,Add validation: if (!profile?.agencyId)
+med-001,MEDIUM,Security - Type Coercion,server/src/controllers/deviceController.js,366,secret could be object instead of string,Add: typeof secret === 'string'
+med-002,MEDIUM,Code Quality - Logging,server/src/controllers/authController.js,48,console.error logs full stack in production,Use logger.error with limited details
+med-003,MEDIUM,Code Quality - Debug Code,server/src/controllers/profileController.js,12,console.log contains user data,Remove or replace with structured logging
+med-004,MEDIUM,Security - Info Disclosure,server/src/controllers/agencyController.js,47,res.status(500).json({message: error.message}) exposes internals,Return generic message
+med-005,MEDIUM,Error Handling,server/src/middleware/authMiddleware.js,4,try block lacks catch for non-JWT errors,Add explicit error handling
+med-006,MEDIUM,Security - CORS,server/src/app.js,78,CORS allows firebaseapp.com and web.app wildcards,Use specific origins instead
+med-007,MEDIUM,Security - Socket CORS,server/src/services/socket.js,10,Socket.io CORS allows all origins: origin: true,Restrict to specific allowed origins
+med-008,MEDIUM,Error Handling,server/src/controllers/roleController.js,43,.catch silently ignores role creation errors,Propagate error or add retry logic
+low-001,LOW,Performance,server/src/controllers/deviceController.js,556,Socket emit failures caught but no retry,Use queue system for failed emissions
+low-002,LOW,Code Quality,server/src/controllers/messageController.js,76,Comment indicates untested code path,Test socket readiness or fix initialization
+low-003,LOW,Code Quality,server/src/controllers/roleController.js,59,Fallback parsing duplicated for each role,Create role permission schema validator
+low-004,LOW,Performance,server/src/services/db.js,11,Logging all slow queries >100ms impacts performance,Use sampling or async logging
+low-005,LOW,Code Quality,server/src/controllers/profileController.js,24,Hardcoded profile ID logic,Store profile display names in DB
+low-006,LOW,Security - Weak,server/src/routes/vultrRoutes.js,96,Blocked commands list incomplete,Use comprehensive validation or allowlist
+low-007,LOW,Performance,server/src/controllers/deviceController.js,208,15s polling could cause SQLite lock contention,Consider caching or reducing frequency
+low-008,LOW,Code Quality,server/src/controllers/messageController.js,94,Transport field hardcoded to SMS,Allow transport as input parameter
