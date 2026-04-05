@@ -18,28 +18,28 @@ export class PortalAdapter {
   /**
    * Sync profile to this portal
    */
-  async syncProfile(profile) {
+  async syncProfile(_profile) {
     throw new Error('syncProfile() must be implemented');
   }
 
   /**
    * Update profile on portal
    */
-  async updateProfile(profileId, changes) {
+  async updateProfile(_profileId, _changes) {
     throw new Error('updateProfile() must be implemented');
   }
 
   /**
    * Sync gallery/photos
    */
-  async syncGallery(profileId, gallery) {
+  async syncGallery(_profileId, _gallery) {
     throw new Error('syncGallery() must be implemented');
   }
 
   /**
    * Get profile from portal
    */
-  async getProfile(profileId) {
+  async getProfile(_profileId) {
     throw new Error('getProfile() must be implemented');
   }
 

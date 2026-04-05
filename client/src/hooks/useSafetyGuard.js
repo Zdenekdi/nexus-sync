@@ -6,10 +6,10 @@ export const useSafetyGuard = ({
   token,
   API_BASE,
   activeProfileId,
-  activeOperator,
+  _activeOperator,
   activeSafetySession,
   setActiveSafetySession,
-  activeTimerEvent,
+  _activeTimerEvent,
   setActiveTimerEvent,
   isTimerActive,
   setIsTimerActive,
@@ -74,7 +74,7 @@ export const useSafetyGuard = ({
     if (!safetyAlarmTriggered) return;
     const fire = () => {
       playNotificationSound('emergency');
-      try { navigator.vibrate?.([600, 200, 600, 200, 600]); } catch (_) {}
+      try { navigator.vibrate?.([600, 200, 600, 200, 600]); } catch {}
       if (window.Notification?.permission === 'granted' && document.hidden) {
         try { 
           new window.Notification('⏰ SESSION ENDED', { 
@@ -82,7 +82,7 @@ export const useSafetyGuard = ({
             tag: 'safety-alarm', 
             requireInteraction: true 
           }); 
-        } catch (_) {}
+        } catch {}
       }
     };
     fire();
@@ -234,7 +234,7 @@ export const useSafetyGuard = ({
         await axios.post(`${API_BASE}/safety/sessions/${departureSessionId}/departure-confirmed`, {}, {
           headers: { Authorization: `Bearer ${token}` }
         });
-      } catch (_) {}
+      } catch {}
     }
     setDepartureSessionId(null);
     showToast('Departure confirmed', 'success');

@@ -277,7 +277,7 @@ export class DatabaseService {
     try {
       const { data } = await this.apiClient.get('/health');
       return data;
-    } catch (error) {
+    } catch {
       throw new Error('Database connection failed');
     }
   }

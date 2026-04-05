@@ -28,21 +28,21 @@ export class ChannelAdapter {
    * @param {Object} message - Message object
    * @returns {Promise<{id, status, timestamp}>}
    */
-  async send(message) {
+  async send(_message) {
     throw new Error('send() must be implemented by subclass');
   }
 
   /**
    * Retrieve conversation history
    */
-  async getConversation(conversationId) {
+  async getConversation(_conversationId) {
     throw new Error('getConversation() must be implemented by subclass');
   }
 
   /**
    * Get list of conversations
    */
-  async getConversations(contactId) {
+  async getConversations(_contactId) {
     throw new Error('getConversations() must be implemented by subclass');
   }
 
@@ -56,7 +56,7 @@ export class ChannelAdapter {
   /**
    * Mark message as read
    */
-  async markAsRead(messageId, conversationId) {
+  async markAsRead(_messageId, _conversationId) {
     throw new Error('markAsRead() must be implemented by subclass');
   }
 
@@ -84,14 +84,14 @@ export class ChannelAdapter {
   /**
    * Parse incoming webhook/notification
    */
-  parseIncoming(rawData) {
+  parseIncoming(_rawData) {
     throw new Error('parseIncoming() must be implemented by subclass');
   }
 
   /**
    * Format outgoing message for API
    */
-  formatOutgoing(message) {
+  formatOutgoing(_message) {
     throw new Error('formatOutgoing() must be implemented by subclass');
   }
 }

@@ -146,7 +146,7 @@ export class AgencyDataGateway {
   /**
    * Intercept API response and filter by agency
    */
-  filterResponse(response, itemsPath = 'items') {
+  filterResponse(response, _itemsPath = 'items') {
     if (!Array.isArray(response)) {
       return response;
     }
@@ -157,7 +157,7 @@ export class AgencyDataGateway {
   /**
    * Check operation permission
    */
-  checkPermission(operation, resource) {
+  checkPermission(operation, _resource) {
     const operator = this.nexusContext?.activeOperator;
     
     if (!operator) {
