@@ -25,7 +25,7 @@ const Sidebar = () => {
     if (isMobile) setIsMobileMenuOpen(false);
   };
 
-  const _handleMobileProfileClick = (p) => {
+  const handleMobileProfileClick = (p) => {
     setActiveProfileId(p.id);
     setActiveTab('inbox');
     setIsMobileMenuOpen(false);
@@ -101,42 +101,34 @@ const Sidebar = () => {
         {/* Navigation */}
         <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1.5rem', marginRight: '-0.75rem', paddingRight: '0.75rem' }} className="custom-scrollbar">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {activeRole !== 'App Owner' && (
-              <button onClick={() => handleNavigation('dashboard')} className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === 'dashboard' ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
-                <LayoutDashboard size={20} color={activeTab === 'dashboard' ? 'var(--accent-color)' : 'var(--text-secondary)'} />
-                {!isSidebarCollapsed && <span style={{ color: activeTab === 'dashboard' ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === 'dashboard' ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(t('dashboard'))}</span>}
-              </button>
-            )}
+            <button onClick={() => handleNavigation('dashboard')} className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === 'dashboard' ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
+              <LayoutDashboard size={20} color={activeTab === 'dashboard' ? 'var(--accent-color)' : 'var(--text-secondary)'} />
+              {!isSidebarCollapsed && <span style={{ color: activeTab === 'dashboard' ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === 'dashboard' ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(t('dashboard'))}</span>}
+            </button>
 
-            {activeRole !== 'MODEL' && activeRole !== 'App Owner' && (
+            {activeRole !== 'MODEL' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.5rem' }}>
                 {!isSidebarCollapsed && (
                   <div style={{ padding: '0.5rem 1.15rem', fontSize: '0.75rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.05em' }}>{capitalize(t('operationsUnit'))}</div>
                 )}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                   {[
-                    { id: 'inbox', icon: MessageSquare, label: t ? t('messages') : 'Messages', badge: totalUnread, perm: 'messaging', hideForOwner: true },
-                    { id: 'calendar', icon: Calendar, label: t ? t('schedule') : 'Schedule', perm: 'calendar', hideForOwner: true },
-                    { id: 'profiles', icon: Users, label: t ? t('profiles') : 'Profiles', perm: 'profiles', hideForOwner: true },
-                    { id: 'inventory', icon: Package, label: (t && t('stockCard')) || 'Sklad', perm: 'view_inventory', hideForOwner: true },
-                    { id: 'web-profiles', icon: Globe, label: t ? t('webProfiles') : 'Web Profiles', perm: 'web_profiles', hideForOwner: true },
-                    { id: 'qa', icon: FileSearch, label: t ? t('qa') : 'QA', perm: 'qa_hub', hideForOwner: true },
+                    { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: totalUnread, perm: 'messaging' },
+                    { id: 'calendar', icon: Calendar, label: t('schedule'), perm: 'calendar' },
+                    { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
+                    { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles' },
+                    { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub', hideForOwner: true },
                   ].filter(item => {
-                    if (!item) return false;
-                    const hasPerm = !item.perm || (typeof isAllowed === 'function' && isAllowed(item.perm));
+                    const hasPerm = !item.perm || isAllowed(item.perm);
                     if (!hasPerm) return false;
                     if (item.hideForOwner && activeRole === 'App Owner') return false;
                     return true;
-                  }).map(item => {
-                    const Icon = item.icon || Circle;
-                    const labelStr = item.label || item.id || '';
-                    return (
-                      <button key={item.id} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
-                        <Icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
-                        {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(labelStr)}</span>}
-                      </button>
-                    );
-                  })}
+                  }).map(item => (
+                    <button key={item.id} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
+                      <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
+                      {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(item.label)}</span>}
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
