@@ -11,7 +11,11 @@
     "dev:server": "cd server && npm run dev",
     "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
     "build:client": "cd client && npm run build",
-    "lint:client": "cd client && npm run lint"
+    "lint:client": "cd client && npm run lint",
+    "build:with-sync": "node scripts/antigravity-sync.js start-task build && npm run build:client && node scripts/antigravity-sync.js complete-task build success",
+    "test:with-sync": "node scripts/antigravity-sync.js start-task test && npm run test && node scripts/antigravity-sync.js complete-task test success",
+    "deploy:with-sync": "node scripts/antigravity-sync.js start-task deploy && npm run deploy && node scripts/antigravity-sync.js complete-task deploy success",
+    "webhook:start": "node scripts/antigravity-webhook.js"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
