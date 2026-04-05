@@ -45,6 +45,8 @@ export const NexusProvider = ({ children }) => {
   
   const { activeOperator: authUser, token, handleLogout: logout, isLoggedIn } = auth;
   const [activeOperatorState, setActiveOperatorState] = useState(null);
+  const [subscriptionPlans, setSubscriptionPlans] = useState([]);
+  const [isPlansLoading, setIsPlansLoading] = useState(false);
 
   const nexusData = useNexusData({
     token,
@@ -139,6 +141,34 @@ export const NexusProvider = ({ children }) => {
 
     return filtered;
   }, [profiles, activeOperator, activeRole, onlineOnly]);
+
+  const fetchPlans = useCallback(async () => {
+    try {
+      setIsPlansLoading(true);
+      const res = await axios.get(`${API_BASE}/subscriptions/plans`);
+      setSubscriptionPlans(res.data);
+    } catch (err) {
+      console.error('Fetch plans error:', err);
+    } finally {
+      setIsPlansLoading(false);
+    }
+  }, [token]);
+
+  const updatePlans = useCallback(async (newPlans) => {
+    try {
+      setIsPlansLoading(true);
+      await axios.post(`${API_BASE}/subscriptions/config`, { plans: newPlans }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSubscriptionPlans(newPlans);
+      return true;
+    } catch (err) {
+      console.error('Update plans error:', err);
+      return false;
+    } finally {
+      setIsPlansLoading(false);
+    }
+  }, [token]);
 
   const activeProfile = useMemo(() => 
     profiles.find(p => p.id === activeProfileId) || myProfiles[0] || null,
@@ -427,7 +457,10 @@ export const NexusProvider = ({ children }) => {
     }, onLogin,
     API_BASE,
     showLanding, setShowLanding,
-    justLoggedOut, setJustLoggedOut,
+    updatePlans,
+    fetchPlans,
+    subscriptionPlans,
+    isPlansLoading,
     isSidebarCollapsed, setIsSidebarCollapsed,
     mobileView, setMobileView,
     inlinePanelTab, setInlinePanelTab,

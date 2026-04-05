@@ -1,23 +1,18 @@
-import React from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { CreditCard, Users, Check, FileEdit, CheckCheck, Zap } from 'lucide-react';
 
-import { useNexus } from '../context/NexusContext';
+import { NexusContext } from '../context/NexusContext';
 
 const PlansDashboard = () => {
-  const nexus = useNexus();
-  const { 
-    t, 
-    lang: _lang, 
-    plans: subscriptionPlans, 
-    setPlans: setSubscriptionPlans, 
-    activeMarket, 
-    setActiveMarket, 
-    activeOperator, 
-    agencies,
-    isMobile
-  } = nexus;
+  const { t, activeOperator, subscriptionPlans, fetchPlans, updatePlans, isPlansLoading, activeMarket, setActiveMarket, agencies, isMobile } = useContext(NexusContext);
   const currentAgency = agencies[0];
-  const [editingPlan, setEditingPlan] = React.useState(null);
+  const [editingPlan, setEditingPlan] = useState(null);
+
+  useEffect(() => {
+    if (activeOperator?.role === 'App Owner') {
+      fetchPlans();
+    }
+  }, []);
 
   const getCurrencySymbol = (m) => {
     switch(m.toLowerCase()) {
@@ -216,10 +211,14 @@ const PlansDashboard = () => {
                 <button 
                   className="action-btn" 
                   style={{ flex: 1, background: 'var(--accent-color)' }} 
-                  onClick={() => {
+                  onClick={async () => {
                     const newPlans = subscriptionPlans.map(p => p.id === editingPlan.id ? editingPlan : p);
-                    setSubscriptionPlans(newPlans);
-                    setEditingPlan(null);
+                    const success = await updatePlans(newPlans);
+                    if (success) {
+                      setEditingPlan(null);
+                    } else {
+                      alert('Chyba při ukládání do DB.');
+                    }
                   }}
                 >
                   ULOŽIT ZMĚNY
