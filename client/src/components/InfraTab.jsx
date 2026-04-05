@@ -89,7 +89,7 @@ function InfraTab() {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
         
         {/* 2. Vultr Management Section */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
