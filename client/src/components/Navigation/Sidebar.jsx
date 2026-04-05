@@ -25,7 +25,7 @@ const Sidebar = () => {
     if (isMobile) setIsMobileMenuOpen(false);
   };
 
-  const handleMobileProfileClick = (p) => {
+  const _handleMobileProfileClick = (p) => {
     setActiveProfileId(p.id);
     setActiveTab('inbox');
     setIsMobileMenuOpen(false);
@@ -109,26 +109,44 @@ const Sidebar = () => {
             {activeRole !== 'MODEL' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.5rem' }}>
                 {!isSidebarCollapsed && (
-                  <div style={{ padding: '0.5rem 1.15rem', fontSize: '0.75rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.05em' }}>{capitalize(t('operationsUnit'))}</div>
+                  <div style={{ padding: '0.5rem 1.15rem', fontSize: '0.75rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.05em' }}>
+                    {activeRole === 'App Owner' ? capitalize(t('systemAdministration')) : capitalize(t('operationsUnit'))}
+                  </div>
                 )}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                  {[
-                    { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: totalUnread, perm: 'messaging' },
-                    { id: 'calendar', icon: Calendar, label: t('schedule'), perm: 'calendar' },
-                    { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
-                    { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles' },
-                    { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub', hideForOwner: true },
-                  ].filter(item => {
-                    const hasPerm = !item.perm || isAllowed(item.perm);
-                    if (!hasPerm) return false;
-                    if (item.hideForOwner && activeRole === 'App Owner') return false;
-                    return true;
-                  }).map(item => (
-                    <button key={item.id} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
-                      <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
-                      {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(item.label)}</span>}
-                    </button>
-                  ))}
+                  {activeRole === 'App Owner' ? (
+                    // App Owner System Tools
+                    [
+                      { id: 'infra', icon: Activity, label: t('infrastructure'), perm: 'infra_view' },
+                      { id: 'maintenance', icon: HardDrive, label: t('maintenance'), perm: 'maintenance_view' },
+                      { id: 'permissions', icon: Shield, label: t('permissions'), perm: 'permissions_view' },
+                      { id: 'plans', icon: CreditCard, label: t('plansManagement'), perm: 'plans_view' },
+                    ].filter(item => !item.perm || isAllowed(item.perm)).map(item => (
+                      <button key={item.id} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
+                        <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
+                        {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(item.label)}</span>}
+                      </button>
+                    ))
+                  ) : (
+                    // Standard Operations Tools
+                    [
+                      { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: totalUnread, perm: 'messaging' },
+                      { id: 'calendar', icon: Calendar, label: t('schedule'), perm: 'calendar' },
+                      { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
+                      { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles' },
+                      { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub', hideForOwner: true },
+                    ].filter(item => {
+                      const hasPerm = !item.perm || isAllowed(item.perm);
+                      if (!hasPerm) return false;
+                      if (item.hideForOwner && activeRole === 'App Owner') return false;
+                      return true;
+                    }).map(item => (
+                      <button key={item.id} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
+                        <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
+                        {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(item.label)}</span>}
+                      </button>
+                    ))
+                  )}
                 </div>
               </div>
             )}
