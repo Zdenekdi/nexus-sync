@@ -16,7 +16,8 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     qa_hub: true,
     settings: true,
     referrals: true,
-    inventory: true
+    inventory: true,
+    maintenance: true
   },
   'Agency Admin': {
     infrastructure: false,

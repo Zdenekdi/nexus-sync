@@ -286,7 +286,19 @@ export const NexusProvider = ({ children }) => {
         stable: 'Stabilní',
         loggedOutSuccess: 'Byl(a) jste úspěšně odhlášen(a).',
         backToHome: 'Zpět na úvod',
-        backToProduct: 'Produktové představení'
+        backToProduct: 'Produktové představení',
+        systemAdministration: 'Systémová správa',
+        infrastructure: 'Infrastruktura',
+        maintenance: 'Údržba serveru',
+        plansManagement: 'Správa tarifů',
+        globalHealthDesc: 'Živý stav systému a globální výkon sítě.',
+        globalOverview: 'Globální přehled',
+        totalRevenue: 'Celkový obrat',
+        agencies: 'Agentury',
+        activeNodes: 'Aktivní uzly',
+        globalTraffic: 'Globální provoz',
+        revenueGrowth: 'Růst obratu',
+        systemLoad: 'Zátěž systému'
       },
       en: {
         dashboard: 'Dashboard',
@@ -354,7 +366,19 @@ export const NexusProvider = ({ children }) => {
         stable: 'Stable',
         loggedOutSuccess: 'Successfully logged out.',
         backToHome: 'Back to home',
-        backToProduct: 'Product Presentation'
+        backToProduct: 'Product Presentation',
+        systemAdministration: 'System Administration',
+        infrastructure: 'Infrastructure',
+        maintenance: 'Maintenance',
+        plansManagement: 'Plans Management',
+        globalHealthDesc: 'Live system health and global network performance.',
+        globalOverview: 'Global Overview',
+        totalRevenue: 'Total Revenue',
+        agencies: 'Agencies',
+        activeNodes: 'Active Nodes',
+        globalTraffic: 'Global Traffic',
+        revenueGrowth: 'Revenue Growth',
+        systemLoad: 'System Load Overview'
       }
     };
     return tr[lang]?.[key] || key;
@@ -376,9 +400,6 @@ export const NexusProvider = ({ children }) => {
     isSidebarCollapsed, setIsSidebarCollapsed,
     mobileView, setMobileView,
     inlinePanelTab, setInlinePanelTab,
-    activeContextTab, setActiveContextTab,
-    sourceText, setSourceText,
-    translatedText, setTranslatedText,
     isTranslating, setIsTranslating,
     internalNote, setInternalNote,
     clientNotes,
