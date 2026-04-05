@@ -118,6 +118,7 @@ const Sidebar = () => {
                     { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: totalUnread, perm: 'messaging', hideForOwner: true },
                     { id: 'calendar', icon: Calendar, label: t('schedule'), perm: 'calendar', hideForOwner: true },
                     { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles', hideForOwner: true },
+                    { id: 'inventory', icon: Package, label: t('stockCard') || 'Sklad', perm: 'view_inventory', hideForOwner: true },
                     { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles', hideForOwner: true },
                     { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub', hideForOwner: true },
                   ].filter(item => {

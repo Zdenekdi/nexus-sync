@@ -96,7 +96,7 @@ export default function OperatorSipClient({
     ua.start();
 
     return () => {
-      try { ua.stop(); } catch (_unused) {}
+      try { ua.stop(); } catch {}
     };
   }, [wsUrl, username, password]); // eslint-disable-line react-hooks/exhaustive-deps
 

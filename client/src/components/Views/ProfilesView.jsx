@@ -43,7 +43,7 @@ const ProfilesView = () => {
                 const resp = await axios.post(`${API_BASE}/profiles`, { name, phoneNumber: phone || null }, { headers: { Authorization: `Bearer ${token}` } });
                 setProfiles(prev => [...prev, resp.data]);
                 showToast(lang === 'cz' ? `Profil "${name}" byl vytvořen` : `Profile "${name}" created`, 'success');
-              } catch (_e) { showToast('Failed to create profile', 'error'); }
+              } catch { showToast('Failed to create profile', 'error'); }
             }}
             style={{ padding: '0.75rem 1.25rem', background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
           >
