@@ -2,7 +2,7 @@
  * OperatorCallScreen.jsx — Fullscreen overlay pro operátora
  * Desktop-first design, tmavý gradient, pulzující kruh, timer
  */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 
 const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 

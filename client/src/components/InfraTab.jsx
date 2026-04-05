@@ -25,7 +25,7 @@ import { useNexus } from '../context/NexusContext';
 
 function InfraTab() {
   const nexus = useNexus();
-  const { t } = nexus;
+  const { t: _t } = nexus;
   const { status, bandwidth, stats, loading, cmdOutput, clearCmdOutput, error, serverAction, runCommand, gitPull, apkInfo, uploadApk, uploadProgress } = useVultr();
   const [command, setCommand] = useState("");
   const [repoPath, setRepoPath] = useState("~/nexus-backend");

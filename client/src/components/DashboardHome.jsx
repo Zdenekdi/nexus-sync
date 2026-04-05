@@ -7,10 +7,12 @@ import { useNexus } from '../context/NexusContext';
 const DashboardHome = () => {
   const nexus = useNexus();
   const { 
-    activeOperator: user, t, lang, agencies, profiles, 
+    activeOperator: user, t, lang, agencies, profiles: _profiles, 
     calendar, stats, activeSubscription, isRelayVariant, activeRole,
     isMobile
   } = nexus;
+  
+  const { status: vultrStatus } = useVultr();
 
   if (isRelayVariant) {
     return (
@@ -64,8 +66,6 @@ const DashboardHome = () => {
       </div>
     );
   }
-
-  const { status: vultrStatus } = useVultr();
 
   const renderSubscriptionBanner = () => {
     if (!activeSubscription) return null;

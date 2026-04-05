@@ -2,7 +2,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 
-const AddAgencyModal = ({ isOpen, onClose, token, onAdd, t }) => {
+const AddAgencyModal = ({ isOpen, onClose, token: _token, onAdd, t }) => {
   const [data, setData] = React.useState({
     name: '',
     region: 'UK/Europe',

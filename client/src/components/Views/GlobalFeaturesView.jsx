@@ -8,7 +8,7 @@ const GlobalFeaturesView = () => {
   const nexus = useNexus();
   const { 
     t, 
-    lang, 
+    lang: _lang, 
     isMobile, 
     globalFeatures, 
     handleFeatureToggle: onFeatureToggle, 

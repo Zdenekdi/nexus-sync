@@ -154,9 +154,9 @@ const InventoryView = ({ t, token }) => {
           { label: t?.lowStockItems || 'Nízké zásoby', val: stats.lowStock, color: 'var(--warning-color)', Icon: AlertTriangle },
           { label: t?.outOfStockItems || 'Vyprodáno', val: stats.outOfStock, color: 'var(--error-color)', Icon: XCircle },
           { label: 'Celkem položek', val: stats.total, color: 'var(--success-color)', Icon: CheckCircle2 },
-        ].map(({ label, val, color, Icon }) => (
+        ].map(({ label, val, color, Icon: _Icon }) => (
           <div key={label} className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
-            <div style={{ background: `${color}15`, padding: '0.5rem', borderRadius: '10px', width: 'fit-content', marginBottom: '0.75rem' }}><Icon size={20} color={color} /></div>
+            <div style={{ background: `${color}15`, padding: '0.5rem', borderRadius: '10px', width: 'fit-content', marginBottom: '0.75rem' }}><_Icon size={20} color={color} /></div>
             <div style={{ color: 'var(--text-secondary)', fontSize: '0.65rem', fontWeight: '800', letterSpacing: '0.05em' }}>{label.toUpperCase()}</div>
             <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{val}</div>
           </div>

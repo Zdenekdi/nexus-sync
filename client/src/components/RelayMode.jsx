@@ -29,7 +29,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   const [logs, setLogs] = useState(() => {
     try { return JSON.parse(localStorage.getItem('nexus_relay_logs') || '[]'); } catch { return []; }
   });
-  const [lastForwardedId, setLastForwardedId] = useState(null);
+  const [_lastForwardedId, setLastForwardedId] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isRefreshingLogs, setIsRefreshingLogs] = useState(false);
   const [activeLog, setActiveLog] = useState(null);
@@ -51,7 +51,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
 
   // Persist logs to localStorage whenever they change
   useEffect(() => {
-    try { localStorage.setItem('nexus_relay_logs', JSON.stringify(logs.slice(0, 20))); } catch (e) {}
+    try { localStorage.setItem('nexus_relay_logs', JSON.stringify(logs.slice(0, 20))); } catch { /* ignore */ }
   }, [logs]);
 
   // Sync lang from localStorage in case user changes language while relay is running
@@ -145,8 +145,8 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   }, []);
 
   const checkRelayStatusFromApi = async () => {
-    const installationId = getStoredInstallationId();
-    const token = getStoredToken();
+    const installationId = localStorage.getItem('nexus_installation_id');
+    const token = localStorage.getItem('nexus_token');
     if (!installationId || !token) {
       return { available: false, connected: false, reason: 'missing-installation-or-token' };
     }
@@ -494,7 +494,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
 
   const syncRelayToNative = async (active) => {
     if (!window.Capacitor?.Plugins?.NexusRelay) return;
-    let installationId = getStoredInstallationId();
+    let installationId = localStorage.getItem('nexus_installation_id');
     const currentProfileId = operator?.profileId || localStorage.getItem('nexus_last_profile_id');
     if (operator?.profileId) {
       localStorage.setItem('nexus_last_profile_id', operator.profileId);
@@ -502,7 +502,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
 
     try {
       const baseUrl = `${RELAY_API_BASE}/api/device/relay`;
-      const token = getStoredToken();
+      const _token = localStorage.getItem('nexus_token');
       await window.Capacitor.Plugins.NexusRelay.configureRelay({
         baseUrl: baseUrl,
         deviceId: operator?.id || 'RELAY-01',
@@ -558,14 +558,14 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
           addLocalLog('sms', data.from, data.body, 'inbound', 'pending');
           // If native plugin doesn't confirm via relay_event, auto-confirm after 4s
           const capturedFrom = data.from;
-          setTimeout(() => { try { updateLogStatus(capturedFrom, 'forwarded'); } catch (e) {} }, 4000);
+          setTimeout(() => { try { updateLogStatus(capturedFrom, 'forwarded'); } catch { /* ignore */ } }, 4000);
         } catch (e) { console.error('[Relay] onSmsReceived error:', e); }
       });
       const rcsListener = window.Capacitor.Plugins.NexusRelay.addListener('onRcsReceived', (data) => {
         try {
           addLocalLog('rcs', data.from, data.body, 'inbound', 'pending');
           const capturedFrom = data.from;
-          setTimeout(() => { try { updateLogStatus(capturedFrom, 'forwarded'); } catch (e) {} }, 4000);
+          setTimeout(() => { try { updateLogStatus(capturedFrom, 'forwarded'); } catch { /* ignore */ } }, 4000);
         } catch (e) { console.error('[Relay] onRcsReceived error:', e); }
       });
       const callListener = window.Capacitor.Plugins.NexusRelay.addListener('onCallStateChanged', (data) => {

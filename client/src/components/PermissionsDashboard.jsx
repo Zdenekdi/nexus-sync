@@ -6,7 +6,7 @@ import { useNexus } from '../context/NexusContext';
 
 const PermissionsDashboard = ({ agencyId = null, onUpdate = null }) => {
   const nexus = useNexus();
-  const { t, activeOperator, isMobile, API_BASE, token } = nexus;
+  const { t, activeOperator: _activeOperator, isMobile, API_BASE, token } = nexus;
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState(null);

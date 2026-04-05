@@ -7,7 +7,7 @@ const PlansDashboard = () => {
   const nexus = useNexus();
   const { 
     t, 
-    lang, 
+    lang: _lang, 
     plans: subscriptionPlans, 
     setPlans: setSubscriptionPlans, 
     activeMarket, 

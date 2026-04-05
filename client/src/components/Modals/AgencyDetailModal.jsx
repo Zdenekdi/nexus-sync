@@ -8,7 +8,7 @@ const AgencyDetailModal = ({
   onManageRoles, 
   operators, 
   showToast, 
-  lang 
+  lang: _lang 
 }) => {
   if (!agency) return null;
 

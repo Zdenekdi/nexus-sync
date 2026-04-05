@@ -45,7 +45,7 @@ export default function OperatorSipClient({
 
     // Ukonči předchozí spojení
     if (uaRef.current) {
-      try { uaRef.current.stop(); } catch (_) {}
+      try { uaRef.current.stop(); } catch (_unused) {}
     }
 
     const socket = new JsSIP.WebSocketInterface(wsUrl);
@@ -84,7 +84,7 @@ export default function OperatorSipClient({
       try {
         targetModel    = session.request?.getHeader('X-Model-Name')    || null;
         relayExtension = session.request?.getHeader('X-Relay-Extension') || null;
-      } catch (_) {}
+      } catch (_unused) {}
 
       onIncoming?.({ session, callerId, callerName, targetModel, relayExtension });
 
@@ -96,7 +96,7 @@ export default function OperatorSipClient({
     ua.start();
 
     return () => {
-      try { ua.stop(); } catch (_) {}
+      try { ua.stop(); } catch (_unused) {}
     };
   }, [wsUrl, username, password]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -116,14 +116,14 @@ export default function OperatorSipClient({
   const reject = useCallback(() => {
     const session = sessionRef.current;
     if (!session) return;
-    try { session.terminate({ status_code: 486 }); } catch (_) {}
+    try { session.terminate({ status_code: 486 }); } catch (_unused) {}
     sessionRef.current = null;
   }, []);
 
   const hangup = useCallback(() => {
     const session = sessionRef.current;
     if (!session) return;
-    try { session.terminate(); } catch (_) {}
+    try { session.terminate(); } catch (_unused) {}
     sessionRef.current = null;
   }, []);
 
@@ -163,7 +163,7 @@ export function useOperatorSip(config, handlers = {}) {
     if (!config?.wsUrl || !config?.username || !config?.password) return;
 
     if (uaRef.current) {
-      try { uaRef.current.stop(); } catch (_) {}
+      try { uaRef.current.stop(); } catch (_unused) {}
     }
 
     if (import.meta.env.PROD) JsSIP.debug.disable('JsSIP:*');
@@ -201,7 +201,7 @@ export function useOperatorSip(config, handlers = {}) {
       try {
         targetModel    = session.request?.getHeader('X-Model-Name')     || null;
         relayExtension = session.request?.getHeader('X-Relay-Extension') || null;
-      } catch (_) {}
+      } catch (_unused) {}
 
       const info = {
         callerId:      session.remote_identity?.uri?.user || 'Neznámé',
@@ -226,7 +226,7 @@ export function useOperatorSip(config, handlers = {}) {
     });
 
     ua.start();
-    return () => { try { ua.stop(); } catch (_) {} clearInterval(timerRef.current); };
+    return () => { try { ua.stop(); } catch (_unused) {} clearInterval(timerRef.current); };
   }, [config?.wsUrl, config?.username, config?.password]); // eslint-disable-line
 
   const cleanup = () => {
@@ -247,12 +247,12 @@ export function useOperatorSip(config, handlers = {}) {
   }, []);
 
   const reject = useCallback(() => {
-    try { sessionRef.current?.terminate({ status_code: 486 }); } catch (_) {}
+    try { sessionRef.current?.terminate({ status_code: 486 }); } catch (_unused) {}
     cleanup();
   }, []); // eslint-disable-line
 
   const hangup = useCallback(() => {
-    try { sessionRef.current?.terminate(); } catch (_) {}
+    try { sessionRef.current?.terminate(); } catch (_unused) {}
     cleanup();
   }, []); // eslint-disable-line
 
