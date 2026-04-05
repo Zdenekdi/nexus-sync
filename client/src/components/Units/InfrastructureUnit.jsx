@@ -6,6 +6,7 @@ import PermissionsDashboard from '../PermissionsDashboard';
 import PlansDashboard from '../PlansDashboard';
 import InventoryView from '../InventoryView';
 import InfraTab from '../InfraTab';
+import MaintenanceView from '../Views/MaintenanceView';
 
 /**
  * Infrastructure Unit: Control hub for system-wide configuration and administration.
@@ -28,6 +29,8 @@ const InfrastructureUnit = () => {
       return <InventoryView />;
     case 'features':
       return <GlobalFeaturesView />;
+    case 'maintenance':
+      return <MaintenanceView />;
     default:
       return null;
   }
