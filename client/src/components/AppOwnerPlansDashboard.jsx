@@ -133,7 +133,7 @@ const AppOwnerPlansDashboard = () => {
 
 const BillingContent = ({
   lang, isMobile, stats, activeMarket, setActiveMarket,
-  getCurrencySymbol, getApiCurrency, currentMRR
+  getCurrencySymbol, _getApiCurrency, currentMRR
 }) => (
   <>
     {/* Header Info */}
