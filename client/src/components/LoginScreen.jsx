@@ -196,7 +196,7 @@ const LoginScreen = () => {
           </form>
         </div>
 
-        {/* LANG & EXIT */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', alignItems: 'center' }}>
           <div style={{ display: 'inline-flex', background: 'rgba(255,255,255,0.03)', padding: '2px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
             <button onClick={() => setLang('cz')} style={{ padding: '3px 10px', border: 'none', background: lang === 'cz' ? '#3b82f6' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer' }}>CZ</button>
             <button onClick={() => setLang('en')} style={{ padding: '3px 10px', border: 'none', background: lang === 'en' ? '#3b82f6' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer' }}>EN</button>
@@ -228,18 +228,18 @@ const LoginScreen = () => {
             {t('backToProduct')}
           </button>
         </div>
-      </div>
 
-      <style>{`
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-spin { animation: spin 1s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .hover-bright:hover { filter: brightness(1.1); transform: translateY(-1px); }
-        .hover-bright:active { transform: translateY(0); }
-      `}</style>
+        <style>{`
+          @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          .animate-spin { animation: spin 1s linear infinite; }
+          @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+          .hover-bright:hover { filter: brightness(1.1); transform: translateY(-1px); }
+          .hover-bright:active { transform: translateY(0); }
+        `}</style>
+      </div>
     </div>
   );
 };
