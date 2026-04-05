@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 
 const LoginScreen = () => {
-  const { onLogin, t, setLang, lang } = useNexus();
+  const { onLogin, t, setLang, lang, justLoggedOut, setJustLoggedOut, setShowLanding } = useNexus();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -76,6 +76,31 @@ const LoginScreen = () => {
             Nexus Hub
           </h1>
         </div>
+        
+        {/* LOGOUT SUCCESS MESSAGE */}
+        {justLoggedOut && (
+          <div style={{
+            background: 'rgba(16, 185, 129, 0.1)',
+            border: '1px solid rgba(16, 185, 129, 0.2)',
+            padding: '0.75rem',
+            borderRadius: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            animation: 'fadeInUp 0.4s ease-out'
+          }}>
+            <CheckCircle2 color="#10b981" size={18} />
+            <span style={{ color: '#10b981', fontSize: '0.8rem', fontWeight: '600' }}>
+              {t('loggedOutSuccess')}
+            </span>
+            <button 
+              onClick={() => setJustLoggedOut(false)}
+              style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '1rem' }}
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         {/* LOGIN CARD */}
         <div className="glass-card" style={{
@@ -172,11 +197,36 @@ const LoginScreen = () => {
         </div>
 
         {/* LANG & EXIT */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', alignItems: 'center' }}>
           <div style={{ display: 'inline-flex', background: 'rgba(255,255,255,0.03)', padding: '2px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
             <button onClick={() => setLang('cz')} style={{ padding: '3px 10px', border: 'none', background: lang === 'cz' ? '#3b82f6' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer' }}>CZ</button>
             <button onClick={() => setLang('en')} style={{ padding: '3px 10px', border: 'none', background: lang === 'en' ? '#3b82f6' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer' }}>EN</button>
           </div>
+
+          <button 
+            onClick={() => {
+              setJustLoggedOut(false);
+              setShowLanding(true);
+            }}
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(255,255,255,0.1)',
+              color: '#94a3b8',
+              padding: '6px 14px',
+              borderRadius: '8px',
+              fontSize: '0.7rem',
+              fontWeight: '700',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            onMouseOver={(e) => { e.target.style.background = 'rgba(255,255,255,0.05)'; e.target.style.color = 'white'; }}
+            onMouseOut={(e) => { e.target.style.background = 'transparent'; e.target.style.color = '#94a3b8'; }}
+          >
+            <Globe size={12} />
+            {t('backToProduct')}
+          </button>
         </div>
       </div>
 

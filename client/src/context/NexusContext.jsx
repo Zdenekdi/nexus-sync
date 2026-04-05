@@ -24,6 +24,7 @@ export const NexusProvider = ({ children }) => {
   const [detectedMeeting, setDetectedMeeting] = useState(null);
   const [typingProfiles, setTypingProfiles] = useState({});
   const [showPanicConfirm, setShowPanicConfirm] = useState(false);
+  const [justLoggedOut, setJustLoggedOut] = useState(false);
   const chatScrollRef = React.useRef(null);
   const isUserScrolled = React.useRef(false);
   const [messages, setMessages] = useState([]);
@@ -89,6 +90,7 @@ export const NexusProvider = ({ children }) => {
     if (success) {
       setShowLanding(false);
       setActiveTab('dashboard');
+      setJustLoggedOut(false);
     }
     return success;
   }, [auth]);
@@ -358,9 +360,13 @@ export const NexusProvider = ({ children }) => {
     activeTab, setActiveTab,
     loading: nexusData.isDataLoading,
     activeOperator, activeRole, isAllowed,
-    isLoggedIn, token, logout, onLogin,
+    isLoggedIn, token, logout: () => {
+      logout();
+      setJustLoggedOut(true);
+    }, onLogin,
     API_BASE,
     showLanding, setShowLanding,
+    justLoggedOut, setJustLoggedOut,
     isSidebarCollapsed, setIsSidebarCollapsed,
     mobileView, setMobileView,
     inlinePanelTab, setInlinePanelTab,
