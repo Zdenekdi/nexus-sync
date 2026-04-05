@@ -113,6 +113,9 @@ export const TRANSLATIONS = {
         signups: 'Sign-ups',
         earned: 'Earned',
         pending: 'Pending',
+        loggedOutSuccess: 'You have been successfully logged out.',
+        backToHome: 'Back to Home',
+        backToProduct: 'Product Introduction',
         referralProgram: 'Referral Program',
         recentActivity: 'Recent Activity',
         date: 'Date',
@@ -490,7 +493,15 @@ export const TRANSLATIONS = {
         systemAdministration: 'System Administration',
         infrastructure: 'Infrastructure',
         maintenance: 'Maintenance',
-        plansManagement: 'Plans Management'
+        plansManagement: 'Plans Management',
+        globalHealthDesc: 'Live system health and global network performance.',
+        globalOverview: 'Global Overview',
+        totalRevenue: 'Total Revenue',
+        agencies: 'Agencies',
+        activeNodes: 'Active Nodes',
+        globalTraffic: 'Global Traffic',
+        revenueGrowth: 'Revenue Growth',
+        systemLoad: 'System Load Overview'
     },
     cz: {
         logo: 'NEXUSSYNC',
@@ -983,6 +994,14 @@ export const TRANSLATIONS = {
         systemAdministration: 'Systémová správa',
         infrastructure: 'Infrastruktura',
         maintenance: 'Údržba serveru',
-        plansManagement: 'Správa tarifů'
+        plansManagement: 'Správa tarifů',
+        globalHealthDesc: 'Živý stav systému a globální výkon sítě.',
+        globalOverview: 'Globální přehled',
+        totalRevenue: 'Celkový obrat',
+        agencies: 'Agentury',
+        activeNodes: 'Aktivní uzly',
+        globalTraffic: 'Globální provoz',
+        revenueGrowth: 'Růst obratu',
+        systemLoad: 'Zátěž systému'
     }
 };
