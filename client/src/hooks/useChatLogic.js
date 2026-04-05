@@ -283,7 +283,7 @@ export function useChatLogic({
     if (!last) { setDetectedMeeting(null); return; }
     
     const text = (last.text || '').toLowerCase();
-    const timeMatch = text.match(/\b(\d{1,2})[:\.]?(\d{2})?\s*(am|pm|h)?\b/i);
+    const timeMatch = text.match(/\b(\d{1,2})[:.]?(\d{2})?\s*(am|pm|h)?\b/i);
     if (timeMatch && timeMatch[1]) {
       const hour = parseInt(timeMatch[1]);
       if (hour >= 0 && hour <= 24) {
