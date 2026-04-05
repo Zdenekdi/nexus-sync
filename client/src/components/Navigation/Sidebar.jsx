@@ -117,11 +117,11 @@ const Sidebar = () => {
                   {activeRole === 'App Owner' ? (
                     // App Owner System Tools
                     [
-                      { id: 'infra', icon: Activity, label: t('infrastructure'), perm: 'infra_view' },
-                      { id: 'maintenance', icon: HardDrive, label: t('maintenance'), perm: 'maintenance_view' },
-                      { id: 'permissions', icon: Shield, label: t('permissions'), perm: 'permissions_view' },
-                      { id: 'plans', icon: CreditCard, label: t('plansManagement'), perm: 'plans_view' },
-                    ].filter(item => !item.perm || isAllowed(item.perm)).map(item => (
+                      { id: 'infra', icon: Activity, label: t('infrastructure'), perm: 'infrastructure' },
+                      { id: 'maintenance', icon: HardDrive, label: t('maintenance'), perm: 'maintenance' },
+                      { id: 'permissions', icon: Shield, label: t('permissions'), perm: 'permissions' },
+                      { id: 'plans', icon: CreditCard, label: t('plansManagement'), perm: 'plans' },
+                    ].map(item => (
                       <button key={item.id} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
                         <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
                         {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(item.label)}</span>}
