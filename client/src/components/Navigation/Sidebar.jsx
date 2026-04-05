@@ -115,23 +115,28 @@ const Sidebar = () => {
                 )}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                   {[
-                    { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: totalUnread, perm: 'messaging', hideForOwner: true },
-                    { id: 'calendar', icon: Calendar, label: t('schedule'), perm: 'calendar', hideForOwner: true },
-                    { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles', hideForOwner: true },
-                    { id: 'inventory', icon: Package, label: t('stockCard') || 'Sklad', perm: 'view_inventory', hideForOwner: true },
-                    { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles', hideForOwner: true },
-                    { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub', hideForOwner: true },
+                    { id: 'inbox', icon: MessageSquare, label: t ? t('messages') : 'Messages', badge: totalUnread, perm: 'messaging', hideForOwner: true },
+                    { id: 'calendar', icon: Calendar, label: t ? t('schedule') : 'Schedule', perm: 'calendar', hideForOwner: true },
+                    { id: 'profiles', icon: Users, label: t ? t('profiles') : 'Profiles', perm: 'profiles', hideForOwner: true },
+                    { id: 'inventory', icon: Package, label: (t && t('stockCard')) || 'Sklad', perm: 'view_inventory', hideForOwner: true },
+                    { id: 'web-profiles', icon: Globe, label: t ? t('webProfiles') : 'Web Profiles', perm: 'web_profiles', hideForOwner: true },
+                    { id: 'qa', icon: FileSearch, label: t ? t('qa') : 'QA', perm: 'qa_hub', hideForOwner: true },
                   ].filter(item => {
-                    const hasPerm = !item.perm || isAllowed(item.perm);
+                    if (!item) return false;
+                    const hasPerm = !item.perm || (typeof isAllowed === 'function' && isAllowed(item.perm));
                     if (!hasPerm) return false;
                     if (item.hideForOwner && activeRole === 'App Owner') return false;
                     return true;
-                  }).map(item => (
-                    <button key={item.id} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
-                      <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
-                      {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(item.label)}</span>}
-                    </button>
-                  ))}
+                  }).map(item => {
+                    const Icon = item.icon || Circle;
+                    const labelStr = item.label || item.id || '';
+                    return (
+                      <button key={item.id} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
+                        <Icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
+                        {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(labelStr)}</span>}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}

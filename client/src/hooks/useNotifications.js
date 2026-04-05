@@ -44,7 +44,7 @@ export const useNotifications = ({
 
       oscillator.start();
       oscillator.stop(audioCtx.currentTime + 0.5);
-    } catch (e) {
+    } catch {
       console.warn('Audio feedback blocked or not supported');
     }
   }, []);

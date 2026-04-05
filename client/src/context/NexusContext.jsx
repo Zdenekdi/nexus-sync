@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { usePermissions } from '../hooks/usePermissions';
 import { useNexusData } from '../hooks/useNexusData';
@@ -100,7 +100,7 @@ export const NexusProvider = ({ children }) => {
     
     // Normalize IDs and role for matching
     const opId = String(activeOperator.id || activeOperator._id || '');
-    const userAgencyId = activeOperator?.agencyId || activeOperator?.clientId;
+    const _userAgencyId = activeOperator?.agencyId || activeOperator?.clientId;
     const rawRoleStr = String(activeRole || '').toLowerCase();
     
     // High-level roles (Agency Admin, Manager, Senior Operator)

@@ -19,7 +19,7 @@ export function useNexusData({
 }) {
   const [profiles, setProfiles] = useState([]);
   const [agencies, setAgencies] = useState([]);
-  const [agencySettings, setAgencySettings] = useState({ safetyAlertMode: 'MANAGERS_AND_ASSIGNED' });
+  const [_agencySettings, _setAgencySettings] = useState({ safetyAlertMode: 'MANAGERS_AND_ASSIGNED' });
   const [operators, setOperators] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [stats, setStats] = useState({
@@ -35,17 +35,17 @@ export function useNexusData({
     profilePerf: [],
     operatorPerf: []
   });
-  const [activeSubscription, setActiveSubscription] = useState(null);
-  const [subscriptionHistory, setSubscriptionHistory] = useState([]);
-  const [globalFeatures, setGlobalFeatures] = useState([]);
-  const [auditLogs, setAuditLogs] = useState([]);
+  const [_activeSubscription, _setActiveSubscription] = useState(null);
+  const [_subscriptionHistory, _setSubscriptionHistory] = useState([]);
+  const [_globalFeatures, _setGlobalFeatures] = useState([]);
+  const [_auditLogs, _setAuditLogs] = useState([]);
   const [isDataLoading, setIsDataLoading] = useState(false);
 
-  const [clientNames, setClientNames] = useState(() => {
+  const [clientNames, _setClientNames] = useState(() => {
     const saved = localStorage.getItem('nexus_client_names');
     return saved ? JSON.parse(saved) : {};
   });
-  const [bookingSchedule, setBookingSchedule] = useState([]);
+  const [_bookingSchedule, _setBookingSchedule] = useState([]);
   const [isCalendarSyncOpen, setIsCalendarSyncOpen] = useState(false);
   const [calendarSyncUrl, setCalendarSyncUrl] = useState('');
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -54,10 +54,10 @@ export function useNexusData({
   
   const [bioText, setBioText] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
-  const [syncStatus, setSyncStatus] = useState({ aw: 'synced', ege: 'synced', tpb: 'warning' });
-  const [syncProgress, setSyncProgress] = useState(0);
+  const [_syncStatus, _setSyncStatus] = useState({ aw: 'synced', ege: 'synced', tpb: 'warning' });
+  const [_syncProgress, _setSyncProgress] = useState(0);
 
-  const [plans, setPlans] = useState([]);
+  const [_plans, _setPlans] = useState([]);
   
   useEffect(() => {
     localStorage.setItem('nexus_client_names', JSON.stringify(clientNames));
@@ -170,11 +170,11 @@ export function useNexusData({
   }, [activeProfileId, token, API_BASE, initData]);
 
   return {
-    profiles, agencies, agencySettings, operators, sessions, stats, activeSubscription,
-    subscriptionHistory, globalFeatures, auditLogs, isDataLoading, clientNames,
-    bookingSchedule, isCalendarSyncOpen, setIsCalendarSyncOpen, calendarSyncUrl, setCalendarSyncUrl,
+    profiles, agencies, agencySettings: _agencySettings, operators, sessions, stats, activeSubscription: _activeSubscription,
+    subscriptionHistory: _subscriptionHistory, globalFeatures: _globalFeatures, auditLogs: _auditLogs, isDataLoading, clientNames,
+    bookingSchedule: _bookingSchedule, isCalendarSyncOpen, setIsCalendarSyncOpen, calendarSyncUrl, setCalendarSyncUrl,
     isBookingModalOpen, setIsBookingModalOpen, selectedScheduleEvent, setSelectedScheduleEvent,
-    newBookingForm, setNewBookingForm, bioText, setBioText, isSyncing, syncStatus, syncProgress,
+    newBookingForm, setNewBookingForm, bioText, setBioText, isSyncing, syncStatus: _syncStatus, syncProgress: _syncProgress,
     handleSaveBio, handleSyncAll, handleQuickSaveMeeting, initData
   };
 }

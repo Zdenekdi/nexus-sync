@@ -29,7 +29,7 @@ export class ContentSyncService {
   /**
    * Sync profile to all registered portals
    */
-  async syncProfile(profile, options = {}) {
+  async syncProfile(profile, _options = {}) {
     const syncId = `sync_${Date.now()}`;
     const sync = {
       id: syncId,
@@ -67,7 +67,7 @@ export class ContentSyncService {
   /**
    * Sync gallery/photos to all portals
    */
-  async syncGallery(profileId, gallery, options = {}) {
+  async syncGallery(profileId, gallery, _options = {}) {
     const syncId = `sync_${Date.now()}`;
     const sync = {
       id: syncId,

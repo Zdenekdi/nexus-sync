@@ -10,10 +10,10 @@ export function useChatLogic({
   API_BASE,
   activeOperator,
   activeProfileId,
-  showToast,
+  _showToast,
   t,
   addNotification,
-  playNotificationSound,
+  _playNotificationSound,
   profiles,
   messages,
   setMessages
@@ -34,7 +34,7 @@ export function useChatLogic({
   const [activeContactId, setActiveContactId] = useState(null);
   const [clientNotes, setClientNotes] = useState({});
   const [internalNote, setInternalNote] = useState('');
-  const [activeTab, setActiveTabOrChatId] = useState(null); // Used to pass through some logic
+  const [_activeTab, _setActiveTabOrChatId] = useState(null); // Used to pass through some logic
 
   // --- Refs ---
   const chatScrollRef = useRef(null);
