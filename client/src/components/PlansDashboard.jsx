@@ -38,17 +38,17 @@ const PlansDashboard = () => {
               key={market}
               onClick={() => setActiveMarket(market)}
               style={{
-                padding: '0.6rem 1.25rem',
-                borderRadius: '10px',
-                background: activeMarket === market ? 'linear-gradient(135deg, #fbbf24, #d97706)' : 'rgba(255,255,255,0.03)',
-                color: activeMarket === market ? 'black' : 'var(--text-secondary)',
-                border: activeMarket === market ? '1px solid #fff' : '1px solid transparent',
-                fontSize: '0.85rem',
-                fontWeight: '900',
+                padding: '0.6rem 1.2rem',
+                borderRadius: '12px',
+                background: activeMarket === market ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255,255,255,0.03)',
+                color: activeMarket === market ? '#60a5fa' : 'var(--text-secondary)',
+                border: activeMarket === market ? '1px solid #60a5fa' : '1px solid rgba(255,255,255,0.05)',
+                fontSize: '0.8rem',
+                fontWeight: '800',
                 cursor: 'pointer',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                boxShadow: activeMarket === market ? '0 0 20px rgba(251, 191, 36, 0.4)' : 'none',
-                transform: activeMarket === market ? 'scale(1.1)' : 'scale(1)'
+                transition: 'all 0.3s ease',
+                boxShadow: activeMarket === market ? '0 0 15px rgba(59, 130, 246, 0.25)' : 'none',
+                transform: activeMarket === market ? 'translateY(-2px)' : 'translateY(0)'
               }}
             >
               {market.toUpperCase()} ({getCurrencySymbol(market)})
@@ -65,10 +65,10 @@ const PlansDashboard = () => {
       )}
 
       {(!isPlansLoading && (!subscriptionPlans || subscriptionPlans.length === 0)) && (
-        <div style={{ padding: '2.5rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '15px', border: '1px solid rgba(239, 68, 68, 0.3)', marginBottom: '2rem', textAlign: 'center' }}>
-          <AlertCircle size={32} style={{ marginBottom: '1rem', color: '#ef4444' }} />
-          <h3 style={{ color: '#ef4444', marginBottom: '0.5rem' }}>Tarify se nepodařilo načíst</h3>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Zkontrolujte připojení k databázi nebo zkuste stránku obnovit (F5). Pokud vidíte chybu 429, je nutné restartovat backend.</p>
+        <div style={{ padding: '3rem', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '20px', border: '1px solid rgba(239, 68, 68, 0.15)', marginBottom: '2.5rem', textAlign: 'center', backdropFilter: 'blur(10px)' }}>
+          <AlertCircle size={40} style={{ marginBottom: '1.2rem', color: '#f87171' }} />
+          <h3 style={{ color: '#f87171', marginBottom: '0.75rem', fontWeight: '800' }}>Tarify nejsou dostupné</h3>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', maxWidth: '500px', marginInline: 'auto' }}>Pravděpodobně došlo k chybě v napojení na databázi nebo vypršel přihlašovací token. Zkuste stránku obnovit.</p>
           
           {activeOperator?.role === 'APP OWNER' && (
             <button 
@@ -80,7 +80,7 @@ const PlansDashboard = () => {
                 ];
                 await updatePlans(defaultPlans);
               }}
-              style={{ padding: '0.8rem 1.5rem', background: '#fbbf24', color: 'black', border: 'none', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}
+              style={{ padding: '1rem 2rem', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 15px rgba(37, 99, 235, 0.3)' }}
             >
               INICIALIZOVAT VÝCHOZÍ TARIFY
             </button>

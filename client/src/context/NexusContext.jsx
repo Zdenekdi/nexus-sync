@@ -155,7 +155,9 @@ export const NexusProvider = ({ children }) => {
   const fetchPlans = useCallback(async () => {
     try {
       setIsPlansLoading(true);
-      const res = await axios.get(`${API_BASE}/subscriptions/plans`);
+      const res = await axios.get(`${API_BASE}/subscriptions/plans`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setSubscriptionPlans(res.data);
     } catch (err) {
       console.error('Fetch plans error:', err);
