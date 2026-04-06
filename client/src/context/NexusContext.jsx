@@ -714,18 +714,28 @@ export const NexusProvider = ({ children }) => {
     <NexusContext.Provider value={value}>
       {children}
       {/* Context-level toast display */}
+      <style>{`
+        @keyframes toastProgressShrink {
+          from { width: 100%; }
+          to { width: 0%; }
+        }
+      `}</style>
       {_toasts.length > 0 && (
-        <div style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 99999, display: 'flex', flexDirection: 'column', gap: '0.5rem', pointerEvents: 'none' }}>
-          {_toasts.map(toast => (
-            <div key={toast.id} style={{
-              pointerEvents: 'auto',
-              padding: '0.75rem 1.25rem', borderRadius: '12px', fontWeight: '700', fontSize: '0.85rem',
-              color: 'white', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', animation: 'fadeIn 0.3s ease',
-              background: toast.type === 'error' ? '#ef4444' : toast.type === 'success' ? '#22c55e' : toast.type === 'warning' ? '#f59e0b' : '#3b82f6'
-            }}>
-              {toast.message}
-            </div>
-          ))}
+        <div role="alert" aria-live="polite" style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 99999, display: 'flex', flexDirection: 'column', gap: '0.5rem', pointerEvents: 'none' }}>
+          {_toasts.map(toast => {
+            const bg = toast.type === 'error' ? '#ef4444' : toast.type === 'success' ? '#22c55e' : toast.type === 'warning' ? '#f59e0b' : '#3b82f6';
+            return (
+              <div key={toast.id} style={{
+                pointerEvents: 'auto', position: 'relative', overflow: 'hidden',
+                padding: '0.75rem 1.25rem', borderRadius: '12px', fontWeight: '700', fontSize: '0.85rem',
+                color: 'white', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', animation: 'fadeIn 0.3s ease',
+                background: bg
+              }}>
+                {toast.message}
+                <div style={{ position: 'absolute', bottom: 0, left: 0, height: '3px', background: 'rgba(255,255,255,0.35)', animation: 'toastProgressShrink 4s linear forwards' }} />
+              </div>
+            );
+          })}
         </div>
       )}
     </NexusContext.Provider>

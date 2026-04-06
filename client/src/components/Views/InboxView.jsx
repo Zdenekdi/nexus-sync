@@ -96,7 +96,13 @@ const InboxView = () => {
                 </div>
                 <div className="truncate-text" style={{ opacity: selectedChatId === msg.id ? 1 : 0.7 }}>{msg.text}</div>
               </div>
-            )) : <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>{t('noMessages')}</div>}
+            )) : <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 1rem', gap: '0.75rem' }}>
+              <MessageSquare size={48} color="#374151" />
+              <div style={{ fontSize: '1rem', fontWeight: '700', color: '#64748b' }}>{t('noMessages')}</div>
+              <div style={{ fontSize: '0.8rem', color: '#475569' }}>
+                {lang === 'cz' ? 'Zprávy se zobrazí po přijetí první konverzace' : 'Messages will appear once you receive your first conversation'}
+              </div>
+            </div>}
             <div style={{ height: isMobile ? '80px' : '0' }}></div>
           </div>
         </div>

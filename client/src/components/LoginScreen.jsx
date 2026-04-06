@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { useNexus } from '../context/NexusContext';
+import axios from 'axios';
 import { 
   Lock, Mail, ArrowRight, Loader2, 
-  Globe, Zap, CheckCircle2, User, Building2, KeyRound, Copy, Check
+  Globe, Zap, CheckCircle2, User, Building2, KeyRound, Copy, Check,
+  Eye, EyeOff
 } from 'lucide-react';
+
+const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
 
 const LoginScreen = () => {
   const { onLogin, onRegisterAgency, onRegisterUser, t, setLang, lang, justLoggedOut, setJustLoggedOut, setShowLanding, showToast } = useNexus();
@@ -11,6 +15,11 @@ const LoginScreen = () => {
   const [loading, setLoading] = useState(false);
   const [createdInviteCode, setCreatedInviteCode] = useState(null);
   const [copied, setCopied] = useState(false);
+
+  // Password visibility toggles
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRegPassword, setShowRegPassword] = useState(false);
+  const [showJoinPassword, setShowJoinPassword] = useState(false);
 
   // Login form
   const [email, setEmail] = useState('');
@@ -59,8 +68,8 @@ const LoginScreen = () => {
       showToast(isCz ? 'Zadejte platný e-mail' : 'Please enter a valid email', 'error');
       return;
     }
-    if (regPassword.length < 6) {
-      showToast(isCz ? 'Heslo musí mít alespoň 6 znaků' : 'Password must be at least 6 characters', 'error');
+    if (regPassword.length < 8) {
+      showToast(isCz ? 'Heslo musí mít alespoň 8 znaků' : 'Password must be at least 8 characters', 'error');
       return;
     }
     setLoading(true);
@@ -88,8 +97,8 @@ const LoginScreen = () => {
       showToast(isCz ? 'Zadejte platný e-mail' : 'Please enter a valid email', 'error');
       return;
     }
-    if (joinPassword.length < 6) {
-      showToast(isCz ? 'Heslo musí mít alespoň 6 znaků' : 'Password must be at least 6 characters', 'error');
+    if (joinPassword.length < 8) {
+      showToast(isCz ? 'Heslo musí mít alespoň 8 znaků' : 'Password must be at least 8 characters', 'error');
       return;
     }
     setLoading(true);
@@ -116,6 +125,45 @@ const LoginScreen = () => {
     }
   };
 
+  const handleForgotPassword = async () => {
+    const resetEmail = window.prompt(isCz ? 'Zadejte svůj e-mail pro reset hesla:' : 'Enter your email to reset password:');
+    if (!resetEmail) return;
+    if (!emailRegex.test(resetEmail)) {
+      showToast(isCz ? 'Zadejte platný e-mail' : 'Please enter a valid email', 'error');
+      return;
+    }
+    try {
+      await axios.post(`${API_BASE}/auth/reset-password-request`, { email: resetEmail });
+      showToast(isCz ? 'Odkaz pro reset hesla byl odeslán na váš e-mail' : 'Password reset link has been sent to your email', 'success');
+    } catch (err) {
+      showToast(isCz ? 'Chyba při odesílání resetu' : 'Error sending reset request', 'error');
+    }
+  };
+
+  const getPasswordStrength = (pw) => {
+    if (!pw || pw.length < 8) return { level: 'weak', color: '#ef4444', label: isCz ? 'Slabé' : 'Weak', width: '33%' };
+    const hasMixed = /[a-z]/.test(pw) && /[A-Z]/.test(pw);
+    const hasNumber = /\d/.test(pw);
+    if (hasMixed && hasNumber) return { level: 'strong', color: '#10b981', label: isCz ? 'Silné' : 'Strong', width: '100%' };
+    if (hasMixed) return { level: 'medium', color: '#f59e0b', label: isCz ? 'Střední' : 'Medium', width: '66%' };
+    return { level: 'weak', color: '#ef4444', label: isCz ? 'Slabé' : 'Weak', width: '33%' };
+  };
+
+  const eyeToggleStyle = { position: 'absolute', right: '0.85rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#475569', cursor: 'pointer', padding: 0, display: 'flex' };
+
+  const PasswordStrengthBar = ({ password: pw }) => {
+    if (!pw) return null;
+    const strength = getPasswordStrength(pw);
+    return (
+      <div style={{ marginTop: '0.35rem' }}>
+        <div style={{ height: '3px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: strength.width, background: strength.color, borderRadius: '2px', transition: 'all 0.3s ease' }} />
+        </div>
+        <div style={{ fontSize: '0.6rem', color: strength.color, fontWeight: '700', marginTop: '0.2rem' }}>{strength.label}</div>
+      </div>
+    );
+  };
+
   const inputStyle = {
     width: '100%',
     padding: '0.6rem 0.85rem 0.6rem 2.4rem',
@@ -126,6 +174,8 @@ const LoginScreen = () => {
     fontSize: '0.85rem',
     outline: 'none'
   };
+
+  const passwordInputStyle = { ...inputStyle, paddingRight: '2.5rem' };
 
   const labelStyle = { fontSize: '0.65rem', fontWeight: '800', color: '#64748b', marginBottom: '0.3rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' };
   const iconStyle = { position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#475569' };
@@ -267,8 +317,14 @@ const LoginScreen = () => {
                     <label style={labelStyle}>{isCz ? 'Heslo' : 'Password'}</label>
                     <div style={{ position: 'relative' }}>
                       <Lock size={14} style={iconStyle} />
-                      <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required style={inputStyle} />
+                      <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required style={passwordInputStyle} />
+                      <button type="button" onClick={() => setShowPassword(v => !v)} style={eyeToggleStyle}>
+                        {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
                     </div>
+                    <button type="button" onClick={handleForgotPassword} style={{ background: 'none', border: 'none', color: '#60a5fa', fontSize: '0.7rem', fontWeight: '600', cursor: 'pointer', padding: '0.35rem 0 0', display: 'block' }}>
+                      {isCz ? 'Zapomenuté heslo?' : 'Forgot password?'}
+                    </button>
                   </div>
                   <button type="submit" disabled={loading} className="hover-bright" style={{
                     width: '100%', padding: '0.75rem',
@@ -307,11 +363,15 @@ const LoginScreen = () => {
                     </div>
                   </div>
                   <div>
-                    <label style={labelStyle}>{isCz ? 'Heslo (min. 6 znaků)' : 'Password (min. 6 chars)'}</label>
+                    <label style={labelStyle}>{isCz ? 'Heslo (min. 8 znaků)' : 'Password (min. 8 chars)'}</label>
                     <div style={{ position: 'relative' }}>
                       <Lock size={14} style={iconStyle} />
-                      <input type="password" value={regPassword} onChange={e => setRegPassword(e.target.value)} placeholder="••••••••" required minLength={6} style={inputStyle} />
+                      <input type={showRegPassword ? 'text' : 'password'} value={regPassword} onChange={e => setRegPassword(e.target.value)} placeholder="••••••••" required minLength={8} style={passwordInputStyle} />
+                      <button type="button" onClick={() => setShowRegPassword(v => !v)} style={eyeToggleStyle}>
+                        {showRegPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
                     </div>
+                    <PasswordStrengthBar password={regPassword} />
                   </div>
                   <div>
                     <label style={labelStyle}>{isCz ? 'Referral kód (volitelné)' : 'Referral Code (optional)'}</label>
@@ -357,11 +417,15 @@ const LoginScreen = () => {
                     </div>
                   </div>
                   <div>
-                    <label style={labelStyle}>{isCz ? 'Heslo (min. 6 znaků)' : 'Password (min. 6 chars)'}</label>
+                    <label style={labelStyle}>{isCz ? 'Heslo (min. 8 znaků)' : 'Password (min. 8 chars)'}</label>
                     <div style={{ position: 'relative' }}>
                       <Lock size={14} style={iconStyle} />
-                      <input type="password" value={joinPassword} onChange={e => setJoinPassword(e.target.value)} placeholder="••••••••" required minLength={6} style={inputStyle} />
+                      <input type={showJoinPassword ? 'text' : 'password'} value={joinPassword} onChange={e => setJoinPassword(e.target.value)} placeholder="••••••••" required minLength={8} style={passwordInputStyle} />
+                      <button type="button" onClick={() => setShowJoinPassword(v => !v)} style={eyeToggleStyle}>
+                        {showJoinPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
                     </div>
+                    <PasswordStrengthBar password={joinPassword} />
                   </div>
                   <div>
                     <label style={labelStyle}>{isCz ? 'Role' : 'Role'}</label>
