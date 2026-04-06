@@ -4,7 +4,7 @@ import { CreditCard, Users, Check, FileEdit, CheckCheck, Zap, RefreshCw, AlertCi
 import { NexusContext } from '../context/NexusContext';
 
 const PlansDashboard = () => {
-  const { t, activeOperator, subscriptionPlans, fetchPlans, updatePlans, isPlansLoading, activeMarket, setActiveMarket, agencies, isMobile } = useContext(NexusContext);
+  const { t, activeOperator, activeRole, subscriptionPlans, fetchPlans, updatePlans, isPlansLoading, activeMarket, setActiveMarket, agencies, isMobile } = useContext(NexusContext);
   const currentAgency = agencies[0];
   const [editingPlan, setEditingPlan] = useState(null);
   
