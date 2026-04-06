@@ -63,3 +63,6 @@ server/.npm/
 server/.npm_cache/
 server/Library/
 server/firebase-auth.json
+
+# Test coverage
+server/coverage/
