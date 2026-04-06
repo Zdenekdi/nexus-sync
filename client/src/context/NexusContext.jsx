@@ -173,10 +173,11 @@ export const NexusProvider = ({ children }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSubscriptionPlans(newPlans);
-      return true;
+      return { success: true };
     } catch (err) {
       console.error('Update plans error:', err);
-      return false;
+      const msg = err.response?.data?.error || err.message || 'Unknown error';
+      return { success: false, error: msg };
     } finally {
       setIsPlansLoading(false);
     }
