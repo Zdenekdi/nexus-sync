@@ -148,7 +148,7 @@ exports.logout = async (req, res) => {
 
 exports.registerAgency = async (req, res) => {
   try {
-    const { agencyName, fullName, email: rawEmail2, password } = req.body;
+    const { agencyName, fullName, email: rawEmail2, password, referralCode } = req.body;
     const email = rawEmail2?.toLowerCase();
     
     // Validate password
@@ -206,6 +206,12 @@ exports.registerAgency = async (req, res) => {
 
       return { agency, user };
     });
+
+    // Track referral if code provided
+    if (referralCode) {
+      const { applyReferral } = require('./referralController');
+      await applyReferral(referralCode, result.agency.id);
+    }
 
     res.status(201).json({ 
       message: 'Agency registered successfully',

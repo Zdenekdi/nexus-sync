@@ -21,6 +21,7 @@ const LoginScreen = () => {
   const [regAgencyName, setRegAgencyName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
+  const [regReferralCode, setRegReferralCode] = useState('');
 
   // Join agency form
   const [joinFullName, setJoinFullName] = useState('');
@@ -64,7 +65,7 @@ const LoginScreen = () => {
     }
     setLoading(true);
     try {
-      const result = await onRegisterAgency({ fullName: regFullName, agencyName: regAgencyName, email: regEmail, password: regPassword });
+      const result = await onRegisterAgency({ fullName: regFullName, agencyName: regAgencyName, email: regEmail, password: regPassword, ...(regReferralCode && { referralCode: regReferralCode }) });
       if (result?.success) {
         showToast(isCz ? 'Agentura úspěšně zaregistrována!' : 'Agency registered successfully!', 'success');
         setCreatedInviteCode(result.inviteCode);
@@ -310,6 +311,13 @@ const LoginScreen = () => {
                     <div style={{ position: 'relative' }}>
                       <Lock size={14} style={iconStyle} />
                       <input type="password" value={regPassword} onChange={e => setRegPassword(e.target.value)} placeholder="••••••••" required minLength={6} style={inputStyle} />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{isCz ? 'Referral kód (volitelné)' : 'Referral Code (optional)'}</label>
+                    <div style={{ position: 'relative' }}>
+                      <KeyRound size={14} style={iconStyle} />
+                      <input type="text" value={regReferralCode} onChange={e => setRegReferralCode(e.target.value.toUpperCase())} placeholder="REF-XXXXXXXX" style={inputStyle} />
                     </div>
                   </div>
                   <button type="submit" disabled={loading} className="hover-bright" style={{
