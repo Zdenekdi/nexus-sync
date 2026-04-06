@@ -38,6 +38,7 @@ const qaRoutes = require('./routes/qaRoutes');
 const callRoutes = require('./routes/callRoutes');
 const emergencyRoutes = require('./routes/emergencyRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const referralRoutes = require('./routes/referralRoutes');
 
 const app = express();
 
@@ -190,6 +191,7 @@ app.use('/api/qa', qaRoutes);
 app.use('/api/calls', callRoutes);
 app.use('/api/emergencies', emergencyRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/referrals', referralRoutes);
 
 // Basic health check
 app.get('/health', (req, res) => {
