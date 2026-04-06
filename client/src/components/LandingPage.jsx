@@ -87,7 +87,14 @@ const LandingPage = () => {
         { icon: <MapPin size={20} />, title: "Multi-tenant architektura", desc: "Kompletní izolace dat mezi agenturami. Každá agentura má vlastní role, oprávnění, profily a nastavení." },
         { icon: <Star size={20} />, title: "QA Hub & Referraly", desc: "Kontrola kvality komunikace operátorek. Referral systém pro růst agenturní sítě s odměnami." }
       ],
-      footer: "Nexus Systems – Váš nástroj pro efektivní škálování."
+      footer: "Nexus Systems – Váš nástroj pro efektivní škálování.",
+      gettingStartedTitle: "Jak začít?",
+      gettingStartedDesc: "Začněte používat Nexus Hub ve třech jednoduchých krocích.",
+      steps: [
+        { num: "1", title: "Zaregistrujte agenturu", desc: "Klikněte na \"Vstoupit do aplikace\" a zvolte záložku \"Nová agentura\". Vyplňte název agentury, vaše jméno, e-mail a heslo. Po registraci obdržíte unikátní zvací kód." },
+        { num: "2", title: "Pozvěte svůj tým", desc: "Sdílejte zvací kód (např. NEXUS-A1B2C3) se svými operátorkami a modelkami. Každý člen se zaregistruje přes záložku \"Připojit se\" na přihlašovací stránce a vybere svou roli." },
+        { num: "3", title: "Spravujte vše z jednoho místa", desc: "Po přihlášení máte přístup k dashboardu s kompletním přehledem. Nastavte profily, oprávnění a začněte pracovat." }
+      ]
     },
     en: {
       title: "The Future of Agency Management",
@@ -150,7 +157,14 @@ const LandingPage = () => {
         { icon: <MapPin size={20} />, title: "Multi-Tenant Architecture", desc: "Complete data isolation between agencies. Each agency gets its own roles, permissions, profiles, and settings." },
         { icon: <Star size={20} />, title: "QA Hub & Referrals", desc: "Operator communication quality control. Referral system for agency network growth with rewards." }
       ],
-      footer: "Nexus Systems – Your tool for efficient scaling."
+      footer: "Nexus Systems – Your tool for efficient scaling.",
+      gettingStartedTitle: "Getting Started",
+      gettingStartedDesc: "Start using Nexus Hub in three simple steps.",
+      steps: [
+        { num: "1", title: "Register Your Agency", desc: "Click \"Enter Application\" and select the \"New Agency\" tab. Fill in your agency name, your name, email, and password. After registration you'll receive a unique invite code." },
+        { num: "2", title: "Invite Your Team", desc: "Share the invite code (e.g. NEXUS-A1B2C3) with your operators and models. Each member registers via the \"Join Agency\" tab on the login page and selects their role." },
+        { num: "3", title: "Manage Everything in One Place", desc: "Once logged in, you have access to a full dashboard. Set up profiles, permissions, and start working." }
+      ]
     }
   };
 
@@ -308,6 +322,48 @@ const LandingPage = () => {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Getting Started Section */}
+      <section style={{ padding: isMobile ? '3rem 5%' : '6rem 5%', background: 'rgba(16, 185, 129, 0.03)', borderTop: '1px solid var(--card-border)', borderBottom: '1px solid var(--card-border)', position: 'relative', zIndex: 1 }}>
+        <h2 style={{ textAlign: 'center', fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900', marginBottom: '0.75rem' }}>{t.gettingStartedTitle}</h2>
+        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '1rem', maxWidth: '600px', margin: '0 auto 3rem' }}>
+          {t.gettingStartedDesc}
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1.5rem', maxWidth: '1000px', margin: '0 auto' }}>
+          {t.steps.map((step, i) => (
+            <div key={i} className="glass-card" style={{ padding: '2rem', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--card-border)', textAlign: 'center', position: 'relative' }}>
+              <div style={{
+                width: '48px', height: '48px', borderRadius: '50%',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 1.25rem', fontSize: '1.25rem', fontWeight: '900', color: 'white',
+                boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)'
+              }}>
+                {step.num}
+              </div>
+              <h4 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '0.75rem' }}>{step.title}</h4>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.6 }}>{step.desc}</p>
+            </div>
+          ))}
+        </div>
+        <div style={{ textAlign: 'center', marginTop: '2.5rem' }}>
+          <button
+            onClick={onLoginClick}
+            className="premium-button"
+            style={{
+              padding: isMobile ? '0.85rem 1.8rem' : '1rem 2.5rem',
+              borderRadius: '12px', border: 'none',
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              color: 'white', fontWeight: '900',
+              fontSize: isMobile ? '0.9rem' : '1rem',
+              cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.75rem',
+              boxShadow: '0 8px 25px rgba(16, 185, 129, 0.35)'
+            }}
+          >
+            {lang === 'cz' ? 'Zaregistrovat agenturu' : 'Register Your Agency'} <ArrowRight size={18} />
+          </button>
         </div>
       </section>
 
