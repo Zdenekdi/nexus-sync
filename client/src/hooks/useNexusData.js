@@ -116,7 +116,7 @@ export function useNexusData({
       }
 
       if (profileRes?.data) {
-        setProfiles(profileRes.data);
+        setProfiles(Array.isArray(profileRes.data) ? profileRes.data : []);
       }
 
       if (safetyRes?.data) {
@@ -141,13 +141,13 @@ export function useNexusData({
         setMessages(mappedMessages);
       }
 
-      if (userRes?.data) setOperators(userRes.data);
+      if (userRes?.data) setOperators(Array.isArray(userRes.data) ? userRes.data : []);
       if (bindingRes?.data?.ok) {
         setSessions(bindingRes.data.bindings.map(b => ({
           id: b.id, device: b.model || 'Android', status: b.active ? 'Active' : 'Disabled'
         })));
       }
-      if (agencyRes?.data) setAgencies(agencyRes.data);
+      if (agencyRes?.data) setAgencies(Array.isArray(agencyRes.data) ? agencyRes.data : []);
 
     } catch (err) {
       console.error('[Data] Init error:', err);

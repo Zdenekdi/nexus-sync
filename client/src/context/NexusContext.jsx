@@ -186,28 +186,28 @@ export const NexusProvider = ({ children }) => {
   }, [token]);
 
   const activeProfile = useMemo(() => 
-    profiles.find(p => p.id === activeProfileId) || myProfiles[0] || null,
+    (profiles || []).find(p => p.id === activeProfileId) || (myProfiles || [])[0] || null,
     [profiles, activeProfileId, myProfiles]
   );
 
   const filteredMessages = useMemo(() => 
-    messages.filter(m => m.profileId === activeProfile?.id),
+    (messages || []).filter(m => m.profileId === activeProfile?.id),
     [messages, activeProfile]
   );
 
   const selectedChat = useMemo(() => 
-     messages.find(m => m.id === selectedChatId) || null,
+     (messages || []).find(m => m.id === selectedChatId) || null,
     [messages, selectedChatId]
   );
 
   const chatMessages = useMemo(() => {
     if (!selectedChatId) return [];
-    return messages.filter(m => m.chatId === selectedChatId);
+    return (messages || []).filter(m => m.chatId === selectedChatId);
   }, [messages, selectedChatId]);
 
   const totalUnread = useMemo(() => {
-    const myProfileIds = new Set(myProfiles.map(p => p.id));
-    return messages.filter(m => m.status === 'unread' && myProfileIds.has(m.profileId)).length;
+    const myProfileIds = new Set((myProfiles || []).map(p => p.id));
+    return (messages || []).filter(m => m.status === 'unread' && myProfileIds.has(m.profileId)).length;
   }, [messages, myProfiles]);
 
   const handleSendMessage = useCallback((text) => {
