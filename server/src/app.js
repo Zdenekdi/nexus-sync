@@ -150,7 +150,7 @@ app.get('/health', (req, res) => {
 app.use((err, req, res, next) => {
   // CORS errors
   if (err.message && err.message.startsWith('CORS:')) {
-    return res.status(403).json({ message: err.message });
+    return res.status(403).json({ message: 'Request blocked by CORS policy' });
   }
   logger.error('Unhandled Error:', err);
   if (!res.headersSent) {

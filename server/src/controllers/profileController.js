@@ -73,9 +73,25 @@ exports.assignUsersToProfile = async (req, res) => {
   try {
     const { id } = req.params;
     const { userIds } = req.body;
+    const { agencyId } = req.user;
     if (!req.user.role.isManager) {
       return res.status(403).json({ message: 'Only managers can assign users to profiles' });
     }
+
+    // Verify profile belongs to this agency
+    const existing = await prisma.profile.findUnique({ where: { id }, select: { agencyId: true } });
+    if (!existing || existing.agencyId !== agencyId) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    // Verify all users belong to this agency
+    if (userIds && userIds.length > 0) {
+      const users = await prisma.user.findMany({ where: { id: { in: userIds } }, select: { agencyId: true } });
+      if (users.length !== userIds.length || users.some(u => u.agencyId !== agencyId)) {
+        return res.status(403).json({ message: 'Cannot assign users from another agency' });
+      }
+    }
+
     const profile = await prisma.profile.update({
       where: { id },
       data: { assignees: { set: userIds.map(userId => ({ id: userId })) } },

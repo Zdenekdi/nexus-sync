@@ -41,7 +41,7 @@ exports.getSettings = async (req, res) => {
     if (!agencyId) return res.status(404).json({ message: 'Agency not found' });
     const agency = await prisma.agency.findUnique({
       where: { id: agencyId },
-      select: { safetyAlertMode: true }
+      select: { id: true, name: true, tier: true, plan: true, safetyAlertMode: true, inviteCode: true, referralCode: true }
     });
     if (!agency) return res.status(404).json({ message: 'Agency not found' });
     res.json(agency);
@@ -85,7 +85,8 @@ exports.getUsers = async (req, res) => {
     
     res.json(mappedUsers);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    logger.error('Error fetching users:', error);
+    res.status(500).json({ message: 'Failed to load users' });
   }
 };
 
@@ -133,7 +134,7 @@ exports.getStats = async (req, res) => {
     res.json(stats);
   } catch (error) {
     logger.error('Error fetching agency stats:', error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Failed to load statistics' });
   }
 };
 
@@ -193,7 +194,7 @@ exports.getAgencies = async (req, res) => {
     res.json(mapped);
   } catch (error) {
     console.error('CRITICAL ERROR IN getAgencies:', error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Failed to load agencies' });
   }
 };
 
@@ -244,11 +245,16 @@ exports.getAgency = async (req, res) => {
     logger.error('Error fetching agency with profiles:', error);
     res.status(500).json({ message: 'Failed to fetch agency details' });
   }
+};
+
+exports.createAgency = async (req, res) => {
   try {
     const { role } = req.user;
     if (!role?.isAppOwner) return res.status(403).json({ message: 'Access denied' });
 
     const { name, region, tier, email } = req.body;
+    if (!name || !region) return res.status(400).json({ message: 'Name and region are required' });
+
     const inviteCode = `NEXUS-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
     const agency = await prisma.agency.create({
@@ -264,7 +270,8 @@ exports.getAgency = async (req, res) => {
 
     res.status(201).json({ ...agency, inviteCode });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    logger.error('Error creating agency:', error);
+    res.status(500).json({ message: 'Failed to create agency' });
   }
 };
 
@@ -277,7 +284,8 @@ exports.deleteAgency = async (req, res) => {
     await prisma.agency.delete({ where: { id } });
     res.json({ message: 'Agency deleted' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    logger.error('Error deleting agency:', error);
+    res.status(500).json({ message: 'Failed to delete agency' });
   }
 };
 
@@ -338,6 +346,6 @@ exports.addUser = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error adding user:', error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Failed to add user' });
   }
 };

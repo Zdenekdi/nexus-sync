@@ -5,9 +5,35 @@ let io;
 const jwt = require('jsonwebtoken');
 
 const init = (server) => {
+  // Build allowed origins matching the Express CORS configuration
+  const envOrigins = (process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map(o => o.trim())
+    .filter(Boolean);
+
+  const FIREBASE_ORIGINS = [
+    'https://nexus-hub.firebaseapp.com',
+    'https://nexus-hub.web.app'
+  ];
+
+  const CAPACITOR_ORIGINS = [
+    'https://localhost',
+    'capacitor://localhost',
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ];
+
+  const allowedOrigins = [...envOrigins, ...FIREBASE_ORIGINS, ...CAPACITOR_ORIGINS];
+
   io = new Server(server, {
     cors: {
-      origin: true,
+      origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error(`Socket.io CORS: Origin ${origin} not allowed`));
+        }
+      },
       methods: ['GET', 'POST'],
       credentials: true
     }

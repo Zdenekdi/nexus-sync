@@ -35,7 +35,7 @@ function generateSipPassword(len = 20) {
 exports.getMyConfig = async (req, res) => {
   try {
     const userId = req.user?.userId;
-    if (!userId) return res.status(401).json({ ok: false, message: 'Unauthorized' });
+    if (!userId) return res.status(401).json({ message: 'Authentication required' });
 
     const installationId = req.headers['x-installation-id'] || req.query.installationId;
 
@@ -56,14 +56,47 @@ exports.getMyConfig = async (req, res) => {
       orderBy: { lastSeenAt: 'desc' },
     });
 
-    if (!binding || !binding.sipUser) {
-      return res.json({ ok: true, sipConfig: null }); // žádný SIP config nastaven
+    if (!binding) {
+      return res.json({ ok: true, sipConfig: null });
+    }
+
+    // Auto-provisioning: generate SIP credentials if binding has none
+    if (!binding.sipUser) {
+      const sipUser = `relay_${binding.installationId?.slice(-8) || Date.now().toString(36)}`;
+      const sipPassword = generateSipPassword();
+      const sipServer = process.env.SIP_SERVER || process.env.VPS_SSH_HOST || 'localhost';
+      const sipPort = parseInt(process.env.SIP_PORT, 10) || 5060;
+
+      await prisma.deviceBinding.update({
+        where: { id: binding.id },
+        data: {
+          sipUser,
+          sipPassword: encrypt(sipPassword),
+          sipServer,
+          sipPort,
+        },
+      });
+
+      // Regenerate Asterisk config to include the new endpoint
+      try { await regenerateAsteriskConfig(); } catch (e) {
+        console.warn('[SIP] Asterisk reload after auto-provision failed:', e.message);
+      }
+
+      return res.json({
+        ok: true,
+        sipConfig: {
+          server:   sipServer,
+          username: sipUser,
+          password: sipPassword,
+          port:     sipPort,
+        },
+      });
     }
 
     const plainPassword = decrypt(binding.sipPassword);
     if (!plainPassword) {
       console.error('[SIP] decrypt failed for binding:', binding.id);
-      return res.status(500).json({ ok: false, message: 'SIP config corrupted' });
+      return res.status(500).json({ message: 'SIP configuration error. Please contact support.' });
     }
 
     return res.json({
@@ -77,7 +110,7 @@ exports.getMyConfig = async (req, res) => {
     });
   } catch (err) {
     console.error('[SIP] getMyConfig error:', err);
-    return res.status(500).json({ ok: false, message: 'Internal server error' });
+    return res.status(500).json({ message: 'Failed to load SIP configuration' });
   }
 };
 
@@ -89,7 +122,7 @@ exports.setConfig = async (req, res) => {
     const { sipUser, sipPassword, sipServer, sipPort } = req.body || {};
 
     if (!sipUser || !sipPassword || !sipServer) {
-      return res.status(400).json({ ok: false, message: 'sipUser, sipPassword, sipServer jsou povinné' });
+      return res.status(400).json({ message: 'SIP username, password and server are required' });
     }
 
     // Validace agencyId — admin může měnit jen bindingy své agentury
@@ -99,7 +132,7 @@ exports.setConfig = async (req, res) => {
     if (role !== 'App Owner' && agencyId) where.agencyId = agencyId;
 
     const binding = await prisma.deviceBinding.findFirst({ where, select: { id: true } });
-    if (!binding) return res.status(404).json({ ok: false, message: 'DeviceBinding nenalezen' });
+    if (!binding) return res.status(404).json({ message: 'Device binding not found' });
 
     const encrypted = encrypt(sipPassword);
 
@@ -124,10 +157,10 @@ exports.setConfig = async (req, res) => {
       console.error('[Asterisk] Regenerace selhala (SIP credentials uloženy OK):', err.message);
     });
 
-    return res.json({ ok: true, message: 'SIP config uložen, Asterisk se reloaduje' });
+    return res.json({ ok: true, message: 'SIP configuration saved' });
   } catch (err) {
     console.error('[SIP] setConfig error:', err);
-    return res.status(500).json({ ok: false, message: 'Internal server error' });
+    return res.status(500).json({ message: 'Failed to save SIP configuration' });
   }
 };
 
@@ -141,7 +174,7 @@ exports.deleteConfig = async (req, res) => {
     if (role !== 'App Owner' && agencyId) where.agencyId = agencyId;
 
     const binding = await prisma.deviceBinding.findFirst({ where, select: { id: true } });
-    if (!binding) return res.status(404).json({ ok: false, message: 'Nenalezen' });
+    if (!binding) return res.status(404).json({ message: 'Device binding not found' });
 
     await prisma.deviceBinding.update({
       where: { id: bindingId },
@@ -151,14 +184,13 @@ exports.deleteConfig = async (req, res) => {
     sipStatusMap.delete(bindingId);
 
     // Auto-regenerace po smazání
-    const agencyId = req.user?.agencyId;
     regenerateAsteriskConfig({ agencyId, decrypt }).catch(err => {
       console.error('[Asterisk] Regenerace po delete selhala:', err.message);
     });
 
     return res.json({ ok: true });
   } catch (err) {
-    return res.status(500).json({ ok: false, message: 'Internal server error' });
+    return res.status(500).json({ message: 'Failed to delete SIP configuration' });
   }
 };
 
@@ -175,7 +207,7 @@ exports.resetConfig = async (req, res) => {
     if (role !== 'App Owner' && agencyId) where.agencyId = agencyId;
 
     const binding = await prisma.deviceBinding.findFirst({ where, select: { id: true, agencyId: true } });
-    if (!binding) return res.status(404).json({ ok: false, message: 'Nenalezen' });
+    if (!binding) return res.status(404).json({ message: 'Device binding not found' });
 
     await prisma.deviceBinding.update({
       where: { id: bindingId },
@@ -185,10 +217,10 @@ exports.resetConfig = async (req, res) => {
     sipStatusMap.delete(bindingId);
     console.log(`[SIP] 🔄 Reset credentials pro binding ${bindingId} — auto-provisioning při příštím připojení`);
 
-    return res.json({ ok: true, message: 'Credentials resetovány. Nové se vygenerují při příštím připojení telefonu.' });
+    return res.json({ ok: true, message: 'Credentials reset. New ones will be generated on next device connection.' });
   } catch (err) {
     console.error('[SIP] resetConfig error:', err);
-    return res.status(500).json({ ok: false, message: 'Internal server error' });
+    return res.status(500).json({ message: 'Failed to reset SIP credentials' });
   }
 };
 
@@ -249,7 +281,7 @@ exports.ping = async (req, res) => {
 
     return res.json({ ok: true, profileName });
   } catch (err) {
-    return res.status(500).json({ ok: false, message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -318,7 +350,7 @@ exports.getStatus = async (req, res) => {
     return res.json({ ok: true, relays: result });
   } catch (err) {
     console.error('[SIP] getStatus error:', err);
-    return res.status(500).json({ ok: false, message: 'Internal server error' });
+    return res.status(500).json({ message: 'Failed to load SIP status' });
   }
 };
 
@@ -331,7 +363,7 @@ exports.reloadAsterisk = async (req, res) => {
 
     // Pouze App Owner nebo Manager
     if (!['App Owner', 'Manager', 'Admin'].includes(role)) {
-      return res.status(403).json({ ok: false, message: 'Nedostatečná oprávnění' });
+      return res.status(403).json({ message: 'Insufficient permissions' });
     }
 
     console.log(`[Asterisk] Manuální reload spuštěn uživatelem ${req.user?.userId} (${role})`);
@@ -357,7 +389,7 @@ exports.reloadAsterisk = async (req, res) => {
     return res.json({ ok: true, message: 'Asterisk konfigurece nasazena a reloadována', output: result.output });
   } catch (err) {
     console.error('[SIP] reloadAsterisk error:', err);
-    return res.status(500).json({ ok: false, message: err.message || 'SSH / Asterisk error' });
+    return res.status(500).json({ message: 'Asterisk reload failed. Please try again.' });
   }
 };
 

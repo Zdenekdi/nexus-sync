@@ -85,8 +85,10 @@ exports.createMessage = async (req, res) => {
 exports.simulateInbound = async (req, res) => {
   try {
     const { externalId, profileId, text } = req.body;
+    const { agencyId } = req.user;
     const profile = await prisma.profile.findUnique({ where: { id: profileId } });
     if (!profile) return res.status(404).json({ message: 'Profile not found' });
+    if (profile.agencyId !== agencyId) return res.status(403).json({ message: 'Access denied' });
     let chat = await prisma.chat.findUnique({ where: { externalId_profileId: { externalId, profileId } } });
     if (!chat) {
       chat = await prisma.chat.create({ data: { externalId, profileId, agencyId: profile.agencyId } });
@@ -152,11 +154,15 @@ exports.markAsRead = async (req, res) => {
 exports.getOutbox = async (req, res) => {
   try {
     const { profileId } = req.query;
+    const { agencyId } = req.user;
     if (!profileId) return res.status(400).json({ message: 'profileId required' });
+
+    const profile = await prisma.profile.findUnique({ where: { id: profileId }, select: { agencyId: true } });
+    if (!profile || profile.agencyId !== agencyId) return res.status(403).json({ message: 'Access denied' });
 
     const pending = await prisma.message.findMany({
       where: {
-        chat: { profileId },
+        chat: { profileId, agencyId },
         direction: 'OUTBOUND',
         status: 'pending_relay'
       },
@@ -179,10 +185,16 @@ exports.getOutbox = async (req, res) => {
 exports.updateMessageStatus = async (req, res) => {
   try {
     const { messageId } = req.params;
-    const { status } = req.body; // e.g., 'sent', 'failed'
+    const { status } = req.body;
+    const { agencyId } = req.user;
 
-    const prevMessage = await prisma.message.findUnique({ where: { id: messageId }, select: { status: true } });
-    const prevStatus = prevMessage?.status || 'unknown';
+    const prevMessage = await prisma.message.findUnique({
+      where: { id: messageId },
+      select: { status: true, chat: { select: { agencyId: true } } }
+    });
+    if (!prevMessage) return res.status(404).json({ message: 'Message not found' });
+    if (prevMessage.chat.agencyId !== agencyId) return res.status(403).json({ message: 'Access denied' });
+    const prevStatus = prevMessage.status || 'unknown';
 
     const message = await prisma.message.update({
       where: { id: messageId },
@@ -209,55 +221,18 @@ exports.updateMessageStatus = async (req, res) => {
   }
 };
 
-exports.simulateInbound = async (req, res) => {
-  try {
-    const { externalId, profileId, text } = req.body;
-    const profile = await prisma.profile.findUnique({ where: { id: profileId } });
-    if (!profile) return res.status(404).json({ message: 'Profile not found' });
-    let chat = await prisma.chat.findUnique({ where: { externalId_profileId: { externalId, profileId } } });
-    if (!chat) {
-      chat = await prisma.chat.create({ data: { externalId, profileId, agencyId: profile.agencyId } });
-    }
-    const message = await prisma.message.create({ data: { chatId: chat.id, text, direction: 'INBOUND', transport: 'sms', status: 'received' } });
-    await prisma.chat.update({ where: { id: chat.id }, data: { lastMessageAt: new Date() } });
-    try {
-      getIO().to(`agency_${profile.agencyId}`).emit('new_message', { ...message, chatId: chat.id, profileId: profile.id, from: externalId });
-    } catch (e) {}
-    try {
-      await sendChatPush({ agencyId: profile.agencyId, profileId, chatId: message.id, from: externalId, messagePreview: text, profileName: profile.name });
-    } catch (e) {}
-    res.status(201).json(message);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error simulating inbound message' });
-  }
-};
-
-exports.markAsRead = async (req, res) => {
-  try {
-    const { messageId } = req.params;
-    const { role, agencyId } = req.user;
-    const isAppOwner = role?.isAppOwner;
-    if (isAppOwner) return res.status(403).json({ message: 'App Owner cannot access messages' });
-    const message = await prisma.message.findUnique({ where: { id: messageId }, include: { chat: true } });
-    if (!message) return res.status(404).json({ message: 'Message not found' });
-    if (message.chat.agencyId !== agencyId) return res.status(403).json({ message: 'Access denied' });
-    const updated = await prisma.message.update({ where: { id: messageId }, data: { status: 'read' } });
-    try { getIO().to(`agency_${message.chat.agencyId}`).emit('message_updated', { chatId: message.chatId, message: updated }); } catch (e) {}
-    res.json(updated);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error marking message as read' });
-  }
-};
-
 exports.getRelayHistory = async (req, res) => {
   try {
     const { profileId } = req.query;
+    const { agencyId } = req.user;
     if (!profileId) return res.status(400).json({ message: 'profileId required' });
+
+    const profile = await prisma.profile.findUnique({ where: { id: profileId }, select: { agencyId: true } });
+    if (!profile || profile.agencyId !== agencyId) return res.status(403).json({ message: 'Access denied' });
+
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const messages = await prisma.message.findMany({
-      where: { chat: { profileId }, createdAt: { gte: since } },
+      where: { chat: { profileId, agencyId }, createdAt: { gte: since } },
       include: {
         chat: { select: { externalId: true, profileId: true } },
         sender: { select: { id: true, name: true } }

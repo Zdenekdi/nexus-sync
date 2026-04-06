@@ -31,6 +31,13 @@ exports.getProfileChats = async (req, res) => {
     const { role, agencyId } = req.user;
     const isAppOwner = role?.isAppOwner;
     if (isAppOwner) return res.status(403).json({ message: 'App Owner cannot access messages' });
+
+    // Verify the profile belongs to the user's agency
+    const profile = await prisma.profile.findUnique({ where: { id: profileId }, select: { agencyId: true } });
+    if (!profile || profile.agencyId !== agencyId) {
+      return res.status(403).json({ message: 'Access denied: profile does not belong to your agency' });
+    }
+
     const whereClause = { profileId, agencyId };
     const chats = await prisma.chat.findMany({
       where: whereClause,

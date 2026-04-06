@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../services/db');
 const logger = require('../services/logger');
 
 // Výchozí konfigurace funkcí (pokud nejsou v DB ještě uloženy)

@@ -1,9 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../services/db');
 const authMiddleware = require('../middleware/authMiddleware');
-
-const prisma = new PrismaClient();
 
 // Plan durations in days
 const PLAN_DURATIONS = {
@@ -42,7 +40,7 @@ router.get('/current', async (req, res) => {
     res.json(active || null);
   } catch (err) {
     console.error('GET /subscriptions/current error:', err);
-    res.status(500).json({ error: 'Failed to fetch subscription' });
+    res.status(500).json({ message: 'Failed to fetch subscription' });
   }
 });
 
@@ -57,7 +55,7 @@ router.get('/history', async (req, res) => {
     });
     res.json(list);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch history' });
+    res.status(500).json({ message: 'Failed to fetch history' });
   }
 });
 
@@ -70,7 +68,7 @@ router.post('/start', async (req, res) => {
     const agencyId = req.user.agencyId;
 
     if (!PLAN_DURATIONS[plan]) {
-      return res.status(400).json({ error: `Invalid plan. Use: ${Object.keys(PLAN_DURATIONS).join(', ')}` });
+      return res.status(400).json({ message: `Invalid plan. Use: ${Object.keys(PLAN_DURATIONS).join(', ')}` });
     }
 
     const now = new Date();
@@ -106,7 +104,7 @@ router.post('/start', async (req, res) => {
     res.status(201).json(subscription);
   } catch (err) {
     console.error('POST /subscriptions/start error:', err);
-    res.status(500).json({ error: 'Failed to start subscription' });
+    res.status(500).json({ message: 'Failed to start subscription' });
   }
 });
 
@@ -124,7 +122,7 @@ router.post('/cancel', async (req, res) => {
     });
 
     if (result.count === 0) {
-      return res.status(404).json({ error: 'No active subscription to cancel' });
+      return res.status(404).json({ message: 'No active subscription to cancel' });
     }
 
     // Reset agency.plan to Standard
@@ -136,7 +134,7 @@ router.post('/cancel', async (req, res) => {
     res.json({ success: true, cancelled: result.count });
   } catch (err) {
     console.error('POST /subscriptions/cancel error:', err);
-    res.status(500).json({ error: 'Failed to cancel subscription' });
+    res.status(500).json({ message: 'Failed to cancel subscription' });
   }
 });
 
@@ -159,10 +157,10 @@ router.get('/plans', (req, res) => {
 router.post('/trial', async (req, res) => {
   try {
     if (!req.user.isAppOwner && !req.user.isAdmin) {
-      return res.status(403).json({ error: 'App Owner access required' });
+      return res.status(403).json({ message: 'App Owner access required' });
     }
     const { agencyId, days = 14, note } = req.body;
-    if (!agencyId) return res.status(400).json({ error: 'agencyId required' });
+    if (!agencyId) return res.status(400).json({ message: 'agencyId required' });
 
     const now = new Date();
     const expiresAt = new Date(now);
@@ -183,7 +181,7 @@ router.post('/trial', async (req, res) => {
     res.status(201).json(trial);
   } catch (err) {
     console.error('POST /subscriptions/trial error:', err);
-    res.status(500).json({ error: 'Failed to start trial' });
+    res.status(500).json({ message: 'Failed to start trial' });
   }
 });
 
@@ -192,7 +190,7 @@ router.post('/trial', async (req, res) => {
 router.get('/admin/stats', async (req, res) => {
   try {
     if (!req.user.isAppOwner && !req.user.isAdmin) {
-      return res.status(403).json({ error: 'App Owner access required' });
+      return res.status(403).json({ message: 'App Owner access required' });
     }
 
     const totalActive = await prisma.subscription.count({ where: { status: 'ACTIVE' } });
@@ -223,7 +221,7 @@ router.get('/admin/stats', async (req, res) => {
     });
   } catch (err) {
     console.error('GET /subscriptions/admin/stats error:', err);
-    res.status(500).json({ error: 'Failed to fetch admin stats' });
+    res.status(500).json({ message: 'Failed to fetch admin stats' });
   }
 });
 
