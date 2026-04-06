@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Signal, 
   Wifi, 
@@ -17,6 +17,10 @@ import {
   ArrowUpRight,
   ArrowDownLeft
 } from 'lucide-react';
+import { useSipCall, isSipAvailable } from '../plugins/NexusSip';
+import IncomingCallScreen from './sip/IncomingCallScreen';
+import ActiveCallScreen from './sip/ActiveCallScreen';
+import axios from 'axios';
 
 const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, requestRelayPermissions, processRelayOutbox, syncSmsHistory }) => {
   const RELAY_API_BASE = (import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api').replace(/\/api$/, '');
@@ -29,7 +33,6 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   const [logs, setLogs] = useState(() => {
     try { return JSON.parse(localStorage.getItem('nexus_relay_logs') || '[]'); } catch { return []; }
   });
-  const [_lastForwardedId, setLastForwardedId] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isRefreshingLogs, setIsRefreshingLogs] = useState(false);
   const [activeLog, setActiveLog] = useState(null);
@@ -48,6 +51,68 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   const latestHealthCheckRef = useRef(0);
   const consecutiveHealthFailuresRef = useRef(0);
   const POLL_FAILURES_FOR_DISCONNECT = 3;
+
+  // ── SIP VoIP integration ────────────────────────────────────────────────────
+  const [sipConfig, setSipConfig] = useState(null);
+  const sipFetchedRef = useRef(false);
+  const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
+
+  // Fetch SIP credentials when relay activates
+  useEffect(() => {
+    if (!isActive || !operator?.token || sipFetchedRef.current) return;
+    sipFetchedRef.current = true;
+    (async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/sip/config`, {
+          headers: {
+            Authorization: `Bearer ${operator.token}`,
+            'x-installation-id': operator.installationId || '',
+          },
+        });
+        if (res.data?.ok && res.data.sipConfig) {
+          setSipConfig(res.data.sipConfig);
+        }
+      } catch (err) {
+        console.warn('[Relay/SIP] Could not fetch SIP config:', err.message);
+      }
+    })();
+  }, [isActive, operator?.token, API_BASE]);
+
+  // Reset SIP on deactivation
+  useEffect(() => {
+    if (!isActive) {
+      setSipConfig(null);
+      sipFetchedRef.current = false;
+    }
+  }, [isActive]);
+
+  const handleSipCallAnswered = useCallback(() => {
+    addLocalLog('call', 'SIP', 'SIP call answered', 'inbound', 'forwarded');
+  }, []);
+
+  const handleSipCallEnded = useCallback(() => {
+    addLocalLog('call', 'SIP', 'SIP call ended', 'inbound', 'forwarded');
+  }, []);
+
+  const {
+    sipState,
+    incomingCall: sipIncomingCall,
+    callDuration: sipCallDuration,
+    isMuted: sipIsMuted,
+    isSpeaker: sipIsSpeaker,
+    answer: sipAnswer,
+    reject: sipReject,
+    hangup: sipHangup,
+    toggleMute: sipToggleMute,
+    toggleSpeaker: sipToggleSpeaker,
+    permissionWarning: sipPermissionWarning,
+  } = useSipCall(sipConfig, {
+    onIncoming: (data) => {
+      addLocalLog('call', data.caller || data.callerId || 'SIP', 'Incoming SIP call', 'inbound', 'pending');
+    },
+    onAnswered: handleSipCallAnswered,
+    onEnded: handleSipCallEnded,
+  });
 
   // Persist logs to localStorage whenever they change
   useEffect(() => {
@@ -415,7 +480,6 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     };
 
     setLogs(prev => [newLog, ...prev.slice(0, 19)]);
-    setLastForwardedId(newLog.id);
     return newLog.id;
   };
 
@@ -470,7 +534,6 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     if (plugin?.addListener) {
       listener = plugin.addListener('relay_event', (event) => {
         try {
-          console.log('[Relay] Native event received:', event);
           const st = (event.status || '').toLowerCase();
           if (st === 'sent' || st === 'forwarded' || st === 'relayed' || st === 'ok' || st === 'success' || st === 'delivered') {
             updateLogStatus(event.from, 'forwarded');
@@ -502,7 +565,6 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
 
     try {
       const baseUrl = `${RELAY_API_BASE}/api/device/relay`;
-      const _token = localStorage.getItem('nexus_token');
       await window.Capacitor.Plugins.NexusRelay.configureRelay({
         baseUrl: baseUrl,
         deviceId: operator?.id || 'RELAY-01',
@@ -670,6 +732,26 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   }, [relayNotice]);
 
   return (
+    <>
+      {/* SIP incoming call fullscreen overlay */}
+      {sipState === 'ringing' && sipIncomingCall && (
+        <IncomingCallScreen
+          caller={sipIncomingCall.caller || sipIncomingCall.callerId}
+          profileName={sipIncomingCall.callerName}
+          onAnswer={() => sipAnswer()}
+          onReject={() => sipReject()}
+        />
+      )}
+
+      {/* SIP active call fullscreen overlay */}
+      {sipState === 'in_call' && (
+        <ActiveCallScreen
+          caller={sipIncomingCall?.caller || 'SIP'}
+          profileName={sipIncomingCall?.callerName}
+          onEnd={() => sipHangup()}
+        />
+      )}
+
     <div className="relay-container fade-in" style={{ 
       minHeight: '100dvh',
       background: '#07080a',
@@ -835,7 +917,8 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
             { id: 'smsMonitoring', label: 'SMS', granted: permissionsStatus.smsMonitoring },
             { id: 'callMonitoring', label: 'PHONE', granted: permissionsStatus.callMonitoring },
             { id: 'locationMonitoring', label: 'LOCATION', granted: permissionsStatus.locationMonitoring },
-            { id: 'rcsMonitoring', label: 'RCS', granted: permissionsStatus.rcsMonitoring }
+            { id: 'rcsMonitoring', label: 'RCS', granted: permissionsStatus.rcsMonitoring },
+            { id: 'sipRegistration', label: 'SIP', granted: sipState === 'registered' || sipState === 'ringing' || sipState === 'in_call' },
           ].map(p => (
             <div
               key={p.id}
@@ -1102,6 +1185,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
         </div>
       )}
     </div>
+    </>
   );
 };
 

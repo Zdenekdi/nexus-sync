@@ -12,6 +12,7 @@ import AddAgencyModal from './AddAgencyModal';
 import CallOverlays from '../Overlays/CallOverlays';
 import DepartureConfirmation from '../Overlays/DepartureConfirmation';
 import NotificationSystem from '../Notifications/NotificationSystem';
+import SipManager from '../sip/SipManager';
 
 /**
  * Container for all global modals and overlays.
@@ -27,6 +28,7 @@ const GlobalModalContainer = () => {
       <CallOverlays />
       <DepartureConfirmation />
       <EmergencyAlert />
+      <SipManager />
 
       {/* Global Modals */}
       {isBugReportOpen && (

@@ -21,7 +21,8 @@ const WebProfilesView = () => {
     isSyncing,
     syncStatus,
     syncProgress,
-    handleSyncAll
+    handleSyncAll,
+    showToast
   } = nexus;
   const [bioLang, setBioLang] = useState('EN');
 
@@ -70,7 +71,7 @@ const WebProfilesView = () => {
               <>
                <input type="file" id="photo-upload-input" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
                  const file = e.target.files?.[0];
-                 if (file) alert((lang === 'cz' ? 'Foto vybráno: ' : 'Photo selected: ') + file.name);
+                 if (file) showToast((lang === 'cz' ? 'Foto vybráno: ' : 'Photo selected: ') + file.name, 'success');
                }} />
                <button className="action-btn" onClick={() => document.getElementById('photo-upload-input').click()} style={{ width: 'auto', padding: '0.5rem 1rem', marginTop: 0, fontSize: '0.8rem' }}>+ {t('uploadPhoto')}</button>
              </>

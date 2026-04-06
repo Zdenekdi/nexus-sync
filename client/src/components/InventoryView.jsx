@@ -22,7 +22,8 @@ const InventoryView = ({ t, token }) => {
   // Add item modal
   const [addItemModal, setAddItemModal] = useState(false);
   const [newItem, setNewItem] = useState({ name: '', quantity: 0, threshold: 10, locationId: '' });
-  const [editingQty, setEditingQty] = useState(null); // { id, value }
+  const [editingQty, setEditingQty] = useState(null);
+  const [fetchError, setFetchError] = useState(false);
 
   // ── API helpers ─────────────────────────────────────────────────────────────
   const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
@@ -35,9 +36,12 @@ const InventoryView = ({ t, token }) => {
         fetch(`${API_BASE}/inventory/items`, { headers })
       ]);
       if (locsRes.ok) setLocations(await locsRes.json());
+      else console.error('[Inventory] locations response not ok:', locsRes.status);
       if (itemsRes.ok) setItems(await itemsRes.json());
+      else console.error('[Inventory] items response not ok:', itemsRes.status);
     } catch (e) {
       console.error('[Inventory] fetch failed:', e);
+      setFetchError(true);
     } finally {
       setLoading(false);
     }
@@ -48,39 +52,50 @@ const InventoryView = ({ t, token }) => {
   // ── CRUD ─────────────────────────────────────────────────────────────────────
   const handleAddLocation = async () => {
     if (!newLocationName.trim()) return;
-    const res = await fetch(`${API_BASE}/inventory/locations`, {
-      method: 'POST', headers,
-      body: JSON.stringify({ name: newLocationName.trim() })
-    });
-    if (res.ok) { const loc = await res.json(); setLocations(p => [...p, loc]); }
+    try {
+      const res = await fetch(`${API_BASE}/inventory/locations`, {
+        method: 'POST', headers,
+        body: JSON.stringify({ name: newLocationName.trim() })
+      });
+      if (res.ok) { const loc = await res.json(); setLocations(p => [...p, loc]); }
+      else console.error('[Inventory] add location failed:', res.status);
+    } catch (e) { console.error('[Inventory] add location error:', e); }
     setNewLocationName(''); setIsAddingLocation(false);
   };
 
   const handleDeleteLocation = async (id) => {
-    if (!window.confirm('Smazat lokaci a všechny její položky?')) return;
-    const res = await fetch(`${API_BASE}/inventory/locations/${id}`, { method: 'DELETE', headers });
-    if (res.ok) { setLocations(p => p.filter(l => l.id !== id)); setItems(p => p.filter(i => i.locationId !== id)); }
+    if (!window.confirm(t?.('confirmDeleteLocation') || 'Smazat lokaci a všechny její položky?')) return;
+    try {
+      const res = await fetch(`${API_BASE}/inventory/locations/${id}`, { method: 'DELETE', headers });
+      if (res.ok) { setLocations(p => p.filter(l => l.id !== id)); setItems(p => p.filter(i => i.locationId !== id)); }
+    } catch (e) { console.error('[Inventory] delete location error:', e); }
   };
 
   const handleAddItem = async () => {
     if (!newItem.name.trim() || !newItem.locationId) return;
-    const res = await fetch(`${API_BASE}/inventory/items`, {
-      method: 'POST', headers, body: JSON.stringify(newItem)
-    });
-    if (res.ok) { const item = await res.json(); setItems(p => [...p, item]); setAddItemModal(false); setNewItem({ name: '', quantity: 0, threshold: 10, locationId: '' }); }
+    try {
+      const res = await fetch(`${API_BASE}/inventory/items`, {
+        method: 'POST', headers, body: JSON.stringify(newItem)
+      });
+      if (res.ok) { const item = await res.json(); setItems(p => [...p, item]); setAddItemModal(false); setNewItem({ name: '', quantity: 0, threshold: 10, locationId: '' }); }
+    } catch (e) { console.error('[Inventory] add item error:', e); }
   };
 
   const handleUpdateQuantity = async (id, quantity) => {
-    const res = await fetch(`${API_BASE}/inventory/items/${id}`, {
-      method: 'PATCH', headers, body: JSON.stringify({ quantity: Number(quantity) })
-    });
-    if (res.ok) { const updated = await res.json(); setItems(p => p.map(i => i.id === id ? updated : i)); }
+    try {
+      const res = await fetch(`${API_BASE}/inventory/items/${id}`, {
+        method: 'PATCH', headers, body: JSON.stringify({ quantity: Number(quantity) })
+      });
+      if (res.ok) { const updated = await res.json(); setItems(p => p.map(i => i.id === id ? updated : i)); }
+    } catch (e) { console.error('[Inventory] update quantity error:', e); }
     setEditingQty(null);
   };
 
   const handleDeleteItem = async (id) => {
-    const res = await fetch(`${API_BASE}/inventory/items/${id}`, { method: 'DELETE', headers });
-    if (res.ok) setItems(p => p.filter(i => i.id !== id));
+    try {
+      const res = await fetch(`${API_BASE}/inventory/items/${id}`, { method: 'DELETE', headers });
+      if (res.ok) setItems(p => p.filter(i => i.id !== id));
+    } catch (e) { console.error('[Inventory] delete item error:', e); }
   };
 
   // ── Derived ───────────────────────────────────────────────────────────────
@@ -106,6 +121,15 @@ const InventoryView = ({ t, token }) => {
 
   return (
     <div style={{ padding: isMobile ? '1.5rem 1rem' : '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
+      {fetchError && (
+        <div style={{ padding: '1rem 1.5rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '12px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#ef4444', fontWeight: '700', fontSize: '0.9rem' }}>
+          <AlertTriangle size={18} />
+          {t?.fetchError || 'Nepodařilo se načíst data. Zkuste to znovu.'}
+          <button onClick={() => { setFetchError(false); fetchAll(); }} style={{ marginLeft: 'auto', background: 'rgba(239,68,68,0.2)', border: 'none', color: '#ef4444', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}>
+            <RefreshCw size={14} />
+          </button>
+        </div>
+      )}
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: isMobile ? '1.5rem' : '3rem', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : 0 }}>
         <div>

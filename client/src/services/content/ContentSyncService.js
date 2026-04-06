@@ -211,7 +211,6 @@ export class ContentSyncService {
 
     const runSync = async () => {
       try {
-        console.log('Running scheduled sync...');
         // Sync all pending profiles
         for (const sync of this.syncQueue.filter(s => s.status === 'pending')) {
           await this.retrySync(sync);

@@ -151,7 +151,6 @@ export function useSipCall(config, handlers = {}) {
 
   const answer = useCallback(async () => {
     const result = await NexusSip.answer();
-    console.log('[SIP] hovor přijat:', result?.callId);
     return result;
   }, []);
 

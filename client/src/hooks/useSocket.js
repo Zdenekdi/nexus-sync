@@ -31,49 +31,40 @@ export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall,
         reconnectionDelay: 1000,
       });
 
-      socketRef.current.on('connect', () => {
-        console.log('Connected to Socket.io:', socketRef.current.id);
-      });
+      socketRef.current.on('connect', () => {});
 
       socketRef.current.on('new_message', (data) => {
-        console.log('Received new_message:', data);
         if (handlersRef.current.onNewMessage) {
           handlersRef.current.onNewMessage(data);
         }
       });
 
       socketRef.current.on('message_updated', (data) => {
-        console.log('Received message_updated:', data);
         if (handlersRef.current.onMessageUpdated) {
           handlersRef.current.onMessageUpdated(data);
         }
       });
 
       socketRef.current.on('incoming_call', (data) => {
-        console.log('Received incoming_call:', data);
         if (handlersRef.current.onIncomingCall) {
           handlersRef.current.onIncomingCall(data);
         }
       });
 
       socketRef.current.on('emergency_alert', (data) => {
-        console.log('Received emergency_alert:', data);
         if (handlersRef.current.onEmergencyAlert) {
           handlersRef.current.onEmergencyAlert(data);
         }
       });
 
-      // SIP příchozí hovor od relay zařízení — obsahuje profileName (jméno modelky)
+      // SIP příchozí hovor od relay zařízení
       socketRef.current.on('sip_incoming_call', (data) => {
-        console.log('[SIP] 📞 sip_incoming_call:', data);
         if (handlersRef.current.onSipIncomingCall) {
           handlersRef.current.onSipIncomingCall(data);
         }
       });
 
-      socketRef.current.on('disconnect', (reason) => {
-        console.log('Disconnected from Socket.io:', reason);
-      });
+      socketRef.current.on('disconnect', () => {});
 
       socketRef.current.on('connect_error', (error) => {
         console.error('Socket connection error:', error);

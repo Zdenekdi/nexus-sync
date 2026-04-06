@@ -152,16 +152,14 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
         } else {
           window.history.replaceState(null, '', '/dashboard');
         }
-        return true;
+        return { success: true };
       } else {
         const errorData = await res.json().catch(() => ({}));
-        alert(errorData.message || (t('loginError') || 'Invalid credentials'));
-        return false;
+        return { success: false, error: errorData.message || 'loginError' };
       }
     } catch (err) {
       console.error('[Auth] Login failed:', err);
-      alert('Connection error. Please check your internet.');
-      return false;
+      return { success: false, error: 'connectionError' };
     } finally {
       setIsLoginLoading(false);
     }

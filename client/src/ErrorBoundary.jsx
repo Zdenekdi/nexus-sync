@@ -21,11 +21,8 @@ class ErrorBoundary extends React.Component {
           </div>
           <h1 style={{ fontSize: '2rem', fontWeight: '900', marginBottom: '1rem' }}>Sakra, něco se pokazilo!</h1>
           <p style={{ color: 'rgba(255,255,255,0.7)', maxWidth: '500px', lineHeight: '1.6', marginBottom: '2rem' }}>
-            Aplikace narazila na chybu, kterou nešlo obejít. Klikni na tlačítko níže pro restartování, nebo nahlas chybu na GitHub.
+            Aplikace narazila na neočekávanou chybu. Zkuste ji restartovat tlačítkem níže nebo kontaktujte podporu.
           </p>
-          <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '12px', width: '100%', maxWidth: '600px', textAlign: 'left', marginBottom: '2rem', border: '1px solid rgba(255,255,255,0.1)', overflowX: 'auto' }}>
-            <code style={{ color: '#f87171', fontSize: '0.9rem' }}>{this.state.error?.toString()}</code>
-          </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
             <button onClick={() => window.location.href = '/'} style={{ background: '#3b82f6', color: 'white', padding: '1rem 2rem', border: 'none', borderRadius: '12px', fontWeight: '800', cursor: 'pointer' }}>Restartovat aplikaci</button>
             <button onClick={() => window.location.href = 'mailto:support@nexus-hub.ai'} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '1rem 2rem', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}>Kontaktovat podporu</button>
