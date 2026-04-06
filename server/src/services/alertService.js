@@ -2,14 +2,14 @@ const axios = require('axios');
 const logger = require('./logger');
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '8701634067';
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
 /**
  * Sends a notification to the administrator via Telegram.
  */
 const sendAlert = async (message, level = 'error') => {
-  if (!TELEGRAM_BOT_TOKEN) {
-    logger.warn('Telegram Alert NOT sent: TELEGRAM_BOT_TOKEN is missing in .env');
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+    logger.warn('Telegram Alert NOT sent: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is missing in .env');
     return;
   }
 

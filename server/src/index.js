@@ -10,6 +10,9 @@ const logger = require('./services/logger');
 const http = require('http');
 const socketService = require('./services/socket');
 const safetyService = require('./services/safetyService');
+const cronService = require('./services/cronService');
+
+const prisma = require('./services/db');
 
 const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
@@ -19,6 +22,9 @@ socketService.init(server);
 
 // Start Safety Worker
 safetyService.startEscalationWorker();
+
+// Start Cron Jobs
+cronService.start();
 
 // Handle Unhandled Rejections and Exceptions
 process.on('unhandledRejection', (reason, promise) => {
@@ -36,11 +42,16 @@ server.listen(PORT, () => {
 });
 
 // Graceful Shutdown
-const shutdown = () => {
+const shutdown = async () => {
   logger.info('Gracefully shutting down...');
-  server.close(() => {
+  server.close(async () => {
     logger.info('HTTP server closed.');
-    // If you had a db client pool, close it here
+    try {
+      await prisma.$disconnect();
+      logger.info('Prisma disconnected.');
+    } catch (e) {
+      logger.error('Prisma disconnect error:', e);
+    }
     process.exit(0);
   });
 

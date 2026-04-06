@@ -80,11 +80,7 @@ exports.verifyDeviceBinding = async (req, res) => {
       });
       
       if (!profile) {
-        return res.status(404).json({ ok: false, message: 'Profile not found' });
-      }
-
-      if (!profile) {
-        return res.status(403).json({ ok: false, message: 'Profile does not belong to your agency' });
+        return res.status(404).json({ ok: false, message: 'Profile not found or does not belong to your agency' });
       }
 
       resolvedProfileId = profile.id;
