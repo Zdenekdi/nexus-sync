@@ -59,13 +59,22 @@ function InfraTab() {
   };
 
   const statCards = [
-    { label: 'Vultr Charges', value: '$' + (status?.pending_charges ?? '0.00'), icon: <CreditCard size={18} />, color: '#10b981', sub: 'Current Month' },
-    { label: 'System Uptime', value: stats?.uptime || '99.9%', icon: <Zap size={18} />, color: '#f59e0b', sub: 'All nodes healthy' },
-    { label: 'Data Transfer', value: bandwidth ? formatBytes(bandwidth.outgoing_bytes) : '0 GB', icon: <Activity size={18} />, color: '#6366f1', sub: 'Outgoing' }
+    { label: 'Náklady (Vultr)', value: '$' + (status?.pending_charges ?? '0.00'), icon: <CreditCard size={18} />, color: '#10b981', sub: 'Aktuální měsíc' },
+    { label: 'Dostupnost systému', value: stats?.uptime || '99.9%', icon: <Zap size={18} />, color: '#f59e0b', sub: 'Všechny uzly OK' },
+    { label: 'Přenos dat', value: bandwidth ? formatBytes(bandwidth.outgoing_bytes) : '0 GB', icon: <Activity size={18} />, color: '#6366f1', sub: 'Odchozí provoz' }
   ];
 
   return (
-    <div className="infra-tab-container fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', paddingBottom: '2rem' }}>
+    <div className="infra-tab-container fade-in" style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      gap: '2.5rem', 
+      padding: '2.5rem', 
+      height: '100%', 
+      overflowY: 'auto', 
+      boxSizing: 'border-box',
+      width: '100%'
+    }}>
       
       {error && (
         <div className="glass-card" style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '0.75rem', borderRadius: '12px' }}>
@@ -98,35 +107,35 @@ function InfraTab() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <Layout size={18} color="var(--accent-color)" />
-                <h3 style={{ fontSize: '0.95rem', fontWeight: '800', letterSpacing: '0.05em' }}>INSTANCE DETAILS</h3>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: '800', letterSpacing: '0.05em' }}>DETAILY SERVERU</h3>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.03)', padding: '0.4rem 0.8rem', borderRadius: '30px', border: '1px solid var(--card-border)' }}>
                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: statusColor }}></div>
-                 <span style={{ fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', color: statusColor }}>{status?.power_status || 'OFFLINE'}</span>
+                 <span style={{ fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', color: statusColor }}>{status?.power_status || 'NEAKTIVNÍ'}</span>
               </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                 <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '700' }}>IP ADDRESS</div>
+                 <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '700' }}>IP ADRESA</div>
                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: '700' }}>
                    <Globe size={14} color="var(--accent-color)" />
                    {status?.main_ip || '---'}
                  </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                 <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '700' }}>OS / REGION</div>
+                 <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '700' }}>SYSTÉM / REGION</div>
                  <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>{status?.os} / {status?.region}</div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                 <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '700' }}>RESOURCES</div>
+                 <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '700' }}>VÝKON / ZDROJE</div>
                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: '700' }}>
                    <Cpu size={14} color="var(--accent-color)" />
                    {status?.vcpu_count} vCPU • {status?.ram} MB
                  </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                 <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '700' }}>BANDWIDTH</div>
+                 <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '700' }}>PŘENOS DAT</div>
                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: '700' }}>
                    <Activity size={14} color="var(--accent-color)" />
                    {bandwidth ? `${formatBytes(bandwidth.outgoing_bytes)} ↑` : '---'}
@@ -137,7 +146,7 @@ function InfraTab() {
 
           {/* Power Controls Card */}
           <div className="glass-card" style={{ padding: '1.25rem', borderRadius: '20px' }}>
-            <h3 style={{ fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.05em' }}>POWER OPERATIONS</h3>
+            <h3 style={{ fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.05em' }}>NAPÁJENÍ A RESTART</h3>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <button 
                 onClick={() => serverAction("start")} 
@@ -173,7 +182,7 @@ function InfraTab() {
           <div className="glass-card" style={{ padding: '1.25rem', borderRadius: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
               <Github size={18} color="var(--text-secondary)" />
-              <h3 style={{ fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>CONTINUOUS DEPLOYMENT</h3>
+              <h3 style={{ fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>KONTINUÁLNÍ NASAZENÍ (GIT)</h3>
             </div>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <div style={{ flex: 1, position: 'relative' }}>
@@ -200,7 +209,7 @@ function InfraTab() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Terminal size={18} color="var(--text-secondary)" />
-                <h3 style={{ fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>REMOTE SSH CONSOLE</h3>
+                <h3 style={{ fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>VZDÁLENÝ SSH TERMINÁL</h3>
               </div>
             </div>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -216,7 +225,7 @@ function InfraTab() {
                 disabled={loading}
                 style={{ padding: '0.7rem 1.25rem', borderRadius: '12px', background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.3)', color: '#d8b4fe', fontWeight: '800', fontSize: '0.75rem', cursor: 'pointer', opacity: loading ? 0.5 : 1 }}
               >
-                RUN
+                SPUSTIT
               </button>
             </div>
             {cmdOutput && (
@@ -228,7 +237,7 @@ function InfraTab() {
                   onClick={clearCmdOutput}
                   style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: 'none', border: 'none', color: 'rgba(16, 185, 129, 0.5)', cursor: 'pointer', fontSize: '0.65rem' }}
                 >
-                  Clear
+                  Smazat
                 </button>
               </div>
             )}
@@ -237,7 +246,7 @@ function InfraTab() {
           <div className="glass-card" style={{ padding: '1.25rem', borderRadius: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
               <Smartphone size={18} color="var(--text-secondary)" />
-              <h3 style={{ fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>RELAY APK</h3>
+              <h3 style={{ fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>ANDROID RELAY (APK)</h3>
             </div>
 
             {/* Current APK Info */}
