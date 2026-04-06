@@ -1,0 +1,23 @@
+const prismaMock = {
+  user: { findUnique: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn(), count: jest.fn() },
+  agency: { findUnique: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), count: jest.fn() },
+  role: { findUnique: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn() },
+  profile: { findUnique: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn(), count: jest.fn() },
+  chat: { findUnique: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), count: jest.fn() },
+  message: { findMany: jest.fn(), create: jest.fn(), count: jest.fn() },
+  booking: { findUnique: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), count: jest.fn() },
+  refreshToken: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn(), updateMany: jest.fn(), deleteMany: jest.fn() },
+  safetySession: { findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), count: jest.fn() },
+  sOSAlert: { findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn() },
+  blacklistEntry: { findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn() },
+  deviceBinding: { findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
+  dailyStat: { findMany: jest.fn(), create: jest.fn() },
+  callLog: { findMany: jest.fn(), create: jest.fn(), count: jest.fn() },
+  inventory: { findMany: jest.fn(), create: jest.fn(), update: jest.fn() },
+  note: { findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
+  subscription: { findMany: jest.fn(), create: jest.fn() },
+  feature: { findMany: jest.fn(), create: jest.fn() },
+  $transaction: jest.fn((fn) => fn(prismaMock)),
+  $on: jest.fn(),
+};
+module.exports = prismaMock;
