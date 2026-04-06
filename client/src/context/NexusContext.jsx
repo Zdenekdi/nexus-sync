@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import { usePermissions } from '../hooks/usePermissions';
 import { useNexusData } from '../hooks/useNexusData';
 import { useSocket } from '../hooks/useSocket';
+import { initPushNotifications, removePushListeners } from '../services/pushService';
 
 export const NexusContext = createContext();
 
@@ -199,6 +200,22 @@ export const NexusProvider = ({ children }) => {
   }, []);
 
   useSocket(token, handleNewMessage, handleMessageUpdated, handleIncomingCall, handleEmergencyAlert, handleSipIncomingCall);
+
+  // Push notifications — register FCM token on native platforms when logged in
+  useEffect(() => {
+    if (!isLoggedIn || !token) return;
+    initPushNotifications(API_BASE, token, (notification, tapped) => {
+      const data = notification?.data;
+      if (tapped && data?.chatId) {
+        setSelectedChatId(data.chatId);
+        setActiveTab('inbox');
+      }
+      if (data?.type === 'safety_alert') {
+        showToast(lang === 'cz' ? '🚨 Nouzový poplach!' : '🚨 Emergency alert!', 'error');
+      }
+    });
+    return () => { removePushListeners(); };
+  }, [isLoggedIn, token, showToast, lang]);
 
   const onLogin = useCallback(async (email, password) => {
     const result = await auth.handleLogin(email, password);

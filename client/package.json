@@ -20,6 +20,7 @@
     "@capacitor/device": "^8.0.1",
     "@capacitor/geolocation": "^8.0.2",
     "@capacitor/local-notifications": "^8.0.2",
+    "@capacitor/push-notifications": "^8.0.3",
     "axios": "^1.13.6",
     "jssip": "^3.13.6",
     "lucide-react": "^0.577.0",
