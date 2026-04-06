@@ -91,9 +91,11 @@ class SafetyService {
                     orderBy: { capturedAt: 'desc' }
                 });
 
-                // Find the user who owns this profile
+                // Find user assigned to this profile
                 const profileUser = await prisma.user.findFirst({
-                    where: { profileId: session.profileId },
+                    where: {
+                        assignedProfiles: { some: { id: session.profileId } }
+                    },
                     select: { id: true }
                 });
 

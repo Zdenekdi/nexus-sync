@@ -2,12 +2,13 @@ const express = require('express');
 const router = express.Router();
 const safetyController = require('../controllers/safetyController');
 const authMiddleware = require('../middleware/authMiddleware');
+const { validate } = require('../middleware/validate');
+const { createSafetySession, safetyLocation } = require('../middleware/schemas');
 
-// All safety routes require authentication
 router.use(authMiddleware);
 
 // Session Management
-router.post('/sessions', (req, res) => safetyController.createSession(req, res));
+router.post('/sessions', validate(createSafetySession), (req, res) => safetyController.createSession(req, res));
 router.get('/sessions/active', (req, res) => safetyController.getActiveSession(req, res));
 router.get('/sessions/:id', (req, res) => safetyController.getSession(req, res));
 router.post('/sessions/:id/check-in', (req, res) => safetyController.checkIn(req, res));
@@ -16,7 +17,7 @@ router.post('/sessions/:id/ack', (req, res) => safetyController.acknowledgeSessi
 
 // Emergency & Tracking
 router.post('/sessions/:id/panic', (req, res) => safetyController.triggerPanic(req, res));
-router.post('/sessions/:id/location', (req, res) => safetyController.updateLocation(req, res));
+router.post('/sessions/:id/location', validate(safetyLocation), (req, res) => safetyController.updateLocation(req, res));
 
 // Client Departure
 router.post('/sessions/:id/departure-timeout', (req, res) => safetyController.departureTimeout(req, res));

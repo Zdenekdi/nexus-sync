@@ -20,11 +20,7 @@ exports.getProfiles = async (req, res) => {
 
     const sanitized = profiles.map(profile => {
       const data = parseData(profile.data);
-      let name = profile.name;
-      if (profile.id === 'ldn-01' && (name?.includes('Sophie') || !name)) {
-        name = 'Diana (Central London)';
-      }
-      return { ...profile, name, data, quickReplies: data.quickReplies || [] };
+      return { ...profile, data, quickReplies: data.quickReplies || [] };
     });
 
     res.json(sanitized);

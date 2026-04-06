@@ -1,0 +1,10 @@
+node_modules/
+.env
+firebase-auth.json
+*.db
+*.db-journal
+logs/
+.npm_cache/
+.cache/
+.npm/
+Library/

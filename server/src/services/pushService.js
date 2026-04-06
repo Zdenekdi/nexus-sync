@@ -233,11 +233,14 @@ const getSafetyTokens = async (agencyId, profileId) => {
   if (mode === 'ASSIGNED_ONLY') {
     whereClause.userId = { in: assignedUserIds };
   } else if (mode === 'MANAGERS_AND_ASSIGNED') {
-    // Managers OR Assigned
-    whereClause.OR = [
-      { userId: { in: assignedUserIds } },
-      { user: { role: { isManager: true } } }
-    ];
+    // Get manager user IDs separately, then combine with assigned
+    const managerUsers = await prisma.user.findMany({
+      where: { agencyId, role: { isManager: true } },
+      select: { id: true }
+    });
+    const managerIds = managerUsers.map(u => u.id);
+    const allUserIds = [...new Set([...assignedUserIds, ...managerIds])];
+    whereClause.userId = { in: allUserIds };
   }
 
   const rows = await prisma.pushDevice.findMany({
