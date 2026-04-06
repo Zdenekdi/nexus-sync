@@ -5,6 +5,7 @@ import ProfilesView from '../Views/ProfilesView';
 import WebProfilesView from '../Views/WebProfilesView';
 import DeviceSetupView from '../Views/DeviceSetupView';
 import ReferralsView from '../Views/ReferralsView';
+import SafetyView from '../Views/SafetyView';
 import QAView from '../QAView';
 import RelayControlCenter from '../RelayControlCenter';
 
@@ -33,6 +34,8 @@ const OperationsUnit = () => {
       return <QAView />;
     case 'referrals':
       return <ReferralsView />;
+    case 'safety':
+      return <SafetyView />;
     default:
       return null;
   }

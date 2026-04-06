@@ -52,6 +52,121 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   const consecutiveHealthFailuresRef = useRef(0);
   const POLL_FAILURES_FOR_DISCONNECT = 3;
 
+  // ── SOS Safety ──────────────────────────────────────────────────────────────
+  const [sosActive, setSosActive] = useState(false);
+  const [sosAlertId, setSosAlertId] = useState(null);
+  const [checkinMinutes, setCheckinMinutes] = useState(60);
+  const [checkinTimerEnd, setCheckinTimerEnd] = useState(null);
+  const [checkinRemaining, setCheckinRemaining] = useState(null);
+  const checkinIntervalRef = useRef(null);
+
+  const triggerSOS = useCallback(async (type = 'manual') => {
+    if (sosActive) return;
+    try {
+      let lat = null, lng = null, accuracy = null;
+      // Try to get GPS location
+      try {
+        const pos = await new Promise((resolve, reject) =>
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
+        );
+        lat = pos.coords.latitude;
+        lng = pos.coords.longitude;
+        accuracy = pos.coords.accuracy;
+      } catch {}
+
+      const res = await axios.post(`${API_BASE}/sos`, {
+        type, lat, lng, accuracy,
+        profileId: operator?.profileId || null
+      }, {
+        headers: { Authorization: `Bearer ${operator?.token}` }
+      });
+
+      setSosActive(true);
+      setSosAlertId(res.data?.id);
+      addLocalLog('sos', 'SOS', `SOS triggered (${type})`, 'outbound', 'sent');
+
+      // Start continuous location updates during SOS
+      const locInterval = setInterval(async () => {
+        try {
+          const pos = await new Promise((resolve, reject) =>
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
+          );
+          await axios.post(`${API_BASE}/sos/${res.data?.id}/location`, {
+            lat: pos.coords.latitude, lng: pos.coords.longitude,
+            accuracy: pos.coords.accuracy, capturedAt: new Date().toISOString()
+          }, { headers: { Authorization: `Bearer ${operator?.token}` } });
+        } catch {}
+      }, 15000);
+
+      // Store interval for cleanup
+      window._sosLocationInterval = locInterval;
+    } catch (err) {
+      console.warn('[SOS] Failed to trigger:', err.message);
+    }
+  }, [sosActive, API_BASE, operator?.token, operator?.profileId]);
+
+  const cancelSOS = useCallback(async () => {
+    if (!sosAlertId) return;
+    try {
+      await axios.post(`${API_BASE}/sos/${sosAlertId}/resolve`, {}, {
+        headers: { Authorization: `Bearer ${operator?.token}` }
+      });
+    } catch {}
+    setSosActive(false);
+    setSosAlertId(null);
+    if (window._sosLocationInterval) {
+      clearInterval(window._sosLocationInterval);
+      window._sosLocationInterval = null;
+    }
+  }, [sosAlertId, API_BASE, operator?.token]);
+
+  // Check-in timer
+  const startCheckinTimer = useCallback(() => {
+    const endTime = Date.now() + checkinMinutes * 60 * 1000;
+    setCheckinTimerEnd(endTime);
+  }, [checkinMinutes]);
+
+  const cancelCheckinTimer = useCallback(() => {
+    setCheckinTimerEnd(null);
+    setCheckinRemaining(null);
+    if (checkinIntervalRef.current) clearInterval(checkinIntervalRef.current);
+  }, []);
+
+  useEffect(() => {
+    if (!checkinTimerEnd) return;
+    checkinIntervalRef.current = setInterval(() => {
+      const remaining = checkinTimerEnd - Date.now();
+      if (remaining <= 0) {
+        clearInterval(checkinIntervalRef.current);
+        setCheckinTimerEnd(null);
+        setCheckinRemaining(null);
+        triggerSOS('timer_expired');
+      } else {
+        setCheckinRemaining(remaining);
+      }
+    }, 1000);
+    return () => { if (checkinIntervalRef.current) clearInterval(checkinIntervalRef.current); };
+  }, [checkinTimerEnd, triggerSOS]);
+
+  // Fake call handler (listen from socket)
+  useEffect(() => {
+    const handleFakeCall = (data) => {
+      const myInstallationId = operator?.installationId;
+      if (data.targetInstallationId && data.targetInstallationId !== myInstallationId) return;
+      const delay = (data.delay || 0) * 1000;
+      setTimeout(() => {
+        // Vibrate + ring pattern
+        if (navigator.vibrate) navigator.vibrate([1000, 500, 1000, 500, 1000]);
+        addLocalLog('call', 'System', 'Fake call received', 'inbound', 'forwarded');
+      }, delay);
+    };
+    // Listen via socket if available
+    if (window._nexusSocket) {
+      window._nexusSocket.on('fake_call_request', handleFakeCall);
+      return () => window._nexusSocket.off('fake_call_request', handleFakeCall);
+    }
+  }, [operator?.installationId]);
+
   // ── SIP VoIP integration ────────────────────────────────────────────────────
   const [sipConfig, setSipConfig] = useState(null);
   const sipFetchedRef = useRef(false);
@@ -615,10 +730,25 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
 
   useEffect(() => {
     if (window.Capacitor?.Plugins?.NexusRelay) {
+      const checkBlacklist = async (phone) => {
+        try {
+          const res = await axios.get(`${API_BASE}/blacklist/check`, {
+            params: { phone },
+            headers: { Authorization: `Bearer ${operator?.token}` }
+          });
+          if (res.data?.found) {
+            const entry = res.data.entry;
+            const severity = entry.severity === 'danger' ? '🔴' : '⚠️';
+            const name = entry.name ? ` (${entry.name})` : '';
+            addLocalLog('warning', phone, `${severity} BLACKLIST: ${phone}${name} — ${entry.description || ''}`, 'inbound', 'forwarded');
+          }
+        } catch {}
+      };
+
       const smsListener = window.Capacitor.Plugins.NexusRelay.addListener('onSmsReceived', (data) => {
         try {
           addLocalLog('sms', data.from, data.body, 'inbound', 'pending');
-          // If native plugin doesn't confirm via relay_event, auto-confirm after 4s
+          checkBlacklist(data.from);
           const capturedFrom = data.from;
           setTimeout(() => { try { updateLogStatus(capturedFrom, 'forwarded'); } catch { /* ignore */ } }, 4000);
         } catch (e) { console.error('[Relay] onSmsReceived error:', e); }
@@ -626,6 +756,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       const rcsListener = window.Capacitor.Plugins.NexusRelay.addListener('onRcsReceived', (data) => {
         try {
           addLocalLog('rcs', data.from, data.body, 'inbound', 'pending');
+          checkBlacklist(data.from);
           const capturedFrom = data.from;
           setTimeout(() => { try { updateLogStatus(capturedFrom, 'forwarded'); } catch { /* ignore */ } }, 4000);
         } catch (e) { console.error('[Relay] onRcsReceived error:', e); }
@@ -634,6 +765,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
         try {
           if (data.state && data.state !== 'IDLE') {
             addLocalLog('call', data.from, `State: ${data.state}`);
+            if (data.from) checkBlacklist(data.from);
           }
         } catch (e) { console.error('[Relay] onCallStateChanged error:', e); }
       });
@@ -871,6 +1003,66 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
             </div>
           </div>
         ))}
+      </div>
+
+      {/* ── SOS Safety Panel ── */}
+      <div className="glass-card" style={{ padding: '1.25rem', borderRadius: '20px', background: sosActive ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.02)', border: `1px solid ${sosActive ? 'rgba(239,68,68,0.3)' : 'var(--card-border)'}` }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <div style={{ fontWeight: 800, fontSize: '0.75rem', color: sosActive ? '#ef4444' : 'var(--text-secondary)', letterSpacing: '0.1em' }}>🆘 SOS & SAFETY</div>
+        </div>
+
+        {/* SOS Button */}
+        <button
+          onClick={() => sosActive ? cancelSOS() : triggerSOS('manual')}
+          style={{
+            width: '100%', padding: '1.25rem', borderRadius: '16px',
+            background: sosActive ? 'linear-gradient(135deg, #22c55e, #16a34a)' : 'linear-gradient(135deg, #ef4444, #dc2626)',
+            border: 'none', color: 'white', fontSize: '1.1rem', fontWeight: 900,
+            cursor: 'pointer', marginBottom: '0.75rem',
+            boxShadow: sosActive ? '0 0 30px rgba(239,68,68,0.3)' : 'none',
+            animation: sosActive ? 'pulse-border 2s infinite' : 'none'
+          }}
+        >
+          {sosActive ? (lang === 'cz' ? '✅ JSEM V BEZPEČÍ — ZRUŠIT SOS' : '✅ I\'M SAFE — CANCEL SOS') : (lang === 'cz' ? '🆘 NOUZOVÉ SOS' : '🆘 EMERGENCY SOS')}
+        </button>
+
+        {/* Check-in Timer */}
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+          {!checkinTimerEnd ? (
+            <>
+              <input
+                type="number" min="5" max="480" value={checkinMinutes}
+                onChange={e => setCheckinMinutes(Math.max(5, Math.min(480, Number(e.target.value))))}
+                style={{ width: '60px', padding: '0.5rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '0.85rem', textAlign: 'center' }}
+              />
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>min</span>
+              <button onClick={startCheckinTimer} style={{
+                flex: 1, padding: '0.5rem', borderRadius: '8px',
+                background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)',
+                color: '#f59e0b', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer'
+              }}>
+                ⏰ {lang === 'cz' ? 'Spustit check-in' : 'Start check-in'}
+              </button>
+            </>
+          ) : (
+            <>
+              <div style={{ flex: 1, textAlign: 'center', fontSize: '1.1rem', fontWeight: 900, color: '#f59e0b', fontFamily: 'monospace' }}>
+                ⏰ {checkinRemaining ? `${Math.floor(checkinRemaining / 60000)}:${String(Math.floor((checkinRemaining % 60000) / 1000)).padStart(2, '0')}` : '--:--'}
+              </div>
+              <button onClick={cancelCheckinTimer} style={{
+                padding: '0.5rem 1rem', borderRadius: '8px',
+                background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)',
+                color: '#22c55e', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer'
+              }}>
+                ✅ {lang === 'cz' ? 'Jsem OK' : 'I\'m OK'}
+              </button>
+            </>
+          )}
+        </div>
+
+        <div style={{ fontSize: '0.65rem', color: '#64748b', textAlign: 'center' }}>
+          {lang === 'cz' ? 'Pokud se neozvete včas, automaticky se odešle SOS s vaší polohou' : 'If you don\'t check in on time, SOS with your location will be sent automatically'}
+        </div>
       </div>
 
       {/* Permissions Check */}
