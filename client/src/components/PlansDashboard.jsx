@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { CreditCard, Users, Check, FileEdit, CheckCheck, Zap, RefreshCw, AlertCircle } from 'lucide-react';
+import { CreditCard, Users, Check, FileEdit, CheckCheck, Zap, RefreshCw, AlertCircle, Package } from 'lucide-react';
 
 import { NexusContext } from '../context/NexusContext';
 
