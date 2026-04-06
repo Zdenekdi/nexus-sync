@@ -99,6 +99,41 @@ export const NexusProvider = ({ children }) => {
   const [subscriptionPlans, setSubscriptionPlans] = useState([]);
   const [isPlansLoading, setIsPlansLoading] = useState(false);
 
+  // Global axios interceptor: auto-refresh on 401, logout if refresh fails
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        const originalRequest = error.config;
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
+          const storedRefreshToken = localStorage.getItem('nexus_refreshToken');
+          if (storedRefreshToken) {
+            try {
+              const res = await fetch(`${API_BASE}/auth/refresh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken: storedRefreshToken }),
+              });
+              if (res.ok) {
+                const data = await res.json();
+                localStorage.setItem('nexus_token', data.token);
+                localStorage.setItem('nexus_refreshToken', data.refreshToken);
+                auth.setToken(data.token);
+                originalRequest.headers.Authorization = `Bearer ${data.token}`;
+                return axios(originalRequest);
+              }
+            } catch { /* refresh failed */ }
+          }
+          // Refresh failed or no refresh token — logout
+          logout();
+        }
+        return Promise.reject(error);
+      }
+    );
+    return () => axios.interceptors.response.eject(interceptor);
+  }, [logout, auth]);
+
   const nexusData = useNexusData({
     token,
     isLoggedIn,
