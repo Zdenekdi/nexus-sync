@@ -8,7 +8,6 @@ services:
     env_file:
       - .env
     volumes:
-      - db-data:/app/prisma
       - logs:/app/logs
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
@@ -18,7 +17,5 @@ services:
       start_period: 10s
 
 volumes:
-  db-data:
-    driver: local
   logs:
     driver: local

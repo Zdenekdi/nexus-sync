@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -32,6 +32,10 @@ model Agency {
   deviceBindings DeviceBinding[]
   auditLogs  AuditLog[]
   subscriptions Subscription[]
+  
+  // Omnichannel & enterprise features
+  omnichannelChannels OmnichannelChannel[]
+  partnerPortals PartnerPortal[] @relation("PartnerPortals")
 }
 
 model Subscription {
@@ -88,9 +92,13 @@ model User {
   auditLogs  AuditLog[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([roleId])
-  @@index([agencyId])
+  
+  // Operator features
+  operatorSessions OperatorWorkSession[] @relation("OperatorSessions")
+  operatorMetrics OperatorMetrics[] @relation("OperatorMetrics")
+  assignedTalents TalentAssignment[] @relation("AssignedOperator")
+  dataAccessLogs DataAccessLog[] @relation("DataAccessLogs")
+  channelMessagesAsSender ChannelMessage[] @relation("SentChannelMessages")
 }
 
 model PushDevice {
@@ -155,6 +163,9 @@ model Profile {
   clientNotes ClientNote[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  
+  // Talent assignment
+  assignedOperators TalentAssignment[] @relation("AssignedTalent")
 }
 
 model ClientNote {
@@ -255,7 +266,6 @@ model Chat {
   updatedAt     DateTime  @updatedAt
 
   @@unique([externalId, profileId])
-  @@index([agencyId])
 }
 
 model Message {
@@ -270,8 +280,6 @@ model Message {
   sender    User?    @relation(fields: [senderId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([chatId])
 }
 
 model CallLog {
@@ -364,6 +372,283 @@ model GlobalSetting {
   key       String   @unique
   value     String   // Stores "true"/"false" or JSON strings
   updatedAt DateTime @updatedAt
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// OMNICHANNEL COMMUNICATION MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model OmnichannelChannel {
+  id           String   @id @default(cuid())
+  agencyId     String
+  agency       Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  
+  type         String   // "whatsapp", "sms", "webchat"
+  name         String   // Friendly name (e.g., "WhatsApp Business - Support")
+  enabled      Boolean  @default(true)
+  
+  // Provider credentials (encrypted at rest in application)
+  config       String   // JSON: {phoneNumber, apiKey, secretKey, etc.}
+  webhookUrl   String?  // Webhook endpoint for this channel
+  webhookSecret String? // Signature verification
+  
+  // Metrics
+  messagesReceived Int   @default(0)
+  messagesSent     Int   @default(0)
+  lastActivityAt   DateTime?
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  messages     ChannelMessage[]
+  webhookEvents ChannelWebhook[]
+  
+  @@unique([agencyId, type])
+  @@index([agencyId])
+}
+
+model ChannelMessage {
+  id           String   @id @default(cuid())
+  agencyId     String
+  channelId    String
+  channel      OmnichannelChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  
+  // Unified message fields
+  externalId   String   // Provider's message ID for deduplication
+  direction    String   @default("inbound") // "inbound" or "outbound"
+  from         String   // Sender identifier (phone, email, user ID)
+  to           String   // Recipient identifier
+  body         String
+  
+  // Media/attachments
+  mediaUrls    String?  // JSON array of URLs
+  mediaType    String?  // "image", "video", "document"
+  
+  // Metadata
+  status       String   @default("received") // "received", "delivered", "read", "failed"
+  senderId     String?  // User ID if sent by operator
+  sender       User?    @relation("SentChannelMessages", fields: [senderId], references: [id], onDelete: SetNull)
+  conversationId String? // External conversation/thread ID
+  
+  // Error tracking
+  errorMessage String?
+  retryCount   Int      @default(0)
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@unique([agencyId, channelId, externalId])
+  @@index([agencyId])
+  @@index([channelId])
+  @@index([from])
+  @@index([to])
+  @@index([conversationId])
+  @@index([status])
+}
+
+model ChannelWebhook {
+  id           String   @id @default(cuid())
+  agencyId     String
+  channelId    String
+  channel      OmnichannelChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  
+  eventType    String   // "message_received", "delivery_report", "status_changed"
+  externalId   String   // Event ID from provider
+  payload      String   // Raw JSON payload
+  
+  processed    Boolean  @default(false)
+  processedAt  DateTime?
+  error        String?
+  
+  receivedAt   DateTime @default(now())
+  
+  @@unique([agencyId, channelId, externalId])
+  @@index([agencyId])
+  @@index([processed])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// OPERATOR WORK SESSION & REAL-TIME ANALYTICS MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model OperatorWorkSession {
+  id           String   @id @default(cuid())
+  agencyId     String
+  userId       String
+  user         User     @relation("OperatorSessions", fields: [userId], references: [id], onDelete: Cascade)
+  
+  status       String   @default("online") // "online", "away", "offline", "on_break"
+  currentTalent String? // ID of the talent/profile operator is representing
+  
+  loginAt      DateTime @default(now())
+  logoutAt     DateTime?
+  lastActivityAt DateTime @default(now())
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@index([agencyId])
+  @@index([userId])
+}
+
+model OperatorMetrics {
+  id           String   @id @default(cuid())
+  agencyId     String
+  userId       String
+  user         User     @relation("OperatorMetrics", fields: [userId], references: [id], onDelete: Cascade)
+  
+  date         DateTime // Date for which metrics are recorded
+  
+  // Message metrics
+  messagesHandled    Int   @default(0)
+  messagesPerChannel String? // JSON: {whatsapp: 10, sms: 5, webchat: 3}
+  
+  // Time metrics (in milliseconds)
+  totalResponseTime  Int   @default(0)
+  avgResponseTime    Int   @default(0)
+  maxResponseTime    Int   @default(0)
+  
+  // Quality metrics
+  resolutionRate     Float @default(0) // Percentage 0-100
+  customerSatisfaction Float @default(0) // 1-5 scale
+  
+  // Availability
+  onlineMinutes      Int   @default(0)
+  activeMinutes      Int   @default(0)
+  
+  // Channel-specific
+  activeChannels     String? // JSON array: ["whatsapp", "sms"]
+  
+  recordedAt   DateTime @default(now())
+  
+  @@unique([agencyId, userId, date])
+  @@index([agencyId])
+  @@index([userId])
+  @@index([date])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TALENT ASSIGNMENT & REPRESENTATION MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model TalentAssignment {
+  id           String   @id @default(cuid())
+  agencyId     String
+  operatorId   String
+  operator     User     @relation("AssignedOperator", fields: [operatorId], references: [id], onDelete: Cascade)
+  
+  talentId     String   // Profile/Talent ID
+  talentProfile Profile @relation("AssignedTalent", fields: [talentId], references: [id], onDelete: Cascade)
+  
+  startTime    DateTime @default(now())
+  endTime      DateTime? // NULL = ongoing
+  
+  status       String   @default("active") // "active", "inactive", "paused"
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@index([agencyId])
+  @@index([operatorId])
+  @@index([talentId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CONTENT MANAGEMENT & PARTNER PORTAL SYNC MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model PartnerPortal {
+  id           String   @id @default(cuid())
+  agencyId     String
+  agency       Agency   @relation("PartnerPortals", fields: [agencyId], references: [id], onDelete: Cascade)
+  
+  name         String   // Portal name (e.g., "XYZ Booking Portal")
+  type         String   // "rest_api", "graphql", "webhook", "custom"
+  
+  // Connection details
+  baseUrl      String
+  apiKey       String   // Encrypted at rest
+  apiSecret    String?  // Encrypted at rest
+  
+  // Sync configuration
+  syncEnabled  Boolean  @default(true)
+  syncSchedule String?  // Cron expression: "0 2 * * *" (daily at 2 AM)
+  lastSyncAt   DateTime?
+  
+  // Content types to sync
+  syncBios     Boolean  @default(true)
+  syncGallery  Boolean  @default(true)
+  syncRates    Boolean  @default(false)
+  syncAvailability Boolean @default(false)
+  
+  credentials  String   // JSON with auth details
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  syncJobs     ContentSyncJob[]
+  
+  @@index([agencyId])
+}
+
+model ContentSyncJob {
+  id           String   @id @default(cuid())
+  agencyId     String
+  portalId     String
+  portal       PartnerPortal @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  
+  talentId     String   // Profile/Talent ID being synced
+  
+  jobType      String   // "full_sync", "incremental", "delete"
+  status       String   @default("pending") // "pending", "running", "completed", "failed"
+  
+  contentType  String   // "bio", "gallery", "rates", "availability"
+  
+  // Results
+  itemsSynced  Int      @default(0)
+  itemsFailed  Int      @default(0)
+  errorMessage String?
+  
+  startedAt    DateTime?
+  completedAt  DateTime?
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@index([agencyId])
+  @@index([portalId])
+  @@index([talentId])
+  @@index([status])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DATA ISOLATION & AUDIT MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model DataAccessLog {
+  id           String   @id @default(cuid())
+  agencyId     String?
+  userId       String?
+  user         User?    @relation("DataAccessLogs", fields: [userId], references: [id], onDelete: SetNull)
+  
+  action       String   // "read", "create", "update", "delete"
+  resourceType String   // "Profile", "ChannelMessage", "OperatorMetrics"
+  resourceId   String
+  
+  // Multi-agency audit
+  accessedAgencyId String? // If user accessed different agency data (should be blocked)
+  violation    Boolean  @default(false) // TRUE = attempted unauthorized access
+  
+  details      String?  // Additional context
+  ipAddress    String?
+  userAgent    String?
+  
+  timestamp    DateTime @default(now())
+  
+  @@index([agencyId])
+  @@index([userId])
+  @@index([violation])
+  @@index([timestamp])
 }
 
 // ─── Shared Blacklist (cross-agency) ───────────────────────────
