@@ -123,7 +123,7 @@ const PlansDashboard = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                 <div>
                   <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.5rem' }}>{plan.name}</h3>
-                    <div style={{ display: 'flex', alignItems: baseline ? 'baseline' : 'center', gap: '0.4rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
                       <div style={{ fontSize: '1.25rem', color: 'var(--accent-color)', fontWeight: '800' }}>
                         {plan.prices?.[activeMarket.toLowerCase()] || '0'} {getCurrencySymbol(activeMarket)}
                       </div>
