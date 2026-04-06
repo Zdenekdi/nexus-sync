@@ -9,10 +9,10 @@ const PlansDashboard = () => {
   const [editingPlan, setEditingPlan] = useState(null);
 
   useEffect(() => {
-    if (activeOperator?.role === 'APP OWNER') {
+    if (activeOperator?.id && activeOperator?.role === 'APP OWNER') {
       fetchPlans();
     }
-  }, [activeOperator]);
+  }, [activeOperator?.id]);
 
   const getCurrencySymbol = (m) => {
     switch(m.toLowerCase()) {
@@ -194,22 +194,28 @@ const PlansDashboard = () => {
         </h3>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
           {[
-            { id: 'senior-op', name: 'Role: Senior Operator', prices: { cz: '500', eu: '20', us: '25', uk: '18' }, desc: t('seniorOpDesc') || 'Pokročilé řízení práv a dohled nad týmem.' },
-            { id: 'ai-opt', name: 'AI Optimizer Pack', prices: { cz: '1200', eu: '48', us: '55', uk: '42' }, desc: t('aiOptDesc') || 'Automatická optimalizace kampaní přes AI.' },
-            { id: 'vip-supp', name: 'Priority VIP Support', prices: { cz: '2000', eu: '80', us: '90', uk: '70' }, desc: t('vipSuppDesc') || 'Garantovaná podpora do 2 hodin.' }
+            { id: 'senior_op', name: 'Role: Senior Operator', desc: t('seniorOpDesc'), icon: Users, prices: { cz: '500', eu: '20', uk: '18', us: '22' } },
+            { id: 'ai_opt', name: 'AI Optimizer Pack', desc: t('aiOptDesc'), icon: Zap, prices: { cz: '1200', eu: '48', uk: '42', us: '52' } },
+            { id: 'vip_supp', name: 'Priority VIP Support', desc: t('vipSuppDesc'), icon: CheckCheck, prices: { cz: '2000', eu: '80', uk: '70', us: '88' } },
+            { id: 'extra_profiles', name: t('extraProfiles'), desc: t('extraProfilesDesc'), icon: Package, prices: { cz: '250', eu: '10', uk: '9', us: '11' } },
           ].map(addon => (
             <div key={addon.id} className="glass-card" style={{ padding: '1.5rem', border: '1px solid rgba(255,255,255,0.05)', transition: 'all 0.3s' }}>
-              <div style={{ fontWeight: '800', marginBottom: '0.5rem', fontSize: '1.1rem' }}>{addon.name}</div>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginBottom: '1.25rem', lineHeight: '1.4' }}>{addon.desc}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                <div style={{ padding: '0.5rem', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '8px' }}>
+                  <addon.icon size={20} color="var(--accent-color)" />
+                </div>
+                <div style={{ fontWeight: '800', fontSize: '1.1rem' }}>{addon.name}</div>
+              </div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginBottom: '1.25rem', lineHeight: '1.4', minHeight: '3em' }}>{addon.desc}</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ color: 'var(--accent-color)', fontWeight: '800' }}>
                   {addon.prices[activeMarket.toLowerCase()]} {getCurrencySymbol(activeMarket)}
                 </span>
                 <button 
-                  onClick={() => activeOperator?.role === 'APP OWNER' ? setEditingPlan({ ...addon, prices: addon.prices, isAddon: true }) : alert('Platba bude integrována via GoPay.')}
+                  onClick={() => activeOperator?.role === 'APP OWNER' ? setEditingPlan({ ...addon, isAddon: true }) : alert('Platba bude integrována via GoPay.')}
                   style={{ 
                     padding: '0.5rem 1rem', 
-                    background: activeOperator?.role === 'APP OWNER' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(255,255,255,0.05)', 
+                    background: activeOperator?.role === 'APP OWNER' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(59, 130, 246, 0.1)', 
                     border: activeOperator?.role === 'APP OWNER' ? '1px solid #fbbf24' : '1px solid var(--accent-color)', 
                     borderRadius: '8px', color: 'white', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer' 
                   }}>
