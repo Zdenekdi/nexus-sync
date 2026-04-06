@@ -3,14 +3,12 @@ import { useNexus } from '../../context/NexusContext';
 
 // Modals & Overlays
 import BugReportModal from './BugReportModal';
-import EmergencyAlert from './EmergencyAlert';
 import AgencyDetailModal from './AgencyDetailModal';
 import BookingModal from './BookingModal';
 import EditProfileModal from './EditProfileModal';
 import AddOperatorModal from './AddOperatorModal';
 import AddAgencyModal from './AddAgencyModal';
 import CallOverlays from '../Overlays/CallOverlays';
-import DepartureConfirmation from '../Overlays/DepartureConfirmation';
 import NotificationSystem from '../Notifications/NotificationSystem';
 import SipManager from '../sip/SipManager';
 
@@ -26,8 +24,6 @@ const GlobalModalContainer = () => {
       {/* Global Overlays */}
       <NotificationSystem />
       <CallOverlays />
-      <DepartureConfirmation />
-      <EmergencyAlert />
       <SipManager />
 
       {/* Global Modals */}
