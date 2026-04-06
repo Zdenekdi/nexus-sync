@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useMemo, useCallback } from 'react';
+import axios from 'axios';
 import { useAuth } from '../hooks/useAuth';
 import { usePermissions } from '../hooks/usePermissions';
 import { useNexusData } from '../hooks/useNexusData';
