@@ -199,17 +199,19 @@ const PlansDashboard = () => {
         </h3>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
           {[
-            { id: 'role_senior_operator', name: 'Role: Senior Operator', price: '500 CZK', desc: 'Pokročilé řízení práv a dohled nad týmem.' },
-            { id: 'mod_ai_optimizer', name: 'AI Optimizer Pack', price: '1200 CZK', desc: 'Automatická optimalizace kampaní přes AI.' },
-            { id: 'feat_priority_support', name: 'Priority VIP Support', price: '2000 CZK', desc: 'Garantovaná podpora do 2 hodin.' }
+            { id: 'senior-op', name: 'Role: Senior Operator', prices: { cz: '500', eu: '20', us: '25', uk: '18' }, desc: t('seniorOpDesc') || 'Pokročilé řízení práv a dohled nad týmem.' },
+            { id: 'ai-opt', name: 'AI Optimizer Pack', prices: { cz: '1200', eu: '48', us: '55', uk: '42' }, desc: t('aiOptDesc') || 'Automatická optimalizace kampaní přes AI.' },
+            { id: 'vip-supp', name: 'Priority VIP Support', prices: { cz: '2000', eu: '80', us: '90', uk: '70' }, desc: t('vipSuppDesc') || 'Garantovaná podpora do 2 hodin.' }
           ].map(addon => (
             <div key={addon.id} className="glass-card" style={{ padding: '1.5rem', border: '1px solid rgba(255,255,255,0.05)', transition: 'all 0.3s' }}>
               <div style={{ fontWeight: '800', marginBottom: '0.5rem', fontSize: '1.1rem' }}>{addon.name}</div>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>{addon.desc}</p>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginBottom: '1.25rem', lineHeight: '1.4' }}>{addon.desc}</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: 'var(--accent-color)', fontWeight: '800' }}>{addon.price}</span>
+                <span style={{ color: 'var(--accent-color)', fontWeight: '800' }}>
+                  {addon.prices[activeMarket.toLowerCase()]} {getCurrencySymbol(activeMarket)}
+                </span>
                 <button 
-                  onClick={() => activeOperator?.role === 'APP OWNER' ? setEditingPlan({ ...addon, prices: { cz: addon.price.split(' ')[0] }, isAddon: true }) : alert('Platba bude integrována via GoPay.')}
+                  onClick={() => activeOperator?.role === 'APP OWNER' ? setEditingPlan({ ...addon, prices: addon.prices, isAddon: true }) : alert('Platba bude integrována via GoPay.')}
                   style={{ 
                     padding: '0.5rem 1rem', 
                     background: activeOperator?.role === 'APP OWNER' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(255,255,255,0.05)', 
