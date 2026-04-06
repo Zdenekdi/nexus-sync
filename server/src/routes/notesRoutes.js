@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../services/db');
 const authMiddleware = require('../middleware/authMiddleware');
+const { validate } = require('../middleware/validate');
+const { createNote } = require('../middleware/schemas');
 
 router.use(authMiddleware);
 
@@ -29,15 +31,11 @@ router.get('/:clientPhone', async (req, res) => {
 });
 
 // POST /api/notes  – create a note
-router.post('/', async (req, res) => {
+router.post('/', validate(createNote), async (req, res) => {
   try {
     const { clientPhone, text, profileId } = req.body;
     const agencyId = req.user.agencyId;
     const authorName = req.user.name || req.user.email;
-
-    if (!clientPhone || !text || !profileId) {
-      return res.status(400).json({ message: 'clientPhone, text and profileId are required' });
-    }
 
     const note = await prisma.clientNote.create({
       data: {

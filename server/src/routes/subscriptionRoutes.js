@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../services/db');
 const authMiddleware = require('../middleware/authMiddleware');
+const { validate } = require('../middleware/validate');
+const { startSubscription, cancelSubscription, startTrial } = require('../middleware/schemas');
 
 // Plan durations in days
 const PLAN_DURATIONS = {
@@ -62,7 +64,7 @@ router.get('/history', async (req, res) => {
 // ── POST /api/subscriptions/start
 // Start (or renew) a subscription for the agency
 // Body: { plan: 'MONTHLY'|'SEMI_ANNUAL'|'ANNUAL', paymentRef?, amountPaid?, note? }
-router.post('/start', async (req, res) => {
+router.post('/start', validate(startSubscription), async (req, res) => {
   try {
     const { plan, paymentRef, amountPaid, currency = 'CZK', note } = req.body;
     const agencyId = req.user.agencyId;
@@ -110,7 +112,7 @@ router.post('/start', async (req, res) => {
 
 // ── POST /api/subscriptions/cancel
 // Cancel the active subscription
-router.post('/cancel', async (req, res) => {
+router.post('/cancel', validate(cancelSubscription), async (req, res) => {
   try {
     const agencyId = req.user.agencyId;
     const { note } = req.body;
@@ -154,7 +156,7 @@ router.get('/plans', (req, res) => {
 
 // ── POST /api/subscriptions/trial   (App Owner only)
 // Start a trial period for an agency
-router.post('/trial', async (req, res) => {
+router.post('/trial', validate(startTrial), async (req, res) => {
   try {
     if (!req.user.isAppOwner && !req.user.isAdmin) {
       return res.status(403).json({ message: 'App Owner access required' });
