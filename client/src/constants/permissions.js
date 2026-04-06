@@ -18,7 +18,8 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     referrals: false,
     inventory: false,
     maintenance: false,
-    safety: false
+    safety: false,
+    relay: false
   },
   'Agency Admin': {
     infrastructure: false,
@@ -38,7 +39,8 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     settings: true,
     referrals: true,
     inventory: true,
-    safety: true
+    safety: true,
+    relay: false
   },
   'Manager': {
     infrastructure: false,
@@ -58,7 +60,8 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     settings: true,
     referrals: true,
     inventory: true,
-    safety: true
+    safety: true,
+    relay: false
   },
   'Operator': {
     infrastructure: false,
@@ -78,7 +81,8 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     settings: true,
     referrals: false,
     inventory: false,
-    safety: true
+    safety: true,
+    relay: false
   },
   'Senior Operator': {
     infrastructure: false,
@@ -98,7 +102,8 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     settings: true,
     referrals: true,
     inventory: true,
-    safety: true
+    safety: true,
+    relay: false
   },
   'Model': {
     infrastructure: false,

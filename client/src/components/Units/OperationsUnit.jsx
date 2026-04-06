@@ -25,7 +25,7 @@ const OperationsUnit = () => {
       return <CalendarView />;
     case 'relay':
       // Model sees RelayMode (the relay device UI), others see RelayControlCenter (management)
-      return activeRole === 'MODEL' || activeRole === 'Model'
+      return activeRole === 'Model'
         ? <RelayModeView />
         : <RelayControlCenter />;
     case 'profiles':

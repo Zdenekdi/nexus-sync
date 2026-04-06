@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { 
   LayoutDashboard, MessageSquare, Calendar, Users, BarChart3, 
   Settings, Activity, Radio, Globe, Smartphone, FileSearch, 
-  Shield, Building2, HardDrive, CreditCard, Zap, Package, 
-  Bell, LogOut, ChevronDown, ChevronUp, Copy, Menu, X, Circle
+  Shield, Building2, HardDrive, CreditCard, Zap,
+  LogOut, Menu, X, Circle
 } from 'lucide-react';
 import { useNexus } from '../../context/NexusContext';
 
@@ -130,6 +130,9 @@ const Sidebar = () => {
                     { id: 'device-setup', icon: Smartphone, label: t('deviceSetup'), perm: 'device_setup' },
                     { id: 'relay', icon: Radio, label: t('relay') || 'Relay', perm: 'relay' },
                     { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub' },
+                    { id: 'hierarchy', icon: Users, label: t('hierarchy'), perm: 'hierarchy' },
+                    { id: 'analytics', icon: BarChart3, label: t('analytics'), perm: 'analytics' },
+                    { id: 'activity', icon: Activity, label: t('activity'), perm: 'analytics' },
                     { id: 'plans', icon: CreditCard, label: t('plansManagement'), perm: 'plans' },
                     { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
                     { id: 'referrals', icon: Zap, label: t('referrals'), perm: 'referrals' },
@@ -146,7 +149,7 @@ const Sidebar = () => {
             )}
 
             {/* My Girls Section */}
-            {activeRole !== 'MODEL' && activeRole !== 'App Owner' && !isSidebarCollapsed && (
+            {activeRole !== 'Model' && activeRole !== 'App Owner' && !isSidebarCollapsed && (
               <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.15rem', marginBottom: '0.75rem' }}>
                   <div style={{ fontSize: '0.65rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{capitalize(t('myAssignedGirls'))}</div>
