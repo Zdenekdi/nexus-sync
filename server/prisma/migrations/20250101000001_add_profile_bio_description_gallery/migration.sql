@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Profile" ADD COLUMN IF NOT EXISTS "bio" TEXT;
+ALTER TABLE "Profile" ADD COLUMN IF NOT EXISTS "description" TEXT;
+ALTER TABLE "Profile" ADD COLUMN IF NOT EXISTS "gallery" TEXT;

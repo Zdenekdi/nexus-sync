@@ -182,6 +182,7 @@ export function useNexusData({
           id: chat.id,
           chatId: chat.id,
           profileId: normalizeProfileId(chat.profileId),
+          profileName: chat.profile?.name || null,
           from: chat.externalId,
           text: (chat.messages?.[0]?.text || 'No messages'),
           timestamp: chat.lastMessageAt || new Date().toISOString(),
