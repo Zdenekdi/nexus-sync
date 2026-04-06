@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const prisma = require('../services/db');
 const { logAction } = require('./auditController');
+const { sendPasswordReset, sendWelcomeEmail, sendAgencyRegistrationEmail } = require('../services/emailService');
 
 const ACCESS_TOKEN_EXPIRY = '1h';
 const REFRESH_TOKEN_DAYS = 7;
@@ -218,6 +219,11 @@ exports.registerAgency = async (req, res) => {
 
     logAction(result.agency.id, result.user.id, 'AGENCY_REGISTERED', `Agency "${agencyName}" created`);
 
+    // Send registration confirmation email (non-blocking)
+    sendAgencyRegistrationEmail(email, agencyName).catch(err => {
+      console.error('[Email] Agency registration email failed:', err.message);
+    });
+
     res.status(201).json({ 
       message: 'Agency registered successfully',
       agencyId: result.agency.id,
@@ -284,6 +290,11 @@ exports.registerUser = async (req, res) => {
       }
     });
 
+    // Send welcome email (non-blocking)
+    sendWelcomeEmail(email, fullName, agency.name).catch(err => {
+      console.error('[Email] Welcome email failed:', err.message);
+    });
+
     res.status(201).json({ message: 'Registered successfully', userId: user.id });
   } catch (error) {
     console.error(error);
@@ -297,13 +308,53 @@ exports.resetPasswordRequest = async (req, res) => {
     const user = await prisma.user.findUnique({ where: { email } });
     
     if (user) {
-      // In production, send token via email
+      // Generate a JWT reset token (1 hour expiry)
+      const resetToken = jwt.sign(
+        { userId: user.id, type: 'password_reset' },
+        process.env.JWT_SECRET || 'nexus-secret',
+        { expiresIn: '1h' }
+      );
       console.log(`[RESET] Password reset requested for ${email}`);
+      await sendPasswordReset(email, resetToken).catch(err => {
+        console.error('[RESET] Email send failed:', err.message);
+      });
     }
 
     // Always respond with success for security (don't reveal if email exists)
     res.json({ message: 'If the email exists, a reset link has been sent.' });
   } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.resetPasswordConfirm = async (req, res) => {
+  try {
+    const { token: resetToken, password } = req.body;
+    if (!resetToken || !password) {
+      return res.status(400).json({ message: 'Token and new password are required' });
+    }
+    const pwError = validatePassword(password);
+    if (pwError) return res.status(400).json({ message: pwError });
+
+    let decoded;
+    try {
+      decoded = jwt.verify(resetToken, process.env.JWT_SECRET || 'nexus-secret');
+    } catch {
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+    if (decoded.type !== 'password_reset') {
+      return res.status(400).json({ message: 'Invalid token type' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+    await prisma.user.update({
+      where: { id: decoded.userId },
+      data: { password: hashedPassword },
+    });
+
+    res.json({ message: 'Password has been reset successfully' });
+  } catch (error) {
+    console.error('[RESET] Confirm error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

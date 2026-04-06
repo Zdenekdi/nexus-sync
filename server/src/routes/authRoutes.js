@@ -11,6 +11,7 @@ router.post('/logout', authController.logout);
 router.post('/register-agency', validate(registerAgency), authController.registerAgency);
 router.post('/register-user', validate(registerUser), authController.registerUser);
 router.post('/reset-password-request', validate(resetPasswordRequest), authController.resetPasswordRequest);
+router.post('/reset-password', authController.resetPasswordConfirm);
 router.get('/me', authMiddleware, authController.getProfile);
 
 module.exports = router;
