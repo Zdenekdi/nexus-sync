@@ -7,6 +7,16 @@ const path = require("path");
 const fs = require("fs");
 const logger = require("../services/logger");
 const authMiddleware = require("../middleware/authMiddleware");
+const { z } = require("zod");
+const { validate } = require("../middleware/validate");
+
+const sshCommand = z.object({
+  command: z.string().min(1).max(2000)
+});
+
+const gitPull = z.object({
+  path: z.string().max(256).optional().default("~/app")
+});
 
 const VULTR_API = "https://api.vultr.com/v2";
 const headers = () => ({
@@ -93,9 +103,8 @@ router.get("/bandwidth", async (req, res) => {
 });
 
 // ── SSH Terminal ──────────────────────────────────────────────────────────────
-router.post("/command", async (req, res) => {
+router.post("/command", validate(sshCommand), async (req, res) => {
   const { command } = req.body;
-  if (!command) return res.status(400).json({ message: 'Command is required' });
 
   const blocked = ["rm -rf /", "mkfs", "dd if=", ":(){ :|:& };:"];
   if (blocked.some(b => command.includes(b))) {
@@ -113,8 +122,8 @@ router.post("/command", async (req, res) => {
   }
 });
 
-router.post("/git-pull", async (req, res) => {
-  const { path: repoPath = "~/app" } = req.body;
+router.post("/git-pull", validate(gitPull), async (req, res) => {
+  const { path: repoPath } = req.body;
   try {
     const ssh = await getSSHConnection();
     const result = await ssh.execCommand(`cd ${repoPath} && git pull origin master`);

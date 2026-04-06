@@ -2,6 +2,8 @@ const express = require('express');
 const router  = express.Router();
 const sip     = require('../controllers/sipController');
 const auth    = require('../middleware/authMiddleware');
+const { validate } = require('../middleware/validate');
+const { setSipConfig } = require('../middleware/schemas');
 
 // Relay zařízení: stáhne vlastní SIP config po přihlášení (+ auto-provisioning při prvním volání)
 router.get('/config', auth, sip.getMyConfig);
@@ -19,7 +21,7 @@ router.get('/call-meta', auth, sip.getCallMeta);
 router.post('/reload-asterisk', auth, sip.reloadAsterisk);
 
 // Admin: manuální nastavení / smazání SIP credentials pro DeviceBinding
-router.post('/config/:bindingId',        auth, express.json(), sip.setConfig);
+router.post('/config/:bindingId',        auth, express.json(), validate(setSipConfig), sip.setConfig);
 router.delete('/config/:bindingId',      auth, sip.deleteConfig);
 
 // Admin: reset credentials → auto-provisioning při příštím připojení telefonu

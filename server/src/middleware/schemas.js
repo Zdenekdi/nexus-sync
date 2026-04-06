@@ -148,8 +148,124 @@ const createInventoryItem = z.object({
   locationId: cuid
 });
 
+const updateInventoryItem = z.object({
+  name: z.string().min(1).max(200).optional(),
+  quantity: z.number().int().min(0).optional(),
+  threshold: z.number().int().min(0).optional(),
+  locationId: cuid.optional()
+});
+
 const createInventoryLocation = z.object({
   name: z.string().min(1).max(200)
+});
+
+// ── Auth ─────────────────────────────────────────────────────────────────────
+const login = z.object({
+  email: z.string().email().max(320),
+  password: z.string().min(1).max(256)
+});
+
+const registerAgency = z.object({
+  name: z.string().min(1).max(200),
+  email: z.string().email().max(320),
+  password: z.string().min(6).max(256),
+  agencyName: z.string().min(1).max(200).optional()
+});
+
+const registerUser = z.object({
+  name: z.string().min(1).max(200),
+  email: z.string().email().max(320),
+  password: z.string().min(6).max(256),
+  roleId: cuid.optional(),
+  agencyId: cuid.optional(),
+  inviteCode: z.string().max(64).optional()
+});
+
+const resetPasswordRequest = z.object({
+  email: z.string().email().max(320)
+});
+
+// ── Agency ───────────────────────────────────────────────────────────────────
+const updateAgencySettings = z.object({
+  name: z.string().min(1).max(200).optional(),
+  safetyAlertMode: z.enum(['MANAGERS_AND_ASSIGNED', 'ASSIGNED_ONLY']).optional(),
+  defaultGraceMinutes: z.number().int().min(1).max(1440).optional(),
+  currency: z.string().max(3).optional(),
+  timezone: z.string().max(64).optional()
+}).refine(data => Object.keys(data).length > 0, {
+  message: 'At least one field must be provided'
+});
+
+const updateRolePermissions = z.object({
+  permissions: z.record(z.boolean())
+});
+
+const purchaseAddon = z.object({
+  addonId: z.string().min(1).max(128),
+  quantity: z.number().int().min(1).max(100).optional().default(1)
+});
+
+const createAgency = z.object({
+  name: z.string().min(1).max(200),
+  plan: z.string().max(50).optional().default('Standard'),
+  ownerEmail: z.string().email().max(320).optional(),
+  ownerName: z.string().max(200).optional()
+});
+
+const addUser = z.object({
+  name: z.string().min(1).max(200),
+  email: z.string().email().max(320),
+  password: z.string().min(6).max(256),
+  roleId: cuid.optional(),
+  agencyId: cuid.optional()
+});
+
+// ── Subscriptions ────────────────────────────────────────────────────────────
+const startSubscription = z.object({
+  plan: z.enum(['MONTHLY', 'SEMI_ANNUAL', 'ANNUAL']),
+  paymentRef: z.string().max(256).optional().nullable(),
+  amountPaid: z.number().min(0).optional().nullable(),
+  currency: z.enum(['CZK', 'EUR', 'GBP', 'USD']).optional().default('CZK'),
+  note: z.string().max(1000).optional().nullable()
+});
+
+const cancelSubscription = z.object({
+  note: z.string().max(1000).optional().nullable()
+});
+
+const startTrial = z.object({
+  agencyId: cuid,
+  days: z.number().int().min(1).max(365).optional().default(14),
+  note: z.string().max(1000).optional().nullable()
+});
+
+// ── Device ───────────────────────────────────────────────────────────────────
+const registerPushToken = z.object({
+  token: z.string().min(1).max(4096),
+  platform: z.enum(['android', 'ios', 'web']).optional().default('android')
+});
+
+const verifyDeviceBinding = z.object({
+  installationId: z.string().min(1).max(256),
+  deviceModel: z.string().max(200).optional().nullable(),
+  osVersion: z.string().max(50).optional().nullable()
+});
+
+const revokeDeviceBinding = z.object({
+  bindingId: cuid
+});
+
+// ── SIP ──────────────────────────────────────────────────────────────────────
+const setSipConfig = z.object({
+  sipUser: z.string().min(1).max(128).optional(),
+  sipPassword: z.string().min(1).max(256).optional(),
+  sipDomain: z.string().max(256).optional(),
+  sipProxy: z.string().max(256).optional()
+});
+
+// ── Admin ────────────────────────────────────────────────────────────────────
+const updateGlobalFeature = z.object({
+  value: z.string().max(10000)
 });
 
 module.exports = {
@@ -171,5 +287,23 @@ module.exports = {
   createQaRecord,
   createCallLog,
   createInventoryItem,
-  createInventoryLocation
+  updateInventoryItem,
+  createInventoryLocation,
+  login,
+  registerAgency,
+  registerUser,
+  resetPasswordRequest,
+  updateAgencySettings,
+  updateRolePermissions,
+  purchaseAddon,
+  createAgency,
+  addUser,
+  startSubscription,
+  cancelSubscription,
+  startTrial,
+  registerPushToken,
+  verifyDeviceBinding,
+  revokeDeviceBinding,
+  setSipConfig,
+  updateGlobalFeature
 };
