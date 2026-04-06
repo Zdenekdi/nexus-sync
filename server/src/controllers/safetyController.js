@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../services/db');
 const logger = require('../services/logger');
 const safetyService = require('../services/safetyService');
 
@@ -7,6 +6,18 @@ const safetyService = require('../services/safetyService');
  * Safety Guard Controller
  */
 class SafetyController {
+
+    /** Verify session belongs to the user's agency */
+    async _verifySessionAgency(id, req, res) {
+        const session = await prisma.safetySession.findUnique({ where: { id }, select: { agencyId: true } });
+        if (!session) { res.status(404).json({ message: 'Session not found' }); return null; }
+        const { role, agencyId } = req.user || {};
+        if (!role?.isAppOwner && session.agencyId !== agencyId) {
+            res.status(403).json({ message: 'Access denied' }); return null;
+        }
+        return session;
+    }
+
     /**
      * Create or Start a Safety Session
      */
@@ -52,6 +63,7 @@ class SafetyController {
     async checkIn(req, res) {
         try {
             const { id } = req.params;
+            if (!await this._verifySessionAgency(id, req, res)) return;
             const session = await prisma.safetySession.update({
                 where: { id },
                 data: { state: 'CHECKED_IN' }
@@ -68,6 +80,7 @@ class SafetyController {
     async checkOut(req, res) {
         try {
             const { id } = req.params;
+            if (!await this._verifySessionAgency(id, req, res)) return;
             const session = await prisma.safetySession.update({
                 where: { id },
                 data: { 
@@ -87,6 +100,7 @@ class SafetyController {
     async acknowledgeSession(req, res) {
         try {
             const { id } = req.params;
+            if (!await this._verifySessionAgency(id, req, res)) return;
             const { extendMinutes = 10 } = req.body || {};
 
             const existing = await prisma.safetySession.findUnique({ where: { id } });
@@ -147,6 +161,7 @@ class SafetyController {
     async triggerPanic(req, res) {
         try {
             const { id } = req.params;
+            if (!await this._verifySessionAgency(id, req, res)) return;
             const result = await safetyService.escalateSession(id, 'panic');
             res.json(result);
         } catch (error) {
@@ -160,6 +175,7 @@ class SafetyController {
     async updateLocation(req, res) {
         try {
             const { id } = req.params;
+            if (!await this._verifySessionAgency(id, req, res)) return;
             const { lat, lng, accuracy, capturedAt } = req.body;
 
             const point = await prisma.safetyLocationPoint.create({
@@ -184,6 +200,7 @@ class SafetyController {
     async getSession(req, res) {
         try {
             const { id } = req.params;
+            if (!await this._verifySessionAgency(id, req, res)) return;
             const session = await prisma.safetySession.findUnique({
                 where: { id },
                 include: {
@@ -204,6 +221,7 @@ class SafetyController {
     async departureTimeout(req, res) {
         try {
             const { id } = req.params;
+            if (!await this._verifySessionAgency(id, req, res)) return;
             const result = await safetyService.escalateSession(id, 'departure_timeout');
             res.json(result);
         } catch (error) {
@@ -218,7 +236,7 @@ class SafetyController {
     async departureConfirmed(req, res) {
         try {
             const { id } = req.params;
-            // Just mark session with a note, session is already RESOLVED after checkout
+            if (!await this._verifySessionAgency(id, req, res)) return;
             logger.info(`Departure confirmed for session ${id}`);
             res.json({ ok: true, sessionId: id });
         } catch (error) {

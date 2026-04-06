@@ -1,9 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../services/db');
 const authMiddleware = require('../middleware/authMiddleware');
-
-const prisma = new PrismaClient();
 
 router.use(authMiddleware);
 
@@ -26,7 +24,7 @@ router.get('/:clientPhone', async (req, res) => {
     res.json(notes);
   } catch (err) {
     console.error('GET /notes error:', err);
-    res.status(500).json({ error: 'Failed to fetch notes' });
+    res.status(500).json({ message: 'Failed to fetch notes' });
   }
 });
 
@@ -38,7 +36,7 @@ router.post('/', async (req, res) => {
     const authorName = req.user.name || req.user.email;
 
     if (!clientPhone || !text || !profileId) {
-      return res.status(400).json({ error: 'clientPhone, text and profileId are required' });
+      return res.status(400).json({ message: 'clientPhone, text and profileId are required' });
     }
 
     const note = await prisma.clientNote.create({
@@ -54,7 +52,7 @@ router.post('/', async (req, res) => {
     res.status(201).json(note);
   } catch (err) {
     console.error('POST /notes error:', err);
-    res.status(500).json({ error: 'Failed to create note' });
+    res.status(500).json({ message: 'Failed to create note' });
   }
 });
 
@@ -65,13 +63,13 @@ router.delete('/:id', async (req, res) => {
     const agencyId = req.user.agencyId;
 
     const note = await prisma.clientNote.findFirst({ where: { id, agencyId } });
-    if (!note) return res.status(404).json({ error: 'Note not found' });
+    if (!note) return res.status(404).json({ message: 'Note not found' });
 
     await prisma.clientNote.delete({ where: { id } });
     res.json({ success: true });
   } catch (err) {
     console.error('DELETE /notes error:', err);
-    res.status(500).json({ error: 'Failed to delete note' });
+    res.status(500).json({ message: 'Failed to delete note' });
   }
 });
 

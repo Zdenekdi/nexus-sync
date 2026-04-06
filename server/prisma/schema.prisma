@@ -88,6 +88,9 @@ model User {
   auditLogs  AuditLog[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([roleId])
+  @@index([agencyId])
 }
 
 model PushDevice {
@@ -252,6 +255,7 @@ model Chat {
   updatedAt     DateTime  @updatedAt
 
   @@unique([externalId, profileId])
+  @@index([agencyId])
 }
 
 model Message {
@@ -266,6 +270,8 @@ model Message {
   sender    User?    @relation(fields: [senderId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([chatId])
 }
 
 model CallLog {

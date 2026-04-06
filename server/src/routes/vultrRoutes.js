@@ -48,7 +48,7 @@ router.get("/status", async (req, res) => {
     res.json(data.instance);
   } catch (err) {
     logger.error("Vultr Status Error:", err.message);
-    res.status(err.response?.status || 500).json({ error: err.message });
+    res.status(err.response?.status || 500).json({ message: 'Failed to fetch server status' });
   }
 });
 
@@ -57,7 +57,8 @@ router.post("/start", async (req, res) => {
     await axios.post(`${VULTR_API}/instances/${process.env.VULTR_INSTANCE_ID}/start`, {}, { headers: headers() });
     res.json({ ok: true });
   } catch (err) {
-    res.status(err.response?.status || 500).json({ error: err.message });
+    logger.error("Vultr Start Error:", err.message);
+    res.status(500).json({ message: 'Failed to start server' });
   }
 });
 
@@ -66,7 +67,8 @@ router.post("/stop", async (req, res) => {
     await axios.post(`${VULTR_API}/instances/${process.env.VULTR_INSTANCE_ID}/halt`, {}, { headers: headers() });
     res.json({ ok: true });
   } catch (err) {
-    res.status(err.response?.status || 500).json({ error: err.message });
+    logger.error("Vultr Stop Error:", err.message);
+    res.status(500).json({ message: 'Failed to stop server' });
   }
 });
 
@@ -75,7 +77,8 @@ router.post("/restart", async (req, res) => {
     await axios.post(`${VULTR_API}/instances/${process.env.VULTR_INSTANCE_ID}/reboot`, {}, { headers: headers() });
     res.json({ ok: true });
   } catch (err) {
-    res.status(err.response?.status || 500).json({ error: err.message });
+    logger.error("Vultr Restart Error:", err.message);
+    res.status(500).json({ message: 'Failed to restart server' });
   }
 });
 
@@ -84,18 +87,19 @@ router.get("/bandwidth", async (req, res) => {
     const { data } = await axios.get(`${VULTR_API}/instances/${process.env.VULTR_INSTANCE_ID}/bandwidth`, { headers: headers() });
     res.json(data.bandwidth);
   } catch (err) {
-    res.status(err.response?.status || 500).json({ error: err.message });
+    logger.error("Vultr Bandwidth Error:", err.message);
+    res.status(err.response?.status || 500).json({ message: 'Failed to fetch bandwidth data' });
   }
 });
 
 // ── SSH Terminal ──────────────────────────────────────────────────────────────
 router.post("/command", async (req, res) => {
   const { command } = req.body;
-  if (!command) return res.status(400).json({ error: "Command is required" });
+  if (!command) return res.status(400).json({ message: 'Command is required' });
 
   const blocked = ["rm -rf /", "mkfs", "dd if=", ":(){ :|:& };:"];
   if (blocked.some(b => command.includes(b))) {
-    return res.status(403).json({ error: "Command blocked for safety" });
+    return res.status(403).json({ message: 'This command is not allowed' });
   }
 
   try {
@@ -105,7 +109,7 @@ router.post("/command", async (req, res) => {
     res.json({ stdout: result.stdout, stderr: result.stderr });
   } catch (err) {
     logger.error("SSH Command Error:", err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: 'Command execution failed' });
   }
 });
 
@@ -118,13 +122,13 @@ router.post("/git-pull", async (req, res) => {
     res.json({ stdout: result.stdout || "Already up to date.", stderr: result.stderr });
   } catch (err) {
     logger.error("SSH Git Pull Error:", err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: 'Git pull failed' });
   }
 });
 
 // ── APK Management ────────────────────────────────────────────────────────────
 router.post("/upload-apk", apkUpload.single("apk"), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: "No APK file provided" });
+  if (!req.file) return res.status(400).json({ message: 'No APK file provided' });
   const stat = fs.statSync(req.file.path);
   const version = req.body.version || "1.0";
   const meta = {

@@ -10,7 +10,7 @@
  *   - POST /api/sip/reload-asterisk    (ruční reload)
  *
  * Env proměnné:
- *   VPS_SSH_HOST     - IP VPS (napr. 78.141.202.139)
+ *   VPS_SSH_HOST     - IP VPS (env variable, no default)
  *   VPS_SSH_USER     - SSH uživatel (napr. root)
  *   VPS_SSH_KEY_PATH - cesta k private key (napr. /root/.ssh/id_rsa)
  *   VPS_SSH_PASSWORD - alternativa k private key
@@ -25,7 +25,7 @@ const prisma       = require('./db');
 const CONF_DIR  = process.env.ASTERISK_CONF_DIR  || '/etc/asterisk';
 const WS_PORT   = process.env.ASTERISK_WS_PORT   || '8089';
 const SIP_PORT  = process.env.ASTERISK_SIP_PORT  || '5060';
-const VPS_HOST  = process.env.VPS_SSH_HOST        || '78.141.202.139';
+const VPS_HOST  = process.env.VPS_SSH_HOST        || 'localhost';
 const VPS_USER  = process.env.VPS_SSH_USER        || 'root';
 
 // ── Generátor pjsip.conf ──────────────────────────────────────────────────────
@@ -55,7 +55,7 @@ function generatePjsipConf(relays, operators) {
     '[transport-wss]',
     'type=transport',
     'protocol=wss',
-    `bind=0.0.0.0:${WS_PORT}',`,
+    `bind=0.0.0.0:${WS_PORT}`,
     '; cert_file a privkey_file jsou nastaveny v http.conf',
     '',
     '; ── Relay zařízení (Android) ─────────────────────────────────────────────',

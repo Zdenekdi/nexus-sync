@@ -24,10 +24,10 @@ exports.getRoles = async (req, res) => {
         if (!agencyId) {
             const expectedTemplates = [
                 { name: 'App Owner', isAppOwner: true, isManager: true, permissions: JSON.stringify({ all: true }) },
-                { name: 'Agency Admin', isAppOwner: false, isManager: true, permissions: JSON.stringify({ permissions: true, hierarchy: true, analytics: true, messaging: true, calendar: true, profiles: true, web_profiles: true, device_setup: true, audit_logs: true, qa_hub: true, settings: true, inventory: false }) },
-                { name: 'Senior Operator', isAppOwner: false, isManager: true, permissions: JSON.stringify({ messaging: true, calendar: true, profiles: true, device_setup: true, settings: true, qa_hub: true, analytics: true, inventory: false }) },
-                { name: 'Operator', isAppOwner: false, isManager: false, permissions: JSON.stringify({ messaging: true, calendar: true, profiles: true, device_setup: true, settings: true, inventory: false }) },
-                { name: 'Model', isAppOwner: false, isManager: false, permissions: JSON.stringify({ messaging: true, calendar: true, inventory: false }) }
+                { name: 'Agency Admin', isAppOwner: false, isManager: true, permissions: JSON.stringify({ permissions: true, hierarchy: true, analytics: true, messaging: true, calendar: true, profiles: true, web_profiles: true, device_setup: true, audit_logs: true, qa_hub: true, settings: true, referrals: true, inventory: true, plans: true }) },
+                { name: 'Senior Operator', isAppOwner: false, isManager: true, permissions: JSON.stringify({ hierarchy: true, analytics: true, messaging: true, calendar: true, profiles: true, web_profiles: true, device_setup: false, settings: true, qa_hub: true, referrals: true, inventory: true }) },
+                { name: 'Operator', isAppOwner: false, isManager: false, permissions: JSON.stringify({ messaging: true, calendar: true, profiles: true, web_profiles: true, device_setup: true, settings: true, referrals: false, inventory: false }) },
+                { name: 'Model', isAppOwner: false, isManager: false, permissions: JSON.stringify({ messaging: true, calendar: true, device_setup: true, settings: true, referrals: true, inventory: false }) }
             ];
 
             const existingNames = roles.map(r => r.name);
@@ -58,11 +58,13 @@ exports.getRoles = async (req, res) => {
                 } catch (e) {
                     // Fallback for older non-JSON roles like '*' or 'messaging,profiles'
                     if (r.name === 'Agency Admin') {
-                        perms = { permissions: true, hierarchy: true, analytics: true, messaging: true, calendar: true, profiles: true, web_profiles: true, device_setup: true, audit_logs: true, qa_hub: true, settings: true, inventory: false };
+                        perms = { permissions: true, hierarchy: true, analytics: true, messaging: true, calendar: true, profiles: true, web_profiles: true, device_setup: true, audit_logs: true, qa_hub: true, settings: true, referrals: true, inventory: true, plans: true };
                     } else if (r.name === 'Model') {
-                        perms = { messaging: true, calendar: true };
+                        perms = { messaging: true, calendar: true, device_setup: true, settings: true, referrals: true };
+                    } else if (r.name === 'Senior Operator') {
+                        perms = { hierarchy: true, analytics: true, messaging: true, calendar: true, profiles: true, web_profiles: true, settings: true, qa_hub: true, referrals: true, inventory: true };
                     } else if (r.name === 'Operator') {
-                        perms = { messaging: true, calendar: true, profiles: true, device_setup: true, settings: true };
+                        perms = { messaging: true, calendar: true, profiles: true, web_profiles: true, device_setup: true, settings: true };
                     }
                 }
             } else {

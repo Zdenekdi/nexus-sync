@@ -1,16 +1,26 @@
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 const deviceController = require('../controllers/deviceController');
 const authMiddleware = require('../middleware/authMiddleware');
 
+// Rate limiter for unauthenticated device endpoints
+const deviceLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many device requests, please try again later.' }
+});
+
 // GoIP uses urlencoded for its POST
-router.post('/goip/sms', express.urlencoded({ extended: true }), deviceController.handleGoIP);
+router.post('/goip/sms', deviceLimiter, express.urlencoded({ extended: true }), deviceController.handleGoIP);
 
 // Mobile apps usually use JSON
-router.post('/mobile/sms', express.json(), deviceController.handleMobileSms);
-router.post('/mobile/call', express.json(), deviceController.handleMobileCall);
+router.post('/mobile/sms', deviceLimiter, express.json(), deviceController.handleMobileSms);
+router.post('/mobile/call', deviceLimiter, express.json(), deviceController.handleMobileCall);
 // Relay Mode (Nexus Relay APK)
-router.post('/relay', express.json(), deviceController.handleRelay);
+router.post('/relay', deviceLimiter, express.json(), deviceController.handleRelay);
 router.post('/push-token', authMiddleware, express.json(), deviceController.registerPushToken);
 router.get('/status', authMiddleware, deviceController.getRelayStatus);
 router.post('/verify', authMiddleware, express.json(), deviceController.verifyDeviceBinding);
