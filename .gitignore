@@ -60,4 +60,5 @@ server/prisma/*.db-journal
 # Server runtime/cache (from HOME override)
 server/.cache/
 server/.npm/
+server/.npm_cache/
 server/Library/
