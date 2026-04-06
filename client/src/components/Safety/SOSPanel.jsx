@@ -67,11 +67,14 @@ const SOSPanel = () => {
     socket.on('sos_acknowledged', onAck);
     socket.on('sos_resolved', onResolved);
     socket.on('sos_location_update', onLocation);
+    // Legacy event from SafetySession escalation
+    socket.on('emergency_alert', () => fetchActive());
     return () => {
       socket.off('sos_triggered', onSOS);
       socket.off('sos_acknowledged', onAck);
       socket.off('sos_resolved', onResolved);
       socket.off('sos_location_update', onLocation);
+      socket.off('emergency_alert');
     };
   }, [socket]);
 

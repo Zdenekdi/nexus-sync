@@ -3,7 +3,7 @@ import { AlertTriangle, Plus, Search, X, Shield, Car, Phone, User, MessageSquare
 import { useNexus } from '../../context/NexusContext';
 
 const BlacklistPanel = () => {
-  const { t, lang, API_BASE, token, showToast } = useNexus();
+  const { t, lang, API_BASE, token, showToast, socket } = useNexus();
   const [entries, setEntries] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -34,6 +34,14 @@ const BlacklistPanel = () => {
   }, [API_BASE, token, page, search]);
 
   useEffect(() => { fetchEntries(); }, [fetchEntries]);
+
+  // Real-time blacklist updates
+  useEffect(() => {
+    if (!socket) return;
+    const onNew = () => fetchEntries();
+    socket.on('blacklist_new', onNew);
+    return () => socket.off('blacklist_new', onNew);
+  }, [socket, fetchEntries]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

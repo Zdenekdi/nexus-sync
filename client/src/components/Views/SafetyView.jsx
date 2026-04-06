@@ -8,7 +8,7 @@ const SafetyView = () => {
   const { t, activeRole } = useNexus();
   const [subTab, setSubTab] = useState('blacklist');
 
-  const isModelRole = activeRole === 'MODEL';
+  const isModelRole = activeRole === 'Model';
   const tabs = [
     { id: 'blacklist', label: t('blacklist'), icon: AlertTriangle },
     ...(!isModelRole ? [{ id: 'sos', label: t('sosAlerts'), icon: Phone }] : [])
