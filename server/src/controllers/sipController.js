@@ -265,6 +265,15 @@ exports.ping = async (req, res) => {
       const from = incomingCall.from;
       callMetaMap.set(from, { profileName, profileId, agencyId, ts: Date.now() });
 
+      // Persist to CallLog
+      try {
+        await prisma.callLog.create({
+          data: { profileId, from, status: 'incoming', duration: 0 }
+        });
+      } catch (logErr) {
+        console.warn('[SIP] CallLog create failed:', logErr.message);
+      }
+
       try {
         getIO().to(`agency_${agencyId}`).emit('sip_incoming_call', {
           from,

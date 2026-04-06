@@ -33,6 +33,10 @@ const adminRoutes = require('./routes/adminRoutes');
 const sipRoutes = require('./routes/sipRoutes');
 const blacklistRoutes = require('./routes/blacklistRoutes');
 const sosRoutes = require('./routes/sosRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
+const qaRoutes = require('./routes/qaRoutes');
+const callRoutes = require('./routes/callRoutes');
+const emergencyRoutes = require('./routes/emergencyRoutes');
 
 const app = express();
 
@@ -144,6 +148,10 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/sip', sipRoutes);
 app.use('/api/blacklist', blacklistRoutes);
 app.use('/api/sos', sosRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/qa', qaRoutes);
+app.use('/api/calls', callRoutes);
+app.use('/api/emergencies', emergencyRoutes);
 
 // Basic health check
 app.get('/health', (req, res) => {
