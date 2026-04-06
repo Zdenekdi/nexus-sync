@@ -48,9 +48,7 @@ app.use('/downloads', (req, res, next) => {
   next();
 }, express.static(path.join(__dirname, '..', 'public', 'downloads')));
 
-// Rate limiting: 500 requests per 15 minutes
-// (relay mode polls /api/device/status every 15 s → ~120 req/15 min per client;
-//  multiple clients + other API calls could easily exceed a lower threshold)
+// Rate limiting: global 500 req/15min
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 500,
@@ -59,13 +57,41 @@ const limiter = rateLimit({
   message: { message: 'Too many requests, please try again later.' }
 });
 
-// Stricter limiter for auth endpoints
+// Auth: 20 req/15min (login brute-force protection)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: 'Too many auth attempts, please try again later.' }
+});
+
+// Write operations (POST/PUT/PATCH/DELETE): 100 req/15min
+const writeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS',
+  message: { message: 'Too many write requests, please try again later.' }
+});
+
+// Device endpoints: 300 req/15min (relay polling every 15s)
+const deviceLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many device requests, please try again later.' }
+});
+
+// Analytics: 60 req/15min
+const analyticsLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many analytics requests, please try again later.' }
 });
 
 app.use(helmet());
@@ -122,8 +148,18 @@ app.use(express.json({ limit: '64kb' }));
 
 // Apply global limiter to all API routes
 app.use('/api/', limiter);
-// Stricter limiter on auth
+// Per-route granular limiters
 app.use('/api/auth', authLimiter);
+app.use('/api/device', deviceLimiter);
+app.use('/api/analytics', analyticsLimiter);
+// Write operation limiter for mutation-heavy routes
+app.use('/api/profiles', writeLimiter);
+app.use('/api/bookings', writeLimiter);
+app.use('/api/messages', writeLimiter);
+app.use('/api/chats', writeLimiter);
+app.use('/api/blacklist', writeLimiter);
+app.use('/api/agency', writeLimiter);
+// SOS has no extra limiter — safety-critical
 
 // Request logging middleware
 app.use((req, res, next) => {

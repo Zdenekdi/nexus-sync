@@ -7,19 +7,24 @@ import React from 'react';
 export const RevenueLineChart = ({ data, height = 300, color = 'var(--accent-color)' }) => {
   if (!data || data.length === 0) return null;
 
+  // Normalize: support both [{revenue, day}] and [number] formats
+  const normalized = data.map((d, i) => {
+    if (typeof d === 'number') return { revenue: d, day: `D${i + 1}` };
+    return { revenue: d.revenue || 0, day: d.day || `D${i + 1}` };
+  });
+
   const width = 1000;
   const padding = 40;
   const chartWidth = width - padding * 2;
   const chartHeight = height - padding * 2;
 
-  const maxVal = Math.max(...data.map(d => d.revenue)) * 1.1;
+  const maxVal = Math.max(...normalized.map(d => d.revenue)) * 1.1 || 1;
   const minVal = 0;
 
-  const getX = (index) => padding + (index * (chartWidth / (data.length - 1)));
+  const getX = (index) => padding + (index * (chartWidth / (normalized.length - 1 || 1)));
   const getY = (value) => height - padding - ((value - minVal) / (maxVal - minVal) * chartHeight);
 
-  // Generate SVG Path using Cubic Bezier for smooth curves
-  const points = data.map((d, i) => ({ x: getX(i), y: getY(d.revenue) }));
+  const points = normalized.map((d, i) => ({ x: getX(i), y: getY(d.revenue) }));
   
   let pathD = `M ${points[0].x} ${points[0].y}`;
   for (let i = 0; i < points.length - 1; i++) {
@@ -42,7 +47,6 @@ export const RevenueLineChart = ({ data, height = 300, color = 'var(--accent-col
           </linearGradient>
         </defs>
         
-        {/* Y Axis Grid Lines */}
         {[0, 0.25, 0.5, 0.75, 1].map((p, i) => (
           <line 
             key={i}
@@ -55,8 +59,7 @@ export const RevenueLineChart = ({ data, height = 300, color = 'var(--accent-col
           />
         ))}
 
-        {/* X Axis Labels */}
-        {data.filter((_, i) => i % 2 === 0).map((d, i) => (
+        {normalized.filter((_, i) => i % 2 === 0).map((d, i) => (
           <text 
             key={i}
             x={getX(i * 2)} 
@@ -70,11 +73,9 @@ export const RevenueLineChart = ({ data, height = 300, color = 'var(--accent-col
           </text>
         ))}
 
-        {/* Areas & Paths */}
         <path d={fillD} fill="url(#chartGradient)" />
         <path d={pathD} fill="none" stroke={color} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
 
-        {/* Data Points */}
         {points.map((p, i) => (
           <circle 
             key={i} 
