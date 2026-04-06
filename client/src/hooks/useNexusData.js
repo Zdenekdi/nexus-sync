@@ -96,7 +96,23 @@ export function useNexusData({
 
       // NO DEMO FALLBACKS - Use server data or initial empty state
       if (statsRes?.data) {
-        setStats(statsRes.data);
+        const s = statsRes.data;
+        setStats({
+          revenueMtd: s.revenue || '£0.00',
+          revenueChange: 0,
+          activeBookings: s.totalBookings || 0,
+          bookingsChange: 0,
+          totalMessages: s.totalMessages || 0,
+          messagesChange: 0,
+          conversionRate: s.conversionRate || 0,
+          conversionChange: 0,
+          revenueData: s.chartData || [],
+          profilePerf: [],
+          operatorPerf: [],
+          totalAgencies: s.totalAgencies || 0,
+          totalProfiles: s.totalProfiles || 0,
+          uptime: s.uptime || '100% UP'
+        });
       }
 
       if (profileRes?.data) {
