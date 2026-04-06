@@ -57,18 +57,13 @@ const PlansDashboard = () => {
         </div>
       </div>
       
-      {isPlansLoading && (
-        <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-          <RefreshCw className="spin" size={32} style={{ marginBottom: '1rem' }} />
-          <div>Načítám tarify z databáze...</div>
-        </div>
-      )}
-
-      {(!isPlansLoading && (!subscriptionPlans || subscriptionPlans.length === 0)) && (
-        <div style={{ padding: '3rem', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '20px', border: '1px solid rgba(239, 68, 68, 0.15)', marginBottom: '2.5rem', textAlign: 'center', backdropFilter: 'blur(10px)' }}>
-          <AlertCircle size={40} style={{ marginBottom: '1.2rem', color: '#f87171' }} />
-          <h3 style={{ color: '#f87171', marginBottom: '0.75rem', fontWeight: '800' }}>Tarify nejsou dostupné</h3>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', maxWidth: '500px', marginInline: 'auto' }}>Pravděpodobně došlo k chybě v napojení na databázi nebo vypršel přihlašovací token. Zkuste stránku obnovit.</p>
+      {isPlansLoading && <div style={{ textAlign: 'center', padding: '3rem' }}><RefreshCw className="spinner" size={40} /></div>}
+      
+      {(!isPlansLoading && (!subscriptionPlans || subscriptionPlans.length === 0 || !subscriptionPlans[0]?.prices)) && (
+        <div style={{ padding: '3rem', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '20px', border: '1px solid rgba(59, 130, 246, 0.15)', marginBottom: '2.5rem', textAlign: 'center', backdropFilter: 'blur(10px)' }}>
+          <Zap size={40} style={{ marginBottom: '1.2rem', color: 'var(--accent-color)' }} />
+          <h3 style={{ color: 'white', marginBottom: '0.75rem', fontWeight: '800' }}>Tarify nejsou inicializovány</h3>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', maxWidth: '500px', marginInline: 'auto' }}>Systém nemá definované základní cenové hladiny. Jako App Owner je můžete inicializovat jedním kliknutím.</p>
           
           {activeOperator?.role === 'APP OWNER' && (
             <button 
