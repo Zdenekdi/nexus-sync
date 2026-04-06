@@ -165,7 +165,12 @@ const PermissionsDashboard = ({ agencyId = null, onUpdate = null }) => {
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {(isAppOwner ? category.perms : categoryPerms).map((permKey) => {
-                          const isEnabled = perms[permKey];
+                          let isEnabled = perms[permKey];
+                          
+                          // Force specific permissions for App Owner as requested
+                          if (isAppOwner && ['agencies', 'infrastructure', 'permissions', 'plans', 'global_features'].includes(permKey)) {
+                            isEnabled = true;
+                          }
                           return (
                             <div key={permKey} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.2rem 0' }}>
                               <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -177,7 +182,7 @@ const PermissionsDashboard = ({ agencyId = null, onUpdate = null }) => {
                                 onClick={() => !isAppOwner && handleToggle(roleData.id, permKey)}
                                 className={`toggle-switch ${isEnabled ? 'active' : ''}`}
                                 style={{ 
-                                  width: '38px', height: '20px', background: isEnabled ? (isAppOwner ? 'rgba(251, 191, 36, 0.5)' : category.color) : 'rgba(255,255,255,0.05)',
+                                  width: '38px', height: '20px', background: isEnabled ? (isAppOwner ? 'rgba(251, 191, 36, 0.7)' : category.color) : 'rgba(255,255,255,0.05)',
                                   borderRadius: '20px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s',
                                   border: '1px solid var(--card-border)'
                                 }}
