@@ -38,17 +38,17 @@ const PlansDashboard = () => {
               key={market}
               onClick={() => setActiveMarket(market)}
               style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '8px',
-                background: activeMarket === market ? 'var(--accent-color)' : 'rgba(255,255,255,0.02)',
-                color: activeMarket === market ? 'white' : 'var(--text-secondary)',
-                border: activeMarket === market ? '1px solid white' : '1px solid transparent',
-                fontSize: '0.8rem',
-                fontWeight: '800',
+                padding: '0.6rem 1.25rem',
+                borderRadius: '10px',
+                background: activeMarket === market ? 'linear-gradient(135deg, #fbbf24, #d97706)' : 'rgba(255,255,255,0.03)',
+                color: activeMarket === market ? 'black' : 'var(--text-secondary)',
+                border: activeMarket === market ? '1px solid #fff' : '1px solid transparent',
+                fontSize: '0.85rem',
+                fontWeight: '900',
                 cursor: 'pointer',
-                transition: 'all 0.2s',
-                boxShadow: activeMarket === market ? '0 0 15px var(--accent-glow)' : 'none',
-                transform: activeMarket === market ? 'scale(1.05)' : 'scale(1)'
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: activeMarket === market ? '0 0 20px rgba(251, 191, 36, 0.4)' : 'none',
+                transform: activeMarket === market ? 'scale(1.1)' : 'scale(1)'
               }}
             >
               {market.toUpperCase()} ({getCurrencySymbol(market)})
@@ -56,6 +56,37 @@ const PlansDashboard = () => {
           ))}
         </div>
       </div>
+      
+      {isPlansLoading && (
+        <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+          <RefreshCw className="spin" size={32} style={{ marginBottom: '1rem' }} />
+          <div>Načítám tarify z databáze...</div>
+        </div>
+      )}
+
+      {(!isPlansLoading && (!subscriptionPlans || subscriptionPlans.length === 0)) && (
+        <div style={{ padding: '2.5rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '15px', border: '1px solid rgba(239, 68, 68, 0.3)', marginBottom: '2rem', textAlign: 'center' }}>
+          <AlertCircle size={32} style={{ marginBottom: '1rem', color: '#ef4444' }} />
+          <h3 style={{ color: '#ef4444', marginBottom: '0.5rem' }}>Tarify se nepodařilo načíst</h3>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Zkontrolujte připojení k databázi nebo zkuste stránku obnovit (F5). Pokud vidíte chybu 429, je nutné restartovat backend.</p>
+          
+          {activeOperator?.role === 'APP OWNER' && (
+            <button 
+              onClick={async () => {
+                const defaultPlans = [
+                  { id: 'basic', name: 'Basic', prices: { cz: '2900', eu: '120', us: '130', uk: '110' }, profilesLimit: 3, features: ['Správa profilů', 'Základní analytika', 'Podpora 24/7'] },
+                  { id: 'pro', name: 'Pro', prices: { cz: '5900', eu: '240', us: '260', uk: '220' }, profilesLimit: 10, features: ['Vše z Basic', 'Pokročilá analytika', 'AI Optimalizace'] },
+                  { id: 'agency', name: 'Agency', prices: { cz: '9900', eu: '400', us: '440', uk: '360' }, profilesLimit: 50, features: ['Vše z Pro', 'Auditní logy', 'API Přístup'] }
+                ];
+                await updatePlans(defaultPlans);
+              }}
+              style={{ padding: '0.8rem 1.5rem', background: '#fbbf24', color: 'black', border: 'none', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}
+            >
+              INICIALIZOVAT VÝCHOZÍ TARIFY
+            </button>
+          )}
+        </div>
+      )}
       
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(350px, 1fr))', gap: isMobile ? '1rem' : '2rem' }}>
         {(subscriptionPlans || []).map((plan) => {
@@ -213,6 +244,18 @@ const PlansDashboard = () => {
                 <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>LIMIT PROFILŮ</label>
                 <input type="number" className="glass-input" value={editingPlan.profilesLimit} onChange={(e) => setEditingPlan({...editingPlan, profilesLimit: parseInt(e.target.value)})} style={{ width: '100%', padding: '0.75rem' }} />
               </div>
+
+              {!editingPlan.isAddon && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>VLASTNOSTI (ODDĚLENÉ ČÁRKOU)</label>
+                  <textarea 
+                    className="glass-input" 
+                    value={(editingPlan.features || []).join(', ')} 
+                    onChange={(e) => setEditingPlan({...editingPlan, features: e.target.value.split(',').map(f => f.trim()).filter(f => f.length > 0)})} 
+                    style={{ width: '100%', padding: '0.75rem', minHeight: '100px', resize: 'vertical' }} 
+                  />
+                </div>
+              )}
 
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                 <button 
