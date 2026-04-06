@@ -87,8 +87,14 @@ const ActivityView = () => {
           <div>{cz ? 'Načítání...' : 'Loading...'}</div>
         </div>
       ) : logs.length === 0 ? (
-        <div className="glass-card" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-          {cz ? 'Žádné záznamy' : 'No audit log entries'}
+        <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 1rem', gap: '0.75rem' }}>
+          <Shield size={48} color="#374151" />
+          <div style={{ fontSize: '1rem', fontWeight: '700', color: '#64748b' }}>
+            {cz ? 'Žádné záznamy' : 'No audit log entries'}
+          </div>
+          <div style={{ fontSize: '0.8rem', color: '#475569' }}>
+            {cz ? 'Záznamy o aktivitě se zobrazí, jakmile dojde k prvním akcím' : 'Activity logs will appear once actions are recorded'}
+          </div>
         </div>
       ) : isMobile ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>

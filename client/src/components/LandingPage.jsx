@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { 
   Shield, 
   Zap, 
@@ -15,10 +15,72 @@ import {
   Settings,
   Bell,
   MapPin,
-  Star
+  Star,
+  HelpCircle,
+  ChevronUp
 } from 'lucide-react';
 
 import { useNexus } from '../context/NexusContext';
+
+// Scroll-reveal hook
+const useScrollReveal = () => {
+  const ref = useRef(null);
+  const [isVisible, setIsVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setIsVisible(true); observer.unobserve(el); } },
+      { threshold: 0.15, rootMargin: '0px 0px -40px 0px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return [ref, isVisible];
+};
+
+const ScrollReveal = ({ children, delay = 0, style = {} }) => {
+  const [ref, isVisible] = useScrollReveal();
+  return (
+    <div ref={ref} style={{
+      ...style,
+      opacity: isVisible ? 1 : 0,
+      transform: isVisible ? 'translateY(0)' : 'translateY(30px)',
+      transition: `opacity 0.6s ease ${delay}s, transform 0.6s ease ${delay}s`
+    }}>
+      {children}
+    </div>
+  );
+};
+
+const FAQItem = ({ question, answer }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div 
+      onClick={() => setOpen(!open)}
+      style={{ 
+        padding: '1.25rem 1.5rem', borderRadius: '16px', cursor: 'pointer',
+        background: 'rgba(255,255,255,0.02)', border: '1px solid var(--card-border)',
+        transition: 'all 0.3s ease'
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+        <h4 style={{ fontSize: '0.95rem', fontWeight: '700', margin: 0 }}>{question}</h4>
+        {open ? <ChevronUp size={18} color="#64748b" /> : <ChevronDown size={18} color="#64748b" />}
+      </div>
+      <div style={{
+        maxHeight: open ? '200px' : '0',
+        overflow: 'hidden',
+        transition: 'max-height 0.3s ease, opacity 0.3s ease',
+        opacity: open ? 1 : 0
+      }}>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.6, marginTop: '0.75rem', marginBottom: 0 }}>
+          {answer}
+        </p>
+      </div>
+    </div>
+  );
+};
 
 const LandingPage = () => {
   const { setShowLanding, lang, setLang, isMobile } = useNexus();
@@ -88,6 +150,14 @@ const LandingPage = () => {
         { icon: <Star size={20} />, title: "QA Hub & Referraly", desc: "Kontrola kvality komunikace operátorek. Referral systém pro růst agenturní sítě s odměnami." }
       ],
       footer: "Nexus Systems – Váš nástroj pro efektivní škálování.",
+      faqTitle: "Časté dotazy",
+      faq: [
+        { q: "Je Nexus Hub bezpečný?", a: "Ano. Používáme JWT autentizaci, bcrypt hashování hesel, rate limiting, šifrované spojení a kompletní izolaci dat mezi agenturami. Bezpečnostní alerty jdou přes Telegram i push notifikace." },
+        { q: "Jak funguje SMS Relay?", a: "Nainstalujete naši Android aplikaci Nexus Relay na dedikované zařízení s SIM kartou. Aplikace automaticky přeposílá příchozí SMS do Unified Inboxu a odchozí zprávy odesílá přes skutečné telefonní číslo." },
+        { q: "Kolik agentur mohu spravovat?", a: "Jako App Owner můžete spravovat neomezený počet agentur. Každá agentura má vlastní data, role, profily a nastavení — kompletně izolovaná od ostatních." },
+        { q: "Mohu systém používat na mobilu?", a: "Ano. Nexus Hub je plně responzivní a funguje ve webovém prohlížeči i jako nativní Android aplikace. Pro modelky nabízíme mobilní rozhraní s Safety Guard a GPS trackingem." },
+        { q: "Jak probíhá registrace?", a: "Zaregistrujete agenturu, obdržíte zvací kód a ten sdílíte s týmem. Každý člen se přihlásí přes \"Připojit se\" a vybere svou roli (Operátor/Model)." }
+      ],
       gettingStartedTitle: "Jak začít?",
       gettingStartedDesc: "Začněte používat Nexus Hub ve třech jednoduchých krocích.",
       steps: [
@@ -158,6 +228,14 @@ const LandingPage = () => {
         { icon: <Star size={20} />, title: "QA Hub & Referrals", desc: "Operator communication quality control. Referral system for agency network growth with rewards." }
       ],
       footer: "Nexus Systems – Your tool for efficient scaling.",
+      faqTitle: "Frequently Asked Questions",
+      faq: [
+        { q: "Is Nexus Hub secure?", a: "Yes. We use JWT authentication, bcrypt password hashing, rate limiting, encrypted connections, and complete data isolation between agencies. Safety alerts go via Telegram and push notifications." },
+        { q: "How does SMS Relay work?", a: "Install our Nexus Relay Android app on a dedicated device with a SIM card. The app automatically forwards incoming SMS to the Unified Inbox and sends outgoing messages via real phone numbers." },
+        { q: "How many agencies can I manage?", a: "As an App Owner, you can manage unlimited agencies. Each agency has its own data, roles, profiles, and settings — completely isolated from others." },
+        { q: "Can I use it on mobile?", a: "Yes. Nexus Hub is fully responsive and works in web browsers and as a native Android app. For models, we offer a mobile interface with Safety Guard and GPS tracking." },
+        { q: "How does registration work?", a: "Register your agency, receive an invite code, and share it with your team. Each member signs up via \"Join Agency\" and selects their role (Operator/Model)." }
+      ],
       gettingStartedTitle: "Getting Started",
       gettingStartedDesc: "Start using Nexus Hub in three simple steps.",
       steps: [
@@ -265,16 +343,20 @@ const LandingPage = () => {
 
       {/* Pillars Section */}
       <section style={{ padding: isMobile ? '3rem 5%' : '6rem 5%', position: 'relative', zIndex: 1 }}>
-        <h2 style={{ textAlign: 'center', fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900', marginBottom: isMobile ? '2rem' : '4rem' }}>{t.pillarsTitle}</h2>
+        <ScrollReveal>
+          <h2 style={{ textAlign: 'center', fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900', marginBottom: isMobile ? '2rem' : '4rem' }}>{t.pillarsTitle}</h2>
+        </ScrollReveal>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', maxWidth: '1200px', margin: '0 auto' }}>
           {t.pillars.map((p, i) => (
-            <div key={i} className="glass-card hover-glow" style={{ padding: '2.5rem', borderRadius: '24px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--card-border)', transition: 'all 0.3s ease' }}>
-              <div style={{ width: '50px', height: '50px', background: 'rgba(59,130,246,0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-color)', marginBottom: '1.5rem' }}>
-                {p.icon}
+            <ScrollReveal key={i} delay={i * 0.15}>
+              <div className="glass-card hover-glow" style={{ padding: '2.5rem', borderRadius: '24px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--card-border)', transition: 'all 0.3s ease' }}>
+                <div style={{ width: '50px', height: '50px', background: 'rgba(59,130,246,0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-color)', marginBottom: '1.5rem' }}>
+                  {p.icon}
+                </div>
+                <h3 style={{ fontSize: '1.3rem', fontWeight: '800', marginBottom: '1rem' }}>{p.title}</h3>
+                <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>{p.desc}</p>
               </div>
-              <h3 style={{ fontSize: '1.3rem', fontWeight: '800', marginBottom: '1rem' }}>{p.title}</h3>
-              <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>{p.desc}</p>
-            </div>
+            </ScrollReveal>
           ))}
         </div>
       </section>
@@ -306,64 +388,91 @@ const LandingPage = () => {
 
       {/* Platform Features Grid */}
       <section style={{ padding: isMobile ? '3rem 5%' : '6rem 5%', position: 'relative', zIndex: 1 }}>
-        <h2 style={{ textAlign: 'center', fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900', marginBottom: '1rem' }}>{t.platformTitle}</h2>
-        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '1rem', maxWidth: '600px', margin: '0 auto 3rem' }}>
-          {lang === 'cz' ? '90+ API endpointů, 21 databázových modelů, 6 úrovní rolí' : '90+ API endpoints, 21 database models, 6 role levels'}
-        </p>
+        <ScrollReveal>
+          <h2 style={{ textAlign: 'center', fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900', marginBottom: '1rem' }}>{t.platformTitle}</h2>
+          <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '1rem', maxWidth: '600px', margin: '0 auto 3rem' }}>
+            {lang === 'cz' ? '90+ API endpointů, 21 databázových modelů, 6 úrovní rolí' : '90+ API endpoints, 21 database models, 6 role levels'}
+          </p>
+        </ScrollReveal>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem', maxWidth: '1200px', margin: '0 auto' }}>
           {t.platformFeatures.map((pf, i) => (
-            <div key={i} className="glass-card" style={{ padding: '1.5rem', borderRadius: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--card-border)', display: 'flex', gap: '1rem', alignItems: 'flex-start', transition: 'border-color 0.3s' }}>
-              <div style={{ width: '40px', height: '40px', minWidth: '40px', background: 'rgba(59,130,246,0.1)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-color)' }}>
-                {pf.icon}
+            <ScrollReveal key={i} delay={Math.min(i * 0.08, 0.4)}>
+              <div className="glass-card" style={{ padding: '1.5rem', borderRadius: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--card-border)', display: 'flex', gap: '1rem', alignItems: 'flex-start', transition: 'border-color 0.3s' }}>
+                <div style={{ width: '40px', height: '40px', minWidth: '40px', background: 'rgba(59,130,246,0.1)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-color)' }}>
+                  {pf.icon}
+                </div>
+                <div>
+                  <h4 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '0.4rem' }}>{pf.title}</h4>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.5 }}>{pf.desc}</p>
+                </div>
               </div>
-              <div>
-                <h4 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '0.4rem' }}>{pf.title}</h4>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.5 }}>{pf.desc}</p>
-              </div>
-            </div>
+            </ScrollReveal>
           ))}
         </div>
       </section>
 
       {/* Getting Started Section */}
       <section style={{ padding: isMobile ? '3rem 5%' : '6rem 5%', background: 'rgba(16, 185, 129, 0.03)', borderTop: '1px solid var(--card-border)', borderBottom: '1px solid var(--card-border)', position: 'relative', zIndex: 1 }}>
-        <h2 style={{ textAlign: 'center', fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900', marginBottom: '0.75rem' }}>{t.gettingStartedTitle}</h2>
-        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '1rem', maxWidth: '600px', margin: '0 auto 3rem' }}>
-          {t.gettingStartedDesc}
-        </p>
+        <ScrollReveal>
+          <h2 style={{ textAlign: 'center', fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900', marginBottom: '0.75rem' }}>{t.gettingStartedTitle}</h2>
+          <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '1rem', maxWidth: '600px', margin: '0 auto 3rem' }}>
+            {t.gettingStartedDesc}
+          </p>
+        </ScrollReveal>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1.5rem', maxWidth: '1000px', margin: '0 auto' }}>
           {t.steps.map((step, i) => (
-            <div key={i} className="glass-card" style={{ padding: '2rem', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--card-border)', textAlign: 'center', position: 'relative' }}>
-              <div style={{
-                width: '48px', height: '48px', borderRadius: '50%',
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                margin: '0 auto 1.25rem', fontSize: '1.25rem', fontWeight: '900', color: 'white',
-                boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)'
-              }}>
-                {step.num}
+            <ScrollReveal key={i} delay={i * 0.15}>
+              <div className="glass-card" style={{ padding: '2rem', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--card-border)', textAlign: 'center', position: 'relative' }}>
+                <div style={{
+                  width: '48px', height: '48px', borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  margin: '0 auto 1.25rem', fontSize: '1.25rem', fontWeight: '900', color: 'white',
+                  boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)'
+                }}>
+                  {step.num}
+                </div>
+                <h4 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '0.75rem' }}>{step.title}</h4>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.6 }}>{step.desc}</p>
               </div>
-              <h4 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '0.75rem' }}>{step.title}</h4>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.6 }}>{step.desc}</p>
-            </div>
+            </ScrollReveal>
           ))}
         </div>
-        <div style={{ textAlign: 'center', marginTop: '2.5rem' }}>
-          <button
-            onClick={onLoginClick}
-            className="premium-button"
-            style={{
-              padding: isMobile ? '0.85rem 1.8rem' : '1rem 2.5rem',
-              borderRadius: '12px', border: 'none',
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-              color: 'white', fontWeight: '900',
-              fontSize: isMobile ? '0.9rem' : '1rem',
-              cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.75rem',
-              boxShadow: '0 8px 25px rgba(16, 185, 129, 0.35)'
-            }}
-          >
-            {lang === 'cz' ? 'Zaregistrovat agenturu' : 'Register Your Agency'} <ArrowRight size={18} />
-          </button>
+        <ScrollReveal delay={0.3}>
+          <div style={{ textAlign: 'center', marginTop: '2.5rem' }}>
+            <button
+              onClick={onLoginClick}
+              className="premium-button"
+              style={{
+                padding: isMobile ? '0.85rem 1.8rem' : '1rem 2.5rem',
+                borderRadius: '12px', border: 'none',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                color: 'white', fontWeight: '900',
+                fontSize: isMobile ? '0.9rem' : '1rem',
+                cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.75rem',
+                boxShadow: '0 8px 25px rgba(16, 185, 129, 0.35)'
+              }}
+            >
+              {lang === 'cz' ? 'Zaregistrovat agenturu' : 'Register Your Agency'} <ArrowRight size={18} />
+            </button>
+          </div>
+        </ScrollReveal>
+      </section>
+
+      {/* FAQ Section */}
+      <section style={{ padding: isMobile ? '3rem 5%' : '6rem 5%', position: 'relative', zIndex: 1 }}>
+        <ScrollReveal>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+            <HelpCircle size={24} color="var(--accent-color)" />
+            <h2 style={{ textAlign: 'center', fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900', margin: 0 }}>{t.faqTitle}</h2>
+          </div>
+        </ScrollReveal>
+        <div style={{ maxWidth: '700px', margin: '2rem auto 0', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {t.faq.map((item, i) => (
+            <ScrollReveal key={i} delay={i * 0.1}>
+              <FAQItem question={item.q} answer={item.a} />
+            </ScrollReveal>
+          ))}
         </div>
       </section>
 
