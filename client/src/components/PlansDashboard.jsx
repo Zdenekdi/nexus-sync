@@ -78,12 +78,12 @@ const PlansDashboard = () => {
                   { id: 'pro', name: 'Pro', prices: { cz: '5900', eu: '240', us: '260', uk: '220' }, profilesLimit: 10, features: ['Vše z Basic', 'Pokročilá analytika', 'AI Optimalizace'] },
                   { id: 'agency', name: 'Agency', prices: { cz: '9900', eu: '400', us: '440', uk: '360' }, profilesLimit: 50, features: ['Vše z Pro', 'Auditní logy', 'API Přístup'] }
                 ];
-                const success = await updatePlans(defaultPlans);
-                if (success) {
+                const result = await updatePlans(defaultPlans);
+                if (result.success) {
                   alert('Tarify byly úspěšně inicializovány. Stránka se nyní aktualizuje.');
                   fetchPlans();
                 } else {
-                  alert('Chyba při inicializaci! Pravděpodobně chybí oprávnění na serveru (403). Zkontrolujte konzoli.');
+                  alert('CHYBA ZE SERVERU: ' + result.error);
                 }
               }}
               style={{ padding: '1rem 2rem', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 15px rgba(37, 99, 235, 0.3)' }}
