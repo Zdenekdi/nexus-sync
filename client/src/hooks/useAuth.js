@@ -150,6 +150,23 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
         if (shouldAutoRelay(data.user)) {
           setIsRelayMode(true);
         } else {
+          // For Model role on native, auto-start relay background service
+          const role = (data.user.role?.name || data.user.role || '').toUpperCase();
+          if (isNativeApp && role === 'MODEL') {
+            try {
+              const plugin = window.Capacitor?.Plugins?.NexusRelay;
+              if (plugin?.startBackgroundService) {
+                await plugin.startBackgroundService({
+                  token: data.token,
+                  userId: data.user.id,
+                  profileId: data.user.profileId || data.user.activeProfileId
+                });
+                console.log('[Relay] Background service started for Model');
+              }
+            } catch (e) {
+              console.warn('[Relay] Background service start failed:', e.message);
+            }
+          }
           window.history.replaceState(null, '', '/dashboard');
         }
         return { success: true };

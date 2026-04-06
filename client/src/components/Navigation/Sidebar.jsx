@@ -128,6 +128,7 @@ const Sidebar = () => {
                     { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
                     { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles' },
                     { id: 'device-setup', icon: Smartphone, label: t('deviceSetup'), perm: 'device_setup' },
+                    { id: 'relay', icon: Radio, label: t('relay') || 'Relay', perm: 'relay' },
                     { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub' },
                     { id: 'plans', icon: CreditCard, label: t('plansManagement'), perm: 'plans' },
                     { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },

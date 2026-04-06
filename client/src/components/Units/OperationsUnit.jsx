@@ -8,6 +8,7 @@ import ReferralsView from '../Views/ReferralsView';
 import SafetyView from '../Views/SafetyView';
 import QAView from '../QAView';
 import RelayControlCenter from '../RelayControlCenter';
+import RelayModeView from '../Views/RelayModeView';
 
 import { useNexus } from '../../context/NexusContext';
 
@@ -15,7 +16,7 @@ import { useNexus } from '../../context/NexusContext';
  * Operations Unit: Primary hub for communication and scheduling.
  */
 const OperationsUnit = () => {
-  const { activeTab } = useNexus();
+  const { activeTab, activeRole } = useNexus();
 
   switch (activeTab) {
     case 'inbox':
@@ -23,7 +24,10 @@ const OperationsUnit = () => {
     case 'calendar':
       return <CalendarView />;
     case 'relay':
-      return <RelayControlCenter />;
+      // Model sees RelayMode (the relay device UI), others see RelayControlCenter (management)
+      return activeRole === 'MODEL' || activeRole === 'Model'
+        ? <RelayModeView />
+        : <RelayControlCenter />;
     case 'profiles':
       return <ProfilesView />;
     case 'web-profiles':
