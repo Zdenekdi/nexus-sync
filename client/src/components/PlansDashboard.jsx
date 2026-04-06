@@ -7,6 +7,14 @@ const PlansDashboard = () => {
   const { t, activeOperator, subscriptionPlans, fetchPlans, updatePlans, isPlansLoading, activeMarket, setActiveMarket, agencies, isMobile } = useContext(NexusContext);
   const currentAgency = agencies[0];
   const [editingPlan, setEditingPlan] = useState(null);
+  
+  const showInitialize = activeRole === 'App Owner' && (
+    !subscriptionPlans || 
+    subscriptionPlans.length === 0 || 
+    !subscriptionPlans[0]?.prices || 
+    subscriptionPlans[0]?.prices?.eu === "0" || 
+    subscriptionPlans[0]?.prices?.cz === "0"
+  );
 
   useEffect(() => {
     if (activeOperator?.id && activeOperator?.role === 'APP OWNER') {
@@ -59,7 +67,7 @@ const PlansDashboard = () => {
       
       {isPlansLoading && <div style={{ textAlign: 'center', padding: '3rem' }}><RefreshCw className="spinner" size={40} /></div>}
       
-      {(!isPlansLoading && (!subscriptionPlans || subscriptionPlans.length === 0 || !subscriptionPlans[0]?.prices)) && (
+      {(!isPlansLoading && showInitialize) && (
         <div style={{ padding: '3rem', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '20px', border: '1px solid rgba(59, 130, 246, 0.15)', marginBottom: '2.5rem', textAlign: 'center', backdropFilter: 'blur(10px)' }}>
           <Zap size={40} style={{ marginBottom: '1.2rem', color: 'var(--accent-color)' }} />
           <h3 style={{ color: 'white', marginBottom: '0.75rem', fontWeight: '800' }}>Tarify nejsou inicializovány</h3>

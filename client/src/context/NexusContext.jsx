@@ -6,7 +6,8 @@ import { useNexusData } from '../hooks/useNexusData';
 
 export const NexusContext = createContext();
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
+const API_BASE = import.meta.env.VITE_API_URL || 
+  (typeof window !== 'undefined' && window.location.origin ? `${window.location.origin}/api` : 'https://nexus-api.myvnc.com/api');
 
 export const NexusProvider = ({ children }) => {
   const [lang, setLang] = useState(localStorage.getItem('nexus_lang') || 'cz');
@@ -374,7 +375,8 @@ export const NexusProvider = ({ children }) => {
         editPlanDetails: 'Upravit tarif',
         upgradeNow: 'Upgradovat',
         active: 'Aktivní',
-        configure: 'Nastavit'
+        configure: 'Nastavit',
+        noPlanDesc: 'Popis tarifu není k dispozici.'
       },
       en: {
         dashboard: 'Dashboard',
