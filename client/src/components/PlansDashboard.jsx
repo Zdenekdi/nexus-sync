@@ -9,10 +9,10 @@ const PlansDashboard = () => {
   const [editingPlan, setEditingPlan] = useState(null);
 
   useEffect(() => {
-    if (activeOperator?.role === 'App Owner') {
+    if (activeOperator?.role === 'APP OWNER') {
       fetchPlans();
     }
-  }, []);
+  }, [activeOperator]);
 
   const getCurrencySymbol = (m) => {
     switch(m.toLowerCase()) {
@@ -40,13 +40,15 @@ const PlansDashboard = () => {
               style={{
                 padding: '0.5rem 1rem',
                 borderRadius: '8px',
-                background: activeMarket === market ? 'var(--accent-color)' : 'transparent',
+                background: activeMarket === market ? 'var(--accent-color)' : 'rgba(255,255,255,0.02)',
                 color: activeMarket === market ? 'white' : 'var(--text-secondary)',
-                border: 'none',
+                border: activeMarket === market ? '1px solid white' : '1px solid transparent',
                 fontSize: '0.8rem',
-                fontWeight: '700',
+                fontWeight: '800',
                 cursor: 'pointer',
-                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                transition: 'all 0.2s',
+                boxShadow: activeMarket === market ? '0 0 15px var(--accent-glow)' : 'none',
+                transform: activeMarket === market ? 'scale(1.05)' : 'scale(1)'
               }}
             >
               {market.toUpperCase()} ({getCurrencySymbol(market)})
@@ -116,7 +118,7 @@ const PlansDashboard = () => {
                 </div>
               </div>
               
-              {activeOperator?.role === 'App Owner' ? (
+              {activeOperator?.role === 'APP OWNER' ? (
                 <button 
                   onClick={() => setEditingPlan(plan)}
                   style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
@@ -170,9 +172,14 @@ const PlansDashboard = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ color: 'var(--accent-color)', fontWeight: '800' }}>{addon.price}</span>
                 <button 
-                  onClick={() => activeOperator?.role === 'App Owner' ? setEditingPlan({ name: addon.name, id: addon.id, prices: { cz: addon.price }, isAddon: true }) : alert('Platba bude integrována via GoPay.')}
-                  style={{ padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--accent-color)', borderRadius: '8px', color: 'white', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer' }}>
-                  {activeOperator?.role === 'App Owner' ? t('configure') : 'AKTIVOVAT'}
+                  onClick={() => activeOperator?.role === 'APP OWNER' ? setEditingPlan({ ...addon, prices: { cz: addon.price.split(' ')[0] }, isAddon: true }) : alert('Platba bude integrována via GoPay.')}
+                  style={{ 
+                    padding: '0.5rem 1rem', 
+                    background: activeOperator?.role === 'APP OWNER' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(255,255,255,0.05)', 
+                    border: activeOperator?.role === 'APP OWNER' ? '1px solid #fbbf24' : '1px solid var(--accent-color)', 
+                    borderRadius: '8px', color: 'white', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer' 
+                  }}>
+                  {activeOperator?.role === 'APP OWNER' ? 'NASTAVIT' : 'AKTIVOVAT'}
                 </button>
               </div>
             </div>

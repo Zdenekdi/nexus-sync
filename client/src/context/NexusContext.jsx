@@ -8,9 +8,10 @@ export const NexusContext = createContext();
 const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
 
 export const NexusProvider = ({ children }) => {
-  const [lang, setLang] = useState('cz');
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [activeProfileId, setActiveProfileId] = useState(null);
+  const [lang, setLang] = useState(localStorage.getItem('nexus_lang') || 'cz');
+  const [activeTab, setActiveTab] = useState(localStorage.getItem('nexus_active_tab') || 'dashboard');
+  const [activeMarket, setActiveMarket] = useState(localStorage.getItem('nexus_active_market') || 'cz');
+  const [activeProfileId, setActiveProfileId] = useState(localStorage.getItem('nexus_active_profile_id') || null);
   const [showLanding, setShowLanding] = useState(true);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [onlineOnly, setOnlineOnly] = useState(false);
@@ -25,6 +26,15 @@ export const NexusProvider = ({ children }) => {
   const [typingProfiles, setTypingProfiles] = useState({});
   const [showPanicConfirm, setShowPanicConfirm] = useState(false);
   const [justLoggedOut, setJustLoggedOut] = useState(false);
+  
+  // Persist important UI states
+  React.useEffect(() => {
+    localStorage.setItem('nexus_lang', lang);
+    localStorage.setItem('nexus_active_tab', activeTab);
+    localStorage.setItem('nexus_active_market', activeMarket);
+    if (activeProfileId) localStorage.setItem('nexus_active_profile_id', activeProfileId);
+  }, [lang, activeTab, activeMarket, activeProfileId]);
+
   const chatScrollRef = React.useRef(null);
   const isUserScrolled = React.useRef(false);
   const [messages, setMessages] = useState([]);
@@ -446,6 +456,7 @@ export const NexusProvider = ({ children }) => {
     // Basic UI and Logic
     t, lang, setLang,
     activeTab, setActiveTab,
+    activeMarket, setActiveMarket,
     loading: nexusData.isDataLoading,
     activeOperator, activeRole, isAllowed,
     isLoggedIn, token, logout: () => {
