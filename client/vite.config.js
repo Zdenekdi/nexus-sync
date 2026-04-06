@@ -6,6 +6,13 @@ export default defineConfig({
   plugins: [react()],
   base: './',
   build: {
-    sourcemap: true
+    sourcemap: process.env.NODE_ENV !== 'production',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          jssip: ['jssip'],
+        },
+      },
+    },
   }
 })

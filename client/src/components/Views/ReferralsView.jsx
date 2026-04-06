@@ -9,7 +9,8 @@ const ReferralsView = () => {
     isMobile,
     t,
     lang,
-    activeOperator
+    activeOperator,
+    showToast
   } = nexus;
   const referralLink = `https://nexus.sync/ref/${activeOperator?.id || 'default'}`;
 
@@ -52,7 +53,7 @@ const ReferralsView = () => {
               {referralLink}
             </div>
             <button 
-              onClick={() => navigator.clipboard.writeText(referralLink).then(() => alert(lang === 'cz' ? 'Odkaz zkopírován ✓' : 'Link copied ✓'))} 
+              onClick={() => navigator.clipboard.writeText(referralLink).then(() => showToast(lang === 'cz' ? 'Odkaz zkopírován ✓' : 'Link copied ✓', 'success'))} 
               className="action-btn" 
               style={{ width: 'auto', padding: '0 1.25rem', marginTop: 0, background: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >

@@ -18,7 +18,6 @@ export class WebChatAdapter extends ChannelAdapter {
       this.validateConfig();
       // Initialize WebSocket connection for real-time chat
       this.isConnected = true;
-      console.log('WebChat adapter connected');
       return { success: true, channel: 'webchat' };
     } catch (error) {
       console.error('WebChat connection failed:', error);

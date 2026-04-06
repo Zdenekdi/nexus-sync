@@ -1,8 +1,11 @@
-import React, { createContext, useContext, useState, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useState, useMemo, useCallback, useEffect } from 'react';
 import axios from 'axios';
+import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 import { useAuth } from '../hooks/useAuth';
 import { usePermissions } from '../hooks/usePermissions';
 import { useNexusData } from '../hooks/useNexusData';
+import { useSocket } from '../hooks/useSocket';
 
 export const NexusContext = createContext();
 
@@ -45,6 +48,42 @@ export const NexusProvider = ({ children }) => {
   const [clientNotes, setClientNotes] = useState({});
   const [calViewDate, setCalViewDate] = useState(new Date());
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [_toasts, _setToasts] = useState([]);
+
+  // Mobile and native platform detection
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+  const isNativeApp = useMemo(() => Capacitor.isNativePlatform(), []);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Android hardware back button handler
+  useEffect(() => {
+    if (!isNativeApp) return;
+    let listener;
+    try {
+      listener = CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+        if (canGoBack) {
+          window.history.back();
+        } else {
+          CapacitorApp.exitApp();
+        }
+      });
+    } catch (e) {
+      console.warn('[App] Back button listener setup failed:', e);
+    }
+    return () => { listener?.remove?.(); };
+  }, [isNativeApp]);
+
+  // Lightweight showToast available to all context consumers
+  const showToast = useCallback((message, type = 'info') => {
+    const id = Date.now();
+    _setToasts(prev => [...prev.slice(-4), { id, message, type }]);
+    setTimeout(() => _setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+  }, []);
   
   const auth = useAuth({ 
     API_BASE,
@@ -70,7 +109,9 @@ export const NexusProvider = ({ children }) => {
     setMessages,
     setActiveSafetySession: () => {},
     setIsTimerActive: () => {},
-    setTimeLeft: () => {}
+    setTimeLeft: () => {},
+    showToast,
+    lang
   });
 
   const activeOperator = useMemo(() => {
@@ -99,15 +140,48 @@ export const NexusProvider = ({ children }) => {
 
   const { activeRole, isAllowed } = usePermissions(activeOperator, nexusData.rolePermissions);
 
+  // Real-time socket connection for messages, calls, and alerts
+  const [incomingRelayCall, setIncomingRelayCall] = useState(null);
+  const handleNewMessage = useCallback((data) => {
+    if (data?.message) {
+      setMessages(prev => [...prev, data.message]);
+    }
+  }, []);
+  const handleMessageUpdated = useCallback((data) => {
+    if (data?.message) {
+      setMessages(prev => prev.map(m => m.id === data.message.id ? { ...m, ...data.message } : m));
+    }
+  }, []);
+  const handleIncomingCall = useCallback((data) => {
+    setIncomingRelayCall(data);
+  }, []);
+  const handleEmergencyAlert = useCallback((_data) => {
+    showToast(lang === 'cz' ? '🚨 Nouzový poplach!' : '🚨 Emergency alert!', 'error');
+  }, [showToast, lang]);
+  const handleSipIncomingCall = useCallback((_data) => {
+    // SIP call metadata from relay device — supplementary to JsSIP WebRTC session
+    // SipManager handles the actual WebRTC call UI
+  }, []);
+
+  useSocket(token, handleNewMessage, handleMessageUpdated, handleIncomingCall, handleEmergencyAlert, handleSipIncomingCall);
+
   const onLogin = useCallback(async (email, password) => {
-    const success = await auth.handleLogin(email, password);
-    if (success) {
+    const result = await auth.handleLogin(email, password);
+    if (result?.success) {
       setShowLanding(false);
       setActiveTab('dashboard');
       setJustLoggedOut(false);
+      return true;
     }
-    return success;
-  }, [auth]);
+    // Show user-friendly error toast
+    const errorMessages = {
+      connectionError: lang === 'cz' ? 'Chyba připojení. Zkontrolujte internet.' : 'Connection error. Please check your internet.',
+      loginError: lang === 'cz' ? 'Neplatné přihlašovací údaje.' : 'Invalid credentials.',
+    };
+    const msg = errorMessages[result?.error] || result?.error || (lang === 'cz' ? 'Přihlášení se nezdařilo.' : 'Login failed.');
+    showToast(msg, 'error');
+    return false;
+  }, [auth, showToast, lang]);
 
   const profiles = nexusData.profiles || [];
   
@@ -116,7 +190,6 @@ export const NexusProvider = ({ children }) => {
     
     // Normalize IDs and role for matching
     const opId = String(activeOperator.id || activeOperator._id || '');
-    const _userAgencyId = activeOperator?.agencyId || activeOperator?.clientId;
     const rawRoleStr = String(activeRole || '').toLowerCase();
     
     // High-level roles (Agency Admin, Manager, Senior Operator)
@@ -163,10 +236,11 @@ export const NexusProvider = ({ children }) => {
       setSubscriptionPlans(res.data);
     } catch (err) {
       console.error('Fetch plans error:', err);
+      showToast(lang === 'cz' ? 'Nepodařilo se načíst tarify.' : 'Failed to load plans.', 'error');
     } finally {
       setIsPlansLoading(false);
     }
-  }, [token]);
+  }, [token, showToast, lang]);
 
   const updatePlans = useCallback(async (newPlans) => {
     try {
@@ -254,8 +328,8 @@ export const NexusProvider = ({ children }) => {
   }, []);
 
   const startCall = useCallback(() => {
-    alert('Initializing secure VoIP relay...');
-  }, []);
+    showToast(lang === 'cz' ? 'Inicializace VoIP spojení...' : 'Initializing secure VoIP relay...', 'info');
+  }, [showToast, lang]);
 
   const handleQuickSaveMeeting = useCallback(() => {
     if (!detectedMeeting) return;
@@ -481,6 +555,10 @@ export const NexusProvider = ({ children }) => {
     fetchPlans,
     subscriptionPlans,
     isPlansLoading,
+    showToast,
+    contextToasts: _toasts,
+    isMobile,
+    isNativeApp,
     isSidebarCollapsed, setIsSidebarCollapsed,
     mobileView, setMobileView,
     inlinePanelTab, setInlinePanelTab,
@@ -491,6 +569,9 @@ export const NexusProvider = ({ children }) => {
     typingProfiles, setTypingProfiles,
     showPanicConfirm, setShowPanicConfirm,
     chatScrollRef, isUserScrolled,
+    
+    // Relay call (from socket incoming_call event)
+    incomingRelayCall, setIncomingRelayCall,
     
     // Crucial handlers that were causing "not a function" errors
     handleSendMessage, handleTranslate,
@@ -518,6 +599,21 @@ export const NexusProvider = ({ children }) => {
   return (
     <NexusContext.Provider value={value}>
       {children}
+      {/* Context-level toast display */}
+      {_toasts.length > 0 && (
+        <div style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 99999, display: 'flex', flexDirection: 'column', gap: '0.5rem', pointerEvents: 'none' }}>
+          {_toasts.map(toast => (
+            <div key={toast.id} style={{
+              pointerEvents: 'auto',
+              padding: '0.75rem 1.25rem', borderRadius: '12px', fontWeight: '700', fontSize: '0.85rem',
+              color: 'white', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', animation: 'fadeIn 0.3s ease',
+              background: toast.type === 'error' ? '#ef4444' : toast.type === 'success' ? '#22c55e' : toast.type === 'warning' ? '#f59e0b' : '#3b82f6'
+            }}>
+              {toast.message}
+            </div>
+          ))}
+        </div>
+      )}
     </NexusContext.Provider>
   );
 };

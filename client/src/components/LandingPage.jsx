@@ -8,7 +8,14 @@ import {
   Users, 
   MessageSquare, 
   ArrowRight,
-  ChevronDown
+  ChevronDown,
+  Calendar,
+  Smartphone,
+  Package,
+  Settings,
+  Bell,
+  MapPin,
+  Star
 } from 'lucide-react';
 
 import { useNexus } from '../context/NexusContext';
@@ -45,17 +52,40 @@ const LandingPage = () => {
       featuresTitle: "Výhody pro váš tým",
       features: [
         { 
+          icon: <MessageSquare size={18} />,
           title: "Pro Operátorky", 
           desc: "AI Smart Replies odbaví chaty za vás. Unified Inbox zajistí, že vám žádná zpráva neuteče. Rychlejší a klidnější směny bez neustálého přepínání oken." 
         },
         { 
+          icon: <Shield size={18} />,
           title: "Pro Modelky", 
           desc: "Safety Guard a GPS tracking pro bezpečí v terénu. Živý přehled výdělků a rezervací přímo v mobilu. Snadný check-in přes tlačítko 'Klient dorazil'." 
         },
         { 
+          icon: <BarChart3 size={18} />,
           title: "Pro Manažery", 
           desc: "Absolutní kontrola nad týmem, real-time analytika a automatické nouzové alerty. Škálování bez stresu z chaosu v datech." 
+        },
+        {
+          icon: <Settings size={18} />,
+          title: "Pro Majitele (App Owner)",
+          desc: "Správa neomezeného množství agentur, konfigurace předplatných plánů, řízení globálních oprávnění a monitoring serverové infrastruktury na jednom místě."
         }
+      ],
+      platformTitle: "Kompletní platforma v jednom",
+      platformFeatures: [
+        { icon: <MessageSquare size={20} />, title: "Unified Inbox", desc: "Všechny konverzace ze všech profilů na jednom místě. SMS relay přes vlastní Android Relay zařízení." },
+        { icon: <Calendar size={20} />, title: "Kalendář & Rezervace", desc: "Správa schůzek s podporou incall/outcall. Automatické napojení na Safety Guard při outcall rezervacích." },
+        { icon: <Shield size={20} />, title: "Safety Guard", desc: "GPS sledování v reálném čase, panik tlačítko, automatická eskalace s grace period a Telegram notifikace manažerům." },
+        { icon: <Smartphone size={20} />, title: "Nexus Relay APK", desc: "Nativní Android aplikace pro relay SMS zpráv. Auto-provisioning SIP/VoIP, device binding a push notifikace." },
+        { icon: <BarChart3 size={20} />, title: "Analytika & Statistiky", desc: "Denní statistiky příjmů, počtu rezervací a aktivních profilů. Dashboard pro manažery i majitele s filtry podle agentury." },
+        { icon: <Users size={20} />, title: "Hierarchie & Role", desc: "6 úrovní rolí (App Owner → Agency Admin → Manager → Senior Operator → Operator → Model) s dynamickými oprávněními." },
+        { icon: <Package size={20} />, title: "Inventář", desc: "Správa vybavení podle lokací s upozorněním na nízké zásoby. Sledování threshold hodnot pro automatické alerty." },
+        { icon: <Globe size={20} />, title: "Webové profily", desc: "Správa bio, galerie a online prezentace profilů. Synchronizace s externími platformami." },
+        { icon: <Bell size={20} />, title: "Push notifikace", desc: "Firebase Cloud Messaging pro okamžité notifikace o nových zprávách, hovorech a bezpečnostních alertech." },
+        { icon: <Lock size={20} />, title: "Bezpečnost", desc: "JWT autentizace, bcrypt hashování, šifrování SIP hesel, rate limiting, CORS whitelist a Helmet security headers." },
+        { icon: <MapPin size={20} />, title: "Multi-tenant architektura", desc: "Kompletní izolace dat mezi agenturami. Každá agentura má vlastní role, oprávnění, profily a nastavení." },
+        { icon: <Star size={20} />, title: "QA Hub & Referraly", desc: "Kontrola kvality komunikace operátorek. Referral systém pro růst agenturní sítě s odměnami." }
       ],
       footer: "Nexus Systems – Váš nástroj pro efektivní škálování."
     },
@@ -85,17 +115,40 @@ const LandingPage = () => {
       featuresTitle: "Benefits for Your Team",
       features: [
         { 
+          icon: <MessageSquare size={18} />,
           title: "For Operators", 
           desc: "AI Smart Replies handle the talking for you. Unified Inbox ensures no lead is lost. Faster, calmer shifts with everything in one place." 
         },
         { 
+          icon: <Shield size={18} />,
           title: "For Models", 
           desc: "Safety Guard and GPS tracking for field protection. Live earnings and booking tracker on your phone. Easy check-in with 'Client Arrived' button." 
         },
         { 
+          icon: <BarChart3 size={18} />,
           title: "For Managers", 
           desc: "Absolute team oversight, real-time analytics, and automated emergency alerts. Scale without the stress of data chaos." 
+        },
+        {
+          icon: <Settings size={18} />,
+          title: "For App Owners",
+          desc: "Manage unlimited agencies, configure subscription plans, control global permissions, and monitor server infrastructure — all from one dashboard."
         }
+      ],
+      platformTitle: "Complete Platform in One Place",
+      platformFeatures: [
+        { icon: <MessageSquare size={20} />, title: "Unified Inbox", desc: "All conversations from all profiles in one place. SMS relay via dedicated Android Relay devices." },
+        { icon: <Calendar size={20} />, title: "Calendar & Bookings", desc: "Appointment management with incall/outcall support. Automatic Safety Guard activation for outcall bookings." },
+        { icon: <Shield size={20} />, title: "Safety Guard", desc: "Real-time GPS tracking, panic button, automatic escalation with grace period, and Telegram alerts to managers." },
+        { icon: <Smartphone size={20} />, title: "Nexus Relay APK", desc: "Native Android app for SMS relay. Auto-provisioning SIP/VoIP, device binding, and push notifications." },
+        { icon: <BarChart3 size={20} />, title: "Analytics & Statistics", desc: "Daily revenue stats, booking counts, and active profiles. Manager and owner dashboards with agency filters." },
+        { icon: <Users size={20} />, title: "Hierarchy & Roles", desc: "6 role levels (App Owner → Agency Admin → Manager → Senior Operator → Operator → Model) with dynamic permissions." },
+        { icon: <Package size={20} />, title: "Inventory", desc: "Equipment management by location with low-stock alerts. Threshold monitoring for automatic notifications." },
+        { icon: <Globe size={20} />, title: "Web Profiles", desc: "Manage bios, galleries, and online presence. Synchronization with external platforms." },
+        { icon: <Bell size={20} />, title: "Push Notifications", desc: "Firebase Cloud Messaging for instant alerts on new messages, calls, and safety events." },
+        { icon: <Lock size={20} />, title: "Security", desc: "JWT authentication, bcrypt hashing, SIP password encryption, rate limiting, CORS whitelist, and Helmet headers." },
+        { icon: <MapPin size={20} />, title: "Multi-Tenant Architecture", desc: "Complete data isolation between agencies. Each agency gets its own roles, permissions, profiles, and settings." },
+        { icon: <Star size={20} />, title: "QA Hub & Referrals", desc: "Operator communication quality control. Referral system for agency network growth with rewards." }
       ],
       footer: "Nexus Systems – Your tool for efficient scaling."
     }
@@ -218,13 +271,15 @@ const LandingPage = () => {
           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', textAlign: isMobile ? 'center' : 'left' }}>
             <h2 style={{ fontSize: isMobile ? '1.8rem' : '2.5rem', fontWeight: '900', lineHeight: 1.2, marginBottom: '1.5rem' }}>{t.featuresTitle}</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', marginBottom: '2rem' }}>
-              Nexus Hub není jen nástroj, je to váš strategický partner pro nekonečný růst a absolutní kontrolu.
+              {lang === 'cz'
+                ? 'Nexus Hub není jen nástroj, je to váš strategický partner pro nekonečný růst a absolutní kontrolu.'
+                : 'Nexus Hub is not just a tool — it is your strategic partner for infinite growth and absolute control.'}
             </p>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {t.features.map((f, i) => (
               <div key={i} style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start' }}>
-                <div style={{ marginTop: '0.2rem', color: 'var(--success-color)' }}><Zap size={18} fill="currentColor" /></div>
+                <div style={{ marginTop: '0.2rem', color: 'var(--success-color)' }}>{f.icon}</div>
                 <div>
                   <h4 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '0.5rem' }}>{f.title}</h4>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>{f.desc}</p>
@@ -232,6 +287,27 @@ const LandingPage = () => {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Platform Features Grid */}
+      <section style={{ padding: isMobile ? '3rem 5%' : '6rem 5%', position: 'relative', zIndex: 1 }}>
+        <h2 style={{ textAlign: 'center', fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900', marginBottom: '1rem' }}>{t.platformTitle}</h2>
+        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '1rem', maxWidth: '600px', margin: '0 auto 3rem' }}>
+          {lang === 'cz' ? '90+ API endpointů, 21 databázových modelů, 6 úrovní rolí' : '90+ API endpoints, 21 database models, 6 role levels'}
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem', maxWidth: '1200px', margin: '0 auto' }}>
+          {t.platformFeatures.map((pf, i) => (
+            <div key={i} className="glass-card" style={{ padding: '1.5rem', borderRadius: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--card-border)', display: 'flex', gap: '1rem', alignItems: 'flex-start', transition: 'border-color 0.3s' }}>
+              <div style={{ width: '40px', height: '40px', minWidth: '40px', background: 'rgba(59,130,246,0.1)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-color)' }}>
+                {pf.icon}
+              </div>
+              <div>
+                <h4 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '0.4rem' }}>{pf.title}</h4>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.5 }}>{pf.desc}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 

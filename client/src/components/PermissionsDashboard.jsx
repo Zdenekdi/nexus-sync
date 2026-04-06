@@ -6,7 +6,7 @@ import { useNexus } from '../context/NexusContext';
 
 const PermissionsDashboard = ({ agencyId = null, onUpdate = null }) => {
   const nexus = useNexus();
-  const { t, activeOperator: _activeOperator, isMobile, API_BASE, token } = nexus;
+  const { t, activeOperator: _activeOperator, isMobile, API_BASE, token, showToast, lang } = nexus;
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState(null);
@@ -26,7 +26,7 @@ const PermissionsDashboard = ({ agencyId = null, onUpdate = null }) => {
       setError(null);
     } catch (err) {
       console.error('Failed to fetch roles:', err);
-      setError('Nepodařilo se načíst oprávnění z databáze.');
+      setError(lang === 'cz' ? 'Nepodařilo se načíst oprávnění.' : 'Failed to load permissions.');
     } finally {
       setLoading(false);
     }
@@ -60,10 +60,10 @@ const PermissionsDashboard = ({ agencyId = null, onUpdate = null }) => {
       });
       
       if (onUpdate) onUpdate();
-      // Optional: show local success state
+      showToast(lang === 'cz' ? 'Oprávnění uložena.' : 'Permissions saved.', 'success');
     } catch (err) {
       console.error('Save failed:', err);
-      alert('Chyba při ukládání oprávnění.');
+      showToast(lang === 'cz' ? 'Nepodařilo se uložit oprávnění.' : 'Failed to save permissions.', 'error');
     } finally {
       setSavingId(null);
     }

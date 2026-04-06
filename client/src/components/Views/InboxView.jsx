@@ -21,7 +21,7 @@ const InboxView = () => {
     bookingSchedule, calViewDate, setCalViewDate, setIsBookingModalOpen,
     setNewBookingForm, activeContextTab, setActiveContextTab, lang, t,
     activeProfile, handleSendMessage, handleTranslate, handleSaveNote,
-    handleDeleteNote, startCall, handleQuickSaveMeeting
+    handleDeleteNote, startCall, handleQuickSaveMeeting, showToast
   } = nexus;
   return (
     <div style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden', position: 'relative' }} className="fade-in inbox-grid">
@@ -129,7 +129,7 @@ const InboxView = () => {
                       </button>
                     )}
                     <button 
-                      onClick={() => alert('Options coming soon')}
+                      onClick={() => showToast(lang === 'cz' ? 'Brzy k dispozici' : 'Options coming soon', 'info')}
                       style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                     >
                       <MoreVertical size={22} />

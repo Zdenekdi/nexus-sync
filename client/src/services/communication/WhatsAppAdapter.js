@@ -18,7 +18,6 @@ export class WhatsAppAdapter extends ChannelAdapter {
       this.validateConfig();
       // Initialize WhatsApp Business API client
       this.isConnected = true;
-      console.log('WhatsApp adapter connected');
       return { success: true, channel: 'whatsapp' };
     } catch (error) {
       console.error('WhatsApp connection failed:', error);

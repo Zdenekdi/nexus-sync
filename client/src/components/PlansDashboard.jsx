@@ -4,7 +4,7 @@ import { CreditCard, Users, Check, FileEdit, CheckCheck, Zap, RefreshCw, AlertCi
 import { NexusContext } from '../context/NexusContext';
 
 const PlansDashboard = () => {
-  const { t, activeOperator, activeRole, subscriptionPlans, fetchPlans, updatePlans, isPlansLoading, activeMarket, setActiveMarket, agencies, isMobile } = useContext(NexusContext);
+  const { t, activeOperator, activeRole, subscriptionPlans, fetchPlans, updatePlans, isPlansLoading, activeMarket, setActiveMarket, agencies, isMobile, showToast, lang } = useContext(NexusContext);
   const currentAgency = agencies[0];
   const [editingPlan, setEditingPlan] = useState(null);
   
@@ -17,7 +17,7 @@ const PlansDashboard = () => {
   );
 
   useEffect(() => {
-    if (activeOperator?.id && activeOperator?.role === 'APP OWNER') {
+    if (activeOperator?.id) {
       fetchPlans();
     }
   }, [activeOperator?.id]);
@@ -83,10 +83,10 @@ const PlansDashboard = () => {
                 ];
                 const result = await updatePlans(defaultPlans);
                 if (result.success) {
-                  alert('Tarify byly úspěšně inicializovány. Stránka se nyní aktualizuje.');
+                  showToast(lang === 'cz' ? 'Tarify byly úspěšně inicializovány.' : 'Plans initialized successfully.', 'success');
                   fetchPlans();
                 } else {
-                  alert('CHYBA ZE SERVERU: ' + result.error);
+                  showToast(lang === 'cz' ? 'Nepodařilo se uložit tarify.' : 'Failed to save plans.', 'error');
                 }
               }}
               style={{ padding: '1rem 2rem', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 15px rgba(37, 99, 235, 0.3)' }}
@@ -220,7 +220,7 @@ const PlansDashboard = () => {
                   {addon.prices[activeMarket.toLowerCase()]} {getCurrencySymbol(activeMarket)}
                 </span>
                 <button 
-                  onClick={() => activeOperator?.role === 'APP OWNER' ? setEditingPlan({ ...addon, isAddon: true }) : alert('Platba bude integrována via GoPay.')}
+                  onClick={() => activeOperator?.role === 'APP OWNER' ? setEditingPlan({ ...addon, isAddon: true }) : showToast(lang === 'cz' ? 'Platba bude integrována přes GoPay.' : 'Payment will be integrated via GoPay.', 'info')}
                   style={{ 
                     padding: '0.5rem 1rem', 
                     background: activeOperator?.role === 'APP OWNER' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(59, 130, 246, 0.1)', 
@@ -279,12 +279,12 @@ const PlansDashboard = () => {
                   className="action-btn" 
                   style={{ flex: 1, background: 'var(--accent-color)' }} 
                   onClick={async () => {
-                    const newPlans = subscriptionPlans.map(p => p.id === editingPlan.id ? editingPlan : p);
-                    const success = await updatePlans(newPlans);
-                    if (success) {
+                    const result = await updatePlans(newPlans);
+                    if (result.success) {
                       setEditingPlan(null);
+                      showToast(lang === 'cz' ? 'Změny uloženy.' : 'Changes saved.', 'success');
                     } else {
-                      alert('Chyba při ukládání do DB.');
+                      showToast(lang === 'cz' ? 'Nepodařilo se uložit změny.' : 'Failed to save changes.', 'error');
                     }
                   }}
                 >

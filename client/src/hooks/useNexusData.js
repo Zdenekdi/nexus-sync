@@ -15,7 +15,9 @@ export function useNexusData({
   setMessages,
   setActiveSafetySession,
   setIsTimerActive,
-  setTimeLeft
+  setTimeLeft,
+  showToast,
+  lang
 }) {
   const [profiles, setProfiles] = useState([]);
   const [agencies, setAgencies] = useState([]);
@@ -85,9 +87,20 @@ export function useNexusData({
         axiosWithTiming(`${API_BASE}/agency/users`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/device/bindings`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/agency/stats`, { headers: { Authorization: `Bearer ${token}` } }),
-        axiosWithTiming(`${API_BASE}/agency/all`, { headers: { Authorization: `Bearer ${token}` } }),
+        axiosWithTiming(`${API_BASE}/agency/all`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
         axiosWithTiming(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
+
+      // For non-owner roles, fetch own agency details if /agency/all returned nothing
+      let agencyData = agencyRes?.data;
+      if (!agencyData || !Array.isArray(agencyData) || agencyData.length === 0) {
+        try {
+          const ownAgencyRes = await axiosWithTiming(`${API_BASE}/agency/settings`, { headers: { Authorization: `Bearer ${token}` } });
+          if (ownAgencyRes?.data) {
+            agencyData = [ownAgencyRes.data];
+          }
+        } catch (e) { /* ignore */ }
+      }
 
       if (selfRes && selfRes.data) {
         setActiveOperator(selfRes.data);
@@ -147,7 +160,7 @@ export function useNexusData({
           id: b.id, device: b.model || 'Android', status: b.active ? 'Active' : 'Disabled'
         })));
       }
-      if (agencyRes?.data) setAgencies(Array.isArray(agencyRes.data) ? agencyRes.data : []);
+      if (agencyData) setAgencies(Array.isArray(agencyData) ? agencyData : [agencyData]);
 
     } catch (err) {
       console.error('[Data] Init error:', err);
@@ -167,8 +180,11 @@ export function useNexusData({
         headers: { Authorization: `Bearer ${token}` }
       });
       initData();
-    } catch (err) { console.error(err); }
-  }, [activeProfileId, bioText, token, API_BASE, initData]);
+    } catch (err) {
+      console.error(err);
+      if (showToast) showToast(lang === 'cz' ? 'Nepodařilo se uložit popis.' : 'Failed to save description.', 'error');
+    }
+  }, [activeProfileId, bioText, token, API_BASE, initData, showToast, lang]);
 
   const handleSyncAll = useCallback(() => {
     // Implement real sync via API when needed
@@ -182,8 +198,11 @@ export function useNexusData({
         profileId: activeProfileId, title: `Meeting: ${meeting.time}`, date: meeting.date, startTime: meeting.time, duration: meeting.duration
       }, { headers: { Authorization: `Bearer ${token}` } });
       initData();
-    } catch (err) { console.error(err); }
-  }, [activeProfileId, token, API_BASE, initData]);
+    } catch (err) {
+      console.error(err);
+      if (showToast) showToast(lang === 'cz' ? 'Nepodařilo se uložit schůzku.' : 'Failed to save meeting.', 'error');
+    }
+  }, [activeProfileId, token, API_BASE, initData, showToast, lang]);
 
   return {
     profiles, agencies, agencySettings: _agencySettings, operators, sessions, stats, activeSubscription: _activeSubscription,

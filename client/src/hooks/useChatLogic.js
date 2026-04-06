@@ -155,6 +155,7 @@ export function useChatLogic({
       setChatMessages(res.data || []);
     } catch (err) {
       console.error('Failed to fetch chat messages:', err);
+      if (_showToast) _showToast(t?.('fetchMessagesError') || 'Failed to load messages', 'error');
     } finally {
       setIsHistoryLoading(false);
     }
@@ -216,8 +217,7 @@ export function useChatLogic({
       setMessages(res.data || []);
     } catch (err) {
       console.error('Failed to refresh messages:', err);
-    }
-  }, [token, API_BASE]);
+    }  }, [token, API_BASE]);
 
   const handleSaveNote = useCallback(async () => {
     if (!internalNote.trim() || !activeContactId || !activeProfileId) return;
@@ -234,6 +234,7 @@ export function useChatLogic({
       setInternalNote('');
     } catch (err) {
       console.error('[Notes] save error:', err.message);
+      if (_showToast) _showToast(t?.('saveNoteError') || 'Failed to save note', 'error');
     }
   }, [internalNote, activeContactId, activeProfileId, API_BASE, token]);
 

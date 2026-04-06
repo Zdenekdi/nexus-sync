@@ -18,7 +18,6 @@ export class SMSAdapter extends ChannelAdapter {
       this.validateConfig();
       // Initialize SMS gateway client
       this.isConnected = true;
-      console.log(`SMS adapter connected (${this.gateway})`);
       return { success: true, channel: 'sms', gateway: this.gateway };
     } catch (error) {
       console.error('SMS connection failed:', error);

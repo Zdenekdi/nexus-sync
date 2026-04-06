@@ -1,28 +1,26 @@
 import React, { useState } from 'react';
 import { useNexus } from '../context/NexusContext';
 import { 
-  Lock, Mail, ArrowRight, Loader2, ShieldCheck, 
-  Globe, Smartphone, Zap, CheckCircle2 
+  Lock, Mail, ArrowRight, Loader2, 
+  Globe, Zap, CheckCircle2 
 } from 'lucide-react';
 
 const LoginScreen = () => {
-  const { onLogin, t, setLang, lang, justLoggedOut, setJustLoggedOut, setShowLanding } = useNexus();
+  const { onLogin, t, setLang, lang, justLoggedOut, setJustLoggedOut, setShowLanding, showToast } = useNexus();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [_error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     
     if (!email || !password) {
-      setError('Please fill in all fields');
+      showToast(lang === 'cs' ? 'Vyplňte všechna pole' : 'Please fill in all fields', 'error');
       return;
     }
     
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError('Please enter a valid email address');
+      showToast(lang === 'cs' ? 'Zadejte platný e-mail' : 'Please enter a valid email address', 'error');
       return;
     }
     
@@ -30,7 +28,6 @@ const LoginScreen = () => {
     try {
       await onLogin(email, password);
     } catch (err) {
-      setError(err?.response?.data?.message || 'Login failed');
       console.error(err);
     } finally {
       setLoading(false);

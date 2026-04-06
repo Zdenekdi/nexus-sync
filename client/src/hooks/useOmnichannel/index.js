@@ -55,9 +55,7 @@ export const useOmnichannel = (config = {}) => {
       });
 
       // Register event listeners
-      service.on('messageSent', (data) => {
-        console.log('Message sent:', data);
-      });
+      service.on('messageSent', () => {});
 
       service.on('messageError', (data) => {
         setError(data.error);
