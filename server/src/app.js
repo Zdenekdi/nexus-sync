@@ -40,6 +40,7 @@ const emergencyRoutes = require('./routes/emergencyRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const referralRoutes = require('./routes/referralRoutes');
 const auditRoutes = require('./routes/auditRoutes');
+const webhookRoutes = require('./routes/webhookRoutes');
 
 const app = express();
 
@@ -203,6 +204,7 @@ app.use('/api/emergencies', emergencyRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/referrals', referralRoutes);
 app.use('/api/audit-logs', auditRoutes);
+app.use('/api/webhooks', webhookRoutes);
 
 // Health check with system status
 app.get('/health', async (req, res) => {
