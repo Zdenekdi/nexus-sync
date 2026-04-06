@@ -2,36 +2,137 @@ import React, { useState } from 'react';
 import { useNexus } from '../context/NexusContext';
 import { 
   Lock, Mail, ArrowRight, Loader2, 
-  Globe, Zap, CheckCircle2 
+  Globe, Zap, CheckCircle2, User, Building2, KeyRound, Copy, Check
 } from 'lucide-react';
 
 const LoginScreen = () => {
-  const { onLogin, t, setLang, lang, justLoggedOut, setJustLoggedOut, setShowLanding, showToast } = useNexus();
+  const { onLogin, onRegisterAgency, onRegisterUser, t, setLang, lang, justLoggedOut, setJustLoggedOut, setShowLanding, showToast } = useNexus();
+  const [tab, setTab] = useState('login'); // login | register-agency | join-agency
+  const [loading, setLoading] = useState(false);
+  const [createdInviteCode, setCreatedInviteCode] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  // Login form
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
+  // Register agency form
+  const [regFullName, setRegFullName] = useState('');
+  const [regAgencyName, setRegAgencyName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+
+  // Join agency form
+  const [joinFullName, setJoinFullName] = useState('');
+  const [joinEmail, setJoinEmail] = useState('');
+  const [joinPassword, setJoinPassword] = useState('');
+  const [joinInviteCode, setJoinInviteCode] = useState('');
+  const [joinRole, setJoinRole] = useState('Operator');
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const isCz = lang === 'cz' || lang === 'cs';
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    
     if (!email || !password) {
-      showToast(lang === 'cs' ? 'Vyplňte všechna pole' : 'Please fill in all fields', 'error');
+      showToast(isCz ? 'Vyplňte všechna pole' : 'Please fill in all fields', 'error');
       return;
     }
-    
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      showToast(lang === 'cs' ? 'Zadejte platný e-mail' : 'Please enter a valid email address', 'error');
+    if (!emailRegex.test(email)) {
+      showToast(isCz ? 'Zadejte platný e-mail' : 'Please enter a valid email', 'error');
       return;
     }
-    
+    setLoading(true);
+    try { await onLogin(email, password); } 
+    catch (err) { console.error(err); } 
+    finally { setLoading(false); }
+  };
+
+  const handleRegisterAgency = async (e) => {
+    e.preventDefault();
+    if (!regFullName || !regAgencyName || !regEmail || !regPassword) {
+      showToast(isCz ? 'Vyplňte všechna pole' : 'Please fill in all fields', 'error');
+      return;
+    }
+    if (!emailRegex.test(regEmail)) {
+      showToast(isCz ? 'Zadejte platný e-mail' : 'Please enter a valid email', 'error');
+      return;
+    }
+    if (regPassword.length < 6) {
+      showToast(isCz ? 'Heslo musí mít alespoň 6 znaků' : 'Password must be at least 6 characters', 'error');
+      return;
+    }
     setLoading(true);
     try {
-      await onLogin(email, password);
+      const result = await onRegisterAgency({ fullName: regFullName, agencyName: regAgencyName, email: regEmail, password: regPassword });
+      if (result?.success) {
+        showToast(isCz ? 'Agentura úspěšně zaregistrována!' : 'Agency registered successfully!', 'success');
+        setCreatedInviteCode(result.inviteCode);
+      } else {
+        showToast(result?.error || (isCz ? 'Registrace selhala' : 'Registration failed'), 'error');
+      }
     } catch (err) {
       console.error(err);
-    } finally {
-      setLoading(false);
+      showToast(isCz ? 'Chyba spojení' : 'Connection error', 'error');
+    } finally { setLoading(false); }
+  };
+
+  const handleJoinAgency = async (e) => {
+    e.preventDefault();
+    if (!joinFullName || !joinEmail || !joinPassword || !joinInviteCode) {
+      showToast(isCz ? 'Vyplňte všechna pole' : 'Please fill in all fields', 'error');
+      return;
     }
+    if (!emailRegex.test(joinEmail)) {
+      showToast(isCz ? 'Zadejte platný e-mail' : 'Please enter a valid email', 'error');
+      return;
+    }
+    if (joinPassword.length < 6) {
+      showToast(isCz ? 'Heslo musí mít alespoň 6 znaků' : 'Password must be at least 6 characters', 'error');
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = await onRegisterUser({ fullName: joinFullName, email: joinEmail, password: joinPassword, inviteCode: joinInviteCode, roleName: joinRole });
+      if (result?.success) {
+        showToast(isCz ? 'Registrace úspěšná! Nyní se přihlaste.' : 'Registered! Please log in now.', 'success');
+        setTab('login');
+        setEmail(joinEmail);
+      } else {
+        showToast(result?.error || (isCz ? 'Registrace selhala' : 'Registration failed'), 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast(isCz ? 'Chyba spojení' : 'Connection error', 'error');
+    } finally { setLoading(false); }
+  };
+
+  const handleCopyCode = () => {
+    if (createdInviteCode) {
+      navigator.clipboard.writeText(createdInviteCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const inputStyle = {
+    width: '100%',
+    padding: '0.6rem 0.85rem 0.6rem 2.4rem',
+    background: 'rgba(0,0,0,0.3)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: '10px',
+    color: 'white',
+    fontSize: '0.85rem',
+    outline: 'none'
+  };
+
+  const labelStyle = { fontSize: '0.65rem', fontWeight: '800', color: '#64748b', marginBottom: '0.3rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' };
+  const iconStyle = { position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#475569' };
+
+  const tabLabels = {
+    login: isCz ? 'Přihlášení' : 'Login',
+    'register-agency': isCz ? 'Nová agentura' : 'New Agency',
+    'join-agency': isCz ? 'Připojit se' : 'Join Agency'
   };
 
   return (
@@ -42,28 +143,25 @@ const LoginScreen = () => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      overflow: 'hidden',
-      padding: '0.5rem',
+      overflow: 'auto',
+      padding: '1rem 0.5rem',
       position: 'fixed'
     }}>
       <div style={{
         width: '100%',
-        maxWidth: '360px',
+        maxWidth: '380px',
         display: 'flex',
         flexDirection: 'column',
         gap: '0.75rem',
         animation: 'fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1)'
       }}>
-        {/* LOGO AREA - ULTRA COMPACT */}
+        {/* LOGO */}
         <div style={{ textAlign: 'center' }}>
           <div style={{
-            width: '44px',
-            height: '44px',
+            width: '44px', height: '44px',
             background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
             borderRadius: '12px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 0 20px rgba(59, 130, 246, 0.3)',
             marginBottom: '0.5rem'
           }}>
@@ -73,150 +171,233 @@ const LoginScreen = () => {
             Nexus Hub
           </h1>
         </div>
-        
-        {/* LOGOUT SUCCESS MESSAGE */}
+
+        {/* LOGOUT SUCCESS */}
         {justLoggedOut && (
           <div style={{
             background: 'rgba(16, 185, 129, 0.1)',
             border: '1px solid rgba(16, 185, 129, 0.2)',
-            padding: '0.75rem',
-            borderRadius: '12px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem',
+            padding: '0.75rem', borderRadius: '12px',
+            display: 'flex', alignItems: 'center', gap: '0.75rem',
             animation: 'fadeInUp 0.4s ease-out'
           }}>
             <CheckCircle2 color="#10b981" size={18} />
-            <span style={{ color: '#10b981', fontSize: '0.8rem', fontWeight: '600' }}>
-              {t('loggedOutSuccess')}
-            </span>
-            <button 
-              onClick={() => setJustLoggedOut(false)}
-              style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '1rem' }}
-            >
-              ×
+            <span style={{ color: '#10b981', fontSize: '0.8rem', fontWeight: '600' }}>{t('loggedOutSuccess')}</span>
+            <button onClick={() => setJustLoggedOut(false)} style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '1rem' }}>×</button>
+          </div>
+        )}
+
+        {/* INVITE CODE SUCCESS */}
+        {createdInviteCode && (
+          <div style={{
+            background: 'rgba(59, 130, 246, 0.1)',
+            border: '1px solid rgba(59, 130, 246, 0.3)',
+            padding: '1rem', borderRadius: '12px',
+            animation: 'fadeInUp 0.4s ease-out'
+          }}>
+            <div style={{ color: '#93c5fd', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
+              {isCz ? 'Zvací kód vaší agentury' : 'Your Agency Invite Code'}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <code style={{ 
+                flex: 1, padding: '0.6rem 1rem', background: 'rgba(0,0,0,0.4)', borderRadius: '8px',
+                color: '#60a5fa', fontSize: '1rem', fontWeight: '900', letterSpacing: '0.05em', fontFamily: 'monospace'
+              }}>
+                {createdInviteCode}
+              </code>
+              <button onClick={handleCopyCode} style={{
+                padding: '0.6rem', background: 'rgba(59, 130, 246, 0.2)', border: '1px solid rgba(59, 130, 246, 0.3)',
+                borderRadius: '8px', color: '#60a5fa', cursor: 'pointer', display: 'flex'
+              }}>
+                {copied ? <Check size={16} /> : <Copy size={16} />}
+              </button>
+            </div>
+            <p style={{ color: '#94a3b8', fontSize: '0.7rem', marginTop: '0.5rem', lineHeight: '1.4' }}>
+              {isCz 
+                ? 'Sdílejte tento kód s členy vaší agentury. Mohou se pomocí něj registrovat přes záložku "Připojit se".'
+                : 'Share this code with your team members. They can register using the "Join Agency" tab.'}
+            </p>
+            <button onClick={() => { setCreatedInviteCode(null); setTab('login'); }} style={{
+              marginTop: '0.75rem', width: '100%', padding: '0.6rem',
+              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+              color: 'white', border: 'none', borderRadius: '8px', fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer'
+            }}>
+              {isCz ? 'Přejít na přihlášení' : 'Go to Login'}
             </button>
           </div>
         )}
 
-        {/* LOGIN CARD */}
-        <div className="glass-card" style={{
-          padding: '1.25rem',
-          borderRadius: '20px',
-          background: 'rgba(15, 23, 42, 0.6)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          backdropFilter: 'blur(20px)'
-        }}>
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <div className="input-group">
-              <label style={{ fontSize: '0.65rem', fontWeight: '800', color: '#64748b', marginBottom: '0.3rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                {t('emailLabel')}
-              </label>
-              <div style={{ position: 'relative' }}>
-                <Mail size={14} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@agency.com"
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem 0.85rem 0.6rem 2.4rem',
-                    background: 'rgba(0,0,0,0.3)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '10px',
-                    color: 'white',
-                    fontSize: '0.85rem',
-                    outline: 'none'
-                  }}
-                />
-              </div>
+        {/* TABS */}
+        {!createdInviteCode && (
+          <>
+            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '3px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              {['login', 'register-agency', 'join-agency'].map(t => (
+                <button key={t} onClick={() => setTab(t)} style={{
+                  flex: 1, padding: '0.5rem 0.25rem', border: 'none',
+                  background: tab === t ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+                  color: tab === t ? '#60a5fa' : '#64748b',
+                  borderRadius: '10px', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  borderBottom: tab === t ? '2px solid #3b82f6' : '2px solid transparent'
+                }}>
+                  {tabLabels[t]}
+                </button>
+              ))}
             </div>
 
-            <div className="input-group">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
-                <label style={{ fontSize: '0.65rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  {t('passwordLabel')}
-                </label>
-              </div>
-              <div style={{ position: 'relative' }}>
-                <Lock size={14} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem 0.85rem 0.6rem 2.4rem',
-                    background: 'rgba(0,0,0,0.3)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '10px',
-                    color: 'white',
-                    fontSize: '0.85rem',
-                    outline: 'none'
-                  }}
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="hover-bright"
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '10px',
-                fontSize: '0.85rem',
-                fontWeight: '900',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                marginTop: '0.25rem'
-              }}
-            >
-              {loading ? <Loader2 className="animate-spin" size={16} /> : (
-                <>
-                  {t('loginButton')}
-                  <ArrowRight size={16} />
-                </>
+            {/* FORM CARD */}
+            <div className="glass-card" style={{
+              padding: '1.25rem', borderRadius: '20px',
+              background: 'rgba(15, 23, 42, 0.6)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              backdropFilter: 'blur(20px)'
+            }}>
+              {/* LOGIN TAB */}
+              {tab === 'login' && (
+                <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div>
+                    <label style={labelStyle}>{isCz ? 'E-mail' : 'Email'}</label>
+                    <div style={{ position: 'relative' }}>
+                      <Mail size={14} style={iconStyle} />
+                      <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@agency.com" required style={inputStyle} />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{isCz ? 'Heslo' : 'Password'}</label>
+                    <div style={{ position: 'relative' }}>
+                      <Lock size={14} style={iconStyle} />
+                      <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required style={inputStyle} />
+                    </div>
+                  </div>
+                  <button type="submit" disabled={loading} className="hover-bright" style={{
+                    width: '100%', padding: '0.75rem',
+                    background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                    color: 'white', border: 'none', borderRadius: '10px',
+                    fontSize: '0.85rem', fontWeight: '900', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginTop: '0.25rem'
+                  }}>
+                    {loading ? <Loader2 className="animate-spin" size={16} /> : <>{isCz ? 'Přihlásit' : 'Sign In'}<ArrowRight size={16} /></>}
+                  </button>
+                </form>
               )}
-            </button>
-          </form>
-        </div>
 
+              {/* REGISTER AGENCY TAB */}
+              {tab === 'register-agency' && (
+                <form onSubmit={handleRegisterAgency} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div>
+                    <label style={labelStyle}>{isCz ? 'Název agentury' : 'Agency Name'}</label>
+                    <div style={{ position: 'relative' }}>
+                      <Building2 size={14} style={iconStyle} />
+                      <input type="text" value={regAgencyName} onChange={e => setRegAgencyName(e.target.value)} placeholder={isCz ? 'Moje Agentura s.r.o.' : 'My Agency Ltd.'} required style={inputStyle} />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{isCz ? 'Vaše jméno' : 'Your Name'}</label>
+                    <div style={{ position: 'relative' }}>
+                      <User size={14} style={iconStyle} />
+                      <input type="text" value={regFullName} onChange={e => setRegFullName(e.target.value)} placeholder={isCz ? 'Jan Novák' : 'John Smith'} required style={inputStyle} />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{isCz ? 'E-mail' : 'Email'}</label>
+                    <div style={{ position: 'relative' }}>
+                      <Mail size={14} style={iconStyle} />
+                      <input type="email" value={regEmail} onChange={e => setRegEmail(e.target.value)} placeholder="admin@agency.com" required style={inputStyle} />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{isCz ? 'Heslo (min. 6 znaků)' : 'Password (min. 6 chars)'}</label>
+                    <div style={{ position: 'relative' }}>
+                      <Lock size={14} style={iconStyle} />
+                      <input type="password" value={regPassword} onChange={e => setRegPassword(e.target.value)} placeholder="••••••••" required minLength={6} style={inputStyle} />
+                    </div>
+                  </div>
+                  <button type="submit" disabled={loading} className="hover-bright" style={{
+                    width: '100%', padding: '0.75rem',
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    color: 'white', border: 'none', borderRadius: '10px',
+                    fontSize: '0.85rem', fontWeight: '900', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginTop: '0.25rem'
+                  }}>
+                    {loading ? <Loader2 className="animate-spin" size={16} /> : <>{isCz ? 'Zaregistrovat agenturu' : 'Register Agency'}<ArrowRight size={16} /></>}
+                  </button>
+                </form>
+              )}
+
+              {/* JOIN AGENCY TAB */}
+              {tab === 'join-agency' && (
+                <form onSubmit={handleJoinAgency} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div>
+                    <label style={labelStyle}>{isCz ? 'Zvací kód' : 'Invite Code'}</label>
+                    <div style={{ position: 'relative' }}>
+                      <KeyRound size={14} style={iconStyle} />
+                      <input type="text" value={joinInviteCode} onChange={e => setJoinInviteCode(e.target.value.toUpperCase())} placeholder="NEXUS-A1B2C3D4E5F6" required style={{ ...inputStyle, fontFamily: 'monospace', letterSpacing: '0.05em' }} />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{isCz ? 'Vaše jméno' : 'Your Name'}</label>
+                    <div style={{ position: 'relative' }}>
+                      <User size={14} style={iconStyle} />
+                      <input type="text" value={joinFullName} onChange={e => setJoinFullName(e.target.value)} placeholder={isCz ? 'Jan Novák' : 'John Smith'} required style={inputStyle} />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{isCz ? 'E-mail' : 'Email'}</label>
+                    <div style={{ position: 'relative' }}>
+                      <Mail size={14} style={iconStyle} />
+                      <input type="email" value={joinEmail} onChange={e => setJoinEmail(e.target.value)} placeholder="you@email.com" required style={inputStyle} />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{isCz ? 'Heslo (min. 6 znaků)' : 'Password (min. 6 chars)'}</label>
+                    <div style={{ position: 'relative' }}>
+                      <Lock size={14} style={iconStyle} />
+                      <input type="password" value={joinPassword} onChange={e => setJoinPassword(e.target.value)} placeholder="••••••••" required minLength={6} style={inputStyle} />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{isCz ? 'Role' : 'Role'}</label>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      {['Operator', 'Model'].map(r => (
+                        <button key={r} type="button" onClick={() => setJoinRole(r)} style={{
+                          flex: 1, padding: '0.5rem', border: joinRole === r ? '1px solid #3b82f6' : '1px solid rgba(255,255,255,0.1)',
+                          background: joinRole === r ? 'rgba(59, 130, 246, 0.15)' : 'rgba(0,0,0,0.3)',
+                          color: joinRole === r ? '#60a5fa' : '#94a3b8',
+                          borderRadius: '8px', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s'
+                        }}>
+                          {r}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <button type="submit" disabled={loading} className="hover-bright" style={{
+                    width: '100%', padding: '0.75rem',
+                    background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                    color: 'white', border: 'none', borderRadius: '10px',
+                    fontSize: '0.85rem', fontWeight: '900', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginTop: '0.25rem'
+                  }}>
+                    {loading ? <Loader2 className="animate-spin" size={16} /> : <>{isCz ? 'Připojit se' : 'Join Agency'}<ArrowRight size={16} /></>}
+                  </button>
+                </form>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* FOOTER: Lang + Back to Product */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', alignItems: 'center' }}>
           <div style={{ display: 'inline-flex', background: 'rgba(255,255,255,0.03)', padding: '2px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
             <button onClick={() => setLang('cz')} style={{ padding: '3px 10px', border: 'none', background: lang === 'cz' ? '#3b82f6' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer' }}>CZ</button>
             <button onClick={() => setLang('en')} style={{ padding: '3px 10px', border: 'none', background: lang === 'en' ? '#3b82f6' : 'transparent', color: 'white', borderRadius: '6px', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer' }}>EN</button>
           </div>
-
           <button 
-            onClick={() => {
-              setJustLoggedOut(false);
-              setShowLanding(true);
-            }}
+            onClick={() => { setJustLoggedOut(false); setShowLanding(true); }}
             style={{
-              background: 'transparent',
-              border: '1px solid rgba(255,255,255,0.1)',
-              color: '#94a3b8',
-              padding: '6px 14px',
-              borderRadius: '8px',
-              fontSize: '0.7rem',
-              fontWeight: '700',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
+              background: 'transparent', border: '1px solid rgba(255,255,255,0.1)',
+              color: '#94a3b8', padding: '6px 14px', borderRadius: '8px',
+              fontSize: '0.7rem', fontWeight: '700', cursor: 'pointer',
+              transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px'
             }}
             onMouseOver={(e) => { e.target.style.background = 'rgba(255,255,255,0.05)'; e.target.style.color = 'white'; }}
             onMouseOut={(e) => { e.target.style.background = 'transparent'; e.target.style.color = '#94a3b8'; }}

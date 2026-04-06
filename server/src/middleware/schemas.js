@@ -166,19 +166,18 @@ const login = z.object({
 });
 
 const registerAgency = z.object({
-  name: z.string().min(1).max(200),
+  fullName: z.string().min(1).max(200),
+  agencyName: z.string().min(1).max(200),
   email: z.string().email().max(320),
-  password: z.string().min(6).max(256),
-  agencyName: z.string().min(1).max(200).optional()
+  password: z.string().min(6).max(256)
 });
 
 const registerUser = z.object({
-  name: z.string().min(1).max(200),
+  fullName: z.string().min(1).max(200),
   email: z.string().email().max(320),
   password: z.string().min(6).max(256),
-  roleId: cuid.optional(),
-  agencyId: cuid.optional(),
-  inviteCode: z.string().max(64).optional()
+  inviteCode: z.string().min(1).max(64),
+  roleName: z.enum(['Operator', 'Model']).optional()
 });
 
 const resetPasswordRequest = z.object({

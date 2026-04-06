@@ -641,6 +641,8 @@ export const NexusProvider = ({ children }) => {
       setShowLanding(true);
       setJustLoggedOut(true);
     }, onLogin,
+    onRegisterAgency: auth.handleRegisterAgency,
+    onRegisterUser: auth.handleRegisterUser,
     API_BASE,
     showLanding, setShowLanding,
     updatePlans,
