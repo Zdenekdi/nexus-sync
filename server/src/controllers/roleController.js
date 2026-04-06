@@ -1,5 +1,6 @@
 const prisma = require('../services/db');
 const logger = require('../services/logger');
+const { logAction } = require('./auditController');
 
 /**
  * Role Controller - Handles dynamic permissions and add-ons
@@ -120,6 +121,7 @@ exports.updateRolePermissions = async (req, res) => {
         }
 
         logger.info(`Role ${id} permissions updated by ${req.user.userId}`);
+        logAction(req.user.agencyId, req.user.userId || req.user.id, 'ROLE_UPDATED', `Role "${existingRole.name}" permissions changed`);
         res.json(role);
     } catch (error) {
         logger.error('Error updating role permissions:', error);

@@ -159,20 +159,31 @@ class QaController {
         where: { agencyId },
         select: {
           id: true, name: true,
-          qaRecords: { select: { rating: true } }
+          qaRecords: { select: { rating: true, createdAt: true } }
         }
       });
 
+      // Recency-weighted scoring: recent reviews count more
+      const now = Date.now();
+      const DAY_MS = 86400000;
+      const decayFactor = (date) => {
+        const ageInDays = (now - new Date(date).getTime()) / DAY_MS;
+        return Math.exp(-ageInDays / 90); // half-life ~62 days
+      };
+
       const leaderboard = profiles
-        .map(p => ({
-          profileId: p.id,
-          name: p.name,
-          avgRating: p.qaRecords.length > 0
-            ? parseFloat((p.qaRecords.reduce((s, r) => s + r.rating, 0) / p.qaRecords.length).toFixed(1))
-            : 0,
-          totalReviews: p.qaRecords.length
-        }))
-        .filter(p => p.totalReviews > 0)
+        .map(p => {
+          if (p.qaRecords.length === 0) return null;
+          const weightedSum = p.qaRecords.reduce((s, r) => s + r.rating * decayFactor(r.createdAt), 0);
+          const weightTotal = p.qaRecords.reduce((s, r) => s + decayFactor(r.createdAt), 0);
+          return {
+            profileId: p.id,
+            name: p.name,
+            avgRating: parseFloat((weightedSum / weightTotal).toFixed(1)),
+            totalReviews: p.qaRecords.length
+          };
+        })
+        .filter(Boolean)
         .sort((a, b) => b.avgRating - a.avgRating || b.totalReviews - a.totalReviews);
 
       res.json(leaderboard);

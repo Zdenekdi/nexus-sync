@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const prisma = require('../services/db');
+const { logAction } = require('./auditController');
 
 const ACCESS_TOKEN_EXPIRY = '1h';
 const REFRESH_TOKEN_DAYS = 7;
@@ -80,6 +81,8 @@ exports.login = async (req, res) => {
 
     const accessToken = generateAccessToken(user);
     const refreshToken = await generateRefreshToken(user.id);
+
+    logAction(user.agencyId, user.id, 'LOGIN', `User ${user.email} logged in`);
 
     res.json({
       token: accessToken,
@@ -212,6 +215,8 @@ exports.registerAgency = async (req, res) => {
       const { applyReferral } = require('./referralController');
       await applyReferral(referralCode, result.agency.id);
     }
+
+    logAction(result.agency.id, result.user.id, 'AGENCY_REGISTERED', `Agency "${agencyName}" created`);
 
     res.status(201).json({ 
       message: 'Agency registered successfully',
