@@ -185,6 +185,10 @@ const resetPasswordRequest = z.object({
   email: z.string().email().max(320)
 });
 
+const refreshToken = z.object({
+  refreshToken: z.string().min(1).max(128)
+});
+
 // ── Agency ───────────────────────────────────────────────────────────────────
 const updateAgencySettings = z.object({
   name: z.string().min(1).max(200).optional(),
@@ -293,6 +297,7 @@ module.exports = {
   registerAgency,
   registerUser,
   resetPasswordRequest,
+  refreshToken,
   updateAgencySettings,
   updateRolePermissions,
   purchaseAddon,

@@ -111,19 +111,25 @@ export function useNexusData({
       if (statsRes?.data) {
         const s = statsRes.data;
         setStats({
+          revenue: s.revenue || '£0.00',
           revenueMtd: s.revenue || '£0.00',
           revenueChange: 0,
+          totalBookings: s.totalBookings || 0,
           activeBookings: s.totalBookings || 0,
           bookingsChange: 0,
           totalMessages: s.totalMessages || 0,
           messagesChange: 0,
+          totalCalls: s.totalCalls || 0,
           conversionRate: s.conversionRate || 0,
           conversionChange: 0,
+          commissionGrowth: s.commissionGrowth || 'STABLE',
+          chartData: s.chartData || [],
           revenueData: s.chartData || [],
           profilePerf: [],
           operatorPerf: [],
           totalAgencies: s.totalAgencies || 0,
           totalProfiles: s.totalProfiles || 0,
+          totalUsers: s.totalUsers || 0,
           uptime: s.uptime || '100% UP'
         });
       }

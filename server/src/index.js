@@ -4,6 +4,21 @@ try {
   console.warn('[Bootstrap] DOTENV Load failed - assuming ENV variables are set externally:', e.message);
 }
 
+// Sentry must be initialized before anything else
+const Sentry = require('@sentry/node');
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV || 'production',
+    tracesSampleRate: 0.2,
+    beforeSend(event) {
+      // Don't send 4xx client errors
+      if (event.contexts?.response?.status_code < 500) return null;
+      return event;
+    }
+  });
+}
+
 const app = require('./app');
 
 const logger = require('./services/logger');

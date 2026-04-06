@@ -99,6 +99,7 @@ model User {
   assignedTalents TalentAssignment[] @relation("AssignedOperator")
   dataAccessLogs DataAccessLog[] @relation("DataAccessLogs")
   channelMessagesAsSender ChannelMessage[] @relation("SentChannelMessages")
+  refreshTokens RefreshToken[]
 
   @@index([agencyId])
   @@index([roleId])
@@ -656,6 +657,20 @@ model DataAccessLog {
   @@index([userId])
   @@index([violation])
   @@index([timestamp])
+}
+
+// ─── Refresh Tokens ────────────────────────────────────────────
+model RefreshToken {
+  id          String   @id @default(cuid())
+  token       String   @unique
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
 }
 
 // ─── Shared Blacklist (cross-agency) ───────────────────────────

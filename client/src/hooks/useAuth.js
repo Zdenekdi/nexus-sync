@@ -47,8 +47,57 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
   const [tempUser, setTempUser] = useState(null);
   const [originalOperator, setOriginalOperator] = useState(null);
   const [isLoginLoading, setIsLoginLoading] = useState(false);
+  const refreshTimerRef = { current: null };
 
   const isNativeApp = Capacitor.isNativePlatform();
+
+  const scheduleTokenRefresh = useCallback((expiresInSec) => {
+    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+    // Refresh 5 minutes before expiry
+    const refreshMs = Math.max((expiresInSec - 300) * 1000, 30000);
+    refreshTimerRef.current = setTimeout(async () => {
+      const storedRefreshToken = localStorage.getItem('nexus_refreshToken');
+      if (!storedRefreshToken) return;
+      try {
+        const res = await fetch(`${API_BASE}/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken: storedRefreshToken }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          localStorage.setItem('nexus_token', data.token);
+          localStorage.setItem('nexus_refreshToken', data.refreshToken);
+          setToken(data.token);
+          scheduleTokenRefresh(data.expiresIn || 3600);
+          console.log('[Auth] Token refreshed');
+        } else {
+          console.warn('[Auth] Refresh failed, logging out');
+          handleLogoutInternal();
+        }
+      } catch (err) {
+        console.error('[Auth] Refresh error:', err);
+      }
+    }, refreshMs);
+  }, [API_BASE]);
+
+  // On mount, if logged in, schedule refresh
+  useEffect(() => {
+    if (isLoggedIn && token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const expiresIn = payload.exp - Math.floor(Date.now() / 1000);
+        if (expiresIn > 0) {
+          scheduleTokenRefresh(expiresIn);
+        } else {
+          // Token already expired, try refresh
+          const storedRefreshToken = localStorage.getItem('nexus_refreshToken');
+          if (storedRefreshToken) scheduleTokenRefresh(0);
+        }
+      } catch { /* ignore parse errors */ }
+    }
+    return () => { if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Detect App Variant
   useEffect(() => {
@@ -134,11 +183,15 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
       if (res.ok) {
         const data = await res.json();
         localStorage.setItem('nexus_token', data.token);
+        localStorage.setItem('nexus_refreshToken', data.refreshToken);
         localStorage.setItem('nexus_isLoggedIn', 'true');
         localStorage.setItem('nexus_activeOperator', JSON.stringify(data.user));
         setToken(data.token);
         setActiveOperator(data.user);
         setIsLoggedIn(true);
+        
+        // Schedule token refresh before expiry
+        scheduleTokenRefresh(data.expiresIn || 3600);
         
         void verifyNativeDeviceBinding(data.token, data.user);
         void maybePromptRcsAccessOnFirstLogin(data.user);
@@ -182,7 +235,8 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
     }
   };
 
-  const handleLogout = useCallback(() => {
+  const handleLogoutInternal = useCallback(() => {
+    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
     setIsLoggedIn(false);
     setShowLanding(true);
     setActiveProfileId(null);
@@ -192,12 +246,25 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
     localStorage.removeItem('nexus_activeOperator');
     localStorage.removeItem('nexus_activeClient');
     localStorage.removeItem('nexus_token');
+    localStorage.removeItem('nexus_refreshToken');
     localStorage.removeItem('nexus_lastSelectedChatId');
     localStorage.removeItem('nexus_relay_mode');
     setToken(null);
     setActiveOperator(null);
     setActiveClient(null);
   }, [setIsRelayMode, setSelectedChatId, setActiveProfileId, setShowLanding]);
+
+  const handleLogout = useCallback(() => {
+    const storedRefreshToken = localStorage.getItem('nexus_refreshToken');
+    if (storedRefreshToken) {
+      fetch(`${API_BASE}/auth/logout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: storedRefreshToken }),
+      }).catch(() => {});
+    }
+    handleLogoutInternal();
+  }, [API_BASE, handleLogoutInternal]);
 
   const handleRegisterAgency = async (data) => {
     try {
