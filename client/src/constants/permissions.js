@@ -118,6 +118,7 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     settings: true,
     referrals: true,
     inventory: false,
-    safety: true
+    safety: true,
+    relay: true
   }
 };
