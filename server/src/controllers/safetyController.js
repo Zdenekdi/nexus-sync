@@ -84,10 +84,15 @@ class SafetyController {
             const session = await prisma.safetySession.update({
                 where: { id },
                 data: { 
-                    state: 'RESOLVED',
-                    resolvedAt: new Date()
-                }
+                    state: 'GRACE',
+                    resolvedAt: null
+                },
+                include: { profile: true }
             });
+
+            // Notify relay device to start departure check-in timer
+            await safetyService.notifyGracePeriodStarted(session);
+
             res.json(session);
         } catch (error) {
             res.status(500).json({ message: 'Check-out failed' });
@@ -237,8 +242,17 @@ class SafetyController {
         try {
             const { id } = req.params;
             if (!await this._verifySessionAgency(id, req, res)) return;
+            
+            const session = await prisma.safetySession.update({
+                where: { id },
+                data: {
+                    state: 'RESOLVED',
+                    resolvedAt: new Date()
+                }
+            });
+
             logger.info(`Departure confirmed for session ${id}`);
-            res.json({ ok: true, sessionId: id });
+            res.json({ ok: true, sessionId: id, state: session.state });
         } catch (error) {
             res.status(500).json({ message: 'Departure confirmation failed' });
         }
