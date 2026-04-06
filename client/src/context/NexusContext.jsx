@@ -3,7 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { usePermissions } from '../hooks/usePermissions';
 import { useNexusData } from '../hooks/useNexusData';
 
-const NexusContext = createContext();
+export const NexusContext = createContext();
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
 
@@ -323,8 +323,6 @@ export const NexusProvider = ({ children }) => {
         plansManagement: 'Správa tarifů',
         globalHealthDesc: 'Živý stav systému a globální výkon sítě.',
         globalOverview: 'Globální přehled',
-        totalRevenue: 'Celkový obrat',
-        agencies: 'Agentury',
         activeNodes: 'Aktivní uzly',
         globalTraffic: 'Globální provoz',
         revenueGrowth: 'Růst obratu',
@@ -333,8 +331,6 @@ export const NexusProvider = ({ children }) => {
         rolePermissionsDesc: 'Definujte přístupová práva pro systémové role a šablony.',
         infraTitle: 'Globální správa',
         agencyMgmtTitle: 'Správa agentury',
-        agencies: 'Agentury',
-        infrastructure: 'Infrastruktura',
         permissions: 'Oprávnění',
         plans: 'Tarify',
         global_features: 'Globální funkce',
@@ -344,7 +340,6 @@ export const NexusProvider = ({ children }) => {
         settings: 'Nastavení',
         messaging: 'Zprávy',
         calendar: 'Kalendář',
-        profiles: 'Profily',
         web_profiles: 'Web profily',
         device_setup: 'Nastavení zařízení',
         qa_hub: 'QA hub',
@@ -434,8 +429,6 @@ export const NexusProvider = ({ children }) => {
         plansManagement: 'Plans Management',
         globalHealthDesc: 'Live system health and global network performance.',
         globalOverview: 'Global Overview',
-        totalRevenue: 'Total Revenue',
-        agencies: 'Agencies',
         activeNodes: 'Active Nodes',
         globalTraffic: 'Global Traffic',
         revenueGrowth: 'Revenue Growth',
