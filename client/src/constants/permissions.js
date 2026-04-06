@@ -17,7 +17,8 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     settings: false,
     referrals: false,
     inventory: false,
-    maintenance: false
+    maintenance: false,
+    safety: false
   },
   'Agency Admin': {
     infrastructure: false,
@@ -36,7 +37,8 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     qa_hub: true,
     settings: true,
     referrals: true,
-    inventory: true
+    inventory: true,
+    safety: true
   },
   'Manager': {
     infrastructure: false,
@@ -55,7 +57,8 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     qa_hub: true,
     settings: true,
     referrals: true,
-    inventory: true
+    inventory: true,
+    safety: true
   },
   'Operator': {
     infrastructure: false,
@@ -74,7 +77,8 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     qa_hub: false,
     settings: true,
     referrals: false,
-    inventory: false
+    inventory: false,
+    safety: true
   },
   'Senior Operator': {
     infrastructure: false,
@@ -93,7 +97,8 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     qa_hub: true,
     settings: true,
     referrals: true,
-    inventory: true
+    inventory: true,
+    safety: true
   },
   'Model': {
     infrastructure: false,
@@ -112,6 +117,7 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     qa_hub: false,
     settings: true,
     referrals: true,
-    inventory: false
+    inventory: false,
+    safety: true
   }
 };

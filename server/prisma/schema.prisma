@@ -365,3 +365,82 @@ model GlobalSetting {
   value     String   // Stores "true"/"false" or JSON strings
   updatedAt DateTime @updatedAt
 }
+
+// ─── Shared Blacklist (cross-agency) ───────────────────────────
+model BlacklistEntry {
+  id            String   @id @default(cuid())
+  phone         String?
+  licensePlate  String?
+  name          String?
+  description   String
+  severity      String   @default("warning") // warning | danger
+  
+  createdById   String
+  createdByName String
+  agencyId      String   // originating agency
+  
+  reports       BlacklistReport[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([phone])
+  @@index([licensePlate])
+}
+
+model BlacklistReport {
+  id            String   @id @default(cuid())
+  entryId       String
+  entry         BlacklistEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  
+  reportedById  String
+  reportedByName String
+  agencyId      String   // reporting agency
+  comment       String?
+  
+  createdAt     DateTime @default(now())
+  
+  @@unique([entryId, agencyId]) // one report per agency per entry
+  @@index([entryId])
+}
+
+// ─── SOS Alerts ────────────────────────────────────────────────
+model SOSAlert {
+  id            String   @id @default(cuid())
+  agencyId      String
+  profileId     String?
+  userId        String
+  
+  type          String   // manual | voice | timer_expired
+  status        String   @default("active") // active | acknowledged | resolved
+  
+  lat           Float?
+  lng           Float?
+  accuracy      Float?
+  
+  acknowledgedBy  String?
+  acknowledgedAt  DateTime?
+  resolvedBy      String?
+  resolvedAt      DateTime?
+  
+  locationUpdates SOSLocationUpdate[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([agencyId])
+  @@index([status])
+}
+
+model SOSLocationUpdate {
+  id          String   @id @default(cuid())
+  sosAlertId  String
+  sosAlert    SOSAlert @relation(fields: [sosAlertId], references: [id], onDelete: Cascade)
+  lat         Float
+  lng         Float
+  accuracy    Float?
+  capturedAt  DateTime
+  receivedAt  DateTime @default(now())
+  
+  @@index([sosAlertId])
+}

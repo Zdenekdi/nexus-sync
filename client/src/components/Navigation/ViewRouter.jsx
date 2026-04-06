@@ -57,6 +57,7 @@ const ViewRouter = () => {
       case 'device-setup':
       case 'qa':
       case 'referrals':
+      case 'safety':
         return <OperationsUnit />;
 
       // Agency Unit Views
