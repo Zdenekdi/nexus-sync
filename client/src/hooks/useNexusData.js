@@ -80,7 +80,7 @@ export function useNexusData({
     
     setIsDataLoading(true);
     try {
-      const [safetyRes, profileRes, chatRes, userRes, bindingRes, statsRes, agencyRes, selfRes] = await Promise.all([
+      const [safetyRes, profileRes, chatRes, userRes, bindingRes, statsRes, agencyRes, selfRes, analyticsRes] = await Promise.all([
         axiosWithTiming(`${API_BASE}/safety/sessions/active`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/profiles`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/chats`, { headers: { Authorization: `Bearer ${token}` } }),
@@ -88,7 +88,8 @@ export function useNexusData({
         axiosWithTiming(`${API_BASE}/device/bindings`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/agency/stats`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/agency/all`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
-        axiosWithTiming(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+        axiosWithTiming(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } }),
+        axiosWithTiming(`${API_BASE}/analytics/summary?days=7`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null)
       ]);
 
       // For non-owner roles, fetch own agency details if /agency/all returned nothing
@@ -110,27 +111,58 @@ export function useNexusData({
       // NO DEMO FALLBACKS - Use server data or initial empty state
       if (statsRes?.data) {
         const s = statsRes.data;
+        
+        // Build rich chart data from analytics/summary if available
+        const dayNames = lang === 'cz' 
+          ? ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So']
+          : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        
+        let richChartData = [];
+        let sparklineData = s.chartData || [];
+        
+        const analyticsChart = analyticsRes?.data?.chartData;
+        if (analyticsChart && analyticsChart.length > 0) {
+          richChartData = analyticsChart.map(d => ({
+            day: dayNames[new Date(d.date).getDay()],
+            revenue: d.revenue || 0,
+            bookings: d.bookings || 0
+          }));
+          sparklineData = analyticsChart.map(d => d.revenue || d.bookings || 0);
+        } else if (Array.isArray(s.chartData) && s.chartData.length > 0) {
+          // Fallback: build from plain number array
+          const now = new Date();
+          richChartData = s.chartData.map((val, i) => {
+            const d = new Date(now);
+            d.setDate(d.getDate() - (s.chartData.length - 1 - i));
+            return { day: dayNames[d.getDay()], revenue: val, bookings: 0 };
+          });
+        }
+
         setStats({
-          revenue: s.revenue || '£0.00',
+          revenue: analyticsRes?.data?.revenue != null 
+            ? `£${Number(analyticsRes.data.revenue).toFixed(2)}` 
+            : (s.revenue || '£0.00'),
           revenueMtd: s.revenue || '£0.00',
-          revenueChange: 0,
-          totalBookings: s.totalBookings || 0,
+          revenueChange: analyticsRes?.data?.revenueChange || 0,
+          totalBookings: analyticsRes?.data?.bookings || s.totalBookings || 0,
           activeBookings: s.totalBookings || 0,
-          bookingsChange: 0,
+          bookingsChange: analyticsRes?.data?.bookingsChange || 0,
           totalMessages: s.totalMessages || 0,
           messagesChange: 0,
           totalCalls: s.totalCalls || 0,
           conversionRate: s.conversionRate || 0,
           conversionChange: 0,
           commissionGrowth: s.commissionGrowth || 'STABLE',
-          chartData: s.chartData || [],
-          revenueData: s.chartData || [],
+          chartData: richChartData.length > 0 ? richChartData : sparklineData,
+          sparklineData: sparklineData,
+          revenueData: richChartData,
           profilePerf: [],
           operatorPerf: [],
           totalAgencies: s.totalAgencies || 0,
           totalProfiles: s.totalProfiles || 0,
           totalUsers: s.totalUsers || 0,
-          uptime: s.uptime || '100% UP'
+          uptime: s.uptime || '100% UP',
+          activeProfiles: analyticsRes?.data?.activeProfiles || s.totalProfiles || 0
         });
       }
 
