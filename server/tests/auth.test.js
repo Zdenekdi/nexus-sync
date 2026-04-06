@@ -208,7 +208,7 @@ describe('POST /api/auth/register-agency', () => {
     const res = await request(app)
       .post('/api/auth/register-agency')
       .send({
-        name: 'Admin User',
+        fullName: 'Admin User',
         agencyName: 'New Agency',
         email: 'admin@new.com',
         password: 'StrongPass1',
@@ -224,7 +224,7 @@ describe('POST /api/auth/register-agency', () => {
     const res = await request(app)
       .post('/api/auth/register-agency')
       .send({
-        name: 'User',
+        fullName: 'User',
         agencyName: 'Agency',
         email: 'user@test.com',
         password: 'weak',
@@ -242,7 +242,7 @@ describe('POST /api/auth/register-agency', () => {
     const res = await request(app)
       .post('/api/auth/register-agency')
       .send({
-        name: 'User',
+        fullName: 'User',
         agencyName: 'Agency',
         email: 'existing@test.com',
         password: 'StrongPass1',

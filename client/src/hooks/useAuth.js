@@ -273,10 +273,12 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-      return res.ok;
+      const body = await res.json().catch(() => ({}));
+      if (res.ok) return { success: true, inviteCode: body.inviteCode };
+      return { success: false, error: body.message || 'Registration failed' };
     } catch (err) {
       console.error('[Auth] Agency registration failed:', err);
-      return false;
+      return { success: false, error: 'Connection error' };
     }
   };
 
@@ -287,10 +289,12 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-      return res.ok;
+      const body = await res.json().catch(() => ({}));
+      if (res.ok) return { success: true };
+      return { success: false, error: body.message || 'Registration failed' };
     } catch (err) {
       console.error('[Auth] User registration failed:', err);
-      return false;
+      return { success: false, error: 'Connection error' };
     }
   };
 
