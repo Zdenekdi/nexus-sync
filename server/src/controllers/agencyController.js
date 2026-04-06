@@ -97,38 +97,46 @@ exports.getStats = async (req, res) => {
 
     if (!agencyId && !isAppOwner) return res.status(404).json({ message: 'Agency not found' });
 
-    // 1. Total Messages (Global if Superadmin)
-    const totalMessages = await prisma.message.count({
-      where: isAppOwner ? {} : { chat: { agencyId } }
-    });
+    const agencyFilter = isAppOwner ? {} : { agencyId };
 
-    // 2. Total Bookings (Safety Sessions)
-    const totalBookings = await prisma.safetySession.count({
-      where: isAppOwner ? {} : { agencyId }
-    });
+    const [totalMessages, totalBookings, totalCalls] = await Promise.all([
+      prisma.message.count({ where: isAppOwner ? {} : { chat: { agencyId } } }),
+      prisma.safetySession.count({ where: agencyFilter }),
+      prisma.callLog.count({ where: isAppOwner ? {} : { profile: { agencyId } } })
+    ]);
 
-    // 3. Total Calls
-    const totalCalls = await prisma.callLog.count({
-      where: isAppOwner ? {} : { profile: { agencyId } }
+    // Real chart data from DailyStat (last 7 days)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const dailyStats = await prisma.dailyStat.findMany({
+      where: { ...(isAppOwner ? {} : { agencyId }), date: { gte: sevenDaysAgo } },
+      orderBy: { date: 'asc' }
     });
+    const chartData = dailyStats.length > 0
+      ? dailyStats.map(d => d.revenue || d.bookingsCount || 0)
+      : [totalMessages, totalMessages, totalMessages, totalMessages, totalMessages, totalMessages, totalMessages];
 
-    // 4. Generate trend data (last 7 days - simplified)
-    const chartData = [totalMessages, totalMessages, totalMessages, totalMessages, totalMessages, totalMessages, totalMessages]; 
-    
+    const totalRevenue = dailyStats.reduce((sum, d) => sum + d.revenue, 0);
+
     const stats = {
       totalMessages,
       totalBookings,
       totalCalls,
       chartData,
       commissionGrowth: 'STABLE',
-      revenue: `£${(totalMessages * 0.05).toFixed(2)}`,
+      revenue: totalRevenue > 0 ? `£${totalRevenue.toFixed(2)}` : `£${(totalMessages * 0.05).toFixed(2)}`,
       uptime: '100% UP'
     };
 
     if (isAppOwner) {
-      stats.totalAgencies = await prisma.agency.count();
-      stats.totalProfiles = await prisma.profile.count();
-      stats.totalUsers = await prisma.user.count();
+      const [totalAgencies, totalProfiles, totalUsers] = await Promise.all([
+        prisma.agency.count(),
+        prisma.profile.count(),
+        prisma.user.count()
+      ]);
+      stats.totalAgencies = totalAgencies;
+      stats.totalProfiles = totalProfiles;
+      stats.totalUsers = totalUsers;
     }
 
     res.json(stats);

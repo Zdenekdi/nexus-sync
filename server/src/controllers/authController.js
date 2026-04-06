@@ -3,6 +3,9 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const prisma = require('../services/db');
 
+const ACCESS_TOKEN_EXPIRY = '1h';
+const REFRESH_TOKEN_DAYS = 7;
+
 function validatePassword(password) {
   if (!password || typeof password !== 'string') {
     return 'Password is required';
@@ -16,7 +19,49 @@ function validatePassword(password) {
   if (!/[0-9]/.test(password)) {
     return 'Password must contain at least one number';
   }
-  return null; // Valid
+  return null;
+}
+
+function generateAccessToken(user) {
+  return jwt.sign(
+    {
+      userId: user.id,
+      agencyId: user.agencyId,
+      role: {
+        name: user.role.name,
+        isManager: user.role.isManager,
+        isAppOwner: user.role.isAppOwner
+      }
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: ACCESS_TOKEN_EXPIRY }
+  );
+}
+
+async function generateRefreshToken(userId) {
+  const token = crypto.randomBytes(40).toString('hex');
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + REFRESH_TOKEN_DAYS);
+
+  await prisma.refreshToken.create({
+    data: { token, userId, expiresAt }
+  });
+
+  return token;
+}
+
+function buildUserResponse(user) {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role.name,
+    isManager: user.role.isManager,
+    isAppOwner: user.role.isAppOwner,
+    agencyId: user.agencyId,
+    agencyName: user.agency?.name || 'System',
+    profileId: user.assignedProfiles?.[0]?.id || null
+  };
 }
 
 exports.login = async (req, res) => {
@@ -33,34 +78,68 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const token = jwt.sign(
-      { 
-        userId: user.id, 
-        agencyId: user.agencyId, 
-        role: {
-          name: user.role.name,
-          isManager: user.role.isManager,
-          isAppOwner: user.role.isAppOwner
-        }
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
+    const accessToken = generateAccessToken(user);
+    const refreshToken = await generateRefreshToken(user.id);
 
     res.json({
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role.name,
-        isManager: user.role.isManager,
-        isAppOwner: user.role.isAppOwner,
-        agencyId: user.agencyId,
-        agencyName: user.agency?.name || 'System',
-        profileId: user.assignedProfiles?.[0]?.id || null
-      }
+      token: accessToken,
+      refreshToken,
+      expiresIn: 3600,
+      user: buildUserResponse(user)
     });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.refresh = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res.status(400).json({ message: 'Refresh token is required' });
+    }
+
+    const stored = await prisma.refreshToken.findUnique({
+      where: { token: refreshToken },
+      include: { user: { include: { role: true, agency: true, assignedProfiles: { take: 1, select: { id: true } } } } }
+    });
+
+    if (!stored || stored.revokedAt || stored.expiresAt < new Date()) {
+      return res.status(401).json({ message: 'Invalid or expired refresh token' });
+    }
+
+    // Rotate: revoke old, issue new pair
+    await prisma.refreshToken.update({
+      where: { id: stored.id },
+      data: { revokedAt: new Date() }
+    });
+
+    const accessToken = generateAccessToken(stored.user);
+    const newRefreshToken = await generateRefreshToken(stored.userId);
+
+    res.json({
+      token: accessToken,
+      refreshToken: newRefreshToken,
+      expiresIn: 3600,
+      user: buildUserResponse(stored.user)
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.logout = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (refreshToken) {
+      await prisma.refreshToken.updateMany({
+        where: { token: refreshToken, revokedAt: null },
+        data: { revokedAt: new Date() }
+      });
+    }
+    res.json({ message: 'Logged out successfully' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
