@@ -58,6 +58,30 @@ class SafetyService {
                 }
             });
 
+            // Create emergency receipts for all managers in the agency
+            try {
+                const managers = await prisma.user.findMany({
+                    where: {
+                        agencyId: session.agencyId,
+                        role: { isManager: true }
+                    },
+                    select: { id: true, role: { select: { name: true } } }
+                });
+
+                for (const mgr of managers) {
+                    await prisma.emergencyReceipt.create({
+                        data: {
+                            eventId: event.id,
+                            recipientId: mgr.id,
+                            recipientRole: mgr.role?.name || 'Manager'
+                        }
+                    });
+                }
+                logger.info(`Created ${managers.length} emergency receipts for event ${event.id}`);
+            } catch (receiptErr) {
+                logger.warn('Failed to create emergency receipts:', receiptErr.message);
+            }
+
             // Bridge: auto-create SOS alert linked to this session
             let sosAlert = null;
             try {
