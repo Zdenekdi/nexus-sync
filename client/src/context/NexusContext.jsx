@@ -300,8 +300,10 @@ export const NexusProvider = ({ children }) => {
   );
 
   const filteredMessages = useMemo(() => 
-    (messages || []).filter(m => m.profileId === activeProfile?.id),
-    [messages, activeProfile]
+    activeProfileId === 'all' 
+      ? (messages || []) 
+      : (messages || []).filter(m => m.profileId === activeProfile?.id),
+    [messages, activeProfile, activeProfileId]
   );
 
   const selectedChat = useMemo(() => 
@@ -675,6 +677,7 @@ export const NexusProvider = ({ children }) => {
     // Profiles and Selection
     activeProfile, activeProfileId, setActiveProfileId,
     profiles, myProfiles,
+    assignedProfiles: myProfiles,
     onlineOnly, setOnlineOnly,
     
     // Chat Logic

@@ -30,11 +30,11 @@ exports.getProfiles = async (req, res) => {
   }
 };
 
-// PATCH /api/profiles/:id  — save name, phone, quickReplies
+// PATCH /api/profiles/:id  — save name, phone, quickReplies, bio, description, gallery
 exports.patchProfile = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, phone, quickReplies } = req.body;
+    const { name, phone, quickReplies, bio, description, gallery } = req.body;
     const { agencyId } = req.user;
 
     const existing = await prisma.profile.findUnique({ where: { id } });
@@ -53,6 +53,9 @@ exports.patchProfile = async (req, res) => {
       data: {
         ...(name && { name }),
         ...(phone !== undefined && { phone }),
+        ...(bio !== undefined && { bio }),
+        ...(description !== undefined && { description }),
+        ...(gallery !== undefined && { gallery: typeof gallery === 'string' ? gallery : JSON.stringify(gallery) }),
         data: newData
       },
       include: { assignees: { select: { id: true, name: true } } }

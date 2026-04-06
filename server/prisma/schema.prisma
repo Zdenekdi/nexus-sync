@@ -154,6 +154,9 @@ model Profile {
   name        String
   phoneNumber String?
   status      String    @default("offline")
+  bio         String?
+  description String?
+  gallery     String?   // JSON array of image URLs
   agencyId    String
   agency      Agency    @relation(fields: [agencyId], references: [id])
   data        String?

@@ -51,6 +51,7 @@ const InboxView = () => {
                     cursor: 'pointer'
                   }}
                 >
+                  <option value="all">📥 {lang === 'cz' ? 'Všechny profily' : 'All Profiles'}</option>
                   {assignedProfiles.map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
@@ -85,8 +86,11 @@ const InboxView = () => {
                 }}>
                     {msg.status === 'unread' && <div className="dot"></div>}
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                  <span style={{ fontWeight: selectedChatId === msg.id ? '800' : '700', fontSize: '1.1rem', color: selectedChatId === msg.id ? 'white' : 'inherit' }}>
+                  <span style={{ fontWeight: selectedChatId === msg.id ? '800' : '700', fontSize: '1.1rem', color: selectedChatId === msg.id ? 'white' : 'inherit', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     {clientNames[msg.from] || msg.from}
+                    {activeProfileId === 'all' && msg.profileName && (
+                      <span style={{ fontSize: '0.65rem', background: 'rgba(59,130,246,0.2)', color: 'var(--accent-color)', padding: '2px 6px', borderRadius: '6px', fontWeight: 600 }}>{msg.profileName}</span>
+                    )}
                   </span>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{msg.time}</span>
                 </div>
