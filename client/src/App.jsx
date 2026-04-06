@@ -32,6 +32,15 @@ function AppContent() {
 
   // 1. Initial Access Control
   if (!isLoggedIn) {
+    // Show product landing page first, then login screen
+    if (showLanding) {
+      return (
+        <div className="nexus-app dark-theme">
+          <GlobalAppStyles />
+          <LandingPage />
+        </div>
+      );
+    }
     return (
       <div className="nexus-app dark-theme">
         <GlobalAppStyles />
@@ -40,8 +49,7 @@ function AppContent() {
     );
   }
 
-  // 2. Foundation Steps
-  if (showLanding && isNativeApp) return <LandingPage />;
+  // 2. Foundation Steps (native onboarding)
   if (showOnboarding && isNativeApp) return <Onboarding />;
 
   // 3. Core Application Shell

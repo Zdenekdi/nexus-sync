@@ -547,6 +547,7 @@ export const NexusProvider = ({ children }) => {
     activeOperator, activeRole, isAllowed,
     isLoggedIn, token, logout: () => {
       logout();
+      setShowLanding(true);
       setJustLoggedOut(true);
     }, onLogin,
     API_BASE,
