@@ -60,12 +60,13 @@ const limiter = rateLimit({
   message: { message: 'Too many requests, please try again later.' }
 });
 
-// Auth: 20 req/15min (login brute-force protection)
+// Auth: 20 req/15min (login brute-force protection), keyed by email or IP
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => req.body?.email?.toLowerCase() || req.ip,
   message: { message: 'Too many auth attempts, please try again later.' }
 });
 
@@ -97,7 +98,12 @@ const analyticsLimiter = rateLimit({
   message: { message: 'Too many analytics requests, please try again later.' }
 });
 
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: false, // API server, no HTML pages
+  hsts: { maxAge: 31536000, includeSubDomains: true },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  crossOriginResourcePolicy: { policy: 'cross-origin' } // Allow APK downloads
+}));
 
 // CORS: restrict to known origins
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
@@ -108,10 +114,13 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
 // Capacitor Android/iOS WebView always uses these origins — must be unconditionally allowed.
 const CAPACITOR_ORIGINS = [
   'https://localhost',
-  'capacitor://localhost',
-  'http://localhost:5173',
-  'http://localhost:3000'
+  'capacitor://localhost'
 ];
+
+// Dev-only origins (not allowed in production)
+if (process.env.NODE_ENV !== 'production') {
+  CAPACITOR_ORIGINS.push('http://localhost:5173', 'http://localhost:3000');
+}
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -195,71 +204,91 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/referrals', referralRoutes);
 app.use('/api/audit-logs', auditRoutes);
 
-// Basic health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+// Health check with system status
+app.get('/health', async (req, res) => {
+  const health = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: Math.floor(process.uptime()),
+    memory: Math.round(process.memoryUsage().rss / 1024 / 1024)
+  };
+  
+  // Check DB connectivity
+  try {
+    const prisma = require('./services/db');
+    await prisma.$queryRaw`SELECT 1`;
+    health.database = 'connected';
+  } catch {
+    health.database = 'disconnected';
+    health.status = 'degraded';
+  }
+
+  const statusCode = health.status === 'ok' ? 200 : 503;
+  res.status(statusCode).json(health);
 });
 
-// Swagger API documentation
-const swaggerJsdoc = require('swagger-jsdoc');
-const swaggerUi = require('swagger-ui-express');
-const swaggerSpec = swaggerJsdoc({
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'Nexus Hub API',
-      version: '1.0.0',
-      description: 'Multi-tenant escort agency management platform API'
-    },
-    servers: [{ url: '/api' }],
-    components: {
-      securitySchemes: {
-        bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }
+// Swagger API documentation (disabled in production for security)
+if (process.env.NODE_ENV !== 'production') {
+  const swaggerJsdoc = require('swagger-jsdoc');
+  const swaggerUi = require('swagger-ui-express');
+  const swaggerSpec = swaggerJsdoc({
+    definition: {
+      openapi: '3.0.0',
+      info: {
+        title: 'Nexus Hub API',
+        version: '1.0.0',
+        description: 'Multi-tenant escort agency management platform API'
+      },
+      servers: [{ url: '/api' }],
+      components: {
+        securitySchemes: {
+          bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }
+        }
+      },
+      security: [{ bearerAuth: [] }],
+      tags: [
+        { name: 'Auth', description: 'Authentication & registration' },
+        { name: 'Agency', description: 'Agency management & stats' },
+        { name: 'Profiles', description: 'Profile management' },
+        { name: 'Messaging', description: 'Chats & messages' },
+        { name: 'Bookings', description: 'Booking management' },
+        { name: 'Safety', description: 'Safety sessions & SOS' },
+        { name: 'Device', description: 'Device binding & relay' },
+        { name: 'Analytics', description: 'Statistics & reports' },
+        { name: 'Admin', description: 'Global admin features' }
+      ],
+      paths: {
+        '/auth/login': { post: { tags: ['Auth'], summary: 'Login', security: [], requestBody: { content: { 'application/json': { schema: { type: 'object', required: ['email', 'password'], properties: { email: { type: 'string' }, password: { type: 'string' } } } } } }, responses: { 200: { description: 'JWT token + refresh token + user data' }, 401: { description: 'Invalid credentials' } } } },
+        '/auth/refresh': { post: { tags: ['Auth'], summary: 'Refresh access token', security: [], requestBody: { content: { 'application/json': { schema: { type: 'object', required: ['refreshToken'], properties: { refreshToken: { type: 'string' } } } } } }, responses: { 200: { description: 'New token pair' }, 401: { description: 'Invalid refresh token' } } } },
+        '/auth/logout': { post: { tags: ['Auth'], summary: 'Logout (revoke refresh token)', security: [], responses: { 200: { description: 'Logged out' } } } },
+        '/auth/register-agency': { post: { tags: ['Auth'], summary: 'Register new agency', security: [], responses: { 201: { description: 'Agency created' } } } },
+        '/auth/register-user': { post: { tags: ['Auth'], summary: 'Self-register with invite code', security: [], responses: { 201: { description: 'User created' } } } },
+        '/auth/me': { get: { tags: ['Auth'], summary: 'Get current user profile', responses: { 200: { description: 'User profile' } } } },
+        '/profiles': { get: { tags: ['Profiles'], summary: 'List profiles for agency', responses: { 200: { description: 'Array of profiles' } } }, post: { tags: ['Profiles'], summary: 'Create new profile', responses: { 201: { description: 'Profile created' } } } },
+        '/profiles/{id}': { patch: { tags: ['Profiles'], summary: 'Update profile', responses: { 200: { description: 'Profile updated' } } } },
+        '/chats': { get: { tags: ['Messaging'], summary: 'Get all chats for agency', responses: { 200: { description: 'Array of chats with latest messages' } } } },
+        '/messages': { post: { tags: ['Messaging'], summary: 'Send message', responses: { 201: { description: 'Message sent' } } } },
+        '/bookings': { get: { tags: ['Bookings'], summary: 'List bookings', responses: { 200: { description: 'Array of bookings' } } }, post: { tags: ['Bookings'], summary: 'Create booking', responses: { 201: { description: 'Booking created' } } } },
+        '/safety/sessions': { post: { tags: ['Safety'], summary: 'Start safety session', responses: { 201: { description: 'Session started' } } } },
+        '/safety/sessions/active': { get: { tags: ['Safety'], summary: 'Get active safety session', responses: { 200: { description: 'Active session or null' } } } },
+        '/sos': { post: { tags: ['Safety'], summary: 'Trigger SOS alert', responses: { 201: { description: 'SOS alert created' } } } },
+        '/agency/stats': { get: { tags: ['Agency'], summary: 'Get agency statistics', responses: { 200: { description: 'Stats object with counts and charts' } } } },
+        '/agency/settings': { get: { tags: ['Agency'], summary: 'Get agency settings', responses: { 200: { description: 'Agency settings' } } }, patch: { tags: ['Agency'], summary: 'Update agency settings', responses: { 200: { description: 'Settings updated' } } } },
+        '/analytics/summary': { get: { tags: ['Analytics'], summary: 'Revenue & booking summary', responses: { 200: { description: 'Summary with period comparison' } } } },
+        '/analytics/daily': { get: { tags: ['Analytics'], summary: 'Daily stats for last N days', responses: { 200: { description: 'Array of daily stats' } } } },
+        '/device/bindings': { get: { tags: ['Device'], summary: 'List device bindings', responses: { 200: { description: 'Array of bindings' } } } },
+        '/blacklist': { get: { tags: ['Safety'], summary: 'Search blacklist entries', responses: { 200: { description: 'Array of entries' } } } },
+        '/subscriptions': { get: { tags: ['Agency'], summary: 'Get agency subscriptions', responses: { 200: { description: 'Array of subscriptions' } } } },
+        '/admin/features': { get: { tags: ['Admin'], summary: 'List global features', responses: { 200: { description: 'Array of features' } } } }
       }
     },
-    security: [{ bearerAuth: [] }],
-    tags: [
-      { name: 'Auth', description: 'Authentication & registration' },
-      { name: 'Agency', description: 'Agency management & stats' },
-      { name: 'Profiles', description: 'Profile management' },
-      { name: 'Messaging', description: 'Chats & messages' },
-      { name: 'Bookings', description: 'Booking management' },
-      { name: 'Safety', description: 'Safety sessions & SOS' },
-      { name: 'Device', description: 'Device binding & relay' },
-      { name: 'Analytics', description: 'Statistics & reports' },
-      { name: 'Admin', description: 'Global admin features' }
-    ],
-    paths: {
-      '/auth/login': { post: { tags: ['Auth'], summary: 'Login', security: [], requestBody: { content: { 'application/json': { schema: { type: 'object', required: ['email', 'password'], properties: { email: { type: 'string' }, password: { type: 'string' } } } } } }, responses: { 200: { description: 'JWT token + refresh token + user data' }, 401: { description: 'Invalid credentials' } } } },
-      '/auth/refresh': { post: { tags: ['Auth'], summary: 'Refresh access token', security: [], requestBody: { content: { 'application/json': { schema: { type: 'object', required: ['refreshToken'], properties: { refreshToken: { type: 'string' } } } } } }, responses: { 200: { description: 'New token pair' }, 401: { description: 'Invalid refresh token' } } } },
-      '/auth/logout': { post: { tags: ['Auth'], summary: 'Logout (revoke refresh token)', security: [], responses: { 200: { description: 'Logged out' } } } },
-      '/auth/register-agency': { post: { tags: ['Auth'], summary: 'Register new agency', security: [], responses: { 201: { description: 'Agency created' } } } },
-      '/auth/register-user': { post: { tags: ['Auth'], summary: 'Self-register with invite code', security: [], responses: { 201: { description: 'User created' } } } },
-      '/auth/me': { get: { tags: ['Auth'], summary: 'Get current user profile', responses: { 200: { description: 'User profile' } } } },
-      '/profiles': { get: { tags: ['Profiles'], summary: 'List profiles for agency', responses: { 200: { description: 'Array of profiles' } } }, post: { tags: ['Profiles'], summary: 'Create new profile', responses: { 201: { description: 'Profile created' } } } },
-      '/profiles/{id}': { patch: { tags: ['Profiles'], summary: 'Update profile', responses: { 200: { description: 'Profile updated' } } } },
-      '/chats': { get: { tags: ['Messaging'], summary: 'Get all chats for agency', responses: { 200: { description: 'Array of chats with latest messages' } } } },
-      '/messages': { post: { tags: ['Messaging'], summary: 'Send message', responses: { 201: { description: 'Message sent' } } } },
-      '/bookings': { get: { tags: ['Bookings'], summary: 'List bookings', responses: { 200: { description: 'Array of bookings' } } }, post: { tags: ['Bookings'], summary: 'Create booking', responses: { 201: { description: 'Booking created' } } } },
-      '/safety/sessions': { post: { tags: ['Safety'], summary: 'Start safety session', responses: { 201: { description: 'Session started' } } } },
-      '/safety/sessions/active': { get: { tags: ['Safety'], summary: 'Get active safety session', responses: { 200: { description: 'Active session or null' } } } },
-      '/sos': { post: { tags: ['Safety'], summary: 'Trigger SOS alert', responses: { 201: { description: 'SOS alert created' } } } },
-      '/agency/stats': { get: { tags: ['Agency'], summary: 'Get agency statistics', responses: { 200: { description: 'Stats object with counts and charts' } } } },
-      '/agency/settings': { get: { tags: ['Agency'], summary: 'Get agency settings', responses: { 200: { description: 'Agency settings' } } }, patch: { tags: ['Agency'], summary: 'Update agency settings', responses: { 200: { description: 'Settings updated' } } } },
-      '/analytics/summary': { get: { tags: ['Analytics'], summary: 'Revenue & booking summary', responses: { 200: { description: 'Summary with period comparison' } } } },
-      '/analytics/daily': { get: { tags: ['Analytics'], summary: 'Daily stats for last N days', responses: { 200: { description: 'Array of daily stats' } } } },
-      '/device/bindings': { get: { tags: ['Device'], summary: 'List device bindings', responses: { 200: { description: 'Array of bindings' } } } },
-      '/blacklist': { get: { tags: ['Safety'], summary: 'Search blacklist entries', responses: { 200: { description: 'Array of entries' } } } },
-      '/subscriptions': { get: { tags: ['Agency'], summary: 'Get agency subscriptions', responses: { 200: { description: 'Array of subscriptions' } } } },
-      '/admin/features': { get: { tags: ['Admin'], summary: 'List global features', responses: { 200: { description: 'Array of features' } } } }
-    }
-  },
-  apis: []
-});
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'Nexus Hub API Docs'
-}));
+    apis: []
+  });
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Nexus Hub API Docs'
+  }));
+}
 
 // Sentry error handler (must be before custom error handler)
 try {

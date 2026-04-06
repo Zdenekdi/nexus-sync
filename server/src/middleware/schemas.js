@@ -165,17 +165,25 @@ const login = z.object({
   password: z.string().min(1).max(256)
 });
 
+const strongPassword = z.string()
+  .min(8, 'Password must be at least 8 characters')
+  .max(256)
+  .regex(/[A-Z]/, 'Must contain at least one uppercase letter')
+  .regex(/[a-z]/, 'Must contain at least one lowercase letter')
+  .regex(/[0-9]/, 'Must contain at least one number');
+
 const registerAgency = z.object({
   fullName: z.string().min(1).max(200),
   agencyName: z.string().min(1).max(200),
   email: z.string().email().max(320),
-  password: z.string().min(6).max(256)
+  password: strongPassword,
+  referralCode: z.string().max(64).optional()
 });
 
 const registerUser = z.object({
   fullName: z.string().min(1).max(200),
   email: z.string().email().max(320),
-  password: z.string().min(6).max(256),
+  password: strongPassword,
   inviteCode: z.string().min(1).max(64),
   roleName: z.enum(['Operator', 'Model']).optional()
 });
@@ -271,6 +279,42 @@ const updateGlobalFeature = z.object({
   value: z.string().max(10000)
 });
 
+// ── Device Relay ─────────────────────────────────────────────────────────────
+const relayMessage = z.object({
+  installationId: z.string().min(1).max(256),
+  secret: z.string().max(256).optional(),
+  type: z.string().max(32).optional(),
+  from: z.string().max(64).optional(),
+  to: z.string().max(64).optional(),
+  body: z.string().max(5000).optional(),
+  text: z.string().max(5000).optional(),
+  content: z.string().max(5000).optional(),
+  transport: z.string().max(16).optional(),
+  timestamp: z.number().optional()
+});
+
+const mobileMessage = z.object({
+  secret: z.string().min(1).max(256),
+  from: z.string().min(1).max(64),
+  body: z.string().max(5000).optional(),
+  text: z.string().max(5000).optional(),
+  transport: z.string().max(16).optional()
+});
+
+const mobileCall = z.object({
+  secret: z.string().min(1).max(256),
+  from: z.string().min(1).max(64),
+  state: z.string().max(32).optional(),
+  duration: z.number().int().min(0).optional()
+});
+
+// ── QA Update ────────────────────────────────────────────────────────────────
+const updateQaRecord = z.object({
+  rating: z.number().int().min(1).max(5).optional(),
+  comment: optionalText,
+  category: z.string().max(100).optional().nullable()
+});
+
 module.exports = {
   createMessage,
   updateMessageStatus,
@@ -288,6 +332,7 @@ module.exports = {
   assignUsers,
   createNote,
   createQaRecord,
+  updateQaRecord,
   createCallLog,
   createInventoryItem,
   updateInventoryItem,
@@ -309,5 +354,8 @@ module.exports = {
   verifyDeviceBinding,
   revokeDeviceBinding,
   setSipConfig,
-  updateGlobalFeature
+  updateGlobalFeature,
+  relayMessage,
+  mobileMessage,
+  mobileCall
 };

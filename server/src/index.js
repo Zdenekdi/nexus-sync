@@ -4,6 +4,8 @@ try {
   console.warn('[Bootstrap] DOTENV Load failed - assuming ENV variables are set externally:', e.message);
 }
 
+const logger = require('./services/logger');
+
 // Sentry must be initialized before anything else
 const Sentry = require('@sentry/node');
 if (process.env.SENTRY_DSN) {
@@ -17,11 +19,13 @@ if (process.env.SENTRY_DSN) {
       return event;
     }
   });
+  logger.info('Sentry initialized');
+} else {
+  logger.warn('SENTRY_DSN not configured — error tracking disabled');
 }
 
 const app = require('./app');
 
-const logger = require('./services/logger');
 const http = require('http');
 const socketService = require('./services/socket');
 const safetyService = require('./services/safetyService');

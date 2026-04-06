@@ -230,7 +230,33 @@ describe('POST /api/auth/register-agency', () => {
         password: 'weak',
       });
 
-    // Zod validates min 6 chars, so 'weak' (4 chars) fails validation
+    // Zod validates min 8 chars + uppercase + lowercase + number
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects password without uppercase', async () => {
+    const res = await request(app)
+      .post('/api/auth/register-agency')
+      .send({
+        fullName: 'User',
+        agencyName: 'Agency',
+        email: 'user@test.com',
+        password: 'alllowercase1',
+      });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects password without number', async () => {
+    const res = await request(app)
+      .post('/api/auth/register-agency')
+      .send({
+        fullName: 'User',
+        agencyName: 'Agency',
+        email: 'user@test.com',
+        password: 'NoNumberHere',
+      });
+
     expect(res.status).toBe(400);
   });
 

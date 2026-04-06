@@ -51,6 +51,16 @@ async function getSSHConnection() {
 // Apply auth to all vultr routes
 router.use(authMiddleware);
 
+// Restrict all vultr operations to App Owner / Agency Admin
+const requireAdmin = (req, res, next) => {
+  const role = req.user?.role;
+  if (!role?.isAppOwner && !role?.isManager) {
+    return res.status(403).json({ message: 'Insufficient permissions — admin access required' });
+  }
+  next();
+};
+router.use(requireAdmin);
+
 // ── Vultr API ─────────────────────────────────────────────────────────────────
 router.get("/status", async (req, res) => {
   try {
@@ -103,12 +113,22 @@ router.get("/bandwidth", async (req, res) => {
 });
 
 // ── SSH Terminal ──────────────────────────────────────────────────────────────
+const COMMAND_ALLOWLIST = [
+  /^(ls|cat|head|tail|grep|wc|df|du|free|uptime|whoami|date|pwd|echo|pm2\s|systemctl\s|docker\s|nginx\s|git\s|npm\s|node\s|npx\s|pg_dump|psql|crontab)/,
+];
+const COMMAND_BLOCKLIST = /rm\s+-rf|mkfs|dd\s+if=|:\(\)\{|>\s*\/dev\/|chmod\s+777|curl\s+.*\|\s*(ba)?sh|wget\s+.*\|\s*(ba)?sh|eval\s|exec\s/i;
+
 router.post("/command", validate(sshCommand), async (req, res) => {
   const { command } = req.body;
+  const trimmed = command.trim();
 
-  const blocked = ["rm -rf /", "mkfs", "dd if=", ":(){ :|:& };:"];
-  if (blocked.some(b => command.includes(b))) {
-    return res.status(403).json({ message: 'This command is not allowed' });
+  if (COMMAND_BLOCKLIST.test(trimmed)) {
+    return res.status(403).json({ message: 'This command is not allowed for security reasons' });
+  }
+
+  const isAllowed = COMMAND_ALLOWLIST.some(rx => rx.test(trimmed));
+  if (!isAllowed) {
+    return res.status(403).json({ message: 'Command not in allowlist. Allowed: ls, cat, head, tail, grep, pm2, systemctl, docker, git, npm, node, pg_dump, psql' });
   }
 
   try {
@@ -124,6 +144,12 @@ router.post("/command", validate(sshCommand), async (req, res) => {
 
 router.post("/git-pull", validate(gitPull), async (req, res) => {
   const { path: repoPath } = req.body;
+  
+  // Prevent path traversal
+  if (repoPath.includes('..') || repoPath.includes(';') || repoPath.includes('|') || repoPath.includes('&')) {
+    return res.status(403).json({ message: 'Invalid path — traversal not allowed' });
+  }
+  
   try {
     const ssh = await getSSHConnection();
     const result = await ssh.execCommand(`cd ${repoPath} && git pull origin master`);

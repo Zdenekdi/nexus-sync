@@ -4,7 +4,7 @@ const rateLimit = require('express-rate-limit');
 const deviceController = require('../controllers/deviceController');
 const authMiddleware = require('../middleware/authMiddleware');
 const { validate } = require('../middleware/validate');
-const { registerPushToken, verifyDeviceBinding, revokeDeviceBinding } = require('../middleware/schemas');
+const { registerPushToken, verifyDeviceBinding, revokeDeviceBinding, relayMessage, mobileMessage, mobileCall } = require('../middleware/schemas');
 
 // Rate limiter for unauthenticated device endpoints
 const deviceLimiter = rateLimit({
@@ -19,10 +19,10 @@ const deviceLimiter = rateLimit({
 router.post('/goip/sms', deviceLimiter, express.urlencoded({ extended: true }), deviceController.handleGoIP);
 
 // Mobile apps usually use JSON
-router.post('/mobile/sms', deviceLimiter, express.json(), deviceController.handleMobileSms);
-router.post('/mobile/call', deviceLimiter, express.json(), deviceController.handleMobileCall);
+router.post('/mobile/sms', deviceLimiter, express.json(), validate(mobileMessage), deviceController.handleMobileSms);
+router.post('/mobile/call', deviceLimiter, express.json(), validate(mobileCall), deviceController.handleMobileCall);
 // Relay Mode (Nexus Relay APK)
-router.post('/relay', deviceLimiter, express.json(), deviceController.handleRelay);
+router.post('/relay', deviceLimiter, express.json(), validate(relayMessage), deviceController.handleRelay);
 router.post('/push-token', authMiddleware, express.json(), validate(registerPushToken), deviceController.registerPushToken);
 router.get('/status', authMiddleware, deviceController.getRelayStatus);
 router.post('/verify', authMiddleware, express.json(), validate(verifyDeviceBinding), deviceController.verifyDeviceBinding);
