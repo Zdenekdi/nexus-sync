@@ -14,6 +14,9 @@ describe('Health check', () => {
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('status', 'ok');
     expect(res.body).toHaveProperty('timestamp');
+    expect(res.body).toHaveProperty('uptime');
+    expect(res.body).toHaveProperty('memory');
+    expect(res.body).toHaveProperty('database', 'connected');
   });
 });
 
