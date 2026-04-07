@@ -195,8 +195,8 @@ const Sidebar = () => {
               </div>
             )}
 
-            {/* My Girls Section */}
-            {activeRole !== 'Model' && activeRole !== 'App Owner' && !isSidebarCollapsed && (
+            {/* My Girls Section - Only for Operators and Senior Operators */}
+            {(activeRole === 'Operator' || activeRole === 'Senior Operator') && !isSidebarCollapsed && (
               <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.15rem', marginBottom: '0.75rem' }}>
                   <div style={{ fontSize: '0.65rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{capitalize(t('myAssignedGirls'))}</div>

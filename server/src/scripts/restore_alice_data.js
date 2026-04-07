@@ -54,6 +54,7 @@ async function restore() {
   const modelData = [
     { id: 'ldn-01', name: 'Diana (Central London)', phoneNumber: '+420 773 227 907' },
     { id: 'manc-05', name: 'Bella (Manchester)', phoneNumber: '+44 7700 900456' },
+    { id: 'birm-02', name: 'Chloe (Birmingham)', phoneNumber: '+44 7700 900789' },
     { id: 'leeds-01', name: 'Mia (Leeds)', phoneNumber: '+44 7700 900888' },
     { id: 'newc-03', name: 'Katerina (Newcastle)', phoneNumber: '+44 7700 900999' },
     { id: 'bris-02', name: 'Zoe (Bristol)', phoneNumber: '+44 7700 900777' },
