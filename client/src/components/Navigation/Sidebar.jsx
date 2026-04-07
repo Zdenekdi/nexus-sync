@@ -47,14 +47,17 @@ const Sidebar = () => {
     );
   }
 
-  const TooltipItem = ({ label, children }) => (
-    <div style={{ position: 'relative' }} className="sidebar-tooltip-wrap">
-      {children}
-      {isSidebarCollapsed && !isMobile && (
-        <span className="sidebar-tooltip-text">{label}</span>
-      )}
-    </div>
-  );
+  const TooltipItem = ({ label, children }) => {
+    if (isMobile) return <>{children}</>;
+    return (
+      <div style={{ position: 'relative' }} className="sidebar-tooltip-wrap">
+        {children}
+        {isSidebarCollapsed && (
+          <span className="sidebar-tooltip-text">{label}</span>
+        )}
+      </div>
+    );
+  };
 
   return (
     <>
