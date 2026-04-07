@@ -148,8 +148,9 @@ router.get('/plans', (req, res) => {
       id:            key,
       label:         { MONTHLY: 'Měsíční', SEMI_ANNUAL: 'Půlroční', ANNUAL: 'Roční' }[key],
       durationDays:  days,
-      priceCZK:      PLAN_PRICES[key],
-      savingVsMonth: key === 'MONTHLY' ? 0 : Math.round((1 - PLAN_PRICES[key] / (PLAN_PRICES.MONTHLY * days / 30)) * 100),
+      priceCZK:      PLAN_PRICES[key].CZK,
+      prices:        PLAN_PRICES[key],
+      savingVsMonth: key === 'MONTHLY' ? 0 : Math.round((1 - PLAN_PRICES[key].CZK / (PLAN_PRICES.MONTHLY.CZK * days / 30)) * 100),
     }))
   );
 });
