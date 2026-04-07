@@ -142,17 +142,52 @@ router.post('/cancel', validate(cancelSubscription), async (req, res) => {
 
 // ── GET /api/subscriptions/plans
 // Returns plan options + pricing (no auth needed for this)
-router.get('/plans', (req, res) => {
-  res.json(
-    Object.entries(PLAN_DURATIONS).map(([key, days]) => ({
-      id:            key,
-      label:         { MONTHLY: 'Měsíční', SEMI_ANNUAL: 'Půlroční', ANNUAL: 'Roční' }[key],
-      durationDays:  days,
-      priceCZK:      PLAN_PRICES[key].CZK,
-      prices:        PLAN_PRICES[key],
-      savingVsMonth: key === 'MONTHLY' ? 0 : Math.round((1 - PLAN_PRICES[key].CZK / (PLAN_PRICES.MONTHLY.CZK * days / 30)) * 100),
-    }))
-  );
+router.get('/plans', async (req, res) => {
+  try {
+    const setting = await prisma.globalSetting.findUnique({ where: { key: 'SUBSCRIPTION_PLANS' } });
+    if (setting && setting.value) {
+      return res.json(JSON.parse(setting.value));
+    }
+    // Fallback if no dynamic plans initialized
+    res.json(
+      Object.entries(PLAN_DURATIONS).map(([key, days]) => ({
+        id:            key,
+        name:          { MONTHLY: 'Měsíční', SEMI_ANNUAL: 'Půlroční', ANNUAL: 'Roční' }[key],
+        durationDays:  days,
+        prices:        PLAN_PRICES[key],
+        profilesLimit: key === 'MONTHLY' ? 5 : 20,
+        features:      ['Základní analytika', 'Podpora 24/7'],
+      }))
+    );
+  } catch (err) {
+    console.error('GET /subscriptions/plans error:', err);
+    res.status(500).json({ message: 'Failed to fetch plans' });
+  }
+});
+
+// ── POST /api/subscriptions/config (App Owner only)
+// Update dynamic plan options
+router.post('/config', async (req, res) => {
+  try {
+    if (!req.user || req.user.role !== 'APP OWNER') {
+      return res.status(403).json({ message: 'Only App Owner can configure plans' });
+    }
+    const { plans } = req.body;
+    if (!plans || !Array.isArray(plans)) {
+      return res.status(400).json({ message: 'Invalid plans format' });
+    }
+
+    await prisma.globalSetting.upsert({
+      where: { key: 'SUBSCRIPTION_PLANS' },
+      update: { value: JSON.stringify(plans) },
+      create: { key: 'SUBSCRIPTION_PLANS', value: JSON.stringify(plans) },
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('POST /subscriptions/config error:', err);
+    res.status(500).json({ message: 'Failed to update plan configuration' });
+  }
 });
 
 // ── POST /api/subscriptions/trial   (App Owner only)
