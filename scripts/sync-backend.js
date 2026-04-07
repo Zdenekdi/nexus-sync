@@ -13,7 +13,8 @@ const ignoreList = [
   '.cache', 
   'coverage', 
   'npm-debug.log',
-  '.prisma_cache'
+  '.prisma_cache',
+  '.dockerignore'
 ];
 
 function syncFiles(src, dest) {
