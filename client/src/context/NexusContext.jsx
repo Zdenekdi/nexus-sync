@@ -36,6 +36,11 @@ export const NexusProvider = ({ children }) => {
   const [showPanicConfirm, setShowPanicConfirm] = useState(false);
   const [justLoggedOut, setJustLoggedOut] = useState(false);
   
+  // Modals state
+  const [agencyDetailModalData, setAgencyDetailModalData] = useState(null);
+  const [isAddAgencyOpen, setIsAddAgencyOpen] = useState(false);
+  const [isBugReportOpen, setIsBugReportOpen] = useState(false);
+  
   // Persist important UI states
   React.useEffect(() => {
     localStorage.setItem('nexus_lang', lang);
@@ -433,6 +438,18 @@ export const NexusProvider = ({ children }) => {
     
     // Relay call (from socket incoming_call event)
     incomingRelayCall, setIncomingRelayCall,
+
+    // Modals
+    agencyDetailModalData, setAgencyDetailModalData,
+    isAddAgencyOpen, setIsAddAgencyOpen,
+    isBugReportOpen, setIsBugReportOpen,
+
+    // Agency / Infrastructure Mock Handlers
+    handleAddAgency: () => setIsAddAgencyOpen(true),
+    handleAgencyDetail: (agency) => setAgencyDetailModalData(agency),
+    handleImpersonateAgency: () => showToast(lang === 'cz' ? 'Tato sekce je v přípravě.' : 'This section is under development.', 'info'),
+    handleDeleteAgency: () => showToast(lang === 'cz' ? 'Tato sekce je v přípravě.' : 'This section is under development.', 'info'),
+    handleToggleAgencyStatus: () => showToast(lang === 'cz' ? 'Tato sekce je v přípravě.' : 'This section is under development.', 'info'),
     
     // Crucial handlers that were causing "not a function" errors
     handleSendMessage, handleTranslate,
