@@ -39,11 +39,47 @@ export function useNexusData({
   });
   const [_activeSubscription, _setActiveSubscription] = useState(null);
   const [_subscriptionHistory, _setSubscriptionHistory] = useState([]);
-  const [_globalFeatures, _setGlobalFeatures] = useState([]);
+  const [_globalFeatures, _setGlobalFeatures] = useState([
+    { id: 'master_sync', label: 'Master Sync', desc: 'Sledování databází a notifikací pro agentury napříč sítí v reálném čase', active: true },
+    { id: 'ai_optimizer', label: 'AI Optimizer', desc: 'Trénovací moduly a automatické návrhy chatů a optimalizační nástroje', active: false },
+    { id: 'audit_vault', label: 'Audit Vault', desc: 'Zabezpečené cloudové zálohování a kompletní audit operátorů pro případné kontroly', active: true },
+    { id: 'cloud_bridge', label: 'Cloud Bridge', desc: 'Přímé propojení Nexus subsystémů s mezinárodním API plateb a bran', active: false }
+  ]);
   const [_auditLogs, _setAuditLogs] = useState([]);
   const [isDataLoading, setIsDataLoading] = useState(false);
+  const [clientNames, setClientNames] = useState({});
 
-  const [clientNames, _setClientNames] = useState(() => {
+  // Global Features & Training Actions
+  const handleFeatureToggle = useCallback((feature, i) => {
+    const updated = [..._globalFeatures];
+    updated[i].active = !updated[i].active;
+    _setGlobalFeatures(updated);
+  }, [_globalFeatures]);
+
+  const [isTraining, setIsTraining] = useState(false);
+  const [trainingProgress, setTrainingProgress] = useState(0);
+
+  const onStartTraining = useCallback(() => {
+    setIsTraining(true);
+    setTrainingProgress(0);
+    const interval = setInterval(() => {
+      setTrainingProgress(p => {
+        if (p >= 100) {
+          clearInterval(interval);
+          setIsTraining(false);
+          return 100;
+        }
+        return p + 5;
+      });
+    }, 500);
+  }, []);
+
+  const onResetTraining = useCallback(() => {
+    setTrainingProgress(0);
+    setIsTraining(false);
+  }, []);
+
+  const [_clientNames, _setClientNames] = useState(() => {
     const saved = localStorage.getItem('nexus_client_names');
     return saved ? JSON.parse(saved) : {};
   });
@@ -245,7 +281,9 @@ export function useNexusData({
 
   return {
     profiles, agencies, agencySettings: _agencySettings, operators, sessions, stats, activeSubscription: _activeSubscription,
-    subscriptionHistory: _subscriptionHistory, globalFeatures: _globalFeatures, auditLogs: _auditLogs, isDataLoading, clientNames,
+    subscriptionHistory: _subscriptionHistory, globalFeatures: _globalFeatures, handleFeatureToggle,
+    isTraining, trainingProgress, onStartTraining, onResetTraining,
+    auditLogs: _auditLogs, isDataLoading, clientNames,
     bookingSchedule: _bookingSchedule, isCalendarSyncOpen, setIsCalendarSyncOpen, calendarSyncUrl, setCalendarSyncUrl,
     isBookingModalOpen, setIsBookingModalOpen, selectedScheduleEvent, setSelectedScheduleEvent,
     newBookingForm, setNewBookingForm, bioText, setBioText, isSyncing, syncStatus: _syncStatus, syncProgress: _syncProgress,
