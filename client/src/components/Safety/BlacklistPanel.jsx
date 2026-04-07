@@ -19,7 +19,7 @@ const BlacklistPanel = () => {
     try {
       const params = new URLSearchParams({ page, limit: 30 });
       if (search) params.set('search', search);
-      const res = await fetch(`${API_BASE}/api/blacklist?${params}`, {
+      const res = await fetch(`${API_BASE}/blacklist?${params}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error();
@@ -54,7 +54,7 @@ const BlacklistPanel = () => {
       return;
     }
     try {
-      const res = await fetch(`${API_BASE}/api/blacklist`, {
+      const res = await fetch(`${API_BASE}/blacklist`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(form)
@@ -71,7 +71,7 @@ const BlacklistPanel = () => {
 
   const handleReport = async (entryId) => {
     try {
-      const res = await fetch(`${API_BASE}/api/blacklist/${entryId}/report`, {
+      const res = await fetch(`${API_BASE}/blacklist/${entryId}/report`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ comment: '' })
@@ -86,7 +86,7 @@ const BlacklistPanel = () => {
 
   const handleDelete = async (entryId) => {
     try {
-      const res = await fetch(`${API_BASE}/api/blacklist/${entryId}`, {
+      const res = await fetch(`${API_BASE}/blacklist/${entryId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });

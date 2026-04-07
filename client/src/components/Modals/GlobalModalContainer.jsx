@@ -1,4 +1,5 @@
 import React from 'react';
+import axios from 'axios';
 import { useNexus } from '../../context/NexusContext';
 
 // Modals & Overlays
@@ -23,7 +24,10 @@ const GlobalModalContainer = () => {
     agencyDetailModalData, setAgencyDetailModalData,
     isAddAgencyOpen, setIsAddAgencyOpen,
     isAddUserOpen, setIsAddUserOpen,
-    operators, showToast, lang
+    operators, showToast, lang, t, isMobile,
+    isEditProfileOpen, setIsEditProfileOpen,
+    editingProfileData, setEditingProfileData,
+    API_BASE, token, setProfiles
   } = useNexus();
 
   return (
@@ -41,7 +45,33 @@ const GlobalModalContainer = () => {
         />
       )}
       <BookingModal />
-      <EditProfileModal />
+      <EditProfileModal
+        isOpen={isEditProfileOpen}
+        onClose={() => setIsEditProfileOpen(false)}
+        data={editingProfileData}
+        onDataChange={setEditingProfileData}
+        onSave={async () => {
+          if (!editingProfileData) return;
+          try {
+            const endpoint = `${API_BASE}/profiles/${editingProfileData.id}`;
+            await axios.patch(endpoint, {
+              name: editingProfileData.name,
+              phoneNumber: editingProfileData.phoneNumber
+            }, { headers: { Authorization: `Bearer ${token}` } });
+            
+            // Re-fetch or update local UI optimally
+            setProfiles(prev => prev.map(p => p.id === editingProfileData.id ? { ...p, ...editingProfileData } : p));
+            showToast(t('profileSavedMsg') || (lang === 'cz' ? 'Profil úspěšně uložen' : 'Profile properly saved'), 'success');
+            setIsEditProfileOpen(false);
+          } catch (e) {
+            console.error('Failed to update profile:', e);
+            showToast(lang === 'cz' ? 'Chyba při ukládání profilu' : 'Error saving profile', 'error');
+          }
+        }}
+        t={t}
+        lang={lang}
+        isMobile={isMobile}
+      />
       <AddOperatorModal />
       
       {isAddAgencyOpen && (
