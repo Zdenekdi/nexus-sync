@@ -196,9 +196,9 @@ const AgencyDetailModal = ({
             </div>
             {agency.inviteCode ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <code style={{ flex: 1, background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '10px', fontSize: '1.2rem', fontWeight: '900', textAlign: 'center' }}>{agency.inviteCode}</code>
-                <button onClick={() => { navigator.clipboard.writeText(agency.inviteCode); showToast('Copied!', 'success'); }} style={{ padding: '0 1rem', height: '52px', background: 'var(--accent-color)', color: 'white', borderRadius: '10px', fontWeight: '800' }}>
-                  <Copy size={16} />
+                <code style={{ flex: 1, background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '10px', fontSize: '1.2rem', fontWeight: '900', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '54px', boxSizing: 'border-box' }}>{agency.inviteCode}</code>
+                <button onClick={() => { navigator.clipboard.writeText(agency.inviteCode); showToast('Copied!', 'success'); }} style={{ padding: '0 1.25rem', height: '54px', minWidth: '54px', background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(59,130,246,0.3)' }}>
+                  <Copy size={18} />
                 </button>
               </div>
             ) : <div style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Code not generated</div>}
