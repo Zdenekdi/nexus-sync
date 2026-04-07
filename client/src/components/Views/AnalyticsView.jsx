@@ -23,8 +23,8 @@ const AnalyticsView = () => {
             <DollarSign size={20} color="var(--success-color)" />
             <span style={{ fontSize: '0.8rem', fontWeight: '700', letterSpacing: '0.05em' }}>{t('totalRevenue').toUpperCase()}</span>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: '900' }}>£15,490</div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--success-color)', marginTop: '0.5rem', fontWeight: '700' }}>+12.4% {t('vsLastWeek')}</div>
+          <div style={{ fontSize: '2rem', fontWeight: '900' }}>0.00</div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem', fontWeight: '700' }}>N/A</div>
         </div>
 
         <div className="glass-card" style={{ padding: '1.5rem' }}>
@@ -32,8 +32,8 @@ const AnalyticsView = () => {
             <Calendar size={20} color="var(--accent-color)" />
             <span style={{ fontSize: '0.8rem', fontWeight: '700', letterSpacing: '0.05em' }}>{t('activeBookings').toUpperCase()}</span>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: '900' }}>89</div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--success-color)', marginTop: '0.5rem', fontWeight: '700' }}>+5 {t('thisWeek')}</div>
+          <div style={{ fontSize: '2rem', fontWeight: '900' }}>0</div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem', fontWeight: '700' }}>N/A</div>
         </div>
 
         <div className="glass-card" style={{ padding: '1.5rem' }}>
@@ -41,7 +41,7 @@ const AnalyticsView = () => {
             <MessageSquare size={20} color="#a855f7" />
             <span style={{ fontSize: '0.8rem', fontWeight: '700', letterSpacing: '0.05em' }}>{t('totalMessages').toUpperCase()}</span>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: '900' }}>2,148</div>
+          <div style={{ fontSize: '2rem', fontWeight: '900' }}>0</div>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('acrossAllProfiles')}</div>
         </div>
 
@@ -50,8 +50,8 @@ const AnalyticsView = () => {
             <TrendingUp size={20} color="#f59e0b" />
             <span style={{ fontSize: '0.8rem', fontWeight: '700', letterSpacing: '0.05em' }}>{t('conversionRate').toUpperCase()}</span>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: '900' }}>11.5%</div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--success-color)', marginTop: '0.5rem', fontWeight: '700' }}>+1.2% {t('trend')}</div>
+          <div style={{ fontSize: '2rem', fontWeight: '900' }}>0%</div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem', fontWeight: '700' }}>N/A</div>
         </div>
       </div>
 
@@ -74,11 +74,11 @@ const AnalyticsView = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div>
                     <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '800' }}>BOOKINGS</div>
-                    <div style={{ fontWeight: '700', fontSize: '1rem' }}>{p.activeBookings || Math.floor(Math.random()*20)}</div>
+                    <div style={{ fontWeight: '700', fontSize: '1rem' }}>{p.activeBookings || 0}</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '800' }}>EARNINGS</div>
-                    <div style={{ fontWeight: '900', fontSize: '1rem', color: 'var(--success-color)' }}>{p.earnings || '£' + (Math.floor(Math.random()*5000) + 1000)}</div>
+                    <div style={{ fontWeight: '900', fontSize: '1rem', color: 'var(--success-color)' }}>{p.earnings || '0.00'}</div>
                   </div>
                 </div>
               </div>
@@ -94,7 +94,7 @@ const AnalyticsView = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {[...(allAgencyProfiles || [])].sort((a,b) => parseInt((b.earnings || '£0').replace(/\D/g,'')) - parseInt((a.earnings || '£0').replace(/\D/g,''))).map((p, idx) => (
+                    {[...(allAgencyProfiles || [])].sort((a,b) => parseInt((b.earnings || '0').replace(/\D/g,'')) - parseInt((a.earnings || '0').replace(/\D/g,''))).map((p, idx) => (
                       <tr key={p.id} style={{ borderBottom: '1px solid var(--card-border)' }}>
                         <td style={{ padding: '1rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -108,8 +108,8 @@ const AnalyticsView = () => {
                             <span style={{ fontWeight: '700' }}>#{idx + 1}</span>
                           </div>
                         </td>
-                        <td style={{ padding: '1rem', fontWeight: '700' }}>{p.activeBookings || Math.floor(Math.random() * 15)}</td>
-                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: '900', color: 'var(--success-color)' }}>{p.earnings}</td>
+                        <td style={{ padding: '1rem', fontWeight: '700' }}>{p.activeBookings || 0}</td>
+                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: '900', color: 'var(--success-color)' }}>{p.earnings || '0.00'}</td>
                       </tr>
                     ))}
                   </tbody>

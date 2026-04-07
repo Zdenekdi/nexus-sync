@@ -14,6 +14,18 @@ const DashboardHome = () => {
   
   const { status: vultrStatus } = useVultr();
 
+  const currentAgency = (agencies || [])[0] || {};
+  const regions = currentAgency.regions || ['uk'];
+  const isMultiregion = currentAgency.isInternational || regions.length > 1;
+  const defaultCurrency = isMultiregion ? 'EUR' : (regions[0] === 'cz' ? 'CZK' : (regions[0] === 'us' ? 'USD' : 'GBP'));
+  const [dashboardCurrency, setDashboardCurrency] = React.useState(defaultCurrency);
+
+  const formatMoney = (val, cur) => {
+    const sym = { GBP: '£', EUR: '€', USD: '$', CZK: 'Kč' }[cur] || '£';
+    const numStr = String(val).replace(/[^0-9.]/g, '') || "0.00";
+    return cur === 'CZK' ? `${parseInt(numStr)} ${sym}` : `${sym}${numStr}`;
+  };
+
   const isCz = lang === 'cz' || lang === 'cs';
 
   const WelcomeSection = () => (
@@ -36,7 +48,10 @@ const DashboardHome = () => {
         alerts.push({ message: isCz ? `Zkušební doba končí za ${daysLeft} dní` : `Trial expires in ${daysLeft} days`, color: '#f59e0b' });
       }
     }
-    if ((_profiles || []).length === 0) {
+    const myAgency = (agencies || [])[0];
+    const hasProfilesInAgency = stats?.totalProfiles > 0 || stats?.activeProfiles > 0 || (myAgency && myAgency.totalProfiles > 0);
+    
+    if (!hasProfilesInAgency && (_profiles || []).length === 0 && (activeRole === 'App Owner' || activeRole === 'Agency Admin' || activeRole === 'Manager')) {
       alerts.push({ message: isCz ? 'Vytvořte svůj první profil a začněte' : 'Create your first profile to get started', color: '#3b82f6' });
     }
     if (alerts.length === 0) return null;
@@ -288,9 +303,34 @@ const DashboardHome = () => {
       <WelcomeSection />
       <AlertsSection />
 
-      <div style={{ marginBottom: isMobile ? '1.5rem' : '2.5rem' }}>
-        <h2 style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '900' }}>{(t('agencyOverview') || 'Agency Overview').toUpperCase()}</h2>
-        <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1rem' }}>{t('agencyOverviewDesc')}</p>
+      <div style={{ marginBottom: isMobile ? '1.5rem' : '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', gap: '1rem' }}>
+        <div>
+          <h2 style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '900' }}>{(t('agencyOverview') || 'Agency Overview').toUpperCase()}</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1rem' }}>{t('agencyOverviewDesc')}</p>
+        </div>
+        {isMultiregion && (
+           <div style={{ display: 'flex', gap: '0.25rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.25rem', borderRadius: '10px' }}>
+              {['GBP', 'EUR', 'USD', 'CZK'].map(cur => (
+                <button
+                  key={cur}
+                  onClick={() => setDashboardCurrency(cur)}
+                  style={{
+                    padding: '0.4rem 0.8rem',
+                    borderRadius: '8px',
+                    background: dashboardCurrency === cur ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
+                    color: dashboardCurrency === cur ? '#60a5fa' : 'var(--text-secondary)',
+                    border: 'none',
+                    fontSize: '0.75rem',
+                    fontWeight: '800',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {cur}
+                </button>
+              ))}
+           </div>
+        )}
       </div>
 
       {renderSubscriptionBanner()}
@@ -310,7 +350,7 @@ const DashboardHome = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--accent-color)', marginBottom: '0.5rem' }}>{t('revenueMtd')}</div>
-              <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>{(stats || {}).revenue || '£0.00'}</div>
+              <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>{formatMoney((stats || {}).revenue, dashboardCurrency)}</div>
             </div>
             <MiniSparkline data={(stats || {}).sparklineData || (stats || {}).chartData || [0,0,0,0,0,0,0]} color="var(--accent-color)" />
           </div>

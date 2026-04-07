@@ -101,8 +101,9 @@ const PlansDashboard = () => {
       )}
       
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(350px, 1fr))', gap: isMobile ? '1rem' : '2rem' }}>
-        {(subscriptionPlans || []).map((plan) => {
-          const isActive = currentAgency?.tier?.toLowerCase() === plan.id;
+        {(subscriptionPlans || []).map(plan => {
+          const agencyPlanName = (currentAgency?.subscription?.plan || currentAgency?.tier || currentAgency?.plan || 'basic').toLowerCase();
+          const isActive = agencyPlanName === plan.id.toLowerCase() || agencyPlanName === plan.name.toLowerCase();
           
           return (
             <div 
@@ -156,7 +157,7 @@ const PlansDashboard = () => {
                     ))}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.85rem' }}>
                     <Users size={14} color="var(--accent-color)" />
-                    <span>{plan.profilesLimit === -1 ? (lang === 'cz' ? 'Neomezený počet profilů' : 'Unlimited profiles') : t('profilesLimitLabel', { count: plan.profilesLimit })}</span>
+                    <span>{plan.profilesLimit === -1 ? (lang === 'cz' ? 'Neomezený počet profilů' : 'Unlimited profiles') : (t('profilesLimitLabel', { count: plan.profilesLimit }) || 'Až {count} profilů').toString().replace('{count}', plan.profilesLimit)}</span>
                   </div>
                 </div>
               </div>
@@ -168,29 +169,19 @@ const PlansDashboard = () => {
                 >
                   <FileEdit size={16} /> {t('editPlanDetails') || 'Upravit tarif'}
                 </button>
-              ) : (
-                <button 
-                  onClick={() => {}} // Simulation only
-                  disabled={isActive}
+              ) : isActive ? null : (
+                <button
                   style={{ 
                     width: '100%', padding: '0.8rem', 
-                    background: isActive ? 'rgba(16, 185, 129, 0.1)' : 'var(--accent-color)', 
-                    border: isActive ? '1px solid var(--success-color)' : 'none', 
+                    background: 'var(--accent-color)', 
+                    border: 'none', 
                     borderRadius: '10px', color: 'white', fontWeight: '800', 
-                    cursor: isActive ? 'default' : 'pointer', display: 'flex', alignItems: 'center', 
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', 
                     justifyContent: 'center', gap: '0.5rem',
-                    boxShadow: isActive ? 'none' : '0 10px 20px var(--accent-glow)'
+                    boxShadow: '0 10px 20px var(--accent-glow)'
                   }}
                 >
-                  {isActive ? (
-                    <>
-                      <CheckCheck size={16} color="var(--success-color)" /> {t('active')}
-                    </>
-                  ) : (
-                    <>
-                      <Zap size={16} fill="white" /> {t('upgradeNow')}
-                    </>
-                  )}
+                  <Zap size={16} fill="white" /> {t('upgradeNow')}
                 </button>
               )}
             </div>

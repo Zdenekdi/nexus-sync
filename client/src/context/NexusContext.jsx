@@ -51,6 +51,9 @@ export const NexusProvider = ({ children }) => {
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [addUserModalAgencyId, setAddUserModalAgencyId] = useState(null);
   
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [editingProfileData, setEditingProfileData] = useState(null);
+  
   // Persist important UI states
   React.useEffect(() => {
     localStorage.setItem('nexus_lang', lang);
@@ -472,6 +475,14 @@ export const NexusProvider = ({ children }) => {
     handleSendMessage, handleTranslate,
     handleSaveNote, handleDeleteNote,
     startCall, handleQuickSaveMeeting,
+    
+    // Explicit profile edit modal triggers
+    isEditProfileOpen, setIsEditProfileOpen,
+    editingProfileData, setEditingProfileData,
+    handleEditProfile: (profile) => {
+      setEditingProfileData(profile);
+      setIsEditProfileOpen(true);
+    },
     
     // Profiles and Selection
     activeProfile, activeProfileId, setActiveProfileId,
