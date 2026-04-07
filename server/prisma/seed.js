@@ -34,6 +34,7 @@ async function main() {
   const roles = [
     { name: 'App Owner', isAppOwner: true, isManager: true, permissions: JSON.stringify({ all: true }), agencyId: null },
     { name: 'Agency Admin', isAppOwner: false, isManager: true, permissions: JSON.stringify({ manage: true }), agencyId: 'agency-01' },
+    { name: 'Manager', isAppOwner: false, isManager: true, permissions: JSON.stringify({ supervise: true }), agencyId: 'agency-01' },
     { name: 'Senior Operator', isAppOwner: false, isManager: true, permissions: JSON.stringify({ operate: true }), agencyId: 'agency-01' },
     { name: 'Operator', isAppOwner: false, isManager: false, permissions: JSON.stringify({ basic: true }), agencyId: 'agency-01' },
     { name: 'Model', isAppOwner: false, isManager: false, permissions: JSON.stringify({ view: true }), agencyId: 'agency-01' },
