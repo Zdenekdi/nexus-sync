@@ -165,7 +165,7 @@ router.post('/cancel', validate(cancelSubscription), async (req, res) => {
 // Update dynamic plan options
 router.post('/config', async (req, res) => {
   try {
-    if (!req.user || req.user.role !== 'APP OWNER') {
+    if (!req.user || !req.user.role?.isAppOwner) {
       return res.status(403).json({ message: 'Only App Owner can configure plans' });
     }
     const { plans } = req.body;
@@ -190,7 +190,7 @@ router.post('/config', async (req, res) => {
 // Start a trial period for an agency
 router.post('/trial', validate(startTrial), async (req, res) => {
   try {
-    if (!req.user.isAppOwner && !req.user.isAdmin) {
+    if (!req.user.role?.isAppOwner) {
       return res.status(403).json({ message: 'App Owner access required' });
     }
     const { agencyId, days = 14, note } = req.body;
@@ -223,7 +223,7 @@ router.post('/trial', validate(startTrial), async (req, res) => {
 // Platform-wide metrics for the administration dashboard
 router.get('/admin/stats', async (req, res) => {
   try {
-    if (!req.user.isAppOwner && !req.user.isAdmin) {
+    if (!req.user.role?.isAppOwner) {
       return res.status(403).json({ message: 'App Owner access required' });
     }
 
