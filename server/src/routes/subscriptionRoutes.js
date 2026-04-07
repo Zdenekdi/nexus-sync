@@ -29,9 +29,9 @@ router.get('/plans', async (req, res) => {
     }
     // Fallback if no dynamic plans initialized
     res.json([
-      { id: 'basic', name: 'Basic', prices: { cz: '2900', eu: '120', us: '130', uk: '110' }, profilesLimit: 3, features: ['Správa profilů', 'Základní analytika', 'Podpora 24/7'] },
-      { id: 'pro', name: 'Pro', prices: { cz: '5900', eu: '240', us: '260', uk: '220' }, profilesLimit: 10, features: ['Vše z Basic', 'Pokročilá analytika', 'AI Optimalizace'] },
-      { id: 'agency', name: 'Agency', prices: { cz: '9900', eu: '400', us: '440', uk: '360' }, profilesLimit: 50, features: ['Vše z Pro', 'Auditní logy', 'API Přístup'] }
+      { id: 'basic', name: 'Basic', description: 'Ideální pro nezávislé modely a začínající agentury. Zahrnuje základní nástroje pro správu.', prices: { cz: '2900', eu: '120', us: '130', uk: '110' }, profilesLimit: 3, features: ['Správa profilů', 'Základní analytika', 'Podpora 24/7'] },
+      { id: 'pro', name: 'Pro', description: 'Nejlepší volba pro rostoucí týmy. Získejte přístup k pokročilým analytickým nástrojům a AI.', prices: { cz: '5900', eu: '240', us: '260', uk: '220' }, profilesLimit: 10, features: ['Vše z Basic', 'Pokročilá analytika', 'AI Optimalizace'] },
+      { id: 'agency', name: 'Agency', description: 'Komplexní řešení pro velké agentury s neomezenou škálovatelností a plným přístupem.', prices: { cz: '9900', eu: '400', us: '440', uk: '360' }, profilesLimit: 50, features: ['Vše z Pro', 'Auditní logy', 'API Přístup'] }
     ]);
   } catch (err) {
     console.error('GET /subscriptions/plans error:', err);
