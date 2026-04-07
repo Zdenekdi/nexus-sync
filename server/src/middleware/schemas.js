@@ -219,7 +219,10 @@ const purchaseAddon = z.object({
 
 const createAgency = z.object({
   name: z.string().min(1).max(200),
+  region: z.string().min(1).max(100),
+  tier: z.string().max(50).optional().default('Standard'),
   plan: z.string().max(50).optional().default('Standard'),
+  email: z.string().email().max(320).optional(),
   ownerEmail: z.string().email().max(320).optional(),
   ownerName: z.string().max(200).optional()
 });
