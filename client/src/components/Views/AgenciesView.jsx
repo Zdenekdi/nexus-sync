@@ -67,7 +67,7 @@ const AgenciesView = () => {
                       </td>
                       <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                          <button onClick={() => onDetail(agency)} className="status-badge">DETAIL</button>
+                          <button onClick={() => onDetail(agency)} style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0.4rem 1rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', letterSpacing: '0.05em' }}>DETAIL</button>
                           <button onClick={() => onImpersonate(agency)} className="status-badge" style={{ color: 'var(--accent-color)' }}>{t('impersonate')}</button>
                           <button onClick={() => onDelete(agency.id)} className="status-badge" style={{ color: '#ef4444' }}>DELETE</button>
                         </div>

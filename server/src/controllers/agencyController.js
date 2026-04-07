@@ -9,7 +9,7 @@ const crypto = require('crypto');
 exports.updateSettings = async (req, res) => {
     try {
         const { role, agencyId: userAgencyId } = req.user;
-        const { safetyAlertMode, agencyId: bodyAgencyId, name, email, defaultGraceMinutes, currency, timezone } = req.body;
+        const { safetyAlertMode, agencyId: bodyAgencyId, name, email, region, defaultGraceMinutes, currency, timezone } = req.body;
         const isAppOwner = role?.isAppOwner;
 
         if (!role?.isManager && !isAppOwner) {
@@ -23,6 +23,7 @@ exports.updateSettings = async (req, res) => {
         if (safetyAlertMode !== undefined) updateData.safetyAlertMode = safetyAlertMode;
         if (name !== undefined) updateData.name = name;
         if (email !== undefined) updateData.email = email;
+        if (region !== undefined) updateData.region = region;
         if (defaultGraceMinutes !== undefined) updateData.defaultGraceMinutes = defaultGraceMinutes;
         if (currency !== undefined) updateData.currency = currency;
         if (timezone !== undefined) updateData.timezone = timezone;
