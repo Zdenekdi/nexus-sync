@@ -264,13 +264,85 @@ const PlansDashboard = () => {
 
               {!editingPlan.isAddon && (
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>VLASTNOSTI (ODDĚLENÉ ČÁRKOU)</label>
-                  <textarea 
-                    className="glass-input" 
-                    value={(editingPlan.features || []).join(', ')} 
-                    onChange={(e) => setEditingPlan({...editingPlan, features: e.target.value.split(',').map(f => f.trim()).filter(f => f.length > 0)})} 
-                    style={{ width: '100%', padding: '0.75rem', minHeight: '100px', resize: 'vertical' }} 
-                  />
+                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.05em' }}>OBSAŽENÉ FUNKCIONALITY (CHECKBOXY)</label>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', maxHeight: '300px', overflowY: 'auto', paddingRight: '0.5rem' }} className="custom-scrollbar">
+                    {[
+                      { 
+                        title: 'Základ a Dědičnost', 
+                        items: ['Vše z Basic', 'Vše z Pro'] 
+                      },
+                      { 
+                        title: 'Správa a Analytika', 
+                        items: ['Správa profilů', 'Základní analytika', 'Pokročilá analytika', 'Auditní logy'] 
+                      },
+                      { 
+                        title: 'Rozšířené Systémy', 
+                        items: ['AI Optimalizace', 'API Přístup', 'Podpora 24/7', 'VIP Podpora', 'Tvorba Web Profilů'] 
+                      }
+                    ].map(group => (
+                      <div key={group.title}>
+                        <div style={{ fontSize: '0.65rem', fontWeight: '900', color: 'rgba(255,255,255,0.3)', marginBottom: '0.5rem', letterSpacing: '0.1em' }}>{group.title.toUpperCase()}</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.5rem' }}>
+                          {group.items.map(feat => {
+                            const isSelected = (editingPlan.features || []).includes(feat);
+                            return (
+                              <button 
+                                key={feat}
+                                onClick={() => {
+                                  setEditingPlan(prev => {
+                                    const curr = prev.features || [];
+                                    if (isSelected) {
+                                      return { ...prev, features: curr.filter(f => f !== feat) };
+                                    } else {
+                                      return { ...prev, features: [...curr, feat] };
+                                    }
+                                  });
+                                }}
+                                style={{
+                                  display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 0.8rem',
+                                  background: isSelected ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255,255,255,0.03)',
+                                  border: isSelected ? '1px solid rgba(59, 130, 246, 0.5)' : '1px solid rgba(255,255,255,0.05)',
+                                  borderRadius: '8px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease',
+                                  color: isSelected ? 'white' : 'var(--text-secondary)'
+                                }}
+                              >
+                                <div style={{ 
+                                  width: '16px', height: '16px', borderRadius: '4px', 
+                                  background: isSelected ? 'var(--accent-color)' : 'rgba(0,0,0,0.3)',
+                                  border: isSelected ? 'none' : '1px solid rgba(255,255,255,0.2)',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                }}>
+                                  {isSelected && <Check size={12} color="white" strokeWidth={3} />}
+                                </div>
+                                <span style={{ fontSize: '0.8rem', fontWeight: isSelected ? '800' : '600' }}>{feat}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {/* Preserve custom features not in our list */}
+                    {(() => {
+                      const allKnown = ['Vše z Basic', 'Vše z Pro', 'Správa profilů', 'Základní analytika', 'Pokročilá analytika', 'Auditní logy', 'AI Optimalizace', 'API Přístup', 'Podpora 24/7', 'VIP Podpora', 'Tvorba Web Profilů'];
+                      const customFeatures = (editingPlan.features || []).filter(f => !allKnown.includes(f));
+                      if (customFeatures.length === 0) return null;
+                      return (
+                        <div>
+                          <div style={{ fontSize: '0.65rem', fontWeight: '900', color: 'rgba(255,255,255,0.3)', marginBottom: '0.5rem', letterSpacing: '0.1em' }}>VLASTNÍ (NEZNÁMÉ) POLOŽKY</div>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.5rem' }}>
+                            {customFeatures.map(feat => (
+                              <div key={feat} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 0.8rem', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', color: 'var(--danger-color)', fontSize: '0.8rem', fontWeight: '600' }}>
+                                <AlertCircle size={14} /> {feat}
+                                <button onClick={() => setEditingPlan(prev => ({...prev, features: prev.features.filter(f => f !== feat)}))} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0 }}>×</button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </div>
               )}
 
@@ -279,7 +351,10 @@ const PlansDashboard = () => {
                   className="action-btn" 
                   style={{ flex: 1, background: 'var(--accent-color)' }} 
                   onClick={async () => {
-                    const result = await updatePlans(newPlans);
+                    const isAddonEdit = editingPlan.isAddon;
+                    const result = await updatePlans(isAddonEdit 
+                      ? subscriptionPlans 
+                      : subscriptionPlans.map(p => p.id === editingPlan.id ? editingPlan : p)); // Replace logic for addon if needed
                     if (result.success) {
                       setEditingPlan(null);
                       showToast(lang === 'cz' ? 'Změny uloženy.' : 'Changes saved.', 'success');
