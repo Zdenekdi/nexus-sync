@@ -68,12 +68,16 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
           const data = await res.json();
           localStorage.setItem('nexus_token', data.token);
           localStorage.setItem('nexus_refreshToken', data.refreshToken);
+          localStorage.setItem('nexus_isLoggedIn', 'true'); // Ensure it's set
           setToken(data.token);
+          if (setShowLanding) setShowLanding(false);
           scheduleTokenRefresh(data.expiresIn || 3600);
           console.log('[Auth] Token refreshed');
-        } else {
-          console.warn('[Auth] Refresh failed, logging out');
+        } else if (res.status === 401 || res.status === 403 || res.status === 400) {
+          console.warn('[Auth] Session expired, logging out');
           handleLogoutInternal();
+        } else {
+          console.warn(`[Auth] Refresh failed with status ${res.status}, keeping session for retry`);
         }
       } catch (err) {
         console.error('[Auth] Refresh error:', err);

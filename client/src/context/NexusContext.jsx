@@ -29,7 +29,12 @@ export const NexusProvider = ({ children }) => {
   });
   const [activeMarket, setActiveMarket] = useState(localStorage.getItem('nexus_active_market') || 'cz');
   const [activeProfileId, setActiveProfileId] = useState(localStorage.getItem('nexus_active_profile_id') || null);
-  const [showLanding, setShowLanding] = useState(true);
+  const [showLanding, setShowLanding] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('nexus_isLoggedIn') !== 'true';
+    }
+    return true;
+  });
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [onlineOnly, setOnlineOnly] = useState(false);
   const [mobileView, setMobileView] = useState('list'); // 'list', 'chat', 'details'

@@ -9,6 +9,8 @@ const ignoreList = [
   '.git', 
   '.github', 
   '.env', 
+  '.env.example',
+  '.npm',
   'logs', 
   '.cache', 
   'coverage', 
@@ -25,6 +27,9 @@ function syncFiles(src, dest) {
   const entries = fs.readdirSync(src);
   for (const entry of entries) {
     if (ignoreList.includes(entry)) continue;
+    
+    // Ignore all hidden files/dirs except .env and .env.example
+    if (entry.startsWith('.') && entry !== '.env' && entry !== '.env.example') continue;
 
     const srcPath = path.join(src, entry);
     const destPath = path.join(dest, entry);
