@@ -52,48 +52,48 @@ app.use('/downloads', (req, res, next) => {
   next();
 }, express.static(path.join(__dirname, '..', 'public', 'downloads')));
 
-// Rate limiting: global 500 req/15min
+// Rate limiting: global 5000 req/15min
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 500,
+  max: 5000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: 'Too many requests, please try again later.' }
 });
 
-// Auth: 20 req/15min (login brute-force protection), keyed by email or IP
+// Auth: 100 req/15min (login brute-force protection), keyed by email or IP
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 100,
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => req.body?.email?.toLowerCase() || req.ip,
   message: { message: 'Too many auth attempts, please try again later.' }
 });
 
-// Write operations (POST/PUT/PATCH/DELETE): 100 req/15min
+// Write operations (POST/PUT/PATCH/DELETE): 1000 req/15min
 const writeLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS',
   message: { message: 'Too many write requests, please try again later.' }
 });
 
-// Device endpoints: 300 req/15min (relay polling every 15s)
+// Device endpoints: 3000 req/15min (relay polling every 15s)
 const deviceLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
+  max: 3000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: 'Too many device requests, please try again later.' }
 });
 
-// Analytics: 60 req/15min
+// Analytics: 600 req/15min
 const analyticsLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 60,
+  max: 600,
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: 'Too many analytics requests, please try again later.' }
