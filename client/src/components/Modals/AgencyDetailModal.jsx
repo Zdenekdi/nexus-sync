@@ -12,7 +12,7 @@ const AgencyDetailModal = ({
   showToast, 
   lang: _lang 
 }) => {
-  const { API_BASE, token, setAgencyDetailModalData } = useNexus();
+  const { API_BASE, token, setAgencyDetailModalData, setIsAddUserOpen, setAddUserModalAgencyId } = useNexus();
   const [isEditing, setIsEditing] = useState(false);
   const [editEmail, setEditEmail] = useState(agency?.email || '');
   const [isSaving, setIsSaving] = useState(false);
@@ -22,7 +22,7 @@ const AgencyDetailModal = ({
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      const res = await axios.patch(`${API_BASE}/agencies/settings`, {
+      const res = await axios.patch(`${API_BASE}/agency/settings`, {
         agencyId: agency.id,
         email: editEmail
       }, {
@@ -93,17 +93,44 @@ const AgencyDetailModal = ({
             </div>
           </div>
 
-          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem' }}>
-            <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>PRIMARY MANAGER</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: '800' }}>
-                {agency.managerName?.charAt(0) || 'M'}
-              </div>
-              <div>
-                <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{agency.managerName || 'N/A'}</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{agency.managerEmail || 'No contact provided'}</div>
+          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>PRIMARY MANAGER</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: '800' }}>
+                  {agency.managerName?.charAt(0) || 'M'}
+                </div>
+                <div>
+                  <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{agency.managerName || 'N/A'}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{agency.managerEmail || 'No contact provided'}</div>
+                </div>
               </div>
             </div>
+            
+            {(!agency.managerName || agency.managerName === 'N/A') && (
+              <button
+                onClick={() => {
+                  setAddUserModalAgencyId(agency.id);
+                  setIsAddUserOpen(true);
+                  onClose();
+                }}
+                style={{
+                  background: 'var(--accent-color)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '8px',
+                  fontSize: '0.75rem',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                + ADD MANAGER
+              </button>
+            )}
           </div>
 
           <button 
