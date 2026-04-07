@@ -4,6 +4,16 @@ import { X, Shield, ShieldCheck, Copy, Edit2, Check } from 'lucide-react';
 import axios from 'axios';
 import { useNexus } from '../../context/NexusContext';
 
+const CONTINENTS = {
+  'Europe': ['United Kingdom', 'Czech Republic', 'Slovakia', 'Germany', 'Austria', 'France', 'Spain', 'Italy', 'Poland', 'Netherlands', 'Other'],
+  'North America': ['United States', 'Canada', 'Mexico', 'Other'],
+  'South America': ['Brazil', 'Argentina', 'Colombia', 'Chile', 'Other'],
+  'Asia': ['United Arab Emirates', 'Saudi Arabia', 'Japan', 'South Korea', 'India', 'Thailand', 'Other'],
+  'Africa': ['South Africa', 'Nigeria', 'Egypt', 'Kenya', 'Other'],
+  'Australia & Oceania': ['Australia', 'New Zealand', 'Other'],
+  'International / Global': ['Global Scope']
+};
+
 const AgencyDetailModal = ({ 
   agency, 
   onClose, 
@@ -12,9 +22,14 @@ const AgencyDetailModal = ({
   showToast, 
   lang: _lang 
 }) => {
-  const { API_BASE, token, setAgencyDetailModalData, setIsAddUserOpen, setAddUserModalAgencyId } = useNexus();
+  const { API_BASE, token, setAgencyDetailModalData, setIsAddUserOpen, setAddUserModalAgencyId, initData } = useNexus();
   const [isEditing, setIsEditing] = useState(false);
   const [editEmail, setEditEmail] = useState(agency?.email || '');
+  
+  const initialRegionParts = agency?.region ? agency.region.split(' - ').map(s => s.trim()) : ['Europe', 'United Kingdom'];
+  const [editContinent, setEditContinent] = useState(CONTINENTS[initialRegionParts[0]] ? initialRegionParts[0] : (agency?.region === 'Global Scope' ? 'International / Global' : 'Europe'));
+  const [editCountry, setEditCountry] = useState(initialRegionParts[1] || 'United Kingdom');
+
   const [isSaving, setIsSaving] = useState(false);
 
   if (!agency) return null;
@@ -22,15 +37,21 @@ const AgencyDetailModal = ({
   const handleSave = async () => {
     try {
       setIsSaving(true);
+      const formattedRegion = editContinent === 'International / Global' 
+        ? 'Global Scope' 
+        : `${editContinent} - ${editCountry}`;
+        
       const res = await axios.patch(`${API_BASE}/agency/settings`, {
         agencyId: agency.id,
-        email: editEmail
+        email: editEmail,
+        region: formattedRegion
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       showToast('Agency info updated', 'success');
-      setAgencyDetailModalData({ ...agency, email: editEmail });
+      setAgencyDetailModalData({ ...agency, email: editEmail, region: formattedRegion });
       setIsEditing(false);
+      if (initData) initData();
     } catch (err) {
       console.error('Failed to update agency:', err);
       showToast('Failed to update agency', 'error');
@@ -48,19 +69,47 @@ const AgencyDetailModal = ({
               {agency.name}
             </h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.4rem' }}>
-              {isEditing ? (
-                <input 
-                  type="email" 
-                  value={editEmail} 
-                  onChange={e => setEditEmail(e.target.value)} 
-                  placeholder="Agency Email"
-                  style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--accent-color)', color: 'white', padding: '0.25rem 0.6rem', borderRadius: '6px', fontSize: '0.8rem', width: '200px' }}
-                />
-              ) : (
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
-                  {agency.email || 'No agency email'}
-                </span>
-              )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  {isEditing ? (
+                    <input 
+                      type="email" 
+                      value={editEmail} 
+                      onChange={e => setEditEmail(e.target.value)} 
+                      placeholder="Agency Email"
+                      style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--accent-color)', color: 'white', padding: '0.25rem 0.6rem', borderRadius: '6px', fontSize: '0.8rem', width: '200px' }}
+                    />
+                  ) : (
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
+                      {agency.email || 'No agency email'}
+                    </span>
+                  )}
+                  {isEditing ? (
+                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                      <select 
+                        value={editContinent} 
+                        onChange={e => {
+                          const newContinent = e.target.value;
+                          setEditContinent(newContinent);
+                          setEditCountry(CONTINENTS[newContinent][0]);
+                        }} 
+                        style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--accent-color)', color: 'white', padding: '0.25rem 0.6rem', borderRadius: '6px', fontSize: '0.8rem', width: '120px' }}
+                      >
+                        {Object.keys(CONTINENTS).map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                      <select 
+                        value={editCountry} 
+                        onChange={e => setEditCountry(e.target.value)} 
+                        style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--accent-color)', color: 'white', padding: '0.25rem 0.6rem', borderRadius: '6px', fontSize: '0.8rem', width: '120px' }}
+                      >
+                        {CONTINENTS[editContinent]?.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', letterSpacing: '0.05em' }}>
+                      {agency.region?.toUpperCase() || 'UNKNOWN REGION'}
+                    </div>
+                  )}
+                </div>
               {isEditing ? (
                 <button onClick={handleSave} disabled={isSaving} style={{ background: 'var(--success-color)', border: 'none', borderRadius: '6px', color: 'white', padding: '0.3rem 0.5rem', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                   <Check size={14} />
@@ -71,7 +120,7 @@ const AgencyDetailModal = ({
                 </button>
               )}
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', letterSpacing: '0.05em', marginTop: '0.5rem' }}>{agency.region?.toUpperCase()}</div>
+            </div>
           </div>
           <button 
             onClick={onClose} 
