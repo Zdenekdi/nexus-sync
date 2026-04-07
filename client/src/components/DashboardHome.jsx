@@ -192,9 +192,22 @@ const DashboardHome = () => {
       <WelcomeSection />
       <AlertsSection />
 
-      <div style={{ marginBottom: isMobile ? '1.5rem' : '2.5rem' }}>
-        <h2 style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '900', letterSpacing: '0.05em' }}>{(t('globalOverview') || 'Global Overview').toUpperCase()}</h2>
-        <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1rem' }}>{t('globalHealthDesc')}</p>
+      <div style={{ marginBottom: isMobile ? '1.5rem' : '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'flex-end', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : 0 }}>
+        <div>
+          <h2 style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '900', letterSpacing: '0.05em' }}>{(t('globalOverview') || 'Global Overview').toUpperCase()}</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1rem' }}>{t('globalHealthDesc')}</p>
+        </div>
+        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '0.5rem', display: 'flex', gap: '0.25rem' }}>
+          {['cz', 'eu', 'uk', 'us'].map(market => (
+            <button
+              key={market}
+              onClick={() => nexus.setActiveMarket(market)}
+              style={{ padding: '0.4rem 0.8rem', borderRadius: '10px', background: nexus.activeMarket === market ? 'rgba(59, 130, 246, 0.2)' : 'transparent', color: nexus.activeMarket === market ? '#60a5fa' : 'var(--text-secondary)', border: 'none', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer' }}
+            >
+              {market.toUpperCase()}
+            </button>
+          ))}
+        </div>
       </div>
 
       {stats === null || stats === undefined ? (
