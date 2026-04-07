@@ -120,7 +120,6 @@ const AgencyDetailModal = ({
                 </button>
               )}
             </div>
-            </div>
           </div>
           <button 
             onClick={onClose} 
