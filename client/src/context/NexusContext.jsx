@@ -11,7 +11,9 @@ import { initPushNotifications, removePushListeners } from '../services/pushServ
 export const NexusContext = createContext();
 
 const API_BASE = import.meta.env.VITE_API_URL || 
-  (typeof window !== 'undefined' && window.location.origin ? `${window.location.origin}/api` : 'https://nexus-api.myvnc.com/api');
+  (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('192.168.')) 
+    ? `http://${window.location.hostname}:5000/api` 
+    : 'https://nexus-api.myvnc.com/api');
 
 export const NexusProvider = ({ children }) => {
   const [lang, setLang] = useState(localStorage.getItem('nexus_lang') || 'cz');
