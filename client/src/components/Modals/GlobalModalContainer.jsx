@@ -8,6 +8,7 @@ import BookingModal from './BookingModal';
 import EditProfileModal from './EditProfileModal';
 import AddOperatorModal from './AddOperatorModal';
 import AddAgencyModal from './AddAgencyModal';
+import AddUserModal from './AddUserModal';
 import CallOverlays from '../Overlays/CallOverlays';
 import NotificationSystem from '../Notifications/NotificationSystem';
 import SipManager from '../sip/SipManager';
@@ -21,6 +22,7 @@ const GlobalModalContainer = () => {
     isBugReportOpen, setIsBugReportOpen,
     agencyDetailModalData, setAgencyDetailModalData,
     isAddAgencyOpen, setIsAddAgencyOpen,
+    isAddUserOpen, setIsAddUserOpen,
     operators, showToast, lang
   } = useNexus();
 
@@ -46,6 +48,13 @@ const GlobalModalContainer = () => {
         <AddAgencyModal 
           isOpen={isAddAgencyOpen}
           onClose={() => setIsAddAgencyOpen(false)}
+        />
+      )}
+
+      {isAddUserOpen && (
+        <AddUserModal 
+          isOpen={isAddUserOpen}
+          onClose={() => setIsAddUserOpen(false)}
         />
       )}
       

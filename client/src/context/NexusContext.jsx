@@ -48,6 +48,8 @@ export const NexusProvider = ({ children }) => {
   const [agencyDetailModalData, setAgencyDetailModalData] = useState(null);
   const [isAddAgencyOpen, setIsAddAgencyOpen] = useState(false);
   const [isBugReportOpen, setIsBugReportOpen] = useState(false);
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [addUserModalAgencyId, setAddUserModalAgencyId] = useState(null);
   
   // Persist important UI states
   React.useEffect(() => {
@@ -456,6 +458,8 @@ export const NexusProvider = ({ children }) => {
     agencyDetailModalData, setAgencyDetailModalData,
     isAddAgencyOpen, setIsAddAgencyOpen,
     isBugReportOpen, setIsBugReportOpen,
+    isAddUserOpen, setIsAddUserOpen,
+    addUserModalAgencyId, setAddUserModalAgencyId,
 
     // Agency / Infrastructure Mock Handlers
     handleAddAgency: () => setIsAddAgencyOpen(true),
