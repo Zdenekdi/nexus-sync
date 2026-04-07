@@ -153,7 +153,7 @@ const PlansDashboard = () => {
                     ))}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.85rem' }}>
                     <Users size={14} color="var(--accent-color)" />
-                    <span>{t('profilesLimitLabel', { count: plan.profilesLimit })}</span>
+                    <span>{plan.profilesLimit === -1 ? (lang === 'cz' ? 'Neomezený počet profilů' : 'Unlimited profiles') : t('profilesLimitLabel', { count: plan.profilesLimit })}</span>
                   </div>
                 </div>
               </div>
@@ -242,24 +242,42 @@ const PlansDashboard = () => {
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>NÁZEV TARIFU</label>
-                <input className="glass-input" value={editingPlan.name} onChange={(e) => setEditingPlan({...editingPlan, name: e.target.value})} style={{ width: '100%', padding: '0.75rem' }} />
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--accent-color)', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>NÁZEV TARIFU</label>
+                <input className="glass-input" value={editingPlan.name} onChange={(e) => setEditingPlan({...editingPlan, name: e.target.value})} style={{ width: '100%', padding: '0.85rem 1rem', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '12px', color: 'white', fontSize: '1rem', fontWeight: '700', transition: 'all 0.3s ease' }} />
               </div>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>CENA CZK</label>
-                  <input className="glass-input" value={editingPlan.prices.cz} onChange={(e) => setEditingPlan({...editingPlan, prices: {...editingPlan.prices, cz: e.target.value}})} style={{ width: '100%', padding: '0.75rem' }} />
+                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>CENA CZK</label>
+                  <div style={{ position: 'relative' }}>
+                    <input className="glass-input" value={editingPlan.prices.cz} onChange={(e) => setEditingPlan({...editingPlan, prices: {...editingPlan.prices, cz: e.target.value}})} style={{ width: '100%', padding: '0.85rem 1rem', paddingRight: '3rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: 'white', fontSize: '1rem', fontWeight: '700', transition: 'all 0.3s ease' }} />
+                    <span style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)', fontWeight: '800', fontSize: '0.8rem' }}>Kč</span>
+                  </div>
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>CENA USD</label>
-                   <input className="glass-input" value={editingPlan.prices.us} onChange={(e) => setEditingPlan({...editingPlan, prices: {...editingPlan.prices, us: e.target.value}})} style={{ width: '100%', padding: '0.75rem' }} />
+                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>CENA USD</label>
+                  <div style={{ position: 'relative' }}>
+                    <input className="glass-input" value={editingPlan.prices.us} onChange={(e) => setEditingPlan({...editingPlan, prices: {...editingPlan.prices, us: e.target.value}})} style={{ width: '100%', padding: '0.85rem 1rem', paddingRight: '2.5rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: 'white', fontSize: '1rem', fontWeight: '700', transition: 'all 0.3s ease' }} />
+                    <span style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)', fontWeight: '800', fontSize: '0.8rem' }}>$</span>
+                  </div>
                 </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>LIMIT PROFILŮ</label>
-                <input type="number" className="glass-input" value={editingPlan.profilesLimit} onChange={(e) => setEditingPlan({...editingPlan, profilesLimit: parseInt(e.target.value)})} style={{ width: '100%', padding: '0.75rem' }} />
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>LIMIT PROFILŮ</label>
+                <select 
+                  className="glass-input custom-select" 
+                  value={editingPlan.profilesLimit ?? -1} 
+                  onChange={(e) => setEditingPlan({...editingPlan, profilesLimit: parseInt(e.target.value)})} 
+                  style={{ width: '100%', padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: 'white', fontSize: '1rem', fontWeight: '700', appearance: 'none', cursor: 'pointer', transition: 'all 0.3s ease' }}
+                >
+                  {Array.from({ length: 20 }, (_, i) => i + 1).map(num => (
+                    <option key={num} value={num} style={{ background: '#0f172a' }}>
+                      {num} {num === 1 ? 'profil' : (num > 1 && num < 5 ? 'profily' : 'profilů')}
+                    </option>
+                  ))}
+                  <option value={-1} style={{ background: '#0f172a' }}>Neomezeně profilů</option>
+                </select>
               </div>
 
               {!editingPlan.isAddon && (
