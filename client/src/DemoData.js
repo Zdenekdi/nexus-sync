@@ -396,7 +396,7 @@ export const MOCK_PLANS = [
             UK: '£49/mo',
             CZ: '1 490 Kč/mo'
         },
-        profilesLimit: 3, 
+        profilesLimit: 5, 
         features: ['Unlimited Messaging', 'Static Smart Templates', 'Shared Proxy Nodes', 'Standard Support'],
         description: 'Core functionality for small teams with full privacy.'
     },
