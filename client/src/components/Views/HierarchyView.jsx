@@ -27,10 +27,36 @@ const HierarchyView = () => {
   // Group operators by role
   const groupedUsers = {};
   roleHierarchy.forEach(role => groupedUsers[role] = []);
+  
   visibleOperators.forEach(op => {
     // Determine target tier, fallback to Operator if unknown
     const tier = roleHierarchy.includes(op.role) ? op.role : 'Operator';
     groupedUsers[tier].push(op);
+  });
+
+  // Add profiles to the Model tier if they aren't already represented by a Model operator
+  const existingModelOperatorProfileIds = new Set(
+    groupedUsers['Model']?.map(op => op.profileId).filter(Boolean) || []
+  );
+
+  (profiles || []).forEach(profile => {
+    // Only show profiles that the current viewer should see
+    const opId = String(activeOperator?.id || activeOperator?._id || '');
+    const isAssigned = (profile.assignees || []).some(a => String(a?.id || a?._id || a) === opId) || 
+                       (profile.operators || []).some(o => String(o?.id || o?._id || o) === opId) ||
+                       activeRole === 'APP OWNER' || activeRole === 'AGENCY ADMIN' || activeRole === 'MANAGER';
+
+    if (isAssigned && !existingModelOperatorProfileIds.has(profile.id)) {
+      // Create a virtual operator node for the profile
+      groupedUsers['Model'].push({
+        id: `profile-${profile.id}`,
+        name: profile.name,
+        role: 'Model',
+        avatar: profile.name?.charAt(0) || 'M',
+        isProfileOnly: true,
+        metrics: { messages: profile.totalMessages || 0, conversion: profile.conversionRate || '0%' }
+      });
+    }
   });
 
   // Keep only tiers that have users
@@ -88,19 +114,24 @@ const HierarchyView = () => {
               }}>
                 {usersInTier.map(op => {
                    let visibleModelsCount = 0;
-                   if (op.role === 'Model') {
-                     // Modelka nevidí žádné přiřazené modelky pod sebou
-                     visibleModelsCount = 0;
-                   } else if (op.role === 'App Owner' || op.role === 'Agency Admin' || op.role === 'Manager') {
+                   const opId = String(op.id || op._id || '');
+
+                   if (op.role === 'APP OWNER' || op.role === 'AGENCY ADMIN' || op.role === 'MANAGER') {
                      // Tyto role vidí všechny profily agentury
                      visibleModelsCount = (profiles || []).length;
                    } else {
                      // Senior Operator a Operator vidí pouze ty profily, které jim byly manuálně přiřazeny
-                     const assignedModels = (profiles || []).filter(p => (p.operators || p.assignees || []).some(o => (o?.id || o) === op.id));
+                     // Kontrolujeme jak .assignees (IDs/Objects), tak .operators (v některých verzích dat)
+                     const assignedModels = (profiles || []).filter(p => {
+                       const asgs = Array.isArray(p.assignees) ? p.assignees : [];
+                       const ops = Array.isArray(p.operators) ? p.operators : [];
+                       return asgs.some(a => String(a?.id || a?._id || a) === opId) || 
+                              ops.some(o => String(o?.id || o?._id || o) === opId);
+                     });
                      visibleModelsCount = assignedModels.length;
                    }
                    
-                   const showAssignedText = op.role !== 'Model'; // Skrýt text pro modelky
+                   const showAssignedText = op.role !== 'MODEL'; // Skrýt text pro modelky
                    
                    return (
                     <div key={op.id} className="glass-card zoom-hover" style={{ 
@@ -128,7 +159,7 @@ const HierarchyView = () => {
                         boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
                         border: '1px solid rgba(255,255,255,0.1)'
                       }}>
-                        {op.avatar}
+                        {op.avatar || op.name?.charAt(0)}
                       </div>
 
                       <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '0.25rem' }}>
@@ -144,7 +175,7 @@ const HierarchyView = () => {
                       )}
 
                       {/* Metrics simple view */}
-                      {op.role !== 'Model' && (
+                      {op.role !== 'MODEL' && (
                         <div style={{ 
                           display: 'flex', 
                           gap: '1.5rem', 
