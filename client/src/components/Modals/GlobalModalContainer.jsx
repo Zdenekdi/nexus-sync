@@ -17,7 +17,12 @@ import SipManager from '../sip/SipManager';
  * Simplifies App.jsx by grouping all interactive overlays in one place.
  */
 const GlobalModalContainer = () => {
-  const { isBugReportOpen, setIsBugReportOpen } = useNexus();
+  const { 
+    isBugReportOpen, setIsBugReportOpen,
+    agencyDetailModalData, setAgencyDetailModalData,
+    isAddAgencyOpen, setIsAddAgencyOpen,
+    operators, showToast, lang
+  } = useNexus();
 
   return (
     <>
@@ -36,8 +41,23 @@ const GlobalModalContainer = () => {
       <BookingModal />
       <EditProfileModal />
       <AddOperatorModal />
-      <AddAgencyModal />
-      <AgencyDetailModal />
+      
+      {isAddAgencyOpen && (
+        <AddAgencyModal 
+          isOpen={isAddAgencyOpen}
+          onClose={() => setIsAddAgencyOpen(false)}
+        />
+      )}
+      
+      {agencyDetailModalData && (
+        <AgencyDetailModal 
+          agency={agencyDetailModalData}
+          onClose={() => setAgencyDetailModalData(null)}
+          operators={operators || []}
+          showToast={showToast}
+          lang={lang}
+        />
+      )}
     </>
   );
 };
