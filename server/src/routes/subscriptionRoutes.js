@@ -19,6 +19,26 @@ const PLAN_PRICES = {
   ANNUAL:      { CZK: 9990, EUR: 399, GBP: 349, USD: 449 },
 };
 
+// ── GET /api/subscriptions/plans
+// Returns plan options + pricing (no auth needed for this)
+router.get('/plans', async (req, res) => {
+  try {
+    const setting = await prisma.globalSetting.findUnique({ where: { key: 'SUBSCRIPTION_PLANS' } });
+    if (setting && setting.value) {
+      return res.json(JSON.parse(setting.value));
+    }
+    // Fallback if no dynamic plans initialized
+    res.json([
+      { id: 'basic', name: 'Basic', prices: { cz: '2900', eu: '120', us: '130', uk: '110' }, profilesLimit: 3, features: ['Správa profilů', 'Základní analytika', 'Podpora 24/7'] },
+      { id: 'pro', name: 'Pro', prices: { cz: '5900', eu: '240', us: '260', uk: '220' }, profilesLimit: 10, features: ['Vše z Basic', 'Pokročilá analytika', 'AI Optimalizace'] },
+      { id: 'agency', name: 'Agency', prices: { cz: '9900', eu: '400', us: '440', uk: '360' }, profilesLimit: 50, features: ['Vše z Pro', 'Auditní logy', 'API Přístup'] }
+    ]);
+  } catch (err) {
+    console.error('GET /subscriptions/plans error:', err);
+    res.status(500).json({ message: 'Failed to fetch plans' });
+  }
+});
+
 router.use(authMiddleware);
 
 // ── GET /api/subscriptions/current
@@ -140,25 +160,6 @@ router.post('/cancel', validate(cancelSubscription), async (req, res) => {
   }
 });
 
-// ── GET /api/subscriptions/plans
-// Returns plan options + pricing (no auth needed for this)
-router.get('/plans', async (req, res) => {
-  try {
-    const setting = await prisma.globalSetting.findUnique({ where: { key: 'SUBSCRIPTION_PLANS' } });
-    if (setting && setting.value) {
-      return res.json(JSON.parse(setting.value));
-    }
-    // Fallback if no dynamic plans initialized
-    res.json([
-      { id: 'basic', name: 'Basic', prices: { cz: '2900', eu: '120', us: '130', uk: '110' }, profilesLimit: 3, features: ['Správa profilů', 'Základní analytika', 'Podpora 24/7'] },
-      { id: 'pro', name: 'Pro', prices: { cz: '5900', eu: '240', us: '260', uk: '220' }, profilesLimit: 10, features: ['Vše z Basic', 'Pokročilá analytika', 'AI Optimalizace'] },
-      { id: 'agency', name: 'Agency', prices: { cz: '9900', eu: '400', us: '440', uk: '360' }, profilesLimit: 50, features: ['Vše z Pro', 'Auditní logy', 'API Přístup'] }
-    ]);
-  } catch (err) {
-    console.error('GET /subscriptions/plans error:', err);
-    res.status(500).json({ message: 'Failed to fetch plans' });
-  }
-});
 
 // ── POST /api/subscriptions/config (App Owner only)
 // Update dynamic plan options
