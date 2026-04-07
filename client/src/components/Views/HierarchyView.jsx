@@ -96,7 +96,7 @@ const HierarchyView = () => {
                      visibleModelsCount = (profiles || []).length;
                    } else {
                      // Senior Operator a Operator vidí pouze ty profily, které jim byly manuálně přiřazeny
-                     const assignedModels = (profiles || []).filter(p => (p.operators || p.assignees || []).some(o => o.id === op.id || o === op.id));
+                     const assignedModels = (profiles || []).filter(p => (p.operators || p.assignees || []).some(o => (o?.id || o) === op.id));
                      visibleModelsCount = assignedModels.length;
                    }
                    
@@ -139,7 +139,7 @@ const HierarchyView = () => {
                         <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
                           <span style={{ color: visibleModelsCount > 0 ? 'var(--accent-color)' : 'inherit', fontWeight: visibleModelsCount > 0 ? '600' : 'normal' }}>
                             {visibleModelsCount}
-                          </span> {visibleModelsCount === 1 ? (lang === 'cz' ? 'přiřazený profil' : 'profile') : (lang === 'cz' ? 'přiřazené profily' : 'profiles')}
+                          </span> {visibleModelsCount === 1 ? t('profile').toLowerCase() : t('profiles').toLowerCase()}
                         </div>
                       )}
 
