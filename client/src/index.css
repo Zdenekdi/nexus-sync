@@ -28,6 +28,11 @@
   max-width: 100vw;
 }
 
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--bg-color);
