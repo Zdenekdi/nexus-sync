@@ -149,16 +149,11 @@ router.get('/plans', async (req, res) => {
       return res.json(JSON.parse(setting.value));
     }
     // Fallback if no dynamic plans initialized
-    res.json(
-      Object.entries(PLAN_DURATIONS).map(([key, days]) => ({
-        id:            key,
-        name:          { MONTHLY: 'Měsíční', SEMI_ANNUAL: 'Půlroční', ANNUAL: 'Roční' }[key],
-        durationDays:  days,
-        prices:        PLAN_PRICES[key],
-        profilesLimit: key === 'MONTHLY' ? 5 : 20,
-        features:      ['Základní analytika', 'Podpora 24/7'],
-      }))
-    );
+    res.json([
+      { id: 'basic', name: 'Basic', prices: { cz: '2900', eu: '120', us: '130', uk: '110' }, profilesLimit: 3, features: ['Správa profilů', 'Základní analytika', 'Podpora 24/7'] },
+      { id: 'pro', name: 'Pro', prices: { cz: '5900', eu: '240', us: '260', uk: '220' }, profilesLimit: 10, features: ['Vše z Basic', 'Pokročilá analytika', 'AI Optimalizace'] },
+      { id: 'agency', name: 'Agency', prices: { cz: '9900', eu: '400', us: '440', uk: '360' }, profilesLimit: 50, features: ['Vše z Pro', 'Auditní logy', 'API Přístup'] }
+    ]);
   } catch (err) {
     console.error('GET /subscriptions/plans error:', err);
     res.status(500).json({ message: 'Failed to fetch plans' });
