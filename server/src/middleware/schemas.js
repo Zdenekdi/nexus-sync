@@ -196,9 +196,10 @@ const refreshToken = z.object({
   refreshToken: z.string().min(1).max(128)
 });
 
-// ── Agency ───────────────────────────────────────────────────────────────────
 const updateAgencySettings = z.object({
+  agencyId: cuid.optional(),
   name: z.string().min(1).max(200).optional(),
+  email: z.string().email().max(320).optional().nullable(),
   safetyAlertMode: z.enum(['MANAGERS_AND_ASSIGNED', 'ASSIGNED_ONLY']).optional(),
   defaultGraceMinutes: z.number().int().min(1).max(1440).optional(),
   currency: z.string().max(3).optional(),

@@ -1,6 +1,8 @@
 /* src/components/Modals/AgencyDetailModal.jsx */
-import React from 'react';
-import { X, Shield, ShieldCheck, Copy } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Shield, ShieldCheck, Copy, Edit2, Check } from 'lucide-react';
+import axios from 'axios';
+import { useNexus } from '../../context/NexusContext';
 
 const AgencyDetailModal = ({ 
   agency, 
@@ -10,19 +12,70 @@ const AgencyDetailModal = ({
   showToast, 
   lang: _lang 
 }) => {
+  const { API_BASE, token, setAgencyDetailModalData } = useNexus();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editEmail, setEditEmail] = useState(agency?.email || '');
+  const [isSaving, setIsSaving] = useState(false);
+
   if (!agency) return null;
+
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      const res = await axios.patch(`${API_BASE}/agencies/settings`, {
+        agencyId: agency.id,
+        email: editEmail
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      showToast('Agency info updated', 'success');
+      setAgencyDetailModalData({ ...agency, email: editEmail });
+      setIsEditing(false);
+    } catch (err) {
+      console.error('Failed to update agency:', err);
+      showToast('Failed to update agency', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1002, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(12px)', padding: '1rem' }}>
       <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '520px', maxHeight: '90vh', padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div style={{ padding: '2rem 2.5rem 1.5rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h3 style={{ fontSize: '1.4rem', fontWeight: '900', marginBottom: '0.25rem' }}>{agency.name}</h3>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', letterSpacing: '0.05em' }}>{agency.region?.toUpperCase()}</div>
+        <div style={{ padding: '2rem 2.5rem 1.5rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ flex: 1 }}>
+            <h3 style={{ fontSize: '1.4rem', fontWeight: '900', marginBottom: '0.25rem' }}>
+              {agency.name}
+            </h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.4rem' }}>
+              {isEditing ? (
+                <input 
+                  type="email" 
+                  value={editEmail} 
+                  onChange={e => setEditEmail(e.target.value)} 
+                  placeholder="Agency Email"
+                  style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--accent-color)', color: 'white', padding: '0.25rem 0.6rem', borderRadius: '6px', fontSize: '0.8rem', width: '200px' }}
+                />
+              ) : (
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
+                  {agency.email || 'No agency email'}
+                </span>
+              )}
+              {isEditing ? (
+                <button onClick={handleSave} disabled={isSaving} style={{ background: 'var(--success-color)', border: 'none', borderRadius: '6px', color: 'white', padding: '0.3rem 0.5rem', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                  <Check size={14} />
+                </button>
+              ) : (
+                <button onClick={() => setIsEditing(true)} style={{ background: 'transparent', border: 'none', color: 'var(--accent-color)', cursor: 'pointer', padding: '0.2rem' }}>
+                  <Edit2 size={14} />
+                </button>
+              )}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', letterSpacing: '0.05em', marginTop: '0.5rem' }}>{agency.region?.toUpperCase()}</div>
           </div>
           <button 
             onClick={onClose} 
-            style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
+            style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0 }}
           >
             <X size={20} />
           </button>

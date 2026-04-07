@@ -9,7 +9,7 @@ const crypto = require('crypto');
 exports.updateSettings = async (req, res) => {
     try {
         const { role, agencyId: userAgencyId } = req.user;
-        const { safetyAlertMode, agencyId: bodyAgencyId } = req.body;
+        const { safetyAlertMode, agencyId: bodyAgencyId, name, email, defaultGraceMinutes, currency, timezone } = req.body;
         const isAppOwner = role?.isAppOwner;
 
         if (!role?.isManager && !isAppOwner) {
@@ -19,12 +19,20 @@ exports.updateSettings = async (req, res) => {
         const agencyId = isAppOwner ? bodyAgencyId : userAgencyId;
         if (!agencyId) return res.status(404).json({ message: 'Agency context required' });
 
+        const updateData = {};
+        if (safetyAlertMode !== undefined) updateData.safetyAlertMode = safetyAlertMode;
+        if (name !== undefined) updateData.name = name;
+        if (email !== undefined) updateData.email = email;
+        if (defaultGraceMinutes !== undefined) updateData.defaultGraceMinutes = defaultGraceMinutes;
+        if (currency !== undefined) updateData.currency = currency;
+        if (timezone !== undefined) updateData.timezone = timezone;
+
         const agency = await prisma.agency.update({
             where: { id: agencyId },
-            data: { safetyAlertMode }
+            data: updateData
         });
 
-        logger.info(`Agency ${agencyId} settings updated: safetyAlertMode=${safetyAlertMode}`);
+        logger.info(`Agency ${agencyId} settings updated by ${req.user.id}`);
         res.json(agency);
     } catch (error) {
         logger.error('Error updating agency settings:', error);

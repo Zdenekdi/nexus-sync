@@ -18,7 +18,15 @@ const API_BASE = import.meta.env.VITE_API_URL ||
 
 export const NexusProvider = ({ children }) => {
   const [lang, setLang] = useState(localStorage.getItem('nexus_lang') || 'cz');
-  const [activeTab, setActiveTab] = useState(localStorage.getItem('nexus_active_tab') || 'dashboard');
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname.substring(1);
+      if (path && path !== '' && path !== 'dashboard') {
+        return path;
+      }
+    }
+    return localStorage.getItem('nexus_active_tab') || 'dashboard';
+  });
   const [activeMarket, setActiveMarket] = useState(localStorage.getItem('nexus_active_market') || 'cz');
   const [activeProfileId, setActiveProfileId] = useState(localStorage.getItem('nexus_active_profile_id') || null);
   const [showLanding, setShowLanding] = useState(true);
@@ -47,6 +55,11 @@ export const NexusProvider = ({ children }) => {
     localStorage.setItem('nexus_active_tab', activeTab);
     localStorage.setItem('nexus_active_market', activeMarket);
     if (activeProfileId) localStorage.setItem('nexus_active_profile_id', activeProfileId);
+    
+    // Sync activeTab to URL without reloading to support browser refreshes on the same page
+    if (activeTab && typeof window !== 'undefined') {
+      window.history.replaceState(null, '', `/${activeTab}`);
+    }
   }, [lang, activeTab, activeMarket, activeProfileId]);
 
   const chatScrollRef = React.useRef(null);
