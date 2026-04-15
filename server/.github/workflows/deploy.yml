@@ -1,0 +1,52 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          command_timeout: 18m
+          script: |
+            cd /root/nexus-backend
+            git fetch --all
+            git reset --hard origin/master
+            git pull origin master
+            npm install --prefer-offline 2>/dev/null || npm install
+            ./node_modules/.bin/prisma generate
+            ./node_modules/.bin/prisma db push
+
+            # ── Injekce SIP / Asterisk env proměnných ───────────────────────
+            # Přidej/aktualizuj proměnné v .env bez přepsání ostatních hodnot
+            ENV_FILE=".env"
+            update_env() {
+              local key="$1" val="$2"
+              if grep -q "^${key}=" "$ENV_FILE" 2>/dev/null; then
+                sed -i "s|^${key}=.*|${key}=${val}|" "$ENV_FILE"
+              else
+                echo "${key}=${val}" >> "$ENV_FILE"
+              fi
+            }
+
+            update_env "VPS_SSH_HOST"        "${{ secrets.SERVER_IP }}"
+            update_env "VPS_SSH_USER"        "root"
+            update_env "VPS_SSH_KEY_PATH"    "/root/.ssh/id_rsa"
+            update_env "ASTERISK_CONF_DIR"   "/etc/asterisk"
+            update_env "ASTERISK_WS_PORT"    "8089"
+            update_env "ASTERISK_SIP_PORT"   "5060"
+            update_env "SIP_ENCRYPTION_KEY"  "${{ secrets.SIP_ENCRYPTION_KEY }}"
+
+            # ── Restart serveru ──────────────────────────────────────────────
+            pm2 restart nexus-backend-final 2>/dev/null || pm2 start index.js --name nexus-backend-final
+            pm2 save
