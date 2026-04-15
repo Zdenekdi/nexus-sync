@@ -12,7 +12,8 @@ exports.getChats = async (req, res) => {
         profile: { select: { id: true, name: true } }, 
         messages: {
           orderBy: { createdAt: 'desc' },
-          take: 1
+          take: 1,
+          include: { sender: { select: { id: true, name: true } } }
         },
         _count: { select: { messages: true } } 
       },
@@ -44,7 +45,8 @@ exports.getProfileChats = async (req, res) => {
       include: { 
         messages: {
           orderBy: { createdAt: 'desc' },
-          take: 1
+          take: 1,
+          include: { sender: { select: { id: true, name: true } } }
         },
         _count: { select: { messages: true } } 
       },

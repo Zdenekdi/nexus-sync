@@ -8,9 +8,11 @@ const GlobalFeaturesView = () => {
   const nexus = useNexus();
   const { 
     t, 
-    lang: _lang, 
+    lang, 
     isMobile, 
+    activeOperator,
     globalFeatures, 
+    globalSettings,
     handleFeatureToggle: onFeatureToggle, 
     isTraining, 
     trainingProgress, 
@@ -63,6 +65,45 @@ const GlobalFeaturesView = () => {
             </button>
           )}
         </div>
+
+        {/* System Parameters (App Owner only) */}
+        {activeOperator?.isAppOwner && (
+          <div className="glass-card" style={{ padding: '2rem', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Zap size={24} color="#ef4444" /> {lang === 'cz' ? 'Systémové parametry' : 'System Parameters'}
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              {[
+                { key: 'referral_reward_base', label: (lang === 'cz' ? 'Základní odměna za doporučení' : 'Base Referral Reward'), type: 'number' },
+                { key: 'referral_currency', label: (lang === 'cz' ? 'Měna odměn' : 'Referral Currency'), type: 'text' }
+              ].map((param) => (
+                <div key={param.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
+                  <div>
+                    <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{param.label}</div>
+                    <code style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{param.key}</code>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input 
+                      type={param.type}
+                      defaultValue={globalSettings?.find(s => s.key === param.key)?.value || ''}
+                      id={`param-${param.key}`}
+                      style={{ width: '100px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--card-border)', borderRadius: '8px', color: 'white', padding: '0.4rem 0.75rem', fontSize: '0.9rem', fontWeight: '700' }}
+                    />
+                    <button 
+                      onClick={async () => {
+                        const val = document.getElementById(`param-${param.key}`).value;
+                        await nexus.handleUpdateGlobalSetting(param.key, val);
+                      }}
+                      style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0.4rem 1rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer' }}
+                    >
+                      SAVE
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -55,6 +55,9 @@ exports.getStats = async (req, res) => {
 exports.generateCode = async (req, res) => {
   try {
     const { agencyId } = req.user;
+    if (!agencyId) {
+      return res.status(400).json({ message: 'Agency ID missing from token' });
+    }
 
     const agency = await prisma.agency.findUnique({
       where: { id: agencyId },
@@ -82,8 +85,11 @@ exports.generateCode = async (req, res) => {
 
     res.json({ referralCode: updated.referralCode });
   } catch (error) {
-    console.error('Error generating referral code:', error);
-    res.status(500).json({ message: 'Failed to generate referral code' });
+    console.error('[Referral] generateCode error:', error.message);
+    res.status(500).json({ 
+      message: 'Failed to generate referral code',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined 
+    });
   }
 };
 
@@ -152,5 +158,26 @@ exports.confirmReferral = async (req, res) => {
   } catch (error) {
     console.error('Error confirming referral:', error);
     res.status(500).json({ message: 'Failed to confirm referral' });
+  }
+};
+// GET /api/referrals/admin/all — list all referrals (App Owner only)
+exports.getAllReferrals = async (req, res) => {
+  try {
+    if (!req.user.role?.isAppOwner && req.user.role?.name !== 'APP OWNER') {
+      return res.status(403).json({ message: 'Only App Owners can access the master referral list' });
+    }
+
+    const referrals = await prisma.referral.findMany({
+      include: {
+        referrer: { select: { id: true, name: true } },
+        referred: { select: { id: true, name: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json(referrals);
+  } catch (error) {
+    console.error('[Referral] getAllReferrals error:', error);
+    res.status(500).json({ message: 'Failed to fetch all referrals' });
   }
 };

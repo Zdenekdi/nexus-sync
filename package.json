@@ -16,9 +16,20 @@
     "test:with-sync": "node scripts/antigravity-sync.js start-task test && npm run test && node scripts/antigravity-sync.js complete-task test success",
     "deploy:with-sync": "node scripts/antigravity-sync.js start-task deploy && npm run deploy && node scripts/antigravity-sync.js complete-task deploy success",
     "webhook:start": "node scripts/antigravity-webhook.js",
-    "sync:backend": "node scripts/sync-backend.js"
+    "sync:backend": "node scripts/sync-backend.js",
+
+    "test:smoke": "npx playwright test",
+    "test:api": "npx playwright test rbac sms-relay --project=chromium",
+    "test:e2e": "npx playwright test smoke dashboard --project=chromium",
+    "test:rbac": "npx playwright test rbac --project=chromium",
+    "test:relay": "npx playwright test sms-relay --project=chromium",
+    "test:report": "npx playwright show-report"
+  },
+  "dependencies": {
+    "axios": "^1.7.9"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "concurrently": "^8.2.2"
   }
 }

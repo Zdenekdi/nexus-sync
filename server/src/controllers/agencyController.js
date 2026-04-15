@@ -69,6 +69,10 @@ exports.getUsers = async (req, res) => {
       return res.status(404).json({ message: 'Agency context required' });
     }
 
+    if (!isAppOwner && !role?.isManager) {
+      return res.status(403).json({ message: 'Access denied: Manager permission required to view users' });
+    }
+
     const users = await prisma.user.findMany({
       where: isAppOwner ? {} : { agencyId },
       select: {
@@ -105,6 +109,10 @@ exports.getStats = async (req, res) => {
     const isAppOwner = role?.isAppOwner;
 
     if (!agencyId && !isAppOwner) return res.status(404).json({ message: 'Agency not found' });
+
+    if (!isAppOwner && !role?.isManager) {
+      return res.status(403).json({ message: 'Access denied: Manager permission required to view stats' });
+    }
 
     const agencyFilter = isAppOwner ? {} : { agencyId };
 

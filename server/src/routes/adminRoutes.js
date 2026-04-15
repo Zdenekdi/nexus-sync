@@ -11,4 +11,8 @@ router.use(authMiddleware);
 router.get('/features', adminController.getGlobalFeatures);
 router.patch('/features/:id', validate(updateGlobalFeature), adminController.updateGlobalFeature);
 
+// Správa globálních nastavení
+router.get('/settings', adminController.getGlobalSettings);
+router.post('/settings', adminController.updateGlobalSetting); 
+
 module.exports = router;

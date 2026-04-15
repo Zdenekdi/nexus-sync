@@ -80,6 +80,7 @@ export const NexusProvider = ({ children }) => {
   const [clientNotes, setClientNotes] = useState({});
   const [calViewDate, setCalViewDate] = useState(new Date());
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [chatHistory, setChatHistory] = useState([]);
   const [_toasts, _setToasts] = useState([]);
 
   // Mobile and native platform detection
@@ -128,8 +129,25 @@ export const NexusProvider = ({ children }) => {
   
   const { activeOperator: authUser, token, handleLogout: logout, isLoggedIn } = auth;
   const [activeOperatorState, setActiveOperatorState] = useState(null);
-  const [subscriptionPlans, setSubscriptionPlans] = useState([]);
+  const [subscriptionPlans, setSubscriptionPlans] = useState([
+    { id: 'basic', name: 'Basic', description: t('basicDesc'), prices: { cz: '2900', eu: '120', us: '130', uk: '110' }, profilesLimit: 5, features: ['Správa profilů', 'Základní analytika', 'Podpora 24/7'] },
+    { id: 'pro', name: 'Pro', description: t('proDesc'), prices: { cz: '5900', eu: '240', us: '260', uk: '220' }, profilesLimit: 10, features: ['Vše z Basic', 'Pokročilá analytika', 'AI Optimalizace'] },
+    { id: 'agency', name: 'Agency', description: t('agencyDesc'), prices: { cz: '9900', eu: '400', us: '440', uk: '360' }, profilesLimit: 20, features: ['Vše z Pro', 'Auditní logy', 'API Přístup'] }
+  ]);
   const [isPlansLoading, setIsPlansLoading] = useState(false);
+  const [globalSettings, setGlobalSettings] = useState([]);
+
+  const fetchGlobalSettings = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await axios.get(`${API_BASE}/admin/settings`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setGlobalSettings(res.data);
+    } catch (err) {
+      console.error('Fetch global settings error:', err);
+    }
+  }, [token, API_BASE]);
 
   // Global axios interceptor: auto-refresh on 401, logout if refresh fails
   useEffect(() => {
@@ -361,8 +379,33 @@ export const NexusProvider = ({ children }) => {
 
   const chatMessages = useMemo(() => {
     if (!selectedChatId) return [];
+    // If we have detailed history fetched, use it. Otherwise fallback to filtered global messages.
+    if (chatHistory?.[0] && chatHistory[0].chatId === selectedChatId) {
+      return chatHistory;
+    }
     return (messages || []).filter(m => m.chatId === selectedChatId);
-  }, [messages, selectedChatId]);
+  }, [messages, selectedChatId, chatHistory]);
+
+  const fetchChatMessages = useCallback(async (chatId) => {
+    if (!token || !chatId) return;
+    try {
+      setIsHistoryLoading(true);
+      const res = await axios.get(`${API_BASE}/messages/${chatId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      // Normalize history messages
+      const history = (res.data || []).map(m => ({
+        ...m,
+        time: new Date(m.createdAt).toLocaleTimeString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' }),
+        senderName: m.sender?.name || null
+      }));
+      setChatHistory(history);
+    } catch (err) {
+      console.error('Failed to fetch chat messages:', err);
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  }, [token, API_BASE, lang]);
 
   const totalUnread = useMemo(() => {
     const myProfileIds = new Set((myProfiles || []).map(p => p.id));
@@ -498,15 +541,72 @@ export const NexusProvider = ({ children }) => {
     // Chat Logic
     totalUnread, messages, filteredMessages,
     selectedChatId, setSelectedChatId,
-    selectedChat, chatMessages, isHistoryLoading, setIsHistoryLoading,
+    selectedChat, chatMessages, chatHistory, fetchChatMessages, 
+    isHistoryLoading, setIsHistoryLoading,
     messageValue, setMessageValue,
     
     // Calendar logic
     calViewDate, setCalViewDate,
     
+    // Admin Referrals logic
+    fetchAllReferrals: async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/referrals/admin/all`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        return res.data;
+      } catch (err) {
+        console.error('Fetch all referrals error:', err);
+        showToast(lang === 'cz' ? 'Nepodařilo se načíst všechna doporučení.' : 'Failed to fetch all referrals.', 'error');
+        return [];
+      }
+    },
+    handleConfirmReferral: async (referralId, amount) => {
+      try {
+        const res = await axios.post(`${API_BASE}/referrals/${referralId}/confirm`, { rewardAmount: amount }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        showToast(lang === 'cz' ? 'Doporučení potvrzeno ✓' : 'Referral confirmed ✓', 'success');
+        return { success: true, data: res.data };
+      } catch (err) {
+        console.error('Confirm referral error:', err);
+        const msg = err.response?.data?.message || (lang === 'cz' ? 'Chyba při potvrzování.' : 'Confirmation failed.');
+        showToast(msg, 'error');
+        return { success: false };
+      }
+    },
+
+    // Global Settings logic
+    globalSettings,
+    fetchGlobalSettings,
+    handleUpdateGlobalSetting: async (key, value) => {
+      try {
+        const res = await axios.post(`${API_BASE}/admin/settings`, { key, value }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setGlobalSettings(prev => {
+          const exists = prev.find(s => s.key === key);
+          if (exists) return prev.map(s => s.key === key ? res.data : s);
+          return [...prev, res.data];
+        });
+        showToast(lang === 'cz' ? 'Nastavení uloženo ✓' : 'Setting saved ✓', 'success');
+        return { success: true, data: res.data };
+      } catch (err) {
+        console.error('Update setting error:', err);
+        showToast(lang === 'cz' ? 'Chyba při ukládání.' : 'Failed to save setting.', 'error');
+        return { success: false };
+      }
+    },
+
     // Data from useNexusData
     ...nexusData
   };
+
+  useEffect(() => {
+    if (isLoggedIn && (activeOperator?.isAppOwner || activeOperator?.isManager)) {
+      fetchGlobalSettings();
+    }
+  }, [isLoggedIn, activeOperator, fetchGlobalSettings]);
 
   return (
     <NexusContext.Provider value={value}>
