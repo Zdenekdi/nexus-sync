@@ -18,6 +18,10 @@ const API_BASE = import.meta.env.VITE_API_URL ||
 
 export const NexusProvider = ({ children }) => {
   const [lang, setLang] = useState(localStorage.getItem('nexus_lang') || 'cz');
+  
+  // Define translation helper early to avoid ReferenceError in state initializers
+  const t = useCallback((key) => TRANSLATIONS[lang]?.[key] || key, [lang]);
+
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname.substring(1);
@@ -120,7 +124,7 @@ export const NexusProvider = ({ children }) => {
   
   const auth = useAuth({ 
     API_BASE,
-    t: (k) => k,
+    t,
     setIsRelayMode: () => {}, 
     setSelectedChatId: () => {}, 
     setActiveProfileId, 
@@ -465,7 +469,6 @@ export const NexusProvider = ({ children }) => {
     setDetectedMeeting(null);
   }, [detectedMeeting, nexusData]);
 
-  const t = (key) => TRANSLATIONS[lang]?.[key] || key;
 
   const value = {
     // Basic UI and Logic
