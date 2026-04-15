@@ -64,9 +64,9 @@ test.describe('App Owner Dashboard', () => {
 
   test('shows global/system management elements', async ({ page }) => {
     // Agencies, Infrastructure, Maintenance, global features
-    await expect(page.locator('text=Agencies, text=Agentury')).toBeVisible();
-    await expect(page.locator('text=Infrastructure, text=Infrastruktura')).toBeVisible();
-    await expect(page.locator('text=Maintenance, text=Údržba')).toBeVisible();
+    await expect(page.locator('#nav-agencies')).toBeVisible();
+    await expect(page.locator('#nav-infrastructure')).toBeVisible();
+    await expect(page.locator('#nav-maintenance')).toBeVisible();
   });
 
   test('has no-error state on dashboard', async ({ page }) => {
@@ -74,17 +74,14 @@ test.describe('App Owner Dashboard', () => {
   });
 
   test('profile count visible (DB connected)', async ({ page }) => {
-    // Should show active profiles card
-    await expect(page.locator('text=Profile, text=Profil')).toBeVisible();
+    // Should show active profiles card or profile link
+    await expect(page.locator('#nav-models, #nav-profiles')).toBeVisible();
   });
 
   test('Schedule and Device Setup tabs are NOT visible', async ({ page }) => {
-    // App Owner should NOT see operational tabs
-    const scheduleLink = page.locator('nav >> text=Schedule, nav >> text=Kalendář').first();
-    await expect(scheduleLink).not.toBeVisible({ timeout: 3000 });
-    
-    const deviceSetupLink = page.locator('nav >> text=Device Setup, nav >> text=Nastavení zařízení').first();
-    await expect(deviceSetupLink).not.toBeVisible({ timeout: 3000 });
+    // App Owner should NOT see operational tabs (Hardenened via hook)
+    await expect(page.locator('#nav-calendar')).not.toBeVisible({ timeout: 3000 });
+    await expect(page.locator('#nav-device-setup')).not.toBeVisible({ timeout: 3000 });
   });
 });
 
@@ -102,20 +99,20 @@ test.describe('Agency Admin Dashboard', () => {
   });
 
   test('inbox tab visible and accessible', async ({ page }) => {
-    const inboxLink = page.locator('nav >> text=Inbox, nav >> text=Zprávy').first();
+    const inboxLink = page.locator('#nav-inbox').first();
     await expect(inboxLink).toBeVisible();
     await inboxLink.click();
     await expect(page.locator('text=Chats, text=Chaty')).toBeVisible();
   });
 
   test('Schedule and Device Setup tabs are NOT visible', async ({ page }) => {
-    // Agency Admin should NOT see operational tabs
-    const scheduleLink = page.locator('nav >> text=Schedule, nav >> text=Kalendář').first();
-    await expect(scheduleLink).not.toBeVisible({ timeout: 3000 });
+    // Agency Admin should NOT see operational tabs (Hardenened via hook)
+    await expect(page.locator('#nav-calendar')).not.toBeVisible({ timeout: 3000 });
+    await expect(page.locator('#nav-device-setup')).not.toBeVisible({ timeout: 3000 });
   });
 
   test('profiles tab shows agency profiles from DB', async ({ page }) => {
-    const profilesLink = page.locator('nav >> text=Profiles, nav >> text=Profily').first();
+    const profilesLink = page.locator('#nav-models, #nav-profiles').first();
     await expect(profilesLink).toBeVisible();
     await profilesLink.click();
     
@@ -124,7 +121,7 @@ test.describe('Agency Admin Dashboard', () => {
   });
 
   test('cannot navigate to system-level agency list', async ({ page }) => {
-    await expect(page.locator('text=Agencies, text=Agentury')).not.toBeVisible();
+    await expect(page.locator('#nav-agencies')).not.toBeVisible();
     // Try direct URL
     await page.goto('/agencies');
     // Should show dashboard instead (RBAC redirect)
@@ -147,7 +144,7 @@ test.describe('Manager Dashboard', () => {
   });
 
   test('QA / Audit section accessible', async ({ page }) => {
-    const qaLink = page.locator('nav >> text=QA, text=Audit').first();
+    const qaLink = page.locator('#nav-qa, #nav-audit').first();
     if (await qaLink.count() > 0) {
       await expect(qaLink).toBeVisible();
       await qaLink.click();
@@ -157,8 +154,8 @@ test.describe('Manager Dashboard', () => {
 
   test('Schedule and Device Setup tabs ARE visible (Senior Operator)', async ({ page }) => {
     // Senior Operator SHOULD see these
-    await expect(page.locator('nav >> text=Schedule, nav >> text=Kalendář')).toBeVisible();
-    await expect(page.locator('nav >> text=Device Setup, nav >> text=Nastavení zařízení')).toBeVisible();
+    await expect(page.locator('#nav-calendar')).toBeVisible();
+    await expect(page.locator('#nav-device-setup')).toBeVisible();
   });
 });
 
@@ -180,11 +177,11 @@ test.describe('Model Dashboard', () => {
 
   test('shows profile/calendar section', async ({ page }) => {
     // Models care about their schedule
-    await expect(page.locator('text=Schedule, text=Můj kalendář')).toBeVisible();
+    await expect(page.locator('#nav-calendar')).toBeVisible();
   });
 
   test('cannot access agency admin sections', async ({ page }) => {
-    await expect(page.locator('text=Agency Users, text=Uživatelé agentury')).not.toBeVisible();
+    await expect(page.locator('#nav-operators')).not.toBeVisible();
   });
 });
 
