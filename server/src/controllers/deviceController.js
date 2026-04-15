@@ -15,6 +15,8 @@ const normalizeTransport = (value) => {
   return null;
 };
 
+// --- AUTHENTICATED ENDPOINTS (RBAC) ---
+
 exports.registerPushToken = async (req, res) => {
   try {
     const { token, platform } = req.body;
@@ -25,13 +27,7 @@ exports.registerPushToken = async (req, res) => {
       return res.status(400).json({ ok: false, message: 'Invalid token or user context.' });
     }
 
-    const result = await registerPushToken({
-      userId,
-      agencyId,
-      token,
-      platform: platform || 'android'
-    });
-
+    const result = await registerPushToken({ userId, agencyId, token, platform: platform || 'android' });
     return res.json({ ok: result.ok });
   } catch (error) {
     console.error('[Device] Register push error:', error);
@@ -49,17 +45,13 @@ exports.verifyDeviceBinding = async (req, res) => {
     const internalRole = roleName.toUpperCase();
     const { installationId, profileId, platform, model, deviceName } = req.body;
 
+    // RBAC: RESTRICTED for App Owner, Agency Admin, Manager
     if (internalRole === 'APP OWNER' || internalRole === 'AGENCY ADMIN' || internalRole === 'MANAGER') {
-      return res.status(403).json({ ok: false, message: 'Forbidden: High-level management and Infrastructure roles do not access Device Setup.' });
+      return res.status(403).json({ ok: false, message: 'Forbidden' });
     }
 
-    if (!agencyId || !userId || userId === '') {
-      return res.status(401).json({ ok: false, message: 'Unauthorized' });
-    }
-
-    if (!installationId) {
-      return res.status(400).json({ ok: false, message: 'Missing installationId' });
-    }
+    if (!agencyId || !userId || userId === '') return res.status(401).json({ ok: false, message: 'Unauthorized' });
+    if (!installationId) return res.status(400).json({ ok: false, message: 'Missing installationId' });
 
     let resolvedProfileId = null;
     if (profileId) {
@@ -69,29 +61,16 @@ exports.verifyDeviceBinding = async (req, res) => {
     }
 
     if (!resolvedProfileId) {
-      const assignedProfile = await prisma.profile.findFirst({
-        where: { agencyId, assignees: { some: { id: userId } } }
-      });
+      const assignedProfile = await prisma.profile.findFirst({ where: { agencyId, assignees: { some: { id: userId } } } });
       if (assignedProfile) resolvedProfileId = assignedProfile.id;
     }
 
-    if (!resolvedProfileId) {
-      return res.status(409).json({ ok: false, profileRequired: true, message: 'No profile assigned context.' });
-    }
+    if (!resolvedProfileId) return res.status(409).json({ ok: false, profileRequired: true });
 
-    const activeCount = await prisma.deviceBinding.count({ where: { userId, active: true, installationId: { not: installationId } } });
-    if (activeCount >= 2) return res.status(403).json({ ok: false, message: 'Device limit reached' });
-
-    await prisma.deviceBinding.upsert({
+    16: await prisma.deviceBinding.upsert({
       where: { installationId },
-      update: {
-        userId, agencyId, profileId: resolvedProfileId,
-        platform: String(platform || 'android'), active: true, model, deviceName, lastSeenAt: new Date(),
-      },
-      create: {
-        installationId, userId, agencyId, profileId: resolvedProfileId,
-        platform: String(platform || 'android'), active: true, model, deviceName, lastSeenAt: new Date(),
-      },
+      update: { userId, agencyId, profileId: resolvedProfileId, platform: String(platform || 'android'), active: true, model, deviceName, lastSeenAt: new Date() },
+      create: { installationId, userId, agencyId, profileId: resolvedProfileId, platform: String(platform || 'android'), active: true, model, deviceName, lastSeenAt: new Date() },
     });
 
     return res.json({ ok: true });
@@ -105,14 +84,13 @@ exports.getRelayStatus = async (req, res) => {
   try {
     const userId = String(req.user?.userId || req.user?.id || '');
     const userRole = req.user?.role;
-    const agencyId = req.user?.agencyId;
     const { installationId } = req.query;
 
     const roleName = (typeof userRole === 'string' ? userRole : userRole?.name) || '';
     const internalRole = roleName.toUpperCase();
 
     if (internalRole === 'APP OWNER' || internalRole === 'AGENCY ADMIN' || internalRole === 'MANAGER') {
-      return res.status(403).json({ ok: false, message: 'Forbidden' });
+      return res.status(403).json({ ok: false });
     }
 
     if (!installationId || !userId || userId === '') return res.status(400).json({ ok: false });
@@ -123,7 +101,6 @@ exports.getRelayStatus = async (req, res) => {
 
     return res.json({ ok: true, registered: true, active: Boolean(binding.active) });
   } catch (error) {
-    console.error('[Device] Relay status error:', error);
     return res.status(500).json({ ok: false });
   }
 };
@@ -138,12 +115,11 @@ exports.getDeviceBindings = async (req, res) => {
     const internalRole = roleName.toUpperCase();
 
     if (internalRole === 'APP OWNER' || internalRole === 'AGENCY ADMIN' || internalRole === 'MANAGER') {
-      return res.status(403).json({ ok: false, message: 'Access denied' });
+      return res.status(403).json({ ok: false });
     }
 
     if (!agencyId) return res.status(400).json({ ok: false });
 
-    // Restrict regular operators to only see their own bindings, Senior Operators can see agency-wide
     const isSenior = (internalRole === 'SENIOR OPERATOR');
     const bindings = await prisma.deviceBinding.findMany({
       where: isSenior ? { agencyId } : { userId },
@@ -153,7 +129,6 @@ exports.getDeviceBindings = async (req, res) => {
 
     return res.json({ ok: true, bindings });
   } catch (error) {
-    console.error('[Device] Get bindings error:', error);
     return res.status(500).json({ ok: false });
   }
 };
@@ -166,7 +141,7 @@ exports.revokeDeviceBinding = async (req, res) => {
 
     const roleName = (typeof userRole === 'string' ? userRole : userRole?.name) || '';
     if (roleName.toUpperCase() === 'APP OWNER' || roleName.toUpperCase() === 'AGENCY ADMIN' || roleName.toUpperCase() === 'MANAGER') {
-      return res.status(403).json({ ok: false, message: 'Forbidden' });
+      return res.status(403).json({ ok: false });
     }
 
     const binding = await prisma.deviceBinding.findUnique({ where: { installationId } });
@@ -175,32 +150,108 @@ exports.revokeDeviceBinding = async (req, res) => {
     await prisma.deviceBinding.update({ where: { installationId }, data: { active: false } });
     return res.json({ ok: true });
   } catch (error) {
-    console.error('[Device] Revoke error:', error);
     return res.status(500).json({ ok: false });
   }
 };
+
+exports.sendTestPush = async (req, res) => {
+  try {
+    const { title, body } = req.body;
+    const userId = String(req.user?.userId || req.user?.id || '');
+    const agencyId = req.user?.agencyId;
+
+    if (!title || !body) return res.status(400).json({ ok: false });
+
+    const binding = await prisma.deviceBinding.findFirst({ where: { userId, active: true } });
+    if (!binding) return res.status(404).json({ ok: false, message: 'No active device binding' });
+
+    await sendChatPush({ agencyId, profileId: binding.profileId, chatId: 'test', from: 'SYSTEM', messagePreview: body, profileName: 'Test' });
+    return res.json({ ok: true });
+  } catch (error) {
+    return res.status(500).json({ ok: false });
+  }
+};
+
+// --- PUBLIC WEBHOOKS (SECRET BASED) ---
 
 exports.handleRelay = async (req, res) => {
   try {
     const { installationId, type, transport, from, content, secret } = req.body;
     const messageTransport = normalizeTransport(transport || type);
     let isAuthorized = (secret === process.env.DEVICE_SECRET);
-    const binding = await prisma.deviceBinding.findUnique({ where: { installationId: installationId || 'none' } });
+    const binding = await prisma.deviceBinding.findUnique({ where: { installationId: installationId || 'none' }, include: { profile: { select: { id: true, name: true, agencyId: true } } } });
 
     if (binding && binding.active) isAuthorized = true;
     if (!isAuthorized) return res.status(401).json({ message: 'Unauthorized' });
 
     if (binding && (messageTransport === 'sms' || messageTransport === 'rcs')) {
       const direction = (type === 'SMS_SENT' || type === 'OUTBOUND') ? 'OUTBOUND' : 'INBOUND';
-      let chat = await prisma.chat.findUnique({ where: { externalId_profileId: { externalId: from, profileId: binding.profileId } } });
+      let chat = await prisma.chat.findFirst({ where: { externalId: from, profileId: binding.profileId } });
       if (!chat) chat = await prisma.chat.create({ data: { externalId: from, profileId: binding.profileId, agencyId: binding.agencyId } });
       
       const createdMessage = await prisma.message.create({ data: { chatId: chat.id, text: content, transport: messageTransport, direction, status: 'delivered', createdAt: new Date() } });
       await prisma.chat.update({ where: { id: chat.id }, data: { lastMessageAt: new Date() } });
       getIO().to(`agency_${binding.agencyId}`).emit('new_message', { id: createdMessage.id, profileId: binding.profileId, chatId: chat.id, from, text: content, transport: messageTransport, direction: direction.toLowerCase() });
+      
+      try { await sendChatPush({ agencyId: binding.agencyId, profileId: binding.profileId, chatId: chat.id, from, messagePreview: content, profileName: binding.profile.name }); } catch (e) {}
+    } else if (binding && messageTransport === 'call') {
+      const callState = normalizeCallState(content);
+      await prisma.callLog.create({ data: { profileId: binding.profileId, from: from || 'UNKNOWN', status: callState } });
+      getIO().to(`agency_${binding.agencyId}`).emit('incoming_call', { profileId: binding.profileId, from, profileName: binding.profile.name, state: callState });
+      try { await sendCallPush({ agencyId: binding.agencyId, profileId: binding.profileId, from, caller: from, profileName: binding.profile.name, callState }); } catch (e) {}
     }
     return res.json({ ok: true });
   } catch (error) {
     return res.status(500).json({ ok: false });
+  }
+};
+
+exports.handleGoIP = async (req, res) => {
+  try {
+    const { src, dst, msg } = req.body;
+    if (!src || !dst || !msg) return res.status(400).send('BAD FIELDS');
+    const profile = await prisma.profile.findFirst({ where: { phoneNumber: dst } });
+    if (!profile) return res.status(404).send('NOT FOUND');
+
+    let chat = await prisma.chat.findUnique({ where: { externalId_profileId: { externalId: src, profileId: profile.id } } });
+    if (!chat) chat = await prisma.chat.create({ data: { externalId: src, profileId: profile.id, agencyId: profile.agencyId } });
+    await prisma.message.create({ data: { chatId: chat.id, text: msg, transport: 'sms', direction: 'INBOUND', status: 'delivered' } });
+    getIO().to(`agency_${profile.agencyId}`).emit('new_message', { id: Date.now(), from: src, text: msg, transport: 'sms' });
+    return res.status(200).send('RECEIVE OK');
+  } catch (error) {
+    return res.status(500).send('ERROR');
+  }
+};
+
+exports.handleMobileSms = async (req, res) => {
+  try {
+    const { from, to, text, secret } = req.body;
+    if (secret !== process.env.DEVICE_SECRET) return res.status(401).json({ message: 'Unauthorized' });
+    const profile = await prisma.profile.findFirst({ where: { phoneNumber: to } });
+    if (!profile) return res.status(404).json({ message: 'Profile not found' });
+
+    let chat = await prisma.chat.findFirst({ where: { externalId: from, profileId: profile.id } });
+    if (!chat) chat = await prisma.chat.create({ data: { externalId: from, profileId: profile.id, agencyId: profile.agencyId } });
+    await prisma.message.create({ data: { chatId: chat.id, text, transport: 'sms', direction: 'INBOUND', status: 'delivered' } });
+    getIO().to(`agency_${profile.agencyId}`).emit('new_message', { from, text, transport: 'sms' });
+    return res.json({ status: 'success' });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error' });
+  }
+};
+
+exports.handleMobileCall = async (req, res) => {
+  try {
+    const { from, to, state, secret } = req.body;
+    if (secret !== process.env.DEVICE_SECRET) return res.status(401).json({ message: 'Unauthorized' });
+    const profile = await prisma.profile.findFirst({ where: { phoneNumber: to } });
+    if (!profile) return res.status(404).json({ message: 'Profile not found' });
+
+    const callState = normalizeCallState(state);
+    await prisma.callLog.create({ data: { profileId: profile.id, from: from || 'UNKNOWN', status: callState } });
+    getIO().to(`agency_${profile.agencyId}`).emit('incoming_call', { from, profileName: profile.name, profileId: profile.id, state: callState });
+    return res.json({ status: 'success' });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error' });
   }
 };
