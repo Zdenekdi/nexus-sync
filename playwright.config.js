@@ -13,7 +13,7 @@ import { defineConfig, devices } from '@playwright/test';
  *
  * Run all tests:  npm run test:smoke
  * Run API-only:   npx playwright test rbac sms-relay  (no dev server needed)
- * Run E2E-only:   npx playwright test smoke dashboard
+ * Run E2E-only:   npx playwright test smoke dashboard (now hits live site directly)
  */
 export default defineConfig({
   testDir: './tests',
@@ -25,7 +25,7 @@ export default defineConfig({
   reporter: 'html',
 
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: process.env.FRONTEND_URL || 'https://nexus-sync-8d50b.web.app',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     viewport: { width: 1280, height: 720 },
@@ -40,19 +40,18 @@ export default defineConfig({
   ],
 
   /**
-   * webServer: Auto-starts the Vite dev client before E2E tests run.
-   * API tests (rbac, sms-relay) don't use the browser so they work without this too.
-   *
-   * reuseExistingServer: if you already have `npm run dev:client` running, Playwright
-   * will reuse it instead of starting a new one.
+   * webServer is disabled by default since we test against the LIVE frontend.
+   * If you ever want to test locally again, you can uncomment this block.
    */
+  /*
   webServer: {
     command: 'npm run dev:client',
     url: 'http://localhost:5173',
-    reuseExistingServer: true,    // Reuse if already running — no duplicate server
+    reuseExistingServer: true,
     timeout: 60_000,
     cwd: '/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub',
     stdout: 'ignore',
     stderr: 'pipe',
   },
+  */
 });
