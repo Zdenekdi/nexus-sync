@@ -55,7 +55,8 @@ async function doLogin(page, email, password) {
   }
 
   // Fill login form
-  await page.waitForSelector('input[type="email"]', { timeout: 12_000 });
+  console.log(`  Waiting for login form... (URL: ${page.url()})`);
+  await page.waitForSelector('input[type="email"]', { timeout: 30_000 });
   await page.fill('input[type="email"]', email);
   await page.fill('input[type="password"]', password);
 
