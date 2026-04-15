@@ -140,6 +140,14 @@ test.describe('Nexus Hub Multi-Role Smoke', () => {
         const visible = await mgmtEl.isVisible({ timeout: 8000 }).catch(() => false);
         console.log(`  ${visible ? '✅' : '⚠️ '} ${user.role} management elements ${visible ? 'visible' : 'not found'}`);
 
+        // STRICT CHECK: Ensure Schedule and Device Setup are NOT visible
+        const restrictedTab = page.locator('nav >> text=Schedule, nav >> text=Kalendář, nav >> text=Device Setup, nav >> text=Nastavení telefonů').first();
+        const isRestrictedVisible = await restrictedTab.isVisible({ timeout: 2000 }).catch(() => false);
+        if (isRestrictedVisible) {
+          throw new Error(`SECURITY BREACH: ${user.role} can see restricted tabs!`);
+        }
+        console.log(`  ✅ ${user.role} restricted tabs are successfully hidden`);
+
         // Optional: navigate to QA if available
         if (user.role !== 'Model') {
           const qaLink = page.locator('nav >> text=QA, nav >> text=Audit').first();

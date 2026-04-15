@@ -255,12 +255,10 @@ test.describe('Relay — installationId binding', () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 test.describe('Device Bindings — Management', () => {
-  test('Manager can list device bindings', async () => {
+  test('Manager cannot list device bindings → 403', async () => {
     const res = await authClient(managerToken).get('/device/bindings');
-    expect(res.status).toBe(200);
-    expect(res.data.ok).toBe(true);
-    expect(Array.isArray(res.data.bindings)).toBe(true);
-    console.log(`  📱 Manager sees ${res.data.bindings.length} bindings`);
+    expect(res.status).toBe(403);
+    console.log(`  ✅ Manager access to bindings blocked (403)`);
   });
 
   test('Model cannot list all bindings', async () => {
@@ -270,7 +268,7 @@ test.describe('Device Bindings — Management', () => {
     expect([200, 403]).toContain(res.status);
   });
 
-  test('relay status for registered device', async () => {
+  test('relay status for registered device → 403 for manager', async () => {
     if (!seededInstallationId) {
       console.log('  ⏭️  Skipped: no device binding');
       return;
@@ -278,8 +276,7 @@ test.describe('Device Bindings — Management', () => {
     const res = await authClient(managerToken).get(
       `/device/status?installationId=${seededInstallationId}`
     );
-    expect(res.status).toBe(200);
-    expect(res.data.registered).toBe(true);
-    console.log(`  ✅ Relay status: online=${res.data.online}`);
+    expect(res.status).toBe(403);
+    console.log(`  ✅ Manager access to relay status blocked (403)`);
   });
 });

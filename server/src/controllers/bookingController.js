@@ -4,9 +4,15 @@ const prisma = require('../services/db');
 exports.getBookings = async (req, res) => {
   try {
     const { profileId } = req.query;
-    const { role, agencyId } = req.user;
-    const isAppOwner = role?.isAppOwner;
+    const { role: userRole, agencyId } = req.user;
+    const internalRole = userRole?.name?.toUpperCase() || '';
 
+    // AGENCY ADMIN and MANAGER roles are strictly prohibited from accessing Schedule data.
+    if (internalRole === 'AGENCY ADMIN' || internalRole === 'MANAGER') {
+      return res.status(403).json({ message: 'Access denied: Non-operator roles cannot access Schedule.' });
+    }
+
+    const isAppOwner = userRole?.isAppOwner;
     const where = isAppOwner ? {} : { agencyId };
     if (profileId) where.profileId = profileId;
 
@@ -26,8 +32,14 @@ exports.getBookings = async (req, res) => {
 exports.createBooking = async (req, res) => {
   try {
     const { profileId, title, startTime, endTime, locationType } = req.body;
-    const { role, agencyId } = req.user;
-    const isAppOwner = role?.isAppOwner;
+    const { role: userRole, agencyId } = req.user;
+    const internalRole = userRole?.name?.toUpperCase() || '';
+
+    if (internalRole === 'AGENCY ADMIN' || internalRole === 'MANAGER') {
+      return res.status(403).json({ message: 'Access denied: Non-operator roles cannot modify Schedule.' });
+    }
+
+    const isAppOwner = userRole?.isAppOwner;
 
     if (!profileId || !title || !startTime || !endTime) {
       return res.status(400).json({ message: 'profileId, title, startTime and endTime are required' });
@@ -66,7 +78,12 @@ exports.updateBooking = async (req, res) => {
   try {
     const { id } = req.params;
     const { title, startTime, endTime, status, locationType } = req.body;
-    const { agencyId } = req.user;
+    const { agencyId, role: userRole } = req.user;
+    const internalRole = userRole?.name?.toUpperCase() || '';
+
+    if (internalRole === 'AGENCY ADMIN' || internalRole === 'MANAGER') {
+      return res.status(403).json({ message: 'Access denied: Non-operator roles cannot modify Schedule.' });
+    }
 
     const existing = await prisma.booking.findUnique({ where: { id } });
     if (!existing || existing.agencyId !== agencyId) {
@@ -94,7 +111,12 @@ exports.updateBooking = async (req, res) => {
 exports.deleteBooking = async (req, res) => {
   try {
     const { id } = req.params;
-    const { agencyId } = req.user;
+    const { agencyId, role: userRole } = req.user;
+    const internalRole = userRole?.name?.toUpperCase() || '';
+
+    if (internalRole === 'AGENCY ADMIN' || internalRole === 'MANAGER') {
+      return res.status(403).json({ message: 'Access denied: Non-operator roles cannot modify Schedule.' });
+    }
     const existing = await prisma.booking.findUnique({ where: { id } });
     if (!existing || existing.agencyId !== agencyId) {
       return res.status(404).json({ message: 'Booking not found' });

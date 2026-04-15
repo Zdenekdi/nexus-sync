@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNexus } from '../../context/NexusContext';
+import { useNexus } from '../../context/NexusBaseContext';
 import AgenciesView from '../Views/AgenciesView';
 import GlobalFeaturesView from '../Views/GlobalFeaturesView';
 import PermissionsDashboard from '../PermissionsDashboard';

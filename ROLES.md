@@ -33,6 +33,7 @@ Tento dokument definuje hierarchii a přístupová práva pro jednotlivé role v
     - Úplný přístup k messagingu (pokud není zapnut jiný režim soukromí).
     - Přístup k auditním logům agentury.
     - Úprava nastavení agentury (název, region, měna, alerty).
+- **Omezení:** Z důvodu ochrany soukromí a bezpečnosti **nemá** přístup ke Kalendáři/Rezervacím a k fyzickému nastavení zařízení (Device Setup).
 
 ### 3. Senior Operator (`isManager: true`)
 - **Dosah:** Vlastní agentura.
@@ -82,10 +83,8 @@ Zde je seznam záložek (dashboardů), které jednotlivé role vidí v postrann�
 ### 👨‍💼 Agency Admin / Manager
 - **Dashboard** (Statistiky agentury)
 - **Inbox** (Zprávy - volitelné dle oprávnění)
-- **Schedule** (Kalendář/Rezervace)
 - **Safety** (Bezpečnostní dohled)
 - **Profiles** (Správa modelů/profilů)
-- **Device Setup** (Nastavení telefonů)
 - **QA** (Kontrola kvality)
 - **Hierarchy** (Správa týmu a uživatelů)
 - **Analytics** (Podrobné grafy a tržby)

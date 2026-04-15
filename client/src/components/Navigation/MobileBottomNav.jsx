@@ -1,16 +1,19 @@
 import { LayoutDashboard, MessageSquare, Zap, Calendar } from 'lucide-react';
-import { useNexus } from '../../context/NexusContext';
+import { useNexus } from '../../context/NexusBaseContext';
 
 const MobileBottomNav = () => {
   const nexus = useNexus();
-  const { activeTab, setActiveTab, t, totalUnread } = nexus;
+  const { activeTab, setActiveTab, t, totalUnread, isAllowed } = nexus;
   const unreadCount = totalUnread || 0;
-  const tabs = [
+  
+  const allTabs = [
     { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard') },
-    { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: unreadCount },
-    { id: 'relay', icon: Zap, label: t('relay') },
-    { id: 'calendar', icon: Calendar, label: t('schedule') },
+    { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: unreadCount, perm: 'messaging' },
+    { id: 'relay', icon: Zap, label: t('relay'), perm: 'relay' },
+    { id: 'calendar', icon: Calendar, label: t('schedule'), perm: 'calendar' },
   ];
+
+  const tabs = allTabs.filter(tab => !tab.perm || isAllowed(tab.perm));
 
   return (
     <div 

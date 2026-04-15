@@ -109,6 +109,15 @@ test.describe('Agency Admin Dashboard', () => {
     }
   });
 
+  test('Schedule and Device Setup tabs are NOT visible', async ({ page }) => {
+    const scheduleLink = page.locator('nav >> text=Schedule, nav >> text=Kalendář').first();
+    const deviceLink = page.locator('nav >> text=Device Setup, nav >> text=Nastavení telefonů').first();
+    
+    await expect(scheduleLink).not.toBeVisible({ timeout: 3000 });
+    await expect(deviceLink).not.toBeVisible({ timeout: 3000 });
+    console.log('  ✅ Restricted tabs successfully hidden for Agency Admin');
+  });
+
   test('profiles tab shows agency profiles from DB', async ({ page }) => {
     const profilesLink = page.locator(
       'nav >> text=Profiles, nav >> text=Profily, a[href*="profiles"]'
@@ -165,6 +174,15 @@ test.describe('Manager Dashboard', () => {
     } else {
       console.log('  ⏭️  QA link not visible in nav for this manager');
     }
+  });
+
+  test('Schedule and Device Setup tabs are NOT visible', async ({ page }) => {
+    const scheduleLink = page.locator('nav >> text=Schedule, nav >> text=Kalendář').first();
+    const deviceLink = page.locator('nav >> text=Device Setup, nav >> text=Nastavení telefonů').first();
+    
+    await expect(scheduleLink).not.toBeVisible({ timeout: 3000 });
+    await expect(deviceLink).not.toBeVisible({ timeout: 3000 });
+    console.log('  ✅ Restricted tabs successfully hidden for Manager');
   });
 });
 

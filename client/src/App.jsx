@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNexus } from './context/NexusContext';
+import { useNexus } from './context/NexusBaseContext';
 
 // Navigation & Routing
 import Sidebar from './components/Navigation/Sidebar';

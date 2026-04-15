@@ -54,11 +54,14 @@ exports.registerPushToken = async (req, res) => {
 exports.verifyDeviceBinding = async (req, res) => {
   try {
     const userId = req.user?.userId;
-    const agencyId = req.user?.agencyId || null;
-    const { installationId, profileId, platform, model, deviceName } = req.body || {};
+    const userRole = req.user?.role?.name?.toUpperCase() || '';
 
     if (!userId) {
       return res.status(401).json({ ok: false, message: 'Unauthorized' });
+    }
+
+    if (userRole === 'AGENCY ADMIN' || userRole === 'MANAGER') {
+      return res.status(403).json({ ok: false, message: 'Forbidden: Admin roles cannot bind devices.' });
     }
 
     if (!installationId || typeof installationId !== 'string' || installationId.length > 256) {
@@ -178,10 +181,15 @@ exports.verifyDeviceBinding = async (req, res) => {
 exports.getRelayStatus = async (req, res) => {
   try {
     const userId = req.user?.userId;
+    const userRole = req.user?.role?.name?.toUpperCase() || '';
     const installationId = req.query?.installationId;
 
     if (!userId) {
       return res.status(401).json({ ok: false, message: 'Unauthorized' });
+    }
+
+    if (userRole === 'AGENCY ADMIN' || userRole === 'MANAGER') {
+      return res.status(403).json({ ok: false, message: 'Forbidden' });
     }
 
     if (!installationId || typeof installationId !== 'string' || installationId.length > 256) {
@@ -235,9 +243,14 @@ exports.getRelayStatus = async (req, res) => {
 exports.getDeviceBindings = async (req, res) => {
   try {
     const { role, agencyId } = req.user;
+    const userRoleName = role?.name?.toUpperCase() || '';
+    
+    if (userRoleName === 'AGENCY ADMIN' || userRoleName === 'MANAGER') {
+      return res.status(403).json({ ok: false, message: 'Access denied: Non-operator roles cannot access Device Setup.' });
+    }
+
     const isAppOwner = role?.isAppOwner;
-    const isManager = role?.isManager;
-    const isAdmin = isManager || isAppOwner;
+    const isAdmin = isAppOwner; // Reduced permission: Managers no longer see all agency bindings
     
     const bindings = await prisma.deviceBinding.findMany({
       where: isAdmin ? { agencyId } : { userId: req.user.id },
@@ -279,9 +292,15 @@ exports.revokeDeviceBinding = async (req, res) => {
     }
 
     // Verify ownership or permission
-    const isAppOwner = req.user.role?.isAppOwner;
-    const isManager = req.user.role?.isManager;
-    const isAdmin = isManager || isAppOwner;
+    const { role } = req.user;
+    const userRoleName = role?.name?.toUpperCase() || '';
+
+    if (userRoleName === 'AGENCY ADMIN' || userRoleName === 'MANAGER') {
+      return res.status(403).json({ ok: false, message: 'Forbidden' });
+    }
+
+    const isAppOwner = role?.isAppOwner;
+    const isAdmin = isAppOwner; // Reduced: Managers cant revoke others
     if (!isAdmin && binding.userId !== userId) {
       return res.status(403).json({ ok: false, message: 'Forbidden' });
     }

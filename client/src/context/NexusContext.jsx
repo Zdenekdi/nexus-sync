@@ -9,8 +9,9 @@ import { useSocket } from '../hooks/useSocket';
 import { initPushNotifications, removePushListeners } from '../services/pushService';
 import { TRANSLATIONS } from '../translations';
 import { API_BASE } from '../constants/config';
+import { NexusContext } from './NexusBaseContext';
 
-export const NexusContext = createContext();
+export { useNexus } from './NexusBaseContext';
 
 export const NexusProvider = ({ children }) => {
   const [lang, setLang] = useState(localStorage.getItem('nexus_lang') || 'cz');
@@ -639,8 +640,3 @@ export const NexusProvider = ({ children }) => {
   );
 };
 
-export const useNexus = () => {
-  const context = useContext(NexusContext);
-  if (!context) throw new Error('useNexus must be used within a NexusProvider');
-  return context;
-};
