@@ -53,10 +53,30 @@ jobs:
       - name: Build client
         run: cd client && npx vite build
 
+  sync-backend:
+    name: Sync Server to Backend Repo
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history needed for subtree split
+
+      - name: Push subtree to nexus-backend
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Isolate server/ and push it to the backend repo
+          git subtree split --prefix=server -b server-only
+          git remote add backend https://x-access-token:${{ secrets.SYNC_BACKEND_TOKEN }}@github.com/Zdenekdi/nexus-backend.git
+          git push backend server-only:master --force
+
   deploy:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: [test, build-client]
+    needs: [test, build-client, sync-backend]
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
 
     steps:
