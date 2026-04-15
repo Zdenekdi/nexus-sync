@@ -16,12 +16,11 @@ import { test, expect } from '@playwright/test';
 async function loginToApp(page, email, password) {
   await page.goto('/');
 
-  // Handle optional landing/splash screen
-  const enterBtn = page.locator(
-    'button:has-text("Enter Application"), button:has-text("Vstoupit"), button:has-text("Get Started")'
-  );
-  if (await enterBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-    await enterBtn.click();
+  // Handle Landing Page Interstitial (Vstoupit do aplikace)
+  const enterBtn = page.locator('text=Vstoupit do aplikace, text=Enter application, text=Vstoupit, button:has-text("Vstoupit")');
+  if (await enterBtn.count() > 0) {
+    console.log('  Landing page detected in dashboard test, entering application...');
+    await enterBtn.first().click();
   }
 
   // Wait for login form
