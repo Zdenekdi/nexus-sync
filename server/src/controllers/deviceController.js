@@ -176,16 +176,28 @@ exports.sendTestPush = async (req, res) => {
 
 exports.handleRelay = async (req, res) => {
   try {
-    const { installationId, type, transport, from, content, secret } = req.body;
+    const { installationId, type, transport, from, content, secret, deviceId, userId } = req.body;
     if (!from || !content) return res.status(400).json({ ok: false, message: 'Missing from or content' });
     
     const messageTransport = normalizeTransport(transport || type);
     if (!messageTransport) return res.status(400).json({ ok: false, message: 'Invalid transport' });
 
+    const reqUserId = String(deviceId || userId || '');
     let isAuthorized = (secret === process.env.DEVICE_SECRET);
-    const binding = await prisma.deviceBinding.findUnique({ where: { installationId: installationId || 'none' }, include: { profile: { select: { id: true, name: true, agencyId: true } } } });
+    const binding = await prisma.deviceBinding.findUnique({ 
+      where: { installationId: installationId || 'none' }, 
+      include: { profile: { select: { id: true, name: true, agencyId: true } } } 
+    });
 
-    if (binding && binding.active) isAuthorized = true;
+    if (binding && binding.active) {
+      // If we find a binding by installationId, we MUST ensure it belongs to the same user
+      // if a deviceId/userId was provided in the request (extra security layer).
+      if (reqUserId && String(binding.userId) !== reqUserId) {
+        return res.status(401).json({ message: 'Unauthorized: Device ID mismatch' });
+      }
+      isAuthorized = true;
+    }
+    
     if (!isAuthorized) return res.status(401).json({ message: 'Unauthorized' });
     if (!binding) return res.status(404).json({ ok: false, message: 'Source device not found' });
 

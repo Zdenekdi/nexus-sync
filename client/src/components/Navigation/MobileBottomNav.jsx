@@ -13,7 +13,14 @@ const MobileBottomNav = () => {
     { id: 'calendar', icon: Calendar, label: t('schedule'), perm: 'calendar' },
   ];
 
-  const tabs = allTabs.filter(tab => !tab.perm || isAllowed(tab.perm));
+  const tabs = allTabs.filter(tab => {
+    // Explicitly hide sensitive tabs for pure admin roles on mobile as well
+    const role = nexus.activeRole;
+    if (role === 'App Owner' || role === 'Agency Admin') {
+      if (tab.id === 'calendar' || tab.id === 'relay') return false;
+    }
+    return !tab.perm || isAllowed(tab.perm);
+  });
 
   return (
     <div 
