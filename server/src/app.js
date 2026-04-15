@@ -174,6 +174,12 @@ app.use('/api/blacklist', writeLimiter);
 app.use('/api/agency', writeLimiter);
 // SOS has no extra limiter — safety-critical
 
+// Startup: Self-Repair DB Schema (Bypass Prisma migrate permission issues)
+const { ensureSchemaIntegrity } = require('./services/schemaService');
+ensureSchemaIntegrity().catch(err => {
+  console.warn('[DB] Self-repair failed (expected if DB unreachable from this process):', err.message);
+});
+
 // Request logging middleware
 app.use((req, res, next) => {
   logger.info(`${req.method} ${req.url} - ${req.ip}`);

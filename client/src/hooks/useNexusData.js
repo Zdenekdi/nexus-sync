@@ -221,6 +221,7 @@ export function useNexusData({
           profileName: chat.profile?.name || null,
           from: chat.externalId,
           text: (chat.messages?.[0]?.text || 'No messages'),
+          senderName: chat.messages?.[0]?.sender?.name || null,
           timestamp: chat.lastMessageAt || new Date().toISOString(),
           status: 'read',
           direction: 'inbound',

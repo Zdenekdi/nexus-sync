@@ -22,20 +22,22 @@ const PLAN_PRICES = {
 // ── GET /api/subscriptions/plans
 // Returns plan options + pricing (no auth needed for this)
 router.get('/plans', async (req, res) => {
+  const defaultPlans = [
+    { id: 'basic', name: 'Basic', description: 'Ideální pro nezávislé modely a začínající agentury. Zahrnuje základní nástroje pro správu.', prices: { cz: '2900', eu: '120', us: '130', uk: '110' }, profilesLimit: 5, features: ['Správa profilů', 'Základní analytika', 'Podpora 24/7'] },
+    { id: 'pro', name: 'Pro', description: 'Nejlepší volba pro rostoucí týmy. Získejte přístup k pokročilým analytickým nástrojům a AI.', prices: { cz: '5900', eu: '240', us: '260', uk: '220' }, profilesLimit: 10, features: ['Vše z Basic', 'Pokročilá analytika', 'AI Optimalizace'] },
+    { id: 'agency', name: 'Agency', description: 'Komplexní řešení pro velké agentury s neomezenou škálovatelností a plným přístupem.', prices: { cz: '9900', eu: '400', us: '440', uk: '360' }, profilesLimit: 20, features: ['Vše z Pro', 'Auditní logy', 'API Přístup'] }
+  ];
+
   try {
     const setting = await prisma.globalSetting.findUnique({ where: { key: 'SUBSCRIPTION_PLANS' } });
     if (setting && setting.value) {
       return res.json(JSON.parse(setting.value));
     }
-    // Fallback if no dynamic plans initialized
-    res.json([
-      { id: 'basic', name: 'Basic', description: 'Ideální pro nezávislé modely a začínající agentury. Zahrnuje základní nástroje pro správu.', prices: { cz: '2900', eu: '120', us: '130', uk: '110' }, profilesLimit: 5, features: ['Správa profilů', 'Základní analytika', 'Podpora 24/7'] },
-      { id: 'pro', name: 'Pro', description: 'Nejlepší volba pro rostoucí týmy. Získejte přístup k pokročilým analytickým nástrojům a AI.', prices: { cz: '5900', eu: '240', us: '260', uk: '220' }, profilesLimit: 10, features: ['Vše z Basic', 'Pokročilá analytika', 'AI Optimalizace'] },
-      { id: 'agency', name: 'Agency', description: 'Komplexní řešení pro velké agentury s neomezenou škálovatelností a plným přístupem.', prices: { cz: '9900', eu: '400', us: '440', uk: '360' }, profilesLimit: 20, features: ['Vše z Pro', 'Auditní logy', 'API Přístup'] }
-    ]);
+    return res.json(defaultPlans);
   } catch (err) {
-    console.error('GET /subscriptions/plans error:', err);
-    res.status(500).json({ message: 'Failed to fetch plans' });
+    console.warn('[API] GET /subscriptions/plans database query failed, using hardcoded fallbacks:', err.message);
+    // Explicitly return success with default data even on DB error
+    return res.json(defaultPlans);
   }
 });
 

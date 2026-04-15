@@ -134,18 +134,24 @@ const AnalyticsView = () => {
                 </tr>
               </thead>
               <tbody>
-                {[...(availableOperators || [])].sort((a,b) => (b.metrics?.messages || 0) - (a.metrics?.messages || 0)).map((op, i) => (
-                  <tr key={op.id} style={{ borderBottom: i < (availableOperators || []).length - 1 ? '1px solid var(--card-border)' : 'none' }}>
-                    <td style={{ padding: '1rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <div style={{ width: '28px', height: '28px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: '900' }}>{op.avatar}</div>
-                        <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{op.name}</div>
-                      </div>
-                    </td>
-                    <td style={{ padding: '1rem', textAlign: 'right', fontWeight: '700' }}>{op.metrics?.messages ?? 0}</td>
-                    <td style={{ padding: '1rem', textAlign: 'right', color: 'var(--text-secondary)' }}>{op.metrics?.calls ?? 0}</td>
-                  </tr>
-                ))}
+                {(availableOperators || [])
+                  .filter(op => {
+                    const r = (op.role?.name || op.role || '').toUpperCase();
+                    return r === 'OPERATOR' || r === 'SENIOR OPERATOR' || r === 'SENIOR_OPERATOR';
+                  })
+                  .sort((a,b) => (b.metrics?.messages || 0) - (a.metrics?.messages || 0))
+                  .map((op, i, arr) => (
+                    <tr key={op.id} style={{ borderBottom: i < arr.length - 1 ? '1px solid var(--card-border)' : 'none' }}>
+                      <td style={{ padding: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <div style={{ width: '28px', height: '28px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: '900' }}>{op.avatar}</div>
+                          <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{op.name}</div>
+                        </div>
+                      </td>
+                      <td style={{ padding: '1rem', textAlign: 'right', fontWeight: '700' }}>{op.metrics?.messages ?? 0}</td>
+                      <td style={{ padding: '1rem', textAlign: 'right', color: 'var(--text-secondary)' }}>{op.metrics?.calls ?? 0}</td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>

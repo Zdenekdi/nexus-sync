@@ -287,6 +287,7 @@ const updateGlobalFeature = z.object({
 // ── Device Relay ─────────────────────────────────────────────────────────────
 const relayMessage = z.object({
   installationId: z.string().min(1).max(256),
+  deviceId: z.string().max(128).optional(),
   secret: z.string().max(256).optional(),
   type: z.string().max(32).optional(),
   from: z.string().max(64).optional(),
@@ -301,6 +302,7 @@ const relayMessage = z.object({
 const mobileMessage = z.object({
   secret: z.string().min(1).max(256),
   from: z.string().min(1).max(64),
+  to: z.string().min(1).max(64),
   body: z.string().max(5000).optional(),
   text: z.string().max(5000).optional(),
   transport: z.string().max(16).optional()

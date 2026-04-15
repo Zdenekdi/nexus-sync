@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { FileSearch, StickyNote, User, Phone, Edit2, Check, X, Search, ChevronDown } from 'lucide-react';
 import { useNexus } from '../context/NexusContext';
 
@@ -6,7 +6,12 @@ const QAView = () => {
   const nexus = useNexus();
   const { 
     t, 
-    messages, 
+    messages,
+    chatMessages,
+    selectedChatId,
+    setSelectedChatId,
+    fetchChatMessages,
+    isHistoryLoading,
     clientNotes, 
     clientNames, 
     updateClientName, 
@@ -73,7 +78,8 @@ const QAView = () => {
           phoneNumber: msg.from,
           name: clientNames?.[msg.from] || null,
           lastMessage: msg.text,
-          time: msg.time
+          time: msg.time,
+          chatId: msg.chatId
         });
       }
     });
@@ -115,6 +121,17 @@ const QAView = () => {
       (p?.assignees || []).some(a => a.id === filterOperatorId)
     );
   }, [filterOperatorId, profiles, activeOperator, activeRole]);
+
+  // Handle history fetching when client selection changes
+  useEffect(() => {
+    if (currentClientData?.chatId) {
+      // Sync global selectedChatId for other consumers
+      if (selectedChatId !== currentClientData.chatId) {
+        setSelectedChatId(currentClientData.chatId);
+      }
+      fetchChatMessages(currentClientData.chatId);
+    }
+  }, [currentClientData?.chatId, fetchChatMessages, setSelectedChatId, selectedChatId]);
 
   return (
     <div style={{ display: 'flex', height: isMobile ? 'calc(100dvh - max(env(safe-area-inset-top), 1rem) - 3rem)' : '100%', background: 'rgba(0,0,0,0.2)', position: 'relative', overflow: 'hidden' }}>
@@ -316,17 +333,34 @@ const QAView = () => {
                   <Search size={18} /> {t('recentCommunicationHistory')}
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {(visibleMessages || []).filter(m => m.from === currentClientData.phoneNumber).map(m => (
-                    <div key={m.id} style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.01)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                  {isHistoryLoading ? (
+                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Načítání historie...</div>
+                  ) : (chatMessages || []).length > 0 ? (chatMessages || []).map(m => (
+                    <div key={m.id} style={{ 
+                      padding: '1.25rem', 
+                      background: 'rgba(255,255,255,0.01)', 
+                      borderRadius: '12px', 
+                      border: '1px solid rgba(255,255,255,0.03)',
+                      borderLeft: (m.direction || '').toUpperCase() === 'OUTBOUND' ? '3px solid var(--accent-color)' : '3px solid transparent'
+                    }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                        <span style={{ fontSize: '0.65rem', fontWeight: '800', color: (m.status || '').toLowerCase() === 'read' ? 'var(--success-color)' : 'var(--accent-color)', padding: '2px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)' }}>
-                          {(m.status || 'UNKNOWN').toUpperCase()}
-                        </span>
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.65rem', fontWeight: '800', color: (m.status || '').toLowerCase() === 'read' ? 'var(--success-color)' : 'var(--accent-color)', padding: '2px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)' }}>
+                            {(m.status || 'UNKNOWN').toUpperCase()}
+                          </span>
+                          {(m.direction || '').toUpperCase() === 'OUTBOUND' && m.senderName && (
+                            <span style={{ fontSize: '0.65rem', fontWeight: '800', color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '2px 8px', borderRadius: '4px' }}>
+                              {lang === 'cz' ? 'ODPOVÍDAL' : 'REPLIED'}: {m.senderName}
+                            </span>
+                          )}
+                        </div>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{m.time}</span>
                       </div>
-                      <div style={{ fontSize: '0.95rem', color: 'var(--text-secondary)' }}>{m.text}</div>
+                      <div style={{ fontSize: '0.95rem', color: m.direction === 'OUTBOUND' ? 'white' : 'var(--text-secondary)' }}>{m.text}</div>
                     </div>
-                  ))}
+                  )) : (
+                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>{t('noMessages')}</div>
+                  )}
                 </div>
               </div>
             </div>

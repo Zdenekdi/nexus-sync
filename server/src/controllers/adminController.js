@@ -75,3 +75,47 @@ exports.updateGlobalFeature = async (req, res) => {
     res.status(500).json({ error: 'Failed to update global feature' });
   }
 };
+
+// GET /api/admin/settings — list all settings (App Owner, Manager)
+exports.getGlobalSettings = async (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    if (!userRole || (!userRole.isAppOwner && !userRole.isManager)) {
+      return res.status(403).json({ error: 'Access denied: Requires App Owner or Manager role.' });
+    }
+
+    const settings = await prisma.globalSetting.findMany({
+      orderBy: { key: 'asc' }
+    });
+    res.json(settings);
+  } catch (err) {
+    logger.error('Error fetching global settings:', err.message);
+    res.status(500).json({ error: 'Failed to fetch global settings' });
+  }
+};
+
+// POST /api/admin/settings — create or update a setting (App Owner only)
+exports.updateGlobalSetting = async (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    if (!userRole || !userRole.isAppOwner) {
+      return res.status(403).json({ error: 'Access denied: Requires App Owner role to modify settings.' });
+    }
+
+    const { key, value } = req.body;
+    if (!key || value === undefined) {
+      return res.status(400).json({ error: 'Missing key or value' });
+    }
+
+    const updated = await prisma.globalSetting.upsert({
+      where: { key: key },
+      update: { value: String(value) },
+      create: { key: key, value: String(value) }
+    });
+
+    res.json(updated);
+  } catch (err) {
+    logger.error(`Error updating setting ${req.body.key}:`, err.message);
+    res.status(500).json({ error: 'Failed to update global setting' });
+  }
+};

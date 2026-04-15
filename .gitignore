@@ -66,3 +66,5 @@ server/firebase-auth.json
 
 # Test coverage
 server/coverage/
+playwright-report/
+test-results/
