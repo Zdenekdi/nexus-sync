@@ -603,10 +603,10 @@ export const NexusProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    if (isLoggedIn && (activeOperator?.isAppOwner || activeOperator?.isManager)) {
+    if (isLoggedIn && (authUser?.isAppOwner || authUser?.isManager)) {
       fetchGlobalSettings();
     }
-  }, [isLoggedIn, activeOperator, fetchGlobalSettings]);
+  }, [isLoggedIn, authUser, fetchGlobalSettings]);
 
   return (
     <NexusContext.Provider value={value}>
