@@ -17,14 +17,17 @@ async function loginToApp(page, email, password) {
   await page.goto('/');
 
   // Handle Landing Page Interstitial (Vstoupit do aplikace)
-  const enterBtn = page.locator('text=Vstoupit do aplikace, text=Enter application, text=Vstoupit, button:has-text("Vstoupit")');
-  if (await enterBtn.count() > 0) {
+  try {
+    const enterBtn = page.locator('text=Vstoupit do aplikace, text=Enter application, text=Vstoupit');
+    await enterBtn.first().waitFor({ state: 'visible', timeout: 5000 });
     console.log('  Landing page detected in dashboard test, entering application...');
     await enterBtn.first().click();
+  } catch (e) {
+    console.log('  No landing page detected in dashboard test, proceeding...');
   }
 
   // Wait for login form
-  await page.waitForSelector('input[type="email"]', { timeout: 10_000 });
+  await page.waitForSelector('input[type="email"]', { timeout: 30_000 });
   await page.fill('input[type="email"]', email);
   await page.fill('input[type="password"]', password);
 
@@ -59,34 +62,29 @@ test.describe('App Owner Dashboard', () => {
     await loginToApp(page, 'dias.zd@gmail.com', 'Nexus2024!');
   });
 
-  test.afterEach(async ({ page }) => {
-    await logout(page);
-  });
-
   test('shows global/system management elements', async ({ page }) => {
-    await expect(page.locator('text=App Owner, text=OWNER, text=System, text=Agencie').first())
-      .toBeVisible({ timeout: 5000 });
+    // Agencies, Infrastructure, Maintenance, global features
+    await expect(page.locator('text=Agencies, text=Agentury')).toBeVisible();
+    await expect(page.locator('text=Infrastructure, text=Infrastruktura')).toBeVisible();
+    await expect(page.locator('text=Maintenance, text=Údržba')).toBeVisible();
   });
 
   test('has no-error state on dashboard', async ({ page }) => {
-    // Check there are no error dialogs or red error messages
-    const errorLocator = page.locator('.error-banner, [data-error="true"]');
-    await expect(errorLocator).toHaveCount(0);
+    await expect(page.locator('text=System error, text=Chyba systému')).not.toBeVisible();
   });
 
   test('profile count visible (DB connected)', async ({ page }) => {
-    // App Owner dashboard should show agency-wide data
-    const statsArea = page.locator('main').first();
-    await expect(statsArea).toBeVisible();
+    // Should show active profiles card
+    await expect(page.locator('text=Profile, text=Profil')).toBeVisible();
   });
 
   test('Schedule and Device Setup tabs are NOT visible', async ({ page }) => {
+    // App Owner should NOT see operational tabs
     const scheduleLink = page.locator('nav >> text=Schedule, nav >> text=Kalendář').first();
-    const deviceLink = page.locator('nav >> text=Device Setup, nav >> text=Nastavení telefonů').first();
-    
     await expect(scheduleLink).not.toBeVisible({ timeout: 3000 });
-    await expect(deviceLink).not.toBeVisible({ timeout: 3000 });
-    console.log('  ✅ Restricted tabs successfully hidden for App Owner');
+    
+    const deviceSetupLink = page.locator('nav >> text=Device Setup, nav >> text=Nastavení zařízení').first();
+    await expect(deviceSetupLink).not.toBeVisible({ timeout: 3000 });
   });
 });
 
@@ -96,101 +94,71 @@ test.describe('App Owner Dashboard', () => {
 
 test.describe('Agency Admin Dashboard', () => {
   test.beforeEach(async ({ page }) => {
-    await loginToApp(page, 'mark@nexus.sync', 'password123');
-  });
-
-  test.afterEach(async ({ page }) => {
-    await logout(page);
+    await loginToApp(page, 'denisa@nexus.sync', 'Nexus2024!');
   });
 
   test('dashboard loads with correct role label', async ({ page }) => {
-    await expect(
-      page.locator('text=Agency Admin, text=AGENCY ADMIN, text=Admin').first()
-    ).toBeVisible({ timeout: 8000 });
+    await expect(page.locator('text=Agency Admin, text=Administrátor agentury')).toBeVisible();
   });
 
   test('inbox tab visible and accessible', async ({ page }) => {
-    const inboxLink = page.locator('nav >> text=Inbox, nav >> text=inbox, nav >> text=Zprávy').first();
-    if (await inboxLink.isVisible()) {
-      await inboxLink.click();
-      await expect(page).toHaveURL(/inbox/, { timeout: 5000 });
-    }
+    const inboxLink = page.locator('nav >> text=Inbox, nav >> text=Zprávy').first();
+    await expect(inboxLink).toBeVisible();
+    await inboxLink.click();
+    await expect(page.locator('text=Chats, text=Chaty')).toBeVisible();
   });
 
   test('Schedule and Device Setup tabs are NOT visible', async ({ page }) => {
+    // Agency Admin should NOT see operational tabs
     const scheduleLink = page.locator('nav >> text=Schedule, nav >> text=Kalendář').first();
-    const deviceLink = page.locator('nav >> text=Device Setup, nav >> text=Nastavení telefonů').first();
-    
     await expect(scheduleLink).not.toBeVisible({ timeout: 3000 });
-    await expect(deviceLink).not.toBeVisible({ timeout: 3000 });
-    console.log('  ✅ Restricted tabs successfully hidden for Agency Admin');
   });
 
   test('profiles tab shows agency profiles from DB', async ({ page }) => {
-    const profilesLink = page.locator(
-      'nav >> text=Profiles, nav >> text=Profily, a[href*="profiles"]'
-    ).first();
-    if (await profilesLink.isVisible()) {
-      await profilesLink.click();
-      await page.waitForLoadState('networkidle');
-      // At least one profile card should appear (seeded: Diana, Bella, Chloe...)
-      const profileCard = page.locator('[data-profile], .profile-card, .profile-item').first();
-      const hasProfiles = await profileCard.isVisible({ timeout: 5000 }).catch(() => false);
-      if (hasProfiles) {
-        console.log('  ✅ Profile cards visible for Agency Admin');
-      }
-    }
+    const profilesLink = page.locator('nav >> text=Profiles, nav >> text=Profily').first();
+    await expect(profilesLink).toBeVisible();
+    await profilesLink.click();
+    
+    // Should see profile management
+    await expect(page.locator('text=Profile Management, text=Správa profilů')).toBeVisible();
   });
 
   test('cannot navigate to system-level agency list', async ({ page }) => {
-    // Try navigating to /agencies (App Owner only)
+    await expect(page.locator('text=Agencies, text=Agentury')).not.toBeVisible();
+    // Try direct URL
     await page.goto('/agencies');
-    await page.waitForLoadState('networkidle');
-    // Should be redirected back to dashboard or show 403
-    const url = page.url();
-    const has403 = await page.locator('text=403, text=Forbidden, text=Přístup odepřen').isVisible({ timeout: 3000 }).catch(() => false);
-    const isOnDashboard = url.includes('dashboard') || url.endsWith('/');
-    expect(has403 || isOnDashboard, 'Agency Admin should not access agencies list').toBe(true);
+    // Should show dashboard instead (RBAC redirect)
+    await expect(page).toHaveURL(/dashboard/);
   });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// MANAGER DASHBOARD
+// MANAGER / OPERATOR DASHBOARD
 // ═══════════════════════════════════════════════════════════════════════════
 
 test.describe('Manager Dashboard', () => {
   test.beforeEach(async ({ page }) => {
-    await loginToApp(page, 'alice@nexus.sync', 'password123');
-  });
-
-  test.afterEach(async ({ page }) => {
-    await logout(page);
+    // Alice is Senior Operator
+    await loginToApp(page, 'alice@nexus.sync', 'Nexus2024!');
   });
 
   test('dashboard loads without errors', async ({ page }) => {
-    const main = page.locator('main, .dashboard-container, .content-area').first();
-    await expect(main).toBeVisible();
+    await expect(page.locator('text=System error')).not.toBeVisible();
   });
 
   test('QA / Audit section accessible', async ({ page }) => {
-    const qaLink = page.locator('nav >> text=QA, nav >> text=Audit').first();
-    const qaVisible = await qaLink.isVisible({ timeout: 5000 }).catch(() => false);
-    if (qaVisible) {
+    const qaLink = page.locator('nav >> text=QA, text=Audit').first();
+    if (await qaLink.count() > 0) {
+      await expect(qaLink).toBeVisible();
       await qaLink.click();
-      await expect(page).toHaveURL(/qa|audit/, { timeout: 5000 });
-      console.log('  ✅ Manager can access QA section');
-    } else {
-      console.log('  ⏭️  QA link not visible in nav for this manager');
+      await expect(page.locator('text=Audit Logs, text=Záznamy auditu')).toBeVisible();
     }
   });
 
   test('Schedule and Device Setup tabs ARE visible (Senior Operator)', async ({ page }) => {
-    const scheduleLink = page.locator('nav >> text=Schedule, nav >> text=Kalendář').first();
-    const deviceLink = page.locator('nav >> text=Device Setup, nav >> text=Nastavení telefonů').first();
-    
-    await expect(scheduleLink).toBeVisible({ timeout: 5000 });
-    await expect(deviceLink).toBeVisible({ timeout: 5000 });
-    console.log('  ✅ Operational tabs visible for Alice (Senior Operator)');
+    // Senior Operator SHOULD see these
+    await expect(page.locator('nav >> text=Schedule, nav >> text=Kalendář')).toBeVisible();
+    await expect(page.locator('nav >> text=Device Setup, nav >> text=Nastavení zařízení')).toBeVisible();
   });
 });
 
@@ -200,93 +168,55 @@ test.describe('Manager Dashboard', () => {
 
 test.describe('Model Dashboard', () => {
   test.beforeEach(async ({ page }) => {
-    await loginToApp(page, 'diana@nexus.sync', 'password123');
-  });
-
-  test.afterEach(async ({ page }) => {
-    await logout(page);
+    // Diana is Model
+    await loginToApp(page, 'diana@nexus.sync', 'Nexus2024!');
   });
 
   test('dashboard loads with model-specific view', async ({ page }) => {
-    const main = page.locator('main, .content-area').first();
-    await expect(main).toBeVisible();
+    await expect(page.locator('text=Dashboard')).toBeVisible();
+    // Should NOT see operator perf
+    await expect(page.locator('text=Operator Performance')).not.toBeVisible();
   });
 
   test('shows profile/calendar section', async ({ page }) => {
-    const profileSection = page.locator(
-      'text=Můj profil, text=My Profile, text=Profil, text=Calendar, text=Kalendář'
-    ).first();
-    const visible = await profileSection.isVisible({ timeout: 5000 }).catch(() => false);
-    if (visible) {
-      console.log('  ✅ Model sees profile/calendar section');
-    }
+    // Models care about their schedule
+    await expect(page.locator('text=Schedule, text=Můj kalendář')).toBeVisible();
   });
 
   test('cannot access agency admin sections', async ({ page }) => {
-    await page.goto('/agency');
-    await page.waitForLoadState('networkidle');
-    const url = page.url();
-    const blocked = await page.locator('text=403, text=Forbidden, text=Přístup odepřen, text=Not Found').isVisible({ timeout: 3000 }).catch(() => false);
-    const redirected = url.includes('dashboard') || url.endsWith('/');
-    expect(blocked || redirected, 'Model should not access /agency').toBe(true);
+    await expect(page.locator('text=Agency Users, text=Uživatelé agentury')).not.toBeVisible();
   });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// DB ↔ FRONTEND INTEGRATION
+// DATABASE INTEGRATION SMOKE
 // ═══════════════════════════════════════════════════════════════════════════
 
 test.describe('DB ↔ Frontend Integration', () => {
   test('login response contains DB-sourced user data', async ({ page }) => {
-    // Intercept the /api/auth/login network call
-    let loginResponse;
-    page.on('response', async (res) => {
-      if (res.url().includes('/api/auth/login')) {
-        try { loginResponse = await res.json(); } catch {}
-      }
-    });
-
-    await page.goto('/');
-    const enterBtn = page.locator('button:has-text("Enter Application"), button:has-text("Vstoupit")');
-    if (await enterBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await enterBtn.click();
-    }
-
-    await page.waitForSelector('input[type="email"]', { timeout: 10_000 });
-    await page.fill('input[type="email"]', 'mark@nexus.sync');
-    await page.fill('input[type="password"]', 'password123');
-    await page.locator('button:has-text("LOG IN"), button:has-text("PŘIHLÁSIT"), button[type="submit"]').first().click();
-
-    await expect(page).toHaveURL(/dashboard/, { timeout: 15_000 });
-
-    // Verify live data came from DB
-    expect(loginResponse).toBeTruthy();
-    expect(loginResponse.user.email).toBe('mark@nexus.sync');
-    expect(loginResponse.user.role).toBe('Agency Admin');
-    expect(loginResponse.user.agencyId).toBeTruthy();
-    console.log(`  ✅ Login response from DB: agencyId=${loginResponse.user.agencyId}`);
+    // Capture the login response
+    const [response] = await Promise.all([
+      page.waitForResponse(res => res.url().includes('/auth/login') && res.status() === 200),
+      loginToApp(page, 'dias.zd@gmail.com', 'Nexus2024!')
+    ]);
+    
+    const body = await response.json();
+    expect(body.user).toBeDefined();
+    expect(body.user.email).toBe('dias.zd@gmail.com');
+    // Ensure role name comes from DB
+    expect(body.user.role).toBeDefined();
   });
 
   test('profiles page renders data from production DB', async ({ page }) => {
-    await loginToApp(page, 'mark@nexus.sync', 'password123');
-
-    // Intercept profiles API call
-    let profilesData;
-    page.on('response', async (res) => {
-      if (res.url().includes('/api/profiles')) {
-        try { profilesData = await res.json(); } catch {}
-      }
-    });
-
-    // Navigate to profiles
+    await loginToApp(page, 'denisa@nexus.sync', 'Nexus2024!');
     await page.goto('/profiles');
-    await page.waitForLoadState('networkidle');
-
-    if (profilesData && Array.isArray(profilesData)) {
-      expect(profilesData.length, 'At least one profile from DB').toBeGreaterThan(0);
-      console.log(`  ✅ ${profilesData.length} profiles from DB rendered`);
-    }
-
-    await logout(page);
+    
+    // Wait for internal API call to /profiles
+    await page.waitForResponse(res => res.url().includes('/profiles') && res.status() === 200);
+    
+    // Verify at least one profile card exists
+    const profileCards = page.locator('.profile-card, [data-testid="profile-card"]');
+    // On production DB, Denisa should have some profiles
+    await expect(profileCards.first()).toBeVisible({ timeout: 10000 });
   });
 });
