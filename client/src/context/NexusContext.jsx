@@ -8,13 +8,9 @@ import { useNexusData } from '../hooks/useNexusData';
 import { useSocket } from '../hooks/useSocket';
 import { initPushNotifications, removePushListeners } from '../services/pushService';
 import { TRANSLATIONS } from '../translations';
+import { API_BASE } from '../constants/config';
 
 export const NexusContext = createContext();
-
-const API_BASE = import.meta.env.VITE_API_URL || 
-  (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('192.168.')) 
-    ? `http://${window.location.hostname}:5000/api` 
-    : 'https://nexus-api.myvnc.com/api');
 
 export const NexusProvider = ({ children }) => {
   const [lang, setLang] = useState(localStorage.getItem('nexus_lang') || 'cz');
@@ -134,9 +130,9 @@ export const NexusProvider = ({ children }) => {
   const { activeOperator: authUser, token, handleLogout: logout, isLoggedIn } = auth;
   const [activeOperatorState, setActiveOperatorState] = useState(null);
   const [subscriptionPlans, setSubscriptionPlans] = useState([
-    { id: 'basic', name: 'Basic', description: t('basicDesc'), prices: { cz: '2900', eu: '120', us: '130', uk: '110' }, profilesLimit: 5, features: ['Správa profilů', 'Základní analytika', 'Podpora 24/7'] },
-    { id: 'pro', name: 'Pro', description: t('proDesc'), prices: { cz: '5900', eu: '240', us: '260', uk: '220' }, profilesLimit: 10, features: ['Vše z Basic', 'Pokročilá analytika', 'AI Optimalizace'] },
-    { id: 'agency', name: 'Agency', description: t('agencyDesc'), prices: { cz: '9900', eu: '400', us: '440', uk: '360' }, profilesLimit: 20, features: ['Vše z Pro', 'Auditní logy', 'API Přístup'] }
+    { id: 'basic', name: 'Basic', descriptionKey: 'basicDesc', prices: { cz: '2900', eu: '120', us: '130', uk: '110' }, profilesLimit: 5, features: ['feat_profiles', 'feat_analytics_basic', 'feat_support'] },
+    { id: 'pro', name: 'Pro', descriptionKey: 'proDesc', prices: { cz: '5900', eu: '240', us: '260', uk: '220' }, profilesLimit: 10, features: ['feat_all_basic', 'feat_analytics_adv', 'feat_ai_opt'] },
+    { id: 'agency', name: 'Agency', descriptionKey: 'agencyDesc', prices: { cz: '9900', eu: '400', us: '440', uk: '360' }, profilesLimit: 20, features: ['feat_all_pro', 'feat_audit_logs', 'feat_api_access'] }
   ]);
   const [isPlansLoading, setIsPlansLoading] = useState(false);
   const [globalSettings, setGlobalSettings] = useState([]);
