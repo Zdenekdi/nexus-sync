@@ -80,6 +80,15 @@ test.describe('App Owner Dashboard', () => {
     const statsArea = page.locator('main').first();
     await expect(statsArea).toBeVisible();
   });
+
+  test('Schedule and Device Setup tabs are NOT visible', async ({ page }) => {
+    const scheduleLink = page.locator('nav >> text=Schedule, nav >> text=Kalendář').first();
+    const deviceLink = page.locator('nav >> text=Device Setup, nav >> text=Nastavení telefonů').first();
+    
+    await expect(scheduleLink).not.toBeVisible({ timeout: 3000 });
+    await expect(deviceLink).not.toBeVisible({ timeout: 3000 });
+    console.log('  ✅ Restricted tabs successfully hidden for App Owner');
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -176,13 +185,13 @@ test.describe('Manager Dashboard', () => {
     }
   });
 
-  test('Schedule and Device Setup tabs are NOT visible', async ({ page }) => {
+  test('Schedule and Device Setup tabs ARE visible (Senior Operator)', async ({ page }) => {
     const scheduleLink = page.locator('nav >> text=Schedule, nav >> text=Kalendář').first();
     const deviceLink = page.locator('nav >> text=Device Setup, nav >> text=Nastavení telefonů').first();
     
-    await expect(scheduleLink).not.toBeVisible({ timeout: 3000 });
-    await expect(deviceLink).not.toBeVisible({ timeout: 3000 });
-    console.log('  ✅ Restricted tabs successfully hidden for Manager');
+    await expect(scheduleLink).toBeVisible({ timeout: 5000 });
+    await expect(deviceLink).toBeVisible({ timeout: 5000 });
+    console.log('  ✅ Operational tabs visible for Alice (Senior Operator)');
   });
 });
 

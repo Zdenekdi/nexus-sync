@@ -11,10 +11,10 @@ import { test, expect } from '@playwright/test';
  */
 
 const TEST_USERS = [
-  { role: 'App Owner',    email: 'dias.zd@gmail.com', password: 'Nexus2024!'  },
-  { role: 'Agency Admin', email: 'mark@nexus.sync',   password: 'password123' },
-  { role: 'Manager',      email: 'alice@nexus.sync',  password: 'password123' },
-  { role: 'Model',        email: 'diana@nexus.sync',  password: 'password123' },
+  { role: 'App Owner',       email: 'dias.zd@gmail.com', password: 'Nexus2024!'  },
+  { role: 'Agency Admin',    email: 'mark@nexus.sync',   password: 'password123' },
+  { role: 'Senior Operator', email: 'alice@nexus.sync',  password: 'password123' },
+  { role: 'Model',           email: 'diana@nexus.sync',  password: 'password123' },
 ];
 
 /**
@@ -140,13 +140,23 @@ test.describe('Nexus Hub Multi-Role Smoke', () => {
         const visible = await mgmtEl.isVisible({ timeout: 8000 }).catch(() => false);
         console.log(`  ${visible ? '✅' : '⚠️ '} ${user.role} management elements ${visible ? 'visible' : 'not found'}`);
 
-        // STRICT CHECK: Ensure Schedule and Device Setup are NOT visible
+        // RESTRICTION CHECK: 
+        // Senior Operator SHOULD see Schedule/Device Setup
+        // App Owner / Agency Admin SHOULD NOT see them
         const restrictedTab = page.locator('nav >> text=Schedule, nav >> text=Kalendář, nav >> text=Device Setup, nav >> text=Nastavení telefonů').first();
         const isRestrictedVisible = await restrictedTab.isVisible({ timeout: 2000 }).catch(() => false);
-        if (isRestrictedVisible) {
-          throw new Error(`SECURITY BREACH: ${user.role} can see restricted tabs!`);
+        
+        if (user.role === 'Senior Operator') {
+          if (!isRestrictedVisible) {
+            throw new Error(`UX ERROR: Senior Operator should see restricted tabs, but they are hidden!`);
+          }
+          console.log(`  ✅ ${user.role} can see operational tabs as expected`);
+        } else {
+          if (isRestrictedVisible) {
+            throw new Error(`SECURITY BREACH: ${user.role} can see restricted tabs!`);
+          }
+          console.log(`  ✅ ${user.role} restricted tabs are successfully hidden`);
         }
-        console.log(`  ✅ ${user.role} restricted tabs are successfully hidden`);
 
         // Optional: navigate to QA if available
         if (user.role !== 'Model') {

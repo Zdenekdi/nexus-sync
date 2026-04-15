@@ -23,8 +23,8 @@ let managerToken;
 let seededInstallationId;
 
 test.beforeAll(async () => {
-  // Login as manager to verify messages in DB
-  const { token } = await loginAs(TEST_USERS.agencyAdmin);
+  // Login as Senior Operator (Alice) who has permission to register devices
+  const { token } = await loginAs(TEST_USERS.manager);
   managerToken = token;
 
   // Register a test device binding for relay tests
@@ -255,10 +255,16 @@ test.describe('Relay — installationId binding', () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 test.describe('Device Bindings — Management', () => {
-  test('Manager cannot list device bindings → 403', async () => {
+  test('Senior Operator can list device bindings → 200', async () => {
     const res = await authClient(managerToken).get('/device/bindings');
+    expect(res.status).toBe(200);
+    console.log(`  ✅ Senior Operator access to bindings verified (200)`);
+  });
+
+  test('Agency Admin cannot list device bindings → 403', async () => {
+    const { token: adminToken } = await loginAs(TEST_USERS.agencyAdmin);
+    const res = await authClient(adminToken).get('/device/bindings');
     expect(res.status).toBe(403);
-    console.log(`  ✅ Manager access to bindings blocked (403)`);
   });
 
   test('Model cannot list all bindings', async () => {
@@ -268,7 +274,7 @@ test.describe('Device Bindings — Management', () => {
     expect([200, 403]).toContain(res.status);
   });
 
-  test('relay status for registered device → 403 for manager', async () => {
+  test('relay status for registered device → 200 for Senior Operator', async () => {
     if (!seededInstallationId) {
       console.log('  ⏭️  Skipped: no device binding');
       return;
@@ -276,7 +282,7 @@ test.describe('Device Bindings — Management', () => {
     const res = await authClient(managerToken).get(
       `/device/status?installationId=${seededInstallationId}`
     );
-    expect(res.status).toBe(403);
-    console.log(`  ✅ Manager access to relay status blocked (403)`);
+    expect(res.status).toBe(200);
+    console.log(`  ✅ Senior Operator access to relay status verified (200)`);
   });
 });
