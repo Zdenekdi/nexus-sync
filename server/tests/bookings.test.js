@@ -13,7 +13,7 @@ function makeToken(overrides = {}) {
     {
       userId: 'user-1',
       agencyId: 'agency-1',
-      role: { name: 'Agency Admin', isManager: true, isAppOwner: false },
+      role: { name: 'Senior Operator', isManager: true, isAppOwner: false },
       ...overrides,
     },
     process.env.JWT_SECRET,
