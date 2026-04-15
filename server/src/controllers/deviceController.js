@@ -198,12 +198,12 @@ exports.handleRelay = async (req, res) => {
       await prisma.chat.update({ where: { id: chat.id }, data: { lastMessageAt: new Date() } });
       getIO().to(`agency_${binding.agencyId}`).emit('new_message', { id: createdMessage.id, profileId: binding.profileId, chatId: chat.id, from, text: content, transport: messageTransport, direction: direction.toLowerCase() });
       
-      try { await sendChatPush({ agencyId: binding.agencyId, profileId: binding.profileId, chatId: chat.id, from, messagePreview: content, profileName: binding.profile.name }); } catch (e) {}
+      try { await sendChatPush({ agencyId: binding.agencyId, profileId: binding.profileId, chatId: chat.id, from, messagePreview: content, profileName: binding.profile.name }); } catch { /* skip */ }
     } else if (binding && messageTransport === 'call') {
       const callState = normalizeCallState(content);
       await prisma.callLog.create({ data: { profileId: binding.profileId, from: from || 'UNKNOWN', status: callState } });
       getIO().to(`agency_${binding.agencyId}`).emit('incoming_call', { profileId: binding.profileId, from, profileName: binding.profile.name, state: callState });
-      try { await sendCallPush({ agencyId: binding.agencyId, profileId: binding.profileId, from, caller: from, profileName: binding.profile.name, callState }); } catch (e) {}
+      try { await sendCallPush({ agencyId: binding.agencyId, profileId: binding.profileId, from, caller: from, profileName: binding.profile.name, callState }); } catch { /* skip */ }
     }
     return res.json({ ok: true });
   } catch (error) {

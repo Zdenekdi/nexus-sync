@@ -47,7 +47,7 @@ async function ensureSchemaIntegrity() {
     try {
       await prisma.$executeRawUnsafe(`ALTER TABLE "Agency" ADD COLUMN "referralCode" TEXT;`);
       console.log('[DB] Added missing referralCode column to Agency.');
-    } catch (e) { 
+    } catch { 
       // Column likely already exists
     }
     
@@ -75,8 +75,8 @@ async function ensureSchemaIntegrity() {
           });
           console.log(`[DB] Initialized global setting: ${setting.key} = ${setting.value}`);
         }
-      } catch (e) {
-        console.warn(`[DB] Failed to initialize setting ${setting.key}:`, e.message);
+      } catch (err) {
+        console.warn(`[DB] Failed to initialize setting ${setting.key}:`, err.message);
       }
     }
 

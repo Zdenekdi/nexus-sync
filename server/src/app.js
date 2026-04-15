@@ -174,11 +174,12 @@ app.use('/api/blacklist', writeLimiter);
 app.use('/api/agency', writeLimiter);
 // SOS has no extra limiter — safety-critical
 
-// Startup: Self-Repair DB Schema (Bypass Prisma migrate permission issues)
-const { ensureSchemaIntegrity } = require('./services/schemaService');
-ensureSchemaIntegrity().catch(err => {
-  console.warn('[DB] Self-repair failed (expected if DB unreachable from this process):', err.message);
-});
+if (process.env.NODE_ENV !== 'test') {
+  const { ensureSchemaIntegrity } = require('./services/schemaService');
+  ensureSchemaIntegrity().catch(() => {
+    // Schema integrity check is best-effort
+  });
+}
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -307,7 +308,7 @@ try {
 } catch { /* Sentry not configured */ }
 
 // Global Error Handler
-app.use((err, req, res, next) => {
+app.use((err, _req, res, _next) => {
   // CORS errors
   if (err.message && err.message.startsWith('CORS:')) {
     return res.status(403).json({ message: 'Request blocked by CORS policy' });
