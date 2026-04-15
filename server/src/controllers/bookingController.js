@@ -4,16 +4,23 @@ const prisma = require('../services/db');
 exports.getBookings = async (req, res) => {
   try {
     const { profileId } = req.query;
-    const { role: userRole, agencyId } = req.user;
-    const internalRole = userRole?.name?.toUpperCase() || '';
+    const userRole = req.user?.role;
+    const agencyId = req.user?.agencyId;
+    
+    const roleName = (typeof userRole === 'string' ? userRole : userRole?.name) || '';
+    const internalRole = roleName.toUpperCase();
 
-    // AGENCY ADMIN and MANAGER roles are strictly prohibited from accessing Schedule data.
-    if (internalRole === 'AGENCY ADMIN' || internalRole === 'MANAGER') {
-      return res.status(403).json({ message: 'Access denied: Non-operator roles cannot access Schedule.' });
+    // RESTRICTED: App Owner (Privacy), Agency Admin, Manager
+    if (internalRole === 'APP OWNER' || internalRole === 'AGENCY ADMIN' || internalRole === 'MANAGER') {
+      return res.status(403).json({ message: 'Access denied: Infrastructure and high-level management do not access Schedule for privacy reasons.' });
     }
 
-    const isAppOwner = userRole?.isAppOwner;
-    const where = isAppOwner ? {} : { agencyId };
+    // Must have an agencyId context
+    if (!agencyId) {
+      return res.status(400).json({ message: 'Missing agency context for booking fetch.' });
+    }
+
+    const where = { agencyId };
     if (profileId) where.profileId = profileId;
 
     const bookings = await prisma.booking.findMany({
@@ -23,7 +30,7 @@ exports.getBookings = async (req, res) => {
     });
     res.json(bookings);
   } catch (error) {
-    console.error(error);
+    console.error('[Booking] Fetch error:', error);
     res.status(500).json({ message: 'Error fetching bookings' });
   }
 };
@@ -32,30 +39,33 @@ exports.getBookings = async (req, res) => {
 exports.createBooking = async (req, res) => {
   try {
     const { profileId, title, startTime, endTime, locationType } = req.body;
-    const { role: userRole, agencyId } = req.user;
-    const internalRole = userRole?.name?.toUpperCase() || '';
+    const userRole = req.user?.role;
+    const agencyId = req.user?.agencyId;
+    
+    const roleName = (typeof userRole === 'string' ? userRole : userRole?.name) || '';
+    const internalRole = roleName.toUpperCase();
 
-    if (internalRole === 'AGENCY ADMIN' || internalRole === 'MANAGER') {
-      return res.status(403).json({ message: 'Access denied: Non-operator roles cannot modify Schedule.' });
+    if (internalRole === 'APP OWNER' || internalRole === 'AGENCY ADMIN' || internalRole === 'MANAGER') {
+      return res.status(403).json({ message: 'Access denied: Modifying schedule restricted.' });
     }
 
-    const isAppOwner = userRole?.isAppOwner;
+    if (!agencyId) {
+      return res.status(400).json({ message: 'Missing agency context for booking creation.' });
+    }
 
     if (!profileId || !title || !startTime || !endTime) {
-      return res.status(400).json({ message: 'profileId, title, startTime and endTime are required' });
+      return res.status(400).json({ message: 'Missing required fields (profileId, title, startTime, endTime).' });
     }
 
     const profile = await prisma.profile.findUnique({ where: { id: profileId } });
-    if (!profile || (!isAppOwner && profile.agencyId !== agencyId)) {
-      return res.status(403).json({ message: 'Profile not found or access denied' });
+    if (!profile || profile.agencyId !== agencyId) {
+      return res.status(403).json({ message: 'Access denied to profile or profile does not exist.' });
     }
-
-    const targetAgencyId = isAppOwner ? profile.agencyId : agencyId;
 
     const booking = await prisma.booking.create({
       data: {
         profileId,
-        agencyId: targetAgencyId,
+        agencyId,
         title,
         startTime: new Date(startTime),
         endTime: new Date(endTime),
@@ -65,10 +75,9 @@ exports.createBooking = async (req, res) => {
       include: { profile: { select: { id: true, name: true } } }
     });
 
-    console.log(`[Booking] Created: ${title} for profile ${profileId} at ${startTime}`);
     res.status(201).json(booking);
   } catch (error) {
-    console.error(error);
+    console.error('[Booking] Create error:', error);
     res.status(500).json({ message: 'Error creating booking' });
   }
 };
@@ -77,32 +86,38 @@ exports.createBooking = async (req, res) => {
 exports.updateBooking = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, startTime, endTime, status, locationType } = req.body;
-    const { agencyId, role: userRole } = req.user;
-    const internalRole = userRole?.name?.toUpperCase() || '';
+    const userRole = req.user?.role;
+    const agencyId = req.user?.agencyId;
+    
+    const roleName = (typeof userRole === 'string' ? userRole : userRole?.name) || '';
+    const internalRole = roleName.toUpperCase();
 
-    if (internalRole === 'AGENCY ADMIN' || internalRole === 'MANAGER') {
-      return res.status(403).json({ message: 'Access denied: Non-operator roles cannot modify Schedule.' });
+    if (internalRole === 'APP OWNER' || internalRole === 'AGENCY ADMIN' || internalRole === 'MANAGER') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    if (!agencyId) {
+      return res.status(400).json({ message: 'Missing agency context.' });
     }
 
     const existing = await prisma.booking.findUnique({ where: { id } });
     if (!existing || existing.agencyId !== agencyId) {
-      return res.status(404).json({ message: 'Booking not found' });
+      return res.status(404).json({ message: 'Booking not found or access denied.' });
     }
 
     const updated = await prisma.booking.update({
       where: { id },
       data: {
-        ...(title && { title }),
-        ...(startTime && { startTime: new Date(startTime) }),
-        ...(endTime && { endTime: new Date(endTime) }),
-        ...(locationType && { locationType }),
-        ...(status && { status })
+        ...(req.body.title && { title: req.body.title }),
+        ...(req.body.startTime && { startTime: new Date(req.body.startTime) }),
+        ...(req.body.endTime && { endTime: new Date(req.body.endTime) }),
+        ...(req.body.locationType && { locationType: req.body.locationType }),
+        ...(req.body.status && { status: req.body.status })
       }
     });
     res.json(updated);
   } catch (error) {
-    console.error(error);
+    console.error('[Booking] Update error:', error);
     res.status(500).json({ message: 'Error updating booking' });
   }
 };
@@ -111,20 +126,29 @@ exports.updateBooking = async (req, res) => {
 exports.deleteBooking = async (req, res) => {
   try {
     const { id } = req.params;
-    const { agencyId, role: userRole } = req.user;
-    const internalRole = userRole?.name?.toUpperCase() || '';
+    const userRole = req.user?.role;
+    const agencyId = req.user?.agencyId;
+    
+    const roleName = (typeof userRole === 'string' ? userRole : userRole?.name) || '';
+    const internalRole = roleName.toUpperCase();
 
-    if (internalRole === 'AGENCY ADMIN' || internalRole === 'MANAGER') {
-      return res.status(403).json({ message: 'Access denied: Non-operator roles cannot modify Schedule.' });
+    if (internalRole === 'APP OWNER' || internalRole === 'AGENCY ADMIN' || internalRole === 'MANAGER') {
+      return res.status(403).json({ message: 'Access denied' });
     }
+
+    if (!agencyId) {
+      return res.status(400).json({ message: 'Missing agency context.' });
+    }
+
     const existing = await prisma.booking.findUnique({ where: { id } });
     if (!existing || existing.agencyId !== agencyId) {
-      return res.status(404).json({ message: 'Booking not found' });
+      return res.status(404).json({ message: 'Booking not found or access denied.' });
     }
+    
     await prisma.booking.delete({ where: { id } });
     res.json({ ok: true });
   } catch (error) {
-    console.error(error);
+    console.error('[Booking] Delete error:', error);
     res.status(500).json({ message: 'Error deleting booking' });
   }
 };

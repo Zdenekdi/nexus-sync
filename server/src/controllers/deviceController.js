@@ -17,20 +17,12 @@ const normalizeTransport = (value) => {
 
 exports.registerPushToken = async (req, res) => {
   try {
-    const { token, platform, operatorId } = req.body;
-    const userId = req.user?.userId;
-    const agencyId = req.user?.agencyId || null;
+    const { token, platform } = req.body;
+    const userId = String(req.user?.userId || req.user?.id || '');
+    const agencyId = req.user?.agencyId;
 
-    if (!token || typeof token !== 'string') {
-      return res.status(400).json({ ok: false, message: 'Missing token' });
-    }
-
-    if (!userId) {
-      return res.status(401).json({ ok: false, message: 'Unauthorized' });
-    }
-
-    if (operatorId && operatorId !== userId) {
-      console.warn(`[Push] Ignoring mismatched operatorId ${operatorId} for user ${userId}`);
+    if (!token || !userId || userId === '') {
+      return res.status(400).json({ ok: false, message: 'Invalid token or user context.' });
     }
 
     const result = await registerPushToken({
@@ -40,242 +32,28 @@ exports.registerPushToken = async (req, res) => {
       platform: platform || 'android'
     });
 
-    if (!result.ok) {
-      return res.status(500).json({ ok: false, message: result.message || 'Could not register push token' });
-    }
-
-    return res.json({ ok: true });
+    return res.json({ ok: result.ok });
   } catch (error) {
-    console.error('Push token registration error:', error);
-    return res.status(500).json({ ok: false, message: 'Internal server error' });
+    console.error('[Device] Register push error:', error);
+    return res.status(500).json({ ok: false });
   }
 };
 
 exports.verifyDeviceBinding = async (req, res) => {
   try {
-    const userId = req.user?.userId;
-    const userRole = req.user?.role?.name?.toUpperCase() || '';
-
-    if (!userId) {
-      return res.status(401).json({ ok: false, message: 'Unauthorized' });
-    }
-
-    if (userRole === 'AGENCY ADMIN' || userRole === 'MANAGER') {
-      return res.status(403).json({ ok: false, message: 'Forbidden: Admin roles cannot bind devices.' });
-    }
-
-    if (!installationId || typeof installationId !== 'string' || installationId.length > 256) {
-      return res.status(400).json({ ok: false, message: 'Invalid installationId' });
-    }
-
-    let resolvedProfileId = null;
-    if (profileId != null) {
-      if (typeof profileId !== 'string' || profileId.length > 128) {
-        return res.status(400).json({ ok: false, message: 'Invalid profileId' });
-      }
-
-      const profile = await prisma.profile.findFirst({
-        where: {
-          id: profileId,
-          agencyId: agencyId || undefined,
-        },
-        select: { id: true },
-      });
-      
-      if (!profile) {
-        return res.status(404).json({ ok: false, message: 'Profile not found or does not belong to your agency' });
-      }
-
-      resolvedProfileId = profile.id;
-    }
-
-    if (!resolvedProfileId && agencyId) {
-      const assignedProfile = await prisma.profile.findFirst({
-        where: {
-          agencyId,
-          assignees: {
-            some: {
-              id: userId,
-            },
-          },
-        },
-        select: { id: true },
-      });
-      if (assignedProfile) {
-        resolvedProfileId = assignedProfile.id;
-      }
-    }
-
-    // Hard block: never create a binding without a profile — relay would silently fail
-    if (!resolvedProfileId) {
-      return res.status(409).json({
-        ok: false,
-        profileRequired: true,
-        message: 'No profile is assigned to your account. Ask your manager to assign you a profile first, then re-pair.'
-      });
-    }
-
-    const activeCount = await prisma.deviceBinding.count({
-      where: {
-        userId,
-        active: true,
-        installationId: { not: installationId }
-      }
-    });
-
-    if (activeCount >= 2) {
-      throw new Error('LIMIT_EXCEEDED');
-    }
-
-    // Upsert the device binding
-    await prisma.deviceBinding.upsert({
-      where: { installationId },
-      update: {
-        userId,
-        agencyId,
-        // DONT clear profileId if it already exists and we have no new one
-        ...(resolvedProfileId ? { profileId: resolvedProfileId } : {}),
-        platform: typeof platform === 'string' && platform.length <= 32 ? platform : 'android',
-        active: true,
-        model: typeof model === 'string' && model.length <= 128 ? model : null,
-        deviceName: typeof deviceName === 'string' && deviceName.length <= 128 ? deviceName : null,
-        lastSeenAt: new Date(),
-      },
-      create: {
-        installationId,
-        userId,
-        agencyId,
-        profileId: resolvedProfileId,
-        platform: typeof platform === 'string' && platform.length <= 32 ? platform : 'android',
-        active: true,
-        model: typeof model === 'string' && model.length <= 128 ? model : null,
-        deviceName: typeof deviceName === 'string' && deviceName.length <= 128 ? deviceName : null,
-        lastSeenAt: new Date(),
-      },
-    });
-
-    const binding = await prisma.deviceBinding.findUnique({
-      where: { installationId },
-      select: {
-        id: true,
-        installationId: true,
-        userId: true,
-        agencyId: true,
-        profileId: true,
-        platform: true,
-        active: true,
-        updatedAt: true,
-      },
-    });
-
-    return res.json({ ok: true, binding });
-  } catch (error) {
-    if (error.message === 'LIMIT_EXCEEDED') {
-      return res.status(403).json({ ok: false, message: 'Device limit reached (max 2). Please revoke an existing device first.' });
-    }
-    console.error('Device verification error:', error);
-    return res.status(500).json({ ok: false, message: 'Internal server error' });
-  }
-};
-
-exports.getRelayStatus = async (req, res) => {
-  try {
-    const userId = req.user?.userId;
-    const userRole = req.user?.role?.name?.toUpperCase() || '';
-    const installationId = req.query?.installationId;
-
-    if (!userId) {
-      return res.status(401).json({ ok: false, message: 'Unauthorized' });
-    }
-
-    if (userRole === 'AGENCY ADMIN' || userRole === 'MANAGER') {
-      return res.status(403).json({ ok: false, message: 'Forbidden' });
-    }
-
-    if (!installationId || typeof installationId !== 'string' || installationId.length > 256) {
-      return res.status(400).json({ ok: false, message: 'Invalid installationId' });
-    }
-
-    const binding = await prisma.deviceBinding.findUnique({
-      where: { installationId },
-      select: {
-        installationId: true,
-        userId: true,
-        agencyId: true,
-        profileId: true,
-        active: true,
-        platform: true,
-        model: true,
-        deviceName: true,
-        lastSeenAt: true,
-        updatedAt: true,
-      },
-    });
-
-    if (!binding) {
-      return res.status(404).json({ ok: true, registered: false, online: false, active: false });
-    }
-
-    if (binding.userId !== userId) {
-      return res.status(403).json({ ok: false, message: 'Device binding mismatch' });
-    }
-
-    // NOTE: Do NOT update lastSeenAt here — this endpoint is polled every 15 s and
-    // a write on every call causes excessive SQLite lock contention that blocks
-    // concurrent queries (including /api/auth/login).  lastSeenAt is already
-    // refreshed by handleRelay whenever the device actually forwards a message.
-    const { userId: _uid, ...bindingData } = binding;
-
-    return res.json({
-      ok: true,
-      registered: true,
-      active: Boolean(binding.active),
-      online: Boolean(binding.active),
-      source: 'device-binding',
-      binding: bindingData,
-    });
-  } catch (error) {
-    console.error('Relay status error:', error);
-    return res.status(500).json({ ok: false, message: 'Internal server error' });
-  }
-};
-
-exports.getDeviceBindings = async (req, res) => {
-  try {
-    const { role, agencyId } = req.user;
-    const userRoleName = role?.name?.toUpperCase() || '';
-    
-    if (userRoleName === 'AGENCY ADMIN' || userRoleName === 'MANAGER') {
-      return res.status(403).json({ ok: false, message: 'Access denied: Non-operator roles cannot access Device Setup.' });
-    }
-
-    const isAppOwner = role?.isAppOwner;
-    const isAdmin = isAppOwner; // Reduced permission: Managers no longer see all agency bindings
-    
-    const bindings = await prisma.deviceBinding.findMany({
-      where: isAdmin ? { agencyId } : { userId: req.user.id },
-      include: {
-        profile: {
-          select: { name: true }
-        }
-      },
-      orderBy: { lastSeenAt: 'desc' }
-    });
-
-    return res.json({ ok: true, bindings });
-  } catch (error) {
-    console.error('Get device bindings error:', error);
-    return res.status(500).json({ ok: false, message: 'Internal server error' });
-  }
-};
-
-exports.revokeDeviceBinding = async (req, res) => {
-  try {
-    const userId = req.user?.userId;
+    const userId = String(req.user?.userId || req.user?.id || '');
+    const userRole = req.user?.role;
     const agencyId = req.user?.agencyId;
-    const { installationId } = req.body;
+    
+    const roleName = (typeof userRole === 'string' ? userRole : userRole?.name) || '';
+    const internalRole = roleName.toUpperCase();
+    const { installationId, profileId, platform, model, deviceName } = req.body;
 
-    if (!userId) {
+    if (internalRole === 'APP OWNER' || internalRole === 'AGENCY ADMIN' || internalRole === 'MANAGER') {
+      return res.status(403).json({ ok: false, message: 'Forbidden: High-level management and Infrastructure roles do not access Device Setup.' });
+    }
+
+    if (!agencyId || !userId || userId === '') {
       return res.status(401).json({ ok: false, message: 'Unauthorized' });
     }
 
@@ -283,519 +61,146 @@ exports.revokeDeviceBinding = async (req, res) => {
       return res.status(400).json({ ok: false, message: 'Missing installationId' });
     }
 
-    const binding = await prisma.deviceBinding.findUnique({
-      where: { installationId }
-    });
-
-    if (!binding) {
-      return res.status(404).json({ ok: false, message: 'Binding not found' });
+    let resolvedProfileId = null;
+    if (profileId) {
+      const profile = await prisma.profile.findFirst({ where: { id: profileId, agencyId } });
+      if (!profile) return res.status(404).json({ ok: false, message: 'Profile not found' });
+      resolvedProfileId = profile.id;
     }
 
-    // Verify ownership or permission
-    const { role } = req.user;
-    const userRoleName = role?.name?.toUpperCase() || '';
-
-    if (userRoleName === 'AGENCY ADMIN' || userRoleName === 'MANAGER') {
-      return res.status(403).json({ ok: false, message: 'Forbidden' });
+    if (!resolvedProfileId) {
+      const assignedProfile = await prisma.profile.findFirst({
+        where: { agencyId, assignees: { some: { id: userId } } }
+      });
+      if (assignedProfile) resolvedProfileId = assignedProfile.id;
     }
 
-    const isAppOwner = role?.isAppOwner;
-    const isAdmin = isAppOwner; // Reduced: Managers cant revoke others
-    if (!isAdmin && binding.userId !== userId) {
-      return res.status(403).json({ ok: false, message: 'Forbidden' });
+    if (!resolvedProfileId) {
+      return res.status(409).json({ ok: false, profileRequired: true, message: 'No profile assigned context.' });
     }
 
-    await prisma.deviceBinding.update({
+    const activeCount = await prisma.deviceBinding.count({ where: { userId, active: true, installationId: { not: installationId } } });
+    if (activeCount >= 2) return res.status(403).json({ ok: false, message: 'Device limit reached' });
+
+    await prisma.deviceBinding.upsert({
       where: { installationId },
-      data: { active: false }
+      update: {
+        userId, agencyId, profileId: resolvedProfileId,
+        platform: String(platform || 'android'), active: true, model, deviceName, lastSeenAt: new Date(),
+      },
+      create: {
+        installationId, userId, agencyId, profileId: resolvedProfileId,
+        platform: String(platform || 'android'), active: true, model, deviceName, lastSeenAt: new Date(),
+      },
     });
 
     return res.json({ ok: true });
   } catch (error) {
-    console.error('Revoke device binding error:', error);
-    return res.status(500).json({ ok: false, message: 'Internal server error' });
+    console.error('[Device] Verify error:', error);
+    return res.status(500).json({ ok: false });
   }
 };
 
-exports.sendTestPush = async (req, res) => {
+exports.getRelayStatus = async (req, res) => {
   try {
-    const { type = 'chat', agencyId: requestedAgencyId, profileId, from, messagePreview, callState } = req.body || {};
-    const user = req.user || {};
+    const userId = String(req.user?.userId || req.user?.id || '');
+    const userRole = req.user?.role;
+    const agencyId = req.user?.agencyId;
+    const { installationId } = req.query;
 
-    if (!user.userId) {
-      return res.status(401).json({ ok: false, message: 'Unauthorized' });
+    const roleName = (typeof userRole === 'string' ? userRole : userRole?.name) || '';
+    const internalRole = roleName.toUpperCase();
+
+    if (internalRole === 'APP OWNER' || internalRole === 'AGENCY ADMIN' || internalRole === 'MANAGER') {
+      return res.status(403).json({ ok: false, message: 'Forbidden' });
     }
 
-    // Non-superadmin users can only target their own agency.
-    const isAppOwner = user.role?.isAppOwner;
-    const targetAgencyId = isAppOwner ? (requestedAgencyId || user.agencyId) : user.agencyId;
-    if (!targetAgencyId) {
-      return res.status(400).json({ ok: false, message: 'Missing agencyId context' });
-    }
+    if (!installationId || !userId || userId === '') return res.status(400).json({ ok: false });
 
-    if (!isAppOwner && requestedAgencyId && requestedAgencyId !== user.agencyId) {
-      return res.status(403).json({ ok: false, message: 'Access denied for target agency' });
-    }
+    const binding = await prisma.deviceBinding.findUnique({ where: { installationId }, select: { userId: true, active: true } });
+    if (!binding) return res.status(404).json({ ok: true, registered: false });
+    if (binding.userId !== userId) return res.status(403).json({ ok: false });
 
-    const testProfileId = profileId || 'test-profile';
-    const testFrom = from || '+420000000000';
-
-    let result;
-    if (type === 'call') {
-      result = await sendCallPush({
-        agencyId: targetAgencyId,
-        profileId: testProfileId,
-        from: testFrom,
-        caller: testFrom,
-        profileName: 'FCM Test Profile',
-        callState: callState || 'RINGING'
-      });
-    } else {
-      result = await sendChatPush({
-        agencyId: targetAgencyId,
-        profileId: testProfileId,
-        chatId: `test-${Date.now()}`,
-        from: testFrom,
-        messagePreview: messagePreview || 'This is a test push message from Nexus Hub backend.',
-        profileName: 'FCM Test Profile'
-      });
-    }
-
-    return res.json({
-      ok: true,
-      type,
-      agencyId: targetAgencyId,
-      sent: result.sent || 0,
-      failed: result.failed || 0,
-      details: result.details || null
-    });
+    return res.json({ ok: true, registered: true, active: Boolean(binding.active) });
   } catch (error) {
-    console.error('Test push error:', error);
-    return res.status(500).json({ ok: false, message: 'Internal server error' });
+    console.error('[Device] Relay status error:', error);
+    return res.status(500).json({ ok: false });
   }
 };
 
-// Nexus Relay (from RelayMode.jsx in mobile app)
+exports.getDeviceBindings = async (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    const agencyId = req.user?.agencyId;
+    const userId = String(req.user?.userId || req.user?.id || '');
+
+    const roleName = (typeof userRole === 'string' ? userRole : userRole?.name) || '';
+    const internalRole = roleName.toUpperCase();
+
+    if (internalRole === 'APP OWNER' || internalRole === 'AGENCY ADMIN' || internalRole === 'MANAGER') {
+      return res.status(403).json({ ok: false, message: 'Access denied' });
+    }
+
+    if (!agencyId) return res.status(400).json({ ok: false });
+
+    // Restrict regular operators to only see their own bindings, Senior Operators can see agency-wide
+    const isSenior = (internalRole === 'SENIOR OPERATOR');
+    const bindings = await prisma.deviceBinding.findMany({
+      where: isSenior ? { agencyId } : { userId },
+      include: { profile: { select: { name: true } } },
+      orderBy: { lastSeenAt: 'desc' }
+    });
+
+    return res.json({ ok: true, bindings });
+  } catch (error) {
+    console.error('[Device] Get bindings error:', error);
+    return res.status(500).json({ ok: false });
+  }
+};
+
+exports.revokeDeviceBinding = async (req, res) => {
+  try {
+    const userId = String(req.user?.userId || req.user?.id || '');
+    const userRole = req.user?.role;
+    const { installationId } = req.body;
+
+    const roleName = (typeof userRole === 'string' ? userRole : userRole?.name) || '';
+    if (roleName.toUpperCase() === 'APP OWNER' || roleName.toUpperCase() === 'AGENCY ADMIN' || roleName.toUpperCase() === 'MANAGER') {
+      return res.status(403).json({ ok: false, message: 'Forbidden' });
+    }
+
+    const binding = await prisma.deviceBinding.findUnique({ where: { installationId } });
+    if (!binding || binding.userId !== userId) return res.status(403).json({ ok: false });
+
+    await prisma.deviceBinding.update({ where: { installationId }, data: { active: false } });
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error('[Device] Revoke error:', error);
+    return res.status(500).json({ ok: false });
+  }
+};
+
 exports.handleRelay = async (req, res) => {
   try {
-    const { installationId, deviceId, type, transport, from, content, secret, timestamp } = req.body;
+    const { installationId, type, transport, from, content, secret } = req.body;
     const messageTransport = normalizeTransport(transport || type);
-
-    // ── Auth: Allow DEVICE_SECRET OR valid installationId binding ─────────────
     let isAuthorized = (secret === process.env.DEVICE_SECRET);
-    
-    // Strict mapping: relay traffic must come from a previously verified installation.
-    const binding = await prisma.deviceBinding.findUnique({
-      where: { installationId: installationId || 'none' },
-      select: {
-        userId: true,
-        agencyId: true,
-        profileId: true,
-        active: true,
-      },
-    });
+    const binding = await prisma.deviceBinding.findUnique({ where: { installationId: installationId || 'none' } });
 
-    if (binding && binding.active) {
-      isAuthorized = true;
+    if (binding && binding.active) isAuthorized = true;
+    if (!isAuthorized) return res.status(401).json({ message: 'Unauthorized' });
+
+    if (binding && (messageTransport === 'sms' || messageTransport === 'rcs')) {
+      const direction = (type === 'SMS_SENT' || type === 'OUTBOUND') ? 'OUTBOUND' : 'INBOUND';
+      let chat = await prisma.chat.findUnique({ where: { externalId_profileId: { externalId: from, profileId: binding.profileId } } });
+      if (!chat) chat = await prisma.chat.create({ data: { externalId: from, profileId: binding.profileId, agencyId: binding.agencyId } });
+      
+      const createdMessage = await prisma.message.create({ data: { chatId: chat.id, text: content, transport: messageTransport, direction, status: 'delivered', createdAt: new Date() } });
+      await prisma.chat.update({ where: { id: chat.id }, data: { lastMessageAt: new Date() } });
+      getIO().to(`agency_${binding.agencyId}`).emit('new_message', { id: createdMessage.id, profileId: binding.profileId, chatId: chat.id, from, text: content, transport: messageTransport, direction: direction.toLowerCase() });
     }
-
-    if (!isAuthorized) {
-      console.warn(`[Relay] Unauthorized relay attempt from IP=${req.ip}`);
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-
-    // ── Input validation ──────────────────────────────────────────────────────
-    if (!messageTransport) {
-      return res.status(400).json({ message: 'Invalid or missing transport' });
-    }
-    if (!from || typeof from !== 'string' || from.length > 64) {
-      return res.status(400).json({ message: 'Invalid from field' });
-    }
-    if (!content || typeof content !== 'string' || content.length > 4096) {
-      return res.status(400).json({ message: 'Invalid content field' });
-    }
-
-    console.log(`[Relay] ${messageTransport.toUpperCase()} from ${from} (Installation: ${installationId})`);
-
-    let finalBinding = binding;
-    const incomingProfileId = req.body.profileId;
-
-    // Only allow auto-registration if authenticated via DEVICE_SECRET
-    // Don't auto-register based on binding alone (too permissive)
-    if (!finalBinding && isAuthorized && secret === process.env.DEVICE_SECRET) {
-      console.info(`[Relay] Attempting auto-registration for installationId=${installationId} deviceId=${deviceId} profileId=${incomingProfileId}`);
-      // Find operator/user to bind to
-      const user = await prisma.user.findUnique({
-        where: { id: deviceId || 'none' },
-        include: { 
-          assignedProfiles: { 
-            orderBy: { createdAt: 'asc' } // Deterministic order
-          } 
-        }
-      });
-
-      if (user) {
-        // Prefer the profile suggested by the phone if user is assigned to it, otherwise take first assigned
-        let profileIdToBind = null;
-        if (incomingProfileId) {
-          const isAssignedToRequested = user.assignedProfiles.some(p => p.id === incomingProfileId);
-          if (isAssignedToRequested) {
-            profileIdToBind = incomingProfileId;
-          }
-        }
-        
-        if (!profileIdToBind) {
-          profileIdToBind = user.assignedProfiles?.[0]?.id || null;
-        }
-
-        finalBinding = await prisma.deviceBinding.upsert({
-          where: { installationId },
-          create: {
-            installationId,
-            userId: user.id,
-            agencyId: user.agencyId,
-            profileId: profileIdToBind,
-            active: true,
-            platform: 'android',
-            deviceName: 'Auto-Registered Relay'
-          },
-          update: {
-            userId: user.id,
-            agencyId: user.agencyId,
-            profileId: profileIdToBind,
-            active: true
-          }
-        });
-        console.info(`[Relay] Auto-registered device for user=${user.email} profileId=${profileIdToBind}`);
-      }
-    } else if (finalBinding && incomingProfileId && !finalBinding.profileId) {
-      // FIX: If binding exists but has NO profile, and phone is now telling us which profile it is, update it.
-      // This recovers "broken" bindings where profileId was somehow set to null.
-      const user = await prisma.user.findUnique({
-        where: { id: finalBinding.userId },
-        include: { assignedProfiles: true }
-      });
-      if (user && user.assignedProfiles.some(p => p.id === incomingProfileId)) {
-        await prisma.deviceBinding.update({
-          where: { installationId },
-          data: { profileId: incomingProfileId }
-        });
-        finalBinding.profileId = incomingProfileId;
-        console.info(`[Relay] Recovered missing profileId for installationId=${installationId} -> profileId=${incomingProfileId}`);
-      }
-    }
-
-    if (!finalBinding) {
-      console.warn(`[Relay] Unknown installationId=${installationId} and could not auto-bind to deviceId=${deviceId}`);
-      return res.status(404).json({ message: 'Device not registered' });
-    }
-
-    if (deviceId && finalBinding.userId !== deviceId) {
-      console.warn(`[Relay] Device mismatch installationId=${installationId} expectedUserId=${finalBinding.userId} gotDeviceId=${deviceId}`);
-      return res.status(403).json({ message: 'Device binding mismatch' });
-    }
-
-    if (!finalBinding.active) {
-      console.warn(`[Relay] Inactive device binding installationId=${installationId}`);
-      return res.status(403).json({ message: 'Device is no longer active' });
-    }
-
-    await prisma.deviceBinding.update({
-      where: { installationId },
-      data: { lastSeenAt: new Date() },
-    });
-
-    const agencyId = finalBinding.agencyId;
-    if (!agencyId) {
-      return res.status(404).json({ message: 'No agency context found' });
-    }
-
-    if (!finalBinding.profileId) {
-      return res.status(409).json({ message: 'No profile is bound to this device' });
-    }
-
-    const profile = await prisma.profile.findFirst({
-      where: {
-        id: finalBinding.profileId,
-        agencyId,
-      },
-      select: { id: true, name: true },
-    });
-    if (!profile) {
-      return res.status(404).json({ message: 'Bound profile not found for agency context' });
-    }
-
-    if (messageTransport === 'sms' || messageTransport === 'rcs') {
-      let chat = await prisma.chat.findUnique({
-        where: { externalId_profileId: { externalId: from, profileId: profile.id } }
-      });
-
-      if (!chat) {
-        chat = await prisma.chat.create({
-          data: { externalId: from, profileId: profile.id, agencyId }
-        });
-      }
-
-      // Determine direction from type (from relay device)
-      const direction = type === 'SMS_SENT' ? 'OUTBOUND' : 'INBOUND';
-
-      const createdMessage = await prisma.message.create({
-        data: {
-          chatId: chat.id,
-          text: content,
-          transport: messageTransport,
-          direction: direction,
-          status: 'delivered',
-          createdAt: new Date() // Always use server time for live messages to ensure correct chronology
-        }
-      });
-
-      await prisma.chat.update({
-        where: { id: chat.id },
-        data: { lastMessageAt: new Date() }
-      });
-
-      if (direction === 'INBOUND') {
-        console.log(`[Relay ✅ INBOUND] SMS přijata od ${from} → chat=${chat.id}, message=${createdMessage.id}`);
-      } else {
-        console.log(`[Relay ✅ OUTBOUND] SMS potvrzena relayem od ${from} → chat=${chat.id}, message=${createdMessage.id}`);
-      }
-
-      try {
-        getIO().to(`agency_${agencyId}`).emit('new_message', {
-          id: createdMessage.id,
-          profileId: profile.id,
-          chatId: chat.id,
-          from,
-          text: content,
-          transport: messageTransport,
-          type: messageTransport,
-          time: new Date(createdMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          status: 'delivered',
-          direction: direction.toLowerCase(),
-          sender: null
-        });
-      } catch (e) {
-        console.warn('[Relay] Socket emit failed', e.message);
-      }
-
-      try {
-        await sendChatPush({
-          agencyId,
-          profileId: profile.id,
-          chatId: createdMessage.id,
-          from,
-          messagePreview: content,
-          profileName: profile.name
-        });
-      } catch (e) {
-        console.warn(`[Relay] Push send failed for ${messageTransport}`, e.message);
-      }
-    } else if (messageTransport === 'call') {
-      const callState = normalizeCallState(content);
-
-      await prisma.callLog.create({
-        data: {
-          profileId: profile.id,
-          from: from || 'UNKNOWN',
-          status: callState
-        }
-      });
-
-      try {
-        getIO().to(`agency_${agencyId}`).emit('incoming_call', {
-          profileId: profile.id,
-          from,
-          profileName: profile.name,
-          state: callState
-        });
-      } catch (e) {
-        console.warn('[Relay] Socket emit failed for call', e.message);
-      }
-
-      try {
-        await sendCallPush({
-          agencyId,
-          profileId: profile.id,
-          from,
-          caller: from,
-          profileName: 'Relay Inbound',
-          callState
-        });
-      } catch (e) {
-        console.warn('[Relay] Push send failed for call', e.message);
-      }
-    } else {
-      return res.status(400).json({ message: 'Unsupported relay transport' });
-    }
-
     return res.json({ ok: true });
   } catch (error) {
-    console.error(`[Relay ❌ FAILED] Chyba při zpracování relay zprávy od installationId=${req.body?.installationId}:`, error);
-    return res.status(500).json({ message: 'Internal server error' });
-  }
-};
-
-// GoIP sends data as application/x-www-form-urlencoded
-// Expected fields: src (sender), dst (receiver/SIM), msg (text), time
-exports.handleGoIP = async (req, res) => {
-  try {
-    const { src, dst, msg } = req.body;
-    if (!src || !dst || !msg) {
-      return res.status(400).json({ message: 'Missing required GoIP fields' });
-    }
-    console.log(`GoIP Inbound: From ${src} to SIM ${dst}: ${msg}`);
-
-    const profile = await prisma.profile.findFirst({ where: { phoneNumber: dst } });
-    if (!profile) {
-      return res.status(404).json({ message: 'Profile not found for this SIM' });
-    }
-
-    let chat = await prisma.chat.findUnique({ where: { externalId_profileId: { externalId: src, profileId: profile.id } } });
-    if (!chat) {
-      chat = await prisma.chat.create({ data: { externalId: src, profileId: profile.id, agencyId: profile.agencyId } });
-    }
-
-    const createdMessage = await prisma.message.create({ data: { chatId: chat.id, text: msg, transport: 'sms', direction: 'INBOUND', status: 'delivered' } });
-    await prisma.chat.update({ where: { id: chat.id }, data: { lastMessageAt: new Date() } });
-
-    try {
-      const { getIO } = require('../services/socket');
-      getIO().to(`agency_${profile.agencyId}`).emit('new_message', {
-        id: Date.now(), profileId: profile.id, from: src, text: msg, transport: 'sms', type: 'sms',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        status: 'delivered', direction: 'inbound'
-      });
-    } catch (e) { console.warn('Socket emit failed', e); }
-
-    try {
-      await sendChatPush({
-        agencyId: profile.agencyId,
-        profileId: profile.id,
-        chatId: createdMessage.id,
-        from: src,
-        messagePreview: msg,
-        profileName: profile.name
-      });
-    } catch (e) {
-      console.warn('Push send failed for SMS', e.message);
-    }
-
-    res.status(200).send('RECEIVE OK');
-  } catch (error) {
-    console.error('GoIP Webhook Error:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-};
-
-// Generic Mobile SMS Apps
-exports.handleMobileSms = async (req, res) => {
-  try {
-    const { from, to, text, secret } = req.body;
-    if (secret !== process.env.DEVICE_SECRET) {
-      return res.status(401).json({ message: 'Unauthorized device' });
-    }
-    if (!from || typeof from !== 'string' || from.length > 64) {
-      return res.status(400).json({ message: 'Invalid from field' });
-    }
-    if (!to || typeof to !== 'string' || to.length > 64) {
-      return res.status(400).json({ message: 'Invalid to field' });
-    }
-    if (!text || typeof text !== 'string' || text.length > 4096) {
-      return res.status(400).json({ message: 'Invalid text field' });
-    }
-
-    const profile = await prisma.profile.findFirst({ where: { phoneNumber: to } });
-    if (!profile) return res.status(404).json({ message: 'Profile not found' });
-
-    let chat = await prisma.chat.findUnique({ where: { externalId_profileId: { externalId: from, profileId: profile.id } } });
-    if (!chat) {
-      chat = await prisma.chat.create({ data: { externalId: from, profileId: profile.id, agencyId: profile.agencyId } });
-    }
-
-    const createdMessage = await prisma.message.create({ data: { chatId: chat.id, text, transport: 'sms', direction: 'INBOUND', status: 'delivered' } });
-    await prisma.chat.update({ where: { id: chat.id }, data: { lastMessageAt: new Date() } });
-
-    try {
-      const { getIO } = require('../services/socket');
-      getIO().to(`agency_${profile.agencyId}`).emit('new_message', {
-        id: Date.now(), profileId: profile.id, from, text, transport: 'sms', type: 'sms',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        status: 'delivered', direction: 'inbound'
-      });
-    } catch (e) { console.warn('Socket emit failed', e); }
-
-    try {
-      await sendChatPush({
-        agencyId: profile.agencyId,
-        profileId: profile.id,
-        chatId: createdMessage.id,
-        from,
-        messagePreview: text,
-        profileName: profile.name
-      });
-    } catch (e) {
-      console.warn('Push send failed for mobile SMS', e.message);
-    }
-
-    res.json({ status: 'success' });
-  } catch (error) {
-    console.error('Mobile Webhook Error:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-};
-
-// Incoming Call Notification
-exports.handleMobileCall = async (req, res) => {
-  try {
-    const { from, to, state, secret } = req.body;
-    if (secret !== process.env.DEVICE_SECRET) {
-      return res.status(401).json({ message: 'Unauthorized device' });
-    }
-    if (!from || typeof from !== 'string' || from.length > 64) {
-      return res.status(400).json({ message: 'Invalid from field' });
-    }
-    if (!to || typeof to !== 'string' || to.length > 64) {
-      return res.status(400).json({ message: 'Invalid to field' });
-    }
-    if (!state || typeof state !== 'string' || state.length > 32) {
-      return res.status(400).json({ message: 'Invalid state field' });
-    }
-
-    const profile = await prisma.profile.findFirst({ where: { phoneNumber: to } });
-    if (!profile) return res.status(404).json({ message: 'Profile not found' });
-
-    const callState = normalizeCallState(state);
-
-    await prisma.callLog.create({
-      data: {
-        profileId: profile.id,
-        from: from || 'UNKNOWN',
-        status: callState
-      }
-    });
-
-    try {
-      const { getIO } = require('../services/socket');
-      getIO().to(`agency_${profile.agencyId}`).emit('incoming_call', { from, profileName: profile.name, profileId: profile.id, state: callState });
-    } catch (e) { console.warn('Socket emit failed for call', e); }
-
-    try {
-      await sendCallPush({
-        agencyId: profile.agencyId,
-        profileId: profile.id,
-        from,
-        caller: from,
-        profileName: profile.name,
-        callState
-      });
-    } catch (e) {
-      console.warn('Push send failed for call', e.message);
-    }
-
-    res.json({ status: 'success' });
-  } catch (error) {
-    console.error('Call Webhook Error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ ok: false });
   }
 };
