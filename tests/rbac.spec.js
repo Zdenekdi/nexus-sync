@@ -262,3 +262,57 @@ test.describe('RBAC — GET /api/audit-logs', () => {
     expect(res.status).toBe(403);
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GROUP 9: Schedule Access — Restricted for Admin/Manager
+// ═══════════════════════════════════════════════════════════════════════════
+
+test.describe('RBAC — GET /api/bookings', () => {
+  test('App Owner can access bookings', async () => {
+    test.skip(!tokens.appOwner, 'App Owner login failed');
+    const res = await client('appOwner').get('/bookings');
+    expect(res.status).toBe(200);
+  });
+
+  test('Model/Operator can access bookings', async () => {
+    test.skip(!tokens.model, 'Model login failed');
+    const res = await client('model').get('/bookings');
+    expect(res.status).toBe(200);
+  });
+
+  test('Agency Admin is FORBIDDEN → 403', async () => {
+    test.skip(!tokens.agencyAdmin, 'Agency Admin login failed');
+    const res = await client('agencyAdmin').get('/bookings');
+    expect(res.status).toBe(403);
+  });
+
+  test('Manager is FORBIDDEN → 403', async () => {
+    test.skip(!tokens.manager, 'Manager login failed');
+    const res = await client('manager').get('/bookings');
+    expect(res.status).toBe(403);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GROUP 10: Device Setup Access — Restricted for Admin/Manager
+// ═══════════════════════════════════════════════════════════════════════════
+
+test.describe('RBAC — Device Management (Restricted)', () => {
+  test('Agency Admin cannot list bindings → 403', async () => {
+    test.skip(!tokens.agencyAdmin, 'Agency Admin login failed');
+    const res = await client('agencyAdmin').get('/device/bindings');
+    expect(res.status).toBe(403);
+  });
+
+  test('Manager cannot list bindings → 403', async () => {
+    test.skip(!tokens.manager, 'Manager login failed');
+    const res = await client('manager').get('/device/bindings');
+    expect(res.status).toBe(403);
+  });
+
+  test('Agency Admin cannot verify binding → 403', async () => {
+    test.skip(!tokens.agencyAdmin, 'Agency Admin login failed');
+    const res = await client('agencyAdmin').post('/device/verify', { installationId: 'test' });
+    expect(res.status).toBe(403);
+  });
+});

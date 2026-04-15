@@ -70,7 +70,7 @@ const slides = [
   },
 ];
 
-import { useNexus } from '../context/NexusContext';
+import { useNexus } from '../context/NexusBaseContext';
 
 const STORAGE_KEY = 'nexus_onboarding_seen';
 

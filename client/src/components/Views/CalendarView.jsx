@@ -3,7 +3,7 @@ import {
   Plus, Share2, Link, X, RefreshCw, Calendar, MoreVertical, Clock
 } from 'lucide-react';
 
-import { useNexus } from '../../context/NexusContext';
+import { useNexus } from '../../context/NexusBaseContext';
 
 const CalendarView = () => {
   const nexus = useNexus();

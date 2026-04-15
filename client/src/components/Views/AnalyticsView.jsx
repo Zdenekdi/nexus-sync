@@ -1,7 +1,7 @@
 import React from 'react';
 import { DollarSign, Calendar, MessageSquare, TrendingUp, Users, Activity } from 'lucide-react';
 
-import { useNexus } from '../../context/NexusContext';
+import { useNexus } from '../../context/NexusBaseContext';
 
 const AnalyticsView = () => {
   const nexus = useNexus();
