@@ -144,7 +144,9 @@ const PlansDashboard = () => {
                   </div>
                 </div>
                 
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: '1.6' }}>{plan.description || t('noPlanDesc')}</p>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: '1.6' }}>
+                  {plan.descriptionKey ? t(plan.descriptionKey) : (plan.description || t('noPlanDesc'))}
+                </p>
                 
                 <div style={{ marginBottom: '2rem' }}>
                   <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.1em' }}>{t('includedFeatures')}</div>

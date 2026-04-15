@@ -1,5 +1,5 @@
 import React from 'react';
-import { NexusProvider, useNexus } from './context/NexusContext';
+import { useNexus } from './context/NexusContext';
 
 // Navigation & Routing
 import Sidebar from './components/Navigation/Sidebar';
@@ -79,11 +79,7 @@ function AppContent() {
  * Handles the Provider wrapper and directs to the main content.
  */
 function App() {
-  return (
-    <NexusProvider>
-      <AppContent />
-    </NexusProvider>
-  );
+  return <AppContent />;
 }
 
 export default App;
