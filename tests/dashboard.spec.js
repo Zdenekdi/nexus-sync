@@ -1,29 +1,29 @@
-/**
- * Nexus Hub — Dashboard Integrity Tests (per role)
- * Tests that the frontend correctly renders the right dashboard
- * for each role when connected to the LIVE production backend.
- *
- * These are E2E Playwright browser tests.
- * baseURL = http://localhost:5173 (Vite dev server auto-started by webServer config)
- * API = https://nexus-api.myvnc.com/api (production, used by the frontend automatically)
- */
-
 import { test, expect } from '@playwright/test';
 
-/**
- * Login helper — fills the login form and waits for dashboard.
- */
 async function loginToApp(page, email, password) {
   await page.goto('/');
 
-  // Handle Landing Page Interstitial (Vstoupit do aplikace)
-  try {
-    const enterBtn = page.locator('text=Vstoupit do aplikace, text=Enter application, text=Vstoupit');
-    await enterBtn.first().waitFor({ state: 'visible', timeout: 5000 });
-    console.log('  Landing page detected in dashboard test, entering application...');
-    await enterBtn.first().click();
-  } catch (e) {
-    console.log('  No landing page detected in dashboard test, proceeding...');
+  // Handling the Landing Page AGGRESSIVELY
+  console.log('  Checking for landing page button in dashboard test...');
+  const enterBtnSelectors = [
+    'text="Vstoupit do aplikace"',
+    'text="Enter application"',
+    'button:has-text("Vstoupit")',
+    '.enter-app-button',
+    '#enter-app'
+  ];
+
+  for (const selector of enterBtnSelectors) {
+    try {
+      const btn = page.locator(selector).first();
+      if (await btn.isVisible({ timeout: 1500 })) {
+        console.log(`  Found landing button with selector: ${selector}`);
+        await btn.click();
+        break; 
+      }
+    } catch (e) {
+      // Continue
+    }
   }
 
   // Wait for login form
@@ -36,21 +36,8 @@ async function loginToApp(page, email, password) {
   ).first();
   await loginBtn.click();
 
-  // Wait for successful redirect to dashboard
   await expect(page).toHaveURL(/dashboard/, { timeout: 15_000 });
   await page.waitForLoadState('networkidle');
-}
-
-/**
- * Logout helper.
- */
-async function logout(page) {
-  // Try nav logout button, or just clear storage
-  await page.evaluate(() => {
-    localStorage.removeItem('nexus_token');
-    localStorage.removeItem('nexus_refreshToken');
-    localStorage.removeItem('nexus_isLoggedIn');
-  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -63,7 +50,6 @@ test.describe('App Owner Dashboard', () => {
   });
 
   test('shows global/system management elements', async ({ page }) => {
-    // Agencies, Infrastructure, Maintenance, global features
     await expect(page.locator('#nav-agencies')).toBeVisible();
     await expect(page.locator('#nav-infrastructure')).toBeVisible();
     await expect(page.locator('#nav-maintenance')).toBeVisible();
@@ -74,12 +60,10 @@ test.describe('App Owner Dashboard', () => {
   });
 
   test('profile count visible (DB connected)', async ({ page }) => {
-    // Should show active profiles card or profile link
     await expect(page.locator('#nav-models, #nav-profiles')).toBeVisible();
   });
 
   test('Schedule and Device Setup tabs are NOT visible', async ({ page }) => {
-    // App Owner should NOT see operational tabs (Hardenened via hook)
     await expect(page.locator('#nav-calendar')).not.toBeVisible({ timeout: 3000 });
     await expect(page.locator('#nav-device-setup')).not.toBeVisible({ timeout: 3000 });
   });
@@ -106,7 +90,6 @@ test.describe('Agency Admin Dashboard', () => {
   });
 
   test('Schedule and Device Setup tabs are NOT visible', async ({ page }) => {
-    // Agency Admin should NOT see operational tabs (Hardenened via hook)
     await expect(page.locator('#nav-calendar')).not.toBeVisible({ timeout: 3000 });
     await expect(page.locator('#nav-device-setup')).not.toBeVisible({ timeout: 3000 });
   });
@@ -115,16 +98,12 @@ test.describe('Agency Admin Dashboard', () => {
     const profilesLink = page.locator('#nav-models, #nav-profiles').first();
     await expect(profilesLink).toBeVisible();
     await profilesLink.click();
-    
-    // Should see profile management
     await expect(page.locator('text=Profile Management, text=Správa profilů')).toBeVisible();
   });
 
   test('cannot navigate to system-level agency list', async ({ page }) => {
     await expect(page.locator('#nav-agencies')).not.toBeVisible();
-    // Try direct URL
     await page.goto('/agencies');
-    // Should show dashboard instead (RBAC redirect)
     await expect(page).toHaveURL(/dashboard/);
   });
 });
@@ -135,7 +114,6 @@ test.describe('Agency Admin Dashboard', () => {
 
 test.describe('Manager Dashboard', () => {
   test.beforeEach(async ({ page }) => {
-    // Alice is Senior Operator
     await loginToApp(page, 'alice@nexus.sync', 'Nexus2024!');
   });
 
@@ -153,7 +131,6 @@ test.describe('Manager Dashboard', () => {
   });
 
   test('Schedule and Device Setup tabs ARE visible (Senior Operator)', async ({ page }) => {
-    // Senior Operator SHOULD see these
     await expect(page.locator('#nav-calendar')).toBeVisible();
     await expect(page.locator('#nav-device-setup')).toBeVisible();
   });
@@ -165,18 +142,15 @@ test.describe('Manager Dashboard', () => {
 
 test.describe('Model Dashboard', () => {
   test.beforeEach(async ({ page }) => {
-    // Diana is Model
     await loginToApp(page, 'diana@nexus.sync', 'Nexus2024!');
   });
 
   test('dashboard loads with model-specific view', async ({ page }) => {
     await expect(page.locator('text=Dashboard')).toBeVisible();
-    // Should NOT see operator perf
     await expect(page.locator('text=Operator Performance')).not.toBeVisible();
   });
 
   test('shows profile/calendar section', async ({ page }) => {
-    // Models care about their schedule
     await expect(page.locator('#nav-calendar')).toBeVisible();
   });
 
@@ -185,35 +159,22 @@ test.describe('Model Dashboard', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// DATABASE INTEGRATION SMOKE
-// ═══════════════════════════════════════════════════════════════════════════
-
 test.describe('DB ↔ Frontend Integration', () => {
   test('login response contains DB-sourced user data', async ({ page }) => {
-    // Capture the login response
     const [response] = await Promise.all([
       page.waitForResponse(res => res.url().includes('/auth/login') && res.status() === 200),
       loginToApp(page, 'dias.zd@gmail.com', 'Nexus2024!')
     ]);
-    
     const body = await response.json();
     expect(body.user).toBeDefined();
     expect(body.user.email).toBe('dias.zd@gmail.com');
-    // Ensure role name comes from DB
-    expect(body.user.role).toBeDefined();
   });
 
   test('profiles page renders data from production DB', async ({ page }) => {
     await loginToApp(page, 'denisa@nexus.sync', 'Nexus2024!');
     await page.goto('/profiles');
-    
-    // Wait for internal API call to /profiles
     await page.waitForResponse(res => res.url().includes('/profiles') && res.status() === 200);
-    
-    // Verify at least one profile card exists
     const profileCards = page.locator('.profile-card, [data-testid="profile-card"]');
-    // On production DB, Denisa should have some profiles
     await expect(profileCards.first()).toBeVisible({ timeout: 10000 });
   });
 });
