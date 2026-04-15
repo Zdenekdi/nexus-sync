@@ -180,11 +180,14 @@ exports.handleRelay = async (req, res) => {
     if (!from || !content) return res.status(400).json({ ok: false, message: 'Missing from or content' });
     
     const messageTransport = normalizeTransport(transport || type);
+    if (!messageTransport) return res.status(400).json({ ok: false, message: 'Invalid transport' });
+
     let isAuthorized = (secret === process.env.DEVICE_SECRET);
     const binding = await prisma.deviceBinding.findUnique({ where: { installationId: installationId || 'none' }, include: { profile: { select: { id: true, name: true, agencyId: true } } } });
 
     if (binding && binding.active) isAuthorized = true;
     if (!isAuthorized) return res.status(401).json({ message: 'Unauthorized' });
+    if (!binding) return res.status(404).json({ ok: false, message: 'Source device not found' });
 
     if (binding && (messageTransport === 'sms' || messageTransport === 'rcs')) {
       const direction = (type === 'SMS_SENT' || type === 'OUTBOUND') ? 'OUTBOUND' : 'INBOUND';
