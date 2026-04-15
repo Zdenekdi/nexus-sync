@@ -67,7 +67,7 @@ exports.verifyDeviceBinding = async (req, res) => {
 
     if (!resolvedProfileId) return res.status(409).json({ ok: false, profileRequired: true });
 
-    16: await prisma.deviceBinding.upsert({
+    await prisma.deviceBinding.upsert({
       where: { installationId },
       update: { userId, agencyId, profileId: resolvedProfileId, platform: String(platform || 'android'), active: true, model, deviceName, lastSeenAt: new Date() },
       create: { installationId, userId, agencyId, profileId: resolvedProfileId, platform: String(platform || 'android'), active: true, model, deviceName, lastSeenAt: new Date() },
