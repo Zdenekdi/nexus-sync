@@ -70,7 +70,11 @@ jobs:
           
           # Isolate server/ and push it to the backend repo
           git subtree split --prefix=server -b server-only
-          git remote add backend https://x-access-token:${{ secrets.SYNC_BACKEND_TOKEN }}@github.com/Zdenekdi/nexus-backend.git
+          
+          # Use extraheader for authentication (more robust for private repos)
+          git remote add backend https://github.com/Zdenekdi/nexus-backend.git
+          git config --global http.https://github.com/.extraheader "AUTHORIZATION: basic $(echo -n x-access-token:${{ secrets.SYNC_BACKEND_TOKEN }} | base64)"
+          
           git push backend server-only:master --force
 
   deploy:
