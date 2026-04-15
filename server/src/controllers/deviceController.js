@@ -55,13 +55,13 @@ exports.verifyDeviceBinding = async (req, res) => {
 
     let resolvedProfileId = null;
     if (profileId) {
-      const profile = await prisma.profile.findFirst({ where: { id: profileId, agencyId } });
+      const profile = await prisma.profile.findFirst({ where: { id: String(profileId), agencyId: String(agencyId) } });
       if (!profile) return res.status(404).json({ ok: false, message: 'Profile not found' });
       resolvedProfileId = profile.id;
     }
 
     if (!resolvedProfileId) {
-      const assignedProfile = await prisma.profile.findFirst({ where: { agencyId, assignees: { some: { id: userId } } } });
+      const assignedProfile = await prisma.profile.findFirst({ where: { agencyId: String(agencyId), assignees: { some: { id: String(userId) } } } });
       if (assignedProfile) resolvedProfileId = assignedProfile.id;
     }
 
@@ -69,8 +69,8 @@ exports.verifyDeviceBinding = async (req, res) => {
 
     await prisma.deviceBinding.upsert({
       where: { installationId },
-      update: { userId, agencyId, profileId: resolvedProfileId, platform: String(platform || 'android'), active: true, model, deviceName, lastSeenAt: new Date() },
-      create: { installationId, userId, agencyId, profileId: resolvedProfileId, platform: String(platform || 'android'), active: true, model, deviceName, lastSeenAt: new Date() },
+      update: { userId: String(userId), agencyId: String(agencyId), profileId: String(resolvedProfileId), platform: String(platform || 'android'), active: true, model, deviceName, lastSeenAt: new Date() },
+      create: { installationId, userId: String(userId), agencyId: String(agencyId), profileId: String(resolvedProfileId), platform: String(platform || 'android'), active: true, model, deviceName, lastSeenAt: new Date() },
     });
 
     return res.json({ ok: true });
@@ -122,7 +122,7 @@ exports.getDeviceBindings = async (req, res) => {
 
     const isSenior = (internalRole === 'SENIOR OPERATOR');
     const bindings = await prisma.deviceBinding.findMany({
-      where: isSenior ? { agencyId } : { userId },
+      where: isSenior ? { agencyId: String(agencyId) } : { userId: String(userId) },
       include: { profile: { select: { name: true } } },
       orderBy: { lastSeenAt: 'desc' }
     });

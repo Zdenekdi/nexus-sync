@@ -20,8 +20,8 @@ exports.getBookings = async (req, res) => {
       return res.status(400).json({ message: 'Missing agency context for booking fetch.' });
     }
 
-    const where = { agencyId };
-    if (profileId) where.profileId = profileId;
+    const where = { agencyId: String(agencyId) };
+    if (profileId) where.profileId = String(profileId);
 
     const bookings = await prisma.booking.findMany({
       where,
@@ -64,8 +64,8 @@ exports.createBooking = async (req, res) => {
 
     const booking = await prisma.booking.create({
       data: {
-        profileId,
-        agencyId,
+        profileId: String(profileId),
+        agencyId: String(agencyId),
         title,
         startTime: new Date(startTime),
         endTime: new Date(endTime),
@@ -100,8 +100,8 @@ exports.updateBooking = async (req, res) => {
       return res.status(400).json({ message: 'Missing agency context.' });
     }
 
-    const existing = await prisma.booking.findUnique({ where: { id } });
-    if (!existing || existing.agencyId !== agencyId) {
+    const existing = await prisma.booking.findUnique({ where: { id: String(id) } });
+    if (!existing || existing.agencyId !== String(agencyId)) {
       return res.status(404).json({ message: 'Booking not found or access denied.' });
     }
 
@@ -140,8 +140,8 @@ exports.deleteBooking = async (req, res) => {
       return res.status(400).json({ message: 'Missing agency context.' });
     }
 
-    const existing = await prisma.booking.findUnique({ where: { id } });
-    if (!existing || existing.agencyId !== agencyId) {
+    const existing = await prisma.booking.findUnique({ where: { id: String(id) } });
+    if (!existing || existing.agencyId !== String(agencyId)) {
       return res.status(404).json({ message: 'Booking not found or access denied.' });
     }
     
