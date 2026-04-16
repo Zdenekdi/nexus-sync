@@ -216,6 +216,7 @@ const DashboardHome = () => {
           {['cz', 'eu', 'uk', 'us'].map(market => (
             <button
               key={market}
+              data-testid={`market-selector-${market}`}
               onClick={() => nexus.setActiveMarket(market)}
               style={{ padding: '0.4rem 0.8rem', borderRadius: '10px', background: nexus.activeMarket === market ? 'rgba(59, 130, 246, 0.2)' : 'transparent', color: nexus.activeMarket === market ? '#60a5fa' : 'var(--text-secondary)', border: 'none', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer' }}
             >
@@ -244,7 +245,7 @@ const DashboardHome = () => {
           { label: (t('activeNodes') || 'Active Nodes').toUpperCase(), value: (stats || {}).totalProfiles || '0', icon: <Zap color="#f59e0b" />, growth: 'STABLE', chart: [0,0,0,0,0,0,0] },
           { label: t('globalTraffic').toUpperCase(), value: (stats || {}).totalMessages || '0', icon: <Activity color="#8b5cf6" />, growth: (stats || {}).uptime || '100% UP', chart: (stats || {}).sparklineData || (stats || {}).chartData || [0,0,0,0,0,0,0] }
         ].map((stat, i) => (
-          <div key={i} className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', border: stat.isStatus ? `1px solid ${statusColor}40` : '1px solid var(--card-border)' }}>
+          <div key={i} data-testid={`stat-card-${stat.label.toLowerCase().replace(/\s+/g, '-')}`} className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', border: stat.isStatus ? `1px solid ${statusColor}40` : '1px solid var(--card-border)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
               <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {stat.icon}
@@ -313,6 +314,7 @@ const DashboardHome = () => {
               {['GBP', 'EUR', 'USD', 'CZK'].map(cur => (
                 <button
                   key={cur}
+                  data-testid={`currency-selector-${cur}`}
                   onClick={() => setDashboardCurrency(cur)}
                   style={{
                     padding: '0.4rem 0.8rem',
