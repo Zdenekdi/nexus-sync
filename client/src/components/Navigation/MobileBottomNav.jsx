@@ -49,6 +49,7 @@ const MobileBottomNav = () => {
         return (
           <button
             key={tab.id}
+            data-testid={`nav-mobile-${tab.id}`}
             onClick={() => setActiveTab(tab.id)}
             style={{
               flex: 1,

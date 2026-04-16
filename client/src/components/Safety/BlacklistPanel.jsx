@@ -105,7 +105,7 @@ const BlacklistPanel = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <div data-testid="page-blacklist-container" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       {/* Toolbar */}
       <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: '200px', position: 'relative' }}>

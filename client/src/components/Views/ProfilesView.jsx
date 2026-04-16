@@ -30,9 +30,9 @@ const ProfilesView = () => {
     API_BASE
   } = nexus;
   return (
-    <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto' }} className="fade-in custom-scrollbar">
+    <div data-testid="page-profiles-container" style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto' }} className="fade-in custom-scrollbar">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <h2 style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '800' }}>{t('managedProfiles')}</h2>
+        <h2 data-testid="page-profiles-title" style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '800' }}>{t('managedProfiles')}</h2>
         {(activeRole === 'App Owner' || activeRole === 'Agency Manager' || activeRole === 'Agency Admin' || activeOperator?.role?.isManager) && (
           <button
             onClick={async () => {
@@ -45,7 +45,7 @@ const ProfilesView = () => {
                 showToast(lang === 'cz' ? `Profil "${name}" byl vytvořen` : `Profile "${name}" created`, 'success');
               } catch { showToast('Failed to create profile', 'error'); }
             }}
-            style={{ padding: '0.75rem 1.25rem', background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            data-testid="btn-add-profile" style={{ padding: '0.75rem 1.25rem', background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
           >
             + {lang === 'cz' ? 'Přidat profil' : 'Add Profile'}
           </button>

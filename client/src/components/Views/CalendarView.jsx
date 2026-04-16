@@ -29,7 +29,7 @@ const CalendarView = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '2.5rem', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : '0' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-            <h2 style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '800' }}>{t('bookingSchedule')}</h2>
+            <h2 data-testid="page-calendar-title" style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '800' }}>{t('bookingSchedule')}</h2>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>•</span>
               <select 
@@ -56,18 +56,18 @@ const CalendarView = () => {
           <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('bookingScheduleDesc')}</p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', width: isMobile ? '100%' : 'auto', flexDirection: isMobile ? 'column' : 'row' }}>
-           <button onClick={() => setIsBookingModalOpen(true)} style={{ padding: '0.85rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', color: 'white', border: 'none', background: 'var(--accent-color)', borderRadius: '15px', fontWeight: '800', fontSize: '0.85rem' }}>
+           <button data-testid="btn-add-booking" onClick={() => setIsBookingModalOpen(true)} style={{ padding: '0.85rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', color: 'white', border: 'none', background: 'var(--accent-color)', borderRadius: '15px', fontWeight: '800', fontSize: '0.85rem' }}>
              <Plus size={16} /> {lang === 'cz' ? 'Přidat akci' : 'Add Booking'}
            </button>
            <button 
-             onClick={handleExportICS}
+             data-testid="btn-export-calendar" onClick={handleExportICS}
              className="glass-card" 
              style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '0.75rem', cursor: 'pointer', color: 'white', border: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', flex: isMobile ? 1 : 'none' }}
            >
              <Share2 size={18} /> <span>{t('exportCalendar')}</span>
            </button>
            <button 
-             onClick={() => setIsCalendarSyncOpen(!isCalendarSyncOpen)}
+             data-testid="btn-sync-calendar-toggle" onClick={() => setIsCalendarSyncOpen(!isCalendarSyncOpen)}
              className="glass-card" 
              style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '0.75rem', cursor: 'pointer', color: 'var(--accent-color)', border: '1px solid var(--accent-color)', background: 'rgba(59,130,246,0.1)', borderRadius: '15px', flex: isMobile ? 1 : 'none' }}
            >
@@ -147,7 +147,7 @@ const CalendarView = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '1rem' }}>
                       {activeTimerEvent?.id === event.id ? (
                         <button 
-                          onClick={(e) => { e.stopPropagation(); handleCheckOut(); }}
+                          data-testid={`btn-checkout-${event.id}`} onClick={(e) => { e.stopPropagation(); handleCheckOut(); }}
                           className="action-btn" 
                           style={{ margin: 0, padding: isMobile ? '0.4rem 0.6rem' : '0.5rem 1rem', background: 'var(--success-color)', fontSize: '0.7rem' }}
                         >
@@ -155,7 +155,7 @@ const CalendarView = () => {
                         </button>
                       ) : (
                         <button 
-                          onClick={(e) => { e.stopPropagation(); handleCheckIn(event); }}
+                          data-testid={`btn-checkin-${event.id}`} onClick={(e) => { e.stopPropagation(); handleCheckIn(event); }}
                           className="action-btn" 
                           style={{ margin: 0, padding: isMobile ? '0.4rem 0.6rem' : '0.5rem 1rem', background: isTimerActive ? 'rgba(255,255,255,0.05)' : 'var(--accent-color)', fontSize: '0.7rem', opacity: isTimerActive ? 0.5 : 1 }}
                           disabled={isTimerActive}

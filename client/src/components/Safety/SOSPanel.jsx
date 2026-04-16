@@ -123,7 +123,7 @@ const SOSPanel = () => {
   const typeLabels = { manual: '🔴 Manual', voice: '🎙️ Voice', timer_expired: '⏰ Timer' };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <div data-testid="page-sos-container" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       {/* Sub-navigation */}
       <div style={{ display: 'flex', gap: '0.5rem' }}>
         {[

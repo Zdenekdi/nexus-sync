@@ -54,9 +54,9 @@ const MaintenanceView = () => {
   };
 
   return (
-    <div className="maintenance-view fade-in" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <div data-testid="page-maintenance-container" className="maintenance-view fade-in" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       <div style={{ marginBottom: '0.5rem' }}>
-        <h2 style={{ fontSize: '1.8rem', fontWeight: '900', letterSpacing: '-0.02em', marginBottom: '0.5rem' }}>
+        <h2 data-testid="page-maintenance-title" style={{ fontSize: '1.8rem', fontWeight: '900', letterSpacing: '-0.02em', marginBottom: '0.5rem' }}>
           Údržba serveru a databáze
         </h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '800px' }}>
