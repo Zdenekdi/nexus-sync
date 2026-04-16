@@ -15,8 +15,8 @@ const MobileBottomNav = () => {
 
   const tabs = allTabs.filter(tab => {
     // Explicitly hide sensitive tabs for pure admin roles on mobile as well
-    const role = nexus.activeRole;
-    if (role === 'App Owner' || role === 'Agency Admin') {
+    const role = activeOperator;
+    if (role?.isAppOwner || role?.isAdmin) {
       if (tab.id === 'calendar' || tab.id === 'relay') return false;
     }
     return !tab.perm || isAllowed(tab.perm);
