@@ -1,32 +1,37 @@
 import { test, expect } from '@playwright/test';
 
+/**
+ * Login helper — fills the login form after prodding the landing page.
+ */
 async function loginToApp(page, email, password) {
   await page.goto('/');
 
-  // Handling the Landing Page AGGRESSIVELY
-  console.log('  Checking for landing page button in dashboard test...');
+  console.log('🚀 Checking for landing page button (Dashboard Test)...');
   const enterBtnSelectors = [
     'text="Vstoupit do aplikace"',
     'text="Enter application"',
     'button:has-text("Vstoupit")',
+    'button:has-text("Enter")',
+    'a:has-text("Vstoupit")',
     '.enter-app-button',
-    '#enter-app'
+    '#enter-app',
+    'div[role="button"]:has-text("Vstoupit")'
   ];
 
   for (const selector of enterBtnSelectors) {
     try {
       const btn = page.locator(selector).first();
-      if (await btn.isVisible({ timeout: 1500 })) {
-        console.log(`  Found landing button with selector: ${selector}`);
+      if (await btn.isVisible({ timeout: 2000 })) {
+        console.log(`✅ Found landing button with selector: ${selector}`);
         await btn.click();
+        await page.waitForTimeout(1000);
         break; 
       }
-    } catch (e) {
-      // Continue
-    }
+    } catch (e) {}
   }
 
   // Wait for login form
+  console.log(`📝 Waiting for login form... (URL: ${page.url()})`);
   await page.waitForSelector('input[type="email"]', { timeout: 30_000 });
   await page.fill('input[type="email"]', email);
   await page.fill('input[type="password"]', password);
