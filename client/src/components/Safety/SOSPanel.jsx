@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { AlertTriangle, CheckCircle2, Phone, MapPin, Clock, Volume2, User, History } from 'lucide-react';
-import { useNexus } from '../../context/NexusBaseContext';
+import { useNexus } from '../../context/NexusContext';
 
 const SOSPanel = () => {
   const { t, lang, API_BASE, token, showToast, socket } = useNexus();

@@ -7,22 +7,6 @@
     <link rel="apple-touch-icon" href="/nexus_icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
     <title>Nexus Systems</title>
-    <script>
-      // Global fallback to prevent ReferenceErrors during migration/scoping issues
-      window.isNativeApp = false; 
-      
-      window.onerror = function(msg, src, line, col, err) {
-        var el = document.getElementById('debug-overlay');
-        if(!el) { el = document.createElement('div'); el.id='debug-overlay'; el.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:#000;color:red;font-size:14px;padding:20px;z-index:99999;overflow:auto;white-space:pre-wrap;'; document.body.appendChild(el); }
-        el.textContent += '\nERROR: ' + msg + '\nAt: ' + src + ':' + line + ':' + col + '\n' + (err && err.stack ? err.stack : '');
-        return false;
-      };
-      window.addEventListener('unhandledrejection', function(e) {
-        var el = document.getElementById('debug-overlay');
-        if(!el) { el = document.createElement('div'); el.id='debug-overlay'; el.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:#000;color:orange;font-size:14px;padding:20px;z-index:99999;overflow:auto;white-space:pre-wrap;'; document.body.appendChild(el); }
-        el.textContent += '\nUNHANDLED PROMISE: ' + (e.reason && e.reason.stack ? e.reason.stack : e.reason);
-      });
-    </script>
   </head>
   <body>
     <div id="root"></div>

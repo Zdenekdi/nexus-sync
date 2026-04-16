@@ -2,7 +2,7 @@ import React from 'react';
 import { DollarSign, Building2, Zap, Activity, TrendingUp, Users, Server, ShieldCheck, AlertTriangle, Calendar } from 'lucide-react';
 import { RevenueLineChart, ConversionDonutChart, MiniSparkline } from './AnalyticsCharts';
 import { useVultr } from '../hooks/useVultr';
-import { useNexus } from '../context/NexusBaseContext';
+import { useNexus } from '../context/NexusContext';
 
 const DashboardHome = () => {
   const nexus = useNexus();

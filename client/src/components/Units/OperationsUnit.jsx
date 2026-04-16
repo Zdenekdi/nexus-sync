@@ -10,7 +10,7 @@ import QAView from '../QAView';
 import RelayControlCenter from '../RelayControlCenter';
 import RelayModeView from '../Views/RelayModeView';
 
-import { useNexus } from '../../context/NexusBaseContext';
+import { useNexus } from '../../context/NexusContext';
 
 /**
  * Operations Unit: Primary hub for communication and scheduling.

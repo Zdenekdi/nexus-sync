@@ -69,8 +69,6 @@ public class NexusSipPlugin extends Plugin implements CallListener {
         super.load();
         instance     = this;
         audioManager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
-        // Zkontroluj USE_FULL_SCREEN_INTENT na Android 14+
-        checkFullScreenIntentPermission();
     }
 
     /**

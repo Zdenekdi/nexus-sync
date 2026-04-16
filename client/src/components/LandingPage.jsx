@@ -20,7 +20,7 @@ import {
   ChevronUp
 } from 'lucide-react';
 
-import { useNexus } from '../context/NexusBaseContext';
+import { useNexus } from '../context/NexusContext';
 
 // Scroll-reveal hook
 const useScrollReveal = () => {
@@ -262,50 +262,8 @@ const LandingPage = () => {
       <div style={{ position: 'fixed', top: '-10%', right: '-5%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)', filter: 'blur(80px)', pointerEvents: 'none', zIndex: 0 }}></div>
       <div style={{ position: 'fixed', bottom: '-10%', left: '-5%', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(139, 92, 246, 0.08) 0%, transparent 70%)', filter: 'blur(80px)', pointerEvents: 'none', zIndex: 0 }}></div>
 
-      {/* Header */}
-      <nav style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        padding: isMobile
-          ? `env(safe-area-inset-top, 0px) 1rem 0`
-          : '0 5%',
-        paddingBottom: 0,
-        flexDirection: 'column',
-        position: 'sticky',
-        top: 0, 
-        zIndex: 100, 
-        backdropFilter: 'blur(10px)',
-        background: 'rgba(8, 10, 15, 0.95)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: isMobile ? '0.6rem 0' : '1.2rem 0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <img src="/nexus_icon.png" alt="Nexus" style={{ width: '26px', height: '26px', borderRadius: '7px' }} />
-            <span style={{ fontWeight: '900', fontSize: '1.1rem', letterSpacing: '0.1em' }}>NEXUS</span>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '20px', padding: '2px', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <button 
-                onClick={() => setLang('cz')}
-                style={{ padding: '0.3rem 0.7rem', borderRadius: '18px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', fontSize: '0.68rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}
-              >CZ</button>
-              <button 
-                onClick={() => setLang('en')}
-                style={{ padding: '0.3rem 0.7rem', borderRadius: '18px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', fontSize: '0.68rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}
-              >EN</button>
-            </div>
-            <button 
-              onClick={onLoginClick}
-              className="premium-button"
-              style={{ padding: isMobile ? '0.45rem 0.9rem' : '0.65rem 1.4rem', borderRadius: '10px', border: 'none', background: 'var(--accent-color)', color: 'white', fontWeight: '800', fontSize: isMobile ? '0.72rem' : '0.82rem', cursor: 'pointer', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)' }}
-            >
-              {t.enterBtn}
-            </button>
-          </div>
-        </div>
-      </nav>
+      {/* Header - COMPLETELY DELETED TO REMOVE WHITE BARS */}
+      {null}
 
       {/* Hero Section */}
       <section style={{ padding: isMobile ? '2.5rem 5% 2.5rem' : '8rem 5% 4rem', textAlign: 'center', position: 'relative', zIndex: 1 }}>

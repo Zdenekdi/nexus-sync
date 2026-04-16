@@ -5,7 +5,7 @@ import {
   Shield, Building2, HardDrive, CreditCard, Zap,
   LogOut, Menu, X, Circle
 } from 'lucide-react';
-import { useNexus } from '../../context/NexusBaseContext';
+import { useNexus } from '../../context/NexusContext';
 
 const Sidebar = () => {
   const nexus = useNexus();

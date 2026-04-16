@@ -2,7 +2,7 @@
 import React from 'react';
 import { Zap, Cpu, Check } from 'lucide-react';
 
-import { useNexus } from '../../context/NexusBaseContext';
+import { useNexus } from '../../context/NexusContext';
 
 const GlobalFeaturesView = () => {
   const nexus = useNexus();

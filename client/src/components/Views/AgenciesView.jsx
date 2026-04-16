@@ -2,7 +2,7 @@
 import React from 'react';
 import { Building2, Users, ShieldCheck } from 'lucide-react';
 
-import { useNexus } from '../../context/NexusBaseContext';
+import { useNexus } from '../../context/NexusContext';
 
 const AgenciesView = () => {
   const nexus = useNexus();

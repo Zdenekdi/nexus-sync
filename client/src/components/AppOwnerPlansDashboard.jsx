@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 
-import { useNexus } from '../context/NexusBaseContext';
+import { useNexus } from '../context/NexusContext';
 import ServerMaintenanceTab from './ServerMaintenanceTab';
 
 const AppOwnerPlansDashboard = () => {

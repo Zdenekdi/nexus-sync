@@ -59,6 +59,18 @@ const GlobalAppStyles = () => {
 
       .toggle-switch.active { box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
       .toggle-switch:hover { border-color: var(--accent-color) !important; }
+
+      /* Core App Layout and Safe Areas */
+      .nexus-app {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        background: #080a0f;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        padding-left: env(safe-area-inset-left, 0px);
+        padding-right: env(safe-area-inset-right, 0px);
+      }
     `}</style>
   );
 };

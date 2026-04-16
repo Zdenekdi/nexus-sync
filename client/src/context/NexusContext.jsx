@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useMemo, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
@@ -9,18 +9,71 @@ import { useSocket } from '../hooks/useSocket';
 import { initPushNotifications, removePushListeners } from '../services/pushService';
 import { TRANSLATIONS } from '../translations';
 import { API_BASE } from '../constants/config';
-import { NexusContext } from './NexusBaseContext';
 
-export { useNexus } from './NexusBaseContext';
+// 1. Context Definition
+export const NexusContext = createContext(null);
+
+// 2. Main Hook - using explicit React.useContext and function declaration for hoisting stability
+// Consistently use function decoration for hoisting stability in production builds
+export function useNexus() {
+  const context = React.useContext(NexusContext);
+  
+  if (!context) {
+    const errorMsg = '[NexusContext] useNexus was called outside of NexusProvider. This is a critical initialization failure.';
+    console.error(errorMsg);
+    
+    // In production crash scenarios, we throw to trigger the ErrorBoundary or window.onerror
+    const err = new Error(errorMsg);
+    // Add extra diagnostic info
+    err.code = 'NEXUS_CONTEXT_MISSING';
+    throw err;
+  }
+  
+  return context;
+}
+
+const getSafeStorage = (key, fallback) => {
+  try {
+    return localStorage.getItem(key) || fallback;
+  } catch (e) {
+    console.warn('[Nexus-Bootstrap] Storage access failed:', e);
+    return fallback;
+  }
+};
 
 export const NexusProvider = ({ children }) => {
   // 1. Core UI States
-  const [lang, setLang] = useState(localStorage.getItem('nexus_lang') || 'cz');
+  const [lang, setLang] = React.useState(() => getSafeStorage('nexus_lang', 'cz'));
   
   // Translation helper - needed for useAuth
-  const t = useCallback((key) => TRANSLATIONS[lang]?.[key] || key, [lang]);
+  // -------------------------------------------------------------------------
+  // SECURE TRANSLATION ENGINE (Ultra-Hardened for Production)
+  // -------------------------------------------------------------------------
+  const t = React.useCallback((key, params = {}) => {
+    try {
+      if (!key || typeof key !== 'string') return key || '';
+      
+      // Multi-layer safety check for translations
+      const safeTranslations = (typeof TRANSLATIONS !== 'undefined' && TRANSLATIONS) || {};
+      const langSet = safeTranslations[lang] || safeTranslations['en'] || {};
+      let text = langSet[key] || key;
 
-  const [activeTab, setActiveTab] = useState(() => {
+      // Safe parameter replacement
+      if (params && typeof params === 'object') {
+        Object.entries(params).forEach(([k, v]) => {
+          if (text.includes(`{{${k}}}`)) {
+            text = text.replace(new RegExp(`{{${k}}}`, 'g'), String(v));
+          }
+        });
+      }
+      return text;
+    } catch (err) {
+      console.error('[NexusContext] Translation fallback triggered for:', key, err);
+      return String(key || '');
+    }
+  }, [lang]);
+
+  const [activeTab, setActiveTab] = React.useState(() => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname.substring(1);
       if (path && path !== '' && path !== 'dashboard') {
@@ -29,40 +82,47 @@ export const NexusProvider = ({ children }) => {
     }
     return localStorage.getItem('nexus_active_tab') || 'dashboard';
   });
-  const [activeMarket, setActiveMarket] = useState(localStorage.getItem('nexus_active_market') || 'cz');
-  const [activeProfileId, setActiveProfileId] = useState(localStorage.getItem('nexus_active_profile_id') || null);
-  const [showLanding, setShowLanding] = useState(() => {
+  const [activeMarket, setActiveMarket] = React.useState(localStorage.getItem('nexus_active_market') || 'cz');
+  const [activeProfileId, setActiveProfileId] = React.useState(localStorage.getItem('nexus_active_profile_id') || null);
+  const [showLanding, setShowLanding] = React.useState(() => {
     if (typeof window !== 'undefined') {
       if (window.location.pathname === '/login') return false;
       return localStorage.getItem('nexus_isLoggedIn') !== 'true';
     }
     return true;
   });
+  const [hasSeenOnboarding, setHasSeenOnboarding] = React.useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('nexus_onboarding_seen') === 'true';
+    }
+    return false;
+  });
+  const [showOnboarding, setShowOnboarding] = React.useState(!hasSeenOnboarding);
 
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [onlineOnly, setOnlineOnly] = useState(false);
-  const [mobileView, setMobileView] = useState('list'); // 'list', 'chat', 'details'
-  const [inlinePanelTab, setInlinePanelTab] = useState(null);
-  const [activeContextTab, setActiveContextTab] = useState('translator');
-  const [sourceText, setSourceText] = useState("");
-  const [translatedText, setTranslatedText] = useState("");
-  const [isTranslating, setIsTranslating] = useState(false);
-  const [internalNote, setInternalNote] = useState("");
-  const [detectedMeeting, setDetectedMeeting] = useState(null);
-  const [typingProfiles, setTypingProfiles] = useState({});
-  const [showPanicConfirm, setShowPanicConfirm] = useState(false);
-  const [justLoggedOut, setJustLoggedOut] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
+  const [onlineOnly, setOnlineOnly] = React.useState(false);
+  const [mobileView, setMobileView] = React.useState('list'); 
+  const [inlinePanelTab, setInlinePanelTab] = React.useState(null);
+  const [activeContextTab, setActiveContextTab] = React.useState('translator');
+  const [sourceText, setSourceText] = React.useState("");
+  const [translatedText, setTranslatedText] = React.useState("");
+  const [isTranslating, setIsTranslating] = React.useState(false);
+  const [internalNote, setInternalNote] = React.useState("");
+  const [detectedMeeting, setDetectedMeeting] = React.useState(null);
+  const [typingProfiles, setTypingProfiles] = React.useState({});
+  const [showPanicConfirm, setShowPanicConfirm] = React.useState(false);
+  const [justLoggedOut, setJustLoggedOut] = React.useState(false);
   
   // Modals state
-  const [agencyDetailModalData, setAgencyDetailModalData] = useState(null);
-  const [isAddAgencyOpen, setIsAddAgencyOpen] = useState(false);
-  const [isBugReportOpen, setIsBugReportOpen] = useState(false);
-  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
-  const [addUserModalAgencyId, setAddUserModalAgencyId] = useState(null);
-  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-  const [editingProfileData, setEditingProfileData] = useState(null);
+  const [agencyDetailModalData, setAgencyDetailModalData] = React.useState(null);
+  const [isAddAgencyOpen, setIsAddAgencyOpen] = React.useState(false);
+  const [isBugReportOpen, setIsBugReportOpen] = React.useState(false);
+  const [isAddUserOpen, setIsAddUserOpen] = React.useState(false);
+  const [addUserModalAgencyId, setAddUserModalAgencyId] = React.useState(null);
+  const [isEditProfileOpen, setIsEditProfileOpen] = React.useState(false);
+  const [editingProfileData, setEditingProfileData] = React.useState(null);
 
-  // 2. Authentication Hook (now initialized after required UI states)
+  // 2. Authentication Hook
   const auth = useAuth({ 
     API_BASE,
     t,
@@ -76,25 +136,25 @@ export const NexusProvider = ({ children }) => {
   // 3. Other Core Components Logic
   const chatScrollRef = React.useRef(null);
   const isUserScrolled = React.useRef(false);
-  const [messages, setMessages] = useState([]);
-  const [selectedChatId, setSelectedChatId] = useState(null);
-  const [messageValue, setMessageValue] = useState("");
-  const [clientNotes, setClientNotes] = useState({});
-  const [calViewDate, setCalViewDate] = useState(new Date());
-  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
-  const [chatHistory, setChatHistory] = useState([]);
-  const [_toasts, _setToasts] = useState([]);
+  const [messages, setMessages] = React.useState([]);
+  const [selectedChatId, setSelectedChatId] = React.useState(null);
+  const [messageValue, setMessageValue] = React.useState("");
+  const [clientNotes, setClientNotes] = React.useState({});
+  const [calViewDate, setCalViewDate] = React.useState(new Date());
+  const [isHistoryLoading, setIsHistoryLoading] = React.useState(false);
+  const [chatHistory, setChatHistory] = React.useState([]);
+  const [_toasts, _setToasts] = React.useState([]);
 
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
-  const isNativeApp = useMemo(() => Capacitor.isNativePlatform(), []);
+  const [isMobile, setIsMobile] = React.useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+  const isNativeApp = React.useMemo(() => Capacitor.isNativePlatform(), []);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!isNativeApp) return;
     let listener;
     try {
@@ -111,22 +171,22 @@ export const NexusProvider = ({ children }) => {
     return () => { listener?.remove?.(); };
   }, [isNativeApp]);
 
-  const showToast = useCallback((message, type = 'info') => {
+  const showToast = React.useCallback((message, type = 'info') => {
     const id = Date.now();
     _setToasts(prev => [...prev.slice(-4), { id, message, type }]);
     setTimeout(() => _setToasts(prev => prev.filter(t => t.id !== id)), 4000);
   }, []);
 
-  const [activeOperatorState, setActiveOperatorState] = useState(null);
-  const [subscriptionPlans, setSubscriptionPlans] = useState([
+  const [activeOperatorState, setActiveOperatorState] = React.useState(null);
+  const [subscriptionPlans, setSubscriptionPlans] = React.useState([
     { id: 'basic', name: 'Basic', descriptionKey: 'basicDesc', prices: { cz: '2900', eu: '120', us: '130', uk: '110' }, profilesLimit: 5, features: ['feat_profiles', 'feat_analytics_basic', 'feat_support'] },
     { id: 'pro', name: 'Pro', descriptionKey: 'proDesc', prices: { cz: '5900', eu: '240', us: '260', uk: '220' }, profilesLimit: 10, features: ['feat_all_basic', 'feat_analytics_adv', 'feat_ai_opt'] },
     { id: 'agency', name: 'Agency', descriptionKey: 'agencyDesc', prices: { cz: '9900', eu: '400', us: '440', uk: '360' }, profilesLimit: 20, features: ['feat_all_pro', 'feat_audit_logs', 'feat_api_access'] }
   ]);
-  const [isPlansLoading, setIsPlansLoading] = useState(false);
-  const [globalSettings, setGlobalSettings] = useState([]);
+  const [isPlansLoading, setIsPlansLoading] = React.useState(false);
+  const [globalSettings, setGlobalSettings] = React.useState([]);
 
-  const fetchGlobalSettings = useCallback(async () => {
+  const fetchGlobalSettings = React.useCallback(async () => {
     if (!token) return;
     try {
       const res = await axios.get(`${API_BASE}/admin/settings`, {
@@ -138,7 +198,7 @@ export const NexusProvider = ({ children }) => {
     }
   }, [token, API_BASE]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const interceptor = axios.interceptors.response.use(
       (response) => response,
       async (error) => {
@@ -169,7 +229,7 @@ export const NexusProvider = ({ children }) => {
       }
     );
     return () => axios.interceptors.response.eject(interceptor);
-  }, [logout, auth]);
+  }, [logout]); 
 
   const nexusData = useNexusData({
     token,
@@ -186,7 +246,7 @@ export const NexusProvider = ({ children }) => {
     lang
   });
 
-  const activeOperator = useMemo(() => {
+  const activeOperator = React.useMemo(() => {
     const base = authUser || {};
     const update = activeOperatorState || {};
     const combined = { ...base, ...update };
@@ -211,26 +271,26 @@ export const NexusProvider = ({ children }) => {
 
   const { activeRole, isAllowed } = usePermissions(activeOperator, nexusData.rolePermissions);
 
-  const [incomingRelayCall, setIncomingRelayCall] = useState(null);
-  const handleNewMessage = useCallback((data) => {
+  const [incomingRelayCall, setIncomingRelayCall] = React.useState(null);
+  const handleNewMessage = React.useCallback((data) => {
     if (data?.message) {
       setMessages(prev => [...prev.slice(-199), data.message]);
     }
   }, []);
-  const handleMessageUpdated = useCallback((data) => {
+  const handleMessageUpdated = React.useCallback((data) => {
     if (data?.message) {
       setMessages(prev => prev.map(m => m.id === data.message.id ? { ...m, ...data.message } : m));
     }
   }, []);
-  const handleIncomingCall = useCallback((data) => setIncomingRelayCall(data), []);
-  const handleEmergencyAlert = useCallback((_data) => {
+  const handleIncomingCall = React.useCallback((data) => setIncomingRelayCall(data), []);
+  const handleEmergencyAlert = React.useCallback((_data) => {
     showToast(lang === 'cz' ? '🚨 Nouzový poplach!' : '🚨 Emergency alert!', 'error');
   }, [showToast, lang]);
-  const handleSipIncomingCall = useCallback((_data) => {}, []);
+  const handleSipIncomingCall = React.useCallback((_data) => {}, []);
 
   useSocket(token, handleNewMessage, handleMessageUpdated, handleIncomingCall, handleEmergencyAlert, handleSipIncomingCall);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!isLoggedIn || !token) return;
     initPushNotifications(API_BASE, token, (notification, tapped) => {
       const data = notification?.data;
@@ -245,7 +305,7 @@ export const NexusProvider = ({ children }) => {
     return () => { removePushListeners(); };
   }, [isLoggedIn, token, showToast, lang]);
 
-  const onLogin = useCallback(async (email, password) => {
+  const onLogin = React.useCallback(async (email, password) => {
     const result = await auth.handleLogin(email, password);
     if (result?.success) {
       setShowLanding(false);
@@ -264,7 +324,7 @@ export const NexusProvider = ({ children }) => {
 
   const profiles = nexusData.profiles || [];
   
-  const myProfiles = useMemo(() => {
+  const myProfiles = React.useMemo(() => {
     if (!activeOperator) return [];
     const opId = String(activeOperator.id || activeOperator._id || '');
     const rawRoleStr = String(activeRole || '').toLowerCase();
@@ -286,7 +346,7 @@ export const NexusProvider = ({ children }) => {
     return filtered;
   }, [profiles, activeOperator, activeRole, onlineOnly]);
 
-  const fetchPlans = useCallback(async () => {
+  const fetchPlans = React.useCallback(async () => {
     try {
       setIsPlansLoading(true);
       const res = await axios.get(`${API_BASE}/subscriptions/plans`, {
@@ -300,7 +360,7 @@ export const NexusProvider = ({ children }) => {
     }
   }, [token, API_BASE]);
 
-  const updatePlans = useCallback(async (newPlans) => {
+  const updatePlans = React.useCallback(async (newPlans) => {
     try {
       setIsPlansLoading(true);
       await axios.post(`${API_BASE}/subscriptions/config`, { plans: newPlans }, {
@@ -316,25 +376,25 @@ export const NexusProvider = ({ children }) => {
     }
   }, [token, API_BASE]);
 
-  const activeProfile = useMemo(() => 
+  const activeProfile = React.useMemo(() => 
     (profiles || []).find(p => p.id === activeProfileId) || (myProfiles || [])[0] || null,
     [profiles, activeProfileId, myProfiles]
   );
 
-  const filteredMessages = useMemo(() => 
+  const filteredMessages = React.useMemo(() => 
     activeProfileId === 'all' ? (messages || []) : (messages || []).filter(m => m.profileId === activeProfile?.id),
     [messages, activeProfile, activeProfileId]
   );
 
-  const selectedChat = useMemo(() => (messages || []).find(m => m.id === selectedChatId) || null, [messages, selectedChatId]);
+  const selectedChat = React.useMemo(() => (messages || []).find(m => m.id === selectedChatId) || null, [messages, selectedChatId]);
 
-  const chatMessages = useMemo(() => {
+  const chatMessages = React.useMemo(() => {
     if (!selectedChatId) return [];
     if (chatHistory?.[0] && chatHistory[0].chatId === selectedChatId) return chatHistory;
     return (messages || []).filter(m => m.chatId === selectedChatId);
   }, [messages, selectedChatId, chatHistory]);
 
-  const fetchChatMessages = useCallback(async (chatId) => {
+  const fetchChatMessages = React.useCallback(async (chatId) => {
     if (!token || !chatId) return;
     try {
       setIsHistoryLoading(true);
@@ -350,25 +410,25 @@ export const NexusProvider = ({ children }) => {
     } catch (err) { console.error('Failed to fetch chat messages:', err); } finally { setIsHistoryLoading(false); }
   }, [token, API_BASE, lang]);
 
-  const totalUnread = useMemo(() => {
+  const totalUnread = React.useMemo(() => {
     const myProfileIds = new Set((myProfiles || []).map(p => p.id));
     return (messages || []).filter(m => m.status === 'unread' && myProfileIds.has(m.profileId)).length;
   }, [messages, myProfiles]);
 
-  const handleSendMessage = useCallback((text) => {
+  const handleSendMessage = React.useCallback((text) => {
     if (!text.trim() || !selectedChatId) return;
     const newMessage = { id: Date.now(), profileId: activeProfileId, chatId: selectedChatId, from: 'Nexus Hub', direction: 'OUTBOUND', text: text.trim(), createdAt: new Date().toISOString(), status: 'sent' };
     setMessages(prev => [...prev, newMessage]);
     setMessageValue("");
   }, [selectedChatId, activeProfileId]);
 
-  const handleTranslate = useCallback(async () => {
+  const handleTranslate = React.useCallback(async () => {
     if (!sourceText.trim()) return;
     setIsTranslating(true);
     setTimeout(() => { setTranslatedText(`[Translated to EN]: ${sourceText}`); setIsTranslating(false); }, 1000);
   }, [sourceText]);
 
-  const handleSaveNote = useCallback(() => {
+  const handleSaveNote = React.useCallback(() => {
     if (!internalNote.trim() || !selectedChatId || !selectedChat) return;
     const from = selectedChat.from;
     const newNote = { id: Date.now(), text: internalNote, author: activeOperator.name, timestamp: new Date().toLocaleTimeString() };
@@ -376,68 +436,40 @@ export const NexusProvider = ({ children }) => {
     setInternalNote("");
   }, [internalNote, selectedChatId, selectedChat, activeOperator]);
 
-  const handleDeleteNote = useCallback((client, noteId) => {
+  const handleDeleteNote = React.useCallback((client, noteId) => {
     setClientNotes(prev => ({ ...prev, [client]: (prev[client] || []).filter(n => n.id !== noteId) }));
   }, []);
 
-  const startCall = useCallback(() => showToast(lang === 'cz' ? 'Inicializace VoIP spojení...' : 'Initializing secure VoIP relay...', 'info'), [showToast, lang]);
+  const startCall = React.useCallback(() => showToast(lang === 'cz' ? 'Inicializace VoIP spojení...' : 'Initializing secure VoIP relay...', 'info'), [showToast, lang]);
 
-  const handleQuickSaveMeeting = useCallback(() => {
+  const handleQuickSaveMeeting = React.useCallback(() => {
     if (!detectedMeeting) return;
     nexusData.handleQuickSaveMeeting(detectedMeeting);
     setDetectedMeeting(null);
   }, [detectedMeeting, nexusData]);
 
   const value = {
-    t, lang, setLang,
-    activeTab, setActiveTab,
-    activeMarket, setActiveMarket,
-    loading: nexusData.isDataLoading,
-    activeOperator, activeRole, isAllowed,
-    isLoggedIn, token, logout: () => {
-      logout();
-      setShowLanding(true);
-      setJustLoggedOut(true);
-    }, onLogin,
-    onRegisterAgency: auth.handleRegisterAgency,
-    onRegisterUser: auth.handleRegisterUser,
-    API_BASE,
-    showLanding, setShowLanding,
-    updatePlans, fetchPlans, subscriptionPlans, isPlansLoading,
-    showToast, contextToasts: _toasts,
-    isMobile, isNativeApp,
-    isSidebarCollapsed, setIsSidebarCollapsed,
-    mobileView, setMobileView,
-    inlinePanelTab, setInlinePanelTab,
-    isTranslating, setIsTranslating,
-    internalNote, setInternalNote,
-    clientNotes,
-    detectedMeeting, setDetectedMeeting,
-    typingProfiles, setTypingProfiles,
-    showPanicConfirm, setShowPanicConfirm,
-    chatScrollRef, isUserScrolled,
-    incomingRelayCall, setIncomingRelayCall,
-    agencyDetailModalData, setAgencyDetailModalData,
-    isAddAgencyOpen, setIsAddAgencyOpen,
-    isBugReportOpen, setIsBugReportOpen,
-    isAddUserOpen, setIsAddUserOpen,
-    addUserModalAgencyId, setAddUserModalAgencyId,
+    t, lang, setLang, activeTab, setActiveTab, activeMarket, setActiveMarket,
+    loading: nexusData.isDataLoading, activeOperator, activeRole, isAllowed,
+    isLoggedIn, token, logout: () => { logout(); setShowLanding(true); setJustLoggedOut(true); }, 
+    onLogin, onRegisterAgency: auth.handleRegisterAgency, onRegisterUser: auth.handleRegisterUser,
+    API_BASE, showLanding: showLanding ?? !isLoggedIn, setShowLanding, hasSeenOnboarding, setHasSeenOnboarding, showOnboarding, setShowOnboarding,
+    updatePlans, fetchPlans, subscriptionPlans, isPlansLoading, showToast, contextToasts: _toasts,
+    isMobile, isNativeApp, isSidebarCollapsed, setIsSidebarCollapsed, mobileView, setMobileView,
+    inlinePanelTab, setInlinePanelTab, isTranslating, setIsTranslating, internalNote, setInternalNote,
+    clientNotes, detectedMeeting, setDetectedMeeting, typingProfiles, setTypingProfiles,
+    showPanicConfirm, setShowPanicConfirm, chatScrollRef, isUserScrolled, incomingRelayCall, setIncomingRelayCall,
+    agencyDetailModalData, setAgencyDetailModalData, isAddAgencyOpen, setIsAddAgencyOpen,
+    isBugReportOpen, setIsBugReportOpen, isAddUserOpen, setIsAddUserOpen, addUserModalAgencyId, setAddUserModalAgencyId,
     handleAddAgency: () => setIsAddAgencyOpen(true),
     handleAgencyDetail: (agency) => setAgencyDetailModalData(agency),
     handleEditProfile: (profile) => { setEditingProfileData(profile); setIsEditProfileOpen(true); },
-    isEditProfileOpen, setIsEditProfileOpen,
-    editingProfileData, setEditingProfileData,
+    isEditProfileOpen, setIsEditProfileOpen, editingProfileData, setEditingProfileData,
     handleSendMessage, handleTranslate, handleSaveNote, handleDeleteNote, startCall, handleQuickSaveMeeting,
-    activeProfile, activeProfileId, setActiveProfileId,
-    profiles, myProfiles, assignedProfiles: myProfiles,
-    onlineOnly, setOnlineOnly,
-    totalUnread, messages, filteredMessages,
-    selectedChatId, setSelectedChatId,
-    selectedChat, chatMessages, chatHistory, fetchChatMessages,
-    isHistoryLoading, setIsHistoryLoading,
-    messageValue, setMessageValue,
-    calViewDate, setCalViewDate,
-    globalSettings, fetchGlobalSettings,
+    activeProfile, activeProfileId, setActiveProfileId, profiles, myProfiles, assignedProfiles: myProfiles,
+    onlineOnly, setOnlineOnly, totalUnread, messages, filteredMessages, selectedChatId, setSelectedChatId,
+    selectedChat, chatMessages, chatHistory, fetchChatMessages, isHistoryLoading, setIsHistoryLoading,
+    messageValue, setMessageValue, calViewDate, setCalViewDate, globalSettings, fetchGlobalSettings,
     handleUpdateGlobalSetting: async (key, value) => {
       try {
         const res = await axios.post(`${API_BASE}/admin/settings`, { key, value }, { headers: { Authorization: `Bearer ${token}` } });
@@ -453,14 +485,13 @@ export const NexusProvider = ({ children }) => {
     ...nexusData
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (isLoggedIn && (authUser?.isAppOwner || authUser?.isManager)) {
       fetchGlobalSettings();
     }
   }, [isLoggedIn, authUser, fetchGlobalSettings]);
 
-  // Consolidated Persistence & URL Routing Logic
-  useEffect(() => {
+  React.useEffect(() => {
     localStorage.setItem('nexus_lang', lang);
     localStorage.setItem('nexus_active_tab', activeTab);
     localStorage.setItem('nexus_active_market', activeMarket);

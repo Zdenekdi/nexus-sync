@@ -23,5 +23,6 @@
   },
   "search.exclude": {
     "**/node_modules": true
-  }
+  },
+  "java.configuration.updateBuildConfiguration": "automatic"
 }

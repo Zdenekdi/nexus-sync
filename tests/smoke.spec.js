@@ -5,7 +5,14 @@ async function doLogin(page, email, password) {
   await page.goto('/');
   await page.waitForLoadState('networkidle');
 
-  // Click landing page enter button
+  // Handle Onboarding slides if visible
+  const nextBtn = page.getByRole('button', { name: /pokračovat|continue/i }).first();
+  while (await nextBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+    await nextBtn.click();
+    await page.waitForTimeout(300); // Wait for transition
+  }
+
+  // Click final enter button (either in Onboarding or LandingPage)
   const enterBtn = page.getByRole('button', { name: /vstoupit|enter application/i }).first();
   if (await enterBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
     await enterBtn.click();

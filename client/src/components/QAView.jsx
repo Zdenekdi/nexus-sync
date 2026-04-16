@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { FileSearch, StickyNote, User, Phone, Edit2, Check, X, Search, ChevronDown } from 'lucide-react';
-import { useNexus } from '../context/NexusBaseContext';
+import { useNexus } from '../context/NexusContext';
 
 const QAView = () => {
   const nexus = useNexus();
