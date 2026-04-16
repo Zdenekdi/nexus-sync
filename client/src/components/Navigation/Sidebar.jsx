@@ -143,7 +143,7 @@ const Sidebar = () => {
               </button>
             </TooltipItem>
 
-            {activeRole === 'App Owner' ? (
+            {activeOperator?.isAppOwner ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.5rem' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                   {[
