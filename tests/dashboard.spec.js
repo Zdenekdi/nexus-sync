@@ -24,7 +24,7 @@ async function loginToApp(page, email, password) {
 test.describe('App Owner Dashboard', () => {
   test.beforeEach(async ({ page }) => { await loginToApp(page, 'dias.zd@gmail.com', 'Nexus2024!'); });
   test('shows system management', async ({ page }) => {
-    await expect(page.locator('nav').getByText(/agentury|agencies/i).first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId('nav-link-agencies')).toBeVisible({ timeout: 15000 });
   });
 });
 
@@ -32,7 +32,7 @@ test.describe('Agency Admin Dashboard', () => {
   test.beforeEach(async ({ page }) => { await loginToApp(page, 'mark@nexus.sync', 'password123'); });
   test('messaging accessible', async ({ page }) => {
     await expect(page.locator('nav')).toBeVisible({ timeout: 15000 });
-    const inboxBtn = page.locator('nav').getByText(/chaty|inbox|zprávy|messages/i).first();
+    const inboxBtn = page.getByTestId('nav-link-inbox');
     if (await inboxBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
       await inboxBtn.click();
     }
@@ -42,7 +42,7 @@ test.describe('Agency Admin Dashboard', () => {
 test.describe('Manager Dashboard', () => {
   test.beforeEach(async ({ page }) => { await loginToApp(page, 'alice@nexus.sync', 'password123'); });
   test('Schedule ARE visible', async ({ page }) => {
-    await expect(page.locator('nav').getByText(/kalendář|schedule|calendar/i).first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId('nav-link-calendar')).toBeVisible({ timeout: 15000 });
   });
 });
 

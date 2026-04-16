@@ -506,7 +506,7 @@ export const TRANSLATIONS = {
     cz: {
         logo: 'NEXUSSYNC',
         messages: 'Zprávy',
-        schedule: 'Plán',
+        schedule: 'Kalendář',
         profiles: 'Profily',
         auditLog: 'Auditní stopa',
         settings: 'Nastavení',
