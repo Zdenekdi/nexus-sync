@@ -32,6 +32,7 @@ export const NexusProvider = ({ children }) => {
   const [activeProfileId, setActiveProfileId] = useState(localStorage.getItem('nexus_active_profile_id') || null);
   const [showLanding, setShowLanding] = useState(() => {
     if (typeof window !== 'undefined') {
+      if (window.location.pathname === '/login') return false;
       return localStorage.getItem('nexus_isLoggedIn') !== 'true';
     }
     return true;
@@ -68,10 +69,18 @@ export const NexusProvider = ({ children }) => {
     if (activeProfileId) localStorage.setItem('nexus_active_profile_id', activeProfileId);
     
     // Sync activeTab to URL without reloading to support browser refreshes on the same page
-    if (activeTab && typeof window !== 'undefined') {
-      window.history.replaceState(null, '', `/${activeTab}`);
+    if (typeof window !== 'undefined') {
+      if (!isLoggedIn) {
+        if (!showLanding) {
+          window.history.replaceState(null, '', '/login');
+        } else if (window.location.pathname !== '/') {
+          window.history.replaceState(null, '', '/');
+        }
+      } else if (activeTab) {
+        window.history.replaceState(null, '', `/${activeTab}`);
+      }
     }
-  }, [lang, activeTab, activeMarket, activeProfileId]);
+  }, [lang, activeTab, activeMarket, activeProfileId, isLoggedIn, showLanding]);
 
   const chatScrollRef = React.useRef(null);
   const isUserScrolled = React.useRef(false);
