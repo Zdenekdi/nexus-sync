@@ -49,42 +49,44 @@ test('verify Nexus Relay app launch', async () => {
     // Log current URL
     console.log(`📍 URL inside app: ${page.url()}`);
     
-    // Take device-level screenshot
-    console.log('📸 Capturing device screenshot...');
-    await device.screenshot({ path: 'android_device_screen.png' });
-    console.log('✅ Screenshot saved: android_device_screen.png');
+    // Handle Onboarding Slides (4 slides)
+    console.log('🏁 Starting Onboarding click-through...');
+    const nextBtn = page.getByRole('button', { name: /pokračovat|continue/i }).first();
+    let slidesClicked = 0;
+    while (slidesClicked < 4 && await nextBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+      console.log(`➡️ Clicking slide ${slidesClicked + 1}...`);
+      await nextBtn.click();
+      slidesClicked++;
+      await page.waitForTimeout(500); // Wait for animation
+    }
 
-    // 6. Inspect individual objects/layout
-    console.log('🔍 Inspecting UI objects...');
-    const layout = await page.evaluate(() => {
-      const getDetails = (el) => {
-        if (!el) return null;
-        const rect = el.getBoundingClientRect();
-        return {
-          tag: el.tagName,
-          id: el.id,
-          className: el.className,
-          text: el.innerText?.substring(0, 20),
-          rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height },
-          styles: { background: getComputedStyle(el).background, padding: getComputedStyle(el).padding, margin: getComputedStyle(el).margin }
-        };
-      };
+    // Click Vstoupit do aplikace / Enter Application
+    console.log('🚀 Finalizing onboarding...');
+    const enterBtn = page.getByRole('button', { name: /vstoupit|enter application/i }).first();
+    if (await enterBtn.isVisible({ timeout: 5000 })) {
+      await enterBtn.click();
+    }
 
-      return {
-        nav: getDetails(document.querySelector('nav')),
-        header: getDetails(document.querySelector('header')),
-        hero: getDetails(document.querySelector('section')),
-        mainButton: getDetails(document.querySelector('button[data-testid="landing-enter-button"]') || document.querySelector('button')),
-        bodyStyle: { background: getComputedStyle(document.body).background }
-      };
-    });
-    console.log('📊 Layout Data:', JSON.stringify(layout, null, 2));
+    // 6. Login Sequence (Using Operator Alice as requested)
+    console.log('🔑 Performing login as Senior Operator (Alice)...');
+    await page.getByTestId('login-email').waitFor({ state: 'visible', timeout: 10000 });
+    await page.getByTestId('login-email').fill('alice@nexus.sync');
+    await page.getByTestId('login-password').fill('password123');
+    await page.getByTestId('login-submit').click();
 
-    await expect(page.getByTestId('login-email')).toBeVisible({ timeout: 10000 }).catch(() => console.log('Assertion skipped for layout debug'));
+    // 7. Verify Dashboard (Calendar access for Operator)
+    console.log('📊 Verifying operator dashboard access...');
+    await expect(page.getByTestId('nav-link-calendar')).toBeVisible({ timeout: 30000 });
+    
+    // Take device-level screenshot of the dashboard
+    console.log('📸 Capturing operator dashboard screenshot...');
+    await device.screenshot({ path: 'android_operator_success.png' });
+    console.log('✅ Screenshot saved: android_operator_success.png');
+    
+    console.log('🚀 Smoke Test PASSED successfully!');
   } catch (e) {
-    console.error('❌ Could not find login-email. Dumping page content...');
-    console.log(await page.content());
-    // Also take screenshot on failure if not already taken
+    console.error('❌ Test failed. Dumping state...');
+    console.log(`📍 Last URL: ${page.url()}`);
     await device.screenshot({ path: 'android_error_screen.png' });
     throw e;
   }
