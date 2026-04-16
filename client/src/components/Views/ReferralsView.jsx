@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Activity, UserPlus, Trophy, Clock, Link, Copy, Check, RefreshCw, Sparkles } from 'lucide-react';
 import axios from 'axios';
 
-import { useNexus } from '../../context/NexusBaseContext';
+import { useNexus } from '../../context/NexusContext';
 
 const ReferralsView = () => {
   const nexus = useNexus();

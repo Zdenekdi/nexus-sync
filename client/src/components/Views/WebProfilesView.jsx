@@ -3,7 +3,7 @@ import {
   ChevronDown, Image, FileEdit, RefreshCw, Check, X, AlertTriangle 
 } from 'lucide-react';
 
-import { useNexus } from '../../context/NexusBaseContext';
+import { useNexus } from '../../context/NexusContext';
 
 const WebProfilesView = () => {
   const nexus = useNexus();

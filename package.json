@@ -20,11 +20,13 @@
 
     "test:smoke": "npx playwright test",
     "test:api": "npx playwright test rbac sms-relay --project=chromium",
-    "test:e2e": "npx playwright test smoke dashboard --project=chromium",
-    "test:rbac": "npx playwright test rbac --project=chromium",
-    "test:relay": "npx playwright test sms-relay --project=chromium",
-    "test:navigation": "npx playwright test tests/navigation.spec.js --project=chromium",
+    "test:e2e": "npx playwright test smoke dashboard sidebar_profiles mobile_navigation --project=chromium",
+    "test:mobile": "npx playwright test tests/mobile_navigation.spec.js --project=mobile",
     "test:profiles": "npx playwright test tests/sidebar_profiles.spec.js --project=chromium",
+    "test:android:native": "npx playwright test tests/android/native_app_smoke.spec.js --config=playwright.android.config.js",
+    "android:sync": "cd client && npx cap sync android",
+    "emulator:list": "~/Library/Android/sdk/emulator/emulator -list-avds",
+    "emulator:start": "~/Library/Android/sdk/emulator/emulator -avd",
     "test:report": "npx playwright show-report"
   },
   "dependencies": {

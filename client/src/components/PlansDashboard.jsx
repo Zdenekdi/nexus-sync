@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { CreditCard, Users, Check, FileEdit, CheckCheck, Zap, RefreshCw, AlertCircle, Package } from 'lucide-react';
 
-import { NexusContext } from '../context/NexusBaseContext';
+import { NexusContext } from '../context/NexusContext';
 
 const PlansDashboard = () => {
   const { t, activeOperator, activeRole, subscriptionPlans, fetchPlans, updatePlans, isPlansLoading, activeMarket, setActiveMarket, agencies, isMobile, showToast, lang } = useContext(NexusContext);

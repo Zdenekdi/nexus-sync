@@ -1,83 +1,83 @@
 import React, { useState, useRef, useCallback } from 'react';
-
-// Neon glow icons rendered as SVG for maximum visual impact
-const slides = [
-  {
-    id: 'relay',
-    gradient: 'rgba(59,130,246,0.15)',
-    glowColor: '#3b82f6',
-    icon: (
-      <svg viewBox="0 0 80 80" width="120" height="120" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="40" cy="40" r="38" stroke="currentColor" strokeWidth="2" strokeOpacity="0.3" />
-        <path d="M28 52V28L52 40L28 52Z" fill="currentColor" fillOpacity="0.9" />
-        <path d="M54 28v24" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeOpacity="0.9" />
-      </svg>
-    ),
-    titleCz: 'SMS Relay',
-    titleEn: 'SMS Relay',
-    descCz: 'Přeposílej zprávy automaticky i se zhasnutým displejem. WakeLock zajistí, že relay nikdy nevypadne.',
-    descEn: 'Forward messages automatically even with the screen off. WakeLock ensures relay never drops.',
-  },
-  {
-    id: 'inbox',
-    gradient: 'rgba(139,92,246,0.15)',
-    glowColor: '#8b5cf6',
-    icon: (
-      <svg viewBox="0 0 80 80" width="120" height="120" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="10" y="18" width="60" height="44" rx="8" stroke="currentColor" strokeWidth="2" strokeOpacity="0.3" />
-        <path d="M10 26l30 22 30-22" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.9" />
-        <circle cx="58" cy="22" r="8" fill="currentColor" fillOpacity="0.9" />
-        <text x="55" y="26" fill="white" fontSize="10" fontWeight="bold">AI</text>
-      </svg>
-    ),
-    titleCz: 'Inbox & AI Replies',
-    titleEn: 'Inbox & AI Replies',
-    descCz: 'Všechny konverzace na jednom místě. AI Smart Replies odpoví za tebe nebo návrhem zkrotí každý chat.',
-    descEn: 'All conversations in one place. AI Smart Replies answer for you or suggest the perfect response.',
-  },
-  {
-    id: 'safety',
-    gradient: 'rgba(239,68,68,0.12)',
-    glowColor: '#ef4444',
-    icon: (
-      <svg viewBox="0 0 80 80" width="120" height="120" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M40 8L12 20v20c0 16 12 30 28 34 16-4 28-18 28-34V20L40 8z" stroke="currentColor" strokeWidth="2" strokeOpacity="0.3" fill="currentColor" fillOpacity="0.08" />
-        <path d="M40 8L12 20v20c0 16 12 30 28 34 16-4 28-18 28-34V20L40 8z" stroke="currentColor" strokeWidth="2" strokeOpacity="0.9" fill="none" />
-        <path d="M32 40l6 6 12-12" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.9" />
-      </svg>
-    ),
-    titleCz: 'Safety Guard',
-    titleEn: 'Safety Guard',
-    descCz: 'SOS tlačítko, GPS tracking a nouzové alerty chrání celý tým v terénu. Stiskni a pomoc přijde.',
-    descEn: 'SOS button, GPS tracking and emergency alerts protect your whole team in the field.',
-  },
-  {
-    id: 'push',
-    gradient: 'rgba(16,185,129,0.12)',
-    glowColor: '#10b981',
-    icon: (
-      <svg viewBox="0 0 80 80" width="120" height="120" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M40 12C27 12 17 22 17 35v18l-5 8h56l-5-8V35c0-13-10-23-23-23z" stroke="currentColor" strokeWidth="2" strokeOpacity="0.3" fill="currentColor" fillOpacity="0.08" />
-        <path d="M40 12C27 12 17 22 17 35v18l-5 8h56l-5-8V35c0-13-10-23-23-23z" stroke="currentColor" strokeWidth="2" strokeOpacity="0.9" fill="none" />
-        <path d="M34 63c0 3.3 2.7 6 6 6s6-2.7 6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.9" />
-        <circle cx="56" cy="18" r="7" fill="currentColor" fillOpacity="0.9" />
-      </svg>
-    ),
-    titleCz: 'Push Notifikace',
-    titleEn: 'Push Notifications',
-    descCz: 'Okamžitá upozornění na nové zprávy, schůzky a nouzové situace — i když je aplikace zavřená.',
-    descEn: 'Instant alerts for new messages, bookings and emergencies — even when the app is closed.',
-  },
-];
-
-import { useNexus } from '../context/NexusBaseContext';
+import { useNexus } from '../context/NexusContext';
 
 const STORAGE_KEY = 'nexus_onboarding_seen';
 
+// Neon glow icons defined at module level for shared access
 const Onboarding = () => {
-  const { setShowOnboarding, lang } = useNexus();
-  
-  const onComplete = () => setShowOnboarding(false);
+  const { setShowOnboarding, setShowLanding, lang, setHasSeenOnboarding } = useNexus();
+
+  // Moving definitions INSIDE to ensure they are available only after React/Context are ready
+  // and to avoid bundling issues with module-level JSX.
+  const slides = [
+    {
+      id: 'relay',
+      glowColor: '#3b82f6',
+      icon: (
+        <svg viewBox="0 0 80 80" width="120" height="120" fill="none">
+          <circle cx="40" cy="40" r="38" stroke="currentColor" strokeWidth="2" strokeOpacity="0.3" />
+          <path d="M28 52V28L52 40L28 52Z" fill="currentColor" fillOpacity="0.9" />
+          <path d="M54 28v24" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeOpacity="0.9" />
+        </svg>
+      ),
+      titleCz: 'SMS Relay',
+      titleEn: 'SMS Relay',
+      descCz: 'Přeposílej zprávy automaticky i se zhasnutým displejem. WakeLock zajistí, že relay nikdy nevypadne.',
+      descEn: 'Forward messages automatically even with the screen off. WakeLock ensures relay never drops.',
+    },
+    {
+      id: 'inbox',
+      glowColor: '#8b5cf6',
+      icon: (
+        <svg viewBox="0 0 80 80" width="120" height="120" fill="none">
+          <rect x="10" y="18" width="60" height="44" rx="8" stroke="currentColor" strokeWidth="2" strokeOpacity="0.3" />
+          <path d="M10 26l30 22 30-22" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.9" />
+          <circle cx="58" cy="22" r="8" fill="currentColor" fillOpacity="0.9" />
+          <text x="55" y="26" fill="white" fontSize="10" fontWeight="bold">AI</text>
+        </svg>
+      ),
+      titleCz: 'Inbox & AI Replies',
+      titleEn: 'Inbox & AI Replies',
+      descCz: 'Všechny konverzace na jednom místě. AI Smart Replies odpoví za tebe nebo návrhem zkrotí každý chat.',
+      descEn: 'All conversations in one place. AI Smart Replies answer for you or suggest the perfect response.',
+    },
+    {
+      id: 'safety',
+      glowColor: '#ef4444',
+      icon: (
+        <svg viewBox="0 0 80 80" width="120" height="120" fill="none">
+          <path d="M40 10L15 22v24c0 15 10.5 29 25 34 14.5-5 25-19 25-34V22L40 10z" stroke="currentColor" strokeWidth="2" strokeOpacity="0.3" />
+          <path d="M40 28v16" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeOpacity="0.9" />
+          <circle cx="40" cy="54" r="3" fill="currentColor" fillOpacity="0.9" />
+        </svg>
+      ),
+      titleCz: 'Nexus Safety',
+      titleEn: 'Nexus Safety',
+      descCz: 'Tvoje bezpečí je prioritou. Tlačítko tísňového volání a automatické hlídky tě nenechají ve štychu.',
+      descEn: 'Your safety is a priority. Panic button and automatic patrols will never leave you hanging.',
+    },
+    {
+      id: 'privacy',
+      glowColor: '#10b981',
+      icon: (
+        <svg viewBox="0 0 80 80" width="120" height="120" fill="none">
+          <circle cx="40" cy="35" r="12" stroke="currentColor" strokeWidth="2" strokeOpacity="0.3" />
+          <path d="M20 65c0-11 9-20 20-20s20 9 20 20" stroke="currentColor" strokeWidth="2" strokeOpacity="0.3" />
+          <rect x="34" y="55" width="12" height="16" rx="2" fill="currentColor" fillOpacity="0.9" />
+          <circle cx="40" cy="61" r="1.5" fill="white" />
+        </svg>
+      ),
+      titleCz: 'Anonymita & Soukromí',
+      titleEn: 'Privacy First',
+      descCz: 'Žádné sdílení osobních údajů. Komunikuj bezpečně přes naši infrastrukturu a chraň si to své.',
+      descEn: 'No sharing of personal data. Communicate safely through our infrastructure and protect what is yours.',
+    }
+  ];
+  const onComplete = () => {
+    setShowOnboarding(false);
+    setShowLanding(false);
+    setHasSeenOnboarding(true);
+  };
   const [current, setCurrent] = useState(0);
   const [animating, setAnimating] = useState(false);
   const touchStartX = useRef(null);
@@ -106,8 +106,9 @@ const Onboarding = () => {
 
   const handleSkip = useCallback(() => {
     localStorage.setItem(STORAGE_KEY, 'true');
+    setShowLanding(false);
     onComplete();
-  }, [onComplete]);
+  }, [onComplete, setShowLanding]);
 
   const onTouchStart = useCallback((e) => {
     touchStartX.current = e.touches[0].clientX;
@@ -146,28 +147,28 @@ const Onboarding = () => {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: 'env(safe-area-inset-top, 0px)',
+        paddingTop: 0,
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         overflow: 'hidden',
         userSelect: 'none',
         WebkitUserSelect: 'none',
       }}
     >
-      {/* Ambient glow background */}
+      {/* Ambient glow background - Enhanced for more depth */}
       <div
         key={slide.id + '-glow'}
         style={{
           position: 'absolute',
-          top: '15%',
+          top: '20%',
           left: '50%',
           transform: 'translateX(-50%)',
-          width: '350px',
-          height: '350px',
+          width: '450px',
+          height: '450px',
           borderRadius: '50%',
-          background: `radial-gradient(circle, ${slide.glowColor}22 0%, transparent 70%)`,
-          filter: 'blur(60px)',
+          background: `radial-gradient(circle, ${slide.glowColor}1a 0%, transparent 80%)`,
+          filter: 'blur(80px)',
           pointerEvents: 'none',
-          transition: 'background 0.5s ease',
+          transition: 'background 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       />
 
@@ -177,24 +178,21 @@ const Onboarding = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '1.2rem 1.5rem 0',
+        padding: '1.5rem 1.8rem 0',
         flexShrink: 0,
         zIndex: 10,
       }}>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           {slides.map((s, i) => (
-            <button
+            <div
               key={s.id}
-              onClick={() => i <= current && goToSlide(i)}
               style={{
-                width: i === current ? '24px' : '8px',
-                height: '8px',
-                borderRadius: '4px',
-                background: i <= current ? slide.glowColor : 'rgba(255,255,255,0.15)',
-                border: 'none',
-                padding: 0,
-                cursor: i < current ? 'pointer' : 'default',
-                transition: 'all 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+                width: i === current ? '32px' : '8px',
+                height: '6px',
+                borderRadius: '3px',
+                background: i === current ? slide.glowColor : 'rgba(255,255,255,0.1)',
+                boxShadow: i === current ? `0 0 10px ${slide.glowColor}` : 'none',
+                transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
               }}
             />
           ))}
@@ -202,20 +200,23 @@ const Onboarding = () => {
         <button
           onClick={handleSkip}
           style={{
-            background: 'none',
+            background: 'rgba(255,255,255,0.05)',
             border: 'none',
-            color: 'rgba(255,255,255,0.35)',
-            fontSize: '0.82rem',
-            fontWeight: '600',
+            color: 'rgba(255,255,255,0.4)',
+            fontSize: '0.75rem',
+            fontWeight: '700',
             cursor: 'pointer',
-            padding: '0.25rem 0',
+            padding: '0.5rem 1rem',
+            borderRadius: '20px',
+            backdropFilter: 'blur(10px)',
+            transition: 'all 0.3s ease',
           }}
         >
-          {isCz ? 'Přeskočit' : 'Skip'}
+          {isCz ? 'PŘESKOČIT' : 'SKIP'}
         </button>
       </div>
 
-      {/* Main content */}
+      {/* Main content - Optimized Spacing */}
       <div
         key={slide.id}
         style={{
@@ -224,42 +225,48 @@ const Onboarding = () => {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '2rem 2.5rem',
+          padding: '0 2.5rem',
           textAlign: 'center',
           opacity: animating ? 0 : 1,
-          transform: animating ? 'scale(0.97)' : 'scale(1)',
-          transition: 'opacity 0.2s ease, transform 0.2s ease',
+          transform: animating ? 'translateY(10px)' : 'translateY(0)',
+          transition: 'opacity 0.3s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
           gap: '0',
+          marginTop: '-10vh'
         }}
       >
-        {/* Icon */}
+        {/* Icon with persistent glow */}
         <div style={{
           color: slide.glowColor,
-          filter: `drop-shadow(0 0 24px ${slide.glowColor}88)`,
-          marginBottom: '2.5rem',
+          filter: `drop-shadow(0 0 30px ${slide.glowColor}aa)`,
+          marginBottom: '3rem',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
         }}>
           {slide.icon}
         </div>
 
         {/* Title */}
         <h1 style={{
-          fontSize: '2rem',
+          fontSize: '2.4rem',
           fontWeight: '900',
           color: 'white',
           margin: '0 0 1.25rem',
-          letterSpacing: '-0.02em',
-          lineHeight: 1.1,
+          letterSpacing: '-0.04em',
+          lineHeight: 1,
+          textShadow: '0 2px 10px rgba(0,0,0,0.5)'
         }}>
           {isCz ? slide.titleCz : slide.titleEn}
         </h1>
 
         {/* Description */}
         <p style={{
-          fontSize: '1rem',
+          fontSize: '1.05rem',
           color: 'rgba(255,255,255,0.5)',
-          lineHeight: 1.65,
-          maxWidth: '320px',
+          lineHeight: 1.6,
+          maxWidth: '300px',
           margin: 0,
+          fontWeight: '400'
         }}>
           {isCz ? slide.descCz : slide.descEn}
         </p>

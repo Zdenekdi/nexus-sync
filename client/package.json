@@ -40,6 +40,8 @@
     "vite": "^7.3.1"
   },
   "browserslist": [
+    "Chrome > 60",
+    "Android >= 7",
     "last 2 versions",
     "not dead"
   ]

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Phone, X } from 'lucide-react';
-import { useNexus } from '../../context/NexusBaseContext';
+import { useNexus } from '../../context/NexusContext';
 
 const CallOverlays = () => {
   const {

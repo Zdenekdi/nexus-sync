@@ -5,7 +5,7 @@ import {
   Signal, MoreVertical, StickyNote, Languages, Sparkles 
 } from 'lucide-react';
 
-import { useNexus } from '../../context/NexusBaseContext';
+import { useNexus } from '../../context/NexusContext';
 
 const InboxView = () => {
   const nexus = useNexus();

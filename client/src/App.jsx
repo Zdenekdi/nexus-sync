@@ -1,85 +1,100 @@
-import React from 'react';
-import { useNexus } from './context/NexusBaseContext';
-
-// Navigation & Routing
-import Sidebar from './components/Navigation/Sidebar';
-import MobileBottomNav from './components/Navigation/MobileBottomNav';
-import ViewRouter from './components/Navigation/ViewRouter';
-
-// Modals, Overlays & UI
-import GlobalModalContainer from './components/Modals/GlobalModalContainer';
-import SystemBanners from './components/UI/SystemBanners';
+import React, { Suspense, lazy } from 'react';
+import { useNexus } from './context/NexusContext';
 import GlobalAppStyles from './styles/GlobalAppStyles';
+import ErrorBoundary from './ErrorBoundary';
 
-// Entry Views
-import LandingPage from './components/LandingPage';
-import Onboarding from './components/Onboarding';
-import LoginScreen from './components/LoginScreen';
+// Lazy load heavy components
+const Sidebar = lazy(() => import('./components/Navigation/Sidebar'));
+const MobileBottomNav = lazy(() => import('./components/Navigation/MobileBottomNav'));
+const ViewRouter = lazy(() => import('./components/Navigation/ViewRouter'));
+const LandingPage = lazy(() => import('./components/LandingPage'));
+const Onboarding = lazy(() => import('./components/Onboarding'));
+const LoginScreen = lazy(() => import('./components/LoginScreen'));
 
-/**
- * Nexus Hub Root Content Component
- * Handles the main app structure once context is available.
- */
 function AppContent() {
-  const {
-    isLoggedIn,
-    showLanding,
-    showOnboarding,
-    isSidebarCollapsed,
-    isMobile,
-    isNativeApp
-  } = useNexus();
+  const { isLoggedIn, loading, showLanding, showOnboarding, isNativeApp } = useNexus();
 
-  // 1. Initial Access Control
-  if (!isLoggedIn) {
-    // Show product landing page first, then login screen
-    if (showLanding) {
-      return (
-        <div className="nexus-app dark-theme">
-          <GlobalAppStyles />
-          <LandingPage />
-        </div>
-      );
-    }
+  if (loading) {
     return (
-      <div className="nexus-app dark-theme">
-        <GlobalAppStyles />
-        <LoginScreen />
+      <div style={{ background: '#080a0f', height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="animate-pulse" style={{ color: '#3b82f6', fontSize: '18px', fontWeight: '900', letterSpacing: '0.1em' }}>NEXUS HUB</div>
       </div>
     );
   }
 
-  // 2. Foundation Steps (native onboarding)
-  if (showOnboarding && isNativeApp) return <Onboarding />;
+  // 1. Walkthrough / Onboarding (4 main functions)
+  if (showOnboarding) {
+    return (
+      <Suspense fallback={null}>
+        <Onboarding />
+      </Suspense>
+    );
+  }
 
-  // 3. Core Application Shell
+  // 2. Landing Page / Marketing (Skip on Native, show only on Web)
+  if (showLanding && !isLoggedIn && !isNativeApp) {
+    return (
+      <Suspense fallback={null}>
+        <LandingPage />
+      </Suspense>
+    );
+  }
+
+  // 3. Login Screen
+  if (!isLoggedIn) {
+    return (
+      <Suspense fallback={null}>
+        <LoginScreen />
+      </Suspense>
+    );
+  }
+
+  // 4. Main Application Shell (Authenticated)
   return (
-    <div className={`nexus-app dark-theme ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+    <div className="nexus-shell" style={{ 
+      background: '#080a0f', 
+      color: '#e2e8f0', 
+      height: '100dvh', 
+      display: 'flex', 
+      overflow: 'hidden',
+      position: 'relative'
+    }}>
       <GlobalAppStyles />
-      
-      <div className="nexus-layout">
-        {!isMobile && <Sidebar />}
-        
-        <main className="nexus-main">
-          <ViewRouter />
+      <Suspense fallback={null}>
+        {/* Sidebar for Desktop/Tablet */}
+        <ErrorBoundary name="Sidebar">
+          <Sidebar />
+        </ErrorBoundary>
+
+        {/* Main View Area */}
+        <main style={{ 
+          flex: 1, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          height: '100%',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          <ErrorBoundary name="ViewRouter">
+            <ViewRouter />
+          </ErrorBoundary>
+
+          {/* Mobile Bottom Navigation */}
+          <ErrorBoundary name="MobileNav">
+            <MobileBottomNav />
+          </ErrorBoundary>
         </main>
-
-        {isMobile && <MobileBottomNav />}
-      </div>
-
-      {/* Global Interactive Layers */}
-      <GlobalModalContainer />
-      <SystemBanners />
+      </Suspense>
     </div>
   );
 }
 
-/**
- * Nexus Hub Root Component
- * Handles the Provider wrapper and directs to the main content.
- */
 function App() {
-  return <AppContent />;
+  return (
+    <ErrorBoundary name="RootApp">
+      <AppContent />
+    </ErrorBoundary>
+  );
 }
 
 export default App;

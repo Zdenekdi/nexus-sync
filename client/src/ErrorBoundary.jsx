@@ -15,17 +15,24 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ height: '100vh', width: '100vw', background: '#05070a', color: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
-          <div style={{ width: '80px', height: '80px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '2rem', border: '1px solid #ef4444' }}>
+        <div style={{ height: '100vh', width: '100vw', background: '#05070a', color: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center', overflow: 'auto' }}>
+          <div style={{ width: '80px', height: '80px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem', border: '1px solid #ef4444' }}>
             <AlertTriangle color="#ef4444" size={40} />
           </div>
-          <h1 style={{ fontSize: '2rem', fontWeight: '900', marginBottom: '1rem' }}>Sakra, něco se pokazilo!</h1>
-          <p style={{ color: 'rgba(255,255,255,0.7)', maxWidth: '500px', lineHeight: '1.6', marginBottom: '2rem' }}>
-            Aplikace narazila na neočekávanou chybu. Zkuste ji restartovat tlačítkem níže nebo kontaktujte podporu.
-          </p>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '0.5rem', color: '#ef4444' }}>Kritická chyba renderu</h1>
+          
+          <div style={{ background: '#111', padding: '15px', borderRadius: '12px', textAlign: 'left', width: '100%', maxWidth: '600px', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '1.5rem' }}>
+            <p style={{ color: '#ef4444', fontWeight: 'bold', marginBottom: '10px', fontSize: '0.9rem' }}>
+              {this.state.error?.toString()}
+            </p>
+            <pre style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', whiteSpace: 'pre-wrap', maxHeight: '300px', overflow: 'auto' }}>
+              {this.state.error?.stack}
+            </pre>
+          </div>
+
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <button onClick={() => window.location.href = '/'} style={{ background: '#3b82f6', color: 'white', padding: '1rem 2rem', border: 'none', borderRadius: '12px', fontWeight: '800', cursor: 'pointer' }}>Restartovat aplikaci</button>
-            <button onClick={() => window.location.href = 'mailto:support@nexus-hub.ai'} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '1rem 2rem', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}>Kontaktovat podporu</button>
+            <button onClick={() => window.location.href = '/'} style={{ background: '#3b82f6', color: 'white', padding: '0.75rem 1.5rem', border: 'none', borderRadius: '10px', fontWeight: '800', cursor: 'pointer' }}>Zkusit znovu</button>
+            <button onClick={() => window.location.reload()} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '10px', fontWeight: '700', cursor: 'pointer' }}>Hard Reload</button>
           </div>
         </div>
       );

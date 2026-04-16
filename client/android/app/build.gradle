@@ -120,12 +120,12 @@ android {
         }
         nexusRelay {
             dimension "version"
-            applicationId "com.nexushub.relay"
+            applicationId "com.nexushub.app"
             versionNameSuffix "-relay"
             buildConfigField "String", "APP_VARIANT", "\"relay\""
             manifestPlaceholders = [
                 appName: "Nexus Relay",
-                appId: "com.nexushub.relay"
+                appId: "com.nexushub.app"
             ]
         }
     }
