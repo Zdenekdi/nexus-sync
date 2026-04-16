@@ -24,16 +24,15 @@ const InboxView = () => {
     handleDeleteNote, startCall, handleQuickSaveMeeting, showToast
   } = nexus;
   return (
-    <div style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden', position: 'relative' }} className="fade-in inbox-grid">
+    <div data-testid="page-inbox-container" style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden', position: 'relative' }} className="fade-in inbox-grid">
       {/* Column 1: Inbox List */}
       {(!isMobile || mobileView === 'list') && (
         <div className={`inbox-panel ${!selectedChatId ? 'active' : ''}`} style={{ width: isMobile ? '100%' : '380px', flexShrink: 0, borderRight: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column' }}>
           <div style={{ padding: '2rem 1.5rem', borderBottom: '1px solid var(--card-border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', gap: '1rem' }}>
-              <h2 style={{ fontSize: '1.5rem', whiteSpace: 'nowrap' }}>{t('inbox')}</h2>
+              <h2 data-testid="page-inbox-title" style={{ fontSize: '1.5rem', whiteSpace: 'nowrap' }}>{t('inbox')}</h2>
               <div style={{ position: 'relative', flex: 1, maxWidth: '200px' }}>
-                <select 
-                  value={activeProfileId} 
+                <select data-testid="input-profile-filter" value={activeProfileId} 
                   onChange={(e) => {
                     setActiveProfileId(e.target.value);
                     setSelectedChatId(null); 
@@ -61,7 +60,7 @@ const InboxView = () => {
             </div>
             <div style={{ position: 'relative' }}>
               <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-              <input type="text" placeholder={t('searchPlaceholder')} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.85rem 0.85rem 0.85rem 2.5rem', borderRadius: '12px', color: 'white' }} />
+              <input data-testid="input-search-chats" type="text" placeholder={t('searchPlaceholder')} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.85rem 0.85rem 0.85rem 2.5rem', borderRadius: '12px', color: 'white' }} />
             </div>
           </div>
           <div style={{ overflowY: 'auto', flex: 1 }}>
@@ -237,7 +236,7 @@ const InboxView = () => {
                             handleSendMessage(messageValue);
                           }
                         }}
-                        placeholder="Type a message..." 
+                        data-testid="input-message" placeholder="Type a message..." 
                         style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '1rem', borderRadius: '12px', color: 'white' }} 
                       />
                       <button 

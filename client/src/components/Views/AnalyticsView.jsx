@@ -13,7 +13,7 @@ const AnalyticsView = () => {
     operators: availableOperators 
   } = nexus;
   return (
-    <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
+    <div data-testid="page-analytics-container" style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
       <h2 style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '800', marginBottom: isMobile ? '1.5rem' : '2.5rem' }}>{t('agencyOverview')}</h2>
 
       {/* Top Metric Cards */}

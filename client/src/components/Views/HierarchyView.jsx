@@ -63,7 +63,7 @@ const HierarchyView = () => {
   const activeTiers = roleHierarchy.filter(role => groupedUsers[role].length > 0);
 
   return (
-    <div style={{ padding: isMobile ? '1.5rem 1rem' : '3rem', flex: 1, overflowY: 'auto', maxHeight: '100%', position: 'relative' }} className="fade-in custom-scrollbar">
+    <div data-testid="page-hierarchy-container" style={{ padding: isMobile ? '1.5rem 1rem' : '3rem', flex: 1, overflowY: 'auto', maxHeight: '100%', position: 'relative' }} className="fade-in custom-scrollbar">
       <div style={{ marginBottom: isMobile ? '2rem' : '4rem', textAlign: 'center' }}>
         <h2 style={{ fontSize: isMobile ? '1.75rem' : '2.5rem', fontWeight: '900', marginBottom: '0.5rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
           {t('teamHierarchy')}

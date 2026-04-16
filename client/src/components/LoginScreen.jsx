@@ -310,14 +310,30 @@ const LoginScreen = () => {
                     <label style={labelStyle}>{isCz ? 'E-mail' : 'Email'}</label>
                     <div style={{ position: 'relative' }}>
                       <Mail size={14} style={iconStyle} />
-                      <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@agency.com" required style={inputStyle} />
+                      <input 
+                        type="email" 
+                        value={email} 
+                        onChange={e => setEmail(e.target.value)} 
+                        placeholder="name@agency.com" 
+                        required 
+                        style={inputStyle} 
+                        data-testid="login-email"
+                      />
                     </div>
                   </div>
                   <div>
                     <label style={labelStyle}>{isCz ? 'Heslo' : 'Password'}</label>
                     <div style={{ position: 'relative' }}>
                       <Lock size={14} style={iconStyle} />
-                      <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required style={passwordInputStyle} />
+                      <input 
+                        type={showPassword ? 'text' : 'password'} 
+                        value={password} 
+                        onChange={e => setPassword(e.target.value)} 
+                        placeholder="••••••••" 
+                        required 
+                        style={passwordInputStyle} 
+                        data-testid="login-password"
+                      />
                       <button type="button" onClick={() => setShowPassword(v => !v)} style={eyeToggleStyle}>
                         {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                       </button>
@@ -326,13 +342,19 @@ const LoginScreen = () => {
                       {isCz ? 'Zapomenuté heslo?' : 'Forgot password?'}
                     </button>
                   </div>
-                  <button type="submit" disabled={loading} className="hover-bright" style={{
-                    width: '100%', padding: '0.75rem',
-                    background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                    color: 'white', border: 'none', borderRadius: '10px',
-                    fontSize: '0.85rem', fontWeight: '900', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginTop: '0.25rem'
-                  }}>
+                  <button 
+                    type="submit" 
+                    disabled={loading} 
+                    className="hover-bright" 
+                    data-testid="login-submit"
+                    style={{
+                      width: '100%', padding: '0.75rem',
+                      background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                      color: 'white', border: 'none', borderRadius: '10px',
+                      fontSize: '0.85rem', fontWeight: '900', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginTop: '0.25rem'
+                    }}
+                  >
                     {loading ? <Loader2 className="animate-spin" size={16} /> : <>{isCz ? 'Přihlásit' : 'Sign In'}<ArrowRight size={16} /></>}
                   </button>
                 </form>

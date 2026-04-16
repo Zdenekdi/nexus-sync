@@ -54,7 +54,7 @@ const ActivityView = () => {
   const actionColor = (action) => ACTION_COLORS[action] || ACTION_COLORS.DEFAULT;
 
   return (
-    <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto' }} className="fade-in custom-scrollbar">
+    <div data-testid="page-activity-container" style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto' }} className="fade-in custom-scrollbar">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '2rem', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : 0 }}>
         <div>
           <h2 style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '800' }}>
