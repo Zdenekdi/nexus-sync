@@ -61,26 +61,7 @@ export const NexusProvider = ({ children }) => {
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [editingProfileData, setEditingProfileData] = useState(null);
   
-  // Persist important UI states
-  React.useEffect(() => {
-    localStorage.setItem('nexus_lang', lang);
-    localStorage.setItem('nexus_active_tab', activeTab);
-    localStorage.setItem('nexus_active_market', activeMarket);
-    if (activeProfileId) localStorage.setItem('nexus_active_profile_id', activeProfileId);
-    
-    // Sync activeTab to URL without reloading to support browser refreshes on the same page
-    if (typeof window !== 'undefined') {
-      if (!isLoggedIn) {
-        if (!showLanding) {
-          window.history.replaceState(null, '', '/login');
-        } else if (window.location.pathname !== '/') {
-          window.history.replaceState(null, '', '/');
-        }
-      } else if (activeTab) {
-        window.history.replaceState(null, '', `/${activeTab}`);
-      }
-    }
-  }, [lang, activeTab, activeMarket, activeProfileId, isLoggedIn, showLanding]);
+
 
   const chatScrollRef = React.useRef(null);
   const isUserScrolled = React.useRef(false);
@@ -138,6 +119,28 @@ export const NexusProvider = ({ children }) => {
   });
   
   const { activeOperator: authUser, token, handleLogout: logout, isLoggedIn } = auth;
+  
+  // Persist important UI states
+  React.useEffect(() => {
+    localStorage.setItem('nexus_lang', lang);
+    localStorage.setItem('nexus_active_tab', activeTab);
+    localStorage.setItem('nexus_active_market', activeMarket);
+    if (activeProfileId) localStorage.setItem('nexus_active_profile_id', activeProfileId);
+    
+    // Sync activeTab to URL without reloading to support browser refreshes on the same page
+    if (typeof window !== 'undefined') {
+      if (!isLoggedIn) {
+        if (!showLanding) {
+          window.history.replaceState(null, '', '/login');
+        } else if (window.location.pathname !== '/') {
+          window.history.replaceState(null, '', '/');
+        }
+      } else if (activeTab) {
+        window.history.replaceState(null, '', `/${activeTab}`);
+      }
+    }
+  }, [lang, activeTab, activeMarket, activeProfileId, isLoggedIn, showLanding]);
+
   const [activeOperatorState, setActiveOperatorState] = useState(null);
   const [subscriptionPlans, setSubscriptionPlans] = useState([
     { id: 'basic', name: 'Basic', descriptionKey: 'basicDesc', prices: { cz: '2900', eu: '120', us: '130', uk: '110' }, profilesLimit: 5, features: ['feat_profiles', 'feat_analytics_basic', 'feat_support'] },
