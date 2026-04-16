@@ -14,9 +14,10 @@ import { NexusContext } from './NexusBaseContext';
 export { useNexus } from './NexusBaseContext';
 
 export const NexusProvider = ({ children }) => {
+  // 1. Core UI States
   const [lang, setLang] = useState(localStorage.getItem('nexus_lang') || 'cz');
   
-  // Define translation helper early to avoid ReferenceError in state initializers
+  // Translation helper - needed for useAuth
   const t = useCallback((key) => TRANSLATIONS[lang]?.[key] || key, [lang]);
 
   const [activeTab, setActiveTab] = useState(() => {
@@ -37,6 +38,7 @@ export const NexusProvider = ({ children }) => {
     }
     return true;
   });
+
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [onlineOnly, setOnlineOnly] = useState(false);
   const [mobileView, setMobileView] = useState('list'); // 'list', 'chat', 'details'
@@ -57,12 +59,21 @@ export const NexusProvider = ({ children }) => {
   const [isBugReportOpen, setIsBugReportOpen] = useState(false);
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [addUserModalAgencyId, setAddUserModalAgencyId] = useState(null);
-  
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [editingProfileData, setEditingProfileData] = useState(null);
-  
 
+  // 2. Authentication Hook (now initialized after required UI states)
+  const auth = useAuth({ 
+    API_BASE,
+    t,
+    setIsRelayMode: () => {}, 
+    setSelectedChatId: () => {}, 
+    setActiveProfileId, 
+    setShowLanding 
+  });
+  const { activeOperator: authUser, token, handleLogout: logout, isLoggedIn } = auth;
 
+  // 3. Other Core Components Logic
   const chatScrollRef = React.useRef(null);
   const isUserScrolled = React.useRef(false);
   const [messages, setMessages] = useState([]);
@@ -74,7 +85,6 @@ export const NexusProvider = ({ children }) => {
   const [chatHistory, setChatHistory] = useState([]);
   const [_toasts, _setToasts] = useState([]);
 
-  // Mobile and native platform detection
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
   const isNativeApp = useMemo(() => Capacitor.isNativePlatform(), []);
 
@@ -84,7 +94,6 @@ export const NexusProvider = ({ children }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Android hardware back button handler
   useEffect(() => {
     if (!isNativeApp) return;
     let listener;
@@ -102,44 +111,11 @@ export const NexusProvider = ({ children }) => {
     return () => { listener?.remove?.(); };
   }, [isNativeApp]);
 
-  // Lightweight showToast available to all context consumers
   const showToast = useCallback((message, type = 'info') => {
     const id = Date.now();
     _setToasts(prev => [...prev.slice(-4), { id, message, type }]);
     setTimeout(() => _setToasts(prev => prev.filter(t => t.id !== id)), 4000);
   }, []);
-  
-  const auth = useAuth({ 
-    API_BASE,
-    t,
-    setIsRelayMode: () => {}, 
-    setSelectedChatId: () => {}, 
-    setActiveProfileId, 
-    setShowLanding 
-  });
-  
-  const { activeOperator: authUser, token, handleLogout: logout, isLoggedIn } = auth;
-  
-  // Persist important UI states
-  React.useEffect(() => {
-    localStorage.setItem('nexus_lang', lang);
-    localStorage.setItem('nexus_active_tab', activeTab);
-    localStorage.setItem('nexus_active_market', activeMarket);
-    if (activeProfileId) localStorage.setItem('nexus_active_profile_id', activeProfileId);
-    
-    // Sync activeTab to URL without reloading to support browser refreshes on the same page
-    if (typeof window !== 'undefined') {
-      if (!isLoggedIn) {
-        if (!showLanding) {
-          window.history.replaceState(null, '', '/login');
-        } else if (window.location.pathname !== '/') {
-          window.history.replaceState(null, '', '/');
-        }
-      } else if (activeTab) {
-        window.history.replaceState(null, '', `/${activeTab}`);
-      }
-    }
-  }, [lang, activeTab, activeMarket, activeProfileId, isLoggedIn, showLanding]);
 
   const [activeOperatorState, setActiveOperatorState] = useState(null);
   const [subscriptionPlans, setSubscriptionPlans] = useState([
@@ -162,7 +138,6 @@ export const NexusProvider = ({ children }) => {
     }
   }, [token, API_BASE]);
 
-  // Global axios interceptor: auto-refresh on 401, logout if refresh fails
   useEffect(() => {
     const interceptor = axios.interceptors.response.use(
       (response) => response,
@@ -188,7 +163,6 @@ export const NexusProvider = ({ children }) => {
               }
             } catch { /* refresh failed */ }
           }
-          // Refresh failed or no refresh token — logout
           logout();
         }
         return Promise.reject(error);
@@ -228,7 +202,6 @@ export const NexusProvider = ({ children }) => {
       role: rawRole,
       originalRole: combined.role?.name || combined.role || rawRole,
       avatar: combined.avatar || (name ? name.charAt(0) : 'U'),
-      // Add explicit permission flags for UI components like InboxView
       isAdmin: rawRole === 'AGENCY ADMIN' || rawRole === 'OWNER',
       isManager: rawRole === 'MANAGER' || rawRole === 'SENIOR MANAGER' || rawRole === 'SENIOR OPERATOR',
       isAppOwner: rawRole === 'APP OWNER' || rawRole === 'SUPER_ADMIN',
@@ -238,11 +211,10 @@ export const NexusProvider = ({ children }) => {
 
   const { activeRole, isAllowed } = usePermissions(activeOperator, nexusData.rolePermissions);
 
-  // Real-time socket connection for messages, calls, and alerts
   const [incomingRelayCall, setIncomingRelayCall] = useState(null);
   const handleNewMessage = useCallback((data) => {
     if (data?.message) {
-      setMessages(prev => [...prev, data.message]);
+      setMessages(prev => [...prev.slice(-199), data.message]);
     }
   }, []);
   const handleMessageUpdated = useCallback((data) => {
@@ -250,20 +222,14 @@ export const NexusProvider = ({ children }) => {
       setMessages(prev => prev.map(m => m.id === data.message.id ? { ...m, ...data.message } : m));
     }
   }, []);
-  const handleIncomingCall = useCallback((data) => {
-    setIncomingRelayCall(data);
-  }, []);
+  const handleIncomingCall = useCallback((data) => setIncomingRelayCall(data), []);
   const handleEmergencyAlert = useCallback((_data) => {
     showToast(lang === 'cz' ? '🚨 Nouzový poplach!' : '🚨 Emergency alert!', 'error');
   }, [showToast, lang]);
-  const handleSipIncomingCall = useCallback((_data) => {
-    // SIP call metadata from relay device — supplementary to JsSIP WebRTC session
-    // SipManager handles the actual WebRTC call UI
-  }, []);
+  const handleSipIncomingCall = useCallback((_data) => {}, []);
 
   useSocket(token, handleNewMessage, handleMessageUpdated, handleIncomingCall, handleEmergencyAlert, handleSipIncomingCall);
 
-  // Push notifications — register FCM token on native platforms when logged in
   useEffect(() => {
     if (!isLoggedIn || !token) return;
     initPushNotifications(API_BASE, token, (notification, tapped) => {
@@ -287,7 +253,6 @@ export const NexusProvider = ({ children }) => {
       setJustLoggedOut(false);
       return true;
     }
-    // Show user-friendly error toast
     const errorMessages = {
       connectionError: lang === 'cz' ? 'Chyba připojení. Zkontrolujte internet.' : 'Connection error. Please check your internet.',
       loginError: lang === 'cz' ? 'Neplatné přihlašovací údaje.' : 'Invalid credentials.',
@@ -301,43 +266,23 @@ export const NexusProvider = ({ children }) => {
   
   const myProfiles = useMemo(() => {
     if (!activeOperator) return [];
-    
-    // Normalize IDs and role for matching
     const opId = String(activeOperator.id || activeOperator._id || '');
     const rawRoleStr = String(activeRole || '').toLowerCase();
-    
-    // High-level roles (Agency Admin, Manager, Senior Operator)
-    // should see all profiles returned by the backend (which are already agency-scoped).
-    const isAgencyLevel = 
-      rawRoleStr === 'agency admin' || 
-      rawRoleStr === 'manager' || 
-      rawRoleStr === 'senior operator';
-    
-    // If Agency-level role, skip further manual filtering (API already scopes it)
+    const isAgencyLevel = rawRoleStr === 'agency admin' || rawRoleStr === 'manager' || rawRoleStr === 'senior operator';
     if (isAgencyLevel) return profiles;
-    
-    // App Owner should see 0 models (unless explicitly assigned)
     if (rawRoleStr === 'app owner') return [];
 
-    // For standard Operators, only show explicitly assigned or owned profiles
     let filtered = profiles.filter(p => {
       if (!p) return false;
-      
       const asgs = Array.isArray(p.assignees) ? p.assignees : [];
       const ops = Array.isArray(p.operators) ? p.operators : [];
-      
       const isAssigneeMatch = asgs.some(a => String(a?.id || a?._id || a) === opId);
       const isOperatorMatch = ops.some(o => String(o?.id || o?._id || o) === opId);
-      
       const isOwnerMatch = String(p.userId || p.ownerId || '') === opId;
-      
       return isAssigneeMatch || isOperatorMatch || isOwnerMatch;
     });
 
-    if (onlineOnly) {
-      filtered = filtered.filter(p => p.status === 'online');
-    }
-
+    if (onlineOnly) filtered = filtered.filter(p => p.status === 'online');
     return filtered;
   }, [profiles, activeOperator, activeRole, onlineOnly]);
 
@@ -350,11 +295,10 @@ export const NexusProvider = ({ children }) => {
       setSubscriptionPlans(res.data);
     } catch (err) {
       console.error('Fetch plans error:', err);
-      showToast(lang === 'cz' ? 'Nepodařilo se načíst tarify.' : 'Failed to load plans.', 'error');
     } finally {
       setIsPlansLoading(false);
     }
-  }, [token, showToast, lang]);
+  }, [token, API_BASE]);
 
   const updatePlans = useCallback(async (newPlans) => {
     try {
@@ -366,12 +310,11 @@ export const NexusProvider = ({ children }) => {
       return { success: true };
     } catch (err) {
       console.error('Update plans error:', err);
-      const msg = err.response?.data?.error || err.message || 'Unknown error';
-      return { success: false, error: msg };
+      return { success: false, error: err.message };
     } finally {
       setIsPlansLoading(false);
     }
-  }, [token]);
+  }, [token, API_BASE]);
 
   const activeProfile = useMemo(() => 
     (profiles || []).find(p => p.id === activeProfileId) || (myProfiles || [])[0] || null,
@@ -379,23 +322,15 @@ export const NexusProvider = ({ children }) => {
   );
 
   const filteredMessages = useMemo(() => 
-    activeProfileId === 'all' 
-      ? (messages || []) 
-      : (messages || []).filter(m => m.profileId === activeProfile?.id),
+    activeProfileId === 'all' ? (messages || []) : (messages || []).filter(m => m.profileId === activeProfile?.id),
     [messages, activeProfile, activeProfileId]
   );
 
-  const selectedChat = useMemo(() => 
-     (messages || []).find(m => m.id === selectedChatId) || null,
-    [messages, selectedChatId]
-  );
+  const selectedChat = useMemo(() => (messages || []).find(m => m.id === selectedChatId) || null, [messages, selectedChatId]);
 
   const chatMessages = useMemo(() => {
     if (!selectedChatId) return [];
-    // If we have detailed history fetched, use it. Otherwise fallback to filtered global messages.
-    if (chatHistory?.[0] && chatHistory[0].chatId === selectedChatId) {
-      return chatHistory;
-    }
+    if (chatHistory?.[0] && chatHistory[0].chatId === selectedChatId) return chatHistory;
     return (messages || []).filter(m => m.chatId === selectedChatId);
   }, [messages, selectedChatId, chatHistory]);
 
@@ -406,18 +341,13 @@ export const NexusProvider = ({ children }) => {
       const res = await axios.get(`${API_BASE}/messages/${chatId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      // Normalize history messages
       const history = (res.data || []).map(m => ({
         ...m,
         time: new Date(m.createdAt).toLocaleTimeString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' }),
         senderName: m.sender?.name || null
       }));
       setChatHistory(history);
-    } catch (err) {
-      console.error('Failed to fetch chat messages:', err);
-    } finally {
-      setIsHistoryLoading(false);
-    }
+    } catch (err) { console.error('Failed to fetch chat messages:', err); } finally { setIsHistoryLoading(false); }
   }, [token, API_BASE, lang]);
 
   const totalUnread = useMemo(() => {
@@ -427,16 +357,7 @@ export const NexusProvider = ({ children }) => {
 
   const handleSendMessage = useCallback((text) => {
     if (!text.trim() || !selectedChatId) return;
-    const newMessage = {
-      id: Date.now(),
-      profileId: activeProfileId,
-      chatId: selectedChatId,
-      from: 'Nexus Hub',
-      direction: 'OUTBOUND',
-      text: text.trim(),
-      createdAt: new Date().toISOString(),
-      status: 'sent'
-    };
+    const newMessage = { id: Date.now(), profileId: activeProfileId, chatId: selectedChatId, from: 'Nexus Hub', direction: 'OUTBOUND', text: text.trim(), createdAt: new Date().toISOString(), status: 'sent' };
     setMessages(prev => [...prev, newMessage]);
     setMessageValue("");
   }, [selectedChatId, activeProfileId]);
@@ -444,33 +365,22 @@ export const NexusProvider = ({ children }) => {
   const handleTranslate = useCallback(async () => {
     if (!sourceText.trim()) return;
     setIsTranslating(true);
-    setTimeout(() => {
-      setTranslatedText(`[Translated to EN]: ${sourceText}`);
-      setIsTranslating(false);
-    }, 1000);
+    setTimeout(() => { setTranslatedText(`[Translated to EN]: ${sourceText}`); setIsTranslating(false); }, 1000);
   }, [sourceText]);
 
   const handleSaveNote = useCallback(() => {
     if (!internalNote.trim() || !selectedChatId || !selectedChat) return;
     const from = selectedChat.from;
     const newNote = { id: Date.now(), text: internalNote, author: activeOperator.name, timestamp: new Date().toLocaleTimeString() };
-    setClientNotes(prev => ({
-      ...prev,
-      [from]: [...(prev[from] || []), newNote]
-    }));
+    setClientNotes(prev => ({ ...prev, [from]: [...(prev[from] || []), newNote] }));
     setInternalNote("");
   }, [internalNote, selectedChatId, selectedChat, activeOperator]);
 
   const handleDeleteNote = useCallback((client, noteId) => {
-    setClientNotes(prev => ({
-      ...prev,
-      [client]: (prev[client] || []).filter(n => n.id !== noteId)
-    }));
+    setClientNotes(prev => ({ ...prev, [client]: (prev[client] || []).filter(n => n.id !== noteId) }));
   }, []);
 
-  const startCall = useCallback(() => {
-    showToast(lang === 'cz' ? 'Inicializace VoIP spojení...' : 'Initializing secure VoIP relay...', 'info');
-  }, [showToast, lang]);
+  const startCall = useCallback(() => showToast(lang === 'cz' ? 'Inicializace VoIP spojení...' : 'Initializing secure VoIP relay...', 'info'), [showToast, lang]);
 
   const handleQuickSaveMeeting = useCallback(() => {
     if (!detectedMeeting) return;
@@ -478,9 +388,7 @@ export const NexusProvider = ({ children }) => {
     setDetectedMeeting(null);
   }, [detectedMeeting, nexusData]);
 
-
   const value = {
-    // Basic UI and Logic
     t, lang, setLang,
     activeTab, setActiveTab,
     activeMarket, setActiveMarket,
@@ -495,14 +403,9 @@ export const NexusProvider = ({ children }) => {
     onRegisterUser: auth.handleRegisterUser,
     API_BASE,
     showLanding, setShowLanding,
-    updatePlans,
-    fetchPlans,
-    subscriptionPlans,
-    isPlansLoading,
-    showToast,
-    contextToasts: _toasts,
-    isMobile,
-    isNativeApp,
+    updatePlans, fetchPlans, subscriptionPlans, isPlansLoading,
+    showToast, contextToasts: _toasts,
+    isMobile, isNativeApp,
     isSidebarCollapsed, setIsSidebarCollapsed,
     mobileView, setMobileView,
     inlinePanelTab, setInlinePanelTab,
@@ -513,89 +416,31 @@ export const NexusProvider = ({ children }) => {
     typingProfiles, setTypingProfiles,
     showPanicConfirm, setShowPanicConfirm,
     chatScrollRef, isUserScrolled,
-    
-    // Relay call (from socket incoming_call event)
     incomingRelayCall, setIncomingRelayCall,
-
-    // Modals
     agencyDetailModalData, setAgencyDetailModalData,
     isAddAgencyOpen, setIsAddAgencyOpen,
     isBugReportOpen, setIsBugReportOpen,
     isAddUserOpen, setIsAddUserOpen,
     addUserModalAgencyId, setAddUserModalAgencyId,
-
-    // Agency / Infrastructure Mock Handlers
     handleAddAgency: () => setIsAddAgencyOpen(true),
     handleAgencyDetail: (agency) => setAgencyDetailModalData(agency),
-    handleImpersonateAgency: () => showToast(lang === 'cz' ? 'Tato sekce je v přípravě.' : 'This section is under development.', 'info'),
-    handleDeleteAgency: () => showToast(lang === 'cz' ? 'Tato sekce je v přípravě.' : 'This section is under development.', 'info'),
-    handleToggleAgencyStatus: () => showToast(lang === 'cz' ? 'Tato sekce je v přípravě.' : 'This section is under development.', 'info'),
-    
-    // Crucial handlers that were causing "not a function" errors
-    handleSendMessage, handleTranslate,
-    handleSaveNote, handleDeleteNote,
-    startCall, handleQuickSaveMeeting,
-    
-    // Explicit profile edit modal triggers
+    handleEditProfile: (profile) => { setEditingProfileData(profile); setIsEditProfileOpen(true); },
     isEditProfileOpen, setIsEditProfileOpen,
     editingProfileData, setEditingProfileData,
-    handleEditProfile: (profile) => {
-      setEditingProfileData(profile);
-      setIsEditProfileOpen(true);
-    },
-    
-    // Profiles and Selection
+    handleSendMessage, handleTranslate, handleSaveNote, handleDeleteNote, startCall, handleQuickSaveMeeting,
     activeProfile, activeProfileId, setActiveProfileId,
-    profiles, myProfiles,
-    assignedProfiles: myProfiles,
+    profiles, myProfiles, assignedProfiles: myProfiles,
     onlineOnly, setOnlineOnly,
-    
-    // Chat Logic
     totalUnread, messages, filteredMessages,
     selectedChatId, setSelectedChatId,
-    selectedChat, chatMessages, chatHistory, fetchChatMessages, 
+    selectedChat, chatMessages, chatHistory, fetchChatMessages,
     isHistoryLoading, setIsHistoryLoading,
     messageValue, setMessageValue,
-    
-    // Calendar logic
     calViewDate, setCalViewDate,
-    
-    // Admin Referrals logic
-    fetchAllReferrals: async () => {
-      try {
-        const res = await axios.get(`${API_BASE}/referrals/admin/all`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        return res.data;
-      } catch (err) {
-        console.error('Fetch all referrals error:', err);
-        showToast(lang === 'cz' ? 'Nepodařilo se načíst všechna doporučení.' : 'Failed to fetch all referrals.', 'error');
-        return [];
-      }
-    },
-    handleConfirmReferral: async (referralId, amount) => {
-      try {
-        const res = await axios.post(`${API_BASE}/referrals/${referralId}/confirm`, { rewardAmount: amount }, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        showToast(lang === 'cz' ? 'Doporučení potvrzeno ✓' : 'Referral confirmed ✓', 'success');
-        return { success: true, data: res.data };
-      } catch (err) {
-        console.error('Confirm referral error:', err);
-        const msg = err.response?.data?.message || (lang === 'cz' ? 'Chyba při potvrzování.' : 'Confirmation failed.');
-        showToast(msg, 'error');
-        return { success: false };
-      }
-    },
-
-    // Global Settings logic
-    globalSettings,
-    fetchGlobalSettings,
+    globalSettings, fetchGlobalSettings,
     handleUpdateGlobalSetting: async (key, value) => {
       try {
-        const res = await axios.post(`${API_BASE}/admin/settings`, { key, value }, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await axios.post(`${API_BASE}/admin/settings`, { key, value }, { headers: { Authorization: `Bearer ${token}` } });
         setGlobalSettings(prev => {
           const exists = prev.find(s => s.key === key);
           if (exists) return prev.map(s => s.key === key ? res.data : s);
@@ -603,14 +448,8 @@ export const NexusProvider = ({ children }) => {
         });
         showToast(lang === 'cz' ? 'Nastavení uloženo ✓' : 'Setting saved ✓', 'success');
         return { success: true, data: res.data };
-      } catch (err) {
-        console.error('Update setting error:', err);
-        showToast(lang === 'cz' ? 'Chyba při ukládání.' : 'Failed to save setting.', 'error');
-        return { success: false };
-      }
+      } catch (err) { return { success: false }; }
     },
-
-    // Data from useNexusData
     ...nexusData
   };
 
@@ -620,35 +459,40 @@ export const NexusProvider = ({ children }) => {
     }
   }, [isLoggedIn, authUser, fetchGlobalSettings]);
 
+  // Consolidated Persistence & URL Routing Logic
+  useEffect(() => {
+    localStorage.setItem('nexus_lang', lang);
+    localStorage.setItem('nexus_active_tab', activeTab);
+    localStorage.setItem('nexus_active_market', activeMarket);
+    if (activeProfileId) localStorage.setItem('nexus_active_profile_id', activeProfileId);
+    
+    if (typeof window !== 'undefined') {
+      const currentPath = window.location.pathname;
+      if (!isLoggedIn) {
+        if (!showLanding) {
+          if (currentPath !== '/login') window.history.replaceState(null, '', '/login');
+        } else {
+          if (currentPath !== '/') window.history.replaceState(null, '', '/');
+        }
+      } else {
+        const targetPath = `/${activeTab}`;
+        if (activeTab && currentPath !== targetPath) {
+          window.history.replaceState(null, '', targetPath);
+        }
+      }
+    }
+  }, [lang, activeTab, activeMarket, activeProfileId, isLoggedIn, showLanding]);
+
   return (
     <NexusContext.Provider value={value}>
       {children}
-      {/* Context-level toast display */}
-      <style>{`
-        @keyframes toastProgressShrink {
-          from { width: 100%; }
-          to { width: 0%; }
-        }
-      `}</style>
       {_toasts.length > 0 && (
-        <div role="alert" aria-live="polite" style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 99999, display: 'flex', flexDirection: 'column', gap: '0.5rem', pointerEvents: 'none' }}>
-          {_toasts.map(toast => {
-            const bg = toast.type === 'error' ? '#ef4444' : toast.type === 'success' ? '#22c55e' : toast.type === 'warning' ? '#f59e0b' : '#3b82f6';
-            return (
-              <div key={toast.id} style={{
-                pointerEvents: 'auto', position: 'relative', overflow: 'hidden',
-                padding: '0.75rem 1.25rem', borderRadius: '12px', fontWeight: '700', fontSize: '0.85rem',
-                color: 'white', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', animation: 'fadeIn 0.3s ease',
-                background: bg
-              }}>
-                {toast.message}
-                <div style={{ position: 'absolute', bottom: 0, left: 0, height: '3px', background: 'rgba(255,255,255,0.35)', animation: 'toastProgressShrink 4s linear forwards' }} />
-              </div>
-            );
-          })}
+        <div style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 99999, display: 'flex', flexDirection: 'column', gap: '0.5rem', pointerEvents: 'none' }}>
+          {_toasts.map(toast => (
+            <div key={toast.id} style={{ pointerEvents: 'auto', padding: '0.75rem 1.25rem', borderRadius: '12px', color: 'white', background: toast.type === 'error' ? '#ef4444' : '#3b82f6' }}>{toast.message}</div>
+          ))}
         </div>
       )}
     </NexusContext.Provider>
   );
 };
-
