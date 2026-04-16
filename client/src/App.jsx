@@ -12,12 +12,22 @@ const Onboarding = lazy(() => import('./components/Onboarding'));
 const LoginScreen = lazy(() => import('./components/LoginScreen'));
 
 function AppContent() {
-  const { isLoggedIn, loading, showLanding, showOnboarding, isNativeApp } = useNexus();
+  const { isLoggedIn, loading, showLanding, showOnboarding, isNativeApp, activeOperator } = useNexus();
 
-  if (loading) {
+  // Show loading screen during initial boot OR during login transition (no operator data yet)
+  if (loading || (isLoggedIn && !activeOperator)) {
     return (
-      <div style={{ background: '#080a0f', height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="animate-pulse" style={{ color: '#3b82f6', fontSize: '18px', fontWeight: '900', letterSpacing: '0.1em' }}>NEXUS HUB</div>
+      <div style={{ 
+        background: '#080a0f', 
+        height: '100dvh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        flexDirection: 'column',
+        gap: '1rem'
+      }}>
+        <div className="animate-pulse" style={{ color: '#3b82f6', fontSize: '24px', fontWeight: '900', letterSpacing: '0.2em' }}>NEXUS HUB</div>
+        <div style={{ color: '#475569', fontSize: '11px', fontWeight: '700', letterSpacing: '0.1em' }}>INITIALIZING SECURE SESSION...</div>
       </div>
     );
   }

@@ -39,17 +39,17 @@ const DashboardHome = () => {
     const alerts = [];
     if (activeSubscription) {
       const now = new Date();
-      const expiresAt = new Date(activeSubscription.expiresAt);
+      const expiresAt = new Date(activeSubscription?.expiresAt || now);
       const daysLeft = Math.max(0, Math.ceil((expiresAt - now) / 86400000));
-      const status = activeSubscription.status;
+      const status = activeSubscription?.status;
       if (status === 'EXPIRED') {
         alerts.push({ message: isCz ? 'Vaše předplatné vypršelo! Obnovte ho pro pokračování.' : 'Your subscription has expired! Renew to continue.', color: '#ef4444' });
       } else if (status === 'TRIAL' && daysLeft < 7) {
         alerts.push({ message: isCz ? `Zkušební doba končí za ${daysLeft} dní` : `Trial expires in ${daysLeft} days`, color: '#f59e0b' });
       }
     }
-    const myAgency = (agencies || [])[0];
-    const hasProfilesInAgency = stats?.totalProfiles > 0 || stats?.activeProfiles > 0 || (myAgency && myAgency.totalProfiles > 0);
+    const myAgency = (agencies || [])?.[0];
+    const hasProfilesInAgency = (stats?.totalProfiles || 0) > 0 || (stats?.activeProfiles || 0) > 0 || (myAgency?.totalProfiles || 0) > 0;
     
     if (!hasProfilesInAgency && (_profiles || []).length === 0 && (activeRole === 'App Owner' || activeRole === 'Agency Admin' || activeRole === 'Manager')) {
       alerts.push({ message: isCz ? 'Vytvořte svůj první profil a začněte' : 'Create your first profile to get started', color: '#3b82f6' });
@@ -66,6 +66,10 @@ const DashboardHome = () => {
       </div>
     );
   };
+
+  const isAppOwner = activeRole === 'App Owner';
+  const isManager = activeRole === 'Agency Admin' || activeRole === 'Manager';
+  const isModel = activeRole === 'Model';
 
   const SkeletonCard = ({ height = '80px', style: extra }) => (
     <div className="skeleton" style={{ height, borderRadius: '15px', ...extra }} />
@@ -488,11 +492,6 @@ const DashboardHome = () => {
       )}
     </div>
   );
-
-  if (!user) return null;
-  const isAppOwner = activeRole === 'App Owner';
-  const isManager = activeRole === 'Agency Admin' || activeRole === 'Manager';
-  const isModel = activeRole === 'Model';
 
   return (
     <div style={{ 
