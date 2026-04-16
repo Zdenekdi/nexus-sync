@@ -28,7 +28,7 @@
     "android:sync": "cd client && npx cap sync android",
     "emulator:list": "~/Library/Android/sdk/emulator/emulator -list-avds",
     "emulator:start": "~/Library/Android/sdk/emulator/emulator -avd",
-    "build:android:apk": "npm run build:client && npx cap sync android && cd client/android && ./gradlew assembleNexusRelayDebug",
+    "build:android:apk": "npm run build:client && cd client && npx cap sync android && cd android && ./gradlew assembleNexusRelayDebug",
     "test:report": "npx playwright show-report"
   },
   "dependencies": {

@@ -15,6 +15,9 @@ const LoginScreen = () => {
   const [loading, setLoading] = useState(false);
   const [createdInviteCode, setCreatedInviteCode] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
 
   // Password visibility toggles
   const [showPassword, setShowPassword] = useState(false);
@@ -125,19 +128,25 @@ const LoginScreen = () => {
     }
   };
 
-  const handleForgotPassword = async () => {
-    const resetEmail = window.prompt(isCz ? 'Zadejte svůj e-mail pro reset hesla:' : 'Enter your email to reset password:');
-    if (!resetEmail) return;
-    if (!emailRegex.test(resetEmail)) {
+  const handleForgotPassword = () => {
+    setShowResetModal(true);
+    setResetEmail(email); // Prefill if user typed it
+  };
+
+  const submitResetRequest = async (e) => {
+    e.preventDefault();
+    if (!resetEmail || !emailRegex.test(resetEmail)) {
       showToast(isCz ? 'Zadejte platný e-mail' : 'Please enter a valid email', 'error');
       return;
     }
+    setResetLoading(true);
     try {
       await axios.post(`${API_BASE}/auth/reset-password-request`, { email: resetEmail });
-      showToast(isCz ? 'Odkaz pro reset hesla byl odeslán na váš e-mail' : 'Password reset link has been sent to your email', 'success');
+      showToast(isCz ? 'Odkaz pro reset hesla byl odeslán' : 'Password reset link sent', 'success');
+      setShowResetModal(false);
     } catch (err) {
-      showToast(isCz ? 'Chyba při odesílání resetu' : 'Error sending reset request', 'error');
-    }
+      showToast(isCz ? 'Chyba při odesílání' : 'Error sending request', 'error');
+    } finally { setResetLoading(false); }
   };
 
   const getPasswordStrength = (pw) => {
@@ -283,14 +292,20 @@ const LoginScreen = () => {
           <>
             <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '3px', border: '1px solid rgba(255,255,255,0.05)' }}>
               {['login', 'register-agency', 'join-agency'].map(t => (
-                <button key={t} onClick={() => setTab(t)} style={{
-                  flex: 1, padding: '0.5rem 0.25rem', border: 'none',
-                  background: tab === t ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
-                  color: tab === t ? '#60a5fa' : '#64748b',
-                  borderRadius: '10px', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  borderBottom: tab === t ? '2px solid #3b82f6' : '2px solid transparent'
-                }}>
+                <button 
+                  key={t} 
+                  id={`tab-btn-${t}`}
+                  data-testid={`tab-${t}`}
+                  onClick={() => setTab(t)} 
+                  style={{
+                    flex: 1, padding: '0.5rem 0.25rem', border: 'none',
+                    background: tab === t ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+                    color: tab === t ? '#60a5fa' : '#64748b',
+                    borderRadius: '10px', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    borderBottom: tab === t ? '2px solid #3b82f6' : '2px solid transparent'
+                  }}
+                >
                   {tabLabels[t]}
                 </button>
               ))}
@@ -314,10 +329,10 @@ const LoginScreen = () => {
                         type="email" 
                         value={email} 
                         onChange={e => setEmail(e.target.value)} 
-                        placeholder="name@agency.com" 
-                        required 
-                        style={inputStyle} 
+                        id="login-email"
+                        name="email"
                         data-testid="login-email"
+                        autoFocus
                       />
                     </div>
                   </div>
@@ -331,7 +346,7 @@ const LoginScreen = () => {
                         onChange={e => setPassword(e.target.value)} 
                         placeholder="••••••••" 
                         required 
-                        style={passwordInputStyle} 
+                        id="login-password"
                         data-testid="login-password"
                       />
                       <button type="button" onClick={() => setShowPassword(v => !v)} style={eyeToggleStyle}>
@@ -345,7 +360,7 @@ const LoginScreen = () => {
                   <button 
                     type="submit" 
                     disabled={loading} 
-                    className="hover-bright" 
+                    id="login-submit"
                     data-testid="login-submit"
                     style={{
                       width: '100%', padding: '0.75rem',
@@ -511,6 +526,66 @@ const LoginScreen = () => {
           .hover-bright:hover { filter: brightness(1.1); transform: translateY(-1px); }
           .hover-bright:active { transform: translateY(0); }
         `}</style>
+
+        {/* RESET PASSWORD MODAL */}
+        {showResetModal && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100dvh',
+            background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 10000, padding: '1rem', animation: 'fadeIn 0.3s ease'
+          }}>
+            <div className="glass-card" style={{
+              width: '100%', maxWidth: '340px', padding: '1.5rem', borderRadius: '24px',
+              background: '#0a0d14', border: '1px solid rgba(255,255,255,0.1)',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
+            }}>
+              <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                <div style={{ width: '40px', height: '40px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                  <KeyRound size={20} color="#3b82f6" />
+                </div>
+                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '900', color: 'white' }}>{isCz ? 'Zapomenuté heslo' : 'Forgot Password'}</h3>
+                <p style={{ color: '#64748b', fontSize: '0.8rem', marginTop: '0.5rem' }}>{isCz ? 'Zadejte svůj e-mail a my vám pošleme odkaz pro obnovení' : 'Enter your email and we\'ll send you a recovery link'}</p>
+              </div>
+
+              <form onSubmit={submitResetRequest} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div>
+                  <label style={labelStyle}>{isCz ? 'E-mail' : 'Email'}</label>
+                  <div style={{ position: 'relative' }}>
+                    <Mail size={14} style={iconStyle} />
+                    <input 
+                      type="email" 
+                      value={resetEmail} 
+                      onChange={e => setResetEmail(e.target.value)} 
+                      placeholder="you@email.com" 
+                      required 
+                      style={inputStyle} 
+                      data-testid="reset-email-input"
+                    />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                  <button type="button" onClick={() => setShowResetModal(false)} style={{
+                    flex: 1, padding: '0.75rem', background: 'transparent',
+                    border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8',
+                    borderRadius: '10px', fontSize: '0.85rem', fontWeight: '800', cursor: 'pointer'
+                  }}>{isCz ? 'Zrušit' : 'Cancel'}</button>
+                  <button type="submit" disabled={resetLoading} style={{
+                    flex: 2, padding: '0.75rem', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                    color: 'white', border: 'none', borderRadius: '10px',
+                    fontSize: '0.85rem', fontWeight: '900', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+                  }}>
+                    {resetLoading ? <Loader2 className="animate-spin" size={16} /> : (isCz ? 'Odeslat' : 'Send')}
+                  </button>
+                </div>
+              </form>
+            </div>
+            <style>{`
+              @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            `}</style>
+          </div>
+        )}
       </div>
     </div>
   );

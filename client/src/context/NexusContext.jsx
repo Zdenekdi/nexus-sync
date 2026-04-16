@@ -250,14 +250,18 @@ export const NexusProvider = ({ children }) => {
     const base = authUser || {};
     const update = activeOperatorState || {};
     const combined = { ...base, ...update };
-    if (!combined.id && !combined._id && !combined.userId && !isLoggedIn) return null;
+    const finalId = combined.id || combined._id || combined.userId;
+    
+    // CRITICAL: If we don't have a valid ID yet, we are still in a transient state.
+    // Return null to keep App.jsx in Loading state until the profile is fully synced.
+    if (!finalId) return null;
     
     const rawRole = (combined.role?.name || combined.role || '').toUpperCase();
     const name = combined.fullname || combined.name || combined.username || (combined.email ? combined.email.split('@')[0] : '');
     
     return {
       ...combined,
-      id: combined.id || combined._id || combined.userId,
+      id: finalId,
       name: name || 'User',
       role: rawRole,
       originalRole: combined.role?.name || combined.role || rawRole,
