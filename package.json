@@ -24,9 +24,11 @@
     "test:mobile": "npx playwright test tests/mobile_navigation.spec.js --project=mobile",
     "test:profiles": "npx playwright test tests/sidebar_profiles.spec.js --project=chromium",
     "test:android:native": "npx playwright test tests/android/native_app_smoke.spec.js --config=playwright.android.config.js",
+    "test:android:prod": "export NODE_ENV=production && npx playwright test tests/android/native_app_smoke.spec.js --config=playwright.android.config.js",
     "android:sync": "cd client && npx cap sync android",
     "emulator:list": "~/Library/Android/sdk/emulator/emulator -list-avds",
     "emulator:start": "~/Library/Android/sdk/emulator/emulator -avd",
+    "build:android:apk": "npm run build:client && npx cap sync android && cd client/android && ./gradlew assembleNexusRelayDebug",
     "test:report": "npx playwright show-report"
   },
   "dependencies": {
