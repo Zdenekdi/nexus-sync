@@ -39,7 +39,7 @@ test.describe('Nexus Hub Multi-Role Smoke', () => {
 
   test('Login & Dashboard — Senior Operator', async ({ page }) => {
     await doLogin(page, 'alice@nexus.sync', 'password123');
-    await expect(page.locator('nav').getByText(/kalendář|schedule|calendar/i).first()).toBeVisible({ timeout: 30000 });
+    await expect(page.getByTestId('nav-link-calendar')).toBeVisible({ timeout: 30000 });
   });
 
   test('Login & Dashboard — Model', async ({ page }) => {
