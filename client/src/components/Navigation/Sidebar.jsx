@@ -200,9 +200,9 @@ const Sidebar = () => {
               </div>
             )}
 
-            {/* My Girls Section - Only for Operators and Senior Operators */}
-            {(activeRole === 'Operator' || activeRole === 'Senior Operator') && !isSidebarCollapsed && (
-              <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column' }}>
+            {/* My Girls Section - Expanded for relevant roles */}
+            {['Operator', 'Senior Operator', 'Manager', 'Agency Admin'].includes(activeRole) && !isSidebarCollapsed && (
+              <div data-testid="my-girls-section" style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.15rem', marginBottom: '0.75rem' }}>
                   <div style={{ fontSize: '0.65rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{capitalize(t('myAssignedGirls'))}</div>
                   
@@ -249,7 +249,13 @@ const Sidebar = () => {
                   {(myProfiles || []).map(p => {
                     const isActive = activeProfile?.id === p.id;
                     return (
-                      <button key={p.id} onMouseDown={() => { setActiveProfileId(p.id); setActiveTab('inbox'); }} onClick={() => { setActiveProfileId(p.id); setActiveTab('inbox'); }} style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.6rem 1.15rem', borderRadius: '12px', cursor: 'pointer', textAlign: 'left', background: isActive ? 'rgba(59, 130, 246, 0.08)' : 'transparent', border: 'none' }}>
+                      <button 
+                        key={p.id} 
+                        data-testid={`assigned-profile-item-${p.id}`}
+                        onMouseDown={() => { setActiveProfileId(p.id); setActiveTab('inbox'); }} 
+                        onClick={() => { setActiveProfileId(p.id); setActiveTab('inbox'); }} 
+                        style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.6rem 1.15rem', borderRadius: '12px', cursor: 'pointer', textAlign: 'left', background: isActive ? 'rgba(59, 130, 246, 0.08)' : 'transparent', border: 'none' }}
+                      >
                         <div style={{ width: '6px', height: '6px', background: p.status === 'online' ? 'var(--success-color)' : 'rgba(255,255,255,0.1)', borderRadius: '50%' }}></div>
                         <div style={{ flex: 1, minWidth: 0, fontSize: '0.85rem', fontWeight: isActive ? '800' : '600', color: isActive ? 'white' : 'rgba(255,255,255,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
                       </button>

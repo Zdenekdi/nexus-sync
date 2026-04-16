@@ -180,6 +180,7 @@ const PermissionsDashboard = ({ agencyId = null, onUpdate = null }) => {
                               </div>
                               <div 
                                 onClick={() => !isAppOwner && handleToggle(roleData.id, permKey)}
+                                data-testid={`perm-toggle-${roleData.id}-${permKey}`}
                                 className={`toggle-switch ${isEnabled ? 'active' : ''}`}
                                 style={{ 
                                   width: '38px', height: '20px', background: isEnabled ? (isAppOwner ? 'rgba(251, 191, 36, 0.7)' : category.color) : 'rgba(255,255,255,0.05)',
@@ -203,6 +204,7 @@ const PermissionsDashboard = ({ agencyId = null, onUpdate = null }) => {
                 {!isAppOwner && (
                   <button 
                     onClick={() => handleSave(roleData.id)}
+                    data-testid={`save-permissions-${roleData.id}`}
                     disabled={isSaving}
                     style={{ 
                       width: '100%', padding: '1rem', background: 'var(--accent-color)', color: 'white', 
