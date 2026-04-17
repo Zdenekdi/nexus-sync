@@ -14,24 +14,7 @@ const LoginScreen = lazy(() => import('./components/LoginScreen'));
 function AppContent() {
   const { isLoggedIn, token, loading, showLanding, showOnboarding, isNativeApp, activeOperator } = useNexus();
 
-  // Show loading screen ONLY for authenticated users waiting for data hydration
-  // This prevents the loading screen from blocking Onboarding/Login for new users or crawlers
-  if (isLoggedIn && token && loading) {
-    return (
-      <div style={{ 
-        background: '#080a0f', 
-        height: '100dvh', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        flexDirection: 'column',
-        gap: '1rem'
-      }}>
-        <div className="animate-pulse" style={{ color: '#3b82f6', fontSize: '24px', fontWeight: '900', letterSpacing: '0.2em' }}>NEXUS HUB</div>
-        <div style={{ color: '#475569', fontSize: '11px', fontWeight: '700', letterSpacing: '0.1em' }}>INITIALIZING SECURE SESSION...</div>
-      </div>
-    );
-  }
+
 
   // 1. Walkthrough / Onboarding (4 main functions)
   if (showOnboarding) {

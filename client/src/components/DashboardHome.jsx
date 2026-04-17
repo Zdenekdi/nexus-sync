@@ -72,7 +72,7 @@ const DashboardHome = () => {
   const isModel = activeRole === 'Model';
 
   const SkeletonCard = ({ height = '80px', style: extra }) => (
-    <div className="skeleton" style={{ height, borderRadius: '15px', ...extra }} />
+    <div className="skeleton" style={{ height, borderRadius: '15px', background: 'rgba(255,255,255,0.08)', ...extra }} />
   );
 
   const SkeletonGrid = ({ columns = 3 }) => (
@@ -414,21 +414,27 @@ const DashboardHome = () => {
       <div style={{ marginBottom: isMobile ? '1.5rem' : '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'center' : 'flex-end', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : 0 }}>
         <div style={{ textAlign: isMobile ? 'center' : 'left' }}>
           <h2 style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>{(t('personalWorkspace') || 'Workspace')}</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.85rem' : '1rem' }}>{t('welcomeBack')}, {user?.name}.</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.85rem' : '1rem' }}>{t('welcomeBack')}, {user?.name || 'User'}.</p>
         </div>
       </div>
 
       {stats === null || stats === undefined ? (
-        <>
-          <SkeletonGrid columns={isMobile ? 1 : 2} />
-          <SkeletonCard height="260px" />
-        </>
+        <div style={{ 
+          display: 'flex', flex: 1, flexDirection: 'column', alignItems: 'center', 
+          justifyContent: 'center', minHeight: '300px', gap: '1rem',
+          background: 'rgba(255,255,255,0.02)', borderRadius: '20px', border: '1px dashed rgba(255,255,255,0.05)'
+        }}>
+          <Loader2 className="animate-spin" size={32} color="#3b82f6" />
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em' }}>
+            {isCz ? 'SYNCHRONIZUJI DATA...' : 'SYNCING REAL-TIME DATA...'}
+          </div>
+        </div>
       ) : (
       <>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 2fr) minmax(300px, 1fr)', gap: isMobile ? '1rem' : '2rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '1rem' : '1.5rem', minWidth: 0 }}>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))', gap: isMobile ? '1rem' : '1.5rem' }}>
-            <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center' }}>
+            <div className="glass-card" id="dashboard-stats-messages" style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center' }}>
                <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('messages')}</div>
                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
                  <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>{stats?.totalMessages || 0}</div>

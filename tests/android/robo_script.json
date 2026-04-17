@@ -1,27 +1,44 @@
 [
   {
     "eventType": "VIEW_CLICKED",
-    "elementDescriptors": [{ "resourceId": "onboarding-next" }]
+    "elementDescriptors": [
+      { "resourceId": "onboarding-next" },
+      { "text": "Pokračovat →" }
+    ]
   },
   {
     "eventType": "VIEW_CLICKED",
-    "elementDescriptors": [{ "resourceId": "onboarding-next" }]
+    "elementDescriptors": [
+      { "resourceId": "onboarding-next" },
+      { "text": "Pokračovat →" }
+    ]
   },
   {
     "eventType": "VIEW_CLICKED",
-    "elementDescriptors": [{ "resourceId": "onboarding-next" }]
+    "elementDescriptors": [
+      { "resourceId": "onboarding-next" },
+      { "text": "Pokračovat →" }
+    ]
   },
   {
     "eventType": "VIEW_CLICKED",
-    "elementDescriptors": [{ "resourceId": "onboarding-finish" }]
+    "elementDescriptors": [
+      { "resourceId": "onboarding-finish" },
+      { "text": "Vstoupit do aplikace →" }
+    ]
   },
   {
     "eventType": "VIEW_CLICKED",
-    "elementDescriptors": [{ "resourceId": "tab-btn-login" }]
+    "elementDescriptors": [
+      { "resourceId": "tab-btn-login" },
+      { "text": "Přihlášení" }
+    ]
   },
   {
     "eventType": "VIEW_CLICKED",
-    "elementDescriptors": [{ "resourceId": "login-email" }]
+    "elementDescriptors": [
+      { "resourceId": "login-email" }
+    ]
   },
   {
     "eventType": "VIEW_TEXT_CHANGED",
@@ -30,7 +47,9 @@
   },
   {
     "eventType": "VIEW_CLICKED",
-    "elementDescriptors": [{ "resourceId": "login-password" }]
+    "elementDescriptors": [
+      { "resourceId": "login-password" }
+    ]
   },
   {
     "eventType": "VIEW_TEXT_CHANGED",
@@ -39,10 +58,15 @@
   },
   {
     "eventType": "VIEW_CLICKED",
-    "elementDescriptors": [{ "resourceId": "login-submit" }]
+    "elementDescriptors": [
+      { "resourceId": "login-submit" },
+      { "text": "Přihlásit" }
+    ]
   },
   {
     "eventType": "VIEW_CLICKED",
-    "elementDescriptors": [{ "resourceId": "dashboard-welcome-title" }]
+    "elementDescriptors": [
+      { "resourceId": "dashboard-stats-messages" }
+    ]
   }
 ]
