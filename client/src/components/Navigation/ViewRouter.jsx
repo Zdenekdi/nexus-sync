@@ -22,7 +22,8 @@ const lazyWithRetry = (componentImport) =>
   });
 
 // Views
-const DashboardHome = lazyWithRetry(() => import('../DashboardHome'));
+import DashboardHome from '../DashboardHome';
+// const DashboardHome = lazyWithRetry(() => import('../DashboardHome'));
 const OperationsUnit = lazyWithRetry(() => import('../Units/OperationsUnit'));
 const AgencyUnit = lazyWithRetry(() => import('../Units/AgencyUnit'));
 const InfrastructureUnit = lazyWithRetry(() => import('../Units/InfrastructureUnit'));
