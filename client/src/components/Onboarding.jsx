@@ -284,8 +284,10 @@ const Onboarding = () => {
         zIndex: 10,
       }}>
         {isLast ? (
-          <button
+            <button
             onClick={handleComplete}
+            data-testid="onboarding-finish"
+            id="onboarding-finish"
             style={{
               width: '100%',
               padding: '1rem',
@@ -308,6 +310,8 @@ const Onboarding = () => {
         ) : (
           <button
             onClick={next}
+            data-testid="onboarding-next"
+            id="onboarding-next"
             style={{
               width: '100%',
               padding: '1rem',
