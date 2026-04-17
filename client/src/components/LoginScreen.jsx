@@ -332,7 +332,6 @@ const LoginScreen = () => {
                         id="login-email"
                         name="email"
                         data-testid="login-email"
-                        autoFocus
                         style={{
                           width: '100%',
                           padding: '0.75rem 0.85rem 0.75rem 2.4rem',

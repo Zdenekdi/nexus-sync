@@ -26,12 +26,6 @@
   {
     "eventType": "VIEW_CLICKED",
     "elementDescriptors": [
-      { "resourceId": "tab-btn-login" }
-    ]
-  },
-  {
-    "eventType": "VIEW_CLICKED",
-    "elementDescriptors": [
       { "resourceId": "login-email" }
     ]
   },
