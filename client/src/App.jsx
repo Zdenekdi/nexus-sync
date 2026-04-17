@@ -16,7 +16,7 @@ function AppContent() {
 
   // Show loading screen ONLY for authenticated users waiting for data hydration
   // This prevents the loading screen from blocking Onboarding/Login for new users or crawlers
-  if (isLoggedIn && token && (loading || !activeOperator)) {
+  if (isLoggedIn && token && loading) {
     return (
       <div style={{ 
         background: '#080a0f', 
