@@ -280,6 +280,7 @@ const LandingPage = () => {
           onClick={onLoginClick}
           className="premium-button-lg fade-in-up"
           data-testid="landing-enter-button"
+          id="landing-enter-button"
           style={{ 
             padding: isMobile ? '1rem 2rem' : '1.25rem 3rem', 
             borderRadius: '16px', 
@@ -403,6 +404,7 @@ const LandingPage = () => {
               onClick={onLoginClick}
               className="premium-button"
               data-testid="landing-enter-button"
+              id="landing-enter-button-2"
               style={{
                 padding: isMobile ? '0.85rem 1.8rem' : '1rem 2.5rem',
                 borderRadius: '12px', border: 'none',

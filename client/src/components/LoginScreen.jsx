@@ -332,6 +332,7 @@ const LoginScreen = () => {
                         id="login-email"
                         name="email"
                         data-testid="login-email"
+                        style={inputStyle}
                         autoFocus
                       />
                     </div>
@@ -348,6 +349,7 @@ const LoginScreen = () => {
                         required 
                         id="login-password"
                         data-testid="login-password"
+                        style={passwordInputStyle}
                       />
                       <button type="button" onClick={() => setShowPassword(v => !v)} style={eyeToggleStyle}>
                         {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}

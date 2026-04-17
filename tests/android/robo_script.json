@@ -2,31 +2,25 @@
   {
     "eventType": "VIEW_CLICKED",
     "elementDescriptors": [
-      { "text": "Pokračovat →" }
+      { "resourceId": "onboarding-next" }
     ]
   },
   {
     "eventType": "VIEW_CLICKED",
     "elementDescriptors": [
-      { "text": "Pokračovat →" }
+      { "resourceId": "onboarding-next" }
     ]
   },
   {
     "eventType": "VIEW_CLICKED",
     "elementDescriptors": [
-      { "text": "Pokračovat →" }
+      { "resourceId": "onboarding-next" }
     ]
   },
   {
     "eventType": "VIEW_CLICKED",
     "elementDescriptors": [
-      { "text": "Pokračovat →" }
-    ]
-  },
-  {
-    "eventType": "VIEW_CLICKED",
-    "elementDescriptors": [
-      { "text": "Vstoupit do aplikace →" }
+      { "resourceId": "onboarding-finish" }
     ]
   },
   {
