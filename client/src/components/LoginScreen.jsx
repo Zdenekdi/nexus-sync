@@ -288,15 +288,7 @@ const LoginScreen = () => {
         )}
 
         {/* TABS */}
-        {/* VISUAL DEBUG INDICATOR */}
-        {debugVisible && (
-          <div style={{
-            position: 'fixed', top: '10px', left: '10px', background: 'red', color: 'white',
-            padding: '5px 10px', borderRadius: '5px', zIndex: 9999, fontWeight: 'bold', fontSize: '10px'
-          }}>
-            DEBUG: LOGIN_READY
-          </div>
-        )}
+
 
         {!createdInviteCode && (
           <>

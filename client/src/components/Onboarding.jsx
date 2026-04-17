@@ -147,8 +147,8 @@ const Onboarding = () => {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: 0,
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        paddingTop: 'env(safe-area-inset-top, 20px)',
+        paddingBottom: 'env(safe-area-inset-bottom, 20px)',
         overflow: 'hidden',
         userSelect: 'none',
         WebkitUserSelect: 'none',
@@ -159,11 +159,11 @@ const Onboarding = () => {
         key={slide.id + '-glow'}
         style={{
           position: 'absolute',
-          top: '20%',
+          top: '25%',
           left: '50%',
           transform: 'translateX(-50%)',
-          width: '450px',
-          height: '450px',
+          width: '500px',
+          height: '500px',
           borderRadius: '50%',
           background: `radial-gradient(circle, ${slide.glowColor}1a 0%, transparent 80%)`,
           filter: 'blur(80px)',
@@ -230,8 +230,7 @@ const Onboarding = () => {
           opacity: animating ? 0 : 1,
           transform: animating ? 'translateY(10px)' : 'translateY(0)',
           transition: 'opacity 0.3s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
-          gap: '0',
-          marginTop: '-10vh'
+          gap: '0'
         }}
       >
         {/* Icon with persistent glow */}
