@@ -7,7 +7,7 @@ import {
   Eye, EyeOff
 } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
+import { API_BASE, APP_VERSION } from '../constants/config';
 
 const LoginScreen = () => {
   const { onLogin, onRegisterAgency, onRegisterUser, t, setLang, lang, justLoggedOut, setJustLoggedOut, setShowLanding, showToast } = useNexus();
@@ -588,6 +588,20 @@ const LoginScreen = () => {
             `}</style>
           </div>
         )}
+        {/* DIAGNOSTIC FOOTER */}
+        <div style={{
+          marginTop: '2rem',
+          textAlign: 'center',
+          opacity: 0.3,
+          fontSize: '0.6rem',
+          color: '#64748b',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '2px'
+        }}>
+          <div>{APP_VERSION} ({import.meta.env.MODE})</div>
+          <div style={{ fontFamily: 'monospace' }}>{API_BASE}</div>
+        </div>
       </div>
     </div>
   );

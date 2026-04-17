@@ -21,8 +21,15 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
     try {
       const saved = localStorage.getItem('nexus_activeOperator');
       if (saved && saved !== 'undefined' && saved !== 'null') {
-        let parsed = JSON.parse(saved);
-        if (parsed.role === 'App Owner' || parsed.role === 'App Owner') {
+        let parsed = null;
+        try {
+          parsed = JSON.parse(saved);
+        } catch (e) {
+          console.error('[Auth] Failed to parse saved operator', e);
+          return null;
+        }
+
+        if (parsed && (parsed.role === 'App Owner' || parsed.role === 'App Owner')) {
           parsed.role = 'App Owner';
           parsed.name = 'App Owner';
         }
@@ -35,7 +42,13 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
     try {
       const saved = localStorage.getItem('nexus_activeClient');
       if (saved && saved !== 'undefined' && saved !== 'null') {
-        const parsed = JSON.parse(saved);
+        let parsed = null;
+        try {
+          parsed = JSON.parse(saved);
+        } catch (e) {
+          console.error('[Auth] Failed to parse saved client', e);
+          return null;
+        }
         if (parsed) return parsed;
       }
       return null;
@@ -89,6 +102,7 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
   useEffect(() => {
     if (isLoggedIn && token) {
       try {
+      try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const expiresIn = payload.exp - Math.floor(Date.now() / 1000);
         if (expiresIn > 0) {
@@ -98,6 +112,9 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
           const storedRefreshToken = localStorage.getItem('nexus_refreshToken');
           if (storedRefreshToken) scheduleTokenRefresh(0);
         }
+      } catch (err) {
+        console.warn('[Auth] Token parsing failed', err);
+      }
       } catch { /* ignore parse errors */ }
     }
     return () => { if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current); };
