@@ -1,64 +1,44 @@
 [
   {
     "eventType": "VIEW_CLICKED",
-    "elementDescriptors": [
-      { "resourceId": "onboarding-next" }
-    ]
+    "elementDescriptors": [{ "resourceId": "onboarding-next" }]
   },
   {
     "eventType": "VIEW_CLICKED",
-    "elementDescriptors": [
-      { "resourceId": "onboarding-next" }
-    ]
+    "elementDescriptors": [{ "resourceId": "onboarding-next" }]
   },
   {
     "eventType": "VIEW_CLICKED",
-    "elementDescriptors": [
-      { "resourceId": "onboarding-next" }
-    ]
+    "elementDescriptors": [{ "resourceId": "onboarding-next" }]
   },
   {
     "eventType": "VIEW_CLICKED",
-    "elementDescriptors": [
-      { "resourceId": "onboarding-finish" }
-    ]
+    "elementDescriptors": [{ "resourceId": "onboarding-finish" }]
   },
   {
     "eventType": "VIEW_CLICKED",
-    "elementDescriptors": [
-      { "resourceId": "tab-btn-login" }
-    ]
+    "elementDescriptors": [{ "resourceId": "tab-btn-login" }]
   },
   {
     "eventType": "VIEW_CLICKED",
-    "elementDescriptors": [
-      { "resourceId": "login-email" }
-    ]
+    "elementDescriptors": [{ "resourceId": "login-email" }]
   },
   {
     "eventType": "VIEW_TEXT_CHANGED",
     "replacementText": "alice@nexus.sync",
-    "elementDescriptors": [
-      { "resourceId": "login-email" }
-    ]
+    "elementDescriptors": [{ "resourceId": "login-email" }]
   },
   {
     "eventType": "VIEW_CLICKED",
-    "elementDescriptors": [
-      { "resourceId": "login-password" }
-    ]
+    "elementDescriptors": [{ "resourceId": "login-password" }]
   },
   {
     "eventType": "VIEW_TEXT_CHANGED",
     "replacementText": "password123",
-    "elementDescriptors": [
-      { "resourceId": "login-password" }
-    ]
+    "elementDescriptors": [{ "resourceId": "login-password" }]
   },
   {
     "eventType": "VIEW_CLICKED",
-    "elementDescriptors": [
-      { "resourceId": "login-submit" }
-    ]
+    "elementDescriptors": [{ "resourceId": "login-submit" }]
   }
 ]
