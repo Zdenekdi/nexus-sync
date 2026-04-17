@@ -4,18 +4,19 @@ import GlobalAppStyles from './styles/GlobalAppStyles';
 import ErrorBoundary from './ErrorBoundary';
 
 // Lazy load heavy components
-const Sidebar = lazy(() => import('./components/Navigation/Sidebar'));
-const MobileBottomNav = lazy(() => import('./components/Navigation/MobileBottomNav'));
-const ViewRouter = lazy(() => import('./components/Navigation/ViewRouter'));
-const LandingPage = lazy(() => import('./components/LandingPage'));
-const Onboarding = lazy(() => import('./components/Onboarding'));
-const LoginScreen = lazy(() => import('./components/LoginScreen'));
+import Sidebar from './components/Navigation/Sidebar';
+import MobileBottomNav from './components/Navigation/MobileBottomNav';
+import ViewRouter from './components/Navigation/ViewRouter';
+import LandingPage from './components/LandingPage';
+import Onboarding from './components/Onboarding';
+import LoginScreen from './components/LoginScreen';
 
 function AppContent() {
-  const { isLoggedIn, loading, showLanding, showOnboarding, isNativeApp, activeOperator } = useNexus();
+  const { isLoggedIn, token, loading, showLanding, showOnboarding, isNativeApp, activeOperator } = useNexus();
 
-  // Show loading screen during initial boot OR during login transition (no operator data yet)
-  if (loading || (isLoggedIn && !activeOperator)) {
+  // Show loading screen ONLY for authenticated users waiting for data hydration
+  // This prevents the loading screen from blocking Onboarding/Login for new users or crawlers
+  if (isLoggedIn && token && (loading || !activeOperator)) {
     return (
       <div style={{ 
         background: '#080a0f', 

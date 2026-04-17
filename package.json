@@ -17,6 +17,7 @@
     "deploy:with-sync": "node scripts/antigravity-sync.js start-task deploy && npm run deploy && node scripts/antigravity-sync.js complete-task deploy success",
     "webhook:start": "node scripts/antigravity-webhook.js",
     "sync:backend": "node scripts/sync-backend.js",
+    "version:bump": "node scripts/bump-version.js",
 
     "test:smoke": "npx playwright test",
     "test:api": "npx playwright test rbac sms-relay --project=chromium",
@@ -28,7 +29,7 @@
     "android:sync": "cd client && npx cap sync android",
     "emulator:list": "~/Library/Android/sdk/emulator/emulator -list-avds",
     "emulator:start": "~/Library/Android/sdk/emulator/emulator -avd",
-    "build:android:apk": "npm run build:client && cd client && npx cap sync android && cd android && ./gradlew assembleNexusRelayDebug",
+      "build:android:apk": "npm run version:bump && npm run build:client && cd client && npx cap sync android && cd android && ./gradlew assembleNexusRelayDebug",
     "test:report": "npx playwright show-report"
   },
   "dependencies": {
