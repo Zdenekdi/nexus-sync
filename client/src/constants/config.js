@@ -7,4 +7,4 @@ export const API_BASE = import.meta.env.VITE_API_URL ||
     ? `http://${typeof window !== 'undefined' && window.location.hostname === 'localhost' && typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent) ? '10.0.2.2' : 'localhost'}:3000/api` 
     : 'https://nexus-api.myvnc.com/api');
 
-export const APP_VERSION = 'v3.12.0-auto';
+export const APP_VERSION = 'v3.14.0-auto';

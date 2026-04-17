@@ -115,6 +115,13 @@ export function useNexusData({
     if (!isLoggedIn || !token) return;
     
     setIsDataLoading(true);
+    
+    // SAFETY TIMEOUT: Forcibly stop loading after 7s to prevent infinite hang
+    const safetyTimer = setTimeout(() => {
+      console.warn('[Data] Safety timeout reached. Forcing loading screen off.');
+      setIsDataLoading(false);
+    }, 7000);
+
     try {
       const [safetyRes, profileRes, chatRes, userRes, bindingRes, statsRes, agencyRes, selfRes, analyticsRes] = await Promise.all([
         axiosWithTiming(`${API_BASE}/safety/sessions/active`, { headers: { Authorization: `Bearer ${token}` } }),
@@ -268,6 +275,7 @@ export function useNexusData({
     } catch (err) {
       console.error('[Data] Init error:', err);
     } finally {
+      clearTimeout(safetyTimer);
       setIsDataLoading(false);
     }
   }, [isLoggedIn, token, API_BASE, axiosWithTiming, normalizeProfileId, setMessages, setActiveOperator, setActiveSafetySession, setIsTimerActive, setTimeLeft]);
