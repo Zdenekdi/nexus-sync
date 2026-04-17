@@ -10,6 +10,16 @@ import {
 import { API_BASE, APP_VERSION } from '../constants/config';
 
 const LoginScreen = () => {
+  const [debugVisible, setDebugVisible] = useState(true);
+
+  useEffect(() => {
+    console.log('NEXUS_LOG: LOGIN_PAGE_READY');
+    console.warn('NEXUS_LOG: LOGIN_PAGE_READY_WARN');
+    console.error('NEXUS_LOG: LOGIN_PAGE_READY_ERROR');
+    
+    const timer = setTimeout(() => setDebugVisible(false), 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const { onLogin, onRegisterAgency, onRegisterUser, t, setLang, lang, justLoggedOut, setJustLoggedOut, setShowLanding, showToast } = useNexus();
   const [tab, setTab] = useState('login'); // login | register-agency | join-agency
@@ -28,28 +38,6 @@ const LoginScreen = () => {
   // Login form
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
-  useEffect(() => {
-    console.log('[ROBO_TEST] LoginScreen mounted. Ready for identification.');
-  }, []);
-
-  useEffect(() => {
-    if (email === 'alice@nexus.sync') {
-      console.log('[ROBO_TEST] Email field successfully filled with: ' + email);
-    }
-  }, [email]);
-
-  useEffect(() => {
-    if (password === 'password123') {
-      console.log('[ROBO_TEST] Password field successfully filled.');
-    }
-  }, [password]);
-
-  const onLoginSubmit = async (e) => {
-    if (e) e.preventDefault();
-    console.log('[ROBO_TEST] Submit button clicked. Email: ' + email);
-    handleLogin(email, password);
-  };
 
   // Register agency form
   const [regFullName, setRegFullName] = useState('');
@@ -311,6 +299,16 @@ const LoginScreen = () => {
         )}
 
         {/* TABS */}
+        {/* VISUAL DEBUG INDICATOR */}
+        {debugVisible && (
+          <div style={{
+            position: 'fixed', top: '10px', left: '10px', background: 'red', color: 'white',
+            padding: '5px 10px', borderRadius: '5px', zIndex: 9999, fontWeight: 'bold', fontSize: '10px'
+          }}>
+            DEBUG: LOGIN_READY
+          </div>
+        )}
+
         {!createdInviteCode && (
           <>
             <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '3px', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -343,7 +341,7 @@ const LoginScreen = () => {
             }}>
               {/* LOGIN TAB */}
               {tab === 'login' && (
-                <form onSubmit={onLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   <div>
                     <label style={labelStyle}>{isCz ? 'E-mail' : 'Email'}</label>
                     <div style={{ position: 'relative' }}>
@@ -355,7 +353,7 @@ const LoginScreen = () => {
                         id="login-email"
                         name="email"
                         data-testid="login-email"
-                        placeholder="Email"
+                        placeholder="you@email.com"
                         style={inputStyle}
                       />
                     </div>
@@ -368,7 +366,7 @@ const LoginScreen = () => {
                         type={showPassword ? 'text' : 'password'} 
                         value={password} 
                         onChange={e => setPassword(e.target.value)} 
-                        placeholder="password123" 
+                        placeholder="••••••••" 
                         required 
                         id="login-password"
                         data-testid="login-password"
