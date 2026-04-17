@@ -4,12 +4,12 @@ import GlobalAppStyles from './styles/GlobalAppStyles';
 import ErrorBoundary from './ErrorBoundary';
 
 // Lazy load heavy components
-import Sidebar from './components/Navigation/Sidebar';
-import MobileBottomNav from './components/Navigation/MobileBottomNav';
-import ViewRouter from './components/Navigation/ViewRouter';
-import LandingPage from './components/LandingPage';
-import Onboarding from './components/Onboarding';
-import LoginScreen from './components/LoginScreen';
+const Sidebar = lazy(() => import('./components/Navigation/Sidebar'));
+const MobileBottomNav = lazy(() => import('./components/Navigation/MobileBottomNav'));
+const ViewRouter = lazy(() => import('./components/Navigation/ViewRouter'));
+const LandingPage = lazy(() => import('./components/LandingPage'));
+const Onboarding = lazy(() => import('./components/Onboarding'));
+const LoginScreen = lazy(() => import('./components/LoginScreen'));
 
 function AppContent() {
   const { isLoggedIn, token, loading, showLanding, showOnboarding, isNativeApp, activeOperator } = useNexus();

@@ -332,16 +332,8 @@ const LoginScreen = () => {
                         id="login-email"
                         name="email"
                         data-testid="login-email"
-                        style={{
-                          width: '100%',
-                          padding: '0.75rem 0.85rem 0.75rem 2.4rem',
-                          background: 'rgba(0,0,0,0.3)',
-                          border: '1px solid rgba(255,255,255,0.1)',
-                          borderRadius: '10px',
-                          color: 'white',
-                          outline: 'none',
-                          fontSize: '0.85rem'
-                        }}
+                        autoFocus
+                        style={inputStyle}
                       />
                     </div>
                   </div>
@@ -357,16 +349,7 @@ const LoginScreen = () => {
                         required 
                         id="login-password"
                         data-testid="login-password"
-                        style={{
-                          width: '100%',
-                          padding: '0.75rem 0.85rem 0.75rem 2.4rem',
-                          background: 'rgba(0,0,0,0.3)',
-                          border: '1px solid rgba(255,255,255,0.1)',
-                          borderRadius: '10px',
-                          color: 'white',
-                          outline: 'none',
-                          fontSize: '0.85rem'
-                        }}
+                        style={passwordInputStyle}
                       />
                       <button type="button" onClick={() => setShowPassword(v => !v)} style={eyeToggleStyle}>
                         {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
