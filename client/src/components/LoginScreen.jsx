@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNexus } from '../context/NexusContext';
 import axios from 'axios';
 import { 
@@ -10,6 +10,7 @@ import {
 import { API_BASE, APP_VERSION } from '../constants/config';
 
 const LoginScreen = () => {
+
   const { onLogin, onRegisterAgency, onRegisterUser, t, setLang, lang, justLoggedOut, setJustLoggedOut, setShowLanding, showToast } = useNexus();
   const [tab, setTab] = useState('login'); // login | register-agency | join-agency
   const [loading, setLoading] = useState(false);
@@ -27,6 +28,28 @@ const LoginScreen = () => {
   // Login form
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  useEffect(() => {
+    console.log('[ROBO_TEST] LoginScreen mounted. Ready for identification.');
+  }, []);
+
+  useEffect(() => {
+    if (email === 'alice@nexus.sync') {
+      console.log('[ROBO_TEST] Email field successfully filled with: ' + email);
+    }
+  }, [email]);
+
+  useEffect(() => {
+    if (password === 'password123') {
+      console.log('[ROBO_TEST] Password field successfully filled.');
+    }
+  }, [password]);
+
+  const onLoginSubmit = async (e) => {
+    if (e) e.preventDefault();
+    console.log('[ROBO_TEST] Submit button clicked. Email: ' + email);
+    handleLogin(email, password);
+  };
 
   // Register agency form
   const [regFullName, setRegFullName] = useState('');
@@ -320,7 +343,7 @@ const LoginScreen = () => {
             }}>
               {/* LOGIN TAB */}
               {tab === 'login' && (
-                <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <form onSubmit={onLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   <div>
                     <label style={labelStyle}>{isCz ? 'E-mail' : 'Email'}</label>
                     <div style={{ position: 'relative' }}>
@@ -332,7 +355,7 @@ const LoginScreen = () => {
                         id="login-email"
                         name="email"
                         data-testid="login-email"
-                        autoFocus
+                        placeholder="Email"
                         style={inputStyle}
                       />
                     </div>
@@ -345,7 +368,7 @@ const LoginScreen = () => {
                         type={showPassword ? 'text' : 'password'} 
                         value={password} 
                         onChange={e => setPassword(e.target.value)} 
-                        placeholder="••••••••" 
+                        placeholder="password123" 
                         required 
                         id="login-password"
                         data-testid="login-password"
