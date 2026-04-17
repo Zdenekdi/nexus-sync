@@ -139,104 +139,127 @@ export function useNexusData({
         } catch (e) { /* ignore */ }
       }
 
-      if (selfRes && selfRes.data) {
-        setActiveOperator(selfRes.data);
-        localStorage.setItem('nexus_activeOperator', JSON.stringify(selfRes.data));
-      }
+      // ------------------------------------------------------------
+      // DEFENSIVE DATA PROCESSING
+      // ------------------------------------------------------------
+      try {
+        if (selfRes?.data) {
+          setActiveOperator(selfRes.data);
+          localStorage.setItem('nexus_activeOperator', JSON.stringify(selfRes.data));
+        }
 
-      // NO DEMO FALLBACKS - Use server data or initial empty state
-      if (statsRes?.data) {
-        const s = statsRes.data;
-        
-        // Build rich chart data from analytics/summary if available
-        const dayNames = lang === 'cz' 
-          ? ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So']
-          : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        
-        let richChartData = [];
-        let sparklineData = s.chartData || [];
-        
-        const analyticsChart = analyticsRes?.data?.chartData;
-        if (analyticsChart && analyticsChart.length > 0) {
-          richChartData = analyticsChart.map(d => ({
-            day: dayNames[new Date(d.date).getDay()],
-            revenue: d.revenue || 0,
-            bookings: d.bookings || 0
-          }));
-          sparklineData = analyticsChart.map(d => d.revenue || d.bookings || 0);
-        } else if (Array.isArray(s.chartData) && s.chartData.length > 0) {
-          // Fallback: build from plain number array
-          const now = new Date();
-          richChartData = s.chartData.map((val, i) => {
-            const d = new Date(now);
-            d.setDate(d.getDate() - (s.chartData.length - 1 - i));
-            return { day: dayNames[d.getDay()], revenue: val, bookings: 0 };
+        // Stats Handling
+        if (statsRes?.data) {
+          const s = statsRes.data || {};
+          const dayNames = lang === 'cz' 
+            ? ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So']
+            : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+          
+          let richChartData = [];
+          let sparklineData = Array.isArray(s.chartData) ? s.chartData : [];
+          
+          const analyticsChart = analyticsRes?.data?.chartData;
+          if (Array.isArray(analyticsChart) && analyticsChart.length > 0) {
+            richChartData = analyticsChart.map(d => {
+              try {
+                return {
+                  day: dayNames[new Date(d.date).getDay()] || '?',
+                  revenue: Number(d.revenue || 0),
+                  bookings: Number(d.bookings || 0)
+                };
+              } catch (e) { return { day: '?', revenue: 0, bookings: 0 }; }
+            });
+            sparklineData = analyticsChart.map(d => Number(d.revenue || d.bookings || 0));
+          } else if (sparklineData.length > 0) {
+            const now = new Date();
+            richChartData = sparklineData.map((val, i) => {
+              const d = new Date(now);
+              d.setDate(d.getDate() - (sparklineData.length - 1 - i));
+              return { day: dayNames[d.getDay()] || '?', revenue: Number(val), bookings: 0 };
+            });
+          }
+
+          setStats({
+            revenue: analyticsRes?.data?.revenue != null 
+              ? `£${Number(analyticsRes.data.revenue).toFixed(2)}` 
+              : (s.revenue || '£0.00'),
+            revenueMtd: s.revenue || '£0.00',
+            revenueChange: Number(analyticsRes?.data?.revenueChange || 0),
+            totalBookings: Number(analyticsRes?.data?.bookings || s.totalBookings || 0),
+            activeBookings: Number(s.totalBookings || 0),
+            bookingsChange: Number(analyticsRes?.data?.bookingsChange || 0),
+            totalMessages: Number(s.totalMessages || 0),
+            messagesChange: 0,
+            totalCalls: Number(s.totalCalls || 0),
+            conversionRate: Number(s.conversionRate || 0),
+            conversionChange: 0,
+            commissionGrowth: String(s.commissionGrowth || 'STABLE'),
+            chartData: richChartData.length > 0 ? richChartData : (sparklineData.length > 0 ? sparklineData : [0,0,0,0,0,0,0]),
+            sparklineData: sparklineData.length > 0 ? sparklineData : [0,0,0,0,0,0,0],
+            revenueData: richChartData,
+            profilePerf: [],
+            operatorPerf: [],
+            totalAgencies: Number(s.totalAgencies || 0),
+            totalProfiles: Number(s.totalProfiles || 0),
+            totalUsers: Number(s.totalUsers || 0),
+            uptime: String(s.uptime || '100% UP'),
+            activeProfiles: Number(analyticsRes?.data?.activeProfiles || s.totalProfiles || 0)
           });
         }
 
-        setStats({
-          revenue: analyticsRes?.data?.revenue != null 
-            ? `£${Number(analyticsRes.data.revenue).toFixed(2)}` 
-            : (s.revenue || '£0.00'),
-          revenueMtd: s.revenue || '£0.00',
-          revenueChange: analyticsRes?.data?.revenueChange || 0,
-          totalBookings: analyticsRes?.data?.bookings || s.totalBookings || 0,
-          activeBookings: s.totalBookings || 0,
-          bookingsChange: analyticsRes?.data?.bookingsChange || 0,
-          totalMessages: s.totalMessages || 0,
-          messagesChange: 0,
-          totalCalls: s.totalCalls || 0,
-          conversionRate: s.conversionRate || 0,
-          conversionChange: 0,
-          commissionGrowth: s.commissionGrowth || 'STABLE',
-          chartData: richChartData.length > 0 ? richChartData : sparklineData,
-          sparklineData: sparklineData,
-          revenueData: richChartData,
-          profilePerf: [],
-          operatorPerf: [],
-          totalAgencies: s.totalAgencies || 0,
-          totalProfiles: s.totalProfiles || 0,
-          totalUsers: s.totalUsers || 0,
-          uptime: s.uptime || '100% UP',
-          activeProfiles: analyticsRes?.data?.activeProfiles || s.totalProfiles || 0
-        });
-      }
+        // Profiles Handling
+        setProfiles(Array.isArray(profileRes?.data) ? profileRes.data : []);
 
-      if (profileRes?.data) {
-        setProfiles(Array.isArray(profileRes.data) ? profileRes.data : []);
-      }
+        // Safety Sessions Handling
+        if (safetyRes?.data && typeof safetyRes.data === 'object') {
+          setActiveSafetySession(safetyRes.data);
+          setIsTimerActive(true);
+          try {
+            const endAt = new Date(safetyRes.data.plannedEndAt).getTime();
+            if (!isNaN(endAt)) {
+              setTimeLeft(Math.floor((endAt - Date.now()) / 1000));
+            }
+          } catch (e) { console.warn('[Safety] Date parse failed', e); }
+        }
 
-      if (safetyRes?.data) {
-        setActiveSafetySession(safetyRes.data);
-        setIsTimerActive(true);
-        const endAt = new Date(safetyRes.data.plannedEndAt).getTime();
-        setTimeLeft(Math.floor((endAt - Date.now()) / 1000));
-      }
+        // Messages/Chats Handling
+        if (Array.isArray(chatRes?.data)) {
+          const mappedMessages = chatRes.data.map(chat => {
+            if (!chat) return null;
+            return {
+              id: chat.id,
+              chatId: chat.id,
+              profileId: normalizeProfileId(chat.profileId),
+              profileName: chat.profile?.name || null,
+              from: chat.externalId || 'Unknown',
+              text: (chat.messages?.[0]?.text || 'No messages'),
+              senderName: chat.messages?.[0]?.sender?.name || null,
+              timestamp: chat.lastMessageAt || new Date().toISOString(),
+              status: 'read',
+              direction: 'inbound',
+              transport: 'sms'
+            };
+          }).filter(Boolean);
+          setMessages(mappedMessages);
+        }
 
-      if (chatRes?.data) {
-        const mappedMessages = (chatRes.data || []).map(chat => ({
-          id: chat.id,
-          chatId: chat.id,
-          profileId: normalizeProfileId(chat.profileId),
-          profileName: chat.profile?.name || null,
-          from: chat.externalId,
-          text: (chat.messages?.[0]?.text || 'No messages'),
-          senderName: chat.messages?.[0]?.sender?.name || null,
-          timestamp: chat.lastMessageAt || new Date().toISOString(),
-          status: 'read',
-          direction: 'inbound',
-          transport: 'sms'
-        }));
-        setMessages(mappedMessages);
-      }
+        // Operators & Bindings
+        if (Array.isArray(userRes?.data)) setOperators(userRes.data);
+        
+        if (bindingRes?.data?.ok && Array.isArray(bindingRes?.data?.bindings)) {
+          setSessions(bindingRes.data.bindings.map(b => ({
+            id: b.id, device: b.model || 'Android', status: b.active ? 'Active' : 'Disabled'
+          })));
+        }
 
-      if (userRes?.data) setOperators(Array.isArray(userRes.data) ? userRes.data : []);
-      if (bindingRes?.data?.ok) {
-        setSessions(bindingRes.data.bindings.map(b => ({
-          id: b.id, device: b.model || 'Android', status: b.active ? 'Active' : 'Disabled'
-        })));
+        // Agency Data
+        if (agencyData) {
+          setAgencies(Array.isArray(agencyData) ? agencyData : [agencyData]);
+        }
+
+      } catch (processingErr) {
+        console.error('[Data] Critical processing error:', processingErr);
       }
-      if (agencyData) setAgencies(Array.isArray(agencyData) ? agencyData : [agencyData]);
 
     } catch (err) {
       console.error('[Data] Init error:', err);

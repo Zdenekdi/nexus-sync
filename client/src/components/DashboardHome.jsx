@@ -243,11 +243,11 @@ const DashboardHome = () => {
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(240px, 1fr))', gap: isMobile ? '1rem' : '1.5rem', marginBottom: isMobile ? '1.5rem' : '3rem' }}>
         {[
-          { label: t('totalRevenue'), value: (stats || {}).revenue || '£0.00', icon: <DollarSign color="#10b981" />, growth: (stats || {}).commissionGrowth || 'STABLE', chart: (stats || {}).sparklineData || (stats || {}).chartData || [0,0,0,0,0,0,0] },
-          { label: (t('agencies') || 'Agencies').toUpperCase(), value: (stats || {}).totalAgencies || (agencies || []).length, icon: <Building2 color="#3b82f6" />, growth: 'PROD', chart: [0,0,0,0,0,0,0] },
+          { label: t('totalRevenue'), value: stats?.revenue || '£0.00', icon: <DollarSign color="#10b981" />, growth: stats?.commissionGrowth || 'STABLE', chart: stats?.sparklineData || stats?.chartData || [0,0,0,0,0,0,0] },
+          { label: (t('agencies') || 'Agencies').toUpperCase(), value: stats?.totalAgencies || (agencies || []).length, icon: <Building2 color="#3b82f6" />, growth: 'PROD', chart: [0,0,0,0,0,0,0] },
           { label: 'SERVER STATUS', value: (vultrStatus?.power_status || 'CHECKING...').toUpperCase(), icon: <Server color={statusColor} />, growth: vultrStatus?.main_ip || 'PENDING', chart: [0,0,0,0,0,0,0], isStatus: true },
-          { label: (t('activeNodes') || 'Active Nodes').toUpperCase(), value: (stats || {}).totalProfiles || '0', icon: <Zap color="#f59e0b" />, growth: 'STABLE', chart: [0,0,0,0,0,0,0] },
-          { label: t('globalTraffic').toUpperCase(), value: (stats || {}).totalMessages || '0', icon: <Activity color="#8b5cf6" />, growth: (stats || {}).uptime || '100% UP', chart: (stats || {}).sparklineData || (stats || {}).chartData || [0,0,0,0,0,0,0] }
+          { label: (t('activeNodes') || 'Active Nodes').toUpperCase(), value: stats?.totalProfiles || '0', icon: <Zap color="#f59e0b" />, growth: 'STABLE', chart: [0,0,0,0,0,0,0] },
+          { label: t('globalTraffic').toUpperCase(), value: stats?.totalMessages || '0', icon: <Activity color="#8b5cf6" />, growth: stats?.uptime || '100% UP', chart: stats?.sparklineData || stats?.chartData || [0,0,0,0,0,0,0] }
         ].map((stat, i) => (
           <div key={i} data-testid={`stat-card-${stat.label.toLowerCase().replace(/\s+/g, '-')}`} className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', border: stat.isStatus ? `1px solid ${statusColor}40` : '1px solid var(--card-border)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
@@ -282,7 +282,7 @@ const DashboardHome = () => {
             </h3>
           </div>
           <div style={{ height: '300px' }}>
-            <RevenueLineChart data={(stats || {}).revenueData || (stats || {}).chartData || [0,0,0,0,0,0,0]} />
+            <RevenueLineChart data={stats?.revenueData || stats?.chartData || [0,0,0,0,0,0,0]} />
           </div>
         </div>
 
@@ -292,8 +292,8 @@ const DashboardHome = () => {
           </h3>
           <div style={{ display: 'flex', justifyContent: 'center', height: '100%', alignItems: 'center' }}>
             <ConversionDonutChart data={[
-              { label: 'Active', value: (stats || {}).totalProfiles ? 100 : 0 },
-              { label: 'Idle', value: (stats || {}).totalProfiles ? 0 : 100 }
+              { label: 'Active', value: stats?.totalProfiles ? 100 : 0 },
+              { label: 'Idle', value: stats?.totalProfiles ? 0 : 100 }
             ]} />
           </div>
         </div>
@@ -356,16 +356,16 @@ const DashboardHome = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--accent-color)', marginBottom: '0.5rem' }}>{t('revenueMtd')}</div>
-              <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>{formatMoney((stats || {}).revenue, dashboardCurrency)}</div>
+              <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>{formatMoney(stats?.revenue, dashboardCurrency)}</div>
             </div>
-            <MiniSparkline data={(stats || {}).sparklineData || (stats || {}).chartData || [0,0,0,0,0,0,0]} color="var(--accent-color)" />
+            <MiniSparkline data={stats?.sparklineData || stats?.chartData || [0,0,0,0,0,0,0]} color="var(--accent-color)" />
           </div>
         </div>
         <div className="glass-card" style={{ padding: '1.5rem' }}>
            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('activeOps')}</div>
-              <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>{(stats || {}).totalUsers || '0'}</div>
+              <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>{stats?.totalUsers || '0'}</div>
             </div>
           </div>
         </div>
@@ -373,7 +373,7 @@ const DashboardHome = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('avgConversion')}</div>
-              <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>{(stats || {}).commissionGrowth || '0%'}</div>
+              <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>{stats?.commissionGrowth || '0%'}</div>
             </div>
           </div>
         </div>
@@ -383,7 +383,7 @@ const DashboardHome = () => {
         <div className="glass-card" style={{ padding: '2rem' }}>
           <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem' }}>{t('revenueTrend') || 'REVENUE TREND'}</h3>
           <div style={{ height: '250px' }}>
-            <RevenueLineChart data={(stats || {}).revenueData || (stats || {}).chartData || [0,0,0,0,0,0,0]} height={250} />
+            <RevenueLineChart data={stats?.revenueData || stats?.chartData || [0,0,0,0,0,0,0]} height={250} />
           </div>
         </div>
         <div className="glass-card" style={{ padding: '2rem' }}>
@@ -431,15 +431,15 @@ const DashboardHome = () => {
             <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center' }}>
                <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('messages')}</div>
                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-                 <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>{(stats || {}).totalMessages || 0}</div>
-                 <MiniSparkline data={(stats || {}).sparklineData || (stats || {}).chartData || [0, 0, 0, 0, 0, 0, 0]} color="var(--text-secondary)" width={40} />
+                 <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>{stats?.totalMessages || 0}</div>
+                 <MiniSparkline data={stats?.sparklineData || stats?.chartData || [0, 0, 0, 0, 0, 0, 0]} color="var(--text-secondary)" width={40} />
                </div>
             </div>
             <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center', border: '1px solid var(--accent-color)', gridColumn: 'auto' }}>
                <div style={{ color: 'var(--accent-color)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{(t('bookings') || 'Bookings').toUpperCase()}</div>
                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-                 <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>{(stats || {}).totalBookings || 0}</div>
-                 <MiniSparkline data={(stats || {}).sparklineData || (stats || {}).chartData || [0, 0, 0, 0, 0, 0, 0]} color="var(--accent-color)" width={40} />
+                 <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>{stats?.totalBookings || 0}</div>
+                 <MiniSparkline data={stats?.sparklineData || stats?.chartData || [0, 0, 0, 0, 0, 0, 0]} color="var(--accent-color)" width={40} />
                </div>
             </div>
           </div>
@@ -447,10 +447,10 @@ const DashboardHome = () => {
           <div className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                <h3 style={{ fontSize: '1.1rem', fontWeight: '800' }}>{t('commissionGrowth')}</h3>
-               <span style={{ fontSize: '0.8rem', color: 'var(--success-color)', fontWeight: '700' }}>{(stats || {}).commissionGrowth || 'STABLE'}</span>
+               <span style={{ fontSize: '0.8rem', color: 'var(--success-color)', fontWeight: '700' }}>{stats?.commissionGrowth || 'STABLE'}</span>
             </div>
             <div style={{ height: '200px' }}>
-              <RevenueLineChart data={(stats || {}).revenueData || (stats || {}).chartData || [0, 0, 0, 0, 0, 0, 0]} height={200} />
+              <RevenueLineChart data={stats?.revenueData || stats?.chartData || [0, 0, 0, 0, 0, 0, 0]} height={200} />
             </div>
           </div>
         </div>
