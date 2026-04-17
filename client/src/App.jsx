@@ -9,7 +9,7 @@ const MobileBottomNav = lazy(() => import('./components/Navigation/MobileBottomN
 const ViewRouter = lazy(() => import('./components/Navigation/ViewRouter'));
 const LandingPage = lazy(() => import('./components/LandingPage'));
 const Onboarding = lazy(() => import('./components/Onboarding'));
-import LoginScreen from './components/LoginScreen';
+const LoginScreen = lazy(() => import('./components/LoginScreen'));
 
 function AppContent() {
   const { isLoggedIn, token, loading, showLanding, showOnboarding, isNativeApp, activeOperator } = useNexus();

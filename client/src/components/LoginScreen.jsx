@@ -10,17 +10,6 @@ import {
 import { API_BASE, APP_VERSION } from '../constants/config';
 
 const LoginScreen = () => {
-  const [debugVisible, setDebugVisible] = useState(true);
-
-  useEffect(() => {
-    console.log('NEXUS_LOG: LOGIN_PAGE_READY');
-    console.warn('NEXUS_LOG: LOGIN_PAGE_READY_WARN');
-    console.error('NEXUS_LOG: LOGIN_PAGE_READY_ERROR');
-    
-    const timer = setTimeout(() => setDebugVisible(false), 3000);
-    return () => clearTimeout(timer);
-  }, []);
-
   const { onLogin, onRegisterAgency, onRegisterUser, t, setLang, lang, justLoggedOut, setJustLoggedOut, setShowLanding, showToast } = useNexus();
   const [tab, setTab] = useState('login'); // login | register-agency | join-agency
   const [loading, setLoading] = useState(false);
@@ -354,6 +343,7 @@ const LoginScreen = () => {
                         name="email"
                         data-testid="login-email"
                         placeholder="you@email.com"
+                        autoFocus
                         style={inputStyle}
                       />
                     </div>
