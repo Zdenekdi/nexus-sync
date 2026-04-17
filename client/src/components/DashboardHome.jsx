@@ -30,7 +30,7 @@ const DashboardHome = () => {
 
   const WelcomeSection = () => (
     <div style={{ marginBottom: '1.5rem' }}>
-      <h2 style={{ fontSize: '1.5rem', fontWeight: '900', margin: 0 }}>👋 {isCz ? 'Vítejte zpět' : 'Welcome back'}, {user?.name || 'User'}!</h2>
+      <h2 id="dashboard-welcome-title" style={{ fontSize: '1.5rem', fontWeight: '900', margin: 0 }}>👋 {isCz ? 'Vítejte zpět' : 'Welcome back'}, {user?.name || 'User'}!</h2>
       <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0.25rem 0 0' }}>{new Date().toLocaleDateString(isCz ? 'cs-CZ' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
     </div>
   );

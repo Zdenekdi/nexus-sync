@@ -40,5 +40,9 @@
   {
     "eventType": "VIEW_CLICKED",
     "elementDescriptors": [{ "resourceId": "login-submit" }]
+  },
+  {
+    "eventType": "VIEW_CLICKED",
+    "elementDescriptors": [{ "resourceId": "dashboard-welcome-title" }]
   }
 ]
