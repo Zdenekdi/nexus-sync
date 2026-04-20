@@ -25,6 +25,7 @@ router.post('/mobile/call', deviceLimiter, express.json(), validate(mobileCall),
 router.post('/relay', deviceLimiter, express.json(), validate(relayMessage), deviceController.handleRelay);
 router.post('/push-token', authMiddleware, express.json(), validate(registerPushToken), deviceController.registerPushToken);
 router.get('/status', authMiddleware, deviceController.getRelayStatus);
+router.get('/logs', authMiddleware, deviceController.getLogs);
 router.post('/verify', authMiddleware, express.json(), validate(verifyDeviceBinding), deviceController.verifyDeviceBinding);
 router.post('/push-test', authMiddleware, express.json(), deviceController.sendTestPush);
 

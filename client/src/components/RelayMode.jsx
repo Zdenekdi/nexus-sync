@@ -713,25 +713,37 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   // Load initial permissions status and start polling
   useEffect(() => {
     void refreshPermissionsStatus();
+    // Also load logs immediately on mount/activation
+    if (isActive) {
+      void refreshLogs();
+    }
 
     const interval = setInterval(() => {
       if (isActive) {
         void refreshPermissionsStatus();
+        void refreshLogs(); // Auto-refresh logs every 10s along with permissions
       }
-    }, 10000); // Poll every 10 seconds
+    }, 10000); 
 
     return () => clearInterval(interval);
   }, [isActive]);
 
   const refreshLogs = async () => {
+    if (isRefreshingLogs) return;
     setIsRefreshingLogs(true);
     try {
-      const deviceId = operator?.id || 'RELAY-01';
+      const installationId = localStorage.getItem('nexus_installation_id');
+      const token = localStorage.getItem('nexus_token');
+      if (!installationId || !token) return;
+
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 6000);
-      const response = await fetch(`${RELAY_API_BASE}/api/device/logs?deviceId=${deviceId}&limit=20`, {
+      const response = await fetch(`${RELAY_API_BASE}/api/device/logs?installationId=${encodeURIComponent(installationId)}&limit=20`, {
         method: 'GET',
         cache: 'no-store',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         signal: controller.signal
       });
       clearTimeout(timeoutId);
@@ -740,11 +752,12 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
         if (Array.isArray(data?.logs)) {
           setLogs(data.logs.map(l => ({
             id: l.id || l.timestamp || Date.now() + Math.random(),
-            transport: normalizeLogType(l),
-            type: normalizeLogType(l),
+            transport: l.transport || 'sms',
+            type: l.transport || 'sms',
             from: l.from || '?',
-            content: l.content || l.body || '',
-            fullData: l.content || l.body || '',
+            content: l.content || '',
+            fullData: l.content || '',
+            direction: l.direction || 'inbound',
             time: l.time || new Date(l.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             status: l.status || 'forwarded'
           })));
@@ -1065,7 +1078,13 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {logs.map(log => (
+          {logs.length === 0 ? (
+            <div className="glass-card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.8rem', borderStyle: 'dashed' }}>
+              <History size={32} style={{ marginBottom: '1rem', opacity: 0.3 }} />
+              <div>{lang === 'cz' ? 'Zatím nebyly zachyceny žádné logy.' : 'No logs captured yet.'}</div>
+              <div style={{ fontSize: '0.7rem', marginTop: '0.5rem', opacity: 0.6 }}>{lang === 'cz' ? 'Historie se objeví automaticky při přeposlání zprávy.' : 'History will appear automatically when messages are relayed.'}</div>
+            </div>
+          ) : logs.map(log => (
             <div 
               key={log.id} 
               onClick={() => setActiveLog(log)}
