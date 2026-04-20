@@ -47,6 +47,8 @@ export function useNexusData({
   ]);
   const [_auditLogs, _setAuditLogs] = useState([]);
   const [isDataLoading, setIsDataLoading] = useState(false);
+  const [isBackgroundLoading, setIsBackgroundLoading] = useState(false);
+  const [hasHydrated, setHasHydrated] = useState(() => localStorage.getItem('nexus_hydrated') === 'true');
   const [clientNames, setClientNames] = useState({});
 
   // Global Features & Training Actions
@@ -83,7 +85,7 @@ export function useNexusData({
     const saved = localStorage.getItem('nexus_client_names');
     return saved ? JSON.parse(saved) : {};
   });
-  const [_bookingSchedule, _setBookingSchedule] = useState([]);
+  const [calendar, setCalendar] = useState([]);
   const [isCalendarSyncOpen, setIsCalendarSyncOpen] = useState(false);
   const [calendarSyncUrl, setCalendarSyncUrl] = useState('');
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -114,7 +116,12 @@ export function useNexusData({
   const initData = useCallback(async () => {
     if (!isLoggedIn || !token) return;
     
-    setIsDataLoading(true);
+    // Only show the global loading screen if we haven't hydrated yet
+    if (!hasHydrated) {
+      setIsDataLoading(true);
+    } else {
+      setIsBackgroundLoading(true);
+    }
     
     // SAFETY TIMEOUT: Forcibly stop loading after 7s to prevent infinite hang
     const safetyTimer = setTimeout(() => {
@@ -123,160 +130,121 @@ export function useNexusData({
     }, 7000);
 
     try {
-      const [safetyRes, profileRes, chatRes, userRes, bindingRes, statsRes, agencyRes, selfRes, analyticsRes] = await Promise.all([
-        axiosWithTiming(`${API_BASE}/safety/sessions/active`, { headers: { Authorization: `Bearer ${token}` } }),
+      // PHASE 1: CRITICAL DATA (Required for Sidebar & Core UI)
+      const [selfRes, profileRes, userRes, safetyRes] = await Promise.all([
+        axiosWithTiming(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/profiles`, { headers: { Authorization: `Bearer ${token}` } }),
-        axiosWithTiming(`${API_BASE}/chats`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/agency/users`, { headers: { Authorization: `Bearer ${token}` } }),
+        axiosWithTiming(`${API_BASE}/safety/sessions/active`, { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+
+      // Process Priority 1 Data immediately to unlock UI
+      if (selfRes?.data) {
+        setActiveOperator(selfRes.data);
+        localStorage.setItem('nexus_activeOperator', JSON.stringify(selfRes.data));
+      }
+      setProfiles(Array.isArray(profileRes?.data) ? profileRes.data : []);
+      if (Array.isArray(userRes?.data)) setOperators(userRes.data);
+      if (safetyRes?.data && typeof safetyRes.data === 'object') {
+        setActiveSafetySession(safetyRes.data);
+        setIsTimerActive(true);
+        try {
+          const endAt = new Date(safetyRes.data.plannedEndAt).getTime();
+          if (!isNaN(endAt)) setTimeLeft(Math.floor((endAt - Date.now()) / 1000));
+        } catch (e) {}
+      }
+
+      // UNLOCK SIDEBAR AS SOON AS CRITICAL DATA IS READY
+      setIsDataLoading(false);
+      setHasHydrated(true);
+      localStorage.setItem('nexus_hydrated', 'true');
+      clearTimeout(safetyTimer);
+      
+      // Phase 2 is starting
+      setIsBackgroundLoading(true);
+
+      // PHASE 2: HEAVY DATA (Background hydration)
+      const [chatRes, bindingRes, statsRes, agencyRes, analyticsRes] = await Promise.all([
+        axiosWithTiming(`${API_BASE}/chats`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/device/bindings`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/agency/stats`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/agency/all`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
-        axiosWithTiming(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/analytics/summary?days=7`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null)
       ]);
 
-      // For non-owner roles, fetch own agency details if /agency/all returned nothing
+      // ------------------------------------------------------------
+      // SECONDARY DATA PROCESSING
+      // ------------------------------------------------------------
+      
+      // Messages/Chats
+      if (Array.isArray(chatRes?.data)) {
+        const mappedMessages = chatRes.data.map(chat => {
+          if (!chat) return null;
+          return {
+            id: chat.id, chatId: chat.id, profileId: normalizeProfileId(chat.profileId),
+            profileName: chat.profile?.name || null, from: chat.externalId || 'Unknown',
+            text: (chat.messages?.[0]?.text || 'No messages'),
+            senderName: chat.messages?.[0]?.sender?.name || null,
+            timestamp: chat.lastMessageAt || new Date().toISOString(),
+            status: 'read', direction: 'inbound', transport: 'sms'
+          };
+        }).filter(Boolean);
+        setMessages(mappedMessages);
+      }
+
+      // Bindings
+      if (bindingRes?.data?.ok && Array.isArray(bindingRes?.data?.bindings)) {
+        setSessions(bindingRes.data.bindings.map(b => ({
+          id: b.id, device: b.model || 'Android', status: b.active ? 'Active' : 'Disabled'
+        })));
+      }
+
+      // Stats & Agency
       let agencyData = agencyRes?.data;
       if (!agencyData || !Array.isArray(agencyData) || agencyData.length === 0) {
         try {
           const ownAgencyRes = await axiosWithTiming(`${API_BASE}/agency/settings`, { headers: { Authorization: `Bearer ${token}` } });
-          if (ownAgencyRes?.data) {
-            agencyData = [ownAgencyRes.data];
-          }
-        } catch (e) { /* ignore */ }
+          if (ownAgencyRes?.data) agencyData = [ownAgencyRes.data];
+        } catch (e) {}
       }
+      if (agencyData) setAgencies(Array.isArray(agencyData) ? agencyData : [agencyData]);
 
-      // ------------------------------------------------------------
-      // DEFENSIVE DATA PROCESSING
-      // ------------------------------------------------------------
-      try {
-        if (selfRes?.data) {
-          setActiveOperator(selfRes.data);
-          localStorage.setItem('nexus_activeOperator', JSON.stringify(selfRes.data));
-        } else {
-          // FALLBACK FOR TEST STABILITY: Don't hang if /auth/me fails
-          console.warn('[Data] No self data, setting fallback operator');
-          setActiveOperator({ name: 'Nexus User', role: 'Operator' });
+      if (statsRes?.data) {
+        const s = statsRes.data || {};
+        const dayNames = lang === 'cz' ? ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        let richChartData = [];
+        let sparklineData = Array.isArray(s.chartData) ? s.chartData : [];
+        const analyticsChart = analyticsRes?.data?.chartData;
+        if (Array.isArray(analyticsChart) && analyticsChart.length > 0) {
+          richChartData = analyticsChart.map(d => ({
+            day: dayNames[new Date(d.date).getDay()] || '?',
+            revenue: Number(d.revenue || 0), bookings: Number(d.bookings || 0)
+          }));
+          sparklineData = analyticsChart.map(d => Number(d.revenue || d.bookings || 0));
         }
-
-        // Stats Handling
-        if (statsRes?.data) {
-          const s = statsRes.data || {};
-          const dayNames = lang === 'cz' 
-            ? ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So']
-            : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-          
-          let richChartData = [];
-          let sparklineData = Array.isArray(s.chartData) ? s.chartData : [];
-          
-          const analyticsChart = analyticsRes?.data?.chartData;
-          if (Array.isArray(analyticsChart) && analyticsChart.length > 0) {
-            richChartData = analyticsChart.map(d => {
-              try {
-                return {
-                  day: dayNames[new Date(d.date).getDay()] || '?',
-                  revenue: Number(d.revenue || 0),
-                  bookings: Number(d.bookings || 0)
-                };
-              } catch (e) { return { day: '?', revenue: 0, bookings: 0 }; }
-            });
-            sparklineData = analyticsChart.map(d => Number(d.revenue || d.bookings || 0));
-          } else if (sparklineData.length > 0) {
-            const now = new Date();
-            richChartData = sparklineData.map((val, i) => {
-              const d = new Date(now);
-              d.setDate(d.getDate() - (sparklineData.length - 1 - i));
-              return { day: dayNames[d.getDay()] || '?', revenue: Number(val), bookings: 0 };
-            });
-          }
-
-          setStats({
-            revenue: analyticsRes?.data?.revenue != null 
-              ? `£${Number(analyticsRes.data.revenue).toFixed(2)}` 
-              : (s.revenue || '£0.00'),
-            revenueMtd: s.revenue || '£0.00',
-            revenueChange: Number(analyticsRes?.data?.revenueChange || 0),
-            totalBookings: Number(analyticsRes?.data?.bookings || s.totalBookings || 0),
-            activeBookings: Number(s.totalBookings || 0),
-            bookingsChange: Number(analyticsRes?.data?.bookingsChange || 0),
-            totalMessages: Number(s.totalMessages || 0),
-            messagesChange: 0,
-            totalCalls: Number(s.totalCalls || 0),
-            conversionRate: Number(s.conversionRate || 0),
-            conversionChange: 0,
-            commissionGrowth: String(s.commissionGrowth || 'STABLE'),
-            chartData: richChartData.length > 0 ? richChartData : (sparklineData.length > 0 ? sparklineData : [0,0,0,0,0,0,0]),
-            sparklineData: sparklineData.length > 0 ? sparklineData : [0,0,0,0,0,0,0],
-            revenueData: richChartData,
-            profilePerf: [],
-            operatorPerf: [],
-            totalAgencies: Number(s.totalAgencies || 0),
-            totalProfiles: Number(s.totalProfiles || 0),
-            totalUsers: Number(s.totalUsers || 0),
-            uptime: String(s.uptime || '100% UP'),
-            activeProfiles: Number(analyticsRes?.data?.activeProfiles || s.totalProfiles || 0)
-          });
-        }
-
-        // Profiles Handling
-        setProfiles(Array.isArray(profileRes?.data) ? profileRes.data : []);
-
-        // Safety Sessions Handling
-        if (safetyRes?.data && typeof safetyRes.data === 'object') {
-          setActiveSafetySession(safetyRes.data);
-          setIsTimerActive(true);
-          try {
-            const endAt = new Date(safetyRes.data.plannedEndAt).getTime();
-            if (!isNaN(endAt)) {
-              setTimeLeft(Math.floor((endAt - Date.now()) / 1000));
-            }
-          } catch (e) { console.warn('[Safety] Date parse failed', e); }
-        }
-
-        // Messages/Chats Handling
-        if (Array.isArray(chatRes?.data)) {
-          const mappedMessages = chatRes.data.map(chat => {
-            if (!chat) return null;
-            return {
-              id: chat.id,
-              chatId: chat.id,
-              profileId: normalizeProfileId(chat.profileId),
-              profileName: chat.profile?.name || null,
-              from: chat.externalId || 'Unknown',
-              text: (chat.messages?.[0]?.text || 'No messages'),
-              senderName: chat.messages?.[0]?.sender?.name || null,
-              timestamp: chat.lastMessageAt || new Date().toISOString(),
-              status: 'read',
-              direction: 'inbound',
-              transport: 'sms'
-            };
-          }).filter(Boolean);
-          setMessages(mappedMessages);
-        }
-
-        // Operators & Bindings
-        if (Array.isArray(userRes?.data)) setOperators(userRes.data);
-        
-        if (bindingRes?.data?.ok && Array.isArray(bindingRes?.data?.bindings)) {
-          setSessions(bindingRes.data.bindings.map(b => ({
-            id: b.id, device: b.model || 'Android', status: b.active ? 'Active' : 'Disabled'
-          })));
-        }
-
-        // Agency Data
-        if (agencyData) {
-          setAgencies(Array.isArray(agencyData) ? agencyData : [agencyData]);
-        }
-
-      } catch (processingErr) {
-        console.error('[Data] Critical processing error:', processingErr);
+        setStats({
+          revenue: analyticsRes?.data?.revenue != null ? `£${Number(analyticsRes.data.revenue).toFixed(2)}` : (s.revenue || '£0.00'),
+          revenueMtd: s.revenue || '£0.00', revenueChange: Number(analyticsRes?.data?.revenueChange || 0),
+          totalBookings: Number(analyticsRes?.data?.bookings || s.totalBookings || 0),
+          activeBookings: Number(s.totalBookings || 0), bookingsChange: Number(analyticsRes?.data?.bookingsChange || 0),
+          totalMessages: Number(s.totalMessages || 0), messagesChange: 0, totalCalls: Number(s.totalCalls || 0),
+          conversionRate: Number(s.conversionRate || 0), conversionChange: 0,
+          commissionGrowth: String(s.commissionGrowth || 'STABLE'),
+          chartData: richChartData.length > 0 ? richChartData : (sparklineData.length > 0 ? sparklineData : [0,0,0,0,0,0,0]),
+          sparklineData: sparklineData.length > 0 ? sparklineData : [0,0,0,0,0,0,0],
+          revenueData: richChartData, profilePerf: [], operatorPerf: [],
+          totalAgencies: Number(s.totalAgencies || 0), totalProfiles: Number(s.totalProfiles || 0),
+          totalUsers: Number(s.totalUsers || 0), uptime: String(s.uptime || '100% UP'),
+          activeProfiles: Number(analyticsRes?.data?.activeProfiles || s.totalProfiles || 0)
+        });
       }
 
     } catch (err) {
       console.error('[Data] Init error:', err);
+      setIsDataLoading(false);
     } finally {
       clearTimeout(safetyTimer);
-      setIsDataLoading(false);
+      setIsBackgroundLoading(false);
     }
   }, [isLoggedIn, token, API_BASE, axiosWithTiming, normalizeProfileId, setMessages, setActiveOperator, setActiveSafetySession, setIsTimerActive, setTimeLeft]);
 
@@ -303,6 +271,80 @@ export function useNexusData({
     setTimeout(() => setIsSyncing(false), 2000);
   }, []);
 
+  const handleDelayBooking = useCallback(async (bookingId, delayMinutes) => {
+    try {
+      let updatedCalendar = [...calendar].sort((a, b) => {
+        const tA = (a.time || '').split(' - ')[0];
+        const tB = (b.time || '').split(' - ')[0];
+        return tA.localeCompare(tB);
+      });
+
+      const bookingIndex = updatedCalendar.findIndex(b => b.id === bookingId);
+      if (bookingIndex === -1) return;
+
+      const parseTime = (timeStr) => {
+        const [s, e] = (timeStr || '10:00 - 11:00').split(' - ');
+        const [sh, sm] = s.split(':').map(Number);
+        const [eh, em] = e.split(':').map(Number);
+        return { start: (sh || 0) * 60 + (sm || 0), end: (eh || 0) * 60 + (em || 0) };
+      };
+
+      const formatTime = (totalMin) => {
+        const h = Math.floor(totalMin / 60) % 24;
+        const m = totalMin % 60;
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      };
+
+      const booking = updatedCalendar[bookingIndex];
+      const times = parseTime(booking.time);
+      const oldEnd = times.end;
+      const newEnd = times.end + delayMinutes;
+      
+      booking.time = `${formatTime(times.start)} - ${formatTime(newEnd)}`;
+      
+      // Cascade shift
+      const postponedSms = [];
+      let lastEnd = newEnd;
+
+      for (let i = bookingIndex + 1; i < updatedCalendar.length; i++) {
+        const nextB = updatedCalendar[i];
+        const nTimes = parseTime(nextB.time);
+        const duration = nTimes.end - nTimes.start;
+        
+        if (nTimes.start < lastEnd) {
+          const shiftBy = lastEnd - nTimes.start;
+          const newStart = lastEnd;
+          const newFinish = newStart + duration;
+          nextB.time = `${formatTime(newStart)} - ${formatTime(newFinish)}`;
+          lastEnd = newFinish;
+
+          // Prepare notification draft
+          const clientName = (nextB.title || '').replace('Meeting w/ ', '');
+          postponedSms.push({
+            bookingId: nextB.id,
+            clientName,
+            oldTime: formatTime(nTimes.start),
+            newTime: formatTime(newStart),
+            delay: shiftBy,
+            message: lang === 'cz' 
+              ? `Ahoj ${clientName}, omlouvám se, ale moje předchozí schůzka se protáhla. Uvidíme se o ${shiftBy} minut později v ${formatTime(newStart)}. Těším se!`
+              : `Hi ${clientName}, I'm sorry, our meeting will be delayed by ${shiftBy} minutes. See you at ${formatTime(newStart)}! Looking forward to it.`
+          });
+        } else {
+          break; // No more overlaps
+        }
+      }
+
+      setCalendar(updatedCalendar);
+      if (showToast) showToast(lang === 'cz' ? 'Agenda byla posunuta.' : 'Agenda has been shifted.', 'success');
+      
+      return postponedSms;
+    } catch (err) {
+      console.error('Delay booking error:', err);
+      return [];
+    }
+  }, [calendar, lang, showToast]);
+
   const handleQuickSaveMeeting = useCallback(async (meeting) => {
     try {
       await axios.post(`${API_BASE}/bookings`, {
@@ -319,10 +361,10 @@ export function useNexusData({
     profiles, agencies, agencySettings: _agencySettings, operators, sessions, stats, activeSubscription: _activeSubscription,
     subscriptionHistory: _subscriptionHistory, globalFeatures: _globalFeatures, handleFeatureToggle,
     isTraining, trainingProgress, onStartTraining, onResetTraining,
-    auditLogs: _auditLogs, isDataLoading, clientNames,
-    bookingSchedule: _bookingSchedule, isCalendarSyncOpen, setIsCalendarSyncOpen, calendarSyncUrl, setCalendarSyncUrl,
+    auditLogs: _auditLogs, isDataLoading, isBackgroundLoading, hasHydrated, clientNames,
+    calendar, isCalendarSyncOpen, setIsCalendarSyncOpen, calendarSyncUrl, setCalendarSyncUrl,
     isBookingModalOpen, setIsBookingModalOpen, selectedScheduleEvent, setSelectedScheduleEvent,
     newBookingForm, setNewBookingForm, bioText, setBioText, isSyncing, syncStatus: _syncStatus, syncProgress: _syncProgress,
-    handleSaveBio, handleSyncAll, handleQuickSaveMeeting, initData
+    handleSaveBio, handleSyncAll, handleQuickSaveMeeting, handleDelayBooking, initData
   };
 }

@@ -92,6 +92,73 @@ const DeviceSetupView = () => {
             </div>
           </div>
         </div>
+
+        {/* External GPS Tracker Setup */}
+        <div className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2.5rem', border: nexus.linkedTrackerId ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid var(--card-border)' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1.5rem', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: '250px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div style={{ width: '48px', height: '48px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Zap size={24} color="#f59e0b" />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.25rem' }}>{nexus.lang === 'cz' ? 'Externí GPS Tracker' : 'External GPS Tracker'}</h3>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                    {nexus.lang === 'cz' ? 'Spárujte svůj hardwarový tracker pro nezávislé sledování polohy.' : 'Pair your hardware tracker for independent location tracking.'}
+                  </p>
+                </div>
+              </div>
+
+              {!nexus.linkedTrackerId ? (
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                  <input 
+                    id="tracker-imei-input"
+                    type="text" 
+                    placeholder="IMEI / ID zařízení" 
+                    style={{ flex: 1, background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0.75rem 1rem', color: 'white' }}
+                  />
+                  <button 
+                    className="action-btn"
+                    style={{ background: 'var(--accent-color)', color: 'white', fontWeight: 800, padding: '0 1.5rem', borderRadius: '10px' }}
+                    onClick={() => {
+                      const input = document.getElementById('tracker-imei-input');
+                      if (input?.value) nexus.handlePairTracker(input.value);
+                    }}
+                  >
+                    {nexus.lang === 'cz' ? 'Spárovat' : 'Pair'}
+                  </button>
+                </div>
+              ) : (
+                <div style={{ padding: '1rem', background: 'rgba(34, 197, 94, 0.05)', borderRadius: '12px', border: '1px solid rgba(34, 197, 94, 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#22c55e' }} />
+                    <span style={{ fontSize: '0.9rem', color: 'white', fontWeight: 700 }}>
+                      ID: {nexus.linkedTrackerId}
+                    </span>
+                    <span style={{ fontSize: '0.75rem', color: '#22c55e', fontWeight: 800, textTransform: 'uppercase' }}>{nexus.lang === 'cz' ? 'Spárováno' : 'Synced'}</span>
+                  </div>
+                  <button 
+                    onClick={nexus.handleUnpairTracker}
+                    style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline' }}
+                  >
+                    {nexus.lang === 'cz' ? 'Odpojit' : 'Unpair'}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div style={{ width: isMobile ? '100%' : '300px', padding: '1.25rem', background: 'rgba(0,0,0,0.2)', borderRadius: '16px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              <div style={{ fontWeight: 800, color: 'white', marginBottom: '0.75rem' }}>
+                {nexus.lang === 'cz' ? 'Jak to funguje?' : 'How it works?'}
+              </div>
+              <ul style={{ paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <li>{nexus.lang === 'cz' ? 'Zadejte IMEI číslo ze štítku zařízení.' : 'Enter the IMEI number from the device label.'}</li>
+                <li>{nexus.lang === 'cz' ? 'Systém začne přijímat GPRMC data z trackeru.' : 'System will start receiving GPRMC data from the tracker.'}</li>
+                <li>{nexus.lang === 'cz' ? 'V případě SOS bude poloha brána primárně z tohoto zařízení.' : 'In case of SOS, location will be primary taken from this device.'}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="glass-card" style={{ marginTop: '2rem', padding: '2rem' }}>

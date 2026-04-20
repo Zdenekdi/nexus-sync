@@ -186,13 +186,48 @@ const SOSPanel = () => {
                     </span>
                   </div>
                   {(alert.lat && alert.lng) && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.25rem' }}>
-                      <MapPin size={14} />
-                      <a href={`https://maps.google.com/?q=${alert.lat},${alert.lng}`} target="_blank" rel="noreferrer" style={{ color: '#3b82f6', textDecoration: 'none' }}>
-                        {alert.lat.toFixed(5)}, {alert.lng.toFixed(5)}
-                      </a>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '0.75rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: '#94a3b8' }}>
+                        <MapPin size={14} />
+                        <a href={`https://maps.google.com/?q=${alert.lat},${alert.lng}`} target="_blank" rel="noreferrer" style={{ color: '#3b82f6', textDecoration: 'none', fontWeight: 700 }}>
+                          {isCz ? 'Aktuální poloha' : 'Current Location'} ({alert.lat.toFixed(5)}, {alert.lng.toFixed(5)})
+                        </a>
+                      </div>
+                      
+                      {nexus.gpsHistory && nexus.gpsHistory.length > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: '#64748b' }}>
+                          <History size={14} />
+                          <span style={{ fontWeight: 600 }}>{isCz ? 'Historie pohybu (Breadcrumbs)' : 'Movement Trail'}</span>
+                        </div>
+                      )}
                     </div>
                   )}
+
+                  {/* Breadcrumb Trail Visualization */}
+                  {nexus.gpsHistory && nexus.gpsHistory.length > 1 && (
+                    <div style={{ 
+                      padding: '0.75rem', 
+                      background: 'rgba(0,0,0,0.2)', 
+                      borderRadius: '10px', 
+                      marginBottom: '1rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.4rem'
+                    }}>
+                      {nexus.gpsHistory.slice(-5).reverse().map((pos, idx) => (
+                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.7rem' }}>
+                          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: idx === 0 ? '#ef4444' : 'rgba(255,255,255,0.2)' }} />
+                          <span style={{ color: idx === 0 ? 'white' : 'var(--text-secondary)', fontWeight: idx === 0 ? 800 : 500 }}>
+                            {new Date(pos.timestamp).toLocaleTimeString()} → 
+                            <a href={`https://maps.google.com/?q=${pos.lat},${pos.lng}`} target="_blank" rel="noreferrer" style={{ color: '#60a5fa', marginLeft: '0.3rem', textDecoration: 'none' }}>
+                               {pos.lat.toFixed(4)}, {pos.lng.toFixed(4)}
+                            </a>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   <div style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <Clock size={12} />{new Date(alert.createdAt).toLocaleString()}
                   </div>

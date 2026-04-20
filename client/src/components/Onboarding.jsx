@@ -51,10 +51,10 @@ const Onboarding = () => {
           <circle cx="40" cy="54" r="3" fill="currentColor" fillOpacity="0.9" />
         </svg>
       ),
-      titleCz: 'Nexus Safety',
-      titleEn: 'Nexus Safety',
-      descCz: 'Tvoje bezpečí je prioritou. Tlačítko tísňového volání a automatické hlídky tě nenechají ve štychu.',
-      descEn: 'Your safety is a priority. Panic button and automatic patrols will never leave you hanging.',
+      titleCz: 'Guardian Suite',
+      titleEn: 'Guardian Suite',
+      descCz: 'Hands-free bezpečnost. Hlasová aktivace SOS ("Pomoc/SOS") i bez dotyku displeje a diskrétní pípání Audio Sentinelu pro tvůj absolutní klid.',
+      descEn: 'Hands-free safety. Trigger SOS by voice ("Help/SOS") even without touching the screen, with discreet Audio Sentinel feedback for your absolute peace of mind.',
     },
     {
       id: 'privacy',

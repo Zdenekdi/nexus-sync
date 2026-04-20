@@ -3,9 +3,11 @@ import { Shield, AlertTriangle, Phone } from 'lucide-react';
 import { useNexus } from '../../context/NexusContext';
 import BlacklistPanel from '../Safety/BlacklistPanel';
 import SOSPanel from '../Safety/SOSPanel';
+import SafetyControlCard from '../Safety/SafetyControlCard';
 
 const SafetyView = () => {
-  const { t, activeRole } = useNexus();
+  const nexus = useNexus();
+  const { t, activeRole, isMobile } = nexus;
   const [subTab, setSubTab] = useState('blacklist');
 
   const isModelRole = activeRole === 'Model';
@@ -16,14 +18,18 @@ const SafetyView = () => {
 
   return (
     <div style={{ padding: '1.5rem', height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-          <Shield size={24} color="var(--accent-color)" />
-          <h2 style={{ margin: 0, fontWeight: 900, fontSize: '1.3rem', color: 'white' }}>{t('safety')}</h2>
+      {/* Header (Hidden on Mobile as it's in the Top Bar) */}
+      {!isMobile && (
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+            <Shield size={24} color="var(--accent-color)" />
+            <h2 style={{ margin: 0, fontWeight: 900, fontSize: '1.3rem', color: 'white' }}>{t('safety')}</h2>
+          </div>
         </div>
+      )}
 
-        {/* Sub-tabs */}
+      {/* Tabs Container */}
+      <div style={{ marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           {tabs.map(tab => (
             <button
@@ -46,7 +52,12 @@ const SafetyView = () => {
       </div>
 
       {/* Content */}
-      <div style={{ flex: 1, overflow: 'auto' }} className="custom-scrollbar">
+      <div style={{ flex: 1, overflow: 'auto', paddingBottom: isMobile ? '120px' : '2rem' }} className="custom-scrollbar">
+        {isModelRole && (
+          <div style={{ marginBottom: '1.5rem' }}>
+            <SafetyControlCard />
+          </div>
+        )}
         {subTab === 'blacklist' && <BlacklistPanel />}
         {subTab === 'sos' && <SOSPanel />}
       </div>

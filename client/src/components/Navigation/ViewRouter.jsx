@@ -27,6 +27,7 @@ import DashboardHome from '../DashboardHome';
 const OperationsUnit = lazyWithRetry(() => import('../Units/OperationsUnit'));
 const AgencyUnit = lazyWithRetry(() => import('../Units/AgencyUnit'));
 const InfrastructureUnit = lazyWithRetry(() => import('../Units/InfrastructureUnit'));
+const TvDashboard = lazyWithRetry(() => import('../Units/TvDashboard'));
 
 const LoadingFallback = () => (
   <div style={{ 
@@ -42,9 +43,11 @@ const LoadingFallback = () => (
  * Uses React.lazy for better performance and smaller initial bundle size.
  */
 const ViewRouter = () => {
-  const { activeTab } = useNexus();
+  const { activeTab, isTvMode } = useNexus();
 
   const renderContent = () => {
+    if (isTvMode) return <TvDashboard />;
+
     switch (activeTab) {
       case 'dashboard':
         return <DashboardHome />;
