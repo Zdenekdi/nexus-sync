@@ -83,23 +83,30 @@ const FAQItem = ({ question, answer }) => {
 };
 
 const StatusBadge = ({ type, lang }) => {
-  let bg = 'rgba(245, 158, 11, 0.15)';
-  let color = '#f59e0b';
-  let border = 'rgba(245, 158, 11, 0.3)';
-  let label = '';
+  let bg = 'rgba(59, 130, 246, 0.15)'; // Default Blue
+  let color = 'var(--accent-color)';
+  let border = 'rgba(59, 130, 246, 0.3)';
+  let label = type.toUpperCase();
+
+  const isCz = lang === 'cz';
 
   if (type === 'coming') {
-    bg = 'rgba(59, 130, 246, 0.15)';
-    color = 'var(--accent-color)';
-    border = 'rgba(59, 130, 246, 0.3)';
-    label = lang === 'cz' ? 'BRZY' : 'SOON';
+    label = isCz ? 'BRZY' : 'SOON';
   } else if (type === 'beta') {
     bg = 'rgba(139, 92, 246, 0.15)';
     color = '#a78bfa';
     border = 'rgba(139, 92, 246, 0.3)';
     label = 'BETA';
-  } else {
-    label = lang === 'cz' ? 'VE VÝVOJI' : 'IN PROGRESS';
+  } else if (type === 'aktivní' || type === 'active') {
+    bg = 'rgba(16, 185, 129, 0.15)';
+    color = '#10b981';
+    border = 'rgba(16, 185, 129, 0.3)';
+    label = isCz ? 'AKTIVNÍ' : 'ACTIVE';
+  } else if (type === 've vývoji' || type === 'progress') {
+    bg = 'rgba(245, 158, 11, 0.15)';
+    color = '#f59e0b';
+    border = 'rgba(245, 158, 11, 0.3)';
+    label = isCz ? 'VE VÝVOJI' : 'IN PROGRESS';
   }
 
   return (
