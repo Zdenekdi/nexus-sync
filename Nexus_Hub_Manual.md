@@ -84,4 +84,15 @@ Zabudovaný systém pro doporučování nových agentur nebo modelek.
 - **Proxy Brána**: Systém využívá residenční proxy uzly pro eliminaci rizika banů.
 
 ---
+### 8. Architektura a Platformy (Web vs. Mobile)
+Pro zajištění optimálního uživatelského zážitku a bezpečnosti Nexus Hub striktně rozlišuje mezi funkcionalitou dostupnou na webu a v mobilní aplikaci:
+
+- **Mobilní Aplikace (Nativní)**: Určena pro modelky a operátory v terénu. Obsahuje nativní funkce jako:
+  - **Onboarding**: Úvodní zaškolení (zobrazuje se pouze v aplikaci).
+  - **Guardian Suite**: Hlasové SOS, diskrétní Audio Sentinel (pípání/vibrace) a senzory.
+  - **Push Notifikace**: Okamžité systémové a bezpečnostní výstrahy.
+- **Webový Portál (Prohlížeč)**: Určen pro administrativu, marketing a správu agentur.
+  - **Absence nativních prvků**: Webové rozhraní je zbaveno mobilních prvků (onboarding, senzory), aby nepůsobilo rušivě a bylo optimalizováno pro desktopovou práci.
+
+---
 **Nexus Hub** – Váš nástroj pro absolutní kontrolu a automatizaci v adult managementu.

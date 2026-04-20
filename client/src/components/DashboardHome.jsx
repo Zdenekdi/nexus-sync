@@ -1,15 +1,20 @@
 import React from 'react';
-import { DollarSign, Building2, Zap, Activity, TrendingUp, Users, Server, ShieldCheck, AlertTriangle, Calendar } from 'lucide-react';
+import { DollarSign, Building2, Zap, Activity, TrendingUp, Users, Server, ShieldCheck, AlertTriangle, Calendar, Loader2, MessageSquare, Copy, X } from 'lucide-react';
 import { RevenueLineChart, ConversionDonutChart, MiniSparkline } from './AnalyticsCharts';
 import { useVultr } from '../hooks/useVultr';
 import { useNexus } from '../context/NexusContext';
+import Skeleton from './UI/Skeleton';
+import SafetyControlCard from './Safety/SafetyControlCard';
 
 const DashboardHome = () => {
   const nexus = useNexus();
   const { 
     activeOperator: user, t, lang, agencies, profiles: _profiles, 
     calendar, stats, activeSubscription, isRelayVariant, activeRole,
-    isMobile
+    isMobile, isBackgroundLoading, activeProfileId, setActiveProfileId,
+    myProfiles: assignedProfiles, setLinkedSessionId, linkedSessionId,
+    pendingNotifications, setPendingNotifications, onDelayBooking,
+    isLoggedIn, showToast
   } = nexus;
   
   const { status: vultrStatus } = useVultr();
@@ -67,17 +72,60 @@ const DashboardHome = () => {
     );
   };
 
+  const PendingNotificationsSection = () => {
+    if (!pendingNotifications || pendingNotifications.length === 0) return null;
+    return (
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h3 style={{ fontSize: '0.8rem', fontWeight: '800', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b', letterSpacing: '0.05em' }}>
+          <MessageSquare size={16} />
+          {(isCz ? 'NÁVRHY SMS PRO KLIENTY' : 'PENDING CLIENT SMS').toUpperCase()}
+        </h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {pendingNotifications.map((notif, i) => (
+            <div key={i} className="glass-card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #f59e0b', background: 'rgba(245, 158, 11, 0.03)', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>{notif.clientName} <span style={{ color: 'var(--text-secondary)', fontWeight: '400', fontSize: '0.75rem' }}>({notif.oldTime} → {notif.newTime})</span></div>
+                <button 
+                  onClick={() => setPendingNotifications(prev => prev.filter((_, idx) => idx !== i))}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.2rem' }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontStyle: 'italic', background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                "{notif.message}"
+              </div>
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(notif.message);
+                  showToast(isCz ? 'Zkopírováno do schránky' : 'Copied to clipboard', 'success');
+                }}
+                style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', fontWeight: '800', color: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '6px', cursor: 'pointer' }}
+              >
+                <Copy size={14} />
+                {isCz ? 'KOPÍROVAT TEXT' : 'COPY TEXT'}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const isAppOwner = activeRole === 'App Owner';
   const isManager = activeRole === 'Agency Admin' || activeRole === 'Manager';
   const isModel = activeRole === 'Model';
 
-  const SkeletonCard = ({ height = '80px', style: extra }) => (
-    <div className="skeleton" style={{ height, borderRadius: '15px', background: 'rgba(255,255,255,0.08)', ...extra }} />
-  );
-
-  const SkeletonGrid = ({ columns = 3 }) => (
+  const SkeletonStatsGrid = ({ columns = 3 }) => (
     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : `repeat(${columns}, 1fr)`, gap: '1.5rem', marginBottom: '1.5rem' }}>
-      {Array.from({ length: columns }).map((_, i) => <SkeletonCard key={i} height="120px" />)}
+      {Array.from({ length: columns }).map((_, i) => (
+        <div key={i} className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <Skeleton width="40px" height="40px" borderRadius="10px" />
+          <Skeleton width="60%" height="12px" />
+          <Skeleton width="40%" height="24px" />
+          <div className="premium-loading-text" style={{ fontSize: '0.6rem', marginTop: 'auto' }}>HYDRATING...</div>
+        </div>
+      ))}
     </div>
   );
 
@@ -101,11 +149,13 @@ const DashboardHome = () => {
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t('dailyAgendaDesc')}</p>
           </div>
 
-          {stats === null || stats === undefined ? (
-            <>
-              <SkeletonCard height="200px" style={{ marginBottom: '1.5rem' }} />
-              <SkeletonGrid columns={2} />
-            </>
+          {isBackgroundLoading ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px', width: '100%', background: 'rgba(255,255,255,0.01)', borderRadius: '24px', border: '1px solid var(--card-border)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                <Loader2 className="animate-spin" size={32} color="var(--accent-color)" />
+                <div className="premium-loading-text" style={{ fontSize: '0.6rem', letterSpacing: '0.2em', opacity: 0.5 }}>SYNCHRONIZING_CORE...</div>
+              </div>
+            </div>
           ) : (
           <>
           <div className="glass-card" style={{ padding: '1.5rem' }}>
@@ -120,7 +170,23 @@ const DashboardHome = () => {
                     <div style={{ fontWeight: '800', fontSize: '1rem' }}>{event.time}</div>
                     <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{(event.title || '').replace('Meeting w/ ', '')}</div>
                   </div>
-                  <div style={{ fontSize: '0.75rem', fontWeight: '900', color: 'var(--text-secondary)' }}>{event.duration}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: '900', color: 'var(--text-secondary)' }}>{event.duration}</div>
+                    <div style={{ display: 'flex', gap: '0.35rem' }}>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); onDelayBooking(event.id, 15); }}
+                        style={{ fontSize: '0.65rem', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', padding: '0.25rem 0.5rem', borderRadius: '6px', fontWeight: '800', cursor: 'pointer' }}
+                      >
+                        +15m
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); onDelayBooking(event.id, 30); }}
+                        style={{ fontSize: '0.65rem', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', padding: '0.25rem 0.5rem', borderRadius: '6px', fontWeight: '800', cursor: 'pointer' }}
+                      >
+                        +30m
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )) : <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem 1rem', gap: '0.75rem', border: '1px dashed var(--card-border)', borderRadius: '12px' }}>
                   <Calendar size={48} color="#374151" />
@@ -230,14 +296,13 @@ const DashboardHome = () => {
         </div>
       </div>
 
-      {stats === null || stats === undefined ? (
-        <>
-          <SkeletonGrid columns={isMobile ? 1 : 5} />
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '2rem', marginBottom: '3rem' }}>
-            <SkeletonCard height="340px" />
-            <SkeletonCard height="340px" />
+      {isBackgroundLoading ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px', width: '100%', background: 'rgba(255,255,255,0.01)', borderRadius: '24px', border: '1px solid var(--card-border)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+            <Loader2 className="animate-spin" size={40} color="var(--accent-color)" />
+            <div className="premium-loading-text" style={{ fontSize: '0.6rem', letterSpacing: '0.2em', opacity: 0.5 }}>HYDRATING_GLOBAL_METRICS...</div>
           </div>
-        </>
+        </div>
       ) : (
       <>
 
@@ -301,24 +366,53 @@ const DashboardHome = () => {
       </>
       )}
     </div>
-  ); };
+    );
+  };
 
   const renderManager = () => (
     <div className="fade-in">
       <WelcomeSection />
       <AlertsSection />
 
-      <div style={{ marginBottom: isMobile ? '1.5rem' : '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', gap: '1rem' }}>
-        <div>
-          <h2 style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '900' }}>{(t('agencyOverview') || 'Agency Overview').toUpperCase()}</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1rem' }}>{t('agencyOverviewDesc')}</p>
+      {!isMobile && (
+        <div style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+          <div>
+            <h2 style={{ fontSize: '2rem', fontWeight: '900' }}>{(t('agencyOverview') || 'Agency Overview').toUpperCase()}</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>{t('agencyOverviewDesc')}</p>
+          </div>
+          {isMultiregion && (
+             <div style={{ display: 'flex', gap: '0.25rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.25rem', borderRadius: '10px' }}>
+                {['GBP', 'EUR', 'USD', 'CZK'].map(cur => (
+                  <button
+                    key={cur}
+                    data-testid={`currency-selector-${cur}`}
+                    onClick={() => setDashboardCurrency(cur)}
+                    style={{
+                      padding: '0.4rem 0.8rem',
+                      borderRadius: '8px',
+                      background: dashboardCurrency === cur ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
+                      color: dashboardCurrency === cur ? '#60a5fa' : 'var(--text-secondary)',
+                      border: 'none',
+                      fontSize: '0.75rem',
+                      fontWeight: '800',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {cur}
+                  </button>
+                ))}
+             </div>
+          )}
         </div>
-        {isMultiregion && (
+      )}
+      
+      {isMobile && isMultiregion && (
+        <div style={{ marginBottom: '1.5rem', overflowX: 'auto', display: 'flex', paddingBottom: '0.5rem' }}>
            <div style={{ display: 'flex', gap: '0.25rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.25rem', borderRadius: '10px' }}>
               {['GBP', 'EUR', 'USD', 'CZK'].map(cur => (
                 <button
                   key={cur}
-                  data-testid={`currency-selector-${cur}`}
                   onClick={() => setDashboardCurrency(cur)}
                   style={{
                     padding: '0.4rem 0.8rem',
@@ -326,29 +420,26 @@ const DashboardHome = () => {
                     background: dashboardCurrency === cur ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
                     color: dashboardCurrency === cur ? '#60a5fa' : 'var(--text-secondary)',
                     border: 'none',
-                    fontSize: '0.75rem',
-                    fontWeight: '800',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
+                    fontSize: '0.7rem',
+                    fontWeight: '800'
                   }}
                 >
                   {cur}
                 </button>
               ))}
            </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {renderSubscriptionBanner()}
 
-      {stats === null || stats === undefined ? (
-        <>
-          <SkeletonGrid columns={isMobile ? 1 : 3} />
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '2rem', marginBottom: '3rem' }}>
-            <SkeletonCard height="300px" />
-            <SkeletonCard height="300px" />
+      {isBackgroundLoading ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '350px', width: '100%', background: 'rgba(255,255,255,0.01)', borderRadius: '24px', border: '1px solid var(--card-border)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+            <Loader2 className="animate-spin" size={32} color="var(--accent-color)" />
+            <div className="premium-loading-text" style={{ fontSize: '0.6rem', letterSpacing: '0.2em', opacity: 0.5 }}>FETCHING_AGENCY_INTEL...</div>
           </div>
-        </>
+        </div>
       ) : (
       <>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
@@ -418,15 +509,11 @@ const DashboardHome = () => {
         </div>
       </div>
 
-      {stats === null || stats === undefined ? (
-        <div style={{ 
-          display: 'flex', flex: 1, flexDirection: 'column', alignItems: 'center', 
-          justifyContent: 'center', minHeight: '300px', gap: '1rem',
-          background: 'rgba(255,255,255,0.02)', borderRadius: '20px', border: '1px dashed rgba(255,255,255,0.05)'
-        }}>
-          <Loader2 className="animate-spin" size={32} color="#3b82f6" />
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em' }}>
-            {isCz ? 'SYNCHRONIZUJI DATA...' : 'SYNCING REAL-TIME DATA...'}
+      {isBackgroundLoading ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px', width: '100%', background: 'rgba(255,255,255,0.01)', borderRadius: '24px', border: '1px solid var(--card-border)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+            <Loader2 className="animate-spin" size={32} color="var(--accent-color)" />
+            <div className="premium-loading-text" style={{ fontSize: '0.6rem', letterSpacing: '0.2em', opacity: 0.5 }}>PREPARING_WORKSPACE...</div>
           </div>
         </div>
       ) : (
@@ -466,18 +553,55 @@ const DashboardHome = () => {
     </div>
   );
 
-  const renderModel = () => (
-    <div className="fade-in">
-      <WelcomeSection />
-      <AlertsSection />
+  const renderModel = () => {
+    // Auto-detect active booking and link it to safety session if not already linked
+    React.useEffect(() => {
+      if (!isLoggedIn || activeRole !== 'Model' || linkedSessionId) return;
+      
+      const now = new Date();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      
+      const activeEvent = (calendar || []).find(event => {
+        try {
+          const [start, end] = (event.time || '').split(' - ');
+          if (!start || !end) return false;
+          const [sh, sm] = start.split(':').map(Number);
+          const [eh, em] = end.split(':').map(Number);
+          const startMin = sh * 60 + sm;
+          const endMin = eh * 60 + em;
+          // Check if current time is within booking window (plus 5 min grace before)
+          return nowMin >= (startMin - 5) && nowMin < endMin;
+        } catch { return false; }
+      });
 
-      <div style={{ marginBottom: isMobile ? '1.1rem' : '2.5rem' }}>
-        <h2 style={{ fontSize: isMobile ? '1.35rem' : '2rem', fontWeight: '900', lineHeight: 1.15 }}>{t('dailyAgenda')}</h2>
-        <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1rem', marginTop: isMobile ? '0.35rem' : '0.5rem' }}>{t('dailyAgendaDesc')}</p>
-      </div>
+      if (activeEvent && activeEvent.id && activeEvent.id !== linkedSessionId) {
+        setLinkedSessionId(activeEvent.id);
+      }
+    }, [calendar, isLoggedIn, activeRole, linkedSessionId, setLinkedSessionId]);
 
-      {stats === null || stats === undefined ? (
-        <SkeletonCard height="200px" />
+    return (
+      <div className="fade-in">
+        <WelcomeSection />
+        <AlertsSection />
+
+        <div style={{ marginBottom: isMobile ? '1.5rem' : '2rem' }}>
+          <SafetyControlCard />
+        </div>
+
+        <PendingNotificationsSection />
+
+        <div style={{ marginBottom: isMobile ? '1.1rem' : '2.5rem' }}>
+          <h2 style={{ fontSize: isMobile ? '1.35rem' : '2rem', fontWeight: '900', lineHeight: 1.15 }}>{t('dailyAgenda')}</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1rem', marginTop: isMobile ? '0.35rem' : '0.5rem' }}>{t('dailyAgendaDesc')}</p>
+        </div>
+
+      {isBackgroundLoading ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '200px', width: '100%', background: 'rgba(255,255,255,0.02)', borderRadius: '24px', border: '1px solid var(--card-border)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+            <Loader2 className="animate-spin" size={24} color="var(--accent-color)" />
+            <div className="premium-loading-text" style={{ fontSize: '0.6rem', letterSpacing: '0.15em', opacity: 0.5 }}>LOADING_AGENDA...</div>
+          </div>
+        </div>
       ) : (
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr', gap: '2rem' }}>
         <div className="glass-card" style={{ padding: isMobile ? '1.15rem' : '2rem' }}>
@@ -497,7 +621,8 @@ const DashboardHome = () => {
       </div>
       )}
     </div>
-  );
+    );
+  };
 
   return (
     <div style={{ 

@@ -113,6 +113,41 @@ h1 {
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  transition: padding 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  h1, h2, header, .view-header {
+    /* Titles will be in the top bar on mobile, so we hide them or reset them */
+    display: none !important;
+  }
+}
+
+.mobile-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  background: rgba(8, 10, 15, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 0 1.25rem;
+  position: sticky;
+  top: 0;
+  z-index: 2000;
+  width: 100%;
+}
+
+.premium-selector-fix {
+  margin-right: 0.5rem;
+}
+
+/* Smooth Scrolling & Momentum */
+.nexus-main, .nexus-layout, .sidebar-scroll-container, .scrollable-view, .inbox-panel, .chat-messages-container {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  overscroll-behavior-y: contain;
 }
 
 .status-badge {
@@ -327,19 +362,30 @@ h1 {
 }
 
 .skeleton {
-  background: linear-gradient(90deg, var(--card-bg) 25%, rgba(255, 255, 255, 0.05) 50%, var(--card-bg) 75%);
+  background: linear-gradient(90deg, var(--card-bg) 25%, rgba(255, 255, 255, 0.1) 50%, var(--card-bg) 75%);
   background-size: 200% 100%;
-  animation: loading 1.5s infinite;
+  animation: loading 1.4s infinite ease-in-out;
 }
 
 @keyframes loading {
-  0% {
-    background-position: 200% 0;
-  }
+  0% { background-position: 200% 0; opacity: 0.8; }
+  50% { background-position: -200% 0; opacity: 1; }
+  100% { background-position: 200% 0; opacity: 0.8; }
+}
 
-  100% {
-    background-position: -200% 0;
-  }
+.premium-loading-text {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  animation: pulse-text 2s infinite;
+}
+
+@keyframes pulse-text {
+  0% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0.4; }
 }
 
 /* Call Simulation Layer */

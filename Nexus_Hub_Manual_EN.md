@@ -93,4 +93,15 @@ Built-in system for referring new agencies or models.
 - **Proxy Gateway**: The system utilizes residential proxy nodes to eliminate the risk of scraping bans.
 
 ---
+### 8. Architecture & Platform Specifics (Web vs. Mobile)
+To ensure optimal user experience and security, Nexus Hub strictly distinguishes between features available on the web and in the mobile application:
+
+- **Mobile Application (Native)**: Designed for models and field operators. Includes native features such as:
+  - **Onboarding**: Initial guided setup (displayed in-app only).
+  - **Guardian Suite**: Voice SOS, discreet Audio Sentinel (pulse beeps/vibrations), and sensor monitoring.
+  - **Push Notifications**: Real-time system and security alerts.
+- **Web Portal (Browser)**: Designed for administration, marketing, and agency management.
+  - **Absence of Native Elements**: The web interface is stripped of mobile-specific elements (onboarding, sensors) to ensure a clean, distraction-free environment optimized for desktop management.
+
+---
 **Nexus Hub** – Your tool for absolute control and automation in adult management.

@@ -13,6 +13,19 @@ import { API_BASE } from '../constants/config';
 // 1. Context Definition
 export const NexusContext = createContext(null);
 
+// Shared AudioContext to prevent exhaustion on mobile devices
+let sharedAudioCtx = null;
+const getSharedAudioCtx = () => {
+  if (!sharedAudioCtx) {
+    try {
+      sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (e) {
+      console.warn('[Nexus-Audio] AudioContext initialization failed:', e);
+    }
+  }
+  return sharedAudioCtx;
+};
+
 // 2. Main Hook - using explicit React.useContext and function declaration for hoisting stability
 // Consistently use function decoration for hoisting stability in production builds
 export function useNexus() {
@@ -43,7 +56,17 @@ const getSafeStorage = (key, fallback) => {
 
 export const NexusProvider = ({ children }) => {
   // 1. Core UI States
-  const [lang, setLang] = React.useState(() => getSafeStorage('nexus_lang', 'cz'));
+  const [lang, setLang] = React.useState(() => {
+    const stored = getSafeStorage('nexus_lang', null);
+    if (stored) return stored;
+    
+    // Automatic detection for first-time users
+    if (typeof navigator !== 'undefined') {
+      const browserLang = (navigator.language || navigator.userLanguage || '').toLowerCase();
+      if (browserLang.includes('cs') || browserLang.includes('sk')) return 'cz';
+    }
+    return 'en';
+  });
   
   // Translation helper - needed for useAuth
   // -------------------------------------------------------------------------
@@ -83,11 +106,21 @@ export const NexusProvider = ({ children }) => {
     return localStorage.getItem('nexus_active_tab') || 'dashboard';
   });
   const [activeMarket, setActiveMarket] = React.useState(localStorage.getItem('nexus_active_market') || 'cz');
-  const [activeProfileId, setActiveProfileId] = React.useState(localStorage.getItem('nexus_active_profile_id') || null);
+  const [activeProfileId, setActiveProfileId] = React.useState(localStorage.getItem('nexus_active_profile_id') || 'all');
   const [showLanding, setShowLanding] = React.useState(() => {
     if (typeof window !== 'undefined') {
-      if (window.location.pathname === '/login') return false;
-      return localStorage.getItem('nexus_isLoggedIn') !== 'true';
+      // If we are in a mobile app, we usually skip landing unless explicitly asked
+      if (Capacitor.isNativePlatform()) {
+        if (window.location.pathname === '/login') return false;
+        return localStorage.getItem('nexus_isLoggedIn') !== 'true';
+      }
+      
+      // On WEB, we ALWAYS want to show the landing page first to present the product
+      // unless the user is already logged in or explicitly navigating deep
+      if (localStorage.getItem('nexus_isLoggedIn') === 'true') return false;
+      
+      // If we are on web and not logged in, show landing by default
+      return true;
     }
     return true;
   });
@@ -97,10 +130,11 @@ export const NexusProvider = ({ children }) => {
     }
     return false;
   });
-  const [showOnboarding, setShowOnboarding] = React.useState(!hasSeenOnboarding);
+  const [showOnboarding, setShowOnboarding] = React.useState(!hasSeenOnboarding && Capacitor.isNativePlatform());
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
   const [onlineOnly, setOnlineOnly] = React.useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const [mobileView, setMobileView] = React.useState('list'); 
   const [inlinePanelTab, setInlinePanelTab] = React.useState(null);
   const [activeContextTab, setActiveContextTab] = React.useState('translator');
@@ -112,6 +146,35 @@ export const NexusProvider = ({ children }) => {
   const [typingProfiles, setTypingProfiles] = React.useState({});
   const [showPanicConfirm, setShowPanicConfirm] = React.useState(false);
   const [justLoggedOut, setJustLoggedOut] = React.useState(false);
+
+  // 1.1 Safety & SOS State (Globalized)
+  const [activeSafetySession, setActiveSafetySession] = React.useState(null);
+  const [sosActive, setSosActive] = React.useState(false);
+  const [linkedTrackerId, setLinkedTrackerId] = React.useState(() => localStorage.getItem('nexus_linkedTrackerId') || null);
+  const [trackerStatus, setTrackerStatus] = React.useState('disconnected');
+  const [lastTrackerUpdate, setLastTrackerUpdate] = React.useState(null);
+  const [gpsHistory, setGpsHistory] = React.useState([]);
+  const [sosAlertId, setSosAlertId] = React.useState(null);
+  const [linkedSessionId, setLinkedSessionId] = React.useState(null);
+  const [checkinMinutes, setCheckinMinutes] = React.useState(60);
+  const [checkinTimerEnd, setCheckinTimerEnd] = React.useState(null);
+  const [checkinRemaining, setCheckinRemaining] = React.useState(null);
+  const [voiceGuardianActive, setVoiceGuardianActive] = React.useState(false);
+  const [batteryLevel, setBatteryLevel] = React.useState(null);
+  const [incomingGhostCall, setIncomingGhostCall] = React.useState(false);
+  const [ghostCallScheduledAt, setGhostCallScheduledAt] = React.useState(null);
+  
+  // 1.2 IoT & Biometric States (Guardian IoT Suite)
+  const [heartRate, setHeartRate] = React.useState(0);
+  const [hrThreshold, setHrThreshold] = React.useState(() => Number(localStorage.getItem('nexus_hrThreshold')) || 130);
+  const [isBluetoothConnected, setIsBluetoothConnected] = React.useState(false);
+  const [isTvMode, setIsTvMode] = React.useState(false);
+  const [tvToken, setTvToken] = React.useState(null);
+  const [activeBioWarning, setActiveBioWarning] = React.useState(null);
+  
+  const checkinIntervalRef = React.useRef(null);
+  const gpsWatchRef = React.useRef(null);
+  const recognitionRef = React.useRef(null);
   
   // Modals state
   const [agencyDetailModalData, setAgencyDetailModalData] = React.useState(null);
@@ -122,14 +185,92 @@ export const NexusProvider = ({ children }) => {
   const [isEditProfileOpen, setIsEditProfileOpen] = React.useState(false);
   const [editingProfileData, setEditingProfileData] = React.useState(null);
 
-  // 2. Authentication Hook
+  // 3. IoT & Auth Persistence
+  React.useEffect(() => {
+    localStorage.setItem('nexus_hrThreshold', hrThreshold);
+  }, [hrThreshold]);
+
+  // Detected TV Token on mount
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('tvToken');
+    if (token) {
+      console.log('[Guardian-IoT] TV Token detected, activating Monitoring Mode');
+      setTvToken(token);
+      setIsTvMode(true);
+      setActiveTab('tv-dashboard');
+      setShowLanding(false);
+      // In a real app, we would validate this token with the backend here
+    }
+  }, [setActiveTab, setShowLanding]);
+
+  const playBeep = React.useCallback(() => {
+    try {
+      const audioCtx = getSharedAudioCtx();
+      if (!audioCtx) return;
+
+      // Resume context if suspended (common browser policy requirement)
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+      gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.1); 
+    } catch (e) {
+      console.warn('[IoT-Audio] Beep failed:', e);
+    }
+  }, []);
+
+  const triggerSilentSOS = React.useCallback(async (type, payload = {}) => {
+    console.log(`[Guardian-IoT] Triggering Silent SOS: ${type}`, payload);
+    // In production, this would be an axios.post to /safety/silent-alarm
+    // For now, we simulate the backend notification
+    if (type === 'BIO_PANIC') {
+      setActiveBioWarning({
+        type: 'HEART_RATE',
+        value: payload.value,
+        timestamp: new Date().toISOString()
+      });
+    }
+    // Logic for sending to manager via socket or API would go here
+  }, []);
+
+  // Bio-Panic Monitoring Logic
+  React.useEffect(() => {
+    if (heartRate > hrThreshold && !sosActive && !isTvMode) {
+      const timer = setTimeout(() => {
+        if (heartRate > hrThreshold) {
+          triggerSilentSOS('BIO_PANIC', { value: heartRate });
+        }
+      }, 5000); // 5 second buffer to avoid spikes
+      return () => clearTimeout(timer);
+    }
+  }, [heartRate, hrThreshold, sosActive, isTvMode, triggerSilentSOS]);
+
+  // -- Memoized Identity-Stable Callbacks for useAuth --
+  const memoizedSetIsRelayMode = React.useCallback(() => {}, []);
+  const memoizedSetSelectedChatId = React.useCallback(() => {}, []);
+  const memoizedSetActiveProfileId = React.useCallback((id) => setActiveProfileId(id), []);
+  const memoizedSetShowLanding = React.useCallback((val) => setShowLanding(val), []);
+
+  // 4. Authentication Hook - Now with stabilized identities
   const auth = useAuth({ 
     API_BASE,
     t,
-    setIsRelayMode: () => {}, 
-    setSelectedChatId: () => {}, 
-    setActiveProfileId, 
-    setShowLanding 
+    setIsRelayMode: memoizedSetIsRelayMode, 
+    setSelectedChatId: memoizedSetSelectedChatId, 
+    setActiveProfileId: memoizedSetActiveProfileId, 
+    setShowLanding: memoizedSetShowLanding 
   });
   const { activeOperator: authUser, token, handleLogout: logout, isLoggedIn } = auth;
 
@@ -231,17 +372,292 @@ export const NexusProvider = ({ children }) => {
     return () => axios.interceptors.response.eject(interceptor);
   }, [logout]); 
 
+  const memoizedSetActiveOperator = React.useCallback((op) => setActiveOperatorState(op), []);
+  const memoizedSetMessages = React.useCallback((msgs) => setMessages(msgs), []);
+  
+  // ── Safety Methods ─────────────────────────────────────────────────────────
+  
+  const getGPSPosition = React.useCallback(async () => {
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const { Geolocation } = await import('@capacitor/geolocation');
+        const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 8000 });
+        return { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy };
+      }
+      return new Promise((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy }),
+          (err) => reject(err),
+          { timeout: 5000, enableHighAccuracy: true }
+        )
+      );
+    } catch { return { lat: null, lng: null, accuracy: null }; }
+  }, []);
+
+  const triggerSOS = React.useCallback(async (type = 'manual') => {
+    if (sosActive) return;
+    try {
+      const { lat, lng, accuracy } = await getGPSPosition();
+      const res = await axios.post(`${API_BASE}/sos`, {
+        type, lat, lng, accuracy,
+        profileId: activeProfileId !== 'all' ? activeProfileId : null
+      }, { headers: { Authorization: `Bearer ${token}` } });
+
+      setSosActive(true);
+      setSosAlertId(res.data?.id);
+      showToast(lang === 'cz' ? '🆘 SOS ACTIVATED' : '🆘 SOS AKTIVOVÁNO', 'error');
+    } catch (err) {
+      console.warn('[SOS] Failed to trigger:', err.message);
+    }
+  }, [sosActive, API_BASE, token, activeProfileId, getGPSPosition, showToast, lang]);
+
+  const cancelSOS = React.useCallback(async () => {
+    if (!sosAlertId) {
+      setSosActive(false);
+      return;
+    }
+    try {
+      await axios.post(`${API_BASE}/sos/${sosAlertId}/resolve`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      showToast(lang === 'cz' ? '✅ SOS zrušeno' : '✅ SOS resolved', 'success');
+    } catch {}
+    setSosActive(false);
+    setSosAlertId(null);
+    setLinkedSessionId(null);
+  }, [sosAlertId, API_BASE, token, showToast, lang]);
+
+  const startCheckinTimer = React.useCallback((minutes) => {
+    const mins = minutes || checkinMinutes;
+    const endTime = Date.now() + mins * 60 * 1000;
+    setCheckinTimerEnd(endTime);
+    showToast(lang === 'cz' ? `⏰ Odpočet spuštěn: ${mins} min` : `⏰ Timer started: ${mins} min`, 'info');
+  }, [checkinMinutes, showToast, lang]);
+
+  const resetCheckinTimer = React.useCallback(async () => {
+    setCheckinTimerEnd(null);
+    setCheckinRemaining(null);
+    if (checkinIntervalRef.current) clearInterval(checkinIntervalRef.current);
+    if (linkedSessionId) {
+      try {
+        await axios.post(`${API_BASE}/safety/sessions/${linkedSessionId}/ack`, { extendMinutes: 10 }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        showToast(lang === 'cz' ? '✓ Stav potvrzen' : '✓ Status confirmed', 'success');
+      } catch {}
+    }
+  }, [linkedSessionId, API_BASE, token, showToast, lang]);
+
+  const handleConfirmDeparture = React.useCallback(async () => {
+    if (!linkedSessionId) return;
+    try {
+      await axios.post(`${API_BASE}/safety/sessions/${linkedSessionId}/departure`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      // Assuming fetchActiveSafetySession is available via nexusData or similar
+      showToast(lang === 'cz' ? 'Klient odešel, odjezd potvrzen.' : 'Client left, departure confirmed.', 'success');
+    } catch (err) {
+      console.error(err);
+    }
+  }, [linkedSessionId, API_BASE, token, showToast, lang]);
+
+  const handlePairTracker = React.useCallback(async (imei) => {
+    if (!imei) return;
+    try {
+      // Simulation of API call to bind tracker
+      console.log('[NexusContext] Pairing external tracker:', imei);
+      setLinkedTrackerId(imei);
+      localStorage.setItem('nexus_linkedTrackerId', imei);
+      setTrackerStatus('connected');
+      showToast(lang === 'cz' ? 'Tracker byl úspěšně spárován.' : 'Tracker successfully paired.', 'success');
+    } catch (err) {
+      console.error(err);
+      showToast(lang === 'cz' ? 'Chyba při párování trackeru.' : 'Error pairing tracker.', 'error');
+    }
+  }, [lang, showToast]);
+
+  const handleUnpairTracker = React.useCallback(() => {
+    setLinkedTrackerId(null);
+    localStorage.removeItem('nexus_linkedTrackerId');
+    setTrackerStatus('disconnected');
+    showToast(lang === 'cz' ? 'Tracker byl odpojen.' : 'Tracker disconnected.', 'info');
+  }, [lang, showToast]);
+
+  const handleToggleVoiceGuardian = React.useCallback(() => {
+    if (voiceGuardianActive) {
+      setVoiceGuardianActive(false);
+      showToast(lang === 'cz' ? 'Hlasový dohled vypnut.' : 'Voice Guardian deactivated.', 'info');
+    } else {
+      setVoiceGuardianActive(true);
+      showToast(lang === 'cz' ? 'Hlasový dohled aktivován.' : 'Voice Guardian activated.', 'success');
+    }
+  }, [voiceGuardianActive, lang, showToast]);
+
+  const triggerGhostCall = React.useCallback((delaySec = 20) => {
+    const scheduledAt = Date.now() + (delaySec * 1000);
+    setGhostCallScheduledAt(scheduledAt);
+    showToast(lang === 'cz' ? `Hovor naplánován za ${delaySec}s.` : `Call scheduled in ${delaySec}s.`, 'info');
+    
+    setTimeout(() => {
+      setIncomingGhostCall(true);
+      setGhostCallScheduledAt(null);
+    }, delaySec * 1000);
+  }, [lang, showToast]);
+
+  const verifyIdentity = React.useCallback(async () => {
+    // In a real app, this would use WebAuthn or a biometric prompt
+    // For now, we use a confirm as a bypassable placeholder, but in the implementation plan we recommended WebAuthn
+    return window.confirm(lang === 'cz' ? 'Potvrďte prosím svou identitu (Biometrika/Kód)' : 'Please confirm your identity (Biometric/Passcode)');
+  }, [lang]);
+
+  // Effects for Safety
+  React.useEffect(() => {
+    if (!checkinTimerEnd) return;
+    checkinIntervalRef.current = setInterval(() => {
+      const remaining = checkinTimerEnd - Date.now();
+      if (remaining <= 0) {
+        clearInterval(checkinIntervalRef.current);
+        setCheckinTimerEnd(null);
+        setCheckinRemaining(null);
+        triggerSOS('timer_expired');
+      } else {
+        setCheckinRemaining(remaining);
+      }
+    }, 1000);
+    return () => clearInterval(checkinIntervalRef.current);
+  }, [checkinTimerEnd, triggerSOS]);
+
+  React.useEffect(() => {
+    if (!sosActive || !sosAlertId) {
+      if (gpsWatchRef.current) clearInterval(gpsWatchRef.current);
+      return;
+    }
+    gpsWatchRef.current = setInterval(async () => {
+      try {
+        const { lat, lng, accuracy } = await getGPSPosition();
+        if (!lat) return;
+        
+        const timestamp = new Date().toISOString();
+        setLastTrackerUpdate(Date.now());
+        setGpsHistory(prev => [...prev.slice(-19), { lat, lng, timestamp, accuracy }]);
+
+        await axios.post(`${API_BASE}/sos/${sosAlertId}/location`, {
+          lat, lng, accuracy, capturedAt: timestamp
+        }, { headers: { Authorization: `Bearer ${token}` } });
+      } catch {}
+    }, 15000);
+    return () => clearInterval(gpsWatchRef.current);
+  }, [sosActive, sosAlertId, API_BASE, token, getGPSPosition]);
+
+  // Voice Guardian Lifecycle
+  React.useEffect(() => {
+    if (!voiceGuardianActive) {
+      if (recognitionRef.current) {
+        recognitionRef.current.onend = null;
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
+      }
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      showToast(lang === 'cz' ? 'Váš prohlížeč nepodporuje hlasové rozpoznávání.' : 'Your browser does not support voice recognition.', 'error');
+      setVoiceGuardianActive(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = lang === 'cz' ? 'cs-CZ' : 'en-US';
+
+    recognition.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map(result => result[0])
+        .map(result => result.transcript)
+        .join('')
+        .toUpperCase();
+
+      const keywords = ['HELP', 'POMOC', 'SOS', 'STOP', 'NEMŮŽU', 'POMOZ', 'POLICIE'];
+      if (keywords.some(k => transcript.includes(k))) {
+        console.log('[VoiceGuardian] Emergency keyword detected! Triggering SOS.');
+        triggerSOS('voice');
+        setVoiceGuardianActive(false); // Disable after trigger
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.warn('[VoiceGuardian] Recognition error:', event.error);
+      if (event.error === 'not-allowed') {
+        showToast(lang === 'cz' ? 'Přístup k mikrofonu byl zamítnut.' : 'Microphone access denied.', 'error');
+        setVoiceGuardianActive(false);
+      }
+    };
+
+    recognition.onend = () => {
+      // Auto-restart if still active (to overcome browser timeout)
+      // Added defensive delay to prevent ANR/Tight-loops on emulators
+      if (voiceGuardianActive && !sosActive) {
+        const restartTimer = setTimeout(() => {
+          try { 
+            if (voiceGuardianActive && !sosActive) recognition.start(); 
+          } catch { /* silent retry */ }
+        }, 2000);
+        return () => clearTimeout(restartTimer);
+      }
+    };
+
+    recognitionRef.current = recognition;
+    try { recognition.start(); } catch (err) { console.error('[VoiceGuardian] Start error:', err); }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.onend = null;
+        recognitionRef.current.stop();
+      }
+    };
+  }, [voiceGuardianActive, sosActive, lang, triggerSOS, showToast]);
+
+  // Battery Sentinel
+  React.useEffect(() => {
+    if (!navigator.getBattery) return;
+    
+    let batteryInstance = null;
+    const handleLevelChange = (e) => {
+      const b = e.target || batteryInstance;
+      if (b) setBatteryLevel(Math.floor(b.level * 100));
+    };
+
+    navigator.getBattery().then(battery => {
+      batteryInstance = battery;
+      setBatteryLevel(Math.floor(battery.level * 100));
+      battery.addEventListener('levelchange', handleLevelChange);
+    });
+
+    return () => {
+      if (batteryInstance) {
+        batteryInstance.removeEventListener('levelchange', handleLevelChange);
+      }
+    };
+  }, []); // Only once, battery level is monitored via event
+
+  const memoizedSetActiveSafetySession = React.useCallback(() => {}, []);
+  const memoizedSetIsTimerActive = React.useCallback(() => {}, []);
+  const memoizedSetTimeLeft = React.useCallback(() => {}, []);
+  const memoizedNormalizeProfileId = React.useCallback((id) => id, []);
+
   const nexusData = useNexusData({
     token,
     isLoggedIn,
     API_BASE,
     activeProfileId,
-    setActiveOperator: (op) => setActiveOperatorState(op),
-    normalizeProfileId: (id) => id, 
-    setMessages,
-    setActiveSafetySession: () => {},
-    setIsTimerActive: () => {},
-    setTimeLeft: () => {},
+    setActiveOperator: memoizedSetActiveOperator,
+    normalizeProfileId: memoizedNormalizeProfileId, 
+    setMessages: memoizedSetMessages,
+    setActiveSafetySession: memoizedSetActiveSafetySession,
+    setIsTimerActive: memoizedSetIsTimerActive,
+    setTimeLeft: memoizedSetTimeLeft,
     showToast,
     lang
   });
@@ -274,6 +690,26 @@ export const NexusProvider = ({ children }) => {
   }, [activeOperatorState, authUser, isLoggedIn]);
 
   const { activeRole, isAllowed } = usePermissions(activeOperator, nexusData.rolePermissions);
+
+  const [pendingNotifications, setPendingNotifications] = React.useState([]);
+
+  const onDelayBooking = React.useCallback(async (id, mins) => {
+    const drafts = await nexusData.handleDelayBooking(id, mins);
+    
+    // If we are currently in a linked safety session, extend the timer too
+    if (linkedSessionId === id && checkinTimerEnd) {
+      setCheckinTimerEnd(prev => prev + (mins * 60 * 1000));
+    }
+
+    if (drafts && drafts.length > 0) {
+      setPendingNotifications(prev => {
+        // Avoid duplicate drafts for the same booking
+        const existingIds = new Set(prev.map(p => p.bookingId));
+        const uniqueDrafts = drafts.filter(d => !existingIds.has(d.bookingId));
+        return [...prev, ...uniqueDrafts];
+      });
+    }
+  }, [nexusData, linkedSessionId, checkinTimerEnd]);
 
   const [incomingRelayCall, setIncomingRelayCall] = React.useState(null);
   const handleNewMessage = React.useCallback((data) => {
@@ -321,34 +757,66 @@ export const NexusProvider = ({ children }) => {
       connectionError: lang === 'cz' ? 'Chyba připojení. Zkontrolujte internet.' : 'Connection error. Please check your internet.',
       loginError: lang === 'cz' ? 'Neplatné přihlašovací údaje.' : 'Invalid credentials.',
     };
-    const msg = errorMessages[result?.error] || result?.error || (lang === 'cz' ? 'Přihlášení se nezdařilo.' : 'Login failed.');
+    const msg = result?.detail || errorMessages[result?.error] || result?.error || (lang === 'cz' ? 'Přihlášení se nezdařilo.' : 'Login failed.');
     showToast(msg, 'error');
-    return false;
+    return { success: false, message: msg };
   }, [auth, showToast, lang]);
 
   const profiles = nexusData.profiles || [];
   
   const myProfiles = React.useMemo(() => {
     if (!activeOperator) return [];
-    const opId = String(activeOperator.id || activeOperator._id || '');
+    
+    // Normalize operator ID and role for reliable comparison
+    const opId = String(activeOperator.id || activeOperator._id || activeOperator.userId || '').toLowerCase();
     const rawRoleStr = String(activeRole || '').toLowerCase();
-    const isAgencyLevel = rawRoleStr === 'agency admin' || rawRoleStr === 'manager' || rawRoleStr === 'senior operator';
-    if (isAgencyLevel) return profiles;
-    if (rawRoleStr === 'app owner') return [];
+    
+    // Roles that should see ALL agency profiles by default
+    const isAgencyLevel = ['agency admin', 'manager', 'senior operator', 'senior manager', 'owner'].includes(rawRoleStr);
+    
+    // Calculate base profiles before final filtering
+    let filtered = [];
+    
+    if (activeOperator.isAppOwner || isAgencyLevel) {
+      filtered = [...(profiles || [])];
+    } else if (activeOperator.isModel) {
+      // SECURITY: Models NEVER have "assigned" profiles. 
+      // They ONLY see the profile they strictly own (match by userId)
+      filtered = (profiles || []).filter(p => {
+        if (!p) return false;
+        const ownerId = String(p.userId || p.ownerId || p.owner_id || '').toLowerCase();
+        return ownerId === opId;
+      });
+    } else {
+      // For regular operators, filter by explicit assignment (assignees/operators)
+      filtered = (profiles || []).filter(p => {
+        if (!p) return false;
+        const asgs = Array.isArray(p.assignees) ? p.assignees : [];
+        const ops = Array.isArray(p.operators) ? p.operators : [];
+        const isAssigneeMatch = asgs.some(a => String(a?.id || a?._id || a?.userId || a).toLowerCase() === opId);
+        const isOperatorMatch = ops.some(o => String(o?.id || o?._id || o?.userId || o).toLowerCase() === opId);
+        const isOwnerMatch = String(p.userId || p.ownerId || p.owner_id || '').toLowerCase() === opId;
+        return isAssigneeMatch || isOperatorMatch || isOwnerMatch;
+      });
+    }
 
-    let filtered = profiles.filter(p => {
-      if (!p) return false;
-      const asgs = Array.isArray(p.assignees) ? p.assignees : [];
-      const ops = Array.isArray(p.operators) ? p.operators : [];
-      const isAssigneeMatch = asgs.some(a => String(a?.id || a?._id || a) === opId);
-      const isOperatorMatch = ops.some(o => String(o?.id || o?._id || o) === opId);
-      const isOwnerMatch = String(p.userId || p.ownerId || '') === opId;
-      return isAssigneeMatch || isOperatorMatch || isOwnerMatch;
-    });
-
-    if (onlineOnly) filtered = filtered.filter(p => p.status === 'online');
+    // Final layer: Online filtering (Strictly matches the UI green dots)
+    if (onlineOnly) {
+      return (filtered || []).filter(p => p && p.status === 'online');
+    }
+    
     return filtered;
   }, [profiles, activeOperator, activeRole, onlineOnly]);
+
+  // SECURITY ENFORCEMENT: For Models, ensure activeProfileId is NEVER 'all' if they have profiles.
+  // This prevents accidental exposure of "Agency-wide" data views.
+  React.useEffect(() => {
+    if (activeOperator?.isModel && activeProfileId === 'all' && myProfiles.length > 0) {
+      console.log('[NexusContext] Enforcing specific profile filter for model user');
+      setActiveProfileId(String(myProfiles[0].id));
+    }
+  }, [activeOperator, activeProfileId, myProfiles, setActiveProfileId]);
+
 
   const fetchPlans = React.useCallback(async () => {
     try {
@@ -385,10 +853,18 @@ export const NexusProvider = ({ children }) => {
     [profiles, activeProfileId, myProfiles]
   );
 
-  const filteredMessages = React.useMemo(() => 
-    activeProfileId === 'all' ? (messages || []) : (messages || []).filter(m => m.profileId === activeProfile?.id),
-    [messages, activeProfile, activeProfileId]
-  );
+  const filteredMessages = React.useMemo(() => {
+    // SECURITY: If user is a model, strictly filter by their assigned profiles (myProfiles)
+    // This prevents seeing any messages from other profiles even if retrieved from API
+    const baseMessages = activeOperator?.isModel 
+      ? (messages || []).filter(m => (myProfiles || []).some(p => String(p.id) === String(m.profileId)))
+      : (messages || []);
+
+    if (activeProfileId === 'all') return baseMessages;
+    
+    // Further filter by selected profile
+    return baseMessages.filter(m => String(m.profileId) === String(activeProfile?.id));
+  }, [messages, activeProfile, activeProfileId, activeOperator, myProfiles]);
 
   const selectedChat = React.useMemo(() => (messages || []).find(m => m.id === selectedChatId) || null, [messages, selectedChatId]);
 
@@ -457,23 +933,39 @@ export const NexusProvider = ({ children }) => {
     loading: nexusData.isDataLoading, activeOperator, activeRole, isAllowed,
     isLoggedIn, token, logout: () => { logout(); setShowLanding(true); setJustLoggedOut(true); }, 
     onLogin, onRegisterAgency: auth.handleRegisterAgency, onRegisterUser: auth.handleRegisterUser,
+    justLoggedOut, setJustLoggedOut,
+    isAppOwner: activeOperator?.isAppOwner || false,
+    isManager: activeOperator?.isManager || false,
+    isAdmin: activeOperator?.isAdmin || false,
     API_BASE, showLanding: showLanding ?? !isLoggedIn, setShowLanding, hasSeenOnboarding, setHasSeenOnboarding, showOnboarding, setShowOnboarding,
     updatePlans, fetchPlans, subscriptionPlans, isPlansLoading, showToast, contextToasts: _toasts,
     isMobile, isNativeApp, isSidebarCollapsed, setIsSidebarCollapsed, mobileView, setMobileView,
     inlinePanelTab, setInlinePanelTab, isTranslating, setIsTranslating, internalNote, setInternalNote,
     clientNotes, detectedMeeting, setDetectedMeeting, typingProfiles, setTypingProfiles,
     showPanicConfirm, setShowPanicConfirm, chatScrollRef, isUserScrolled, incomingRelayCall, setIncomingRelayCall,
+    activeSafetySession, sosActive, linkedSessionId, checkinMinutes, setCheckinMinutes,
+    checkinTimerEnd, checkinRemaining, triggerSOS, cancelSOS, 
+    startCheckinTimer, resetCheckinTimer, confirmDeparture: handleConfirmDeparture,
+    pendingNotifications, setPendingNotifications, onDelayBooking,
     agencyDetailModalData, setAgencyDetailModalData, isAddAgencyOpen, setIsAddAgencyOpen,
     isBugReportOpen, setIsBugReportOpen, isAddUserOpen, setIsAddUserOpen, addUserModalAgencyId, setAddUserModalAgencyId,
+    SAFETY_SUGGESTIONS: ['15m', '30m', '45m', '60m', '1.5h', '2h'],
     handleAddAgency: () => setIsAddAgencyOpen(true),
     handleAgencyDetail: (agency) => setAgencyDetailModalData(agency),
     handleEditProfile: (profile) => { setEditingProfileData(profile); setIsEditProfileOpen(true); },
     isEditProfileOpen, setIsEditProfileOpen, editingProfileData, setEditingProfileData,
     handleSendMessage, handleTranslate, handleSaveNote, handleDeleteNote, startCall, handleQuickSaveMeeting,
     activeProfile, activeProfileId, setActiveProfileId, profiles, myProfiles, assignedProfiles: myProfiles,
-    onlineOnly, setOnlineOnly, totalUnread, messages, filteredMessages, selectedChatId, setSelectedChatId,
+    onlineOnly, setOnlineOnly, 
+    isSidebarOpen, setIsSidebarOpen,
+    totalUnread, messages, filteredMessages, selectedChatId, setSelectedChatId,
     selectedChat, chatMessages, chatHistory, fetchChatMessages, isHistoryLoading, setIsHistoryLoading,
     messageValue, setMessageValue, calViewDate, setCalViewDate, globalSettings, fetchGlobalSettings,
+    gpsHistory, lastTrackerUpdate,
+    voiceGuardianActive, handleToggleVoiceGuardian,
+    batteryLevel, incomingGhostCall, setIncomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity,
+    heartRate, setHeartRate, hrThreshold, setHrThreshold, isBluetoothConnected, setIsBluetoothConnected,
+    isTvMode, tvToken, activeBioWarning, setActiveBioWarning, playBeep, triggerSilentSOS,
     handleUpdateGlobalSetting: async (key, value) => {
       try {
         const res = await axios.post(`${API_BASE}/admin/settings`, { key, value }, { headers: { Authorization: `Bearer ${token}` } });

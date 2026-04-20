@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 
 import { useNexus } from '../../context/NexusContext';
+import PremiumSelector from '../UI/PremiumSelector';
 
 const CalendarView = () => {
   const nexus = useNexus();
@@ -26,55 +27,56 @@ const CalendarView = () => {
 
   return (
     <div style={{ padding: isMobile ? '1.5rem 1rem' : '3rem', paddingBottom: '8rem', flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }} className="fade-in custom-scrollbar">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '2.5rem', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : '0' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-            <h2 data-testid="page-calendar-title" style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '800' }}>{t('bookingSchedule')}</h2>
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>•</span>
-              <select 
-                value={activeProfileId || ''} 
-                onChange={(e) => setActiveProfileId(e.target.value)}
-                style={{
-                  background: 'rgba(255,255,255,0.05)', 
-                  border: '1px solid var(--card-border)', 
-                  color: 'var(--accent-color)', 
-                  padding: '0.4rem 1rem', 
-                  borderRadius: '8px', 
-                  fontSize: '0.9rem', 
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  outline: 'none'
-                }}
-              >
-                {((activeRole === 'App Owner' || activeRole === 'Agency Admin' || activeRole === 'Manager') ? safeProfiles : safeMyProfiles).map(p => (
-                  <option key={p.id} value={p.id} style={{ background: '#0a0c10', color: 'white' }}>{p.name}</option>
-                ))}
-              </select>
+      {!isMobile && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem', flexDirection: 'row', gap: '0' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              <h2 data-testid="page-calendar-title" style={{ fontSize: '2rem', fontWeight: '800' }}>{t('bookingSchedule')}</h2>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '220px' }} className="premium-selector-fix">
+                <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>•</span>
+                <PremiumSelector
+                  options={(activeRole === 'App Owner' || activeRole === 'Agency Admin' || activeRole === 'Manager') ? safeProfiles : safeMyProfiles}
+                  value={activeProfileId || ''}
+                  onChange={(val) => setActiveProfileId(val)}
+                  placeholder={t('selectProfile')}
+                  style={{ flex: 1 }}
+                />
+              </div>
             </div>
+            <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('bookingScheduleDesc')}</p>
           </div>
-          <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>{t('bookingScheduleDesc')}</p>
+          <div style={{ display: 'flex', gap: '0.75rem', width: 'auto', flexDirection: 'row' }}>
+             <button data-testid="btn-add-booking" onClick={() => setIsBookingModalOpen(true)} style={{ padding: '0.85rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', color: 'white', border: 'none', background: 'var(--accent-color)', borderRadius: '15px', fontWeight: '800', fontSize: '0.85rem' }}>
+               <Plus size={16} /> {lang === 'cz' ? 'Přidat akci' : 'Add Booking'}
+             </button>
+             <button 
+               data-testid="btn-export-calendar" onClick={handleExportICS}
+               className="glass-card" 
+               style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '0.75rem', cursor: 'pointer', color: 'white', border: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', flex: 'none' }}
+             >
+               <Share2 size={18} /> <span>{t('exportCalendar')}</span>
+             </button>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '0.75rem', width: isMobile ? '100%' : 'auto', flexDirection: isMobile ? 'column' : 'row' }}>
-           <button data-testid="btn-add-booking" onClick={() => setIsBookingModalOpen(true)} style={{ padding: '0.85rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', color: 'white', border: 'none', background: 'var(--accent-color)', borderRadius: '15px', fontWeight: '800', fontSize: '0.85rem' }}>
-             <Plus size={16} /> {lang === 'cz' ? 'Přidat akci' : 'Add Booking'}
+      )}
+
+      {isMobile && (
+        <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
+           <button onClick={() => setIsBookingModalOpen(true)} style={{ flex: 1, padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', cursor: 'pointer', color: 'white', border: 'none', background: 'var(--accent-color)', borderRadius: '12px', fontWeight: '800', fontSize: '0.8rem' }}>
+             <Plus size={14} /> {lang === 'cz' ? 'Přidat' : 'Add'}
            </button>
-           <button 
-             data-testid="btn-export-calendar" onClick={handleExportICS}
-             className="glass-card" 
-             style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '0.75rem', cursor: 'pointer', color: 'white', border: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', flex: isMobile ? 1 : 'none' }}
-           >
-             <Share2 size={18} /> <span>{t('exportCalendar')}</span>
+           <button onClick={handleExportICS} className="glass-card" style={{ flex: 1, padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', cursor: 'pointer', color: 'white', border: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', fontWeight: '800', fontSize: '0.8rem' }}>
+             <Share2 size={14} /> <span>Export</span>
            </button>
+        </div>
+      )}
            <button 
              data-testid="btn-sync-calendar-toggle" onClick={() => setIsCalendarSyncOpen(!isCalendarSyncOpen)}
              className="glass-card" 
-             style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '0.75rem', cursor: 'pointer', color: 'var(--accent-color)', border: '1px solid var(--accent-color)', background: 'rgba(59,130,246,0.1)', borderRadius: '15px', flex: isMobile ? 1 : 'none' }}
+             style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '0.75rem', cursor: 'pointer', color: 'var(--accent-color)', border: '1px solid var(--accent-color)', background: 'rgba(59,130,246,0.1)', borderRadius: '15px', flex: isMobile ? 1 : 'none', marginBottom: '1.5rem' }}
            >
              <Link size={18} /> <span>{t('syncCalendar')}</span>
            </button>
-        </div>
-      </div>
 
       {isCalendarSyncOpen && (
         <div className="glass-card fade-in" style={{ position: 'relative', padding: '1.5rem 1.5rem 2rem', marginBottom: '2rem', background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.2)' }}>
@@ -107,7 +109,9 @@ const CalendarView = () => {
               {safeSchedule.length === 0 ? (
                 <div style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
                   <Calendar size={48} style={{ opacity: 0.1, marginBottom: '1rem' }} />
-                  <p>{t('noEventsToday') || 'No bookings scheduled for today.'}</p>
+                  <p style={{ fontWeight: '600', marginTop: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                    {t('noEventsToday') === 'noEventsToday' ? (lang === 'cz' ? 'Na dnešek nejsou naplánovány žádné rezervace.' : 'No bookings scheduled for today.') : t('noEventsToday')}
+                  </p>
                 </div>
               ) : (
                 safeSchedule.sort((a,b) => {

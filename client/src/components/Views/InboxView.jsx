@@ -2,10 +2,11 @@ import React from 'react';
 import { 
   Search, MessageSquare, Phone, Clock, Link, Globe, Shield, Check, 
   Zap, Calendar, ChevronDown, ChevronLeft, ChevronRight, PlusCircle, 
-  Signal, MoreVertical, StickyNote, Languages, Sparkles 
+  Signal, MoreVertical, StickyNote, Languages, Sparkles, Loader2
 } from 'lucide-react';
 
 import { useNexus } from '../../context/NexusContext';
+import PremiumSelector from '../UI/PremiumSelector';
 
 const InboxView = () => {
   const nexus = useNexus();
@@ -23,79 +24,91 @@ const InboxView = () => {
     activeProfile, handleSendMessage, handleTranslate, handleSaveNote,
     handleDeleteNote, startCall, handleQuickSaveMeeting, showToast
   } = nexus;
+
+  // ENSURE WE HAVE A VALID FILTER (Default to 'all' if somehow null or invalid for better UX)
+  React.useEffect(() => {
+    if (!activeProfileId) {
+      setActiveProfileId('all');
+    }
+  }, [activeProfileId, setActiveProfileId]);
+
   return (
     <div data-testid="page-inbox-container" style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden', position: 'relative' }} className="fade-in inbox-grid">
       {/* Column 1: Inbox List */}
       {(!isMobile || mobileView === 'list') && (
         <div className={`inbox-panel ${!selectedChatId ? 'active' : ''}`} style={{ width: isMobile ? '100%' : '380px', flexShrink: 0, borderRight: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ padding: '2rem 1.5rem', borderBottom: '1px solid var(--card-border)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', gap: '1rem' }}>
-              <h2 data-testid="page-inbox-title" style={{ fontSize: '1.5rem', whiteSpace: 'nowrap' }}>{t('inbox')}</h2>
-              <div style={{ position: 'relative', flex: 1, maxWidth: '200px' }}>
-                <select data-testid="input-profile-filter" value={activeProfileId} 
-                  onChange={(e) => {
-                    setActiveProfileId(e.target.value);
-                    setSelectedChatId(null); 
+          {!isMobile && !activeOperator?.isModel && (
+            <div style={{ padding: '2rem 1.5rem', borderBottom: '1px solid var(--card-border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', gap: '1rem' }}>
+                <h2 data-testid="page-inbox-title" style={{ fontSize: '1.5rem', whiteSpace: 'nowrap' }}>{t('inbox')}</h2>
+                <div style={{ position: 'relative', flex: 1, maxWidth: '210px' }} className="premium-selector-fix">
+                  <PremiumSelector
+                    options={assignedProfiles}
+                    value={activeProfileId}
+                    onChange={(val) => {
+                      setActiveProfileId(val);
+                      setSelectedChatId(null); 
+                    }}
+                    showAllOption={true}
+                    allLabel={lang === 'cz' ? 'Všechny profily' : 'All Profiles'}
+                    placeholder={t('selectProfile')}
+                  />
+                </div>
+              </div>
+              <div style={{ position: 'relative' }}>
+                <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                <input data-testid="input-search-chats" type="text" placeholder={t('searchPlaceholder')} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.85rem 0.85rem 0.85rem 2.5rem', borderRadius: '12px', color: 'white' }} />
+              </div>
+            </div>
+          )}
+          <div style={{ overflowY: 'auto', flex: 1 }}>
+            {filteredMessages.length > 0 ? filteredMessages.map(msg => {
+              const isSelected = selectedChatId === msg.id;
+              const isUnread = msg.status === 'unread';
+              
+              return (
+                <div 
+                  key={msg.id} 
+                  onClick={() => { 
+                    setSelectedChatId(msg.id); 
+                    if (isMobile) setMobileView('chat');
+                    if (!isTranslating) { setSourceText(""); }
+                    setInternalNote("");
                   }}
+                  className={`conversation-item ${isSelected ? 'active' : ''} ${isUnread ? 'unread' : ''}`}
                   style={{ 
-                    width: '100%',
-                    background: 'rgba(255,255,255,0.05)', 
-                    border: '1px solid var(--card-border)', 
-                    padding: '0.4rem 2rem 0.4rem 0.85rem', 
-                    borderRadius: '10px', 
-                    color: 'white',
-                    fontSize: '0.8rem',
-                    fontWeight: '800',
-                    appearance: 'none',
-                    cursor: 'pointer'
+                    padding: isMobile ? '1.25rem 1.25rem 1.25rem 2.2rem' : '1.5rem 1.5rem 1.5rem 2.5rem', 
+                    borderBottom: '1px solid var(--card-border)', 
+                    cursor: 'pointer', 
+                    position: 'relative'
                   }}
                 >
-                  <option value="all">📥 {lang === 'cz' ? 'Všechny profily' : 'All Profiles'}</option>
-                  {assignedProfiles.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
-                <ChevronDown size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-secondary)' }} />
-              </div>
-            </div>
-            <div style={{ position: 'relative' }}>
-              <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-              <input data-testid="input-search-chats" type="text" placeholder={t('searchPlaceholder')} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.85rem 0.85rem 0.85rem 2.5rem', borderRadius: '12px', color: 'white' }} />
-            </div>
-          </div>
-          <div style={{ overflowY: 'auto', flex: 1 }}>
-            {filteredMessages.length > 0 ? filteredMessages.map(msg => (
-              <div key={msg.id} onClick={() => { 
-                setSelectedChatId(msg.id); 
-                if (isMobile) setMobileView('chat');
-                if (!isTranslating) {
-                  setSourceText("");
-                }
-                setInternalNote("");
-              }}
-                style={{ 
-                  padding: '1.5rem', 
-                  borderBottom: '1px solid var(--card-border)', 
-                  background: selectedChatId === msg.id ? 'rgba(59, 130, 246, 0.2)' : 'transparent', 
-                  cursor: 'pointer', 
-                  position: 'relative',
-                  borderLeft: selectedChatId === msg.id ? '6px solid var(--accent-color)' : '6px solid transparent',
-                  boxShadow: selectedChatId === msg.id ? 'inset 0 0 20px rgba(59, 130, 246, 0.1)' : 'none',
-                  transition: 'all 0.2s ease'
-                }}>
-                    {msg.status === 'unread' && <div className="dot"></div>}
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                  <span style={{ fontWeight: selectedChatId === msg.id ? '800' : '700', fontSize: '1.1rem', color: selectedChatId === msg.id ? 'white' : 'inherit', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    {clientNames[msg.from] || msg.from}
-                    {activeProfileId === 'all' && msg.profileName && (
-                      <span style={{ fontSize: '0.65rem', background: 'rgba(59,130,246,0.2)', color: 'var(--accent-color)', padding: '2px 6px', borderRadius: '6px', fontWeight: 600 }}>{msg.profileName}</span>
-                    )}
-                  </span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{msg.time}</span>
+                  {isUnread && <div className="dot"></div>}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                    <span style={{ 
+                      fontWeight: (isUnread || isSelected) ? '800' : '600', 
+                      fontSize: '1rem', 
+                      color: isSelected ? 'white' : (isUnread ? 'var(--accent-color)' : 'inherit'),
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '0.5rem' 
+                    }}>
+                      {clientNames[msg.from] || msg.from}
+                      {activeProfileId === 'all' && msg.profileName && (
+                        <span style={{ fontSize: '0.6rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(59,130,246,0.1)', color: 'var(--accent-color)', border: '1px solid rgba(59,130,246,0.2)' }}>{msg.profileName}</span>
+                      )}
+                    </span>
+                    <span style={{ fontSize: '0.72rem', color: isUnread ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: isUnread ? '800' : '400' }}>{msg.time}</span>
+                  </div>
+                  <div className="truncate-text" style={{ 
+                    opacity: isSelected ? 1 : (isUnread ? 0.9 : 0.6),
+                    color: isUnread ? 'white' : 'var(--text-secondary)',
+                    fontWeight: isUnread ? '600' : '400',
+                    fontSize: '0.85rem'
+                  }}>{msg.text}</div>
                 </div>
-                <div className="truncate-text" style={{ opacity: selectedChatId === msg.id ? 1 : 0.7 }}>{msg.text}</div>
-              </div>
-            )) : <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 1rem', gap: '0.75rem' }}>
+              );
+            }) : <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 1rem', gap: '0.75rem' }}>
               <MessageSquare size={48} color="#374151" />
               <div style={{ fontSize: '1rem', fontWeight: '700', color: '#64748b' }}>{t('noMessages')}</div>
               <div style={{ fontSize: '0.8rem', color: '#475569' }}>
@@ -154,7 +167,9 @@ const InboxView = () => {
                   }}
                   style={{ flex: 1, padding: isMobile ? '0.5rem 0.75rem' : '2rem', overflowY: 'auto', WebkitOverflowScrolling: 'touch', background: 'rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', gap: isMobile ? '0' : '0.25rem', minHeight: 0, justifyContent: 'flex-end' }}>
                    {isHistoryLoading && chatMessages.length === 0 ? (
-                     <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Loading history...</div>
+                     <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+                       <Loader2 className="animate-spin" size={24} color="var(--accent-color)" />
+                     </div>
                    ) : chatMessages.length > 0 ? (
                      chatMessages.map((msg, i) => (
                        <div key={msg.id || i} className={msg.direction === 'OUTBOUND' ? 'message-bubble-out' : 'message-bubble-in'} style={{ alignSelf: msg.direction === 'OUTBOUND' ? 'flex-end' : 'flex-start', marginBottom: isMobile ? '0.35rem' : '0.6rem' }}>
@@ -262,7 +277,7 @@ const InboxView = () => {
               </div>
             )}
           </div>
-          {/* Column 3: Notes / Details (Sibling of Column 2 inside Column 2/3 wrapper) */}
+          {/* Column 3: Notes / Details */}
           {(!isMobile || mobileView === 'details') && (
             <div className="notes-panel-container" style={{ 
               width: isMobile ? '100%' : '400px', 
@@ -332,7 +347,6 @@ const InboxView = () => {
                         )}
                       </div>
                     ) : (
-                      /* Quick Replies tab */
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                         {(activeProfile?.quickReplies || []).length === 0 ? (
                           <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
@@ -350,7 +364,7 @@ const InboxView = () => {
                       </div>
                     )}
                   </div>
-                {/* Calendar mini-panel below tabs */}
+                {/* Calendar mini-panel */}
                 {(() => {
                   const calDateStr = calViewDate.toISOString().split('T')[0];
                   const bookingsForDate = (bookingSchedule || []).filter(b => b.startTime?.startsWith(calDateStr));
@@ -359,7 +373,6 @@ const InboxView = () => {
                   const dayDate = calViewDate.toLocaleDateString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { day: 'numeric', month: 'long' });
                   return (
                     <div style={{ borderTop: '1px solid var(--card-border)', flex: '0 0 auto', display: 'flex', flexDirection: 'column', height: '340px' }}>
-                      {/* day nav header */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.75rem', background: 'rgba(99,102,241,0.05)', borderBottom: '1px solid var(--card-border)', flexShrink: 0 }}>
                         <button onClick={() => { const d = new Date(calViewDate); d.setDate(d.getDate()-1); setCalViewDate(d); }} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--card-border)', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.25rem 0.5rem', borderRadius: '6px', display: 'flex', alignItems: 'center' }}><ChevronLeft size={13} /></button>
                         <div style={{ textAlign: 'center' }}>
@@ -371,7 +384,6 @@ const InboxView = () => {
                           <button onClick={() => { const d = new Date(calViewDate); d.setDate(d.getDate()+1); setCalViewDate(d); }} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--card-border)', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.25rem 0.5rem', borderRadius: '6px', display: 'flex', alignItems: 'center' }}><ChevronRight size={13} /></button>
                         </div>
                       </div>
-                      {/* bookings list */}
                       <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                         {bookingsForDate.length === 0 ? (
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '0.5rem', color: 'var(--text-secondary)' }}>
@@ -398,7 +410,6 @@ const InboxView = () => {
                     </div>
                   );
                 })()}
-                {/* Add Booking pinned at bottom of right panel */}
                 <div style={{ padding: '0.75rem', borderTop: '1px solid var(--card-border)', background: 'var(--bg-secondary, #0f1117)', flexShrink: 0 }}>
                   <button
                     onClick={() => { const d = calViewDate.toISOString().split('T')[0]; setNewBookingForm(f => ({ ...f, date: d })); setIsBookingModalOpen(true); }}

@@ -24,6 +24,7 @@ import axios from 'axios';
 
 const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, requestRelayPermissions, processRelayOutbox, syncSmsHistory }) => {
   const RELAY_API_BASE = (import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api').replace(/\/api$/, '');
+  const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
   const [lang, setLang] = useState(() => localStorage.getItem('nexus_lang') || 'cz');
   const [isActive, setIsActive] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState('connecting');
@@ -52,169 +53,8 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   const consecutiveHealthFailuresRef = useRef(0);
   const POLL_FAILURES_FOR_DISCONNECT = 3;
 
-  // ── SOS Safety (unified with SafetySession) ─────────────────────────────────
-  const [sosActive, setSosActive] = useState(false);
-  const [sosAlertId, setSosAlertId] = useState(null);
-  const [linkedSessionId, setLinkedSessionId] = useState(null);
-  const [checkinMinutes, setCheckinMinutes] = useState(60);
-  const [checkinTimerEnd, setCheckinTimerEnd] = useState(null);
-  const [checkinRemaining, setCheckinRemaining] = useState(null);
-  const checkinIntervalRef = useRef(null);
-  const gpsWatchRef = useRef(null);
+  // ── SIP VoIP integration ────────────────────────────────────────────────────
 
-  // Unified GPS: prefer Capacitor, fallback to WebAPI
-  const getGPSPosition = useCallback(async () => {
-    // Try Capacitor Geolocation first (native)
-    try {
-      const { Geolocation } = await import('@capacitor/geolocation');
-      const perm = await Geolocation.checkPermissions();
-      if (perm.location !== 'granted' && perm.location !== 'limited') {
-        await Geolocation.requestPermissions();
-      }
-      const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 8000 });
-      return { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy };
-    } catch {
-      // Fallback to Web Geolocation API
-      try {
-        const pos = await new Promise((resolve, reject) =>
-          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000, enableHighAccuracy: true })
-        );
-        return { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy };
-      } catch { return { lat: null, lng: null, accuracy: null }; }
-    }
-  }, []);
-
-  // Start continuous GPS tracking during active SOS
-  const startSOSTracking = useCallback((alertId) => {
-    if (gpsWatchRef.current) clearInterval(gpsWatchRef.current);
-    gpsWatchRef.current = setInterval(async () => {
-      try {
-        const { lat, lng, accuracy } = await getGPSPosition();
-        if (!lat) return;
-        await axios.post(`${API_BASE}/sos/${alertId}/location`, {
-          lat, lng, accuracy, capturedAt: new Date().toISOString()
-        }, { headers: { Authorization: `Bearer ${operator?.token}` } });
-      } catch {}
-    }, 15000);
-  }, [getGPSPosition, API_BASE, operator?.token]);
-
-  const stopSOSTracking = useCallback(() => {
-    if (gpsWatchRef.current) { clearInterval(gpsWatchRef.current); gpsWatchRef.current = null; }
-  }, []);
-
-  const triggerSOS = useCallback(async (type = 'manual') => {
-    if (sosActive) return;
-    try {
-      const { lat, lng, accuracy } = await getGPSPosition();
-      const res = await axios.post(`${API_BASE}/sos`, {
-        type, lat, lng, accuracy,
-        profileId: operator?.profileId || null
-      }, { headers: { Authorization: `Bearer ${operator?.token}` } });
-
-      setSosActive(true);
-      setSosAlertId(res.data?.id);
-      addLocalLog('sos', 'SOS', `SOS triggered (${type})`, 'outbound', 'sent');
-      startSOSTracking(res.data?.id);
-    } catch (err) {
-      console.warn('[SOS] Failed to trigger:', err.message);
-    }
-  }, [sosActive, API_BASE, operator?.token, operator?.profileId, getGPSPosition, startSOSTracking]);
-
-  const cancelSOS = useCallback(async () => {
-    if (!sosAlertId) return;
-    try {
-      await axios.post(`${API_BASE}/sos/${sosAlertId}/resolve`, {}, {
-        headers: { Authorization: `Bearer ${operator?.token}` }
-      });
-    } catch {}
-    setSosActive(false);
-    setSosAlertId(null);
-    setLinkedSessionId(null);
-    stopSOSTracking();
-  }, [sosAlertId, API_BASE, operator?.token, stopSOSTracking]);
-
-  // Check-in timer (manual OR auto from SafetySession grace period)
-  const startCheckinTimer = useCallback((minutes) => {
-    const mins = minutes || checkinMinutes;
-    const endTime = Date.now() + mins * 60 * 1000;
-    setCheckinTimerEnd(endTime);
-  }, [checkinMinutes]);
-
-  const resetCheckinTimer = useCallback(async () => {
-    setCheckinTimerEnd(null);
-    setCheckinRemaining(null);
-    if (checkinIntervalRef.current) clearInterval(checkinIntervalRef.current);
-    // If linked to a SafetySession, acknowledge it (extend grace)
-    if (linkedSessionId) {
-      try {
-        await axios.post(`${API_BASE}/safety/sessions/${linkedSessionId}/ack`, { extendMinutes: 10 }, {
-          headers: { Authorization: `Bearer ${operator?.token}` }
-        });
-      } catch {}
-    }
-  }, [linkedSessionId, API_BASE, operator?.token]);
-
-  const confirmDeparture = useCallback(async () => {
-    setCheckinTimerEnd(null);
-    setCheckinRemaining(null);
-    if (checkinIntervalRef.current) clearInterval(checkinIntervalRef.current);
-    if (linkedSessionId) {
-      try {
-        await axios.post(`${API_BASE}/safety/sessions/${linkedSessionId}/departure-confirmed`, {}, {
-          headers: { Authorization: `Bearer ${operator?.token}` }
-        });
-      } catch {}
-      setLinkedSessionId(null);
-    }
-  }, [linkedSessionId, API_BASE, operator?.token]);
-
-  useEffect(() => {
-    if (!checkinTimerEnd) return;
-    checkinIntervalRef.current = setInterval(() => {
-      const remaining = checkinTimerEnd - Date.now();
-      if (remaining <= 0) {
-        clearInterval(checkinIntervalRef.current);
-        setCheckinTimerEnd(null);
-        setCheckinRemaining(null);
-        triggerSOS('timer_expired');
-      } else {
-        setCheckinRemaining(remaining);
-      }
-    }, 1000);
-    return () => { if (checkinIntervalRef.current) clearInterval(checkinIntervalRef.current); };
-  }, [checkinTimerEnd, triggerSOS]);
-
-  // Listen for SafetySession events from server (booking-linked grace period)
-  useEffect(() => {
-    if (!window._nexusSocket) return;
-
-    const handleGraceStarted = (data) => {
-      // Auto-start check-in timer when booking grace period begins
-      setLinkedSessionId(data.sessionId);
-      const minutes = data.graceMinutes || 10;
-      setCheckinMinutes(minutes);
-      startCheckinTimer(minutes);
-      addLocalLog('safety', 'System', `Check-in timer started (${minutes} min grace)`, 'inbound', 'forwarded');
-    };
-
-    const handleGraceExpired = (data) => {
-      // Server already auto-triggered SOS, sync state
-      if (data.sosAlertId) {
-        setSosActive(true);
-        setSosAlertId(data.sosAlertId);
-        setLinkedSessionId(data.sessionId);
-        startSOSTracking(data.sosAlertId);
-        addLocalLog('sos', 'System', `SOS auto-triggered (${data.type})`, 'inbound', 'forwarded');
-      }
-    };
-
-    window._nexusSocket.on('safety_grace_started', handleGraceStarted);
-    window._nexusSocket.on('safety_grace_expired', handleGraceExpired);
-    return () => {
-      window._nexusSocket.off('safety_grace_started', handleGraceStarted);
-      window._nexusSocket.off('safety_grace_expired', handleGraceExpired);
-    };
-  }, [startCheckinTimer, startSOSTracking]);
 
   // Fake call handler
   useEffect(() => {
@@ -236,7 +76,6 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   // ── SIP VoIP integration ────────────────────────────────────────────────────
   const [sipConfig, setSipConfig] = useState(null);
   const sipFetchedRef = useRef(false);
-  const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
 
   // Fetch SIP credentials when relay activates
   useEffect(() => {
@@ -1071,79 +910,6 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
         ))}
       </div>
 
-      {/* ── SOS Safety Panel ── */}
-      <div className="glass-card" style={{ padding: '1.25rem', borderRadius: '20px', background: sosActive ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.02)', border: `1px solid ${sosActive ? 'rgba(239,68,68,0.3)' : 'var(--card-border)'}` }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <div style={{ fontWeight: 800, fontSize: '0.75rem', color: sosActive ? '#ef4444' : 'var(--text-secondary)', letterSpacing: '0.1em' }}>
-            🆘 SOS & SAFETY {linkedSessionId ? (lang === 'cz' ? '(navázáno na rezervaci)' : '(linked to booking)') : ''}
-          </div>
-        </div>
-
-        {/* SOS Button */}
-        <button
-          onClick={() => sosActive ? cancelSOS() : triggerSOS('manual')}
-          style={{
-            width: '100%', padding: '1.25rem', borderRadius: '16px',
-            background: sosActive ? 'linear-gradient(135deg, #22c55e, #16a34a)' : 'linear-gradient(135deg, #ef4444, #dc2626)',
-            border: 'none', color: 'white', fontSize: '1.1rem', fontWeight: 900,
-            cursor: 'pointer', marginBottom: '0.75rem',
-            boxShadow: sosActive ? '0 0 30px rgba(239,68,68,0.3)' : 'none',
-            animation: sosActive ? 'pulse-border 2s infinite' : 'none'
-          }}
-        >
-          {sosActive ? (lang === 'cz' ? '✅ JSEM V BEZPEČÍ — ZRUŠIT SOS' : '✅ I\'M SAFE — CANCEL SOS') : (lang === 'cz' ? '🆘 NOUZOVÉ SOS' : '🆘 EMERGENCY SOS')}
-        </button>
-
-        {/* Check-in Timer */}
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
-          {!checkinTimerEnd ? (
-            <>
-              <input
-                type="number" min="5" max="480" value={checkinMinutes}
-                onChange={e => setCheckinMinutes(Math.max(5, Math.min(480, Number(e.target.value))))}
-                style={{ width: '60px', padding: '0.5rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '0.85rem', textAlign: 'center' }}
-              />
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>min</span>
-              <button onClick={() => startCheckinTimer()} style={{
-                flex: 1, padding: '0.5rem', borderRadius: '8px',
-                background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)',
-                color: '#f59e0b', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer'
-              }}>
-                ⏰ {lang === 'cz' ? 'Spustit check-in' : 'Start check-in'}
-              </button>
-            </>
-          ) : (
-            <>
-              <div style={{ flex: 1, textAlign: 'center', fontSize: '1.1rem', fontWeight: 900, color: checkinRemaining && checkinRemaining < 120000 ? '#ef4444' : '#f59e0b', fontFamily: 'monospace' }}>
-                ⏰ {checkinRemaining ? `${Math.floor(checkinRemaining / 60000)}:${String(Math.floor((checkinRemaining % 60000) / 1000)).padStart(2, '0')}` : '--:--'}
-              </div>
-              <button onClick={resetCheckinTimer} style={{
-                padding: '0.5rem 0.75rem', borderRadius: '8px',
-                background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)',
-                color: '#22c55e', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer'
-              }}>
-                ✅ {lang === 'cz' ? 'Jsem OK' : 'I\'m OK'}
-              </button>
-              {linkedSessionId && (
-                <button onClick={confirmDeparture} style={{
-                  padding: '0.5rem 0.75rem', borderRadius: '8px',
-                  background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)',
-                  color: '#3b82f6', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer'
-                }}>
-                  🚪 {lang === 'cz' ? 'Klient odešel' : 'Client left'}
-                </button>
-              )}
-            </>
-          )}
-        </div>
-
-        <div style={{ fontSize: '0.65rem', color: '#64748b', textAlign: 'center' }}>
-          {linkedSessionId
-            ? (lang === 'cz' ? 'Časovač je napojen na vaši rezervaci. Po uplynutí grace periody se automaticky odešle SOS.' : 'Timer is linked to your booking. SOS will auto-trigger when grace period expires.')
-            : (lang === 'cz' ? 'Pokud se neozvete včas, automaticky se odešle SOS s vaší polohou' : 'If you don\'t check in on time, SOS with your location will be sent automatically')
-          }
-        </div>
-      </div>
 
       {/* Permissions Check */}
       <div 

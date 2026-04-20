@@ -61,6 +61,30 @@ const SettingsView = () => {
 
         <div className="settings-section">
           <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Activity size={20} color="var(--accent-color)" /> Osobní předvolby / Personal Preferences
+          </h3>
+          <div className="glass-card" style={{ padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontWeight: '700' }}>{lang === 'cz' ? 'Jazyk aplikace' : 'Application Language'}</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{lang === 'cz' ? 'Vyberte preferovaný jazyk uživatelského rozhraní.' : 'Select your preferred user interface language.'}</div>
+              </div>
+              <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', padding: '3px', borderRadius: '12px', border: '1px solid var(--card-border)', width: '120px' }}>
+                <button 
+                  onClick={() => nexus.setLang('cz')} 
+                  style={{ flex: 1, padding: '8px 0', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '9px', fontSize: '0.75rem', fontWeight: '900', cursor: 'pointer', transition: 'all 0.2s' }}
+                >CZ</button>
+                <button 
+                  onClick={() => nexus.setLang('en')} 
+                  style={{ flex: 1, padding: '8px 0', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '9px', fontSize: '0.75rem', fontWeight: '900', cursor: 'pointer', transition: 'all 0.2s' }}
+                >EN</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="settings-section">
+          <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Building2 size={20} color="var(--accent-color)" /> 
             {activeRole === 'App Owner' ? 'Agency Information' : t('agencyInsight')}: {activeClient?.name || t('global')}
           </h3>

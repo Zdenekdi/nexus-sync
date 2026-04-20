@@ -82,6 +82,51 @@ const FAQItem = ({ question, answer }) => {
   );
 };
 
+const StatusBadge = ({ type, lang }) => {
+  let bg = 'rgba(245, 158, 11, 0.15)';
+  let color = '#f59e0b';
+  let border = 'rgba(245, 158, 11, 0.3)';
+  let label = '';
+
+  if (type === 'coming') {
+    bg = 'rgba(59, 130, 246, 0.15)';
+    color = 'var(--accent-color)';
+    border = 'rgba(59, 130, 246, 0.3)';
+    label = lang === 'cz' ? 'BRZY' : 'SOON';
+  } else if (type === 'beta') {
+    bg = 'rgba(139, 92, 246, 0.15)';
+    color = '#a78bfa';
+    border = 'rgba(139, 92, 246, 0.3)';
+    label = 'BETA';
+  } else {
+    label = lang === 'cz' ? 'VE VÝVOJI' : 'IN PROGRESS';
+  }
+
+  return (
+    <span style={{
+      fontSize: '0.65rem',
+      fontWeight: '800',
+      padding: '3px 10px',
+      borderRadius: '8px',
+      marginLeft: '0.6rem',
+      textTransform: 'uppercase',
+      letterSpacing: '0.08em',
+      background: bg,
+      color: color,
+      border: `1px solid ${border}`,
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '4px',
+      boxShadow: `0 0 15px ${bg}`,
+      backdropFilter: 'blur(4px)',
+      verticalAlign: 'middle'
+    }}>
+      <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: color, display: 'inline-block' }} />
+      {label}
+    </span>
+  );
+};
+
 const LandingPage = () => {
   const { setShowLanding, lang, setLang, isMobile } = useNexus();
 
@@ -98,7 +143,7 @@ const LandingPage = () => {
         {
           icon: <Zap size={24} />,
           title: "Maximální efektivita",
-          desc: "AI Smart Replies a jednotný inbox zrychlují práci operátorek až o 70%."
+          desc: "AI Smart Replies (Q3/Q4 2026) a jednotný inbox zrychlují práci operátorek až o 70%."
         },
         {
           icon: <Users size={24} />,
@@ -107,8 +152,8 @@ const LandingPage = () => {
         },
         {
           icon: <Shield size={24} />,
-          title: "Bezpečnost a Sync",
-          desc: "Vlastní Android Relay a Safety Guard pro maximální ochranu týmu i dat."
+          title: "Guardian Suite PRO",
+          desc: "Hands-free SOS, Ghost Calls a diskrétní Audio Sentinel. Architektura bez lagů pro absolutní spolehlivost v krizových situacích."
         }
       ],
       featuresTitle: "Výhody pro váš tým",
@@ -116,12 +161,14 @@ const LandingPage = () => {
         { 
           icon: <MessageSquare size={18} />,
           title: "Pro Operátorky", 
-          desc: "AI Smart Replies odbaví chaty za vás. Unified Inbox zajistí, že vám žádná zpráva neuteče. Rychlejší a klidnější směny bez neustálého přepínání oken." 
+          desc: "AI Smart Replies (dostupné v Q3/Q4 2026) odbaví chaty za vás. Unified Inbox zajistí, že vám žádná zpráva neuteče. Rychlejší a klidnější směny bez neustálého přepínání oken.",
+          status: 'coming'
         },
         { 
           icon: <Shield size={18} />,
           title: "Pro Modelky", 
-          desc: "Safety Guard a GPS tracking pro bezpečí v terénu. Živý přehled výdělků a rezervací přímo v mobilu. Snadný check-in přes tlačítko 'Klient dorazil'." 
+          desc: "Guardian Suite: Hlasová aktivace SOS ('Pomoc') i se zhasnutým displejem. Audio Sentinel – diskrétní pípání potvrzující tvé bezpečí. Ghost Call pro ústup ze schůzky a živý přehled výdělků.",
+          status: 'beta'
         },
         { 
           icon: <BarChart3 size={18} />,
@@ -134,20 +181,27 @@ const LandingPage = () => {
           desc: "Správa neomezeného množství agentur, konfigurace předplatných plánů, řízení globálních oprávnění a monitoring serverové infrastruktury na jednom místě."
         }
       ],
-      platformTitle: "Kompletní platforma v jednom",
       platformFeatures: [
-        { icon: <MessageSquare size={20} />, title: "Unified Inbox", desc: "Všechny konverzace ze všech profilů na jednom místě. SMS relay přes vlastní Android Relay zařízení." },
-        { icon: <Calendar size={20} />, title: "Kalendář & Rezervace", desc: "Správa schůzek s podporou incall/outcall. Automatické napojení na Safety Guard při outcall rezervacích." },
-        { icon: <Shield size={20} />, title: "Safety Guard", desc: "GPS sledování v reálném čase, panik tlačítko, automatická eskalace s grace period a Telegram notifikace manažerům." },
-        { icon: <Smartphone size={20} />, title: "Nexus Relay APK", desc: "Nativní Android aplikace pro relay SMS zpráv. Auto-provisioning SIP/VoIP, device binding a push notifikace." },
-        { icon: <BarChart3 size={20} />, title: "Analytika & Statistiky", desc: "Denní statistiky příjmů, počtu rezervací a aktivních profilů. Dashboard pro manažery i majitele s filtry podle agentury." },
-        { icon: <Users size={20} />, title: "Hierarchie & Role", desc: "6 úrovní rolí (App Owner → Agency Admin → Manager → Senior Operator → Operator → Model) s dynamickými oprávněními." },
-        { icon: <Package size={20} />, title: "Inventář", desc: "Správa vybavení podle lokací s upozorněním na nízké zásoby. Sledování threshold hodnot pro automatické alerty." },
-        { icon: <Globe size={20} />, title: "Webové profily", desc: "Správa bio, galerie a online prezentace profilů. Synchronizace s externími platformami." },
-        { icon: <Bell size={20} />, title: "Push notifikace", desc: "Firebase Cloud Messaging pro okamžité notifikace o nových zprávách, hovorech a bezpečnostních alertech." },
-        { icon: <Lock size={20} />, title: "Bezpečnost", desc: "JWT autentizace, bcrypt hashování, šifrování SIP hesel, rate limiting, CORS whitelist a Helmet security headers." },
-        { icon: <MapPin size={20} />, title: "Multi-tenant architektura", desc: "Kompletní izolace dat mezi agenturami. Každá agentura má vlastní role, oprávnění, profily a nastavení." },
-        { icon: <Star size={20} />, title: "QA Hub & Referraly", desc: "Kontrola kvality komunikace operátorek. Referral systém pro růst agenturní sítě s odměnami." }
+        { icon: <MessageSquare size={20} />, title: "Sjednocená schránka", desc: "Zprávy z AW, SMS a Telegramu v jednom rozhraní.", status: 'beta' },
+        { icon: <Shield size={20} />, title: "Bezpečnostní dohled", desc: "GPS tracking, SOS alerty a tichý dohled nad týmem.", status: 'beta' },
+        { icon: <Calendar size={20} />, title: "Rezervace & Kalendář", desc: "Správa incall/outcall s automatickou Safety pojistkou.", status: 'beta' },
+        { icon: <Smartphone size={20} />, title: "Nexus Relay Brána", desc: "Nativní Android most pro intercepting SMS a hovorů.", status: 'beta' },
+        { icon: <BarChart3 size={20} />, title: "Analytika & Příjmy", desc: "Real-time statistiky výdělků a aktivity operátorek.", status: 'beta' },
+        { icon: <Users size={20} />, title: "Hierarchie & Role", desc: "6 úrovní oprávnění (Majitel → Manager → Modelka).", status: 'aktivní' },
+        { icon: <MessageSquare size={20} />, title: "AI Smart Replies", desc: "Chytré návrhy odpovědí pro bleskové konverze.", status: 'q3/q4 2026' },
+        { icon: <Globe size={20} />, title: "Synchronizace webů", desc: "Hromadná správa bio a galerií na inzertních webech.", status: 'beta' },
+        { icon: <Zap size={20} />, title: "SIP / VoIP Simulace", desc: "Virtuální corridors pro simulaci hovorů z prohlížeče.", status: 'q1 2027' },
+        { icon: <Package size={20} />, title: "Skladový systém", desc: "Správa vybavení podle lokací s logistikou zásob.", status: 've vývoji' },
+        { icon: <Lock size={20} />, title: "Biometrická ochrana", desc: "Pojistka proti nucenému vypnutí SOS (FaceID/PIN).", status: 'beta' },
+        { icon: <Bell size={20} />, title: "Push notifikace", desc: "Okamžité výstrahy o zprávách a bezpečnostních stavech.", status: 'aktivní' },
+        { icon: <Shield size={20} title="Audio Sentinel" />, title: "Audio Sentinel", desc: "Diskrétní pípání/vibrace potvrzující vaše bezpečí.", status: 'beta' },
+        { icon: <Star size={20} />, title: "Auditní logy Hubu", desc: "Kryptograficky podepsaná historie všech systémových akcí.", status: 've vývoji' },
+        { icon: <MapPin size={20} />, title: "Multi-tenant izolace", desc: "Absolutní oddělení dat mezi agenturami v síti.", status: 'aktivní' },
+        { icon: <MessageSquare size={20} />, title: "AI Překladač", desc: "Real-time překlad mezi operátorkou a klientem.", status: 'aktivní' },
+        { icon: <Package size={20} />, title: "White-label rozhraní", desc: "Možnost vlastního brandingu a domény pro agentury.", status: 'q2 2027' },
+        { icon: <Settings size={20} />, title: "Automatické výplaty", desc: "Generování reportů a automatické týdenní odměny.", status: 'q4 2026' },
+        { icon: <Smartphone size={20} />, title: "Device Cloud Sync", desc: "Synchronizace dat na pozadí mezi mobilní app a webem.", status: 've vývoji' },
+        { icon: <Star size={20} />, title: "Partnerský program", desc: "Referral systém pro růst sítě s provizemi.", status: 'aktivní' }
       ],
       footer: "Nexus Systems – Váš nástroj pro efektivní škálování.",
       faqTitle: "Časté dotazy",
@@ -156,6 +210,9 @@ const LandingPage = () => {
         { q: "Jak funguje SMS Relay?", a: "Nainstalujete naši Android aplikaci Nexus Relay na dedikované zařízení s SIM kartou. Aplikace automaticky přeposílá příchozí SMS do Unified Inboxu a odchozí zprávy odesílá přes skutečné telefonní číslo." },
         { q: "Kolik agentur mohu spravovat?", a: "Jako App Owner můžete spravovat neomezený počet agentur. Každá agentura má vlastní data, role, profily a nastavení — kompletně izolovaná od ostatních." },
         { q: "Mohu systém používat na mobilu?", a: "Ano. Nexus Hub je plně responzivní a funguje ve webovém prohlížeči i jako nativní Android aplikace. Pro modelky nabízíme mobilní rozhraní s Safety Guard a GPS trackingem." },
+        { q: "Jak funguje Exit Strategy (Ghost Call)?", a: "Modelka může jedním dotykem naplánovat falešný hovor. Za 20 sekund začne telefon vyzvánět a zobrazí věrohodnou obrazovku příchozího hovoru z agentury, což vytvoří diskrétní záminku k odchodu." },
+        { q: "Je možné aplikaci ovládat hlasem?", a: "Ano. Nexus Hub obsahuje Voice Guardian, který naslouchá klíčovým slovům (např. Pomoc, SOS). Při jejich zachycení se spustí tichý alarm i bez dotyku telefonu. Systém je nově vybaven pojistkou proti falešným restartům." },
+        { q: "Co je to Audio Sentinel?", a: "Je to diskrétní hlídač, který ti v pravidelných intervalech jemným pípnutím nebo vibrací potvrzuje, že systém je aktivní a monitoruje tvé bezpečí. Zvuk i periodu si můžeš plně přizpůsobit." },
         { q: "Jak probíhá registrace?", a: "Zaregistrujete agenturu, obdržíte zvací kód a ten sdílíte s týmem. Každý člen se přihlásí přes \"Připojit se\" a vybere svou roli (Operátor/Model)." }
       ],
       gettingStartedTitle: "Jak začít?",
@@ -176,7 +233,7 @@ const LandingPage = () => {
         {
           icon: <Zap size={24} />,
           title: "Maximum Efficiency",
-          desc: "AI Smart Replies and unified inbox boost operator speed by up to 70%."
+          desc: "AI Smart Replies (Q3/Q4 2026) and unified inbox boost operator speed by up to 70%."
         },
         {
           icon: <Users size={24} />,
@@ -185,8 +242,8 @@ const LandingPage = () => {
         },
         {
           icon: <Shield size={24} />,
-          title: "Security & Sync",
-          desc: "Native Android Relay and Safety Guard for maximum protection."
+          title: "Guardian Suite PRO",
+          desc: "Hands-free SOS, Ghost Calls, and the discrete Audio Sentinel. Ultra-stable zero-lag architecture for absolute mission-critical reliability."
         }
       ],
       featuresTitle: "Benefits for Your Team",
@@ -194,12 +251,14 @@ const LandingPage = () => {
         { 
           icon: <MessageSquare size={18} />,
           title: "For Operators", 
-          desc: "AI Smart Replies handle the talking for you. Unified Inbox ensures no lead is lost. Faster, calmer shifts with everything in one place." 
+          desc: "AI Smart Replies (available Q3/Q4 2026) handle the talking for you. Unified Inbox ensures no lead is lost. Faster, calmer shifts with everything in one place.",
+          status: 'coming'
         },
         { 
           icon: <Shield size={18} />,
           title: "For Models", 
-          desc: "Safety Guard and GPS tracking for field protection. Live earnings and booking tracker on your phone. Easy check-in with 'Client Arrived' button." 
+          desc: "Guardian Suite: Hands-free Voice SOS ('Help/SOS') even with the screen locked. Audio Sentinel – discreet pulse beeps confirming your safety. Ghost Calls for exit strategies.",
+          status: 'beta'
         },
         { 
           icon: <BarChart3 size={18} />,
@@ -214,18 +273,26 @@ const LandingPage = () => {
       ],
       platformTitle: "Complete Platform in One Place",
       platformFeatures: [
-        { icon: <MessageSquare size={20} />, title: "Unified Inbox", desc: "All conversations from all profiles in one place. SMS relay via dedicated Android Relay devices." },
-        { icon: <Calendar size={20} />, title: "Calendar & Bookings", desc: "Appointment management with incall/outcall support. Automatic Safety Guard activation for outcall bookings." },
-        { icon: <Shield size={20} />, title: "Safety Guard", desc: "Real-time GPS tracking, panic button, automatic escalation with grace period, and Telegram alerts to managers." },
-        { icon: <Smartphone size={20} />, title: "Nexus Relay APK", desc: "Native Android app for SMS relay. Auto-provisioning SIP/VoIP, device binding, and push notifications." },
-        { icon: <BarChart3 size={20} />, title: "Analytics & Statistics", desc: "Daily revenue stats, booking counts, and active profiles. Manager and owner dashboards with agency filters." },
-        { icon: <Users size={20} />, title: "Hierarchy & Roles", desc: "6 role levels (App Owner → Agency Admin → Manager → Senior Operator → Operator → Model) with dynamic permissions." },
-        { icon: <Package size={20} />, title: "Inventory", desc: "Equipment management by location with low-stock alerts. Threshold monitoring for automatic notifications." },
-        { icon: <Globe size={20} />, title: "Web Profiles", desc: "Manage bios, galleries, and online presence. Synchronization with external platforms." },
-        { icon: <Bell size={20} />, title: "Push Notifications", desc: "Firebase Cloud Messaging for instant alerts on new messages, calls, and safety events." },
-        { icon: <Lock size={20} />, title: "Security", desc: "JWT authentication, bcrypt hashing, SIP password encryption, rate limiting, CORS whitelist, and Helmet headers." },
-        { icon: <MapPin size={20} />, title: "Multi-Tenant Architecture", desc: "Complete data isolation between agencies. Each agency gets its own roles, permissions, profiles, and settings." },
-        { icon: <Star size={20} />, title: "QA Hub & Referrals", desc: "Operator communication quality control. Referral system for agency network growth with rewards." }
+        { icon: <MessageSquare size={20} />, title: "Unified Inbox", desc: "Consolidated messages from AW, SMS, and Telegram.", status: 'beta' },
+        { icon: <Shield size={20} />, title: "Safety Guard", desc: "GPS tracking, SOS alerts, and silent team monitoring.", status: 'beta' },
+        { icon: <Calendar size={20} />, title: "Bookings & Calendar", desc: "Appointment management with incall/outcall support.", status: 'beta' },
+        { icon: <Smartphone size={20} />, title: "Nexus Relay APK", desc: "Native Android bridge for SMS and call intercepting.", status: 'beta' },
+        { icon: <BarChart3 size={20} />, title: "Analytics & Revenue", desc: "Real-time earnings stats and operator activity tracking.", status: 'beta' },
+        { icon: <Users size={20} />, title: "Hierarchy & Roles", desc: "6 permission levels (Owner → Manager → Model).", status: 'active' },
+        { icon: <MessageSquare size={20} />, title: "AI Smart Replies", desc: "Intelligent response suggestions for fast conversion.", status: 'q3/q4 2026' },
+        { icon: <Globe size={20} />, title: "Web Sync", desc: "Bulk bio and gallery management across ad sites.", status: 'beta' },
+        { icon: <Zap size={20} />, title: "SIP / VoIP Tunneling", desc: "Virtual corridors for browser-based call simulation.", status: 'q1 2027' },
+        { icon: <Package size={20} />, title: "Inventory System", desc: "Equipment management by location with asset logistics.", status: 'progress' },
+        { icon: <Lock size={20} />, title: "Biometric Protection", desc: "Anti-forced SOS cancellation (FaceID/PIN).", status: 'beta' },
+        { icon: <Bell size={20} />, title: "Push Notifications", desc: "Instant alerts for messages and safety event status.", status: 'active' },
+        { icon: <Shield size={20} />, title: "Audio Sentinel", desc: "Discreet pulse beeps/vibrations to confirm safety.", status: 'beta' },
+        { icon: <Star size={20} />, title: "Audit Logs", desc: "Cryptographically signed history of all system actions.", status: 'progress' },
+        { icon: <MapPin size={20} />, title: "Multi-tenant Isolation", desc: "Absolute data separation between network agencies.", status: 'active' },
+        { icon: <MessageSquare size={20} />, title: "AI Translator", desc: "Real-time translation between operator and client.", status: 'active' },
+        { icon: <Package size={20} />, title: "White-label Dashboard", desc: "Custom branding and domains for enterprise agencies.", status: 'q2 2027' },
+        { icon: <Settings size={20} />, title: "Automated Payouts", desc: "Report generation and automated weekly commissions.", status: 'q4 2026' },
+        { icon: <Smartphone size={20} />, title: "Device Cloud Sync", desc: "Background data sync between mobile app and web.", status: 'progress' },
+        { icon: <Star size={20} />, title: "Network Program", desc: "Referral system for network growth with commissions.", status: 'active' }
       ],
       footer: "Nexus Systems – Your tool for efficient scaling.",
       faqTitle: "Frequently Asked Questions",
@@ -234,6 +301,9 @@ const LandingPage = () => {
         { q: "How does SMS Relay work?", a: "Install our Nexus Relay Android app on a dedicated device with a SIM card. The app automatically forwards incoming SMS to the Unified Inbox and sends outgoing messages via real phone numbers." },
         { q: "How many agencies can I manage?", a: "As an App Owner, you can manage unlimited agencies. Each agency has its own data, roles, profiles, and settings — completely isolated from others." },
         { q: "Can I use it on mobile?", a: "Yes. Nexus Hub is fully responsive and works in web browsers and as a native Android app. For models, we offer a mobile interface with Safety Guard and GPS tracking." },
+        { q: "How does Exit Strategy (Ghost Call) work?", a: "A model can trigger a fake call with one touch. After a delay, the phone will ring with a realistic 'Agency Relay' screen, providing a discreet excuse to leave any situation." },
+        { q: "Can I use voice commands for safety?", a: "Yes. Our Voice Guardian listens for emergency keywords like 'Help' or 'SOS'. If detected, it triggers a silent emergency protocol instantly, without needing to touch the device. Now with enhanced stability safeguards." },
+        { q: "What is Audio Sentinel?", a: "It is a discreet companion that provides periodic pulse beeps or vibrations to confirm the system is actively monitoring your safety. You can fully customize the sound and interval." },
         { q: "How does registration work?", a: "Register your agency, receive an invite code, and share it with your team. Each member signs up via \"Join Agency\" and selects their role (Operator/Model)." }
       ],
       gettingStartedTitle: "Getting Started",
@@ -337,7 +407,10 @@ const LandingPage = () => {
               <div key={i} style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start' }}>
                 <div style={{ marginTop: '0.2rem', color: 'var(--success-color)' }}>{f.icon}</div>
                 <div>
-                  <h4 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '0.5rem' }}>{f.title}</h4>
+                  <h4 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}>
+                    {f.title}
+                    {f.status && <StatusBadge type={f.status} lang={lang} />}
+                  </h4>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>{f.desc}</p>
                 </div>
               </div>
@@ -362,7 +435,10 @@ const LandingPage = () => {
                   {pf.icon}
                 </div>
                 <div>
-                  <h4 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '0.4rem' }}>{pf.title}</h4>
+                  <h4 style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '0.4rem', display: 'flex', alignItems: 'center' }}>
+                    {pf.title}
+                    {pf.status && <StatusBadge type={pf.status} lang={lang} />}
+                  </h4>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.5 }}>{pf.desc}</p>
                 </div>
               </div>

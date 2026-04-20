@@ -1,6 +1,7 @@
 /* src/components/Modals/AddOperatorModal.jsx */
 import React from 'react';
 import { X } from 'lucide-react';
+import PremiumSelector from '../UI/PremiumSelector';
 
 const AddOperatorModal = ({ isOpen, onClose, data, onDataChange, onAdd, t, lang, activeRole, activeOperator }) => {
   if (!isOpen) return null;
@@ -15,13 +16,18 @@ const AddOperatorModal = ({ isOpen, onClose, data, onDataChange, onAdd, t, lang,
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <input type="text" value={data.name} onChange={e => onDataChange({...data, name: e.target.value})} placeholder={t('fullName')} style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }} />
           <input type="email" value={data.email} onChange={e => onDataChange({...data, email: e.target.value})} placeholder={t('emailAddress')} style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }} />
-          <select value={data.role} onChange={e => onDataChange({...data, role: e.target.value})} style={{ width: '100%', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}>
-            <option value="Model">{lang === 'cz' ? 'Modelka' : 'Model'}</option>
-            <option value="Operator">{lang === 'cz' ? 'Operátorka' : 'Operator'}</option>
-            <option value="Senior Operator">Senior Operator</option>
-            <option value="Agency Manager">{lang === 'cz' ? 'Manažer agentury' : 'Agency Manager'}</option>
-            {(activeRole === 'App Owner' || activeOperator?.role?.isManager) && <option value="Agency Admin">Agency Admin</option>}
-          </select>
+          <PremiumSelector
+            options={[
+              { id: 'Model', name: lang === 'cz' ? 'Modelka' : 'Model' },
+              { id: 'Operator', name: lang === 'cz' ? 'Operátorka' : 'Operator' },
+              { id: 'Senior Operator', name: 'Senior Operator' },
+              { id: 'Agency Manager', name: lang === 'cz' ? 'Manažer agentury' : 'Agency Manager' },
+              ...((activeRole === 'App Owner' || activeOperator?.role?.isManager) ? [{ id: 'Agency Admin', name: 'Agency Admin' }] : [])
+            ]}
+            value={data.role}
+            onChange={val => onDataChange({...data, role: val})}
+            placeholder={lang === 'cz' ? 'Vyberte roli' : 'Select role'}
+          />
         </div>
         <div style={{ display: 'flex', gap: '1rem', marginTop: '2.5rem' }}>
           <button onClick={onClose} style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid var(--card-border)', color: 'white', borderRadius: '12px', fontWeight: '700' }}>{t('cancel')}</button>

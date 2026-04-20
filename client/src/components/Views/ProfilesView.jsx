@@ -30,27 +30,48 @@ const ProfilesView = () => {
     API_BASE
   } = nexus;
   return (
-    <div data-testid="page-profiles-container" style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto' }} className="fade-in custom-scrollbar">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <h2 data-testid="page-profiles-title" style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '800' }}>{t('managedProfiles')}</h2>
-        {(activeRole === 'App Owner' || activeRole === 'Agency Manager' || activeRole === 'Agency Admin' || activeOperator?.role?.isManager) && (
+    <div data-testid="page-profiles-container" style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
+      {!isMobile && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <h2 data-testid="page-profiles-title" style={{ fontSize: '2rem', fontWeight: '800' }}>{t('managedProfiles')}</h2>
+          {(activeRole === 'App Owner' || activeRole === 'Agency Manager' || activeRole === 'Agency Admin' || activeOperator?.role?.isManager) && (
+            <button
+              onClick={async () => {
+                const name = window.prompt(lang === 'cz' ? 'Jméno nového profilu (pracovní jméno):' : 'New profile name (stage name):');
+                if (!name) return;
+                const phone = window.prompt(lang === 'cz' ? 'Telefonní číslo (nebo ponech prázdné):' : 'Phone number (or leave empty):') || '';
+                try {
+                  const resp = await axios.post(`${API_BASE}/profiles`, { name, phoneNumber: phone || null }, { headers: { Authorization: `Bearer ${token}` } });
+                  setProfiles(prev => [...prev, resp.data]);
+                  showToast(lang === 'cz' ? `Profil "${name}" byl vytvořen` : `Profile "${name}" created`, 'success');
+                } catch { showToast('Failed to create profile', 'error'); }
+              }}
+              data-testid="btn-add-profile" style={{ padding: '0.75rem 1.25rem', background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            >
+              + {lang === 'cz' ? 'Přidat profil' : 'Add Profile'}
+            </button>
+          )}
+        </div>
+      )}
+
+      {isMobile && (activeRole === 'App Owner' || activeRole === 'Agency Manager' || activeRole === 'Agency Admin' || activeOperator?.role?.isManager) && (
+        <div style={{ marginBottom: '1.5rem' }}>
           <button
             onClick={async () => {
-              const name = window.prompt(lang === 'cz' ? 'Jméno nového profilu (pracovní jméno):' : 'New profile name (stage name):');
+              const name = window.prompt(lang === 'cz' ? 'Jméno nového profilu:' : 'New profile name:');
               if (!name) return;
-              const phone = window.prompt(lang === 'cz' ? 'Telefonní číslo (nebo ponech prázdné):' : 'Phone number (or leave empty):') || '';
               try {
-                const resp = await axios.post(`${API_BASE}/profiles`, { name, phoneNumber: phone || null }, { headers: { Authorization: `Bearer ${token}` } });
+                const resp = await axios.post(`${API_BASE}/profiles`, { name }, { headers: { Authorization: `Bearer ${token}` } });
                 setProfiles(prev => [...prev, resp.data]);
-                showToast(lang === 'cz' ? `Profil "${name}" byl vytvořen` : `Profile "${name}" created`, 'success');
-              } catch { showToast('Failed to create profile', 'error'); }
+                showToast(lang === 'cz' ? `Profil "${name}" vytvořen` : `Profile "${name}" created`, 'success');
+              } catch { showToast('Error', 'error'); }
             }}
-            data-testid="btn-add-profile" style={{ padding: '0.75rem 1.25rem', background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            style={{ width: '100%', padding: '0.85rem', background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '800', fontSize: '0.8rem' }}
           >
-            + {lang === 'cz' ? 'Přidat profil' : 'Add Profile'}
+            + {lang === 'cz' ? 'PŘIDAT NOVÝ PROFIL' : 'ADD NEW PROFILE'}
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
         {(allAgencyProfiles || []).map((profile, i) => {

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { FileSearch, StickyNote, User, Phone, Edit2, Check, X, Search, ChevronDown } from 'lucide-react';
 import { useNexus } from '../context/NexusContext';
+import PremiumSelector from './UI/PremiumSelector';
 
 const QAView = () => {
   const nexus = useNexus();
@@ -47,11 +48,29 @@ const QAView = () => {
 
     // 3. Specific operator requested
     if (filterOperatorId !== 'all') {
+      const selectedOp = (operators || []).find(o => String(o.id) === String(filterOperatorId));
+      const opIdStr = String(filterOperatorId).toLowerCase();
+      const opNameStr = selectedOp?.name?.toLowerCase();
+
       return (profiles || [])
-        .filter(p => 
-          (p?.operators || []).some(o => o.id === filterOperatorId) || 
-          (p?.assignees || []).some(a => a.id === filterOperatorId)
-        )
+        .filter(p => {
+          if (!p) return false;
+          const ops = Array.isArray(p.operators) ? p.operators : [];
+          const asgs = Array.isArray(p.assignees) ? p.assignees : [];
+          
+          const isIdMatch = String(p.operatorId || p.userId || p.ownerId || '').toLowerCase() === opIdStr ||
+                            ops.some(o => String(o?.id || o?._id || o).toLowerCase() === opIdStr) ||
+                            asgs.some(a => String(a?.id || a?._id || a).toLowerCase() === opIdStr);
+          
+          // Name fallback
+          const isNameMatch = opNameStr && (
+            String(p.operatorName || '').toLowerCase() === opNameStr ||
+            ops.some(o => o?.name?.toLowerCase() === opNameStr) ||
+            asgs.some(a => a?.name?.toLowerCase() === opNameStr)
+          );
+          
+          return isIdMatch || isNameMatch;
+        })
         .map(p => p.id);
     }
 
@@ -105,21 +124,50 @@ const QAView = () => {
   };
 
   // Operators scoped to current agency
-  const agencyOperators = useMemo(() =>
-    (operators || []).filter(op => !op.isAppOwner && !op.isModel && (activeOperator?.isAppOwner || op.clientId === activeOperator?.clientId)),
-    [operators, activeOperator]
-  );
+  const agencyOperators = useMemo(() => {
+    return (operators || []).filter(op => {
+      // Exclude App Owners and Models
+      if (op.isAppOwner) return false;
+      if (op.isModel) return false;
+      
+      const roleName = (op.role?.name || op.role || '').toLowerCase();
+      if (roleName.includes('model')) return false;
+
+      // Must be same agency or current user is App Owner
+      const isSameAgency = activeOperator?.isAppOwner || op.clientId === activeOperator?.clientId;
+      return isSameAgency;
+    });
+  }, [operators, activeOperator]);
 
   // Profiles for the selected operator (or all agency profiles)
   const operatorProfiles = useMemo(() => {
     if (activeRole === 'Model') return (profiles || []).filter(p => p.userId === activeOperator?.id);
+    
     if (filterOperatorId === 'all') {
       return (profiles || []).filter(p => activeOperator?.isAppOwner || p.clientId === activeOperator?.clientId);
     }
-    return (profiles || []).filter(p => 
-      (p?.operators || []).some(o => o.id === filterOperatorId) || 
-      (p?.assignees || []).some(a => a.id === filterOperatorId)
-    );
+
+    const selectedOp = (operators || []).find(o => String(o.id) === String(filterOperatorId));
+    const opIdStr = String(filterOperatorId).toLowerCase();
+    const opNameStr = selectedOp?.name?.toLowerCase();
+
+    return (profiles || []).filter(p => {
+      if (!p) return false;
+      const ops = Array.isArray(p.operators) ? p.operators : [];
+      const asgs = Array.isArray(p.assignees) ? p.assignees : [];
+      
+      const isIdMatch = String(p.operatorId || p.userId || p.ownerId || '').toLowerCase() === opIdStr ||
+                        ops.some(o => String(o?.id || o?._id || o).toLowerCase() === opIdStr) ||
+                        asgs.some(a => String(a?.id || a?._id || a).toLowerCase() === opIdStr);
+      
+      const isNameMatch = opNameStr && (
+        String(p.operatorName || '').toLowerCase() === opNameStr ||
+        ops.some(o => o?.name?.toLowerCase() === opNameStr) ||
+        asgs.some(a => a?.name?.toLowerCase() === opNameStr)
+      );
+      
+      return isIdMatch || isNameMatch;
+    });
   }, [filterOperatorId, profiles, activeOperator, activeRole]);
 
   // Handle history fetching when client selection changes
@@ -155,33 +203,25 @@ const QAView = () => {
 
           {/* Role-based Filter Visibility */}
           {activeRole !== 'Model' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '1rem' }}>
               <div style={{ position: 'relative' }}>
-                <select
+                <PremiumSelector
+                  options={agencyOperators.map(op => ({ id: op.id, name: `${op.name} — ${op.role}` }))}
                   value={filterOperatorId}
-                  onChange={e => { setFilterOperatorId(e.target.value); setFilterProfileId('all'); setSelectedClient(null); }}
-                  style={{ width: '100%', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--card-border)', padding: '0.55rem 2rem 0.55rem 0.75rem', borderRadius: '10px', color: 'white', fontSize: '0.8rem', fontWeight: '700', appearance: 'none', cursor: 'pointer' }}
-                >
-                  <option value="all">All Operators</option>
-                  {(agencyOperators || []).map(op => (
-                    <option key={op.id} value={op.id}>{op.name} — {op.role}</option>
-                  ))}
-                </select>
-                <ChevronDown size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)', pointerEvents: 'none' }} />
+                  onChange={val => { setFilterOperatorId(val); setFilterProfileId('all'); setSelectedClient(null); }}
+                  showAllOption={true}
+                  allLabel="All Operators"
+                />
               </div>
 
               <div style={{ position: 'relative' }}>
-                <select
+                <PremiumSelector
+                  options={operatorProfiles}
                   value={filterProfileId}
-                  onChange={e => { setFilterProfileId(e.target.value); setSelectedClient(null); }}
-                  style={{ width: '100%', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--card-border)', padding: '0.55rem 2rem 0.55rem 0.75rem', borderRadius: '10px', color: 'white', fontSize: '0.8rem', fontWeight: '700', appearance: 'none', cursor: 'pointer' }}
-                >
-                  <option value="all">All Models</option>
-                  {(operatorProfiles || []).map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
-                <ChevronDown size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)', pointerEvents: 'none' }} />
+                  onChange={val => { setFilterProfileId(val); setSelectedClient(null); }}
+                  showAllOption={true}
+                  allLabel="All Models"
+                />
               </div>
             </div>
           )}

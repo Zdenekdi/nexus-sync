@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
 import { Device } from '@capacitor/device';
@@ -250,7 +250,7 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
       }
     } catch (err) {
       console.error('[Auth] Login failed:', err);
-      return { success: false, error: 'connectionError' };
+      return { success: false, error: 'connectionError', detail: err.message || String(err) };
     } finally {
       setIsLoginLoading(false);
     }
@@ -270,6 +270,7 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
     localStorage.removeItem('nexus_refreshToken');
     localStorage.removeItem('nexus_lastSelectedChatId');
     localStorage.removeItem('nexus_relay_mode');
+    localStorage.removeItem('nexus_hydrated');
     setToken(null);
     setActiveOperator(null);
     setActiveClient(null);
@@ -356,7 +357,7 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
     setTempUser(null);
   };
 
-  return {
+  return React.useMemo(() => ({
     isLoggedIn, setIsLoggedIn,
     token, setToken,
     activeOperator, setActiveOperator,
@@ -377,5 +378,12 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
     verifyNativeDeviceBinding,
     maybePromptRcsAccessOnFirstLogin,
     shouldAutoRelay
-  };
+  }), [
+    isLoggedIn, token, activeOperator, activeClient, appVariant, 
+    showResetPassword, tempUser, originalOperator, isLoginLoading, 
+    isNativeApp, handleLogin, handleLogout, handleRegisterAgency, 
+    handleRegisterUser, handleResetRequest, handleResetRequired, 
+    handleResetComplete, verifyNativeDeviceBinding, 
+    maybePromptRcsAccessOnFirstLogin, shouldAutoRelay
+  ]);
 }

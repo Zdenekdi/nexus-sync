@@ -42,8 +42,13 @@ const GlobalAppStyles = () => {
       .suggestion-chip:hover { background: rgba(59, 130, 246, 0.1); border-color: var(--accent-color); color: white; }
       .status-badge-small { font-size: 0.75rem; padding: 0.2rem 0.5rem; border: 1px solid var(--card-border); border-radius: 6px; display: inline-flex; }
       .hash-code { font-size: 0.8rem; color: var(--text-secondary); background: rgba(255,255,255,0.05); padding: 0.2rem 0.4rem; border-radius: 4px; }
-      .dot { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); width: 6px; height: 6px; background: var(--accent-color); borderRadius: 50%; }
-      .truncate-text { font-size: 0.9rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; WebkitLineClamp: 1; WebkitBoxOrient: vertical; }
+      .dot { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 10px; height: 10px; background: var(--accent-color); border-radius: 50%; box-shadow: 0 0 10px var(--accent-glow); animation: dotPulse 2s infinite ease-in-out; z-index: 2; }
+      @keyframes dotPulse { 0% { transform: translateY(-50%) scale(1); opacity: 1; } 50% { transform: translateY(-50%) scale(1.3); opacity: 0.7; } 100% { transform: translateY(-50%) scale(1); opacity: 1; } }
+      .conversation-item { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); border-left: 4px solid transparent; }
+      .conversation-item:hover { background: rgba(255,255,255,0.03) !important; transform: translateX(4px); }
+      .conversation-item.active { border-left-color: var(--accent-color); background: rgba(59, 130, 246, 0.1) !important; }
+      .conversation-item.unread { background: rgba(59, 130, 246, 0.04); }
+      .truncate-text { font-size: 0.9rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; WebkitLineClamp: 1; WebkitBoxOrient: vertical; transition: color 0.2s; }
       .incoming-call-popup { position: fixed; bottom: 3rem; right: 3rem; z-index: 1000; width: 400px; }
       .incoming-card { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(20px); border: 1px solid var(--accent-color); padding: 1.5rem; border-radius: 24px; display: flex; align-items: center; gap: 1.5rem; box-shadow: 0 0 20px var(--accent-glow); }
       .avatar-pulse { width: 56px; height: 56px; background: var(--accent-color); border-radius: 16px; display: flex; align-items: center; justify-content: center; animation: ringPulse 2s infinite; }

@@ -3,7 +3,7 @@ import { useNexus } from '../../context/NexusContext';
 
 const MobileBottomNav = () => {
   const nexus = useNexus();
-  const { activeTab, setActiveTab, t, totalUnread, activeOperator, isAllowed } = nexus;
+  const { activeTab, setActiveTab, setIsSidebarOpen, t, totalUnread, activeOperator, isAllowed } = nexus;
   const unreadCount = totalUnread || 0;
 
   // Custom SVG icons to bypass lucide-react bundling issues in production
@@ -73,7 +73,10 @@ const MobileBottomNav = () => {
           <button
             key={tab.id}
             data-testid={`nav-mobile-${tab.id}`}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => {
+              setActiveTab(tab.id);
+              setIsSidebarOpen(false);
+            }}
             style={{
               flex: 1,
               display: 'flex',

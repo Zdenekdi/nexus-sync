@@ -5,6 +5,9 @@ Tento soubor definuje globální pravidla architektury, pracovních postupů a s
 ## 1. Základní Architektura (Striktní oddělení)
 * **Dva nezávislé repozitáře:** Projekt se skládá ze dvou zcela oddělených částí: `[SERVER]` (Backend) a `[UI]` (Frontend).
 * **Izolace kódu:** Nikdy nemíchej kód, závislosti (package.json) ani konfigurační soubory mezi serverem a UI. 
+* **Web vs. Mobile (Striktní separace):** Vždy důsledně rozlišuj, která funkcionalita patří na web a která do mobilní aplikace.
+    * Nativní funkce (Onboarding, Senzory, Biometrika, Push notifikace) patří **pouze do mobilní aplikace**.
+    * Marketingové a administrativní weby nesmí tyto nativní prvky zobrazovat (např. skrývání úvodních slidů v prohlížeči).
 * **Navigace v terminálu:** Než spustíš jakýkoliv příkaz (např. `npm install`, `git commit`), ověř si příkazem `pwd`, ve které složce se aktuálně nacházíš, abys neprovedl změny ve špatném repozitáři.
 
 ## 2. Komunikace (API & Typy)

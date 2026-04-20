@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 
 import { useNexus } from '../../context/NexusContext';
+import PremiumSelector from '../UI/PremiumSelector';
 
 const WebProfilesView = () => {
   const nexus = useNexus();
@@ -36,29 +37,13 @@ const WebProfilesView = () => {
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>{t('webProfilesDesc')}</p>
         </div>
         
-        <div style={{ position: 'relative', width: '220px' }}>
-          <select 
-            value={activeProfileId} 
-            onChange={(e) => setActiveProfileId(e.target.value)}
-            style={{ 
-              width: '100%',
-              background: 'rgba(255,255,255,0.05)', 
-              border: '1px solid var(--card-border)', 
-              padding: '0.6rem 2.5rem 0.6rem 1rem', 
-              borderRadius: '12px', 
-              color: 'white',
-              fontSize: '0.9rem',
-              fontWeight: '700',
-              appearance: 'none',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            {assignedProfiles.map(p => (
-              <option key={p.id} value={p.id} style={{ background: '#0a0c10', color: 'white' }}>{p.name}</option>
-            ))}
-          </select>
-          <ChevronDown size={18} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-secondary)' }} />
+        <div style={{ position: 'relative', width: '240px' }}>
+          <PremiumSelector
+            options={assignedProfiles}
+            value={activeProfileId}
+            onChange={(val) => setActiveProfileId(val)}
+            placeholder={t('selectProfile')}
+          />
         </div>
       </div>
 
