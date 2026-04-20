@@ -134,6 +134,51 @@ const StatusBadge = ({ type, lang }) => {
   );
 };
 
+const LanguageSwitcher = ({ current, onSelect, isMobile }) => {
+  return (
+    <div style={{
+      position: 'fixed',
+      top: isMobile ? '1rem' : '2rem',
+      right: isMobile ? '1rem' : '5%',
+      zIndex: 1000,
+      display: 'flex',
+      gap: '2px',
+      background: 'rgba(255, 255, 255, 0.05)',
+      backdropFilter: 'blur(10px)',
+      padding: '4px',
+      borderRadius: '12px',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)'
+    }}>
+      {['cz', 'en'].map((l) => (
+        <button
+          key={l}
+          onClick={() => onSelect(l)}
+          style={{
+            padding: '6px 12px',
+            borderRadius: '8px',
+            border: 'none',
+            background: current === l ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
+            color: current === l ? 'var(--accent-color)' : 'rgba(255, 255, 255, 0.5)',
+            fontSize: '0.75rem',
+            fontWeight: '800',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            textTransform: 'uppercase',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minWidth: '40px',
+            boxShadow: current === l ? '0 0 15px rgba(59, 130, 246, 0.3)' : 'none'
+          }}
+        >
+          {l}
+        </button>
+      ))}
+    </div>
+  );
+};
+
 const LandingPage = () => {
   const { setShowLanding, lang, setLang, isMobile } = useNexus();
 
@@ -142,7 +187,7 @@ const LandingPage = () => {
   const content = {
     cz: {
       title: "Budoucnost správy adult agentur",
-      tagline: "Absolute Control. Infinite Growth.",
+      tagline: "Absolutní kontrola. Nekonečný růst.",
       heroDesc: "Nexus Hub je inteligentní ekosystém navržený pro moderní agentury. Kombinujeme pokročilou AI, real-time synchronizaci a nekompromisní důraz na bezpečnost.",
       enterBtn: "Vstoupit do aplikace",
       pillarsTitle: "Klíčové pilíře systému",
@@ -159,8 +204,8 @@ const LandingPage = () => {
         },
         {
           icon: <Shield size={24} />,
-          title: "Guardian Suite PRO",
-          desc: "Hands-free SOS, Ghost Calls a diskrétní Audio Sentinel. Architektura bez lagů pro absolutní spolehlivost v krizových situacích."
+          title: "Ochranný balíček PRO",
+          desc: "Hands-free SOS, falešné hovory a diskrétní Audio Sentinel. Architektura bez lagů pro absolutní spolehlivost v krizových situacích."
         }
       ],
       featuresTitle: "Výhody pro váš tým",
@@ -168,13 +213,13 @@ const LandingPage = () => {
         { 
           icon: <MessageSquare size={18} />,
           title: "Pro Operátorky", 
-          desc: "AI Smart Replies (dostupné v Q3/Q4 2026) odbaví chaty za vás. Unified Inbox zajistí, že vám žádná zpráva neuteče. Rychlejší a klidnější směny bez neustálého přepínání oken.",
+          desc: "AI Smart Replies (dostupné v Q3/Q4 2026) odbaví chaty za vás. Sjednocená schránka zajistí, že vám žádná zpráva neuteče. Rychlejší a klidnější směny bez neustálého přepínání oken.",
           status: 'coming'
         },
         { 
           icon: <Shield size={18} />,
           title: "Pro Modelky", 
-          desc: "Guardian Suite: Hlasová aktivace SOS ('Pomoc') i se zhasnutým displejem. Audio Sentinel – diskrétní pípání potvrzující tvé bezpečí. Ghost Call pro ústup ze schůzky a živý přehled výdělků.",
+          desc: "Bezpečnostní dohled: Hlasová aktivace SOS ('Pomoc') i se zhasnutým displejem. Audio Sentinel – diskrétní pípání potvrzující tvé bezpečí. Falešný hovor pro ústup ze schůzky a živý přehled výdělků.",
           status: 'beta'
         },
         { 
@@ -184,7 +229,7 @@ const LandingPage = () => {
         },
         {
           icon: <Settings size={18} />,
-          title: "Pro Majitele (App Owner)",
+          title: "Pro Majitele (Vlastník aplikace)",
           desc: "Správa neomezeného množství agentur, konfigurace předplatných plánů, řízení globálních oprávnění a monitoring serverové infrastruktury na jednom místě."
         }
       ],
@@ -338,6 +383,12 @@ const LandingPage = () => {
       {/* Background Orbs */}
       <div style={{ position: 'fixed', top: '-10%', right: '-5%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)', filter: 'blur(80px)', pointerEvents: 'none', zIndex: 0 }}></div>
       <div style={{ position: 'fixed', bottom: '-10%', left: '-5%', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(139, 92, 246, 0.08) 0%, transparent 70%)', filter: 'blur(80px)', pointerEvents: 'none', zIndex: 0 }}></div>
+
+      <LanguageSwitcher 
+        current={lang} 
+        onSelect={setLang} 
+        isMobile={isMobile} 
+      />
 
       {/* Header - COMPLETELY DELETED TO REMOVE WHITE BARS */}
       {null}
