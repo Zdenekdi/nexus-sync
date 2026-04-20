@@ -274,3 +274,74 @@ exports.handleMobileCall = async (req, res) => {
     return res.status(500).json({ message: 'Error' });
   }
 };
+
+exports.getLogs = async (req, res) => {
+  try {
+    const { installationId, limit = 50 } = req.query;
+    const agencyId = req.user?.agencyId;
+
+    if (!installationId) {
+      return res.status(400).json({ ok: false, message: 'Missing installationId' });
+    }
+
+    const binding = await prisma.deviceBinding.findUnique({
+      where: { installationId },
+      select: { profileId: true, agencyId: true }
+    });
+
+    if (!binding || !binding.profileId) {
+      return res.json({ ok: true, logs: [] });
+    }
+
+    // Security check: ensure user belongs to same agency
+    if (agencyId && String(binding.agencyId) !== String(agencyId)) {
+      return res.status(403).json({ ok: false, message: 'Forbidden' });
+    }
+
+    const [messages, calls] = await Promise.all([
+      prisma.message.findMany({
+        where: {
+          chat: { profileId: binding.profileId },
+          transport: { in: ['sms', 'rcs'] }
+        },
+        take: parseInt(limit),
+        orderBy: { createdAt: 'desc' },
+        include: { chat: { select: { externalId: true } } }
+      }),
+      prisma.callLog.findMany({
+        where: { profileId: binding.profileId },
+        take: parseInt(limit),
+        orderBy: { createdAt: 'desc' }
+      })
+    ]);
+
+    // Unify format
+    const unifiedLogs = [
+      ...messages.map(m => ({
+        id: m.id,
+        transport: m.transport,
+        type: m.transport,
+        from: m.chat.externalId,
+        content: m.text,
+        direction: m.direction.toLowerCase(),
+        timestamp: m.createdAt,
+        status: m.status
+      })),
+      ...calls.map(c => ({
+        id: c.id,
+        transport: 'call',
+        type: 'call',
+        from: c.from,
+        content: `Status: ${c.status}`,
+        direction: 'inbound',
+        timestamp: c.createdAt,
+        status: 'forwarded'
+      }))
+    ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, parseInt(limit));
+
+    return res.json({ ok: true, logs: unifiedLogs });
+  } catch (error) {
+    console.error('[Device] getLogs error:', error);
+    return res.status(500).json({ ok: false });
+  }
+};
