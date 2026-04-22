@@ -145,6 +145,7 @@ const MobileBottomNav = () => {
           </button>
         );
       })}
+      <div style={{ position: 'absolute', bottom: '1px', right: '10px', fontSize: '0.45rem', opacity: 0.15, pointerEvents: 'none' }}>v3.21.1</div>
     </div>
   );
 };

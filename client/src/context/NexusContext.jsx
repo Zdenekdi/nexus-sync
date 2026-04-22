@@ -784,8 +784,26 @@ export const NexusProvider = ({ children }) => {
       // They ONLY see the profile they strictly own (match by userId)
       filtered = (profiles || []).filter(p => {
         if (!p) return false;
-        const ownerId = String(p.userId || p.ownerId || p.owner_id || '').toLowerCase();
-        return ownerId === opId;
+        
+        // Cross-reference: Direct ownership, assigned operator, or linked profileId
+        const ownerMatch = (p.userId && String(p.userId) === opId) || 
+                           (p.ownerId && String(p.ownerId) === opId) ||
+                           (p.owner_id && String(p.owner_id) === opId);
+                           
+        const isOperatorMatch = Array.isArray(p.operators) && p.operators.some(o => {
+          const targetId = String(o?.id || o?._id || o?.userId || o || '').toLowerCase();
+          return targetId === opId;
+        });
+        
+        const isAssigneeMatch = Array.isArray(p.assignees) && p.assignees.some(a => {
+          const targetId = String(a?.id || a?._id || a?.userId || a || '').toLowerCase();
+          return targetId === opId;
+        });
+
+        const isProfileIdMatch = (activeOperator.profileId && (String(p.id || p._id) === String(activeOperator.profileId))) ||
+                                 (activeOperator.activeProfileId && (String(p.id || p._id) === String(activeOperator.activeProfileId)));
+
+        return ownerMatch || isOperatorMatch || isAssigneeMatch || isProfileIdMatch;
       });
     } else {
       // For regular operators, filter by explicit assignment (assignees/operators)
@@ -854,16 +872,30 @@ export const NexusProvider = ({ children }) => {
   );
 
   const filteredMessages = React.useMemo(() => {
+    const rawMessages = messages || [];
+    
     // SECURITY: If user is a model, strictly filter by their assigned profiles (myProfiles)
-    // This prevents seeing any messages from other profiles even if retrieved from API
-    const baseMessages = activeOperator?.isModel 
-      ? (messages || []).filter(m => (myProfiles || []).some(p => String(p.id) === String(m.profileId)))
-      : (messages || []);
+    let baseMessages = rawMessages;
+    
+    if (activeOperator?.isModel) {
+      const myProfileIds = new Set((myProfiles || []).map(p => String(p.id || p._id)));
+      baseMessages = rawMessages.filter(m => {
+        const msgProfileId = String(m.profileId || m.profile_id || '');
+        return myProfileIds.has(msgProfileId);
+      });
+      
+      // DIAGNOSTIC (Internal): If we have messages in system but filter result is 0, 
+      // check if activeOperator.profileId exists as a fallback.
+      if (baseMessages.length === 0 && rawMessages.length > 0 && activeOperator.profileId) {
+        baseMessages = rawMessages.filter(m => String(m.profileId || m.profile_id) === String(activeOperator.profileId));
+      }
+    }
 
     if (activeProfileId === 'all') return baseMessages;
     
     // Further filter by selected profile
-    return baseMessages.filter(m => String(m.profileId) === String(activeProfile?.id));
+    const currentProfileId = String(activeProfile?.id || activeProfile?._id || '');
+    return baseMessages.filter(m => String(m.profileId || m.profile_id || '') === currentProfileId);
   }, [messages, activeProfile, activeProfileId, activeOperator, myProfiles]);
 
   const selectedChat = React.useMemo(() => (messages || []).find(m => m.id === selectedChatId) || null, [messages, selectedChatId]);
@@ -881,11 +913,17 @@ export const NexusProvider = ({ children }) => {
       const res = await axios.get(`${API_BASE}/messages/${chatId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const history = (res.data || []).map(m => ({
-        ...m,
-        time: new Date(m.createdAt).toLocaleTimeString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' }),
-        senderName: m.sender?.name || null
-      }));
+      const history = (res.data || []).map(m => {
+        const rawDate = m.createdAt || m.timestamp || m.time || new Date();
+        const msgDate = new Date(rawDate);
+        const validDate = isNaN(msgDate.getTime()) ? new Date() : msgDate;
+        
+        return {
+          ...m,
+          time: validDate.toLocaleTimeString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' }),
+          senderName: m.sender?.name || null
+        };
+      });
       setChatHistory(history);
     } catch (err) { console.error('Failed to fetch chat messages:', err); } finally { setIsHistoryLoading(false); }
   }, [token, API_BASE, lang]);

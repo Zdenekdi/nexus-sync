@@ -295,8 +295,8 @@ const LoginScreen = () => {
           </button>
         </div>
 
-        <div style={{ textAlign: 'center', opacity: 0.3, fontSize: '0.6rem', color: '#64748b', marginTop: '1rem' }}>
-          {APP_VERSION} • {API_BASE}
+        <div style={{ textAlign: 'center', opacity: 0.3, fontSize: '0.65rem', color: '#64748b', marginTop: '1rem', fontWeight: '800' }}>
+          {APP_VERSION} • {API_BASE} • v3.21.1
         </div>
 
       </div>

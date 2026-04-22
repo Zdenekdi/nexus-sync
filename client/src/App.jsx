@@ -210,8 +210,8 @@ function AppContent() {
             overflowY: 'auto', 
             overflowX: 'hidden', 
             position: 'relative', 
-            paddingTop: isMobile ? 'calc(64px + env(safe-area-inset-top, 0px))' : '0',
-            paddingBottom: isMobile ? '100px' : '0', 
+            paddingTop: isMobile ? '68px' : '0',
+            paddingBottom: isMobile ? '80px' : '0', 
             zIndex: 10 
           }} className="custom-scrollbar">
             <ErrorBoundary name="ViewRouter">

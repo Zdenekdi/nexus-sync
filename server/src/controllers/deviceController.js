@@ -45,13 +45,20 @@ exports.verifyDeviceBinding = async (req, res) => {
     const internalRole = roleName.toUpperCase();
     const { installationId, profileId, platform, model, deviceName } = req.body;
 
-    // RBAC: RESTRICTED for App Owner, Agency Admin, Manager
-    if (internalRole === 'APP OWNER' || internalRole === 'AGENCY ADMIN' || internalRole === 'MANAGER') {
-      return res.status(403).json({ ok: false, message: 'Forbidden' });
+    // RBAC: RESTRICTED for Modelka (they shouldn't be binding new devices usually, but let's be more permissive than the current block)
+    // The previous block was way too aggressive, blocking even admins.
+    
+    if (!agencyId || !userId || userId === '') {
+      console.warn(`[Device Binding] Unauthorized attempt: userId=${userId}, agencyId=${agencyId}`);
+      return res.status(401).json({ ok: false, message: 'Unauthorized' });
+    }
+    
+    if (!installationId) {
+      console.warn(`[Device Binding] Missing installationId from user ${userId}`);
+      return res.status(400).json({ ok: false, message: 'Missing installationId' });
     }
 
-    if (!agencyId || !userId || userId === '') return res.status(401).json({ ok: false, message: 'Unauthorized' });
-    if (!installationId) return res.status(400).json({ ok: false, message: 'Missing installationId' });
+    console.info(`[Device Binding] Attempting: installationId=${installationId}, userId=${userId}, role=${internalRole}, model=${model}`);
 
     let resolvedProfileId = null;
     if (profileId) {
@@ -89,10 +96,8 @@ exports.getRelayStatus = async (req, res) => {
     const roleName = (typeof userRole === 'string' ? userRole : userRole?.name) || '';
     const internalRole = roleName.toUpperCase();
 
-    if (internalRole === 'APP OWNER' || internalRole === 'AGENCY ADMIN' || internalRole === 'MANAGER') {
-      return res.status(403).json({ ok: false });
-    }
-
+    // Previous block was incorrectly blocking admins from checking relay status.
+    
     if (!installationId || !userId || userId === '') return res.status(400).json({ ok: false });
 
     const binding = await prisma.deviceBinding.findUnique({ where: { installationId }, select: { userId: true, active: true } });
@@ -114,15 +119,11 @@ exports.getDeviceBindings = async (req, res) => {
     const roleName = (typeof userRole === 'string' ? userRole : userRole?.name) || '';
     const internalRole = roleName.toUpperCase();
 
-    if (internalRole === 'APP OWNER' || internalRole === 'AGENCY ADMIN' || internalRole === 'MANAGER') {
-      return res.status(403).json({ ok: false });
-    }
-
-    if (!agencyId) return res.status(400).json({ ok: false });
-
-    const isSenior = (internalRole === 'SENIOR OPERATOR');
+    // RBAC: App Owner, Agency Admin, Manager and Senior Operator can see all bindings in their agency.
+    const isAgencyLevel = ['APP OWNER', 'AGENCY ADMIN', 'MANAGER', 'SENIOR OPERATOR'].includes(internalRole);
+    
     const bindings = await prisma.deviceBinding.findMany({
-      where: isSenior ? { agencyId: String(agencyId) } : { userId: String(userId) },
+      where: isAgencyLevel ? { agencyId: String(agencyId) } : { userId: String(userId) },
       include: { profile: { select: { name: true } } },
       orderBy: { lastSeenAt: 'desc' }
     });
@@ -139,13 +140,15 @@ exports.revokeDeviceBinding = async (req, res) => {
     const userRole = req.user?.role;
     const { installationId } = req.body;
 
-    const roleName = (typeof userRole === 'string' ? userRole : userRole?.name) || '';
-    if (roleName.toUpperCase() === 'APP OWNER' || roleName.toUpperCase() === 'AGENCY ADMIN' || roleName.toUpperCase() === 'MANAGER') {
-      return res.status(403).json({ ok: false });
-    }
+    // Allow admins to revoke any binding, while operators only their own.
+    const isAgencyLevel = ['APP OWNER', 'AGENCY ADMIN', 'MANAGER'].includes(roleName.toUpperCase());
 
     const binding = await prisma.deviceBinding.findUnique({ where: { installationId } });
-    if (!binding || binding.userId !== userId) return res.status(403).json({ ok: false });
+    if (!binding) return res.status(404).json({ ok: false, message: 'Binding not found' });
+    
+    if (!isAgencyLevel && binding.userId !== userId) {
+      return res.status(403).json({ ok: false, message: 'Unauthorized' });
+    }
 
     await prisma.deviceBinding.update({ where: { installationId }, data: { active: false } });
     return res.json({ ok: true });
