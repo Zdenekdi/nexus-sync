@@ -1,0 +1,37 @@
+{
+  "version": 3,
+  "artifactType": {
+    "type": "APK",
+    "kind": "Directory"
+  },
+  "applicationId": "com.nexushub.app",
+  "variantName": "nexusFullRelease",
+  "elements": [
+    {
+      "type": "SINGLE",
+      "filters": [],
+      "attributes": [],
+      "versionCode": 30021,
+      "versionName": "3.21-full",
+      "outputFile": "Nexus-Relay-v3.21-full.apk"
+    }
+  ],
+  "elementType": "File",
+  "baselineProfiles": [
+    {
+      "minApi": 28,
+      "maxApi": 30,
+      "baselineProfiles": [
+        "baselineProfiles/1/Nexus-Relay-v3.21-full.dm"
+      ]
+    },
+    {
+      "minApi": 31,
+      "maxApi": 2147483647,
+      "baselineProfiles": [
+        "baselineProfiles/0/Nexus-Relay-v3.21-full.dm"
+      ]
+    }
+  ],
+  "minSdkVersionForDexing": 24
+}

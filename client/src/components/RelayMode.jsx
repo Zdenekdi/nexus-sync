@@ -15,7 +15,8 @@ import {
   Phone,
   MessageSquare,
   ArrowUpRight,
-  ArrowDownLeft
+  ArrowDownLeft,
+  X
 } from 'lucide-react';
 import { useSipCall, isSipAvailable } from '../plugins/NexusSip';
 import IncomingCallScreen from './sip/IncomingCallScreen';
@@ -23,6 +24,7 @@ import ActiveCallScreen from './sip/ActiveCallScreen';
 import axios from 'axios';
 
 const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, requestRelayPermissions, processRelayOutbox, syncSmsHistory }) => {
+  const isMobile = window.innerWidth <= 768;
   const RELAY_API_BASE = (import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api').replace(/\/api$/, '');
   const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
   const [lang, setLang] = useState(() => localStorage.getItem('nexus_lang') || 'cz');
@@ -41,6 +43,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   const [settingsBatteryWarning, setSettingsBatteryWarning] = useState(true);
   const [settingsTrafficProxy, setSettingsTrafficProxy] = useState(true);
   const [settingsHiddenMode, setSettingsHiddenMode] = useState(false);
+  const [selectedSimSlot, setSelectedSimSlot] = useState(() => localStorage.getItem('nexus_relay_sim_slot') || 'auto'); // 'auto', '1', '2'
   const [permissionsStatus, setPermissionsStatus] = useState({
     smsMonitoring: false,
     callMonitoring: false,
@@ -147,6 +150,11 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     }, 2000);
     return () => clearInterval(interval);
   }, []);
+
+  // Persist SIM slot preference
+  useEffect(() => {
+    localStorage.setItem('nexus_relay_sim_slot', selectedSimSlot);
+  }, [selectedSimSlot]);
 
   const HEALTH_CHECK_TIMEOUT_MS = 8000;
   const MANUAL_RETRY_ATTEMPTS = 3;
@@ -575,6 +583,39 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     };
   }, [isActive]);
 
+  const syncRelayToServer = async () => {
+    if (!operator?.token || !isActive) return;
+    const installationId = localStorage.getItem('nexus_installation_id');
+    if (!installationId) return;
+
+    try {
+      const plugin = window.Capacitor?.Plugins?.NexusRelay;
+      let model = 'Web/Unknown';
+      let platform = 'android';
+      let deviceName = '';
+
+      if (window.Capacitor?.isNativePlatform()) {
+        const info = await window.Capacitor.Plugins.Device.getInfo();
+        model = info.model;
+        platform = info.platform;
+        deviceName = info.name;
+      }
+
+      await axios.post(`${RELAY_API_BASE}/api/device/verify`, {
+        installationId,
+        profileId: operator?.profileId,
+        platform,
+        model,
+        deviceName
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      console.log('[Relay] Server binding verified successfully');
+    } catch (error) {
+      console.warn('[Relay] Failed to verify server binding', error);
+    }
+  };
+
   const syncRelayToNative = async (active) => {
     if (!window.Capacitor?.Plugins?.NexusRelay) return;
     let installationId = localStorage.getItem('nexus_installation_id');
@@ -590,7 +631,8 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
         deviceId: operator?.id || 'RELAY-01',
         installationId: installationId || null,
         profileId: currentProfileId || null,
-        isActive: active
+        isActive: active,
+        simSlot: selectedSimSlot === 'auto' ? null : parseInt(selectedSimSlot)
       });
 
 
@@ -622,7 +664,11 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   useEffect(() => {
     // Sync relay status to native side for background forwarding.
     void syncRelayToNative(isActive);
-  }, [isActive, operator]);
+    // Also wake up the server so it knows this device is active today.
+    if (isActive) {
+      void syncRelayToServer();
+    }
+  }, [isActive, operator, operator?.token]);
 
   const handleExitMode = async () => {
     setIsActive(false);
@@ -654,16 +700,12 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
         try {
           addLocalLog('sms', data.from, data.body, 'inbound', 'pending');
           checkBlacklist(data.from);
-          const capturedFrom = data.from;
-          setTimeout(() => { try { updateLogStatus(capturedFrom, 'forwarded'); } catch { /* ignore */ } }, 4000);
         } catch (e) { console.error('[Relay] onSmsReceived error:', e); }
       });
       const rcsListener = window.Capacitor.Plugins.NexusRelay.addListener('onRcsReceived', (data) => {
         try {
           addLocalLog('rcs', data.from, data.body, 'inbound', 'pending');
           checkBlacklist(data.from);
-          const capturedFrom = data.from;
-          setTimeout(() => { try { updateLogStatus(capturedFrom, 'forwarded'); } catch { /* ignore */ } }, 4000);
         } catch (e) { console.error('[Relay] onRcsReceived error:', e); }
       });
       const callListener = window.Capacitor.Plugins.NexusRelay.addListener('onCallStateChanged', (data) => {
@@ -806,7 +848,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       minHeight: '100dvh',
       background: '#07080a',
       color: 'white', 
-      paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.5rem)',
+      paddingTop: isMobile ? '0.5rem' : '1.25rem',
       paddingLeft: '1.5rem',
       paddingRight: '1.5rem',
       paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 5.5rem)',
@@ -820,7 +862,9 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       {/* Diagnostics / Test Section */}
       <div className="glass-card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontWeight: '800', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t('relayDiagnostics') || 'DIAGNOSTICS'}</div>
+          <div style={{ fontWeight: '900', fontSize: '0.9rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            {t('relayDiagnostics') || (lang === 'cz' ? 'DIAGNOSTIKA RELAY' : 'RELAY DIAGNOSTICS')}
+          </div>
           <Activity size={16} color="var(--text-secondary)" />
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -828,33 +872,35 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
             onClick={testSms}
             style={{ 
               flex: 1, 
-              padding: '0.75rem', 
+              padding: '0.85rem', 
               borderRadius: '12px', 
               background: 'rgba(59, 130, 246, 0.1)', 
-              border: '1px solid rgba(59, 130, 246, 0.2)', 
+              border: '1px solid rgba(59, 130, 246, 0.3)', 
               color: 'var(--accent-color)', 
-              fontSize: '0.8rem', 
-              fontWeight: '800',
-              cursor: 'pointer'
+              fontSize: '0.75rem', 
+              fontWeight: '950',
+              cursor: 'pointer',
+              textTransform: 'uppercase'
             }}
           >
-            {t('runSmsTest') || 'RUN SMS TEST'}
+            {t('runSmsTest') || (lang === 'cz' ? 'TESTOVACÍ SMS' : 'TEST SMS')}
           </button>
           <button 
             onClick={refreshDiagnostics}
             style={{ 
               flex: 1, 
-              padding: '0.75rem', 
+              padding: '0.85rem', 
               borderRadius: '12px', 
-              background: 'rgba(255, 255, 255, 0.05)', 
+              background: 'rgba(255, 255, 255, 0.03)', 
               border: '1px solid var(--card-border)', 
               color: 'var(--text-secondary)', 
-              fontSize: '0.8rem', 
-              fontWeight: '800',
-              cursor: 'pointer'
+              fontSize: '0.75rem', 
+              fontWeight: '950',
+              cursor: 'pointer',
+              textTransform: 'uppercase'
             }}
           >
-            {t('refreshHealth') || 'REFRESH HEALTH'}
+            {t('refreshHealth') || (lang === 'cz' ? 'OBNOVIT STAV' : 'REFRESH STATUS')}
           </button>
         </div>
       </div>
@@ -893,7 +939,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           {[
           { icon: currentConnectionUi.icon, label: t('relayServer') || 'SERVER', value: currentConnectionUi.label, color: currentConnectionUi.color, isStatus: true },
-          { icon: Signal, label: t('relaySignal') || 'SIGNAL', value: `${Math.round(signalStrength)}%`, color: isServerConnected ? 'var(--success-color)' : 'var(--text-secondary)' },
+          { icon: Signal, label: t('relaySignal') || 'SIGNAL', value: `${Math.round(signalStrength)}%`, subValue: selectedSimSlot.toUpperCase(), color: isServerConnected ? 'var(--success-color)' : 'var(--text-secondary)' },
           { icon: Battery, label: t('relayBattery') || 'BATTERY', value: `${Math.round(batteryLevel)}%${isCharging ? ' ⚡' : ''}`, color: batteryLevel > 20 ? (isServerConnected ? 'var(--success-color)' : 'var(--text-secondary)') : 'var(--error-color)' },
           { icon: Activity, label: t('relayUptime') || 'UPTIME', value: t('relayUptimeValue') || '14d 05h', color: isServerConnected ? 'var(--accent-color)' : 'var(--text-secondary)' }
         ].map((card, i) => (
@@ -918,6 +964,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: card.isStatus ? 'center' : 'flex-start', gap: '0.5rem', width: '100%' }}>
               {card.isStatus && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: card.color }}></div>}
               <span style={{ fontSize: '1.1rem', fontWeight: '900' }}>{card.value}</span>
+              {card.subValue && <span style={{ fontSize: '0.6rem', padding: '0.15rem 0.4rem', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', fontWeight: '800', marginLeft: 'auto' }}>{card.subValue}</span>}
             </div>
           </div>
         ))}
@@ -1000,20 +1047,22 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
               await relayPlugin.openNotificationAccessSettings();
             }}
             style={{
-              marginTop: '0.9rem',
+              marginTop: '1rem',
               width: '100%',
-              padding: '0.75rem 0.9rem',
-              borderRadius: '10px',
-              border: '1px solid rgba(168, 85, 247, 0.35)',
-              background: 'rgba(168, 85, 247, 0.08)',
+              padding: '1rem',
+              borderRadius: '14px',
+              border: '1px solid rgba(168, 85, 247, 0.4)',
+              background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(99, 102, 241, 0.15))',
               color: '#d8b4fe',
-              fontWeight: '800',
-              fontSize: '0.75rem',
-              letterSpacing: '0.03em',
-              cursor: 'pointer'
+              fontWeight: '950',
+              fontSize: '0.85rem',
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              boxShadow: '0 4px 15px rgba(168, 85, 247, 0.2)'
             }}
           >
-            {t('relayEnableRcsAccess') || 'ENABLE RCS ACCESS'}
+            {t('relayEnableRcsAccess') || (lang === 'cz' ? 'AKTIVOVAT RCS / SMS' : 'ENABLE RCS / SMS')}
           </button>
         )}
         {noProfileWarning && (
@@ -1168,7 +1217,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
             }
           }}
           style={{ padding: '1rem', borderRadius: '14px', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)', color: 'var(--accent-color)', fontWeight: '800', cursor: 'pointer' }}>
-          {t('hideRelayPage') || 'HIDE RELAY PAGE'}
+          {t('hideRelayDevice')}
         </button>
         <button
           onClick={handleExitMode}
@@ -1205,16 +1254,70 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
 
       {/* Settings Drawer */}
       {showSettings && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'flex-end' }} onClick={() => setShowSettings(false)}>
-          <div style={{ background: '#12141a', borderTop: '1px solid var(--card-border)', borderTopLeftRadius: '32px', borderTopRightRadius: '32px', width: '100%', height: '100dvh', padding: '2rem 1.5rem', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
-            <div style={{ width: '40px', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', margin: '0 auto 1.5rem' }} />
-            <h3 style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '1.5rem' }}>{t('relaySettingsTitle') || 'Relay Settings'}</h3>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(15px)', zIndex: 9000, display: 'flex', alignItems: 'flex-end' }} onClick={() => setShowSettings(false)}>
+          <div style={{ 
+            background: '#040507', 
+            borderTop: '1px solid var(--card-border)', 
+            borderTopLeftRadius: '32px', 
+            borderTopRightRadius: '32px', 
+            width: '100%', 
+            height: '100dvh', 
+            padding: 'calc(env(safe-area-inset-top, 0px) + 1.5rem) 1.5rem', 
+            paddingBottom: isMobile ? '90px' : 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)', 
+            boxSizing: 'border-box', 
+            display: 'flex', 
+            flexDirection: 'column' 
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <button 
+                onClick={() => setShowSettings(false)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--accent-color)', fontWeight: '800', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', padding: 0 }}
+              >
+                <ArrowDownLeft size={18} style={{ transform: 'rotate(45deg)' }} />
+                {lang === 'cz' ? 'Zpět' : 'Back'}
+              </button>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: '900', margin: 0 }}>{t('relaySettingsTitle') || 'Relay Settings'}</h3>
+              <button 
+                onClick={() => setShowSettings(false)}
+                style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', cursor: 'pointer' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, overflowY: 'auto' }}>
                 {[
                 { id: 'apiGateway', label: t('relayApiGateway') || 'API Gateway', sub: `${RELAY_API_BASE}/api/device/relay • ${currentConnectionUi.label}`, icon: currentConnectionUi.icon, iconColor: currentConnectionUi.color, toggle: undefined, onToggle: reconnectServer },
                 { id: 'batteryWarning', label: t('relayBatteryWarning') || 'Battery Warning', sub: t('relayBatteryWarningSub') || 'Alert at 15%', icon: Battery, toggle: settingsBatteryWarning, onToggle: () => setSettingsBatteryWarning(v => !v) },
                 { id: 'trafficProxy', label: t('relayTrafficProxy') || 'Traffic Proxy', sub: t('relayTrafficProxySub') || 'Routing through SIM', icon: Wifi, toggle: settingsTrafficProxy, onToggle: () => setSettingsTrafficProxy(v => !v) },
+                { 
+                  id: 'simSlot', 
+                  label: lang === 'cz' ? 'Pracovní SIM karta' : 'Work SIM Card', 
+                  sub: selectedSimSlot === 'auto' ? (lang === 'cz' ? 'Automaticky (všechny SIM)' : 'Automatic (all SIMs)') : `SIM ${selectedSimSlot}`, 
+                  icon: Phone, 
+                  customAction: (
+                    <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '8px' }}>
+                      {['auto', '1', '2'].map(slot => (
+                        <button 
+                          key={slot}
+                          onClick={(e) => { e.stopPropagation(); setSelectedSimSlot(slot); }}
+                          style={{
+                            padding: '6px 10px',
+                            fontSize: '0.7rem',
+                            fontWeight: '900',
+                            borderRadius: '6px',
+                            border: 'none',
+                            background: selectedSimSlot === slot ? 'var(--accent-color)' : 'rgba(255,255,255,0.05)',
+                            color: 'white',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {slot.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+                  )
+                },
                 { id: 'hiddenMode', label: t('relayHiddenMode') || 'Hidden Mode', sub: t('relayHiddenModeSub') || 'Hide text in logs', icon: Activity, toggle: settingsHiddenMode, onToggle: () => setSettingsHiddenMode(v => !v) }
               ].map((item, i) => (
                 <div key={i} onClick={item.onToggle} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.85rem', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid var(--card-border)', cursor: item.onToggle ? 'pointer' : 'default' }}>
@@ -1225,7 +1328,9 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
                       <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{item.sub}</div>
                     </div>
                   </div>
-                  {item.toggle !== undefined ? (
+                  {item.customAction ? (
+                    item.customAction
+                  ) : item.toggle !== undefined ? (
                     <div
                       onClick={e => { e.stopPropagation(); item.onToggle(); }}
                       style={{ width: '44px', height: '24px', background: item.toggle ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)', borderRadius: '12px', position: 'relative', cursor: 'pointer', flexShrink: 0 }}
@@ -1237,7 +1342,27 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
               ))}
             </div>
 
-            <button onClick={() => setShowSettings(false)} style={{ width: '100%', padding: '1rem', borderRadius: '18px', background: 'var(--accent-color)', border: 'none', color: 'white', fontWeight: '900', marginTop: '1rem', cursor: 'pointer', transition: 'all 0.2s ease' }}>{t('saveAndClose') || 'SAVE & CLOSE'}</button>
+            <div style={{ padding: '1.25rem 0', marginTop: 'auto' }}>
+              <button 
+                onClick={(e) => { e.stopPropagation(); setShowSettings(false); }}
+                style={{ 
+                  width: '100%', 
+                  padding: '1.4rem', 
+                  borderRadius: '20px', 
+                  background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', 
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: 'white', 
+                  fontWeight: '950', 
+                  cursor: 'pointer', 
+                  boxShadow: '0 12px 40px rgba(59, 130, 246, 0.5)',
+                  fontSize: '1.1rem',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase'
+                }}
+              >
+                {lang === 'cz' ? 'ZAVŘÍT NASTAVENÍ' : 'CLOSE SETTINGS'}
+              </button>
+            </div>
           </div>
         </div>
       )}

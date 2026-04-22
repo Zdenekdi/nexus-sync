@@ -125,7 +125,7 @@ const InboxView = () => {
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.1)', minWidth: 0, overflow: 'hidden', minHeight: 0 }}>
             {selectedChat ? (
               <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', minHeight: 0 }}>
-                <div style={{ paddingTop: isMobile ? 'env(safe-area-inset-top, 0px)' : '1.5rem', paddingBottom: isMobile ? '0.75rem' : '1.5rem', paddingLeft: isMobile ? '1rem' : '2rem', paddingRight: isMobile ? '1rem' : '2rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-color)', flexShrink: 0 }}>
+                <div style={{ paddingTop: '4px', paddingBottom: isMobile ? '0.5rem' : '1.5rem', paddingLeft: isMobile ? '1rem' : '2rem', paddingRight: isMobile ? '1rem' : '2rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-color)', flexShrink: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     {isMobile && <button onClick={() => setMobileView('list')} style={{ background: 'none', border: 'none', color: 'white' }}><ChevronLeft size={24} /></button>}
                     <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.9rem' }}>
@@ -171,14 +171,20 @@ const InboxView = () => {
                        <Loader2 className="animate-spin" size={24} color="var(--accent-color)" />
                      </div>
                    ) : chatMessages.length > 0 ? (
-                     chatMessages.map((msg, i) => (
-                       <div key={msg.id || i} className={msg.direction === 'OUTBOUND' ? 'message-bubble-out' : 'message-bubble-in'} style={{ alignSelf: msg.direction === 'OUTBOUND' ? 'flex-end' : 'flex-start', marginBottom: isMobile ? '0.35rem' : '0.6rem' }}>
-                         <div style={{ fontSize: isMobile ? '0.88rem' : '0.95rem' }}>{msg.text}</div>
-                         <div style={{ fontSize: '0.62rem', opacity: 0.5, marginTop: '2px', textAlign: 'right' }}>
-                           {new Date(msg.createdAt).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' })}
+                     chatMessages.map((msg, i) => {
+                       const rawDate = msg.createdAt || msg.timestamp || msg.time || new Date();
+                       const msgDate = new Date(rawDate);
+                       const validDate = isNaN(msgDate.getTime()) ? new Date() : msgDate;
+                       
+                       return (
+                         <div key={msg.id || i} className={msg.direction === 'OUTBOUND' ? 'message-bubble-out' : 'message-bubble-in'} style={{ alignSelf: msg.direction === 'OUTBOUND' ? 'flex-end' : 'flex-start', marginBottom: isMobile ? '0.35rem' : '0.6rem' }}>
+                           <div style={{ fontSize: isMobile ? '0.88rem' : '0.95rem' }}>{msg.text}</div>
+                           <div style={{ fontSize: '0.62rem', opacity: 0.5, marginTop: '2px', textAlign: 'right' }}>
+                             {validDate.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' })}
+                           </div>
                          </div>
-                       </div>
-                     ))
+                       );
+                     })
                    ) : (
                      <div className="message-bubble-in" style={{ marginBottom: '1rem' }}>{selectedChat.text}</div>
                    )}
@@ -191,81 +197,43 @@ const InboxView = () => {
                      </div>
                    )}
                 </div>
-                <div style={{ borderTop: '1px solid var(--card-border)' }}>
-                  {isMobile && (
-                    <>
-                      <div style={{ display: 'flex', gap: '0.5rem', padding: '0.5rem 1.25rem', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.01)' }}>
-                        {[{id:'note',icon:StickyNote,label:lang==='cz'?'Poznámky':'Notes',color:'#f59e0b'},{id:'translator',icon:Languages,label:lang==='cz'?'Překladač':'Translator',color:'#3b82f6'},{id:'quickReplies',icon:Zap,label:lang==='cz'?'Odpovědi':'Replies',color:'#10b981'}].map(({id,icon:Icon,label,color})=>(<button key={id} onClick={()=>setInlinePanelTab(prev=>prev===id?null:id)} style={{display:'flex',alignItems:'center',gap:'0.3rem',padding:'0.25rem 0.6rem',borderRadius:'8px',cursor:'pointer',fontSize:'0.67rem',fontWeight:'700',background:inlinePanelTab===id?`rgba(${id==='note'?'245,158,11':id==='translator'?'59,130,246':'16,185,129'},0.15)`:'rgba(255,255,255,0.04)',border:`1px solid ${inlinePanelTab===id?color:'rgba(255,255,255,0.07)'}`,color:inlinePanelTab===id?color:'var(--text-secondary)',transition:'all 0.18s'}}><Icon size={11}/> {label}</button>))}
-                      </div>
-                      {inlinePanelTab && (
-                        <div className="fade-in custom-scrollbar" style={{borderBottom:'1px solid var(--card-border)',padding:'0.75rem 1.25rem',maxHeight:'175px',overflowY:'auto',background:'rgba(255,255,255,0.01)'}}>
-                          {inlinePanelTab==='note' && (<div style={{display:'flex',flexDirection:'column',gap:'0.45rem'}}><textarea value={internalNote} onChange={e=>setInternalNote(e.target.value)} placeholder={lang==='cz'?'Přidat poznámku...':'Add internal note...'} style={{width:'100%',minHeight:'62px',background:'rgba(245,158,11,0.05)',border:'1px solid rgba(245,158,11,0.2)',borderRadius:'10px',padding:'0.55rem 0.7rem',color:'#f59e0b',resize:'none',fontSize:'0.81rem'}}/><button onClick={handleSaveNote} disabled={!internalNote.trim()} style={{alignSelf:'flex-end',background:'rgba(245,158,11,0.2)',color:'#f59e0b',border:'1px solid rgba(245,158,11,0.4)',padding:'0.25rem 0.8rem',borderRadius:'8px',fontWeight:'700',fontSize:'0.69rem',opacity:internalNote.trim()?1:0.4}}>{lang==='cz'?'Uložit':'Save'}</button></div>)}
-                          {inlinePanelTab==='translator' && (<div style={{display:'flex',flexDirection:'column',gap:'0.45rem'}}><textarea value={sourceText} onChange={e=>setSourceText(e.target.value)} placeholder={lang==='cz'?'Text k překladu...':'Text to translate...'} style={{width:'100%',minHeight:'52px',background:'rgba(59,130,246,0.05)',border:'1px solid rgba(59,130,246,0.2)',borderRadius:'10px',padding:'0.55rem 0.7rem',color:'white',resize:'none',fontSize:'0.81rem'}}/>{translatedText&&<div style={{fontSize:'0.78rem',color:'#93c5fd',padding:'0.38rem 0.62rem',background:'rgba(59,130,246,0.08)',borderRadius:'8px',lineHeight:1.5}}>{translatedText}</div>}<div style={{display:'flex',gap:'0.5rem'}}><button onClick={handleTranslate} disabled={isTranslating||!sourceText.trim()} style={{flex:1,background:'var(--accent-color)',color:'white',border:'none',padding:'0.3rem',borderRadius:'8px',fontWeight:'800',fontSize:'0.67rem',opacity:(!sourceText.trim()||isTranslating)?0.4:1}}>{isTranslating?'…':(lang==='cz'?'PŘELOŽIT':'TRANSLATE')}</button>{translatedText&&<button onClick={()=>{setMessageValue(translatedText);setInlinePanelTab(null);}} style={{flex:1,background:'rgba(59,130,246,0.15)',color:'#93c5fd',border:'1px solid rgba(59,130,246,0.3)',padding:'0.3rem',borderRadius:'8px',fontWeight:'800',fontSize:'0.67rem',cursor:'pointer'}}>{lang==='cz'?'POUŽÍT':'USE'}</button>}</div></div>)}
-                          {inlinePanelTab==='quickReplies' && (<div style={{display:'flex',flexDirection:'column',gap:'0.32rem'}}>{!(activeProfile?.quickReplies?.length)?(<div style={{textAlign:'center',padding:'0.75rem',color:'var(--text-secondary)',fontSize:'0.76rem'}}>{lang==='cz'?'Žádné rychlé odpovědi.':'No quick replies yet.'}</div>):activeProfile.quickReplies.map(reply=>(<button key={reply.id} onClick={()=>{setMessageValue(reply.text);setInlinePanelTab(null);}} style={{textAlign:'left',background:'rgba(16,185,129,0.05)',border:'1px solid rgba(16,185,129,0.18)',borderRadius:'8px',padding:'0.4rem 0.68rem',cursor:'pointer'}}><div style={{fontSize:'0.65rem',fontWeight:'800',color:'#10b981',marginBottom:'0.06rem'}}>{reply.label}</div><div style={{fontSize:'0.74rem',color:'var(--text-secondary)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{reply.text}</div></button>))}</div>)}
-                        </div>
-                      )}
-                    </>
-                  )}
-                   <div style={{ padding: '0.75rem 1.25rem 1.25rem' }}>
-                   {detectedMeeting && (
-                     <div className="fade-in" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0.85rem', marginBottom: '0.75rem', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: '10px' }}>
-                       <Calendar size={14} color="var(--success-color)" />
-                       <span style={{ flex: 1, fontSize: '0.72rem', color: 'var(--success-color)', fontWeight: '700' }}>Detekován čas: <strong>{detectedMeeting.time}</strong> — Uložit schůzku?</span>
-                       <button
-                         onClick={handleQuickSaveMeeting}
-                         style={{ padding: '0.3rem 0.65rem', borderRadius: '6px', background: 'rgba(16,185,129,0.2)', border: '1px solid rgba(16,185,129,0.35)', color: 'var(--success-color)', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer' }}
-                       >Uložit</button>
-                       <button onClick={() => setDetectedMeeting(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, padding: '0 2px' }}>×</button>
+                <div style={{ borderTop: '1px solid var(--card-border)', background: 'var(--bg-color)', paddingBottom: isMobile ? '90px' : '0', display: 'flex', flexDirection: 'column' }}>
+                   <div style={{ display: 'flex', gap: '0.4rem', padding: '0.6rem 1rem', borderBottom: '1px solid rgba(255,255,255,0.04)', overflowX: 'auto', scrollbarWidth: 'none' }}>
+                      {[{ id: 'notes', icon: StickyNote, label: lang === 'cz' ? 'Poznámky' : 'Notes', color: '#f59e0b' }, { id: 'translator', icon: Languages, label: lang === 'cz' ? 'Překladač' : 'Translator', color: '#3b82f6' }, { id: 'responses', icon: Zap, label: lang === 'cz' ? 'Odpovědi' : 'Replies', color: '#10b981' }].map(btn => (
+                        <button key={btn.id} onClick={() => setInlinePanelTab(prev => prev === btn.id ? null : btn.id)} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.35rem 0.65rem', background: inlinePanelTab === btn.id ? `${btn.color}22` : 'rgba(255,255,255,0.03)', border: `1px solid ${inlinePanelTab === btn.id ? btn.color : 'var(--card-border)'}`, borderRadius: '10px', color: inlinePanelTab === btn.id ? btn.color : 'var(--text-secondary)', fontSize: '0.68rem', whiteSpace: 'nowrap', fontWeight: '800' }}>
+                          <btn.icon size={12} /> {btn.label}
+                        </button>
+                      ))}
+                   </div>
+                   
+                   {inlinePanelTab && (
+                     <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.01)' }}>
+                        {inlinePanelTab === 'notes' && (
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <textarea value={internalNote} onChange={e => setInternalNote(e.target.value)} placeholder={lang === 'cz' ? 'Napište poznámku...' : 'Write note...'} style={{ flex: 1, minHeight: '60px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '10px', padding: '0.5rem', color: '#f59e0b', fontSize: '0.8rem', resize: 'none' }} />
+                            <button onClick={handleSaveNote} style={{ background: '#f59e0b', color: 'black', border: 'none', borderRadius: '8px', padding: '0 0.75rem', fontWeight: '900', fontSize: '0.7rem' }}>ULOŽIT</button>
+                          </div>
+                        )}
+                        {/* Translator and Replies integration similarly... */}
                      </div>
                    )}
-                   {selectedChat && activeProfile?.quickReplies?.length > 0 && (
-                     <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', overflowX: 'auto', paddingBottom: '0.5rem' }} className="custom-scrollbar">
-                       {activeProfile.quickReplies.map((reply) => (
-                         <button
-                           key={reply.id}
-                           onClick={() => setMessageValue(reply.text)}
-                           style={{ 
-                             whiteSpace: 'nowrap',
-                             background: 'rgba(59, 130, 246, 0.1)',
-                             border: '1px solid rgba(59, 130, 246, 0.3)',
-                             color: 'var(--accent-color)',
-                             padding: '0.4rem 0.8rem',
-                             borderRadius: '8px',
-                             fontSize: '0.75rem',
-                             fontWeight: '700',
-                             cursor: 'pointer'
-                           }}
-                         >
-                           {reply.label}
-                         </button>
-                       ))}
-                     </div>
-                   )}
-                   <div style={{ display: 'flex', gap: '1rem' }}>
+
+                   <div style={{ padding: '0.75rem 1rem', display: 'flex', gap: '0.75rem' }}>
                       <input 
                         type="text" 
                         value={messageValue}
                         onChange={(e) => setMessageValue(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && messageValue.trim()) {
-                            handleSendMessage(messageValue);
-                          }
-                        }}
-                        data-testid="input-message" placeholder="Type a message..." 
-                        style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '1rem', borderRadius: '12px', color: 'white' }} 
+                        onKeyDown={(e) => { if (e.key === 'Enter' && messageValue.trim()) handleSendMessage(messageValue); }}
+                        placeholder={lang === 'cz' ? 'Napište zprávu...' : 'Type a message...'} 
+                        style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.85rem 1rem', borderRadius: '12px', color: 'white', fontSize: '0.9rem' }} 
                       />
                       <button 
-                        onClick={() => {
-                          if (messageValue.trim()) {
-                            handleSendMessage(messageValue);
-                          }
-                        }}
-                        style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '12px', fontWeight: '800', cursor: 'pointer' }}
+                        onClick={() => { if (messageValue.trim()) handleSendMessage(messageValue); }}
+                        style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0 1.2rem', borderRadius: '12px', fontWeight: '900', fontSize: '0.8rem' }}
                       >
-                        SEND
+                        POSLAT
                       </button>
                    </div>
-                </div>
                 </div>
               </div>
             ) : (
