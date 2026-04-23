@@ -726,20 +726,67 @@ export const NexusProvider = ({ children }) => {
   const handleEmergencyAlert = React.useCallback((_data) => {
     showToast(lang === 'cz' ? '🚨 Nouzový poplach!' : '🚨 Emergency alert!', 'error');
   }, [showToast, lang]);
+  const handleRelayCommand = React.useCallback(async (data) => {
+    if (data?.targetType === 'relay_command' || data?.type === 'send_sms') {
+      const { to, content, messageId } = data;
+      if (!to || !content) return;
+
+      console.log('[Nexus-Relay] Remote send request received:', { to, messageId });
+      
+      try {
+        const plugin = window.Capacitor?.Plugins?.NexusRelay;
+        if (plugin) {
+          // Physical send
+          await plugin.sendSms({ to, text: content });
+          console.log('[Nexus-Relay] SMS sent successfully');
+          
+          // Notify server that it was sent
+          if (messageId) {
+            await axios.post(`${API_BASE}/messages/${messageId}/status`, 
+              { status: 'sent' },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+          }
+        } else {
+          console.warn('[Nexus-Relay] Relay command received but plugin not available');
+        }
+      } catch (err) {
+        console.error('[Nexus-Relay] Failed to execute remote send command:', err);
+        if (messageId) {
+          try {
+            await axios.post(`${API_BASE}/messages/${messageId}/status`, 
+              { status: 'failed' },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+          } catch (e) {}
+        }
+      }
+    }
+  }, [API_BASE, token]);
+
   const handleSipIncomingCall = React.useCallback((_data) => {}, []);
 
-  useSocket(token, handleNewMessage, handleMessageUpdated, handleIncomingCall, handleEmergencyAlert, handleSipIncomingCall);
+  useSocket(token, handleNewMessage, handleMessageUpdated, handleIncomingCall, handleEmergencyAlert, handleSipIncomingCall, handleRelayCommand);
 
   React.useEffect(() => {
     if (!isLoggedIn || !token) return;
-    initPushNotifications(API_BASE, token, (notification, tapped) => {
+    initPushNotifications(API_BASE, token, async (notification, tapped) => {
       const data = notification?.data;
+      
+      // 1. Navigation handling
       if (tapped && data?.chatId) {
         setSelectedChatId(data.chatId);
         setActiveTab('inbox');
       }
+      
+      // 2. Safety handling
       if (data?.type === 'safety_alert') {
         showToast(lang === 'cz' ? '🚨 Nouzový poplach!' : '🚨 Emergency alert!', 'error');
+      }
+
+      // 3. Relay handling
+      if (data) {
+        handleRelayCommand(data);
       }
     });
     return () => { removePushListeners(); };
