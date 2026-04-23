@@ -1302,6 +1302,7 @@ export const NexusProvider = ({ children }) => {
         return { success: true, data: res.data };
       } catch (err) { return { success: false }; }
     },
+    handleRelayCommand,
     ...nexusData
   };
 

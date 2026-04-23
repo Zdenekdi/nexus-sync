@@ -37,8 +37,9 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     addRelayLog: addLocalLog,
     updateRelayLogStatus: updateLogStatusId,
     API_BASE,
-    lang
-  } = nexus;
+    lang,
+    setLang
+  } = nexus || {};
 
   const isMobile = window.innerWidth <= 768;
   const RELAY_API_BASE = (import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api').replace(/\/api$/, '');
@@ -159,7 +160,8 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     sipFetchedRef.current = true;
     (async () => {
       try {
-        const res = await axios.get(`${API_BASE}/sip/config`, {
+        const url = `${API_BASE || RELAY_API_BASE}/sip/config`;
+        const res = await axios.get(url, {
           headers: {
             Authorization: `Bearer ${operator.token}`,
             'x-installation-id': operator.installationId || '',
@@ -730,7 +732,8 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     if (window.Capacitor?.Plugins?.NexusRelay) {
       const checkBlacklist = async (phone) => {
         try {
-          const res = await axios.get(`${API_BASE}/blacklist/check`, {
+          const url = `${API_BASE || RELAY_API_BASE}/blacklist/check`;
+          const res = await axios.get(url, {
             params: { phone },
             headers: { Authorization: `Bearer ${operator?.token}` }
           });

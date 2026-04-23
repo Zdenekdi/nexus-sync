@@ -31,6 +31,9 @@ export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall,
         reconnectionDelay: 1000,
       });
 
+      // Global reference for legacy components/bridge
+      window._nexusSocket = socketRef.current;
+
       socketRef.current.on('connect', () => {});
 
       socketRef.current.on('new_message', (data) => {
@@ -55,6 +58,10 @@ export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall,
         if (handlersRef.current.onEmergencyAlert) {
           handlersRef.current.onEmergencyAlert(data);
         }
+      });
+
+      socketRef.current.onAny((eventName, ...args) => {
+        console.log(`[Socket-Any] Event: ${eventName}`, args);
       });
 
       socketRef.current.on('relay_command', (data) => {
