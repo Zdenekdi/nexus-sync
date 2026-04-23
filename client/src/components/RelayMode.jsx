@@ -40,6 +40,10 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     lang
   } = nexus;
 
+  const isMobile = window.innerWidth <= 768;
+  const RELAY_API_BASE = (import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api').replace(/\/api$/, '');
+
+
   const updateLogStatus = (from, newStatus) => {
     // This is the old way by phone number, keeping it for local events if any
     setLogs(prev => prev.map(l =>
@@ -48,6 +52,12 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
         : l
     ));
   };
+
+  const [connectionStatus, setConnectionStatus] = useState('connecting');
+  const [signalStrength, setSignalStrength] = useState(85);
+  const [batteryLevel, setBatteryLevel] = useState(100);
+  const [isCharging, setIsCharging] = useState(false);
+
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isRefreshingLogs, setIsRefreshingLogs] = useState(false);
