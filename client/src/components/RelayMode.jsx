@@ -35,7 +35,9 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     relayLogs: logs,
     setRelayLogs: setLogs,
     addRelayLog: addLocalLog,
-    updateRelayLogStatus: updateLogStatusId
+    updateRelayLogStatus: updateLogStatusId,
+    API_BASE,
+    lang
   } = nexus;
 
   const updateLogStatus = (from, newStatus) => {
