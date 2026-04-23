@@ -79,6 +79,7 @@ exports.createMessage = async (req, res) => {
 
       // Targeted relay command via socket (faster than push)
       if (direction === 'OUTBOUND') {
+        console.log(`[Socket] Emitting relay_command to agency_${chat.agencyId} for chat ${chatId}`);
         io.to(`agency_${chat.agencyId}`).emit('relay_command', {
           type: 'send_sms',
           to: chat.externalId,
@@ -87,7 +88,9 @@ exports.createMessage = async (req, res) => {
           profileId: chat.profileId
         });
       }
-    } catch (e) { /* Socket may not be ready */ }
+    } catch (e) {
+      console.error('[Socket] Relay emission failed:', e.message);
+    }
     
     res.status(201).json(message);
   } catch (error) {
