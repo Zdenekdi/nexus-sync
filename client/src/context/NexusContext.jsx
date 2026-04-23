@@ -729,48 +729,66 @@ export const NexusProvider = ({ children }) => {
     showToast(lang === 'cz' ? '🚨 Nouzový poplach!' : '🚨 Emergency alert!', 'error');
   }, [showToast, lang]);
   const handleRelayCommand = React.useCallback(async (data) => {
-    if (data?.targetType === 'relay_command' || data?.type === 'send_sms') {
-      const { to, content, messageId } = data;
-      if (!to || !content) return;
+    if (!data) return;
+    
+    const isCommand = data.targetType === 'relay_command' || data.type === 'send_sms' || data.action === 'send_sms';
+    if (!isCommand) return;
 
-      console.log('[Nexus-Relay] Remote send request received:', { to, messageId });
-      
-      try {
-        const plugin = window.Capacitor?.Plugins?.NexusRelay;
-        if (plugin) {
-          // Physical send
-          console.log('[Nexus-Relay] Calling plugin.sendSms...', { to, text: content });
-          const result = await plugin.sendSms({ to, text: content });
-          console.log('[Nexus-Relay] plugin.sendSms result:', result);
-          
-          showToast(lang === 'cz' ? `SMS pro ${to} odeslána.` : `SMS for ${to} sent.`, 'success');
+    if (!isRelayActive) {
+      console.log('[Nexus-Relay] Command received but relay is INACTIVE. Skipping.');
+      return;
+    }
 
-          // Notify server that it was sent (MUST BE PATCH)
-          if (messageId) {
-            await axios.patch(`${API_BASE}/messages/${messageId}/status`, 
-              { status: 'sent' },
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-          }
-        } else {
-          console.warn('[Nexus-Relay] Relay command received but plugin not available');
-          showToast(lang === 'cz' ? 'Chyba: Relay plugin nedostupný' : 'Error: Relay plugin unavailable', 'error');
-        }
-      } catch (err) {
-        console.error('[Nexus-Relay] Failed to execute remote send command:', err);
-        showToast(lang === 'cz' ? `SMS selhala: ${err.message || 'Neznámá chyba'}` : `SMS failed: ${err.message || 'Unknown error'}`, 'error');
+    const messageId = data.messageId || data.id;
+    const to = data.to || data.phoneNumber || data.phone;
+    const text = data.content || data.text || data.body;
+
+    if (!to || !text) {
+      console.warn('[Nexus-Relay] Incomplete command data:', data);
+      return;
+    }
+
+    console.log('[Nexus-Relay] Remote send request received:', { to, messageId, textLength: text.length });
+    
+    try {
+      const plugin = window.Capacitor?.Plugins?.NexusRelay;
+      if (plugin) {
+        // Physical send
+        console.log('[Nexus-Relay] Calling plugin.sendSms...', { to, text });
+        const result = await plugin.sendSms({ 
+          to, 
+          text,
+          simSlot: relaySimSlot === 'auto' ? null : parseInt(relaySimSlot)
+        });
+        console.log('[Nexus-Relay] plugin.sendSms result:', result);
         
+        showToast(lang === 'cz' ? `SMS pro ${to} odeslána.` : `SMS for ${to} sent.`, 'success');
+
+        // Notify server that it was sent (MUST BE PATCH)
         if (messageId) {
-          try {
-            await axios.patch(`${API_BASE}/messages/${messageId}/status`, 
-              { status: 'failed' },
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-          } catch (e) {}
+          await axios.patch(`${API_BASE}/messages/${messageId}/status`, 
+            { status: 'sent', result: JSON.stringify(result) },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
         }
+      } else {
+        console.warn('[Nexus-Relay] Relay command received but native plugin not available');
+        showToast(lang === 'cz' ? 'Chyba: Relay plugin nedostupný' : 'Error: Relay plugin unavailable', 'error');
+      }
+    } catch (err) {
+      console.error('[Nexus-Relay] Failed to execute remote send command:', err);
+      showToast(lang === 'cz' ? `SMS selhala: ${err.message || 'Neznámá chyba'}` : `SMS failed: ${err.message || 'Unknown error'}`, 'error');
+      
+      if (messageId) {
+        try {
+          await axios.patch(`${API_BASE}/messages/${messageId}/status`, 
+            { status: 'failed', error: err.message },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+        } catch (e) {}
       }
     }
-  }, [API_BASE, token]);
+  }, [API_BASE, token, isRelayActive, relaySimSlot, lang, showToast]);
 
   const handleSipIncomingCall = React.useCallback((_data) => {}, []);
 
