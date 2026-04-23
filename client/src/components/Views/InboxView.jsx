@@ -193,8 +193,13 @@ const InboxView = () => {
                        return (
                          <div key={msg.id || i} className={msg.direction === 'OUTBOUND' ? 'message-bubble-out' : 'message-bubble-in'} style={{ alignSelf: msg.direction === 'OUTBOUND' ? 'flex-end' : 'flex-start', marginBottom: isMobile ? '0.35rem' : '0.6rem' }}>
                            <div style={{ fontSize: isMobile ? '0.88rem' : '0.95rem' }}>{msg.text}</div>
-                           <div style={{ fontSize: '0.62rem', opacity: 0.5, marginTop: '2px', textAlign: 'right' }}>
-                             {validDate.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' })}
+                           <div style={{ fontSize: '0.62rem', opacity: 0.6, marginTop: '4px', display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
+                             <span style={{ fontWeight: '800', color: msg.direction === 'OUTBOUND' ? 'rgba(255,255,255,0.7)' : 'inherit' }}>
+                               {msg.senderName ? `[${msg.senderName}]` : ''}
+                             </span>
+                             <span>
+                               {validDate.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' })}
+                             </span>
                            </div>
                          </div>
                        );

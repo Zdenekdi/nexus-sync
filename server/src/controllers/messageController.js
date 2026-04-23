@@ -40,6 +40,7 @@ exports.createMessage = async (req, res) => {
         chatId,
         text,
         direction,
+        transport: transport || 'sms',
         status: direction === 'OUTBOUND' ? 'pending_relay' : (status || 'sent'),
         senderId: direction === 'OUTBOUND' ? userId : null
       },
