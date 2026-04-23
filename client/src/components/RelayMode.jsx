@@ -34,7 +34,12 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   const [batteryLevel, setBatteryLevel] = useState(100);
   const [isCharging, setIsCharging] = useState(false);
   const [logs, setLogs] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('nexus_relay_logs') || '[]'); } catch { return []; }
+    try { 
+      const saved = localStorage.getItem('nexus_relay_logs');
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch { return []; }
   });
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isRefreshingLogs, setIsRefreshingLogs] = useState(false);
@@ -535,22 +540,12 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     return () => clearInterval(interval);
   }, [isActive]);
 
-  const testSms = async () => {
+  const testSms = () => {
     try {
-      const plugin = window.Capacitor?.Plugins?.NexusRelay;
-      if (!plugin) throw new Error('Relay plugin not available');
-      
-      const testNum = prompt(t('enterTestNumber') || 'Zadejte testovací číslo:', '+420');
-      if (!testNum) return;
-
-      const testMsg = 'Nexus Relay Diagnostic Test - ' + new Date().toLocaleTimeString();
-      addLocalLog('sms', testNum, 'TEST: ' + testMsg);
-      
-      await plugin.sendSms({ to: testNum, text: testMsg });
-      showRelayNotice(t('testSmsSent') || 'Testovací SMS odeslána!', 'success');
+      // Direct notice without any async or plugin logic
+      showRelayNotice('Debug: Test button clicked!', 'success');
     } catch (e) {
-      console.error('[Relay] Test SMS failed', e);
-      showRelayNotice(t('testSmsFailed') || 'Chyba při testu SMS: ' + e.message, 'error');
+      console.error('[Relay] Test button error:', e);
     }
   };
 
@@ -939,7 +934,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           {[
           { icon: currentConnectionUi.icon, label: t('relayServer') || 'SERVER', value: currentConnectionUi.label, color: currentConnectionUi.color, isStatus: true },
-          { icon: Signal, label: t('relaySignal') || 'SIGNAL', value: `${Math.round(signalStrength)}%`, subValue: selectedSimSlot.toUpperCase(), color: isServerConnected ? 'var(--success-color)' : 'var(--text-secondary)' },
+          { icon: Signal, label: t('relaySignal') || 'SIGNAL', value: `${Math.round(signalStrength || 0)}%`, subValue: (selectedSimSlot || 'auto').toUpperCase(), color: isServerConnected ? 'var(--success-color)' : 'var(--text-secondary)' },
           { icon: Battery, label: t('relayBattery') || 'BATTERY', value: `${Math.round(batteryLevel)}%${isCharging ? ' ⚡' : ''}`, color: batteryLevel > 20 ? (isServerConnected ? 'var(--success-color)' : 'var(--text-secondary)') : 'var(--error-color)' },
           { icon: Activity, label: t('relayUptime') || 'UPTIME', value: t('relayUptimeValue') || '14d 05h', color: isServerConnected ? 'var(--accent-color)' : 'var(--text-secondary)' }
         ].map((card, i) => (
