@@ -325,10 +325,10 @@ exports.getLogs = async (req, res) => {
       prisma.message.findMany({
         where: {
           OR: [
-            { chat: { profileId: binding.profileId } },
-            { installationId: String(installationId) }
+            { chat: { profileId: binding.profileId } }
           ],
-          transport: { in: ['sms', 'rcs', null] }
+          transport: { in: ['sms', 'rcs'] }
+
         },
         take: parseInt(limit),
         orderBy: { createdAt: 'desc' },
