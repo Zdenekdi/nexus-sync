@@ -80,6 +80,15 @@ exports.verifyDeviceBinding = async (req, res) => {
       create: { installationId, userId: String(userId), agencyId: String(agencyId), profileId: String(resolvedProfileId), platform: String(platform || 'android'), active: true, model, deviceName, lastSeenAt: new Date() },
     });
 
+    // AUTO-ONLINE: When a device verifies, the profile must be marked as online
+    if (resolvedProfileId) {
+      await prisma.profile.update({
+        where: { id: String(resolvedProfileId) },
+        data: { status: 'online' }
+      });
+      console.info(`[Device Binding] Profile ${resolvedProfileId} (Diana) is now ONLINE`);
+    }
+
     return res.json({ ok: true });
   } catch (error) {
     console.error('[Device] Verify error:', error);
@@ -308,11 +317,14 @@ exports.getLogs = async (req, res) => {
             { chat: { profileId: binding.profileId } },
             { installationId: String(installationId) }
           ],
-          transport: { in: ['sms', 'rcs'] }
+          transport: { in: ['sms', 'rcs', null] }
         },
         take: parseInt(limit),
         orderBy: { createdAt: 'desc' },
-        include: { chat: { select: { externalId: true } } }
+        include: { 
+          chat: { select: { externalId: true } },
+          sender: { select: { name: true } }
+        }
       }),
       prisma.callLog.findMany({
         where: { profileId: binding.profileId },

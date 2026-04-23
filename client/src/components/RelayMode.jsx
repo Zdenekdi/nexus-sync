@@ -82,6 +82,56 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     }
   }, [operator?.installationId]);
 
+  // ── Automatic Refresh on New Message ──
+  useEffect(() => {
+    const handleNewMessage = (data) => {
+      // If we are in relay mode for a specific profile, only refresh if it matches
+      if (operator?.profileId && data.profileId === operator.profileId) {
+        void refreshLogs();
+      } else if (!operator?.profileId) {
+        // If we are global relay (not tied to profile yet), refresh anyway
+        void refreshLogs();
+      }
+    };
+    if (window._nexusSocket) {
+      window._nexusSocket.on('new_message', handleNewMessage);
+      return () => window._nexusSocket.off('new_message', handleNewMessage);
+    }
+  }, [operator?.profileId]);
+
+  // ── Pull to Refresh logic ──
+  const [pullDistance, setPullDistance] = useState(0);
+  const pullStartRef = useRef(0);
+  const isPullingRef = useRef(false);
+
+  const handleTouchStart = (e) => {
+    const scrollEl = document.querySelector('.relay-logs-scroll');
+    if (scrollEl && scrollEl.scrollTop === 0) {
+      pullStartRef.current = e.touches[0].clientY;
+      isPullingRef.current = true;
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isPullingRef.current) return;
+    const currentY = e.touches[0].clientY;
+    const distance = currentY - pullStartRef.current;
+    if (distance > 0) {
+      setPullDistance(Math.min(distance * 0.4, 80));
+      if (distance > 10) e.preventDefault();
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (isPullingRef.current) {
+      if (pullDistance > 60) {
+        void refreshLogs();
+      }
+      setPullDistance(0);
+      isPullingRef.current = false;
+    }
+  };
+
   // ── SIP VoIP integration ────────────────────────────────────────────────────
   const [sipConfig, setSipConfig] = useState(null);
   const sipFetchedRef = useRef(false);
@@ -880,7 +930,8 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
             fullData: l.content || '',
             direction: l.direction || 'inbound',
             time: l.time || new Date(l.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            status: l.status || 'forwarded'
+            status: l.status || 'forwarded',
+            senderName: l.sender?.name || null
           }));
           // Merge: keep local-only logs (prefixed with 'local_') + server logs
           setLogs(prev => {
@@ -1271,7 +1322,34 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <div 
+          className="relay-logs-scroll"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '0.75rem',
+            transition: pullDistance === 0 ? 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)' : 'none',
+            transform: `translateY(${pullDistance}px)`,
+            position: 'relative'
+          }}
+        >
+          {pullDistance > 0 && (
+            <div style={{ 
+              position: 'absolute', 
+              top: -40, 
+              left: 0, 
+              right: 0, 
+              display: 'flex', 
+              justifyContent: 'center', 
+              opacity: pullDistance / 80,
+              color: 'var(--accent-color)'
+            }}>
+              <RefreshCw size={20} className={pullDistance > 60 ? 'rotate' : ''} />
+            </div>
+          )}
           {logs.length === 0 ? (
             <div className="glass-card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.8rem', borderStyle: 'dashed' }}>
               <History size={32} style={{ marginBottom: '1rem', opacity: 0.3 }} />
@@ -1317,7 +1395,12 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
                     <span style={{ fontSize: '0.85rem', fontWeight: '800', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.from}</span>
                     <span style={{ fontSize: '0.58rem', padding: '0.15rem 0.4rem', borderRadius: '999px', background: (log.transport || log.type) === 'call' ? 'rgba(34, 197, 94, 0.12)' : ((log.transport || log.type) === 'rcs' ? 'rgba(168, 85, 247, 0.16)' : 'rgba(59, 130, 246, 0.12)'), color: (log.transport || log.type) === 'call' ? 'var(--success-color)' : ((log.transport || log.type) === 'rcs' ? '#c084fc' : 'var(--accent-color)'), fontWeight: '900', letterSpacing: '0.04em' }}>{(log.transport || log.type || 'sms').toUpperCase()}</span>
                   </div>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{log.time}</span>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{log.time}</div>
+                    {log.senderName && (
+                      <div style={{ fontSize: '0.58rem', color: 'var(--accent-color)', fontWeight: '900', marginTop: '2px' }}>[{log.senderName.toUpperCase()}]</div>
+                    )}
+                  </div>
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0, wordBreak: 'break-word', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                   {log.content}
@@ -1386,7 +1469,11 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
               </div>
               <div>
                 <div style={{ fontWeight: '900', fontSize: '1.1rem' }}>{activeLog.from}</div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{activeLog.time} • {(activeLog.transport || activeLog.type || 'sms').toUpperCase()} • {t('relayForwardedToNexus') || 'Forwarded to Nexus'}</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  {activeLog.time} • {(activeLog.transport || activeLog.type || 'sms').toUpperCase()} 
+                  {activeLog.senderName && <span style={{ color: 'var(--accent-color)', fontWeight: '800' }}> • {activeLog.senderName.toUpperCase()}</span>}
+                  • {t('relayForwardedToNexus') || 'Forwarded to Nexus'}
+                </div>
               </div>
             </div>
             <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--card-border)', color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '2rem' }}>
