@@ -68,12 +68,25 @@ exports.createMessage = async (req, res) => {
     }
 
     try { 
-      getIO().to(`agency_${chat.agencyId}`).emit('new_message', { 
+      const io = getIO();
+      // Regular inbox update
+      io.to(`agency_${chat.agencyId}`).emit('new_message', { 
         ...message,
         chatId: chatId,
         profileId: chat.profileId,
         from: chat.externalId
       }); 
+
+      // Targeted relay command via socket (faster than push)
+      if (direction === 'OUTBOUND') {
+        io.to(`agency_${chat.agencyId}`).emit('relay_command', {
+          type: 'send_sms',
+          to: chat.externalId,
+          content: text,
+          messageId: message.id,
+          profileId: chat.profileId
+        });
+      }
     } catch (e) { /* Socket may not be ready */ }
     
     res.status(201).json(message);
