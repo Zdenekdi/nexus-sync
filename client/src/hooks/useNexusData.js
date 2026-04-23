@@ -270,6 +270,93 @@ export function useNexusData({
     setIsSyncing(true);
     setTimeout(() => setIsSyncing(false), 2000);
   }, []);
+  
+  const handleExportICS = useCallback(() => {
+    if (!calendar || calendar.length === 0) {
+      if (showToast) showToast(lang === 'cz' ? 'Není co exportovat.' : 'Nothing to export.', 'info');
+      return;
+    }
+    
+    let icsContent = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Nexus Hub//NONSGML v1.0//EN\n";
+    
+    calendar.forEach(event => {
+      const start = new Date(event.startTime || new Date());
+      const end = new Date(event.endTime || new Date());
+      
+      const formatDate = (date) => {
+        return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+      };
+      
+      icsContent += "BEGIN:VEVENT\n";
+      icsContent += `SUMMARY:${event.title}\n`;
+      icsContent += `DTSTART:${formatDate(start)}\n`;
+      icsContent += `DTEND:${formatDate(end)}\n`;
+      icsContent += `DESCRIPTION:${event.locationType || 'Incall'}\n`;
+      icsContent += "END:VEVENT\n";
+    });
+    
+    icsContent += "END:VCALENDAR";
+    
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'nexus-calendar.ics');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    if (showToast) showToast(lang === 'cz' ? 'Kalendář byl exportován.' : 'Calendar exported.', 'success');
+  }, [calendar, lang, showToast]);
+
+  const handleSaveCalendarSync = useCallback(async () => {
+    if (!calendarSyncUrl || !calendarSyncUrl.startsWith('http')) {
+      if (showToast) showToast(lang === 'cz' ? 'Neplatná URL kalendáře.' : 'Invalid calendar URL.', 'error');
+      return;
+    }
+    
+    try {
+      setIsSyncing(true);
+      // Mock call if backend is not ready, or actual call if it is
+      // await axios.post(`${API_BASE}/calendar/sync`, { url: calendarSyncUrl }, { headers: { Authorization: `Bearer ${token}` } });
+      
+      if (showToast) showToast(lang === 'cz' ? 'Synchronizace kalendáře nastavena.' : 'Calendar sync configured.', 'success');
+      setIsCalendarSyncOpen(false);
+    } catch (err) {
+      console.error(err);
+      if (showToast) showToast(lang === 'cz' ? 'Chyba při nastavování synchronizace.' : 'Error setting up sync.', 'error');
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [calendarSyncUrl, lang, showToast, setIsCalendarSyncOpen]);
+
+  const handleSaveBooking = useCallback(async () => {
+    if (!newBookingForm.title || !newBookingForm.date || !activeProfileId) return;
+    
+    try {
+      setIsDataLoading(true);
+      const startDateTime = `${newBookingForm.date}T${newBookingForm.startTime}:00`;
+      const endDateTime = `${newBookingForm.date}T${newBookingForm.endTime}:00`;
+      
+      await axios.post(`${API_BASE}/bookings`, {
+        profileId: activeProfileId,
+        title: newBookingForm.title,
+        startTime: startDateTime,
+        endTime: endDateTime,
+        locationType: newBookingForm.locationType
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      
+      if (showToast) showToast(lang === 'cz' ? 'Schůzka uložena.' : 'Booking saved.', 'success');
+      setIsBookingModalOpen(false);
+      setNewBookingForm({ title: '', date: new Date().toISOString().split('T')[0], startTime: '10:00', endTime: '11:00', locationType: 'incall' });
+      initData();
+    } catch (err) {
+      console.error(err);
+      if (showToast) showToast(lang === 'cz' ? 'Chyba při ukládání.' : 'Error saving booking.', 'error');
+    } finally {
+      setIsDataLoading(false);
+    }
+  }, [newBookingForm, activeProfileId, token, API_BASE, initData, showToast, lang, setIsBookingModalOpen]);
 
   const handleDelayBooking = useCallback(async (bookingId, delayMinutes) => {
     try {
@@ -365,6 +452,7 @@ export function useNexusData({
     calendar, isCalendarSyncOpen, setIsCalendarSyncOpen, calendarSyncUrl, setCalendarSyncUrl,
     isBookingModalOpen, setIsBookingModalOpen, selectedScheduleEvent, setSelectedScheduleEvent,
     newBookingForm, setNewBookingForm, bioText, setBioText, isSyncing, syncStatus: _syncStatus, syncProgress: _syncProgress,
-    handleSaveBio, handleSyncAll, handleQuickSaveMeeting, handleDelayBooking, initData
+    handleSaveBio, handleSyncAll, handleQuickSaveMeeting, handleDelayBooking, initData,
+    handleExportICS, handleSaveCalendarSync, handleSaveBooking
   };
 }

@@ -27,6 +27,9 @@ const GlobalModalContainer = () => {
     operators, showToast, lang, t, isMobile,
     isEditProfileOpen, setIsEditProfileOpen,
     editingProfileData, setEditingProfileData,
+    isBookingModalOpen, setIsBookingModalOpen,
+    newBookingForm, setNewBookingForm,
+    handleSaveBooking,
     API_BASE, token, setProfiles
   } = useNexus();
 
@@ -44,7 +47,14 @@ const GlobalModalContainer = () => {
           onClose={() => setIsBugReportOpen(false)} 
         />
       )}
-      <BookingModal />
+      <BookingModal 
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        form={newBookingForm}
+        onFormChange={setNewBookingForm}
+        onSave={handleSaveBooking}
+        lang={lang}
+      />
       <EditProfileModal
         isOpen={isEditProfileOpen}
         onClose={() => setIsEditProfileOpen(false)}
