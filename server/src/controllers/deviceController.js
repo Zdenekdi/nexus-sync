@@ -149,7 +149,7 @@ exports.revokeDeviceBinding = async (req, res) => {
     const userRole = req.user?.role;
     const { installationId } = req.body;
 
-    // Allow admins to revoke any binding, while operators only their own.
+    const roleName = (typeof userRole === 'string' ? userRole : userRole?.name) || '';
     const isAgencyLevel = ['APP OWNER', 'AGENCY ADMIN', 'MANAGER'].includes(roleName.toUpperCase());
 
     const binding = await prisma.deviceBinding.findUnique({ where: { installationId } });

@@ -1,6 +1,8 @@
 const admin = require('firebase-admin');
 const prisma = require('./db');
 
+const path = require('path');
+
 let firebaseApp = null;
 
 const getFirebaseApp = () => {
@@ -21,6 +23,12 @@ const getFirebaseApp = () => {
         credential: admin.credential.cert(credentials)
       });
       return firebaseApp;
+    }
+
+    // Explicitly handle GOOGLE_APPLICATION_CREDENTIALS if it's a relative path
+    const credPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+    if (credPath && !path.isAbsolute(credPath)) {
+      process.env.GOOGLE_APPLICATION_CREDENTIALS = path.resolve(process.cwd(), credPath);
     }
 
     // Falls back to GOOGLE_APPLICATION_CREDENTIALS when running on server.
