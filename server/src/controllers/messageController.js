@@ -193,6 +193,7 @@ exports.getOutbox = async (req, res) => {
       id: m.id,
       to: m.chat.externalId,
       text: m.text,
+      transport: m.transport,
       createdAt: m.createdAt
     })));
   } catch (error) {

@@ -22,7 +22,7 @@ const createMessage = z.object({
 });
 
 const updateMessageStatus = z.object({
-  status: z.enum(['sent', 'delivered', 'read'])
+  status: z.enum(['sent', 'delivered', 'read', 'failed'])
 });
 
 // ── Bookings ─────────────────────────────────────────────────────────────────
