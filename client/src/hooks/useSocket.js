@@ -34,9 +34,16 @@ export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall,
       // Global reference for legacy components/bridge
       window._nexusSocket = socketRef.current;
 
-      socketRef.current.on('connect', () => {});
+      socketRef.current.onAny((event, ...args) => {
+        console.log(`[Socket-DEBUG] Received event: ${event}`, args);
+      });
+
+      socketRef.current.on('connect', () => {
+        console.log('[Socket-DEBUG] Connected with ID:', socketRef.current.id);
+      });
 
       socketRef.current.on('new_message', (data) => {
+        console.log('[Socket-DEBUG] new_message received:', data);
         if (handlersRef.current.onNewMessage) {
           handlersRef.current.onNewMessage(data);
         }

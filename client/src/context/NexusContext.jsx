@@ -765,9 +765,13 @@ export const NexusProvider = ({ children }) => {
   const handleRelayCommand = React.useCallback(async (data) => {
     if (!data) return;
     
-    console.log('[Nexus-Relay] Incoming command data:', data);
+    console.log('[Nexus-Relay-DEBUG] Incoming command data:', data);
     
-    const isCommand = data.targetType === 'relay_command' || data.type === 'send_sms' || data.action === 'send_sms';
+    // Support multiple command structures for backward compatibility
+    const isCommand = data.type === 'send_sms' || data.targetType === 'relay_command' || !!data.messageId;
+    
+    console.log('[Nexus-Relay-DEBUG] isCommand:', isCommand, 'isRelayActive:', isRelayActive);
+    
     if (!isCommand) return;
 
     // Visual feedback that command was RECEIVED

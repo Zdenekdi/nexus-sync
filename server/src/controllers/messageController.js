@@ -79,13 +79,15 @@ exports.createMessage = async (req, res) => {
 
       // Targeted relay command via socket (faster than push)
       if (direction === 'OUTBOUND') {
-        console.log(`[Socket] Emitting relay_command to agency_${chat.agencyId} for chat ${chatId}`);
+        console.log(`[Socket-DEBUG] Emitting relay_command to agency_${chat.agencyId} for chat ${chatId}. MessageId: ${message.id}`);
         io.to(`agency_${chat.agencyId}`).emit('relay_command', {
+          targetType: 'relay_command', // Explicitly add targetType for client check
           type: 'send_sms',
           to: chat.externalId,
           content: text,
           messageId: message.id,
-          profileId: chat.profileId
+          profileId: chat.profileId,
+          agencyId: chat.agencyId
         });
       }
     } catch (e) {

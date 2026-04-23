@@ -60,12 +60,14 @@ const init = (server) => {
     
     // Join a room for the specific agency
     if (agencyId) {
+      console.log(`[Socket-DEBUG] User ${userId} joining room agency_${agencyId}`);
       socket.join(`agency_${agencyId}`);
-      console.log(`User ${userId} joined room: agency_${agencyId}`);
+    } else {
+      console.warn(`[Socket-DEBUG] User ${userId} connected but has NO agencyId in token!`);
     }
 
     socket.on('disconnect', () => {
-      console.log('User disconnected:', socket.id);
+      console.log('[Socket-DEBUG] User disconnected:', socket.id);
     });
   });
 
