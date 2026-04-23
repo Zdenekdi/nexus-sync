@@ -71,12 +71,23 @@ const BookingModal = ({ isOpen, onClose, form, onFormChange, onSave, lang }) => 
 
           {form.locationType === 'outcall' && (
             <div className="fade-in" style={{ position: 'relative' }}>
-              <MapPin size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--warning-color)' }} />
+              <MapPin size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--warning-color)', opacity: 0.8 }} />
               <input 
                 value={form.address || ''} 
                 onChange={e => onFormChange({...form, address: e.target.value})} 
-                placeholder={lang === 'cz' ? 'Adresa výjezdu' : 'Outcall address'} 
-                style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 2.5rem', background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.2)', borderRadius: '12px', color: 'white', fontSize: '0.95rem' }} 
+                placeholder={lang === 'cz' ? 'Adresa výjezdu (ulice, město...)' : 'Outcall address (street, city...)'} 
+                style={{ 
+                  width: '100%', 
+                  padding: '1rem 1rem 1rem 3rem', 
+                  background: 'rgba(245, 158, 11, 0.05)', 
+                  border: '1px solid rgba(245, 158, 11, 0.2)', 
+                  borderRadius: '14px', 
+                  color: 'white', 
+                  fontSize: '1rem',
+                  outline: 'none',
+                  boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)',
+                  transition: 'all 0.2s'
+                }} 
               />
             </div>
           )}

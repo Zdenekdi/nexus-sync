@@ -146,6 +146,8 @@ export const NexusProvider = ({ children }) => {
   const [typingProfiles, setTypingProfiles] = React.useState({});
   const [showPanicConfirm, setShowPanicConfirm] = React.useState(false);
   const [justLoggedOut, setJustLoggedOut] = React.useState(false);
+  const [isRelayActive, setIsRelayActive] = React.useState(() => localStorage.getItem('nexus_relay_active') === 'true');
+  const [relaySimSlot, setRelaySimSlot] = React.useState(() => localStorage.getItem('nexus_relay_sim_slot') || 'auto');
 
   // 1.1 Safety & SOS State (Globalized)
   const [activeSafetySession, setActiveSafetySession] = React.useState(null);
@@ -737,24 +739,30 @@ export const NexusProvider = ({ children }) => {
         const plugin = window.Capacitor?.Plugins?.NexusRelay;
         if (plugin) {
           // Physical send
-          await plugin.sendSms({ to, text: content });
-          console.log('[Nexus-Relay] SMS sent successfully');
+          console.log('[Nexus-Relay] Calling plugin.sendSms...', { to, text: content });
+          const result = await plugin.sendSms({ to, text: content });
+          console.log('[Nexus-Relay] plugin.sendSms result:', result);
           
-          // Notify server that it was sent
+          showToast(lang === 'cz' ? `SMS pro ${to} odeslána.` : `SMS for ${to} sent.`, 'success');
+
+          // Notify server that it was sent (MUST BE PATCH)
           if (messageId) {
-            await axios.post(`${API_BASE}/messages/${messageId}/status`, 
+            await axios.patch(`${API_BASE}/messages/${messageId}/status`, 
               { status: 'sent' },
               { headers: { Authorization: `Bearer ${token}` } }
             );
           }
         } else {
           console.warn('[Nexus-Relay] Relay command received but plugin not available');
+          showToast(lang === 'cz' ? 'Chyba: Relay plugin nedostupný' : 'Error: Relay plugin unavailable', 'error');
         }
       } catch (err) {
         console.error('[Nexus-Relay] Failed to execute remote send command:', err);
+        showToast(lang === 'cz' ? `SMS selhala: ${err.message || 'Neznámá chyba'}` : `SMS failed: ${err.message || 'Unknown error'}`, 'error');
+        
         if (messageId) {
           try {
-            await axios.post(`${API_BASE}/messages/${messageId}/status`, 
+            await axios.patch(`${API_BASE}/messages/${messageId}/status`, 
               { status: 'failed' },
               { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -765,6 +773,47 @@ export const NexusProvider = ({ children }) => {
   }, [API_BASE, token]);
 
   const handleSipIncomingCall = React.useCallback((_data) => {}, []);
+
+  const syncRelayToNative = React.useCallback(async (active) => {
+    if (!Capacitor.isNativePlatform() || !window.Capacitor?.Plugins?.NexusRelay) return;
+    
+    const installationId = localStorage.getItem('nexus_installation_id');
+    const profileId = activeOperator?.profileId || activeOperator?.activeProfileId || localStorage.getItem('nexus_last_profile_id');
+    
+    try {
+      const RELAY_API_BASE = API_BASE.replace(/\/api$/, '');
+      const baseUrl = `${RELAY_API_BASE}/api/device/relay`;
+      
+      await window.Capacitor.Plugins.NexusRelay.configureRelay({
+        baseUrl: baseUrl,
+        deviceId: activeOperator?.id || 'RELAY-01',
+        installationId: installationId || null,
+        profileId: profileId || null,
+        isActive: active,
+        simSlot: relaySimSlot === 'auto' ? null : parseInt(relaySimSlot)
+      });
+      
+      console.log(`[Nexus-Relay] Native sync: active=${active}, profileId=${profileId}`);
+    } catch (error) {
+      console.warn('[Nexus-Relay] Native sync failed:', error);
+    }
+  }, [activeOperator, relaySimSlot, API_BASE]);
+
+  // Persistent Relay Lifecycle
+  React.useEffect(() => {
+    if (isLoggedIn && activeOperator?.isModel && !isRelayActive && localStorage.getItem('nexus_relay_ever_enabled') !== 'true') {
+      // Auto-enable for models who haven't explicitly disabled it
+      setIsRelayActive(true);
+      localStorage.setItem('nexus_relay_active', 'true');
+      localStorage.setItem('nexus_relay_ever_enabled', 'true');
+    }
+  }, [isLoggedIn, activeOperator, isRelayActive]);
+
+  React.useEffect(() => {
+    if (isLoggedIn) {
+      syncRelayToNative(isRelayActive);
+    }
+  }, [isLoggedIn, isRelayActive, activeOperator?.id, relaySimSlot, syncRelayToNative]);
 
   useSocket(token, handleNewMessage, handleMessageUpdated, handleIncomingCall, handleEmergencyAlert, handleSipIncomingCall, handleRelayCommand);
 
@@ -949,14 +998,20 @@ export const NexusProvider = ({ children }) => {
 
   const chatMessages = React.useMemo(() => {
     if (!selectedChatId) return [];
-    if (chatHistory?.[0] && chatHistory[0].chatId === selectedChatId) return chatHistory;
-    return (messages || []).filter(m => m.chatId === selectedChatId);
+    // Only return chatHistory if it actually belongs to the selected chat
+    const filteredHistory = (chatHistory || []).filter(m => String(m.chatId) === String(selectedChatId));
+    if (filteredHistory.length > 0) return filteredHistory;
+    
+    // Fallback to the latest message from the global messages list while history is loading
+    return (messages || []).filter(m => String(m.chatId) === String(selectedChatId));
   }, [messages, selectedChatId, chatHistory]);
 
   const fetchChatMessages = React.useCallback(async (chatId) => {
     if (!token || !chatId) return;
     try {
       setIsHistoryLoading(true);
+      // Optional: Clear history before fetching to avoid showing stale data
+      // setChatHistory([]); 
       const res = await axios.get(`${API_BASE}/messages/${chatId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -978,11 +1033,12 @@ export const NexusProvider = ({ children }) => {
   // ── Automatic History Fetching ──────────────────────────────────────────
   React.useEffect(() => {
     if (selectedChatId) {
+      setChatHistory([]); // Clear immediately to show loader/fresh state
       fetchChatMessages(selectedChatId);
     } else {
       setChatHistory([]);
     }
-  }, [selectedChatId, fetchChatMessages]);
+  }, [selectedChatId]); // Removed fetchChatMessages from deps to avoid infinite loops if it's not memoized properly (though it is)
 
   const totalUnread = React.useMemo(() => {
     const myProfileIds = new Set((myProfiles || []).map(p => p.id));
@@ -1153,6 +1209,14 @@ export const NexusProvider = ({ children }) => {
     isSidebarOpen, setIsSidebarOpen,
     totalUnread, messages, filteredMessages, selectedChatId, setSelectedChatId,
     selectedChat, chatMessages, chatHistory, fetchChatMessages, isHistoryLoading, setIsHistoryLoading,
+    isRelayActive, setIsRelayActive: (val) => {
+      setIsRelayActive(val);
+      localStorage.setItem('nexus_relay_active', String(val));
+    }, 
+    relaySimSlot, setRelaySimSlot: (val) => {
+      setRelaySimSlot(val);
+      localStorage.setItem('nexus_relay_sim_slot', val);
+    },
     messageValue, setMessageValue, calViewDate, setCalViewDate, globalSettings, fetchGlobalSettings,
     gpsHistory, lastTrackerUpdate,
     voiceGuardianActive, handleToggleVoiceGuardian,

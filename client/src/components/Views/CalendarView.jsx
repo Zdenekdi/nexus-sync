@@ -96,13 +96,15 @@ const CalendarView = () => {
                 onChange={(e) => setCalendarSyncUrl(e.target.value)}
                 style={{ 
                   flex: 1, 
-                  padding: '0.75rem 1.25rem', 
-                  background: 'rgba(0,0,0,0.3)', 
-                  border: '1px solid rgba(255,255,255,0.05)', 
+                  padding: '1rem 1.25rem', 
+                  background: 'rgba(0,0,0,0.4)', 
+                  border: '1px solid rgba(255,255,255,0.1)', 
                   borderRadius: '14px', 
                   color: 'white',
-                  fontSize: '0.9rem',
-                  outline: 'none'
+                  fontSize: '1rem',
+                  outline: 'none',
+                  boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)',
+                  transition: 'border-color 0.2s ease'
                 }}
                 className="glass-input-premium"
               />

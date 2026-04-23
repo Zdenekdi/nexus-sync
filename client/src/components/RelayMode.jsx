@@ -23,12 +23,16 @@ import IncomingCallScreen from './sip/IncomingCallScreen';
 import ActiveCallScreen from './sip/ActiveCallScreen';
 import axios from 'axios';
 
+import { useNexus } from '../context/NexusContext';
+
 const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, requestRelayPermissions, processRelayOutbox, syncSmsHistory }) => {
+  const nexus = useNexus();
+  const { isRelayActive: isActive, setIsRelayActive: setIsActive, relaySimSlot: selectedSimSlot, setRelaySimSlot: setSelectedSimSlot } = nexus;
+
   const isMobile = window.innerWidth <= 768;
   const RELAY_API_BASE = (import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api').replace(/\/api$/, '');
   const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
   const [lang, setLang] = useState(() => localStorage.getItem('nexus_lang') || 'cz');
-  const [isActive, setIsActive] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState('connecting');
   const [signalStrength, setSignalStrength] = useState(85);
   const [batteryLevel, setBatteryLevel] = useState(100);
@@ -48,7 +52,6 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   const [settingsBatteryWarning, setSettingsBatteryWarning] = useState(true);
   const [settingsTrafficProxy, setSettingsTrafficProxy] = useState(true);
   const [settingsHiddenMode, setSettingsHiddenMode] = useState(false);
-  const [selectedSimSlot, setSelectedSimSlot] = useState(() => localStorage.getItem('nexus_relay_sim_slot') || 'auto'); // 'auto', '1', '2'
   const [permissionsStatus, setPermissionsStatus] = useState({
     smsMonitoring: false,
     callMonitoring: false,
@@ -764,8 +767,6 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   };
 
   useEffect(() => {
-    // Sync relay status to native side for background forwarding.
-    void syncRelayToNative(isActive);
     // Also wake up the server so it knows this device is active today.
     if (isActive) {
       void syncRelayToServer();
@@ -773,9 +774,8 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   }, [isActive, operator, operator?.token]);
 
   const handleExitMode = async () => {
-    setIsActive(false);
     setConnectionStatus('disconnected');
-    await syncRelayToNative(false);
+    // We NO LONGER disable the relay on exit, it stays active in background!
     if (typeof onExit === 'function') {
       onExit();
     }
