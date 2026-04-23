@@ -39,9 +39,9 @@ const InboxView = () => {
         <div className={`inbox-panel ${!selectedChatId ? 'active' : ''}`} style={{ width: isMobile ? '100%' : '380px', flexShrink: 0, borderRight: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column' }}>
           {!isMobile && !activeOperator?.isModel && (
             <div style={{ padding: '2rem 1.5rem', borderBottom: '1px solid var(--card-border)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', gap: '1rem' }}>
-                <h2 data-testid="page-inbox-title" style={{ fontSize: '1.5rem', whiteSpace: 'nowrap' }}>{t('inbox')}</h2>
-                <div style={{ position: 'relative', flex: 1, maxWidth: '210px' }} className="premium-selector-fix">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', gap: '1rem', flexWrap: 'wrap' }}>
+                <h2 data-testid="page-inbox-title" style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0 }}>{t('inbox')}</h2>
+                <div style={{ position: 'relative', width: '180px' }} className="premium-selector-fix">
                   <PremiumSelector
                     options={assignedProfiles}
                     value={activeProfileId}
@@ -55,9 +55,23 @@ const InboxView = () => {
                   />
                 </div>
               </div>
-              <div style={{ position: 'relative' }}>
-                <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                <input data-testid="input-search-chats" type="text" placeholder={t('searchPlaceholder')} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.85rem 0.85rem 0.85rem 2.5rem', borderRadius: '12px', color: 'white' }} />
+              <div style={{ position: 'relative', marginTop: '0.5rem' }}>
+                <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', zIndex: 2 }} />
+                <input 
+                  data-testid="input-search-chats" 
+                  type="text" 
+                  placeholder={t('searchPlaceholder')} 
+                  style={{ 
+                    width: '100%', 
+                    background: 'rgba(255,255,255,0.05)', 
+                    border: '1px solid var(--card-border)', 
+                    padding: '0.85rem 1rem 0.85rem 2.8rem', 
+                    borderRadius: '12px', 
+                    color: 'white',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }} 
+                />
               </div>
             </div>
           )}
