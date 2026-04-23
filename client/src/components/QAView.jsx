@@ -20,7 +20,8 @@ const QAView = () => {
     profiles, 
     operators,
     isMobile,
-    activeRole
+    activeRole,
+    lang
   } = nexus;
 
   const [mobileView, setMobileView] = useState('list');

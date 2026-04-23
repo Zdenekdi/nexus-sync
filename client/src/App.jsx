@@ -17,6 +17,7 @@ const LandingPage = lazy(() => import('./components/LandingPage'));
 const Onboarding = lazy(() => import('./components/Onboarding'));
 const LoginScreen = lazy(() => import('./components/LoginScreen'));
 const SystemBanners = lazy(() => import('./components/UI/SystemBanners'));
+const GlobalModalContainer = lazy(() => import('./components/Modals/GlobalModalContainer'));
 
 function AppContent() {
   const { 
@@ -127,6 +128,7 @@ function AppContent() {
         <div className="premium-loading-text" style={{ fontSize: '0.6rem', letterSpacing: '0.3em', opacity: 0.5 }}>SYNCHRONIZING_INTERFACE...</div>
       </div>}>
         <SystemBanners />
+        <GlobalModalContainer />
         <ErrorBoundary name="Sidebar">
           <Sidebar />
         </ErrorBoundary>

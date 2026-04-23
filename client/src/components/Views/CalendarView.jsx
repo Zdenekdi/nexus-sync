@@ -88,16 +88,42 @@ const CalendarView = () => {
               <RefreshCw size={18} /> {t('syncCalendar')}
             </h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', maxWidth: '480px' }}>{t('syncDesc')}</p>
-            <div style={{ display: 'flex', gap: '1rem', width: '100%', maxWidth: '560px', flexDirection: isMobile ? 'column' : 'row' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', width: '100%', maxWidth: '600px', flexDirection: isMobile ? 'column' : 'row', background: 'rgba(0,0,0,0.2)', padding: '0.5rem', borderRadius: '18px', border: '1px solid rgba(255,255,255,0.05)' }}>
               <input
                 type="text"
                 placeholder="https://calendar.google.com/calendar/ical/..."
                 value={calendarSyncUrl || ''}
                 onChange={(e) => setCalendarSyncUrl(e.target.value)}
-                style={{ flex: 1, padding: '0.75rem 1.25rem' }}
-                className="glass-input"
+                style={{ 
+                  flex: 1, 
+                  padding: '0.75rem 1.25rem', 
+                  background: 'rgba(0,0,0,0.3)', 
+                  border: '1px solid rgba(255,255,255,0.05)', 
+                  borderRadius: '14px', 
+                  color: 'white',
+                  fontSize: '0.9rem',
+                  outline: 'none'
+                }}
+                className="glass-input-premium"
               />
-              <button className="action-btn" onClick={handleSaveCalendarSync} style={{ whiteSpace: 'nowrap' }}>{t('add')}</button>
+              <button 
+                className="action-btn" 
+                onClick={handleSaveCalendarSync} 
+                style={{ 
+                  whiteSpace: 'nowrap', 
+                  margin: 0, 
+                  padding: '0 1.5rem', 
+                  height: isMobile ? '48px' : 'auto',
+                  borderRadius: '14px',
+                  background: 'var(--accent-color)',
+                  color: 'white',
+                  fontWeight: '800',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                {t('add')}
+              </button>
             </div>
           </div>
         </div>
