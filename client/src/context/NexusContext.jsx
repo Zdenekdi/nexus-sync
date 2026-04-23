@@ -942,12 +942,59 @@ export const NexusProvider = ({ children }) => {
     return (messages || []).filter(m => m.status === 'unread' && myProfileIds.has(m.profileId)).length;
   }, [messages, myProfiles]);
 
-  const handleSendMessage = React.useCallback((text) => {
-    if (!text.trim() || !selectedChatId) return;
-    const newMessage = { id: Date.now(), profileId: activeProfileId, chatId: selectedChatId, from: 'Nexus Hub', direction: 'OUTBOUND', text: text.trim(), createdAt: new Date().toISOString(), status: 'sent' };
-    setMessages(prev => [...prev, newMessage]);
+  const handleSendMessage = React.useCallback(async (text) => {
+    if (!text.trim() || !selectedChatId || !token) return;
+    
+    const tempId = Date.now();
+    const currentText = text.trim();
+    
+    // Optimistic UI update
+    const optimisticMsg = { 
+      id: tempId, 
+      chatId: selectedChatId, 
+      from: 'Nexus Hub', 
+      direction: 'OUTBOUND', 
+      text: currentText, 
+      createdAt: new Date().toISOString(), 
+      status: 'sending',
+      time: new Date().toLocaleTimeString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' }),
+      senderName: activeOperator?.name || 'Me'
+    };
+
+    setMessages(prev => {
+      // Update the preview in the inbox list
+      return prev.map(m => m.chatId === selectedChatId ? { ...m, text: currentText, timestamp: optimisticMsg.createdAt, status: 'sent' } : m);
+    });
+
+    setChatHistory(prev => [...prev, optimisticMsg]);
     setMessageValue("");
-  }, [selectedChatId, activeProfileId]);
+
+    try {
+      const res = await axios.post(`${API_BASE}/messages`, {
+        chatId: selectedChatId,
+        text: currentText,
+        direction: 'OUTBOUND'
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.data) {
+        // Replace temp message with real one from server
+        const realMsg = {
+          ...res.data,
+          time: new Date(res.data.createdAt).toLocaleTimeString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' }),
+          senderName: res.data.sender?.name || activeOperator?.name || 'Me'
+        };
+        
+        setChatHistory(prev => prev.map(m => m.id === tempId ? realMsg : m));
+      }
+    } catch (err) {
+      console.error('Failed to send message:', err);
+      showToast(lang === 'cz' ? 'Zprávu se nepodařilo odeslat.' : 'Failed to send message.', 'error');
+      // Mark as failed in UI
+      setChatHistory(prev => prev.map(m => m.id === tempId ? { ...m, status: 'failed' } : m));
+    }
+  }, [selectedChatId, activeProfileId, token, API_BASE, lang, activeOperator, showToast]);
 
   const handleTranslate = React.useCallback(async () => {
     if (!sourceText.trim()) return;
@@ -979,39 +1026,53 @@ export const NexusProvider = ({ children }) => {
   React.useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
+    let backListener = null;
+
     const setupBack = async () => {
-      const listener = await CapacitorApp.addListener('backButton', () => {
-        // 1. Close modals/overlays first
+      backListener = await CapacitorApp.addListener('backButton', () => {
+        // 1. Sidebar
         if (isSidebarOpen) {
           setIsSidebarOpen(false);
           return;
         }
         
-        if (selectedChatId) {
+        // 2. Modals
+        if (nexusData.isBookingModalOpen) { nexusData.setIsBookingModalOpen(false); return; }
+        if (isBugReportOpen) { setIsBugReportOpen(false); return; }
+        if (isAddAgencyOpen) { setIsAddAgencyOpen(false); return; }
+        if (isAddUserOpen) { setIsAddUserOpen(false); return; }
+        if (agencyDetailModalData) { setAgencyDetailModalData(null); return; }
+
+        // 3. Chat / Mobile View
+        if (selectedChatId || mobileView === 'chat') {
           setSelectedChatId(null);
+          setMobileView('list');
           return;
         }
 
-        // 2. Navigation logic
+        // 4. Navigation logic
         if (activeTab !== 'dashboard') {
           setActiveTab('dashboard');
           return;
         }
 
-        // 3. Exit logic
+        // 5. Exit logic
         CapacitorApp.exitApp();
       });
-
-      return () => {
-        listener.remove();
-      };
     };
 
-    const backPromise = setupBack();
+    setupBack();
+
     return () => {
-      backPromise.then(l => l?.remove());
+      if (backListener) {
+        backListener.remove();
+      }
     };
-  }, [isSidebarOpen, selectedChatId, activeTab]);
+  }, [
+    isSidebarOpen, selectedChatId, activeTab, mobileView,
+    isBugReportOpen, isAddAgencyOpen, isAddUserOpen, agencyDetailModalData,
+    nexusData.isBookingModalOpen, setSelectedChatId, setMobileView, setActiveTab
+  ]);
 
   const value = {
     t, lang, setLang, activeTab, setActiveTab, activeMarket, setActiveMarket,
