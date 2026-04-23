@@ -164,12 +164,13 @@ export function useNexusData({
       setIsBackgroundLoading(true);
 
       // PHASE 2: HEAVY DATA (Background hydration)
-      const [chatRes, bindingRes, statsRes, agencyRes, analyticsRes] = await Promise.all([
+      const [chatRes, bindingRes, statsRes, agencyRes, analyticsRes, bookingRes] = await Promise.all([
         axiosWithTiming(`${API_BASE}/chats`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/device/bindings`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/agency/stats`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/agency/all`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
-        axiosWithTiming(`${API_BASE}/analytics/summary?days=7`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null)
+        axiosWithTiming(`${API_BASE}/analytics/summary?days=7`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
+        axiosWithTiming(`${API_BASE}/bookings`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null)
       ]);
 
       // ------------------------------------------------------------
@@ -197,6 +198,30 @@ export function useNexusData({
         setSessions(bindingRes.data.bindings.map(b => ({
           id: b.id, device: b.model || 'Android', status: b.active ? 'Active' : 'Disabled'
         })));
+      }
+
+      // Bookings / Calendar
+      if (Array.isArray(bookingRes?.data)) {
+        const mappedBookings = bookingRes.data.map(b => {
+          const start = new Date(b.startTime);
+          const end = new Date(b.endTime);
+          const timeStr = start.toLocaleTimeString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { hour: '2-digit', minute: '2-digit' });
+          const duration = Math.round((end - start) / (1000 * 60));
+          
+          return {
+            id: b.id,
+            title: b.title || 'Booking',
+            time: timeStr,
+            startTime: b.startTime,
+            endTime: b.endTime,
+            duration: `${duration}m`,
+            type: b.locationType === 'outcall' ? 'outcall' : 'work',
+            status: b.status || 'confirmed',
+            locationType: b.locationType,
+            address: b.address
+          };
+        });
+        setCalendar(mappedBookings);
       }
 
       // Stats & Agency

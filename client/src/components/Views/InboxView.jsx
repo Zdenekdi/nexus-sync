@@ -22,8 +22,42 @@ const InboxView = () => {
     bookingSchedule, calViewDate, setCalViewDate, setIsBookingModalOpen,
     setNewBookingForm, activeContextTab, setActiveContextTab, lang, t,
     activeProfile, handleSendMessage, handleTranslate, handleSaveNote,
-    handleDeleteNote, startCall, handleQuickSaveMeeting, showToast
+    handleDeleteNote, startCall, handleQuickSaveMeeting, showToast,
+    initData: refreshData, isBackgroundLoading
   } = nexus;
+
+  // Pull to refresh logic
+  const [pullDistance, setPullDistance] = React.useState(0);
+  const pullStartRef = React.useRef(0);
+  const isPullingRef = React.useRef(false);
+
+  const handleTouchStart = (e) => {
+    const scrollEl = document.querySelector('.inbox-scroll-container');
+    if (scrollEl && scrollEl.scrollTop === 0) {
+      pullStartRef.current = e.touches[0].clientY;
+      isPullingRef.current = true;
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isPullingRef.current) return;
+    const currentY = e.touches[0].clientY;
+    const distance = currentY - pullStartRef.current;
+    if (distance > 0) {
+      setPullDistance(Math.min(distance * 0.4, 80));
+      if (distance > 10) e.preventDefault();
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (isPullingRef.current) {
+      if (pullDistance > 60) {
+        void refreshData();
+      }
+      setPullDistance(0);
+      isPullingRef.current = false;
+    }
+  };
 
   // ENSURE WE HAVE A VALID FILTER (Default to 'all' if somehow null or invalid for better UX)
   React.useEffect(() => {
@@ -36,7 +70,45 @@ const InboxView = () => {
     <div data-testid="page-inbox-container" style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden', position: 'relative' }} className="fade-in inbox-grid">
       {/* Column 1: Inbox List */}
       {(!isMobile || mobileView === 'list') && (
-        <div className={`inbox-panel ${!selectedChatId ? 'active' : ''}`} style={{ width: isMobile ? '100%' : '380px', flexShrink: 0, borderRight: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column' }}>
+        <div 
+          className={`inbox-panel ${!selectedChatId ? 'active' : ''}`} 
+          style={{ width: isMobile ? '100%' : '380px', flexShrink: 0, borderRight: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column', position: 'relative' }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          {pullDistance > 0 && (
+            <div style={{ position: 'absolute', top: `${pullDistance - 40}px`, left: '0', right: '0', display: 'flex', justifyContent: 'center', zIndex: 100, transition: pullDistance === 0 ? 'all 0.3s ease' : 'none' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', transform: `rotate(${pullDistance * 4}deg)` }}>
+                <RefreshCw size={20} color="white" />
+              </div>
+            </div>
+          )}
+
+          {isMobile && (
+            <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-color)' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: '800', margin: 0 }}>{t('inbox')}</h2>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button onClick={() => refreshData()} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', width: '36px', height: '36px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <RefreshCw size={18} className={isBackgroundLoading ? 'rotate' : ''} />
+                </button>
+                <div style={{ position: 'relative', width: '140px' }}>
+                  <PremiumSelector
+                    options={assignedProfiles}
+                    value={activeProfileId}
+                    onChange={(val) => {
+                      setActiveProfileId(val);
+                      setSelectedChatId(null); 
+                    }}
+                    showAllOption={true}
+                    allLabel={lang === 'cz' ? 'Všechny' : 'All'}
+                    placeholder={t('selectProfile')}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {!isMobile && !activeOperator?.isModel && (
             <div style={{ padding: '2rem 1.5rem', borderBottom: '1px solid var(--card-border)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', gap: '1rem', flexWrap: 'wrap' }}>
@@ -75,7 +147,7 @@ const InboxView = () => {
               </div>
             </div>
           )}
-          <div style={{ overflowY: 'auto', flex: 1 }}>
+          <div className="inbox-scroll-container" style={{ overflowY: 'auto', flex: 1 }}>
             {filteredMessages.length > 0 ? filteredMessages.map(msg => {
               const isSelected = selectedChatId === msg.id;
               const isUnread = msg.status === 'unread';
