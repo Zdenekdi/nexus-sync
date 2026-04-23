@@ -80,6 +80,17 @@ exports.verifyDeviceBinding = async (req, res) => {
       create: { installationId, userId: String(userId), agencyId: String(agencyId), profileId: String(resolvedProfileId), platform: String(platform || 'android'), active: true, model, deviceName, lastSeenAt: new Date() },
     });
 
+    // Cleanup redundant bindings for this profile
+    if (resolvedProfileId) {
+      await prisma.deviceBinding.deleteMany({
+        where: {
+          profileId: String(resolvedProfileId),
+          NOT: { installationId }
+        }
+      });
+    }
+
+
     // AUTO-ONLINE: When a device verifies, the profile must be marked as online
     if (resolvedProfileId) {
       await prisma.profile.update({
