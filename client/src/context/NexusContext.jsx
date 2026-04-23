@@ -928,6 +928,15 @@ export const NexusProvider = ({ children }) => {
     } catch (err) { console.error('Failed to fetch chat messages:', err); } finally { setIsHistoryLoading(false); }
   }, [token, API_BASE, lang]);
 
+  // ── Automatic History Fetching ──────────────────────────────────────────
+  React.useEffect(() => {
+    if (selectedChatId) {
+      fetchChatMessages(selectedChatId);
+    } else {
+      setChatHistory([]);
+    }
+  }, [selectedChatId, fetchChatMessages]);
+
   const totalUnread = React.useMemo(() => {
     const myProfileIds = new Set((myProfiles || []).map(p => p.id));
     return (messages || []).filter(m => m.status === 'unread' && myProfileIds.has(m.profileId)).length;
@@ -965,6 +974,44 @@ export const NexusProvider = ({ children }) => {
     nexusData.handleQuickSaveMeeting(detectedMeeting);
     setDetectedMeeting(null);
   }, [detectedMeeting, nexusData]);
+
+  // ── Android Back Button Handling ──────────────────────────────────────────
+  React.useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const setupBack = async () => {
+      const listener = await CapacitorApp.addListener('backButton', () => {
+        // 1. Close modals/overlays first
+        if (isSidebarOpen) {
+          setIsSidebarOpen(false);
+          return;
+        }
+        
+        if (selectedChatId) {
+          setSelectedChatId(null);
+          return;
+        }
+
+        // 2. Navigation logic
+        if (activeTab !== 'dashboard') {
+          setActiveTab('dashboard');
+          return;
+        }
+
+        // 3. Exit logic
+        CapacitorApp.exitApp();
+      });
+
+      return () => {
+        listener.remove();
+      };
+    };
+
+    const backPromise = setupBack();
+    return () => {
+      backPromise.then(l => l?.remove());
+    };
+  }, [isSidebarOpen, selectedChatId, activeTab]);
 
   const value = {
     t, lang, setLang, activeTab, setActiveTab, activeMarket, setActiveMarket,
