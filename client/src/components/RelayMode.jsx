@@ -27,24 +27,26 @@ import { useNexus } from '../context/NexusContext';
 
 const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, requestRelayPermissions, processRelayOutbox, syncSmsHistory }) => {
   const nexus = useNexus();
-  const { isRelayActive: isActive, setIsRelayActive: setIsActive, relaySimSlot: selectedSimSlot, setRelaySimSlot: setSelectedSimSlot } = nexus;
+  const { 
+    isRelayActive: isActive, 
+    setIsRelayActive: setIsActive, 
+    relaySimSlot: selectedSimSlot, 
+    setRelaySimSlot: setSelectedSimSlot,
+    relayLogs: logs,
+    setRelayLogs: setLogs,
+    addRelayLog: addLocalLog,
+    updateRelayLogStatus: updateLogStatusId
+  } = nexus;
 
-  const isMobile = window.innerWidth <= 768;
-  const RELAY_API_BASE = (import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api').replace(/\/api$/, '');
-  const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
-  const [lang, setLang] = useState(() => localStorage.getItem('nexus_lang') || 'cz');
-  const [connectionStatus, setConnectionStatus] = useState('connecting');
-  const [signalStrength, setSignalStrength] = useState(85);
-  const [batteryLevel, setBatteryLevel] = useState(100);
-  const [isCharging, setIsCharging] = useState(false);
-  const [logs, setLogs] = useState(() => {
-    try { 
-      const saved = localStorage.getItem('nexus_relay_logs');
-      if (!saved) return [];
-      const parsed = JSON.parse(saved);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch { return []; }
-  });
+  const updateLogStatus = (from, newStatus) => {
+    // This is the old way by phone number, keeping it for local events if any
+    setLogs(prev => prev.map(l =>
+      l.from === from && l.status === 'pending'
+        ? { ...l, status: newStatus }
+        : l
+    ));
+  };
+
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isRefreshingLogs, setIsRefreshingLogs] = useState(false);
   const [activeLog, setActiveLog] = useState(null);
@@ -551,32 +553,6 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     return 'sms';
   };
 
-  const addLocalLog = (type, from, content, direction, status = 'pending') => {
-    if (!isActive) return;
-
-    const newLog = {
-      id: 'local_' + Date.now() + '_' + Math.random(), // 'local_' prefix = never from server
-      transport: type,
-      type,
-      from: from || 'UNKNOWN',
-      content,
-      fullData: content,
-      direction: direction || (content?.startsWith('[OUTBOUND]') ? 'outbound' : 'inbound'),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      status
-    };
-
-    setLogs(prev => [newLog, ...prev.slice(0, 19)]);
-    return newLog.id;
-  };
-
-  const updateLogStatus = (from, newStatus) => {
-    setLogs(prev => prev.map(l =>
-      l.from === from && l.status === 'pending'
-        ? { ...l, status: newStatus }
-        : l
-    ));
-  };
 
   useEffect(() => {
     if (!isActive) {
@@ -601,59 +577,16 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
 
   const executeSendTestSms = async () => {
     setShowTestSmsConfirm(false);
+    const testNum = operator?.phoneNumber || "+420777777777";
+    const testMsg = "Nexus Relay Diagnostic - " + new Date().toLocaleTimeString();
+    addLocalLog("sms", testNum, "TEST: " + testMsg, "outbound", "pending");
     try {
       const plugin = window.Capacitor?.Plugins?.NexusRelay;
-      if (!plugin) {
-        showRelayNotice(lang === 'cz' ? 'Chyba: Relay plugin není dostupný' : 'Error: Relay plugin not available', 'error');
-        return;
-      }
-
-      const testNum = operator?.phoneNumber || '+420777777777';
-      const testMsg = 'Nexus Relay Diagnostic - ' + new Date().toLocaleTimeString();
-
-      // 0. Ensure server knows about this device (fix 404)
-      await syncRelayToServer();
-
-      addLocalLog('sms', testNum, 'TEST: ' + testMsg, 'outbound', 'pending');
-      
-      // 1. Send physical SMS
+      if (!plugin) throw new Error("Relay plugin not available");
       await plugin.sendSms({ to: testNum, text: testMsg });
-      
-      // 2. Immediately try to forward this diagnostic to the server to verify API connectivity
-      const token = localStorage.getItem('nexus_token');
-      const installationId = localStorage.getItem('nexus_installation_id');
-      
-      if (installationId && token) {
-        try {
-          const res = await fetch(`${RELAY_API_BASE}/api/device/relay`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({
-              installationId,
-              secret: '0321f04b30c9fd5dd501bc6b5b9247867ddd7b26d265faca48a79dd5271e6929',
-              from: 'DIAGNOSTIC',
-              content: testMsg,
-              type: 'SMS_SENT',
-              transport: 'sms',
-              direction: 'outbound'
-            })
-          });
-          
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          
-          showRelayNotice(t('testSmsSent') || 'Testovací zpráva doručena na server!', 'success');
-          updateLogStatus(testNum, 'forwarded');
-        } catch (serverErr) {
-          console.warn('[Relay] Server forward failed', serverErr);
-          showRelayNotice('Server error: ' + serverErr.message, 'error');
-        }
-      } else {
-        showRelayNotice(t('testSmsSent') || 'SMS odeslána (bez serveru)', 'success');
-      }
-    } catch (e) {
-      console.error('[Relay] SMS Test failed', e);
-      showRelayNotice((t('testSmsFailed') || 'Chyba při testu SMS: ') + (e?.message || 'Unknown error'), 'error');
-      updateLogStatus(operator?.phoneNumber || '+420777777777', 'failed');
+      updateLogStatus(testNum, "sent");
+    } catch (err) {
+      updateLogStatus(testNum, "failed");
     }
   };
 
