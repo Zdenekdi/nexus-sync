@@ -90,7 +90,7 @@ export function useNexusData({
   const [calendarSyncUrl, setCalendarSyncUrl] = useState('');
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [selectedScheduleEvent, setSelectedScheduleEvent] = useState(null);
-  const [newBookingForm, setNewBookingForm] = useState({ title: '', date: new Date().toISOString().split('T')[0], startTime: '10:00', endTime: '11:00', locationType: 'incall' });
+  const [newBookingForm, setNewBookingForm] = useState({ title: '', date: new Date().toISOString().split('T')[0], startTime: '10:00', endTime: '11:00', locationType: 'incall', address: '' });
   
   const [bioText, setBioText] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
@@ -343,12 +343,13 @@ export function useNexusData({
         title: newBookingForm.title,
         startTime: startDateTime,
         endTime: endDateTime,
-        locationType: newBookingForm.locationType
+        locationType: newBookingForm.locationType,
+        address: newBookingForm.locationType === 'outcall' ? newBookingForm.address : null
       }, { headers: { Authorization: `Bearer ${token}` } });
       
       if (showToast) showToast(lang === 'cz' ? 'Schůzka uložena.' : 'Booking saved.', 'success');
       setIsBookingModalOpen(false);
-      setNewBookingForm({ title: '', date: new Date().toISOString().split('T')[0], startTime: '10:00', endTime: '11:00', locationType: 'incall' });
+      setNewBookingForm({ title: '', date: new Date().toISOString().split('T')[0], startTime: '10:00', endTime: '11:00', locationType: 'incall', address: '' });
       initData();
     } catch (err) {
       console.error(err);
