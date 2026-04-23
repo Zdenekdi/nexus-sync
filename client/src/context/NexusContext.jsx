@@ -148,6 +148,40 @@ export const NexusProvider = ({ children }) => {
   const [justLoggedOut, setJustLoggedOut] = React.useState(false);
   const [isRelayActive, setIsRelayActive] = React.useState(() => localStorage.getItem('nexus_relay_active') === 'true');
   const [relaySimSlot, setRelaySimSlot] = React.useState(() => localStorage.getItem('nexus_relay_sim_slot') || 'auto');
+  const [relayLogs, setRelayLogs] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem('nexus_relay_logs');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+
+  const addRelayLog = React.useCallback((type, from, content, direction, status = 'pending') => {
+    const newLog = {
+      id: 'relay_' + Date.now() + '_' + Math.random(),
+      transport: type,
+      type,
+      from: from || 'UNKNOWN',
+      content,
+      direction: direction || 'outbound',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      status
+    };
+    setRelayLogs(prev => {
+      const updated = [newLog, ...prev.slice(0, 49)];
+      localStorage.setItem('nexus_relay_logs', JSON.stringify(updated));
+      return updated;
+    });
+    return newLog.id;
+  }, []);
+
+  const updateRelayLogStatus = React.useCallback((logId, newStatus) => {
+    setRelayLogs(prev => {
+      const updated = prev.map(l => l.id === logId ? { ...l, status: newStatus } : l);
+      localStorage.setItem('nexus_relay_logs', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
 
   // 1.1 Safety & SOS State (Globalized)
   const [activeSafetySession, setActiveSafetySession] = React.useState(null);
@@ -731,11 +765,17 @@ export const NexusProvider = ({ children }) => {
   const handleRelayCommand = React.useCallback(async (data) => {
     if (!data) return;
     
+    console.log('[Nexus-Relay] Incoming command data:', data);
+    
     const isCommand = data.targetType === 'relay_command' || data.type === 'send_sms' || data.action === 'send_sms';
     if (!isCommand) return;
 
+    // Visual feedback that command was RECEIVED
+    showToast(lang === 'cz' ? '📥 Přijat příkaz k odeslání SMS' : '📥 SMS relay command received', 'info');
+
     if (!isRelayActive) {
       console.log('[Nexus-Relay] Command received but relay is INACTIVE. Skipping.');
+      showToast(lang === 'cz' ? '⚠️ Relay je neaktivní' : '⚠️ Relay is inactive', 'warning');
       return;
     }
 
@@ -747,6 +787,8 @@ export const NexusProvider = ({ children }) => {
       console.warn('[Nexus-Relay] Incomplete command data:', data);
       return;
     }
+
+    const logId = addRelayLog('sms', to, text, 'outbound', 'pending');
 
     console.log('[Nexus-Relay] Remote send request received:', { to, messageId, textLength: text.length });
     
@@ -762,6 +804,7 @@ export const NexusProvider = ({ children }) => {
         });
         console.log('[Nexus-Relay] plugin.sendSms result:', result);
         
+        updateRelayLogStatus(logId, 'sent');
         showToast(lang === 'cz' ? `SMS pro ${to} odeslána.` : `SMS for ${to} sent.`, 'success');
 
         // Notify server that it was sent (MUST BE PATCH)
@@ -770,6 +813,7 @@ export const NexusProvider = ({ children }) => {
             { status: 'sent', result: JSON.stringify(result) },
             { headers: { Authorization: `Bearer ${token}` } }
           );
+          updateRelayLogStatus(logId, 'forwarded');
         }
       } else {
         console.warn('[Nexus-Relay] Relay command received but native plugin not available');
@@ -777,6 +821,7 @@ export const NexusProvider = ({ children }) => {
       }
     } catch (err) {
       console.error('[Nexus-Relay] Failed to execute remote send command:', err);
+      updateRelayLogStatus(logId, 'failed');
       showToast(lang === 'cz' ? `SMS selhala: ${err.message || 'Neznámá chyba'}` : `SMS failed: ${err.message || 'Unknown error'}`, 'error');
       
       if (messageId) {
@@ -1100,6 +1145,9 @@ export const NexusProvider = ({ children }) => {
       });
 
       if (res.data) {
+        showToast(lang === 'cz' ? 'Zpráva uložena na server, čekám na relay...' : 'Message saved to server, awaiting relay...', 'info');
+        console.log('[Nexus-Messaging] Message created on server, ID:', res.data.id);
+        
         // Replace temp message with real one from server
         const realMsg = {
           ...res.data,
@@ -1110,8 +1158,8 @@ export const NexusProvider = ({ children }) => {
         setChatHistory(prev => prev.map(m => m.id === tempId ? realMsg : m));
       }
     } catch (err) {
-      console.error('Failed to send message:', err);
-      showToast(lang === 'cz' ? 'Zprávu se nepodařilo odeslat.' : 'Failed to send message.', 'error');
+      console.error('[Nexus-Messaging] Failed to send message:', err);
+      showToast(lang === 'cz' ? 'Zprávu se nepodařilo odeslat na server.' : 'Failed to send message to server.', 'error');
       // Mark as failed in UI
       setChatHistory(prev => prev.map(m => m.id === tempId ? { ...m, status: 'failed' } : m));
     }
@@ -1235,6 +1283,7 @@ export const NexusProvider = ({ children }) => {
       setRelaySimSlot(val);
       localStorage.setItem('nexus_relay_sim_slot', val);
     },
+    relayLogs, setRelayLogs, addRelayLog, updateRelayLogStatus,
     messageValue, setMessageValue, calViewDate, setCalViewDate, globalSettings, fetchGlobalSettings,
     gpsHistory, lastTrackerUpdate,
     voiceGuardianActive, handleToggleVoiceGuardian,

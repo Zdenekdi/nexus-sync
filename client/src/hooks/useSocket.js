@@ -58,6 +58,7 @@ export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall,
       });
 
       socketRef.current.on('relay_command', (data) => {
+        console.log('Socket: Received relay_command', data);
         if (handlersRef.current.onRelayCommand) {
           handlersRef.current.onRelayCommand(data);
         }
