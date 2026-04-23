@@ -304,7 +304,10 @@ exports.getLogs = async (req, res) => {
     const [messages, calls] = await Promise.all([
       prisma.message.findMany({
         where: {
-          chat: { profileId: binding.profileId },
+          OR: [
+            { chat: { profileId: binding.profileId } },
+            { installationId: String(installationId) }
+          ],
           transport: { in: ['sms', 'rcs'] }
         },
         take: parseInt(limit),

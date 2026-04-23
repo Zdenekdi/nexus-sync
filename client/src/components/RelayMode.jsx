@@ -56,6 +56,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     rcsMonitoring: false
   });
   const [relayNotice, setRelayNotice] = useState(null);
+  const [showTestSmsConfirm, setShowTestSmsConfirm] = useState(false);
   const [noProfileWarning, setNoProfileWarning] = useState(false);
   const latestHealthCheckRef = useRef(0);
   const consecutiveHealthFailuresRef = useRef(0);
@@ -501,7 +502,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     if (!isActive) return;
 
     const newLog = {
-      id: Date.now() + Math.random(),
+      id: 'local_' + Date.now() + '_' + Math.random(), // 'local_' prefix = never from server
       transport: type,
       type,
       from: from || 'UNKNOWN',
@@ -541,11 +542,65 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   }, [isActive]);
 
   const testSms = () => {
+    // Open in-app confirm dialog instead of window.confirm (crashes Android WebView)
+    setShowTestSmsConfirm(true);
+  };
+
+  const executeSendTestSms = async () => {
+    setShowTestSmsConfirm(false);
     try {
-      // Direct notice without any async or plugin logic
-      showRelayNotice('Debug: Test button clicked!', 'success');
+      const plugin = window.Capacitor?.Plugins?.NexusRelay;
+      if (!plugin) {
+        showRelayNotice(lang === 'cz' ? 'Chyba: Relay plugin není dostupný' : 'Error: Relay plugin not available', 'error');
+        return;
+      }
+
+      const testNum = operator?.phoneNumber || '+420777777777';
+      const testMsg = 'Nexus Relay Diagnostic - ' + new Date().toLocaleTimeString();
+
+      // 0. Ensure server knows about this device (fix 404)
+      await syncRelayToServer();
+
+      addLocalLog('sms', testNum, 'TEST: ' + testMsg, 'outbound', 'pending');
+      
+      // 1. Send physical SMS
+      await plugin.sendSms({ to: testNum, text: testMsg });
+      
+      // 2. Immediately try to forward this diagnostic to the server to verify API connectivity
+      const token = localStorage.getItem('nexus_token');
+      const installationId = localStorage.getItem('nexus_installation_id');
+      
+      if (installationId && token) {
+        try {
+          const res = await fetch(`${RELAY_API_BASE}/api/device/relay`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({
+              installationId,
+              secret: '0321f04b30c9fd5dd501bc6b5b9247867ddd7b26d265faca48a79dd5271e6929',
+              from: 'DIAGNOSTIC',
+              content: testMsg,
+              type: 'SMS_SENT',
+              transport: 'sms',
+              direction: 'outbound'
+            })
+          });
+          
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          
+          showRelayNotice(t('testSmsSent') || 'Testovací zpráva doručena na server!', 'success');
+          updateLogStatus(testNum, 'forwarded');
+        } catch (serverErr) {
+          console.warn('[Relay] Server forward failed', serverErr);
+          showRelayNotice('Server error: ' + serverErr.message, 'error');
+        }
+      } else {
+        showRelayNotice(t('testSmsSent') || 'SMS odeslána (bez serveru)', 'success');
+      }
     } catch (e) {
-      console.error('[Relay] Test button error:', e);
+      console.error('[Relay] SMS Test failed', e);
+      showRelayNotice((t('testSmsFailed') || 'Chyba při testu SMS: ') + (e?.message || 'Unknown error'), 'error');
+      updateLogStatus(operator?.phoneNumber || '+420777777777', 'failed');
     }
   };
 
@@ -603,11 +658,13 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
         model,
         deviceName
       }, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${operator?.token}` }
       });
       console.log('[Relay] Server binding verified successfully');
+      setConnectionStatus('connected');
     } catch (error) {
       console.warn('[Relay] Failed to verify server binding', error);
+      setConnectionStatus('error');
     }
   };
 
@@ -691,10 +748,37 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
         } catch {}
       };
 
-      const smsListener = window.Capacitor.Plugins.NexusRelay.addListener('onSmsReceived', (data) => {
+      const smsListener = window.Capacitor.Plugins.NexusRelay.addListener('onSmsReceived', async (data) => {
         try {
           addLocalLog('sms', data.from, data.body, 'inbound', 'pending');
           checkBlacklist(data.from);
+          // Also forward to server (in case native plugin doesn't do it automatically)
+          const installationId = localStorage.getItem('nexus_installation_id');
+          const token = localStorage.getItem('nexus_token');
+          if (installationId && token) {
+            try {
+              const res = await fetch(`${RELAY_API_BASE}/api/device/relay`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({
+                  installationId,
+                  secret: '0321f04b30c9fd5dd501bc6b5b9247867ddd7b26d265faca48a79dd5271e6929',
+                  from: data.from,
+                  content: data.body,
+                  type: 'SMS_RECEIVED',
+                  transport: 'sms',
+                  direction: 'inbound'
+                })
+              });
+              if (!res.ok) throw new Error(`Server returned ${res.status}`);
+              updateLogStatus(data.from, 'forwarded');
+              showRelayNotice(lang === 'cz' ? 'SMS přeposlána na server' : 'SMS forwarded to server', 'success');
+            } catch (relayErr) {
+              console.warn('[Relay] Failed to forward SMS to server', relayErr);
+              updateLogStatus(data.from, 'failed');
+              showRelayNotice((lang === 'cz' ? 'Chyba přeposílání: ' : 'Forward error: ') + relayErr.message, 'error');
+            }
+          }
         } catch (e) { console.error('[Relay] onSmsReceived error:', e); }
       });
       const rcsListener = window.Capacitor.Plugins.NexusRelay.addListener('onRcsReceived', (data) => {
@@ -787,7 +871,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       if (response.ok) {
         const data = await response.json();
         if (Array.isArray(data?.logs)) {
-          setLogs(data.logs.map(l => ({
+          const serverLogs = data.logs.map(l => ({
             id: l.id || l.timestamp || Date.now() + Math.random(),
             transport: l.transport || 'sms',
             type: l.transport || 'sms',
@@ -797,7 +881,18 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
             direction: l.direction || 'inbound',
             time: l.time || new Date(l.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             status: l.status || 'forwarded'
-          })));
+          }));
+          // Merge: keep local-only logs (prefixed with 'local_') + server logs
+          setLogs(prev => {
+            const localOnly = prev.filter(l => String(l.id).startsWith('local_'));
+            const merged = [...serverLogs];
+            localOnly.forEach(local => {
+              if (!merged.find(s => s.content === local.content && s.from === local.from)) {
+                merged.unshift(local);
+              }
+            });
+            return merged.slice(0, 30);
+          });
         }
       }
     } catch (error) {
@@ -820,6 +915,61 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
 
   return (
     <>
+      {/* In-app Test SMS confirm dialog (window.confirm crashes Android WebView) */}
+      {showTestSmsConfirm && (
+        <div
+          onClick={() => setShowTestSmsConfirm(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem'
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#12141a', border: '1px solid rgba(59,130,246,0.3)',
+              borderRadius: '20px', padding: '2rem', width: '100%', maxWidth: '320px',
+              display: 'flex', flexDirection: 'column', gap: '1.5rem'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <MessageSquare size={22} color="var(--accent-color)" />
+              <span style={{ fontWeight: '900', fontSize: '1rem' }}>
+                {lang === 'cz' ? 'Testovací SMS' : 'Test SMS'}
+              </span>
+            </div>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+              {lang === 'cz'
+                ? 'Odeslat diagnostickou SMS pro ověření funkčnosti Relay pluginu?'
+                : 'Send a diagnostic SMS to verify Relay plugin functionality?'}
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={() => setShowTestSmsConfirm(false)}
+                style={{
+                  flex: 1, padding: '0.85rem', borderRadius: '12px',
+                  background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)',
+                  color: 'var(--text-secondary)', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer'
+                }}
+              >
+                {lang === 'cz' ? 'ZRUŠIT' : 'CANCEL'}
+              </button>
+              <button
+                onClick={executeSendTestSms}
+                style={{
+                  flex: 1, padding: '0.85rem', borderRadius: '12px',
+                  background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.4)',
+                  color: 'var(--accent-color)', fontWeight: '900', fontSize: '0.8rem', cursor: 'pointer'
+                }}
+              >
+                {lang === 'cz' ? 'ODESLAT' : 'SEND'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* SIP incoming call fullscreen overlay */}
       {sipState === 'ringing' && sipIncomingCall && (
         <IncomingCallScreen
