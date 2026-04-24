@@ -30,7 +30,7 @@ const GlobalModalContainer = () => {
     isBookingModalOpen, setIsBookingModalOpen,
     newBookingForm, setNewBookingForm,
     handleSaveBooking,
-    API_BASE, token, setProfiles
+    API_BASE, token, setProfiles, initData
   } = useNexus();
 
   return (
@@ -82,12 +82,34 @@ const GlobalModalContainer = () => {
         lang={lang}
         isMobile={isMobile}
       />
-      <AddOperatorModal />
+      <AddOperatorModal 
+        isOpen={false}
+        onClose={() => {}}
+        t={t}
+        lang={lang}
+        activeRole={activeRole}
+        activeOperator={activeOperator}
+      />
       
       {isAddAgencyOpen && (
         <AddAgencyModal 
           isOpen={isAddAgencyOpen}
           onClose={() => setIsAddAgencyOpen(false)}
+          t={t}
+          token={token}
+          onAdd={async (data) => {
+            try {
+              await axios.post(`${API_BASE}/agency/all`, data, {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+              showToast(lang === 'cz' ? 'Agentura byla vytvořena' : 'Agency provisioned successfully', 'success');
+              setIsAddAgencyOpen(false);
+              if (initData) initData();
+            } catch (err) {
+              console.error(err);
+              showToast(lang === 'cz' ? 'Chyba při vytváření agentury' : 'Failed to provision agency', 'error');
+            }
+          }}
         />
       )}
 
@@ -95,6 +117,7 @@ const GlobalModalContainer = () => {
         <AddUserModal 
           isOpen={isAddUserOpen}
           onClose={() => setIsAddUserOpen(false)}
+          t={t}
         />
       )}
       
@@ -105,6 +128,7 @@ const GlobalModalContainer = () => {
           operators={operators || []}
           showToast={showToast}
           lang={lang}
+          t={t}
         />
       )}
     </>
