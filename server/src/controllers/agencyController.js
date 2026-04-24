@@ -322,7 +322,8 @@ exports.addUser = async (req, res) => {
     
     if (!isAppOwner && !isManager) return res.status(403).json({ message: 'Access denied' });
 
-    const { name, email, password, roleName, agencyId: bodyAgencyId } = req.body;
+    const { name, email, password, roleName: bodyRoleName, role: bodyRole, agencyId: bodyAgencyId } = req.body;
+    const roleName = bodyRole || bodyRoleName || 'Operator';
     const targetAgencyId = isAppOwner ? bodyAgencyId : userAgencyId;
 
     if (!targetAgencyId) return res.status(400).json({ message: 'Agency ID required' });
