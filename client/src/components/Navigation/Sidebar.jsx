@@ -190,7 +190,7 @@ const Sidebar = () => {
             )}
 
             {/* My Girls Section */}
-            {['Operator', 'Senior Operator', 'Manager', 'Agency Admin'].includes(activeRole) && !isSidebarCollapsed && (
+            {['Operator', 'Senior Operator'].includes(activeRole) && !isSidebarCollapsed && (
               <div data-testid="my-girls-section" style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.15rem', marginBottom: '0.75rem' }}>
                   <div style={{ fontSize: '0.65rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{capitalize(t('myAssignedGirls'))}</div>
