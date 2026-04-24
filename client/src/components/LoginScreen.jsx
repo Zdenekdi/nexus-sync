@@ -54,11 +54,11 @@ const AuthTabNavigation = memo(({ activeTab, setTab, labels }) => (
         onClick={() => setTab(t)} 
         style={{
           flex: 1, padding: '0.5rem 0.25rem', border: 'none',
-          background: activeTab === t ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
-          color: activeTab === t ? '#60a5fa' : '#64748b',
+          background: (activeTab === t || (activeTab === 'join-agency-expanded' && t === 'join-agency')) ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+          color: (activeTab === t || (activeTab === 'join-agency-expanded' && t === 'join-agency')) ? '#60a5fa' : '#64748b',
           borderRadius: '10px', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer',
           transition: 'all 0.2s',
-          borderBottom: activeTab === t ? '2px solid #3b82f6' : '2px solid transparent'
+          borderBottom: (activeTab === t || (activeTab === 'join-agency-expanded' && t === 'join-agency')) ? '2px solid #3b82f6' : '2px solid transparent'
         }}
       >
         {labels[t]}
@@ -148,6 +148,16 @@ const LoginScreen = () => {
     const timer = setTimeout(() => setIsMounting(false), 500);
     return () => clearTimeout(timer);
   }, []);
+
+  // Auto-clear logout message after 5s
+  useEffect(() => {
+    if (justLoggedOut) {
+      const timer = setTimeout(() => {
+        setJustLoggedOut(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [justLoggedOut, setJustLoggedOut]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -254,12 +264,68 @@ const LoginScreen = () => {
                     </form>
                   )}
 
-                  {tab === 'join-agency' && (
-                    <div style={{ color: 'white', textAlign: 'center', padding: '1rem' }}>
-                      {/* Simpler join form or placeholder for brevety in optimized version */}
+                  {(tab === 'join-agency' || tab === 'join-agency-expanded') && (
+                    <form 
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        if (!joinInviteCode) return showToast(isCz ? 'Zadejte kód' : 'Enter code', 'error');
+                        
+                        // If we haven't shown the full form yet, we just "verify" the code visually
+                        const hasFullInfo = joinFullName && joinEmail && joinPassword;
+                        if (!hasFullInfo) {
+                           // This is a simple UI trick to show the rest of the form
+                           setTab('join-agency-expanded'); 
+                           return;
+                        }
+                      }} 
+                      style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
+                    >
                       <MemoInput label={isCz ? 'Zvací kód' : 'Invite Code'} icon={KeyRound} value={joinInviteCode} onChange={setJoinInviteCode} placeholder="NEXUS-..." />
-                      <button style={{ ...STYLES.submitButton, marginTop: '1rem' }}>{isCz ? 'Pokračovat' : 'Continue'}</button>
-                    </div>
+                      
+                      {tab === 'join-agency-expanded' && (
+                        <>
+                          <MemoInput label={isCz ? 'Vaše jméno' : 'Your Name'} icon={User} value={joinFullName} onChange={setJoinFullName} placeholder="..." />
+                          <MemoInput label="Email" icon={Mail} type="email" value={joinEmail} onChange={setJoinEmail} placeholder="..." />
+                          <div>
+                            <MemoInput label={isCz ? 'Heslo' : 'Password'} icon={Lock} value={joinPassword} onChange={setJoinPassword} placeholder="..." showToggle onToggle={() => setShowJoinPassword(!showJoinPassword)} isToggled={showJoinPassword} />
+                            <PasswordStrength password={joinPassword} isCz={isCz} />
+                          </div>
+                        </>
+                      )}
+
+                      <button 
+                        type="button"
+                        onClick={async () => {
+                          if (tab === 'join-agency') {
+                            if (!joinInviteCode) return showToast(isCz ? 'Zadejte kód' : 'Enter code', 'error');
+                            setTab('join-agency-expanded');
+                          } else {
+                            if (!joinFullName || !joinEmail || !joinPassword) {
+                              return showToast(isCz ? 'Vyplňte všechna pole' : 'Fill all fields', 'error');
+                            }
+                            setLoading(true);
+                            try {
+                              await onRegisterUser({ 
+                                fullName: joinFullName, 
+                                email: joinEmail, 
+                                password: joinPassword, 
+                                inviteCode: joinInviteCode 
+                              });
+                            } catch (err) {
+                              console.error(err);
+                            } finally {
+                              setLoading(false);
+                            }
+                          }
+                        }}
+                        disabled={loading} 
+                        style={STYLES.submitButton}
+                      >
+                        {loading ? <Loader2 className="animate-spin" size={16} /> : (
+                          tab === 'join-agency' ? (isCz ? 'Pokračovat' : 'Continue') : (isCz ? 'Zaregistrovat se' : 'Join Now')
+                        )}
+                      </button>
+                    </form>
                   )}
                 </>
               )}
