@@ -233,6 +233,8 @@ const addUser = z.object({
   email: z.string().email().max(320),
   password: z.string().min(6).max(256),
   roleId: cuid.optional(),
+  roleName: z.string().max(100).optional(),
+  role: z.string().max(100).optional(),
   agencyId: cuid.optional()
 });
 
