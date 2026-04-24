@@ -24,7 +24,7 @@ const GlobalModalContainer = () => {
     agencyDetailModalData, setAgencyDetailModalData,
     isAddAgencyOpen, setIsAddAgencyOpen,
     isAddUserOpen, setIsAddUserOpen,
-    operators, showToast, lang, t, isMobile,
+    operators, showToast, lang, t, isMobile, activeRole, activeOperator,
     isEditProfileOpen, setIsEditProfileOpen,
     editingProfileData, setEditingProfileData,
     isBookingModalOpen, setIsBookingModalOpen,
