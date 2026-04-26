@@ -40,6 +40,23 @@ function generateAccessToken(user) {
   );
 }
 
+function generateRelayToken(user) {
+  return jwt.sign(
+    {
+      userId: user.id,
+      agencyId: user.agencyId,
+      role: {
+        name: user.role.name,
+        isManager: user.role.isManager,
+        isAppOwner: user.role.isAppOwner
+      },
+      type: 'relay'
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: '30d' } // Long-lived for automation
+  );
+}
+
 async function generateRefreshToken(userId) {
   const token = crypto.randomBytes(40).toString('hex');
   const expiresAt = new Date();
@@ -380,6 +397,22 @@ exports.getProfile = async (req, res) => {
       profileId: user.assignedProfiles?.[0]?.id || null
     });
   } catch {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.getRelayToken = async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      include: { role: true }
+    });
+    
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    const token = generateRelayToken(user);
+    res.json({ token });
+  } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
 };

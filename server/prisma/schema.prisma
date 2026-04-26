@@ -169,6 +169,7 @@ model Profile {
   deviceBindings DeviceBinding[]
   assignees   User[]    @relation("ProfileAssignees")
   clientNotes ClientNote[]
+  credentials String?   // Encrypted JSON containing platform logins, cookies, and proxy settings
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   

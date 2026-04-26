@@ -1,0 +1,17 @@
+{
+  "name": "nexus-local-agent",
+  "version": "1.0.0",
+  "description": "Stealth automation bridge for Nexus Hub",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.5",
+    "ghost-cursor": "^1.1.10",
+    "playwright-extra": "^3.0.3",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "socket.io-client": "^4.8.1"
+  }
+}

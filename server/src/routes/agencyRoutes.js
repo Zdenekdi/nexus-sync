@@ -14,6 +14,7 @@ router.get('/settings', agencyController.getSettings);
 router.get('/users', agencyController.getUsers);
 router.get('/stats', agencyController.getStats);
 router.get('/profiles', profileController.getProfiles);
+router.get('/relay-status', agencyController.getRelayStatus);
 
 // Role & Permission Management
 router.get('/roles', roleController.getRoles);
