@@ -1,17 +1,56 @@
-import React from 'react';
-import { DollarSign, Calendar, MessageSquare, TrendingUp, Users, Activity } from 'lucide-react';
-
+import React, { useState } from 'react';
+import { DollarSign, Calendar, MessageSquare, TrendingUp, Users, Activity, Lock } from 'lucide-react';
 import { useNexus } from '../../context/NexusContext';
+import PinModal from '../Modals/PinModal';
 
 const AnalyticsView = () => {
   const nexus = useNexus();
   const { 
     isMobile, 
     t, 
+    lang,
     agencies, 
     profiles: allAgencyProfiles, 
-    operators: availableOperators 
+    operators: availableOperators,
+    activeOperator
   } = nexus;
+
+  const [pinVerified, setPinVerified] = useState(!activeOperator?.hasPin);
+
+  if (!pinVerified) {
+    return (
+      <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100%', background: 'var(--bg-main)' }}>
+        <div style={{ textAlign: 'center', maxWidth: '400px', padding: '2rem' }}>
+          <div style={{ width: '80px', height: '80px', background: 'rgba(167, 139, 250, 0.1)', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem', border: '1px solid rgba(167, 139, 250, 0.2)' }}>
+            <Lock size={40} color="#a78bfa" />
+          </div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '1rem' }}>{lang === 'cz' ? 'Analytika je uzamčena' : 'Analytics is Locked'}</h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '2.5rem', fontSize: '0.95rem', lineHeight: '1.6' }}>
+            {lang === 'cz' 
+              ? 'Tento pohled obsahuje citlivá finanční data. Pro pokračování zadejte svůj bezpečnostní PIN.' 
+              : 'This view contains sensitive financial data. Please enter your security PIN to continue.'}
+          </p>
+          <button 
+            onClick={() => setPinVerified('prompt')}
+            className="action-btn"
+            style={{ width: '100%', padding: '1rem', background: '#a78bfa', borderRadius: '12px', fontWeight: '800' }}
+          >
+            {lang === 'cz' ? 'ODEMKNOUT PINEM' : 'UNLOCK WITH PIN'}
+          </button>
+        </div>
+        
+        {pinVerified === 'prompt' && (
+          <PinModal 
+            onSuccess={() => setPinVerified(true)}
+            onCancel={() => setPinVerified(false)}
+            title={lang === 'cz' ? 'Přístup k analytice' : 'Access Analytics'}
+            description={lang === 'cz' ? 'Zadejte svůj 4-místný kód pro zobrazení tržeb.' : 'Enter your 4-digit code to view revenue.'}
+          />
+        )}
+      </div>
+    );
+  }
+
   return (
     <div data-testid="page-analytics-container" style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
       {!isMobile && (

@@ -4,7 +4,6 @@ import AgenciesView from '../Views/AgenciesView';
 import GlobalFeaturesView from '../Views/GlobalFeaturesView';
 import PermissionsDashboard from '../PermissionsDashboard';
 import PlansDashboard from '../PlansDashboard';
-import InventoryView from '../InventoryView';
 import InfraTab from '../InfraTab';
 import MaintenanceView from '../Views/MaintenanceView';
 
@@ -25,8 +24,6 @@ const InfrastructureUnit = () => {
     case 'plans':
     case 'plans-owner':
       return <PlansDashboard />;
-    case 'inventory':
-      return <InventoryView />;
     case 'features':
       return <GlobalFeaturesView />;
     case 'maintenance':

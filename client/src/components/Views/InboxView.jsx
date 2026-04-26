@@ -424,7 +424,7 @@ const InboxView = () => {
                           </div>
                         )}
                       </div>
-                    ) : (
+                    ) : activeContextTab === 'quickReplies' ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                         {(activeProfile?.quickReplies || []).length === 0 ? (
                           <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
@@ -539,17 +539,20 @@ const InboxView = () => {
                     <PlusCircle size={16} /> {lang === 'cz' ? 'Přidat schůzku' : 'Add booking'}
                   </button>
                 </div>
-                </div>
-              ) : (
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
-                  <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t('selectConversationDesc')}</div>
-                </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t('selectConversationDesc')}</div>
         </div>
       )}
     </div>
+  )}
+</div>
+    )}
+</div>
   );
 };
 

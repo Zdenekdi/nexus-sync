@@ -1,197 +1,208 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Activity, UserPlus, Trophy, Clock, Link, Copy, Check, RefreshCw, Sparkles } from 'lucide-react';
-import axios from 'axios';
-
+import { 
+  Users, Gift, Award, TrendingUp, Copy, 
+  Check, Share2, ExternalLink, RefreshCw,
+  Clock, AlertCircle
+} from 'lucide-react';
 import { useNexus } from '../../context/NexusContext';
 
-const ReferralsView = () => {
-  const nexus = useNexus();
-  const {
-    isMobile,
-    t,
-    lang,
-    showToast,
-    API_BASE,
-    token
-  } = nexus;
+const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
 
-  const [stats, setStats] = useState({ referralCode: null, totalSignups: 0, confirmed: 0, pending: 0, totalEarned: 0, pendingEarned: 0, referrals: [] });
-  const [isLoading, setIsLoading] = useState(true);
-  const [isGenerating, setIsGenerating] = useState(false);
+const ReferralsView = () => {
+  const { t, token, isMobile, lang, showToast } = useNexus();
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   const fetchStats = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_BASE}/referrals/stats`, {
-        headers: { Authorization: `Bearer ${token}` }
+      setLoading(true);
+      const res = await fetch(`${API_BASE}/referrals/stats`, {
+        headers: { 'Authorization': `Bearer ${token}` }
       });
-      setStats(res.data);
+      if (res.ok) {
+        const data = await res.json();
+        setStats(data);
+      }
     } catch (err) {
-      console.error('Failed to load referral stats:', err);
+      console.error('Failed to fetch referral stats:', err);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [API_BASE, token]);
+  }, [token]);
 
-  useEffect(() => { fetchStats(); }, [fetchStats]);
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   const handleGenerateCode = async () => {
-    setIsGenerating(true);
     try {
-      const res = await axios.post(`${API_BASE}/referrals/generate-code`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
+      const res = await fetch(`${API_BASE}/referrals/generate-code`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
       });
-      setStats(prev => ({ ...prev, referralCode: res.data.referralCode }));
-      showToast(lang === 'cz' ? 'Kód vygenerován ✓' : 'Code generated ✓', 'success');
+      if (res.ok) {
+        fetchStats();
+        showToast(lang === 'cz' ? 'Referral kód vygenerován!' : 'Referral code generated!', 'success');
+      }
     } catch (err) {
-      showToast(lang === 'cz' ? 'Chyba při generování kódu' : 'Failed to generate code', 'error');
-    } finally {
-      setIsGenerating(false);
+      showToast('Error generating code', 'error');
     }
   };
 
-  const referralLink = stats.referralCode ? `https://nexus-hub.app/register?ref=${stats.referralCode}` : null;
+  const copyToClipboard = () => {
+    if (!stats?.referralCode) return;
+    navigator.clipboard.writeText(stats.referralCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    showToast(lang === 'cz' ? 'Kód zkopírován!' : 'Code copied!', 'success');
+  };
 
-  const cz = lang === 'cz';
+  if (loading && !stats) {
+    return (
+      <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+        <RefreshCw size={32} className="animate-spin" color="var(--accent-color)" />
+      </div>
+    );
+  }
 
   return (
-    <div data-testid="page-referrals-container" style={{ padding: isMobile ? '1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
-      <div style={{ marginBottom: isMobile ? '1.5rem' : '3rem' }}>
-        <h2 style={{ fontSize: isMobile ? '1.8rem' : '2.5rem', fontWeight: '900', marginBottom: '1rem', background: 'linear-gradient(to right, #f59e0b, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          {t('referralProgram')}
+    <div style={{ padding: isMobile ? '1.5rem 1rem' : '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
+      {/* Header */}
+      <div style={{ marginBottom: '3rem' }}>
+        <h2 style={{ fontSize: isMobile ? '1.75rem' : '2.5rem', fontWeight: '900', marginBottom: '0.5rem', background: 'linear-gradient(to right, #f59e0b, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <Gift size={isMobile ? 24 : 32} color="#f59e0b" /> {lang === 'cz' ? 'Partnerský Program' : 'Referral Program'}
         </h2>
-        <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.95rem' : '1.1rem' }}>{t('referralsSubtitle')}</p>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>{lang === 'cz' ? 'Doporučte Nexus Hub dalším agenturám a získejte odměny.' : 'Refer Nexus Hub to other agencies and earn rewards.'}</p>
       </div>
 
-      {/* Stats Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '1rem' : '1.5rem', marginBottom: isMobile ? '2rem' : '3rem' }}>
-        {[
-          { label: (cz ? 'REGISTRACE' : 'SIGNUPS'), value: stats.totalSignups, icon: UserPlus, color: '#10b981' },
-          { label: (cz ? 'POTVRZENO' : 'CONFIRMED'), value: stats.confirmed, icon: Check, color: '#3b82f6' },
-          { label: (cz ? 'VYDĚLÁNO' : 'EARNED'), value: `€${stats.totalEarned}`, icon: Trophy, color: '#f59e0b' },
-          { label: (cz ? 'ČEKAJÍCÍ' : 'PENDING'), value: `€${stats.pendingEarned}`, icon: Clock, color: 'var(--text-secondary)' }
-        ].map((stat, i) => (
-          <div key={i} className="glass-card" style={{ padding: isMobile ? '1.15rem' : '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-              <stat.icon size={16} color={stat.color} />
-              <span style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{stat.label}</span>
+      {/* Referral Code Card */}
+      <div className="glass-card" style={{ padding: '2.5rem', marginBottom: '3rem', border: '1px solid rgba(245, 158, 11, 0.2)', background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(0, 0, 0, 0) 100%)' }}>
+        <div style={{ textAlign: 'center', maxWidth: '600px', margin: '0 auto' }}>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem' }}>{lang === 'cz' ? 'Váš unikátní doporučující kód' : 'Your Unique Referral Code'}</h3>
+          
+          {stats?.referralCode ? (
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', alignItems: 'stretch' }}>
+              <div style={{ background: 'rgba(255,255,255,0.05)', border: '2px dashed var(--accent-color)', padding: '1rem 2rem', borderRadius: '12px', fontSize: '1.75rem', fontWeight: '900', letterSpacing: '0.2em', color: 'white' }}>
+                {stats.referralCode}
+              </div>
+              <button 
+                onClick={copyToClipboard}
+                style={{ background: 'var(--accent-color)', border: 'none', borderRadius: '12px', padding: '0 1.25rem', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                {copied ? <Check size={24} /> : <Copy size={24} />}
+              </button>
             </div>
-            <div style={{ fontSize: isMobile ? '1.5rem' : '1.75rem', fontWeight: '900' }}>{isLoading ? '...' : stat.value}</div>
-          </div>
-        ))}
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '2rem', marginBottom: '3rem' }}>
-        {/* Referral Link / Code */}
-        <div className="glass-card" style={{ flex: 1, padding: isMobile ? '1.5rem' : '2rem', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
-          <h3 style={{ fontSize: isMobile ? '1rem' : '1.2rem', fontWeight: '800', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Link size={20} color="#f59e0b" /> {t('referralLinkHeader')}
-          </h3>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-            {t('referralLinkDesc')}
-          </p>
-
-          {stats.referralCode ? (
-            <>
-              {/* Referral Code */}
-              <div style={{ marginBottom: '1rem' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>
-                  {cz ? 'VÁŠ KÓD' : 'YOUR CODE'}
-                </span>
-                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                  <div style={{ flex: 1, background: 'rgba(245,158,11,0.1)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(245,158,11,0.3)', fontFamily: 'monospace', fontSize: '1.1rem', fontWeight: '900', color: '#f59e0b', textAlign: 'center', letterSpacing: '0.1em' }}>
-                    {stats.referralCode}
-                  </div>
-                  <button
-                    onClick={() => navigator.clipboard.writeText(stats.referralCode).then(() => showToast(cz ? 'Kód zkopírován ✓' : 'Code copied ✓', 'success'))}
-                    className="action-btn"
-                    style={{ width: 'auto', padding: '0 1.25rem', marginTop: 0, background: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <Copy size={18} />
-                  </button>
-                </div>
-              </div>
-              {/* Referral Link */}
-              <div>
-                <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>
-                  {cz ? 'ODKAZ' : 'LINK'}
-                </span>
-                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                  <div style={{ flex: 1, background: 'rgba(0,0,0,0.2)', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid var(--card-border)', fontFamily: 'monospace', fontSize: '0.8rem', color: '#f59e0b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {referralLink}
-                  </div>
-                  <button
-                    onClick={() => navigator.clipboard.writeText(referralLink).then(() => showToast(cz ? 'Odkaz zkopírován ✓' : 'Link copied ✓', 'success'))}
-                    className="action-btn"
-                    style={{ width: 'auto', padding: '0 1.25rem', marginTop: 0, background: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <Copy size={18} />
-                  </button>
-                </div>
-              </div>
-            </>
           ) : (
-            <button onClick={handleGenerateCode} disabled={isGenerating} className="action-btn" style={{ width: '100%', padding: '1rem', fontSize: '1rem', background: 'linear-gradient(135deg, #f59e0b, #ef4444)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
-              {isGenerating ? <RefreshCw size={18} className="spin" /> : <Sparkles size={18} />}
-              {cz ? 'Vygenerovat referral kód' : 'Generate Referral Code'}
+            <button 
+              onClick={handleGenerateCode}
+              className="action-btn"
+              style={{ width: 'auto', padding: '1rem 2rem', background: 'var(--accent-color)', borderRadius: '12px', fontWeight: '800' }}
+            >
+              VYGENEROVAT KÓD
             </button>
           )}
+          
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '1.5rem' }}>
+            {lang === 'cz' 
+              ? 'Sdílejte tento kód. Nové agentury ho zadají při registraci.' 
+              : 'Share this code. New agencies enter it during registration.'}
+          </p>
         </div>
+      </div>
 
-        {/* Why Refer */}
-        <div className="glass-card" style={{ width: isMobile ? '100%' : '400px', padding: isMobile ? '1.5rem' : '2rem' }}>
-          <h3 style={{ fontSize: isMobile ? '1rem' : '1.2rem', fontWeight: '800', marginBottom: '1.5rem' }}>{t('whyRefer')}</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            {[
-              { title: cz ? 'Bonus za registraci' : 'Registration Bonus', desc: cz ? 'Získejte odměnu za každou registrovanou agenturu' : 'Earn a reward for every registered agency' },
-              { title: cz ? 'Vzájemné výhody' : 'Mutual Benefits', desc: cz ? 'Obě agentury získají prémiové funkce' : 'Both agencies get premium features' },
-              { title: cz ? 'Bez limitu' : 'No Limit', desc: cz ? 'Doporučte kolik agentur chcete' : 'Refer as many agencies as you want' }
-            ].map((item, i) => (
-              <div key={i} style={{ display: 'flex', gap: '1rem' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Check size={18} color="#10b981" />
-                </div>
-                <div>
-                  <div style={{ fontWeight: '800', fontSize: '0.9rem', marginBottom: '0.2rem' }}>{item.title}</div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{item.desc}</div>
-                </div>
-              </div>
-            ))}
+      {/* Stats Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
+        <div className="glass-card" style={{ padding: '1.5rem' }}>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Celkem doporučení</div>
+          <div style={{ fontSize: '1.75rem', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Users size={20} color="var(--accent-color)" /> {stats?.totalSignups || 0}
+          </div>
+        </div>
+        <div className="glass-card" style={{ padding: '1.5rem' }}>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Potvrzené registrace</div>
+          <div style={{ fontSize: '1.75rem', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Check size={20} color="#10b981" /> {stats?.confirmed || 0}
+          </div>
+        </div>
+        <div className="glass-card" style={{ padding: '1.5rem' }}>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Čekající odměny</div>
+          <div style={{ fontSize: '1.75rem', fontWeight: '900', color: '#f59e0b' }}>
+            {stats?.pendingEarned || 0} <span style={{ fontSize: '1rem', fontWeight: '700' }}>CZK</span>
+          </div>
+        </div>
+        <div className="glass-card" style={{ padding: '1.5rem' }}>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Získané odměny</div>
+          <div style={{ fontSize: '1.75rem', fontWeight: '900', color: '#10b981' }}>
+            {stats?.totalEarned || 0} <span style={{ fontSize: '1rem', fontWeight: '700' }}>CZK</span>
           </div>
         </div>
       </div>
 
-      {/* Referral History */}
-      {stats.referrals.length > 0 && (
-        <div className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2rem' }}>
-          <h3 style={{ fontSize: isMobile ? '1rem' : '1.2rem', fontWeight: '800', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Activity size={20} color="#3b82f6" /> {cz ? 'Historie doporučení' : 'Referral History'}
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {stats.referrals.map(ref => (
-              <div key={ref.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'rgba(0,0,0,0.15)', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
-                <div>
-                  <div style={{ fontWeight: '800', fontSize: '0.95rem' }}>{ref.agencyName}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                    {new Date(ref.createdAt).toLocaleDateString(cz ? 'cs-CZ' : 'en-GB')}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  {ref.rewardAmount > 0 && (
-                    <span style={{ fontWeight: '900', color: '#f59e0b' }}>€{ref.rewardAmount}</span>
-                  )}
-                  <span style={{
-                    padding: '4px 10px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '800',
-                    background: ref.status === 'confirmed' ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)',
-                    color: ref.status === 'confirmed' ? '#10b981' : '#f59e0b'
-                  }}>
-                    {ref.status === 'confirmed' ? (cz ? 'Potvrzeno' : 'Confirmed') : (cz ? 'Čekající' : 'Pending')}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* Referral Table */}
+      <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '800' }}>{lang === 'cz' ? 'Historie doporučení' : 'Referral History'}</h3>
+          <button onClick={fetchStats} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><RefreshCw size={16} /></button>
         </div>
-      )}
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--card-border)' }}>
+              <th style={{ padding: '1rem 1.5rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800' }}>AGENTURA</th>
+              <th style={{ padding: '1rem 1.5rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800' }}>DATUM</th>
+              <th style={{ padding: '1rem 1.5rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800' }}>STAV</th>
+              <th style={{ padding: '1rem 1.5rem', textAlign: 'right', color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800' }}>ODMĚNA</th>
+            </tr>
+          </thead>
+          <tbody>
+            {!stats?.referrals || stats.referrals.length === 0 ? (
+              <tr><td colSpan="4" style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Zatím jste nikoho nedoporučili. Začněte sdílením kódu!</td></tr>
+            ) : stats.referrals.map((ref) => (
+              <tr key={ref.id} style={{ borderBottom: '1px solid var(--card-border)' }} className="table-row-hover">
+                <td style={{ padding: '1.25rem 1.5rem' }}>
+                  <div style={{ fontWeight: '700' }}>{ref.agencyName}</div>
+                </td>
+                <td style={{ padding: '1.25rem 1.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  {new Date(ref.createdAt).toLocaleDateString()}
+                </td>
+                <td style={{ padding: '1.25rem 1.5rem' }}>
+                   <div style={{ 
+                     display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.75rem', borderRadius: '100px', fontSize: '0.7rem', fontWeight: '800',
+                     background: ref.status === 'confirmed' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                     color: ref.status === 'confirmed' ? '#10b981' : '#f59e0b',
+                     border: `1px solid ${ref.status === 'confirmed' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)'}`
+                   }}>
+                     {ref.status === 'confirmed' ? <Check size={12} /> : <Clock size={12} />}
+                     {ref.status.toUpperCase()}
+                   </div>
+                </td>
+                <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right', fontWeight: '900', color: ref.rewardAmount > 0 ? '#10b981' : 'var(--text-secondary)' }}>
+                  {ref.rewardAmount || 0} CZK
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Info Box */}
+      <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '12px', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+        <AlertCircle size={24} color="#3b82f6" style={{ marginTop: '0.2rem' }} />
+        <div>
+          <div style={{ fontWeight: '800', color: '#3b82f6', marginBottom: '0.25rem' }}>{lang === 'cz' ? 'Jak to funguje?' : 'How it works?'}</div>
+          <p style={{ fontSize: '0.85rem', color: '#94a3b8', lineHeight: '1.5' }}>
+            {lang === 'cz' 
+              ? 'Odměna za doporučení se připisuje automaticky poté, co doporučená agentura uhradí své první předplatné. Výše odměny závisí na zvoleném tarifu nové agentury.' 
+              : 'Referral rewards are credited automatically after the referred agency pays its first subscription. Reward amount depends on the new agency\'s chosen plan.'}
+          </p>
+        </div>
+      </div>
+
+      <style>{`
+        .table-row-hover:hover { background: rgba(255,255,255,0.02) !important; }
+        .animate-spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 };

@@ -101,6 +101,7 @@ model User {
   dataAccessLogs DataAccessLog[] @relation("DataAccessLogs")
   channelMessagesAsSender ChannelMessage[] @relation("SentChannelMessages")
   refreshTokens RefreshToken[]
+  securityPin  String?   // Hashed security PIN for sensitive actions
 
   @@index([agencyId])
   @@index([roleId])
