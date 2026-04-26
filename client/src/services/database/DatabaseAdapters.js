@@ -232,8 +232,4 @@ export class DatabaseBackedWebChatAdapter extends WebChatAdapter {
   }
 }
 
-export {
-  DatabaseBackedWhatsAppAdapter,
-  DatabaseBackedSMSAdapter,
-  DatabaseBackedWebChatAdapter
-};
+

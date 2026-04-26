@@ -521,17 +521,8 @@ export const TRANSLATIONS = {
         sendError: 'Send Error',
         sendErrorMessage: 'Message could not be sent. Please check the relay device connection.',
         systemAdministration: 'System Administration',
-        infrastructure: 'Infrastructure',
         maintenance: 'Maintenance',
-        plansManagement: 'Plans Management',
-        globalHealthDesc: 'Live system health and global network performance.',
-        globalOverview: 'Global Overview',
-        totalRevenue: 'Total Revenue',
-        agencies: 'Agencies',
-        activeNodes: 'Active Nodes',
-        globalTraffic: 'Global Traffic',
-        revenueGrowth: 'Revenue Growth',
-        systemLoad: 'System Load Overview'
+        plansManagement: 'Plans Management'
     },
     cz: {
         comingSoon: 'Brzy k dispozici',
@@ -623,7 +614,6 @@ export const TRANSLATIONS = {
         bioFormattingNote: 'Text bude automaticky naformátován pro připojené platformy.',
         qaCenter: 'QA Centrum',
         hierarchy: 'Hierarchie',
-        analytics: 'Analytika',
         activity: 'Aktivita',
         managePlans: 'Správa tarifů',
         safety: 'Bezpečnost',
@@ -640,7 +630,6 @@ export const TRANSLATIONS = {
         confirmations: 'potvrzení',
         confirmReport: 'Potvrdit nahlášení',
         qa: 'QA Centrum',
-        hierarchy: 'Hierarchie',
         agencies: 'Agentury',
         plans: 'Tarify',
         features: 'Funkce',
@@ -1072,14 +1061,6 @@ export const TRANSLATIONS = {
         systemAdministration: 'Systémová správa',
         infrastructure: 'Infrastruktura',
         maintenance: 'Údržba serveru',
-        plansManagement: 'Správa tarifů',
-        globalHealthDesc: 'Živý stav systému a globální výkon sítě.',
-        globalOverview: 'Globální přehled',
-        totalRevenue: 'Celkový obrat',
-        agencies: 'Agentury',
-        activeNodes: 'Aktivní uzly',
-        globalTraffic: 'Globální provoz',
-        revenueGrowth: 'Růst obratu',
-        systemLoad: 'Zátěž systému'
+        plansManagement: 'Správa tarifů'
     }
 };
