@@ -4,12 +4,14 @@ const { chromium } = require('playwright-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const { createCursor } = require('ghost-cursor');
 const axios = require('axios');
+const CaptchaSolver = require('./solver');
 
 chromium.use(StealthPlugin());
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:5000";
 const ADS_POWER_PORT = process.env.ADS_POWER_PORT || "50325";
 const ADS_POWER_URL = `http://local.adspower.com:${ADS_POWER_PORT}`;
+const solver = new CaptchaSolver(process.env.CAPSOLVER_KEY);
 
 if (!process.env.RELAY_TOKEN) {
     console.error("❌ CHYBA: Chybí RELAY_TOKEN v .env souboru!");
@@ -91,6 +93,14 @@ async function runMasterSync(payload) {
         }
 
         console.log("✅ Všechny platformy synchronizovány.");
+        
+        // Informujeme server, že je hotovo, aby se v UI mohl zastavit loader
+        socket.emit('relay_event', {
+            type: 'SYNC_COMPLETED',
+            profileId: payload.profileId,
+            platforms: platforms
+        });
+        
         // Browser nebudeme zavírat, aby operátor mohl zkontrolovat výsledek
     } catch (err) {
         console.error(`🔴 Chyba syncu: ${err.message}`);
@@ -107,6 +117,10 @@ async function syncAdultwork(page, cursor, bio, creds) {
             if (!creds) return console.warn("      ! Chybí credentials pro Adultwork");
             await humanType(page, '#txtLogin', creds.user);
             await humanType(page, '#txtPassword', creds.pass);
+            
+            // Kontrola Captchy před kliknutím na login
+            await solver.solve(page, 'hcaptcha');
+            
             await cursor.click('#btnLogin');
             await page.waitForNavigation({ timeout: 15000 }).catch(() => {});
         }
@@ -129,6 +143,10 @@ async function syncAmateri(page, cursor, bio, creds) {
             if (!creds) return console.warn("      ! Chybí credentials pro Amateri");
             await humanType(page, 'input[name="username"]', creds.user);
             await humanType(page, 'input[name="password"]', creds.pass);
+            
+            // Amateri používá Turnstile (Cloudflare)
+            await solver.solve(page, 'turnstile');
+            
             await cursor.click('button[type="submit"]');
             await page.waitForNavigation({ timeout: 15000 }).catch(() => {});
         }
@@ -149,6 +167,10 @@ async function syncOnlyFans(page, cursor, bio, creds) {
             if (!creds) return console.warn("      ! Chybí credentials pro OnlyFans");
             await humanType(page, 'input[name="email"]', creds.user);
             await humanType(page, 'input[name="password"]', creds.pass);
+            
+            // OnlyFans používá HCaptcha
+            await solver.solve(page, 'hcaptcha');
+            
             await cursor.click('button[type="submit"]');
             await page.waitForNavigation({ timeout: 15000 }).catch(() => {});
         }

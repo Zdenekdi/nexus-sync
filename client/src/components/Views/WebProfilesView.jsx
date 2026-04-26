@@ -25,7 +25,9 @@ const WebProfilesView = () => {
     syncProgress,
     relayOnline,
     handleSyncAll,
-    showToast
+    showToast,
+    token,
+    API_BASE
   } = nexus;
   const [bioLang, setBioLang] = useState('EN');
 
@@ -119,8 +121,6 @@ const WebProfilesView = () => {
                   <option value="adultwork">Adultwork.com</option>
                   <option value="amateri">Amateri.com</option>
                   <option value="onlyfans">OnlyFans.com</option>
-                  <option value="eurogirls">EuroGirlsEscort</option>
-                  <option value="thepunters">ThePuntersGuide</option>
                 </select>
               </div>
               <div className="input-group-premium">
