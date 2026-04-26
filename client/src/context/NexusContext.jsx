@@ -838,6 +838,13 @@ export const NexusProvider = ({ children }) => {
       }
     }
   }, [API_BASE, token, isRelayActive, relaySimSlot, lang, showToast]);
+  
+  const handleRelayEvent = React.useCallback((data) => {
+    if (data?.type === 'SYNC_COMPLETED') {
+      showToast(lang === 'cz' ? '✅ Synchronizace přes Local Agent dokončena' : '✅ Sync via Local Agent completed', 'success');
+      // Tady bychom mohli v budoucnu spustit refresh dat nebo aktualizovat specifický status profilu
+    }
+  }, [lang, showToast]);
 
   const handleSipIncomingCall = React.useCallback((_data) => {}, []);
 
@@ -882,7 +889,7 @@ export const NexusProvider = ({ children }) => {
     }
   }, [isLoggedIn, isRelayActive, activeOperator?.id, relaySimSlot, syncRelayToNative]);
 
-  useSocket(token, handleNewMessage, handleMessageUpdated, handleIncomingCall, handleEmergencyAlert, handleSipIncomingCall, handleRelayCommand);
+  useSocket(token, handleNewMessage, handleMessageUpdated, handleIncomingCall, handleEmergencyAlert, handleSipIncomingCall, handleRelayCommand, handleRelayEvent);
 
   React.useEffect(() => {
     if (!isLoggedIn || !token) return;

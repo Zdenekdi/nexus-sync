@@ -66,6 +66,12 @@ const init = (server) => {
       console.warn(`[Socket-DEBUG] User ${userId} connected but has NO agencyId in token!`);
     }
 
+    socket.on('relay_event', (data) => {
+      console.log(`[Socket-Relay] Event from ${userId} for agency_${agencyId}:`, data);
+      // Přeposlat všem v místnosti (operátorům)
+      socket.to(`agency_${agencyId}`).emit('relay_event', data);
+    });
+
     socket.on('disconnect', () => {
       console.log('[Socket-DEBUG] User disconnected:', socket.id);
     });

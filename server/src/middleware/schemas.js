@@ -231,7 +231,7 @@ const createAgency = z.object({
 const addUser = z.object({
   name: z.string().min(1).max(200),
   email: z.string().email().max(320),
-  password: z.string().min(6).max(256),
+  password: strongPassword,
   roleId: cuid.optional(),
   roleName: z.string().max(100).optional(),
   role: z.string().max(100).optional(),

@@ -3,14 +3,14 @@ import { io } from 'socket.io-client';
 
 const SOCKET_URL = (import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api').replace(/\/api$/, '');
 
-export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert, onSipIncomingCall, onRelayCommand) => {
+export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert, onSipIncomingCall, onRelayCommand, onRelayEvent) => {
   const socketRef = useRef(null);
-  const handlersRef = useRef({ onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert, onSipIncomingCall, onRelayCommand });
+  const handlersRef = useRef({ onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert, onSipIncomingCall, onRelayCommand, onRelayEvent });
 
   // Update refs when handlers change without re-triggering the socket effect
   useEffect(() => {
-    handlersRef.current = { onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert, onSipIncomingCall, onRelayCommand };
-  }, [onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert, onSipIncomingCall, onRelayCommand]);
+    handlersRef.current = { onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert, onSipIncomingCall, onRelayCommand, onRelayEvent };
+  }, [onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert, onSipIncomingCall, onRelayCommand, onRelayEvent]);
 
   useEffect(() => {
     // If no token, don't connect or disconnect if already connected
@@ -75,6 +75,13 @@ export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall,
         console.log('Socket: Received relay_command', data);
         if (handlersRef.current.onRelayCommand) {
           handlersRef.current.onRelayCommand(data);
+        }
+      });
+
+      socketRef.current.on('relay_event', (data) => {
+        console.log('Socket: Received relay_event', data);
+        if (handlersRef.current.onRelayEvent) {
+          handlersRef.current.onRelayEvent(data);
         }
       });
 

@@ -207,8 +207,9 @@ exports.syncProfile = async (req, res) => {
       payload: {
         name: name || profile.name,
         bio: bio || profile.bio,
-        credentials: decryptedCredentials, // Send decrypted credentials to the trusted Relay
-        platforms: ['adultwork', 'eurogirls', 'thepunters']
+        adsPowerId: decryptedCredentials?.adsPowerId, // EXTRÉMNĚ DŮLEŽITÉ: Local Agent to potřebuje k otevření prohlížeče
+        credentials: decryptedCredentials,
+        platforms: ['adultwork', 'amateri', 'onlyfans'] // Sjednoceno s možnostmi Agenta
       }
     });
 

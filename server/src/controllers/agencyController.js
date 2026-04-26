@@ -333,7 +333,8 @@ exports.addUser = async (req, res) => {
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) return res.status(400).json({ message: 'User already exists' });
 
-    const hashedPassword = await bcrypt.hash(password || 'password123', 10);
+    if (!password) return res.status(400).json({ message: 'Password is required' });
+    const hashedPassword = await bcrypt.hash(password, 10);
     
     // Find or create role
     let targetRole = await prisma.role.findFirst({ where: { name: roleName, agencyId: targetAgencyId } });

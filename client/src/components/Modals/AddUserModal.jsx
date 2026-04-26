@@ -24,6 +24,22 @@ const AddUserModal = ({ isOpen, onClose, t }) => {
       });
     }
   }, [isOpen]);
+  
+  const generatePassword = () => {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+    let pass = '';
+    // Ensure at least one uppercase, one lowercase, one number
+    pass += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)];
+    pass += '0123456789'[Math.floor(Math.random() * 10)];
+    pass += '!@#$%'[Math.floor(Math.random() * 5)];
+    
+    for (let i = 0; i < 9; i++) {
+      pass += chars[Math.floor(Math.random() * chars.length)];
+    }
+    // Shuffle
+    pass = pass.split('').sort(() => 0.5 - Math.random()).join('');
+    setData({ ...data, password: pass });
+  };
 
   if (!isOpen || !addUserModalAgencyId) return null;
 
@@ -91,14 +107,25 @@ const AddUserModal = ({ isOpen, onClose, t }) => {
           </div>
 
           <div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', fontWeight: '600' }}>PASSWORD</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600' }}>PASSWORD</div>
+              <button 
+                onClick={generatePassword}
+                style={{ fontSize: '0.7rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'var(--accent-color)', padding: '0.2rem 0.5rem', borderRadius: '6px', cursor: 'pointer', fontWeight: '700' }}
+              >
+                GENERATE
+              </button>
+            </div>
             <input 
-              type="text" // using text so they can see what they generated
+              type="text" 
               value={data.password} 
               onChange={e => setData({...data, password: e.target.value})} 
               placeholder="Secure password"
               style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }} 
             />
+            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>
+              Min. 8 chars, 1 uppercase letter, 1 number
+            </div>
           </div>
         </div>
 
