@@ -38,18 +38,26 @@
    - Configuration guide
    - Architecture diagrams
 
-### 🔄 Probíhá (Sub-agent: fix-eslint)
+6. **Critical Fix: ReferenceError: Package is not defined** ✓
+   - Renamed `Package` component to `PackageIcon` (reserved JS word conflict).
+   - Fixed globally across Sidebar, Inventory, Permissions, and Plans views.
 
-- Oprava zbývajících ESLint chyb (147 errors)
-  - Hlavně v `translations.js` (duplikátní klíče)
-  - Unused variables, missing dependencies v hooks
-  - Unused imports
+7. **Initial Lint Cleanup** ✓
+   - Deduplicated 20+ keys in `translations.js`.
+   - Fixed duplicate exports in `DatabaseAdapters.js`.
+   - Resolved Vite config ESLint error (`process` not defined).
+
+### 🔄 Probíhá
+
+- Oprava zbývajících ESLint chyb (135 errors)
+  - Unused variables v `DatabaseAdapters.js` a `InventoryView.jsx`.
+  - Missing dependencies v hooks (`useOmnichannel`).
+  - Empty block statements (`pushService.js`).
 
 ### ⏳ Na Vyřízení (ToDo)
 
 1. **Oprava zbývajících linting chyb**
-   - Klíči v translations.js (duplikáty)
-   - Ostatní unused variables, missing dependencies
+   - Vyřešit zbývající `no-unused-vars` a hook dependencies.
 
 2. **Backend implementace**
    - Message storage (Firebase/DB)
