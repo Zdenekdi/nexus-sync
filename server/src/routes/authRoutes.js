@@ -13,5 +13,6 @@ router.post('/register-user', validate(registerUser), authController.registerUse
 router.post('/reset-password-request', validate(resetPasswordRequest), authController.resetPasswordRequest);
 router.post('/reset-password', authController.resetPasswordConfirm);
 router.get('/me', authMiddleware, authController.getProfile);
+router.get('/relay-token', authMiddleware, authController.getRelayToken);
 
 module.exports = router;

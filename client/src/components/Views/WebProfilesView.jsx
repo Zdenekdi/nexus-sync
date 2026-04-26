@@ -19,13 +19,52 @@ const WebProfilesView = () => {
     bioText,
     setBioText,
     handleSaveBio,
+    handleSaveCredentials,
     isSyncing,
     syncStatus,
     syncProgress,
+    relayOnline,
     handleSyncAll,
     showToast
   } = nexus;
   const [bioLang, setBioLang] = useState('EN');
+
+  // Automation states
+  const [automationPlatform, setAutomationPlatform] = useState('adultwork');
+  const [adsPowerId, setAdsPowerId] = useState('');
+  const [platformUser, setPlatformUser] = useState('');
+  const [platformPass, setPlatformPass] = useState('');
+  const [proxyConfig, setProxyConfig] = useState('');
+
+  // Update fields when activeProfile changes
+  React.useEffect(() => {
+    if (activeProfile) {
+      // In a real app, we might want to fetch or decrypt these if needed, 
+      // but for security we usually keep them empty or show as placeholders.
+      setAdsPowerId(''); 
+      setPlatformUser('');
+      setPlatformPass('');
+      setProxyConfig('');
+    }
+  }, [activeProfileId, activeProfile]);
+
+  const onSaveAutomation = async () => {
+    if (!platformUser || !platformPass) {
+      showToast(lang === 'cz' ? 'Zadejte uživatelské jméno a heslo.' : 'Enter username and password.', 'warning');
+      return;
+    }
+
+    const credentials = {
+      adsPowerId,
+      proxy: proxyConfig,
+      [automationPlatform]: {
+        user: platformUser,
+        pass: platformPass
+      }
+    };
+
+    await handleSaveCredentials(credentials);
+  };
 
   return (
     <div data-testid="page-web-profiles-container" style={{ padding: isMobile ? '1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto', overflowX: 'hidden', display: 'flex', flexDirection: 'column', gap: '1.5rem', maxHeight: '100%' }} className="fade-in custom-scrollbar">
@@ -50,6 +89,125 @@ const WebProfilesView = () => {
       <div style={{ display: 'flex', gap: '1.5rem', flex: 1, flexDirection: isMobile ? 'column' : 'row', flexWrap: 'wrap' }}>
         {/* Left Content Area (Gallery & Bio) */}
         <div style={{ flex: '1 1 450px', display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: 0 }}>
+          
+          {/* SEKCE AUTOMATIZACE A PŘIHLAŠOVACÍ ÚDAJE */}
+          <div className="glass-card" style={{ padding: '2rem', border: '1px solid var(--accent-color)', boxShadow: '0 0 15px rgba(59, 130, 246, 0.1)' }}>
+            <h3 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.6rem', marginBottom: '1.5rem', color: 'var(--accent-color)' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}><RefreshCw size={20} /> Nastavení automatizace (Local Bridge)</span>
+              <span style={{ 
+                fontSize: '0.7rem', 
+                padding: '4px 10px', 
+                borderRadius: '20px', 
+                background: relayOnline ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                color: relayOnline ? 'var(--success-color)' : 'var(--error-color)',
+                border: `1px solid ${relayOnline ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
+                fontWeight: '800'
+              }}>
+                {relayOnline ? 'AGENT ONLINE' : 'AGENT OFFLINE'}
+              </span>
+            </h3>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1rem' }}>
+              <div className="input-group-premium">
+                <label className="input-label-premium">Platforma</label>
+                <select 
+                  className="note-input" 
+                  style={{ background: 'rgba(255,255,255,0.05)' }}
+                  value={automationPlatform}
+                  onChange={(e) => setAutomationPlatform(e.target.value)}
+                >
+                  <option value="adultwork">Adultwork.com</option>
+                  <option value="amateri">Amateri.com</option>
+                  <option value="onlyfans">OnlyFans.com</option>
+                  <option value="eurogirls">EuroGirlsEscort</option>
+                  <option value="thepunters">ThePuntersGuide</option>
+                </select>
+              </div>
+              <div className="input-group-premium">
+                <label className="input-label-premium">AdsPower Profile ID</label>
+                <input 
+                  type="text" 
+                  className="note-input" 
+                  placeholder="např. j8f2k9l" 
+                  value={adsPowerId}
+                  onChange={(e) => setAdsPowerId(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+              <div className="input-group-premium">
+                <label className="input-label-premium">Uživatelské jméno / Email</label>
+                <input 
+                  type="text" 
+                  className="note-input" 
+                  placeholder="Login k webu" 
+                  value={platformUser}
+                  onChange={(e) => setPlatformUser(e.target.value)}
+                />
+              </div>
+              <div className="input-group-premium">
+                <label className="input-label-premium">Heslo</label>
+                <input 
+                  type="password" 
+                  className="note-input" 
+                  placeholder="••••••••" 
+                  value={platformPass}
+                  onChange={(e) => setPlatformPass(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="input-group-premium" style={{ marginTop: '1rem' }}>
+              <label className="input-label-premium">Proxy server (volitelné)</label>
+              <input 
+                type="text" 
+                className="note-input" 
+                placeholder="host:port:user:pass" 
+                value={proxyConfig}
+                onChange={(e) => setProxyConfig(e.target.value)}
+              />
+            </div>
+
+            <button onClick={onSaveAutomation} className="action-btn" style={{ marginTop: '1.5rem', width: '100%' }}>
+              Uložit a ověřit spojení
+            </button>
+
+            <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              <label className="input-label-premium">Váš Relay Token (pro Local Agent)</label>
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                <input 
+                  type="password" 
+                  readOnly 
+                  className="note-input" 
+                  style={{ fontSize: '0.7rem', fontFamily: 'monospace' }} 
+                  value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." 
+                />
+                <button 
+                  className="action-btn" 
+                  style={{ padding: '0 1rem', background: 'var(--card-bg)' }}
+                  onClick={async () => {
+                    try {
+                      const res = await axios.get(`${API_BASE}/auth/relay-token`, { headers: { Authorization: `Bearer ${token}` } });
+                      navigator.clipboard.writeText(res.data.token);
+                      showToast(lang === 'cz' ? 'Token zkopírován!' : 'Token copied!', 'success');
+                    } catch (e) {
+                      showToast('Chyba při generování tokenu', 'error');
+                    }
+                  }}
+                >
+                  Kopírovat
+                </button>
+              </div>
+              <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                * Tento token vložte do souboru <code>.env</code> vašeho Local Agenta jako <code>RELAY_TOKEN</code>.
+              </p>
+            </div>
+            <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.5rem', textAlign: 'center' }}>
+              * Údaje budou uloženy pomocí AES-256 šifrování.
+            </p>
+          </div>
+
           <div className="glass-card" style={{ padding: '2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Image size={20} color="var(--accent-color)" /> {t('gallery')}</h3>

@@ -2,6 +2,7 @@ const prisma = require('../services/db');
 const logger = require('../services/logger');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const { getRoomSize } = require('../services/socket');
 
 /**
  * Agency Controller
@@ -373,5 +374,23 @@ exports.addUser = async (req, res) => {
   } catch (error) {
     logger.error('Error adding user:', error);
     res.status(500).json({ message: 'Failed to add user' });
+  }
+};
+
+exports.getRelayStatus = async (req, res) => {
+  try {
+    const { agencyId } = req.user;
+    if (!agencyId) return res.status(400).json({ message: 'Agency ID required' });
+
+    const connectedCount = getRoomSize(`agency_${agencyId}`);
+    
+    res.json({ 
+      online: connectedCount > 0,
+      activeRelays: connectedCount,
+      message: connectedCount > 0 ? 'Local Agent is online' : 'No Local Agents connected'
+    });
+  } catch (error) {
+    logger.error('Error getting relay status:', error);
+    res.status(500).json({ message: 'Failed to get relay status' });
   }
 };

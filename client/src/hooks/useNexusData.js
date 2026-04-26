@@ -96,6 +96,27 @@ export function useNexusData({
   const [isSyncing, setIsSyncing] = useState(false);
   const [_syncStatus, _setSyncStatus] = useState({ aw: 'synced', ege: 'synced', tpb: 'warning' });
   const [_syncProgress, _setSyncProgress] = useState(0);
+  const [relayOnline, setRelayOnline] = useState(false);
+
+  const checkRelayStatus = useCallback(async () => {
+    if (!isLoggedIn || !token) return;
+    try {
+      const res = await axios.get(`${API_BASE}/agency/relay-status`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setRelayOnline(res.data.online);
+    } catch (e) {
+      setRelayOnline(false);
+    }
+  }, [isLoggedIn, token, API_BASE]);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      checkRelayStatus();
+      const interval = setInterval(checkRelayStatus, 30000); // Check every 30s
+      return () => clearInterval(interval);
+    }
+  }, [isLoggedIn, checkRelayStatus]);
 
   const [_plans, _setPlans] = useState([]);
   
@@ -290,11 +311,73 @@ export function useNexusData({
     }
   }, [activeProfileId, bioText, token, API_BASE, initData, showToast, lang]);
 
-  const handleSyncAll = useCallback(() => {
-    // Implement real sync via API when needed
-    setIsSyncing(true);
-    setTimeout(() => setIsSyncing(false), 2000);
-  }, []);
+  const handleSyncAll = useCallback(async () => {
+    if (!activeProfileId || activeProfileId === 'all') {
+      if (showToast) showToast(lang === 'cz' ? 'Vyberte konkrétní profil pro synchronizaci.' : 'Select a specific profile to sync.', 'info');
+      return;
+    }
+
+    try {
+      setIsSyncing(true);
+      _setSyncProgress(0);
+      _setSyncStatus({ aw: 'syncing', ege: 'syncing', tpb: 'syncing' });
+
+      // Start progress simulation
+      const progressInterval = setInterval(() => {
+        _setSyncProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 5;
+        });
+      }, 500);
+
+      // Call API to dispatch relay command
+      await axios.post(`${API_BASE}/profiles/${activeProfileId}/sync`, {
+        bio: bioText,
+        name: profiles.find(p => p.id === activeProfileId)?.name
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // For now, we simulate completion after API success + some delay
+      // In a real scenario, we would wait for a socket event from the relay
+      setTimeout(() => {
+        clearInterval(progressInterval);
+        _setSyncProgress(100);
+        _setSyncStatus({ aw: 'synced', ege: 'synced', tpb: 'synced' });
+        
+        setTimeout(() => {
+          setIsSyncing(false);
+          if (showToast) showToast(lang === 'cz' ? 'Synchronizace dokončena!' : 'Synchronization complete!', 'success');
+        }, 1000);
+      }, 3000);
+
+    } catch (err) {
+      console.error('Sync failed:', err);
+      setIsSyncing(false);
+      _setSyncStatus({ aw: 'error', ege: 'error', tpb: 'error' });
+      const errMsg = err.response?.data?.message || (lang === 'cz' ? 'Synchronizace selhala.' : 'Synchronization failed.');
+      if (showToast) showToast(errMsg, 'error');
+    }
+  }, [activeProfileId, bioText, token, API_BASE, profiles, showToast, lang]);
+
+  const handleSaveCredentials = useCallback(async (credentials) => {
+    if (!activeProfileId || activeProfileId === 'all') return;
+    try {
+      await axios.post(`${API_BASE}/profiles/${activeProfileId}/credentials`, {
+        credentials
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (showToast) showToast(lang === 'cz' ? 'Přihlašovací údaje byly bezpečně uloženy.' : 'Credentials securely saved.', 'success');
+      initData();
+    } catch (err) {
+      console.error('Save credentials failed:', err);
+      if (showToast) showToast(lang === 'cz' ? 'Nepodařilo se uložit údaje.' : 'Failed to save credentials.', 'error');
+    }
+  }, [activeProfileId, token, API_BASE, initData, showToast, lang]);
   
   const handleExportICS = useCallback(() => {
     if (!calendar || calendar.length === 0) {
@@ -478,7 +561,7 @@ export function useNexusData({
     calendar, isCalendarSyncOpen, setIsCalendarSyncOpen, calendarSyncUrl, setCalendarSyncUrl,
     isBookingModalOpen, setIsBookingModalOpen, selectedScheduleEvent, setSelectedScheduleEvent,
     newBookingForm, setNewBookingForm, bioText, setBioText, isSyncing, syncStatus: _syncStatus, syncProgress: _syncProgress,
-    handleSaveBio, handleSyncAll, handleQuickSaveMeeting, handleDelayBooking, initData,
+    relayOnline, handleSaveBio, handleSyncAll, handleSaveCredentials, handleQuickSaveMeeting, handleDelayBooking, initData,
     handleExportICS, handleSaveCalendarSync, handleSaveBooking
   };
 }

@@ -81,7 +81,14 @@ const getIO = () => {
   return io;
 };
 
+const getRoomSize = (roomName) => {
+  if (!io) return 0;
+  const room = io.sockets.adapter.rooms.get(roomName);
+  return room ? room.size : 0;
+};
+
 module.exports = {
   init,
-  getIO
+  getIO,
+  getRoomSize
 };

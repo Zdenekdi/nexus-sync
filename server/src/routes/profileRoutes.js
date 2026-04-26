@@ -9,5 +9,7 @@ router.get('/', authMiddleware, profileController.getProfiles);
 router.post('/', authMiddleware, validate(createProfile), profileController.createProfile);
 router.patch('/:id', authMiddleware, validate(patchProfile), profileController.patchProfile);
 router.patch('/:id/assignees', authMiddleware, validate(assignUsers), profileController.assignUsersToProfile);
+router.post('/:id/sync', authMiddleware, profileController.syncProfile);
+router.post('/:id/credentials', authMiddleware, profileController.updateCredentials);
 
 module.exports = router;
