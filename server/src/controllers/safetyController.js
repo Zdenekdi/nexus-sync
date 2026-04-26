@@ -161,6 +161,39 @@ class SafetyController {
     }
 
     /**
+     * Get a summary of all active/recent safety sessions for the agency.
+     * Used for the Safety Guard dashboard.
+     */
+    async getSessionsSummary(req, res) {
+        try {
+            const { role, agencyId } = req.user || {};
+            const isAppOwner = role?.isAppOwner;
+
+            const sessions = await prisma.safetySession.findMany({
+                where: {
+                    ...(isAppOwner ? {} : { agencyId }),
+                    state: { in: ['CHECKED_IN', 'GRACE', 'ESCALATED'] }
+                },
+                include: {
+                    profile: {
+                        select: { id: true, name: true, image: true }
+                    },
+                    locationPoints: {
+                        take: 1,
+                        orderBy: { capturedAt: 'desc' }
+                    }
+                },
+                orderBy: { updatedAt: 'desc' }
+            });
+
+            res.json(sessions);
+        } catch (error) {
+            logger.error('Failed to load sessions summary:', error);
+            res.status(500).json({ message: 'Failed to load sessions summary' });
+        }
+    }
+
+    /**
      * Trigger Panic Alert
      */
     async triggerPanic(req, res) {

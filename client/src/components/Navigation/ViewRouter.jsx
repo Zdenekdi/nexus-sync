@@ -23,7 +23,6 @@ const lazyWithRetry = (componentImport) =>
 
 // Views
 import DashboardHome from '../DashboardHome';
-// const DashboardHome = lazyWithRetry(() => import('../DashboardHome'));
 const OperationsUnit = lazyWithRetry(() => import('../Units/OperationsUnit'));
 const AgencyUnit = lazyWithRetry(() => import('../Units/AgencyUnit'));
 const InfrastructureUnit = lazyWithRetry(() => import('../Units/InfrastructureUnit'));
@@ -38,10 +37,6 @@ const LoadingFallback = () => (
   </div>
 );
 
-/**
- * Component to handle the main application routing based on activeTab.
- * Uses React.lazy for better performance and smaller initial bundle size.
- */
 const ViewRouter = () => {
   const { activeTab, isTvMode } = useNexus();
 
@@ -67,12 +62,13 @@ const ViewRouter = () => {
       // Agency Unit Views
       case 'hierarchy':
       case 'analytics':
-      case 'crm':
       case 'activity':
+      case 'crm':
       case 'inventory':
       case 'audit-logs':
       case 'payouts':
       case 'settings':
+      case 'safety-guard':
         return <AgencyUnit />;
 
       // Infrastructure Unit Views

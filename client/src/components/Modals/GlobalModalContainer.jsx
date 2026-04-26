@@ -13,6 +13,7 @@ import AddUserModal from './AddUserModal';
 import CallOverlays from '../Overlays/CallOverlays';
 import NotificationSystem from '../Notifications/NotificationSystem';
 import SipManager from '../sip/SipManager';
+import PinModal from './PinModal';
 
 /**
  * Container for all global modals and overlays.
@@ -30,6 +31,7 @@ const GlobalModalContainer = () => {
     isBookingModalOpen, setIsBookingModalOpen,
     newBookingForm, setNewBookingForm,
     handleSaveBooking,
+    isPinModalOpen, setIsPinModalOpen, pinModalPromise, setPinModalPromise,
     API_BASE, token, setProfiles, initData
   } = useNexus();
 
@@ -129,6 +131,23 @@ const GlobalModalContainer = () => {
           showToast={showToast}
           lang={lang}
           t={t}
+        />
+      )}
+
+      {isPinModalOpen && (
+        <PinModal 
+          onSuccess={() => {
+            if (pinModalPromise?.resolve) pinModalPromise.resolve(true);
+            setIsPinModalOpen(false);
+            setPinModalPromise(null);
+          }}
+          onCancel={() => {
+            if (pinModalPromise?.resolve) pinModalPromise.resolve(false);
+            setIsPinModalOpen(false);
+            setPinModalPromise(null);
+          }}
+          title={t('secureVerification') || (lang === 'cz' ? 'Bezpečnostní ověření' : 'Secure Verification')}
+          description={t('enterPinToProceed') || (lang === 'cz' ? 'Zadejte svůj PIN pro potvrzení akce.' : 'Enter your PIN to confirm this action.')}
         />
       )}
     </>

@@ -207,6 +207,9 @@ export const NexusProvider = ({ children }) => {
   const [isTvMode, setIsTvMode] = React.useState(false);
   const [tvToken, setTvToken] = React.useState(null);
   const [activeBioWarning, setActiveBioWarning] = React.useState(null);
+  const [audioSentinelActive, setAudioSentinelActive] = React.useState(() => localStorage.getItem('nexus_audio_sentinel') === 'true');
+  const [isPinModalOpen, setIsPinModalOpen] = React.useState(false);
+  const [pinModalPromise, setPinModalPromise] = React.useState(null);
   
   const checkinIntervalRef = React.useRef(null);
   const gpsWatchRef = React.useRef(null);
@@ -226,6 +229,10 @@ export const NexusProvider = ({ children }) => {
     localStorage.setItem('nexus_hrThreshold', hrThreshold);
   }, [hrThreshold]);
 
+  React.useEffect(() => {
+    localStorage.setItem('nexus_audio_sentinel', String(audioSentinelActive));
+  }, [audioSentinelActive]);
+
   // Detected TV Token on mount
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -240,12 +247,11 @@ export const NexusProvider = ({ children }) => {
     }
   }, [setActiveTab, setShowLanding]);
 
-  const playBeep = React.useCallback(() => {
+  const playBeep = React.useCallback((freq = 880, duration = 0.1, gain = 0.05) => {
     try {
       const audioCtx = getSharedAudioCtx();
       if (!audioCtx) return;
 
-      // Resume context if suspended (common browser policy requirement)
       if (audioCtx.state === 'suspended') {
         audioCtx.resume();
       }
@@ -257,11 +263,11 @@ export const NexusProvider = ({ children }) => {
       gainNode.connect(audioCtx.destination);
 
       oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
-      gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gainNode.gain.setValueAtTime(gain, audioCtx.currentTime);
 
       oscillator.start();
-      oscillator.stop(audioCtx.currentTime + 0.1); 
+      oscillator.stop(audioCtx.currentTime + duration); 
     } catch (e) {
       console.warn('[IoT-Audio] Beep failed:', e);
     }
@@ -292,6 +298,18 @@ export const NexusProvider = ({ children }) => {
       return () => clearTimeout(timer);
     }
   }, [heartRate, hrThreshold, sosActive, isTvMode, triggerSilentSOS]);
+
+  // Audio Sentinel (Pulse Beeps)
+  React.useEffect(() => {
+    if (!audioSentinelActive || sosActive) return;
+    
+    // Pulse beep every 10 seconds to confirm safety monitoring is alive
+    const interval = setInterval(() => {
+      playBeep(440, 0.05, 0.02); // Low frequency, short, very quiet beep
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [audioSentinelActive, sosActive, playBeep]);
 
   // -- Memoized Identity-Stable Callbacks for useAuth --
   const memoizedSetIsRelayMode = React.useCallback(() => {}, []);
@@ -541,10 +559,11 @@ export const NexusProvider = ({ children }) => {
   }, [lang, showToast]);
 
   const verifyIdentity = React.useCallback(async () => {
-    // In a real app, this would use WebAuthn or a biometric prompt
-    // For now, we use a confirm as a bypassable placeholder, but in the implementation plan we recommended WebAuthn
-    return window.confirm(lang === 'cz' ? 'Potvrďte prosím svou identitu (Biometrika/Kód)' : 'Please confirm your identity (Biometric/Passcode)');
-  }, [lang]);
+    return new Promise((resolve) => {
+      setPinModalPromise({ resolve });
+      setIsPinModalOpen(true);
+    });
+  }, []);
 
   // Effects for Safety
   React.useEffect(() => {
@@ -1301,6 +1320,8 @@ export const NexusProvider = ({ children }) => {
     batteryLevel, incomingGhostCall, setIncomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity,
     heartRate, setHeartRate, hrThreshold, setHrThreshold, isBluetoothConnected, setIsBluetoothConnected,
     isTvMode, tvToken, activeBioWarning, setActiveBioWarning, playBeep, triggerSilentSOS,
+    audioSentinelActive, setAudioSentinelActive,
+    isPinModalOpen, setIsPinModalOpen, pinModalPromise, setPinModalPromise,
     handleUpdateGlobalSetting: async (key, value) => {
       try {
         const res = await axios.post(`${API_BASE}/admin/settings`, { key, value }, { headers: { Authorization: `Bearer ${token}` } });

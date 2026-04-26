@@ -8,6 +8,7 @@ import CRMView from '../Views/CRMView';
 import InventoryView from '../InventoryView';
 import AuditLogsView from '../Views/AuditLogsView';
 import PayoutsView from '../Views/PayoutsView';
+import SafetyGuardView from '../Views/SafetyGuardView';
 
 /**
  * Agency Unit: Management hub for agencies and global activity.
@@ -32,6 +33,8 @@ const AgencyUnit = () => {
       return <AuditLogsView />;
     case 'payouts':
       return <PayoutsView />;
+    case 'safety-guard':
+      return <SafetyGuardView />;
     default:
       return null;
   }
