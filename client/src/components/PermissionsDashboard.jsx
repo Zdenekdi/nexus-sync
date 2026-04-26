@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Shield, Lock, Globe, Building2, Users, Package, Activity, MessageSquare, Save, RefreshCw, AlertCircle } from 'lucide-react';
+import { Shield, Lock, Globe, Building2, Users, Package as PackageIcon, Activity, MessageSquare, Save, RefreshCw, AlertCircle } from 'lucide-react';
 
 import { useNexus } from '../context/NexusContext';
 
@@ -94,7 +94,7 @@ const PermissionsDashboard = ({ agencyId = null, onUpdate = null }) => {
     {
       id: 'logistika',
       label: 'Provozní sekce - Logistika',
-      icon: Package,
+      icon: PackageIcon,
       color: '#f59e0b',
       perms: ['inventory']
     }

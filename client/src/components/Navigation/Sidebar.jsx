@@ -3,7 +3,7 @@ import {
   LayoutDashboard, MessageSquare, Calendar, Users, BarChart3, 
   Settings, Activity, Radio, Globe, Smartphone, FileSearch, 
   Shield, Building2, HardDrive, CreditCard, Zap, UserCheck,
-  LogOut, Menu, X, Circle
+  LogOut, Menu, X, Circle, Package as PackageIcon, Gift, Wallet
 } from 'lucide-react';
 import { useNexus } from '../../context/NexusContext';
 
@@ -171,7 +171,7 @@ const Sidebar = () => {
                       { id: 'safety', icon: Shield, label: t('safety'), perm: 'safety' },
                       { id: 'safety-guard', icon: Shield, label: t('safetyGuard') || 'Safety Guard', perm: 'safety' },
                       { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
-                      { id: 'inventory', icon: Package, label: t('inventory') || 'Sklad', perm: 'inventory' },
+                      { id: 'inventory', icon: PackageIcon, label: t('inventory') || 'Sklad', perm: 'inventory' },
                       { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles' },
                       { id: 'device-setup', icon: Smartphone, label: t('deviceSetup'), perm: 'device_setup' },
                       { id: 'relay', icon: Radio, label: t('relay'), perm: 'relay' },
