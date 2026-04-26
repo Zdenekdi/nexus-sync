@@ -89,25 +89,50 @@ const MemoInput = memo(({ label, icon: Icon, type, value, onChange, placeholder,
   </div>
 ));
 
-const PasswordStrength = memo(({ password, isCz }) => {
+const PasswordRequirements = memo(({ password, isCz }) => {
   if (!password) return null;
   
+  const requirements = [
+    { label: isCz ? 'Minimálně 8 znaků' : 'At least 8 characters', met: password.length >= 8 },
+    { label: isCz ? 'Aspoň jedno velké písmeno' : 'At least one uppercase letter', met: /[A-Z]/.test(password) },
+    { label: isCz ? 'Aspoň jedno číslo' : 'At least one number', met: /[0-9]/.test(password) }
+  ];
+
   const getStrength = (pw) => {
-    if (!pw || pw.length < 8) return { level: 'weak', color: '#ef4444', label: isCz ? 'Slabé' : 'Weak', width: '33%' };
-    const hasMixed = /[a-z]/.test(pw) && /[A-Z]/.test(pw);
-    const hasNumber = /\d/.test(pw);
-    if (hasMixed && hasNumber) return { level: 'strong', color: '#10b981', label: isCz ? 'Silné' : 'Strong', width: '100%' };
-    if (hasMixed) return { level: 'medium', color: '#f59e0b', label: isCz ? 'Střední' : 'Medium', width: '66%' };
-    return { level: 'weak', color: '#ef4444', label: isCz ? 'Slabé' : 'Weak', width: '33%' };
+    const metCount = requirements.filter(r => r.met).length;
+    if (metCount === 3) return { color: '#10b981', label: isCz ? 'Silné' : 'Strong', width: '100%' };
+    if (metCount === 2) return { color: '#f59e0b', label: isCz ? 'Střední' : 'Medium', width: '66%' };
+    return { color: '#ef4444', label: isCz ? 'Slabé' : 'Weak', width: '33%' };
   };
 
   const strength = getStrength(password);
+
   return (
-    <div style={{ marginTop: '0.35rem' }}>
-      <div style={{ height: '3px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
+    <div style={{ marginTop: '0.5rem', animation: 'fadeInUp 0.3s ease-out' }}>
+      <div style={{ height: '3px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden', marginBottom: '0.4rem' }}>
         <div style={{ height: '100%', width: strength.width, background: strength.color, borderRadius: '2px', transition: 'all 0.3s ease' }} />
       </div>
-      <div style={{ fontSize: '0.6rem', color: strength.color, fontWeight: '700', marginTop: '0.2rem' }}>{strength.label}</div>
+      
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+        {requirements.map((req, idx) => (
+          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.65rem' }}>
+            <div style={{ 
+              width: '4px', height: '4px', borderRadius: '50%', 
+              background: req.met ? '#10b981' : '#475569',
+              boxShadow: req.met ? '0 0 4px #10b981' : 'none'
+            }} />
+            <span style={{ 
+              color: req.met ? '#10b981' : '#64748b',
+              fontWeight: req.met ? '700' : '500',
+              textDecoration: req.met ? 'line-through' : 'none',
+              opacity: req.met ? 0.7 : 1,
+              transition: 'all 0.2s ease'
+            }}>
+              {req.label}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 });
@@ -256,10 +281,11 @@ const LoginScreen = () => {
                       <MemoInput label="Email" icon={Mail} type="email" value={regEmail} onChange={setRegEmail} placeholder="..." />
                       <div>
                         <MemoInput label={isCz ? 'Heslo' : 'Password'} icon={Lock} value={regPassword} onChange={setRegPassword} placeholder="..." showToggle onToggle={() => setShowRegPassword(!showRegPassword)} isToggled={showRegPassword} />
-                        <PasswordStrength password={regPassword} isCz={isCz} />
+                        <PasswordRequirements password={regPassword} isCz={isCz} />
                       </div>
                       <button type="submit" disabled={loading} style={{ ...STYLES.submitButton, background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}>
-                        {loading ? <Loader2 className="animate-spin" size={16} /> : <>{isCz ? 'Vytvořit agenturu' : 'Create Agency'}<ArrowRight size={16} /></>}
+                        {loading ? <Loader2 className="animate-spin" size={16} /> : (isCz ? 'Vytvořit agenturu' : 'Create Agency')}
+                        <ArrowRight size={16} />
                       </button>
                     </form>
                   )}
@@ -270,12 +296,36 @@ const LoginScreen = () => {
                         e.preventDefault();
                         if (!joinInviteCode) return showToast(isCz ? 'Zadejte kód' : 'Enter code', 'error');
                         
-                        // If we haven't shown the full form yet, we just "verify" the code visually
-                        const hasFullInfo = joinFullName && joinEmail && joinPassword;
-                        if (!hasFullInfo) {
-                           // This is a simple UI trick to show the rest of the form
-                           setTab('join-agency-expanded'); 
-                           return;
+                        if (tab === 'join-agency') {
+                          setTab('join-agency-expanded');
+                          return;
+                        }
+
+                        if (!joinFullName || !joinEmail || !joinPassword) {
+                          return showToast(isCz ? 'Vyplňte všechna pole' : 'Fill all fields', 'error');
+                        }
+
+                        setLoading(true);
+                        try {
+                          const result = await onRegisterUser({ 
+                            fullName: joinFullName, 
+                            email: joinEmail, 
+                            password: joinPassword, 
+                            inviteCode: joinInviteCode 
+                          });
+                          
+                          if (result?.success) {
+                            showToast(isCz ? 'Registrace úspěšná! Nyní se můžete přihlásit.' : 'Registration successful! You can now log in.', 'success');
+                            setTab('login');
+                            setEmail(joinEmail);
+                          } else {
+                            showToast(result?.error || (isCz ? 'Registrace se nezdařila' : 'Registration failed'), 'error');
+                          }
+                        } catch (err) {
+                          console.error(err);
+                          showToast(isCz ? 'Chyba připojení' : 'Connection error', 'error');
+                        } finally {
+                          setLoading(false);
                         }
                       }} 
                       style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
@@ -287,37 +337,14 @@ const LoginScreen = () => {
                           <MemoInput label={isCz ? 'Vaše jméno' : 'Your Name'} icon={User} value={joinFullName} onChange={setJoinFullName} placeholder="..." />
                           <MemoInput label="Email" icon={Mail} type="email" value={joinEmail} onChange={setJoinEmail} placeholder="..." />
                           <div>
-                            <MemoInput label={isCz ? 'Heslo' : 'Password'} icon={Lock} value={joinPassword} onChange={setJoinPassword} placeholder="..." showToggle onToggle={() => setShowJoinPassword(!showJoinPassword)} isToggled={showJoinPassword} />
-                            <PasswordStrength password={joinPassword} isCz={isCz} />
+                            <MemoInput label={isCz ? 'Heslo' : 'Password'} icon={Lock} value={joinPassword} onChange={setJoinPassword} placeholder="..." showToggle onToggle={() => setShowJoinPassword(!setShowJoinPassword)} isToggled={showJoinPassword} />
+                            <PasswordRequirements password={joinPassword} isCz={isCz} />
                           </div>
                         </>
                       )}
 
                       <button 
-                        type="button"
-                        onClick={async () => {
-                          if (tab === 'join-agency') {
-                            if (!joinInviteCode) return showToast(isCz ? 'Zadejte kód' : 'Enter code', 'error');
-                            setTab('join-agency-expanded');
-                          } else {
-                            if (!joinFullName || !joinEmail || !joinPassword) {
-                              return showToast(isCz ? 'Vyplňte všechna pole' : 'Fill all fields', 'error');
-                            }
-                            setLoading(true);
-                            try {
-                              await onRegisterUser({ 
-                                fullName: joinFullName, 
-                                email: joinEmail, 
-                                password: joinPassword, 
-                                inviteCode: joinInviteCode 
-                              });
-                            } catch (err) {
-                              console.error(err);
-                            } finally {
-                              setLoading(false);
-                            }
-                          }
-                        }}
+                        type="submit"
                         disabled={loading} 
                         style={STYLES.submitButton}
                       >
