@@ -67,6 +67,7 @@ const ViewRouter = () => {
       // Agency Unit Views
       case 'hierarchy':
       case 'analytics':
+      case 'crm':
       case 'activity':
       case 'settings':
         return <AgencyUnit />;

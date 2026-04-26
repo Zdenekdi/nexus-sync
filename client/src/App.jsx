@@ -2,7 +2,7 @@ import React, { lazy, Suspense } from "react";
 import { 
   Loader2, Menu, LayoutDashboard, MessageSquare, Calendar, 
   Shield, Users, Globe, Smartphone, FileSearch, BarChart3, 
-  Activity, Settings 
+  Activity, Settings, UserCheck 
 } from 'lucide-react';
 import { useNexus } from './context/NexusContext';
 import GlobalAppStyles from './styles/GlobalAppStyles';
@@ -45,6 +45,7 @@ function AppContent() {
     qa: { label: t('qaCenter'), icon: FileSearch },
     hierarchy: { label: t('hierarchy'), icon: Users },
     analytics: { label: t('analytics'), icon: BarChart3 },
+    crm: { label: t('crm') || 'CRM', icon: UserCheck },
     activity: { label: t('activity'), icon: Activity },
     settings: { label: t('settings'), icon: Settings }
   };

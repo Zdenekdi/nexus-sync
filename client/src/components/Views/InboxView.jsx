@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   Search, MessageSquare, Phone, Clock, Link, Globe, Shield, Check, 
   Zap, Calendar, ChevronDown, ChevronLeft, ChevronRight, PlusCircle, 
-  Signal, MoreVertical, StickyNote, Languages, Sparkles, Loader2, RefreshCw
+  Signal, MoreVertical, StickyNote, Languages, Sparkles, Loader2, RefreshCw, UserCheck
 } from 'lucide-react';
 
 import { useNexus } from '../../context/NexusContext';
@@ -23,8 +23,24 @@ const InboxView = () => {
     setNewBookingForm, activeContextTab, setActiveContextTab, lang, t,
     activeProfile, handleSendMessage, handleTranslate, handleSaveNote,
     handleDeleteNote, startCall, handleQuickSaveMeeting, showToast,
-    initData: refreshData, isBackgroundLoading
+    initData: refreshData, isBackgroundLoading, fetchClientByPhone
   } = nexus;
+
+  const [clientCrmData, setClientCrmData] = React.useState(null);
+  const [isCrmLoading, setIsCrmLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    if (selectedChat?.from && activeContextTab === 'crm') {
+      loadClientCrm();
+    }
+  }, [selectedChat?.from, activeContextTab]);
+
+  const loadClientCrm = async () => {
+    setIsCrmLoading(true);
+    const data = await fetchClientByPhone(selectedChat.from);
+    setClientCrmData(data);
+    setIsCrmLoading(false);
+  };
 
   // Pull to refresh logic
   const [pullDistance, setPullDistance] = React.useState(0);
@@ -369,6 +385,9 @@ const InboxView = () => {
                      <button onClick={() => setActiveContextTab('quickReplies')} style={{ flex: 1, padding: '0.6rem 0.25rem', border: 'none', background: 'transparent', color: activeContextTab === 'quickReplies' ? '#10b981' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.7rem' }}>
                        <Zap size={13} /> {lang === 'cz' ? 'Odpovědi' : 'Replies'}
                      </button>
+                     <button onClick={() => setActiveContextTab('crm')} style={{ flex: 1, padding: '0.6rem 0.25rem', border: 'none', background: 'transparent', color: activeContextTab === 'crm' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.7rem' }}>
+                       <UserCheck size={13} /> CRM
+                     </button>
                    </div>
                   {/* Tab content */}
                   <div style={{ padding: '1.25rem', flex: '1 1 0', minHeight: 0, maxHeight: '45%', overflowY: 'auto' }}>
@@ -421,8 +440,51 @@ const InboxView = () => {
                           ))
                         )}
                       </div>
-                    )}
-                  </div>
+                    ) : activeContextTab === 'crm' ? (
+                      <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {isCrmLoading ? (
+                          <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                            <Loader2 className="animate-spin" size={24} color="var(--accent-color)" />
+                          </div>
+                        ) : clientCrmData ? (
+                          <>
+                            <div style={{ background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.1)', borderRadius: '14px', padding: '1rem' }}>
+                              <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Financial Worth</div>
+                              <div style={{ fontSize: '1.5rem', fontWeight: '900', color: 'white' }}>{Number(clientCrmData.totalSpent).toLocaleString()} CZK</div>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--success-color)', marginTop: '0.2rem', fontWeight: '700' }}>{clientCrmData._count?.bookings || 0} Successful meetings</div>
+                            </div>
+                            
+                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                              {(JSON.parse(clientCrmData.tags || '[]')).map((tag, i) => (
+                                <span key={i} style={{ background: tag === 'VIP' ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255,255,255,0.05)', color: tag === 'VIP' ? '#fbbf24' : 'var(--text-secondary)', fontSize: '0.65rem', fontWeight: '900', padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                  {tag}
+                                </span>
+                              ))}
+                              {(JSON.parse(clientCrmData.tags || '[]')).length === 0 && (
+                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontStyle: 'italic' }}>No tags assigned</span>
+                              )}
+                            </div>
+
+                            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem' }}>
+                              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>LAST VISIT</div>
+                              <div style={{ color: 'white', fontWeight: '700' }}>{clientCrmData.lastVisit ? new Date(clientCrmData.lastVisit).toLocaleDateString() : 'Never'}</div>
+                            </div>
+
+                            <button 
+                              onClick={() => setActiveTab('crm')}
+                              style={{ marginTop: '0.5rem', background: 'transparent', border: '1px solid var(--card-border)', color: 'white', padding: '0.75rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: '750', cursor: 'pointer' }}
+                            >
+                              OPEN FULL CLIENT CARD
+                            </button>
+                          </>
+                        ) : (
+                          <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>
+                             No CRM record found for this number yet.
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {/* Calendar mini-panel */}
                 {(() => {
                   const calDateStr = calViewDate.toISOString().split('T')[0];

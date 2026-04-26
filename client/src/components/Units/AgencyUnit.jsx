@@ -4,6 +4,7 @@ import HierarchyView from '../Views/HierarchyView';
 import AnalyticsView from '../Views/AnalyticsView';
 import ActivityView from '../Views/ActivityView';
 import SettingsView from '../Views/SettingsView';
+import CRMView from '../Views/CRMView';
 
 /**
  * Agency Unit: Management hub for agencies and global activity.
@@ -20,6 +21,8 @@ const AgencyUnit = () => {
       return <ActivityView />;
     case 'settings':
       return <SettingsView />;
+    case 'crm':
+      return <CRMView />;
     default:
       return null;
   }

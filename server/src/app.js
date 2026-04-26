@@ -41,6 +41,7 @@ const aiRoutes = require('./routes/aiRoutes');
 const referralRoutes = require('./routes/referralRoutes');
 const auditRoutes = require('./routes/auditRoutes');
 const webhookRoutes = require('./routes/webhookRoutes');
+const clientRoutes = require('./routes/clientRoutes');
 
 const app = express();
 
@@ -172,6 +173,7 @@ app.use('/api/messages', writeLimiter);
 app.use('/api/chats', writeLimiter);
 app.use('/api/blacklist', writeLimiter);
 app.use('/api/agency', writeLimiter);
+app.use('/api/clients', writeLimiter);
 // SOS has no extra limiter — safety-critical
 
 if (process.env.NODE_ENV !== 'test') {
@@ -212,6 +214,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/referrals', referralRoutes);
 app.use('/api/audit-logs', auditRoutes);
 app.use('/api/webhooks', webhookRoutes);
+app.use('/api/clients', clientRoutes);
 
 // Health check with system status
 app.get('/health', async (req, res) => {

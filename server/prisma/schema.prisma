@@ -36,6 +36,7 @@ model Agency {
   // Omnichannel & enterprise features
   omnichannelChannels OmnichannelChannel[]
   partnerPortals PartnerPortal[] @relation("PartnerPortals")
+  clients   Client[]
 }
 
 model Subscription {
@@ -182,6 +183,8 @@ model ClientNote {
   agencyId    String
   profileId   String
   profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  clientId    String?
+  client      Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
   clientPhone String
   text        String
   authorName  String
@@ -190,6 +193,7 @@ model ClientNote {
   @@index([agencyId])
   @@index([profileId])
   @@index([clientPhone])
+  @@index([clientId])
 }
 
 model Booking {
@@ -197,7 +201,12 @@ model Booking {
   profileId   String
   profile     Profile   @relation(fields: [profileId], references: [id])
   agencyId    String
+  clientId    String?
+  client      Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientPhone String?   
+  
   title       String
+  price       Float     @default(0)
   startTime   DateTime
   endTime     DateTime
   locationType  String    @default("incall") // incall or outcall
@@ -206,6 +215,9 @@ model Booking {
   safetySession SafetySession?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  @@index([clientId])
+  @@index([clientPhone])
 }
 
 model SafetySession {
@@ -267,6 +279,8 @@ model Chat {
   externalId    String
   profileId     String
   profile       Profile   @relation(fields: [profileId], references: [id])
+  clientId      String?
+  client        Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
   agencyId      String
   agency        Agency    @relation(fields: [agencyId], references: [id])
   messages      Message[]
@@ -275,6 +289,7 @@ model Chat {
   updatedAt     DateTime  @updatedAt
 
   @@unique([externalId, profileId])
+  @@index([clientId])
 }
 
 model Message {
@@ -384,6 +399,30 @@ model GlobalSetting {
   key       String   @unique
   value     String   // Stores "true"/"false" or JSON strings
   updatedAt DateTime @updatedAt
+}
+
+model Client {
+  id          String   @id @default(cuid())
+  agencyId    String
+  agency      Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  
+  phone       String
+  name        String?
+  totalSpent  Float    @default(0)
+  lastVisit   DateTime?
+  tags        String?  // JSON array like ["VIP", "Frequent", "Troublemaker"]
+  preferences String?  @db.Text
+  
+  notes       ClientNote[]
+  bookings    Booking[]
+  chats       Chat[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([agencyId, phone])
+  @@index([agencyId])
+  @@index([phone])
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { 
   LayoutDashboard, MessageSquare, Calendar, Users, BarChart3, 
   Settings, Activity, Radio, Globe, Smartphone, FileSearch, 
-  Shield, Building2, HardDrive, CreditCard, Zap,
+  Shield, Building2, HardDrive, CreditCard, Zap, UserCheck,
   LogOut, Menu, X, Circle
 } from 'lucide-react';
 import { useNexus } from '../../context/NexusContext';
@@ -176,6 +176,7 @@ const Sidebar = () => {
                       { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub' },
                       { id: 'hierarchy', icon: Users, label: t('hierarchy'), perm: 'hierarchy' },
                       { id: 'analytics', icon: BarChart3, label: t('analytics'), perm: 'analytics' },
+                      { id: 'crm', icon: UserCheck, label: t('crm') || 'CRM', perm: 'analytics' },
                       { id: 'activity', icon: Activity, label: t('activity'), perm: 'analytics' },
                       { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
                     ].filter(item => !item.perm || isAllowed(item.perm)).map(item => (

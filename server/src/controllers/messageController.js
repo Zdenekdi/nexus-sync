@@ -13,7 +13,10 @@ exports.getMessages = async (req, res) => {
     if (chat.agencyId !== agencyId) return res.status(403).json({ message: 'Access denied' });
     const messages = await prisma.message.findMany({
       where: { chatId },
-      include: { sender: { select: { id: true, name: true } } },
+      include: { 
+        sender: { select: { id: true, name: true } },
+        chat: { include: { client: true } }
+      },
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }]
     });
     res.json(messages);
@@ -109,8 +112,43 @@ exports.simulateInbound = async (req, res) => {
     if (!profile) return res.status(404).json({ message: 'Profile not found' });
     if (profile.agencyId !== agencyId) return res.status(403).json({ message: 'Access denied' });
     let chat = await prisma.chat.findUnique({ where: { externalId_profileId: { externalId, profileId } } });
+    
+    // Auto-link to CRM Client
+    let clientId = null;
+    if (externalId) {
+      const client = await prisma.client.upsert({
+        where: {
+          agencyId_phone: {
+            agencyId: String(agencyId),
+            phone: String(externalId)
+          }
+        },
+        update: {}, // Just find it if it exists
+        create: {
+          agencyId: String(agencyId),
+          phone: String(externalId),
+          name: 'Lead',
+          totalSpent: 0
+        }
+      });
+      clientId = client.id;
+    }
+
     if (!chat) {
-      chat = await prisma.chat.create({ data: { externalId, profileId, agencyId: profile.agencyId } });
+      chat = await prisma.chat.create({ 
+        data: { 
+          externalId, 
+          profileId, 
+          agencyId: profile.agencyId,
+          clientId
+        } 
+      });
+    } else if (!chat.clientId && clientId) {
+      // Link existing chat to client if not linked yet
+      await prisma.chat.update({
+        where: { id: chat.id },
+        data: { clientId }
+      });
     }
     const message = await prisma.message.create({ data: { chatId: chat.id, text, direction: 'INBOUND', transport: 'sms', status: 'received' } });
     await prisma.chat.update({ where: { id: chat.id }, data: { lastMessageAt: new Date() } });
