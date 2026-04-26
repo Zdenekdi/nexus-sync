@@ -208,7 +208,8 @@ export function useNexusData({
             text: (chat.messages?.[0]?.text || 'No messages'),
             senderName: chat.messages?.[0]?.sender?.name || null,
             timestamp: chat.lastMessageAt || new Date().toISOString(),
-            status: 'read', direction: 'inbound', transport: 'sms'
+            status: 'read', direction: 'inbound', transport: 'sms',
+            client: chat.client || null
           };
         }).filter(Boolean);
         setMessages(mappedMessages);
@@ -553,6 +554,19 @@ export function useNexusData({
     }
   }, [activeProfileId, token, API_BASE, initData, showToast, lang]);
 
+  const fetchClientByPhone = useCallback(async (phone) => {
+    if (!phone) return null;
+    try {
+      const res = await axios.get(`${API_BASE}/clients/${phone}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return res.data;
+    } catch (err) {
+      console.error('Failed to fetch client info:', err);
+      return null;
+    }
+  }, [API_BASE, token]);
+
   return {
     profiles, agencies, agencySettings: _agencySettings, operators, sessions, stats, activeSubscription: _activeSubscription,
     subscriptionHistory: _subscriptionHistory, globalFeatures: _globalFeatures, handleFeatureToggle,
@@ -562,6 +576,6 @@ export function useNexusData({
     isBookingModalOpen, setIsBookingModalOpen, selectedScheduleEvent, setSelectedScheduleEvent,
     newBookingForm, setNewBookingForm, bioText, setBioText, isSyncing, syncStatus: _syncStatus, syncProgress: _syncProgress,
     relayOnline, handleSaveBio, handleSyncAll, handleSaveCredentials, handleQuickSaveMeeting, handleDelayBooking, initData,
-    handleExportICS, handleSaveCalendarSync, handleSaveBooking
+    handleExportICS, handleSaveCalendarSync, handleSaveBooking, fetchClientByPhone
   };
 }

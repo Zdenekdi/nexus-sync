@@ -38,7 +38,7 @@ exports.getBookings = async (req, res) => {
 // POST /api/bookings
 exports.createBooking = async (req, res) => {
   try {
-    const { profileId, title, startTime, endTime, locationType } = req.body;
+    const { profileId, title, startTime, endTime, locationType, clientPhone, clientName, price } = req.body;
     const userRole = req.user?.role;
     const agencyId = req.user?.agencyId;
     
@@ -62,17 +62,49 @@ exports.createBooking = async (req, res) => {
       return res.status(403).json({ message: 'Access denied to profile or profile does not exist.' });
     }
 
+    // 1. Handle Client CRM Integration
+    let clientId = null;
+    if (clientPhone) {
+      const client = await prisma.client.upsert({
+        where: {
+          agencyId_phone: {
+            agencyId: String(agencyId),
+            phone: String(clientPhone)
+          }
+        },
+        update: {
+          totalSpent: { increment: Number(price || 0) },
+          lastVisit: new Date(startTime),
+          ...(clientName && { name: clientName })
+        },
+        create: {
+          agencyId: String(agencyId),
+          phone: String(clientPhone),
+          name: clientName || 'Anonymous',
+          totalSpent: Number(price || 0),
+          lastVisit: new Date(startTime)
+        }
+      });
+      clientId = client.id;
+    }
+
     const booking = await prisma.booking.create({
       data: {
         profileId: String(profileId),
         agencyId: String(agencyId),
+        clientId,
+        clientPhone: clientPhone ? String(clientPhone) : null,
         title,
+        price: Number(price || 0),
         startTime: new Date(startTime),
         endTime: new Date(endTime),
         locationType: locationType || 'incall',
         status: 'confirmed'
       },
-      include: { profile: { select: { id: true, name: true } } }
+      include: { 
+        profile: { select: { id: true, name: true } },
+        client: true
+      }
     });
 
     res.status(201).json(booking);
