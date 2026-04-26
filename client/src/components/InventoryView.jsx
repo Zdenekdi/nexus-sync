@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNexus } from '../context/NexusContext';
 import {
-  Package, MapPin, AlertTriangle, Plus, Search, Filter,
+  Package as PackageIcon, MapPin, AlertTriangle, Plus, Search, Filter,
   ChevronDown, CheckCircle2, XCircle, RefreshCw, MoreVertical,
   Minus, Check, X, Trash2, Edit2
 } from 'lucide-react';
@@ -136,7 +136,7 @@ const InventoryView = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: isMobile ? '1.5rem' : '3rem', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : 0 }}>
         <div>
           <h2 style={{ fontSize: isMobile ? '1.75rem' : '2.5rem', fontWeight: '900', marginBottom: '0.5rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <Package size={isMobile ? 24 : 32} color="var(--accent-color)" /> {t?.stockCard || 'Sklad'}
+            <PackageIcon size={isMobile ? 24 : 32} color="var(--accent-color)" /> {t?.stockCard || 'Sklad'}
           </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1.1rem' }}>Správa fyzického majetku a zásob agentury.</p>
         </div>
@@ -176,7 +176,7 @@ const InventoryView = () => {
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: isMobile ? '0.75rem' : '1.5rem', marginBottom: '2rem' }}>
         {[
-          { label: t?.itemsInStock || 'Skladem', val: stats.inStock, color: 'var(--accent-color)', Icon: Package },
+          { label: t?.itemsInStock || 'Skladem', val: stats.inStock, color: 'var(--accent-color)', Icon: PackageIcon },
           { label: t?.lowStockItems || 'Nízké zásoby', val: stats.lowStock, color: 'var(--warning-color)', Icon: AlertTriangle },
           { label: t?.outOfStockItems || 'Vyprodáno', val: stats.outOfStock, color: 'var(--error-color)', Icon: XCircle },
           { label: 'Celkem položek', val: stats.total, color: 'var(--success-color)', Icon: CheckCircle2 },
@@ -225,7 +225,7 @@ const InventoryView = () => {
                 </div>
               </div>
             ))}
-            {!filteredItems.length && <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}><Package size={40} style={{ opacity: 0.1 }} /><div>Žádné položky</div></div>}
+            {!filteredItems.length && <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}><PackageIcon size={40} style={{ opacity: 0.1 }} /><div>Žádné položky</div></div>}
           </div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -241,7 +241,7 @@ const InventoryView = () => {
                 <tr key={item.id} style={{ borderBottom: '1px solid var(--card-border)' }} className="table-row-hover">
                   <td style={{ padding: '1rem 1.25rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <div style={{ width: '36px', height: '36px', background: 'rgba(255,255,255,0.04)', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Package size={18} color="var(--text-secondary)" /></div>
+                      <div style={{ width: '36px', height: '36px', background: 'rgba(255,255,255,0.04)', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><PackageIcon size={18} color="var(--text-secondary)" /></div>
                       <div style={{ fontWeight: '700' }}>{item.name}</div>
                     </div>
                   </td>
@@ -265,7 +265,7 @@ const InventoryView = () => {
                 </tr>
               ))}
               {!filteredItems.length && (
-                <tr><td colSpan="6" style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}><Package size={40} style={{ opacity: 0.1, marginBottom: '0.75rem' }} /><div>Žádné položky</div></td></tr>
+                <tr><td colSpan="6" style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}><PackageIcon size={40} style={{ opacity: 0.1, marginBottom: '0.75rem' }} /><div>Žádné položky</div></td></tr>
               )}
             </tbody>
           </table>

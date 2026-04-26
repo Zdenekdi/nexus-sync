@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { CreditCard, Users, Check, FileEdit, CheckCheck, Zap, RefreshCw, AlertCircle, Package } from 'lucide-react';
+import { CreditCard, Users, Check, FileEdit, CheckCheck, Zap, RefreshCw, AlertCircle, Package as PackageIcon } from 'lucide-react';
 
 import { NexusContext } from '../context/NexusContext';
 
@@ -201,7 +201,7 @@ const PlansDashboard = () => {
             { id: 'senior_op', name: 'Role: Senior Operator', desc: t('seniorOpDesc'), icon: Users, prices: { cz: '500', eu: '20', uk: '18', us: '22' } },
             { id: 'ai_opt', name: 'AI Optimizer Pack', desc: t('aiOptDesc'), icon: Zap, prices: { cz: '1200', eu: '48', uk: '42', us: '52' } },
             { id: 'vip_supp', name: 'Priority VIP Support', desc: t('vipSuppDesc'), icon: CheckCheck, prices: { cz: '2000', eu: '80', uk: '70', us: '88' } },
-            { id: 'extra_profiles', name: t('extraProfiles'), desc: t('extraProfilesDesc'), icon: Package, prices: { cz: '250', eu: '10', uk: '9', us: '11' } },
+            { id: 'extra_profiles', name: t('extraProfiles'), desc: t('extraProfilesDesc'), icon: PackageIcon, prices: { cz: '250', eu: '10', uk: '9', us: '11' } },
           ].map(addon => (
             <div key={addon.id} className="glass-card" style={{ padding: '1.5rem', border: '1px solid rgba(255,255,255,0.05)', transition: 'all 0.3s' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
