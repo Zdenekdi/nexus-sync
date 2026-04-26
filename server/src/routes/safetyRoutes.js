@@ -10,6 +10,7 @@ router.use(authMiddleware);
 // Session Management
 router.post('/sessions', validate(createSafetySession), (req, res) => safetyController.createSession(req, res));
 router.get('/sessions/active', (req, res) => safetyController.getActiveSession(req, res));
+router.get('/sessions/summary', (req, res) => safetyController.getSessionsSummary(req, res));
 router.get('/sessions/:id', (req, res) => safetyController.getSession(req, res));
 router.post('/sessions/:id/check-in', (req, res) => safetyController.checkIn(req, res));
 router.post('/sessions/:id/check-out', (req, res) => safetyController.checkOut(req, res));

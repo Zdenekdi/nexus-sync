@@ -9,7 +9,8 @@ const SafetyControlCard = () => {
     SAFETY_SUGGESTIONS, onDelayBooking, pendingNotifications,
     linkedTrackerId, lastTrackerUpdate, voiceGuardianActive, handleToggleVoiceGuardian,
     batteryLevel, incomingGhostCall, setIncomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity,
-    heartRate, hrThreshold, setHrThreshold, isBluetoothConnected, setIsBluetoothConnected
+    heartRate, hrThreshold, setHrThreshold, isBluetoothConnected, setIsBluetoothConnected,
+    audioSentinelActive, setAudioSentinelActive
   } = useNexus();
 
   const isCz = lang === 'cz' || lang === 'cs';
@@ -139,58 +140,128 @@ const SafetyControlCard = () => {
           : (isCz ? 'NOUZOVÉ SOS' : 'EMERGENCY SOS')}
       </button>
 
-      {/* Voice Guardian Toggle */}
-      <div 
-        onClick={handleToggleVoiceGuardian}
-        style={{ 
-          fontSize: '0.75rem', 
-          background: voiceGuardianActive ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255, 255, 255, 0.03)', 
-          padding: '0.8rem 1rem', 
-          borderRadius: '16px', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between',
-          border: voiceGuardianActive ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(255, 255, 255, 0.05)',
-          cursor: 'pointer',
-          transition: 'all 0.3s ease'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ 
-            width: '32px', height: '32px', borderRadius: '10px', 
-            background: voiceGuardianActive ? '#3b82f6' : 'rgba(255,255,255,0.05)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: voiceGuardianActive ? 'white' : 'var(--text-secondary)'
-          }}>
-            {voiceGuardianActive ? <Mic size={16} /> : <MicOff size={16} />}
+      {/* Voice Guardian & Audio Sentinel */}
+      <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div 
+          onClick={handleToggleVoiceGuardian}
+          style={{ 
+            flex: 1,
+            fontSize: '0.75rem', 
+            background: voiceGuardianActive ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255, 255, 255, 0.03)', 
+            padding: '1rem', 
+            borderRadius: '20px', 
+            display: 'flex', 
+            flexDirection: 'column',
+            gap: '0.5rem',
+            border: voiceGuardianActive ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(255, 255, 255, 0.05)',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ 
+              width: '32px', height: '32px', borderRadius: '10px', 
+              background: voiceGuardianActive ? '#3b82f6' : 'rgba(255,255,255,0.05)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: voiceGuardianActive ? 'white' : 'var(--text-secondary)'
+            }}>
+              {voiceGuardianActive ? <Mic size={16} /> : <MicOff size={16} />}
+            </div>
+            <div style={{ 
+              width: '32px', height: '18px', borderRadius: '20px', 
+              background: voiceGuardianActive ? '#3b82f6' : 'rgba(255,255,255,0.1)',
+              position: 'relative'
+            }}>
+              <div style={{ 
+                width: '12px', height: '12px', borderRadius: '50%', background: 'white',
+                position: 'absolute', top: '3px', left: voiceGuardianActive ? '17px' : '3px',
+                transition: 'all 0.3s ease'
+              }} />
+            </div>
           </div>
           <div>
-            <div style={{ fontWeight: 700, color: voiceGuardianActive ? '#3b82f6' : 'white' }}>
-              {t.voiceGuardian}
-            </div>
-            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
-              {voiceGuardianActive ? t.listeningToKeywords : t.voiceGuardianDesc}
-            </div>
+            <div style={{ fontWeight: 800, color: voiceGuardianActive ? 'white' : 'var(--text-secondary)' }}>{t.voiceGuardian || 'Voice SOS'}</div>
+            <div style={{ fontSize: '0.6rem', opacity: 0.6 }}>{voiceGuardianActive ? (isCz ? 'Aktivně naslouchá' : 'Listening...') : (isCz ? 'Hlasové SOS' : 'Voice activation')}</div>
           </div>
         </div>
-        <div style={{ 
-          width: '36px', height: '20px', borderRadius: '20px', 
-          background: voiceGuardianActive ? '#3b82f6' : 'rgba(255,255,255,0.1)',
-          position: 'relative', transition: 'all 0.3s ease'
-        }}>
-           <div style={{ 
-             width: '14px', height: '14px', borderRadius: '50%', background: 'white',
-             position: 'absolute', top: '3px', left: voiceGuardianActive ? '19px' : '3px',
-             transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-           }} />
+
+        <div 
+          onClick={() => setAudioSentinelActive(!audioSentinelActive)}
+          style={{ 
+            flex: 1,
+            fontSize: '0.75rem', 
+            background: audioSentinelActive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 255, 255, 0.03)', 
+            padding: '1rem', 
+            borderRadius: '20px', 
+            display: 'flex', 
+            flexDirection: 'column',
+            gap: '0.5rem',
+            border: audioSentinelActive ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255, 255, 255, 0.05)',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ 
+              width: '32px', height: '32px', borderRadius: '10px', 
+              background: audioSentinelActive ? '#10b981' : 'rgba(255,255,255,0.05)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: audioSentinelActive ? 'white' : 'var(--text-secondary)'
+            }}>
+              <Volume2 size={16} />
+            </div>
+            <div style={{ 
+              width: '32px', height: '18px', borderRadius: '20px', 
+              background: audioSentinelActive ? '#10b981' : 'rgba(255,255,255,0.1)',
+              position: 'relative'
+            }}>
+              <div style={{ 
+                width: '12px', height: '12px', borderRadius: '50%', background: 'white',
+                position: 'absolute', top: '3px', left: audioSentinelActive ? '17px' : '3px',
+                transition: 'all 0.3s ease'
+              }} />
+            </div>
+          </div>
+          <div>
+            <div style={{ fontWeight: 800, color: audioSentinelActive ? 'white' : 'var(--text-secondary)' }}>Sentinel</div>
+            <div style={{ fontSize: '0.6rem', opacity: 0.6 }}>{audioSentinelActive ? (isCz ? 'Audio dohled zapnut' : 'Audio pulse on') : (isCz ? 'Tichý dohled' : 'Silent monitor')}</div>
+          </div>
         </div>
       </div>
 
+      {voiceGuardianActive && (
+        <div style={{ 
+          background: 'rgba(59, 130, 246, 0.05)', 
+          padding: '0.75rem', 
+          borderRadius: '12px', 
+          fontSize: '0.65rem',
+          border: '1px solid rgba(59, 130, 246, 0.1)'
+        }}>
+          <div style={{ fontWeight: 800, color: '#3b82f6', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            {isCz ? 'Aktivní klíčová slova' : 'Active Keywords'}
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+            {['HELP', 'POMOC', 'SOS', 'STOP', 'POLICIE'].map(k => (
+              <span key={k} style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '2px 6px', borderRadius: '4px', color: 'white', fontWeight: 600 }}>{k}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {!sosActive && (
         <div 
-          onClick={() => triggerGhostCall(20)}
+          onClick={() => {
+            const scenarios = [
+              { name: isCz ? 'Agency HQ' : 'Agency HQ', icon: Shield },
+              { name: isCz ? 'Máma' : 'Mom', icon: UserCheck },
+              { name: isCz ? 'Taxi Dispečink' : 'Taxi Dispatch', icon: Phone }
+            ];
+            const sc = scenarios[Math.floor(Math.random() * scenarios.length)];
+            triggerGhostCall(10);
+            showToast(isCz ? `Simulace hovoru: ${sc.name}` : `Simulating call from: ${sc.name}`, 'info');
+          }}
           style={{ 
-            marginTop: '1.5rem',
+            marginTop: '1rem',
             background: ghostCallScheduledAt ? 'rgba(245, 158, 11, 0.1)' : 'rgba(255,255,255,0.03)', 
             padding: '1rem', 
             borderRadius: '16px', 

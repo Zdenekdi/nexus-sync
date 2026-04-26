@@ -28,12 +28,52 @@ const InboxView = () => {
 
   const [clientCrmData, setClientCrmData] = React.useState(null);
   const [isCrmLoading, setIsCrmLoading] = React.useState(false);
+  const [aiSuggestions, setAiSuggestions] = React.useState([]);
+  const [isAiLoading, setIsAiLoading] = React.useState(false);
+
+  const loadAiSuggestions = React.useCallback(async () => {
+    if (!selectedChat) return;
+    setIsAiLoading(true);
+    try {
+      const lastInbound = [...chatMessages].reverse().find(m => m.from === selectedChat.from);
+      const text = lastInbound?.text || "";
+
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api'}/ai/suggest-reply`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${nexus.token}`
+        },
+        body: JSON.stringify({ 
+          messageText: text,
+          chatId: selectedChatId,
+          profileId: activeProfileId,
+          lang
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setAiSuggestions(data.suggestions || []);
+      }
+    } catch (err) {
+      console.error('AI Suggestion error:', err);
+    } finally {
+      setIsAiLoading(false);
+    }
+  }, [selectedChat, chatMessages, selectedChatId, activeProfileId, lang, nexus.token]);
 
   React.useEffect(() => {
     if (selectedChat?.from && activeContextTab === 'crm') {
       loadClientCrm();
     }
   }, [selectedChat?.from, activeContextTab]);
+
+  React.useEffect(() => {
+    if (selectedChatId && inlinePanelTab === 'ai') {
+      loadAiSuggestions();
+    }
+  }, [selectedChatId, inlinePanelTab, loadAiSuggestions]);
 
   const loadClientCrm = async () => {
     setIsCrmLoading(true);
@@ -306,7 +346,12 @@ const InboxView = () => {
                 </div>
                 <div style={{ borderTop: '1px solid var(--card-border)', background: 'var(--bg-color)', paddingBottom: isMobile ? '90px' : '0', display: 'flex', flexDirection: 'column' }}>
                    <div style={{ display: 'flex', gap: '0.4rem', padding: '0.6rem 1rem', borderBottom: '1px solid rgba(255,255,255,0.04)', overflowX: 'auto', scrollbarWidth: 'none' }}>
-                      {[{ id: 'notes', icon: StickyNote, label: lang === 'cz' ? 'Poznámky' : 'Notes', color: '#f59e0b' }, { id: 'translator', icon: Languages, label: lang === 'cz' ? 'Překladač' : 'Translator', color: '#3b82f6' }, { id: 'responses', icon: Zap, label: lang === 'cz' ? 'Odpovědi' : 'Replies', color: '#10b981' }].map(btn => (
+                      {[
+                         { id: 'ai', icon: Sparkles, label: lang === 'cz' ? 'AI Návrhy' : 'AI Smart', color: '#a78bfa' },
+                         { id: 'notes', icon: StickyNote, label: lang === 'cz' ? 'Poznámky' : 'Notes', color: '#f59e0b' }, 
+                         { id: 'translator', icon: Languages, label: lang === 'cz' ? 'Překladač' : 'Translator', color: '#3b82f6' }, 
+                         { id: 'responses', icon: Zap, label: lang === 'cz' ? 'Odpovědi' : 'Replies', color: '#10b981' }
+                       ].map(btn => (
                         <button key={btn.id} onClick={() => setInlinePanelTab(prev => prev === btn.id ? null : btn.id)} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.35rem 0.65rem', background: inlinePanelTab === btn.id ? `${btn.color}22` : 'rgba(255,255,255,0.03)', border: `1px solid ${inlinePanelTab === btn.id ? btn.color : 'var(--card-border)'}`, borderRadius: '10px', color: inlinePanelTab === btn.id ? btn.color : 'var(--text-secondary)', fontSize: '0.68rem', whiteSpace: 'nowrap', fontWeight: '800' }}>
                           <btn.icon size={12} /> {btn.label}
                         </button>
@@ -314,16 +359,51 @@ const InboxView = () => {
                    </div>
                    
                    {inlinePanelTab && (
-                     <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.01)' }}>
-                        {inlinePanelTab === 'notes' && (
-                          <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <textarea value={internalNote} onChange={e => setInternalNote(e.target.value)} placeholder={lang === 'cz' ? 'Napište poznámku...' : 'Write note...'} style={{ flex: 1, minHeight: '60px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '10px', padding: '0.5rem', color: '#f59e0b', fontSize: '0.8rem', resize: 'none' }} />
-                            <button onClick={handleSaveNote} style={{ background: '#f59e0b', color: 'black', border: 'none', borderRadius: '8px', padding: '0 0.75rem', fontWeight: '900', fontSize: '0.7rem' }}>ULOŽIT</button>
-                          </div>
-                        )}
-                        {/* Translator and Replies integration similarly... */}
-                     </div>
-                   )}
+                      <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.01)' }}>
+                         {inlinePanelTab === 'ai' && (
+                           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                               <span style={{ fontSize: '0.65rem', fontWeight: '800', color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                 {lang === 'cz' ? 'AI CHYTRÉ NÁVRHY' : 'AI SMART SUGGESTIONS'}
+                               </span>
+                               <button onClick={loadAiSuggestions} style={{ background: 'none', border: 'none', color: '#a78bfa', cursor: 'pointer', padding: '2px' }}>
+                                 <RefreshCw size={12} className={isAiLoading ? 'animate-spin' : ''} />
+                               </button>
+                             </div>
+                             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                               {isAiLoading ? (
+                                 <div style={{ padding: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontStyle: 'italic' }}>
+                                   {lang === 'cz' ? 'Generuji odpovědi...' : 'Generating suggestions...'}
+                                 </div>
+                               ) : aiSuggestions.length > 0 ? (
+                                 aiSuggestions.map((s, i) => (
+                                   <button 
+                                     key={i} 
+                                     onClick={() => setMessageValue(s)}
+                                     style={{ background: 'rgba(167, 139, 250, 0.08)', border: '1px solid rgba(167, 139, 250, 0.2)', padding: '0.5rem 0.75rem', borderRadius: '10px', color: 'white', fontSize: '0.75rem', textAlign: 'left', cursor: 'pointer', maxWidth: '100%', transition: 'all 0.2s' }}
+                                     onMouseEnter={e => e.currentTarget.style.background = 'rgba(167, 139, 250, 0.15)'}
+                                     onMouseLeave={e => e.currentTarget.style.background = 'rgba(167, 139, 250, 0.08)'}
+                                   >
+                                     {s}
+                                   </button>
+                                 ))
+                               ) : (
+                                 <div style={{ padding: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
+                                   {lang === 'cz' ? 'Žádné návrhy k dispozici.' : 'No suggestions available.'}
+                                 </div>
+                               )}
+                             </div>
+                           </div>
+                         )}
+                         {inlinePanelTab === 'notes' && (
+                           <div style={{ display: 'flex', gap: '0.5rem' }}>
+                             <textarea value={internalNote} onChange={e => setInternalNote(e.target.value)} placeholder={lang === 'cz' ? 'Napište poznámku...' : 'Write note...'} style={{ flex: 1, minHeight: '60px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '10px', padding: '0.5rem', color: '#f59e0b', fontSize: '0.8rem', resize: 'none' }} />
+                             <button onClick={handleSaveNote} style={{ background: '#f59e0b', color: 'black', border: 'none', borderRadius: '8px', padding: '0 0.75rem', fontWeight: '900', fontSize: '0.7rem' }}>ULOŽIT</button>
+                           </div>
+                         )}
+                         {/* Translator and Replies integration similarly... */}
+                      </div>
+                    )}
 
                    <div style={{ padding: '0.75rem 1rem', display: 'flex', gap: '0.75rem' }}>
                       <input 
