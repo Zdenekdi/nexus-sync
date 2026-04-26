@@ -79,7 +79,8 @@ function buildUserResponse(user) {
     isAppOwner: user.role.isAppOwner,
     agencyId: user.agencyId,
     agencyName: user.agency?.name || 'System',
-    profileId: user.assignedProfiles?.[0]?.id || null
+    profileId: user.assignedProfiles?.[0]?.id || null,
+    hasPin: !!user.securityPin
   };
 }
 
@@ -416,3 +417,46 @@ exports.getRelayToken = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+exports.setSecurityPin = async (req, res) => {
+  try {
+    const { pin, password } = req.body;
+    if (!pin || pin.length < 4) return res.status(400).json({ message: 'PIN must be at least 4 digits' });
+    
+    const user = await prisma.user.findUnique({ where: { id: req.user.userId } });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    // Verify password for extra security when changing PIN
+    if (!(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ message: 'Invalid password' });
+    }
+    
+    const hashedPin = await bcrypt.hash(pin, 10);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { securityPin: hashedPin }
+    });
+    
+    logAction(user.agencyId, user.id, 'SECURITY_PIN_UPDATE', 'User updated security PIN');
+    res.json({ message: 'Security PIN updated successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.verifySecurityPin = async (req, res) => {
+  try {
+    const { pin } = req.body;
+    const user = await prisma.user.findUnique({ where: { id: req.user.userId } });
+    if (!user || !user.securityPin) return res.status(400).json({ message: 'PIN not set' });
+    
+    const isValid = await bcrypt.compare(pin, user.securityPin);
+    if (!isValid) return res.status(401).json({ message: 'Invalid PIN' });
+    
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { useNexus } from '../context/NexusContext';
 import {
   Package, MapPin, AlertTriangle, Plus, Search, Filter,
   ChevronDown, CheckCircle2, XCircle, RefreshCw, MoreVertical,
@@ -7,7 +8,8 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
 
-const InventoryView = ({ t, token }) => {
+const InventoryView = () => {
+  const { t, token } = useNexus();
   const isMobile = window.innerWidth < 768;
 
   // ── State ──────────────────────────────────────────────────────────────────

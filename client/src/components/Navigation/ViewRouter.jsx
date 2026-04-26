@@ -69,6 +69,9 @@ const ViewRouter = () => {
       case 'analytics':
       case 'crm':
       case 'activity':
+      case 'inventory':
+      case 'audit-logs':
+      case 'payouts':
       case 'settings':
         return <AgencyUnit />;
 
@@ -76,7 +79,6 @@ const ViewRouter = () => {
       case 'agencies':
       case 'infra':
       case 'infrastructure':
-      case 'inventory':
       case 'features':
       case 'plans':
       case 'plans-owner':

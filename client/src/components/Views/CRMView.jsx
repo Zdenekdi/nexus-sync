@@ -4,11 +4,12 @@ import {
   MessageSquare, Star, Clock, AlertTriangle, ChevronRight,
   MoreVertical, Tag as TagIcon
 } from 'lucide-react';
-import api from '../../services/api';
 import { useNexus } from '../../context/NexusContext';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
+
 const CRMView = () => {
-  const { t } = useNexus();
+  const { t, token } = useNexus();
   const [clients, setClients] = useState([]);
   const [stats, setStats] = useState({ totalClients: 0, vipClients: 0, totalRevenue: 0 });
   const [loading, setLoading] = useState(true);
@@ -22,12 +23,18 @@ const CRMView = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
+      const headers = { 'Authorization': `Bearer ${token}` };
       const [clientsRes, statsRes] = await Promise.all([
-        api.get('/clients'),
-        api.get('/clients/stats')
+        fetch(`${API_BASE}/clients`, { headers }),
+        fetch(`${API_BASE}/clients/stats`, { headers })
       ]);
-      setClients(clientsRes.data);
-      setStats(statsRes.data);
+      
+      if (clientsRes.ok && statsRes.ok) {
+        const clientsData = await clientsRes.json();
+        const statsData = await statsRes.json();
+        setClients(clientsData);
+        setStats(statsData);
+      }
     } catch (err) {
       console.error('Failed to fetch CRM data', err);
     } finally {

@@ -14,5 +14,7 @@ router.post('/reset-password-request', validate(resetPasswordRequest), authContr
 router.post('/reset-password', authController.resetPasswordConfirm);
 router.get('/me', authMiddleware, authController.getProfile);
 router.get('/relay-token', authMiddleware, authController.getRelayToken);
+router.post('/security-pin', authMiddleware, authController.setSecurityPin);
+router.post('/verify-pin', authMiddleware, authController.verifySecurityPin);
 
 module.exports = router;

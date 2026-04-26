@@ -170,6 +170,7 @@ const Sidebar = () => {
                       { id: 'calendar', icon: Calendar, label: t('schedule'), perm: 'calendar' },
                       { id: 'safety', icon: Shield, label: t('safety'), perm: 'safety' },
                       { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
+                      { id: 'inventory', icon: Package, label: t('inventory') || 'Sklad', perm: 'inventory' },
                       { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles' },
                       { id: 'device-setup', icon: Smartphone, label: t('deviceSetup'), perm: 'device_setup' },
                       { id: 'relay', icon: Radio, label: t('relay'), perm: 'relay' },
@@ -178,6 +179,9 @@ const Sidebar = () => {
                       { id: 'analytics', icon: BarChart3, label: t('analytics'), perm: 'analytics' },
                       { id: 'crm', icon: UserCheck, label: t('crm') || 'CRM', perm: 'analytics' },
                       { id: 'activity', icon: Activity, label: t('activity'), perm: 'analytics' },
+                      { id: 'referrals', icon: Gift, label: t('referrals') || 'Partner Program', perm: 'messaging' },
+                      { id: 'audit-logs', icon: FileSearch, label: t('auditLogs') || 'Auditní Logy', perm: 'audit_logs' },
+                      { id: 'payouts', icon: Wallet, label: t('payouts') || 'Výplaty', perm: 'analytics' },
                       { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
                     ].filter(item => !item.perm || isAllowed(item.perm)).map(item => (
                       <TooltipItem key={item.id} label={capitalize(item.label)}>

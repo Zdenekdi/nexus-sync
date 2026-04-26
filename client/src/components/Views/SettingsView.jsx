@@ -85,6 +85,74 @@ const SettingsView = () => {
 
         <div className="settings-section">
           <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Lock size={20} color="#a78bfa" /> {lang === 'cz' ? 'Bezpečnostní PIN' : 'Security PIN'}
+          </h3>
+          <div className="glass-card" style={{ padding: '1.5rem' }}>
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
+                  {lang === 'cz' 
+                    ? 'Nastavte si 4-místný PIN pro ochranu citlivých operací (mazání, finanční reporty).' 
+                    : 'Set a 4-digit PIN to protect sensitive operations (deletion, financial reports).'}
+                </p>
+                
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                   <div style={{ flex: 1, minWidth: '200px' }}>
+                      <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>NOVÝ PIN (4 ČÍSLICE)</label>
+                      <input 
+                        type="password" 
+                        maxLength={4} 
+                        placeholder="****"
+                        id="new-security-pin"
+                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.75rem', borderRadius: '10px', color: 'white', letterSpacing: '0.5em', textAlign: 'center', fontSize: '1.2rem', fontWeight: '900' }} 
+                      />
+                   </div>
+                   <div style={{ flex: 1, minWidth: '200px' }}>
+                      <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>POTVRZENÍ HESLEM</label>
+                      <input 
+                        type="password" 
+                        placeholder="Vaše heslo k účtu"
+                        id="pin-auth-password"
+                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.75rem', borderRadius: '10px', color: 'white' }} 
+                      />
+                   </div>
+                </div>
+                
+                <button 
+                  onClick={async () => {
+                    const pin = document.getElementById('new-security-pin').value;
+                    const password = document.getElementById('pin-auth-password').value;
+                    if (!pin || pin.length < 4 || !password) {
+                      return showToast(lang === 'cz' ? 'Vyplňte 4-místný PIN a heslo.' : 'Enter 4-digit PIN and password.', 'error');
+                    }
+                    try {
+                      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api'}/auth/security-pin`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${nexus.token}` },
+                        body: JSON.stringify({ pin, password })
+                      });
+                      if (res.ok) {
+                        showToast(lang === 'cz' ? 'PIN úspěšně nastaven.' : 'PIN set successfully.', 'success');
+                        document.getElementById('new-security-pin').value = '';
+                        document.getElementById('pin-auth-password').value = '';
+                      } else {
+                        const data = await res.json();
+                        showToast(data.message || 'Error', 'error');
+                      }
+                    } catch (e) {
+                      showToast('Network error', 'error');
+                    }
+                  }}
+                  className="action-btn" 
+                  style={{ width: 'fit-content', padding: '0.75rem 2rem', background: '#a78bfa', marginTop: '0.5rem' }}
+                >
+                  {lang === 'cz' ? 'ULOŽIT PIN' : 'SAVE PIN'}
+                </button>
+             </div>
+          </div>
+        </div>
+
+        <div className="settings-section">
+          <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Building2 size={20} color="var(--accent-color)" /> 
             {activeRole === 'App Owner' ? 'Agency Information' : t('agencyInsight')}: {activeClient?.name || t('global')}
           </h3>
