@@ -226,11 +226,6 @@ const LandingPage = () => {
           icon: <BarChart3 size={18} />,
           title: "Pro Manažery", 
           desc: "Absolutní kontrola nad týmem, real-time analytika a automatické nouzové alerty. Škálování bez stresu z chaosu v datech." 
-        },
-        {
-          icon: <Settings size={18} />,
-          title: "Pro Majitele (Vlastník aplikace)",
-          desc: "Správa neomezeného množství agentur, konfigurace předplatných plánů, řízení globálních oprávnění a monitoring serverové infrastruktury na jednom místě."
         }
       ],
       platformFeatures: [
@@ -316,11 +311,6 @@ const LandingPage = () => {
           icon: <BarChart3 size={18} />,
           title: "For Managers", 
           desc: "Absolute team oversight, real-time analytics, and automated emergency alerts. Scale without the stress of data chaos." 
-        },
-        {
-          icon: <Settings size={18} />,
-          title: "For App Owners",
-          desc: "Manage unlimited agencies, configure subscription plans, control global permissions, and monitor server infrastructure — all from one dashboard."
         }
       ],
       platformTitle: "Complete Platform in One Place",
