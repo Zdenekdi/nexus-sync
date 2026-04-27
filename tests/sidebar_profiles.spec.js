@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { TEST_USERS } from './helpers/api.js';
 
 async function loginToApp(page, email, password) {
   console.log(`🔑 Logging in as ${email}...`);
@@ -51,7 +52,7 @@ test.describe('Sidebar Assigned Profiles Visibility', () => {
   });
 
   test('App Owner — SHOULD NOT see profile section', async ({ page }) => {
-    await loginToApp(page, 'dias.zd@gmail.com', 'Nexus2024!');
+    await loginToApp(page, TEST_USERS.appOwner.email, TEST_USERS.appOwner.password);
     await expect(page.getByTestId('my-girls-section')).not.toBeVisible({ timeout: 10000 });
   });
 });

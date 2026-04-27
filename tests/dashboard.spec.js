@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { TEST_USERS } from './helpers/api.js';
 
 async function loginToApp(page, email, password) {
   console.log(`🔑 Logging in as ${email}...`);
@@ -22,7 +23,7 @@ async function loginToApp(page, email, password) {
 }
 
 test.describe('App Owner Dashboard', () => {
-  test.beforeEach(async ({ page }) => { await loginToApp(page, 'dias.zd@gmail.com', 'Nexus2024!'); });
+  test.beforeEach(async ({ page }) => { await loginToApp(page, TEST_USERS.appOwner.email, TEST_USERS.appOwner.password); });
   test('shows system management', async ({ page }) => {
     await expect(page.getByTestId('nav-link-agencies')).toBeVisible({ timeout: 15000 });
   });
