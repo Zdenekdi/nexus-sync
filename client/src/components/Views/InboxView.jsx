@@ -5,7 +5,7 @@ import {
   Signal, MoreVertical, StickyNote, Languages, Sparkles, Loader2, RefreshCw, UserCheck
 } from 'lucide-react';
 
-import { useNexus } from '../../context/NexusContextCore';
+import { useNexus } from '../../context/NexusContext';
 import PremiumSelector from '../UI/PremiumSelector';
 
 const InboxView = () => {

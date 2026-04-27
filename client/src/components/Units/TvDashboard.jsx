@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Shield, Activity, Battery, MapPin, AlertTriangle, Monitor, Volume2 } from 'lucide-react';
-import { useNexus } from '../../context/NexusContextCore';
+import { useNexus } from '../../context/NexusContext';
 
 const TvDashboard = () => {
   const { 

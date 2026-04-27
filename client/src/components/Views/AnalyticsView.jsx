@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { DollarSign, Calendar, MessageSquare, TrendingUp, Users, Activity, Lock } from 'lucide-react';
-import { useNexus } from '../../context/NexusContextCore';
+import { useNexus } from '../../context/NexusContext';
 import PinModal from '../Modals/PinModal';
 
 const AnalyticsView = () => {

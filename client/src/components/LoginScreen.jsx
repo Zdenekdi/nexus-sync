@@ -1,5 +1,5 @@
 import React, { useState, useEffect, memo, useMemo, useCallback } from 'react';
-import { useNexus } from '../context/NexusContextCore';
+import { useNexus } from '../context/NexusContext';
 import { 
   Lock, Mail, ArrowRight, Loader2, 
   Globe, Zap, CheckCircle2, User, Building2, KeyRound, Copy, Check,

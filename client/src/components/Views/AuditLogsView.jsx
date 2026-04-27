@@ -4,7 +4,7 @@ import {
   Activity, AlertTriangle, RefreshCw, ChevronLeft, 
   ChevronRight, Info, Eye
 } from 'lucide-react';
-import { useNexus } from '../../context/NexusContextCore';
+import { useNexus } from '../../context/NexusContext';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
 
