@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { useNexus } from '../context/NexusContext';
+import { useNexus } from '../context/ContextHook';
 
 const STORAGE_KEY = 'nexus_onboarding_seen';
 

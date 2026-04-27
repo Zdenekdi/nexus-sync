@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Shield, Lock, Globe, Building2, Users, Package as PackageIcon, Activity, MessageSquare, Save, RefreshCw, AlertCircle } from 'lucide-react';
 
-import { useNexus } from '../context/NexusContext';
+import { useNexus } from '../context/ContextHook';
 
 const PermissionsDashboard = ({ agencyId = null, onUpdate = null }) => {
   const nexus = useNexus();

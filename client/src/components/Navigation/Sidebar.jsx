@@ -5,7 +5,7 @@ import {
   Shield, Building2, HardDrive, CreditCard, Zap, UserCheck,
   LogOut, Menu, X, Circle, Package as PackageIcon, Gift, Wallet
 } from 'lucide-react';
-import { useNexus } from '../../context/NexusContext';
+import { useNexus } from '../../context/ContextHook';
 
 const TooltipItem = ({ label, children, isMobile, isSidebarCollapsed }) => {
   if (isMobile) return <>{children}</>;

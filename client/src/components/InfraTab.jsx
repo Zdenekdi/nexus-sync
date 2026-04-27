@@ -21,7 +21,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 
-import { useNexus } from '../context/NexusContext';
+import { useNexus } from '../context/ContextHook';
 
 function InfraTab() {
   const nexus = useNexus();
