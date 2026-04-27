@@ -20,7 +20,7 @@ export default defineConfig({
   fullyParallel: true,    // Parallelize tests for speed
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 2 : undefined, // Use 2 workers in CI to balance speed and DB load
+  workers: 1, // Reverted to 1 worker to avoid RBAC race conditions on live production DB
   timeout: 45_000,        // Reduce timeout to fail faster
   reporter: process.env.CI ? 'list' : 'html',
 
