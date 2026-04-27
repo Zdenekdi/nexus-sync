@@ -47,15 +47,10 @@ export default defineConfig({
    * webServer is disabled by default since we test against the LIVE frontend.
    * If you ever want to test locally again, you can uncomment this block.
    */
-  /*
   webServer: {
-    command: 'npm run dev:client',
+    command: 'cd client && npx vite',
     url: 'http://localhost:5173',
-    reuseExistingServer: true,
-    timeout: 60_000,
-    cwd: '/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub',
-    stdout: 'ignore',
-    stderr: 'pipe',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
   },
-  */
 });
