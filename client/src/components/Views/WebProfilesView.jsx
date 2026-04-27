@@ -4,7 +4,7 @@ import {
   ChevronDown, Image, FileEdit, RefreshCw, Check, X, AlertTriangle 
 } from 'lucide-react';
 
-import { useNexus } from '../../context/NexusContext';
+import { useNexus } from '../../context/NexusContextCore';
 import PremiumSelector from '../UI/PremiumSelector';
 
 const WebProfilesView = () => {

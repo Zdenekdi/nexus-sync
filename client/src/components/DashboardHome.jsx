@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DollarSign, Building2, Zap, Activity, TrendingUp, Users, Server, ShieldCheck, AlertTriangle, Calendar, Loader2, MessageSquare, Copy, X } from 'lucide-react';
 import { RevenueLineChart, ConversionDonutChart, MiniSparkline } from './AnalyticsCharts';
 import { useVultr } from '../hooks/useVultr';
-import { useNexus } from '../context/NexusContext';
+import { useNexus } from '../context/NexusContextCore';
 import Skeleton from './UI/Skeleton';
 import SafetyControlCard from './Safety/SafetyControlCard';
 

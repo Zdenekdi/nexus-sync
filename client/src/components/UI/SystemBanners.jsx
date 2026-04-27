@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNexus } from '../../context/NexusContext';
+import { useNexus } from '../../context/NexusContextCore';
 
 /**
  * Component to handle global UI banners such as Maintenance Mode and Global Announcements.

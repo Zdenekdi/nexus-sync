@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useNexus } from '../context/NexusContext';
+import { useNexus } from '../context/NexusContextCore';
 import {
   Package as PackageIcon, MapPin, AlertTriangle, Plus, Search, Filter,
   ChevronDown, CheckCircle2, XCircle, RefreshCw, MoreVertical,

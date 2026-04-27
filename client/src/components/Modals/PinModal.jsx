@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Shield, X, Check, AlertTriangle, Loader2 } from 'lucide-react';
-import { useNexus } from '../../context/NexusContext';
+import { useNexus } from '../../context/NexusContextCore';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
 

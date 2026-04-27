@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { ShieldAlert, History, Clock, MapPin, AlertTriangle, ChevronRight, Bell, BellOff } from 'lucide-react';
-import { useNexus } from '../../context/NexusContext';
+import { useNexus } from '../../context/NexusContextCore';
 
 const SOSPanel = () => {
   const { t, lang, API_BASE, token, showToast, socket, gpsHistory: _gpsHistory } = useNexus();

@@ -23,7 +23,7 @@ import IncomingCallScreen from './sip/IncomingCallScreen';
 import ActiveCallScreen from './sip/ActiveCallScreen';
 import axios from 'axios';
 
-import { useNexus } from '../context/NexusContext';
+import { useNexus } from '../context/NexusContextCore';
 
 const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, requestRelayPermissions, processRelayOutbox, syncSmsHistory }) => {
   const nexus = useNexus();

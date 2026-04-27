@@ -67,6 +67,7 @@ async function main() {
     { id: 'op-02', email: 'mark@nexus.sync', name: 'Mark T.', password: 'password123', roleName: 'Agency Admin', agencyId: 'agency-01' },
     { id: 'op-03', email: 'sarah@nexus.sync', name: 'Sarah K.', password: 'password123', roleName: 'Operator', agencyId: 'agency-01' },
     { id: 'op-04', email: 'diana@nexus.sync', name: 'Diana B.', password: 'password123', roleName: 'Model', agencyId: 'agency-01' },
+    { id: 'op-05', email: 'dias.zd@gmail.com', name: 'Zdenek D.', password: 'password123', roleName: 'App Owner', agencyId: null },
     { id: 'op-06', email: 'owner@nexus.sync', name: 'App Owner', password: 'Nexus2024!', roleName: 'App Owner', agencyId: null },
   ];
 
