@@ -23,10 +23,10 @@ class ErrorBoundary extends React.Component {
           
           <div style={{ background: '#111', padding: '15px', borderRadius: '12px', textAlign: 'left', width: '100%', maxWidth: '600px', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '1.5rem' }}>
             <p style={{ color: '#ef4444', fontWeight: 'bold', marginBottom: '10px', fontSize: '0.9rem' }}>
-              {this.state.error?.toString()}
+              {this.state._err?.toString()}
             </p>
             <pre style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', whiteSpace: 'pre-wrap', maxHeight: '300px', overflow: 'auto' }}>
-              {this.state.error?.stack}
+              {this.state._err?.stack}
             </pre>
           </div>
 
