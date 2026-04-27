@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { TEST_USERS } from './helpers/api.js';
 
 async function loginToApp(page, email, password) {
   console.log(`🔑 Logging in as ${email}...`);
@@ -52,7 +53,7 @@ test.describe('Dashboard Discovery & Health Check', () => {
   test.slow();
 
   test('App Owner — Click All Links', async ({ page }) => {
-    await loginToApp(page, 'dias.zd@gmail.com', 'Nexus2024!');
+    await loginToApp(page, TEST_USERS.appOwner.email, TEST_USERS.appOwner.password);
     await verifyAllLinks(page, 'App Owner');
   });
 

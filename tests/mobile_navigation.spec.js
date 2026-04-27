@@ -1,15 +1,16 @@
 import { test, expect, devices } from '@playwright/test';
+import { TEST_USERS } from './helpers/api.js';
 
 test.use({ ...devices['Pixel 5'] });
 
 test.describe('Mobile Navigation Verification', () => {
   test('MobileBottomNav should render correctly for Senior Operator', async ({ page }) => {
     console.log('📱 Starting Mobile Verification (Pixel 5)...');
-    await page.goto('https://nexus-sync-8d50b.web.app/login');
+    await page.goto('/login');
     
     // Login flow
-    await page.getByTestId('login-email').fill('alice@nexus.sync');
-    await page.getByTestId('login-password').fill('password123');
+    await page.getByTestId('login-email').fill(TEST_USERS.manager.email);
+    await page.getByTestId('login-password').fill(TEST_USERS.manager.password);
     await page.getByTestId('login-submit').click();
     
     // Wait for dashboard
@@ -23,10 +24,10 @@ test.describe('Mobile Navigation Verification', () => {
   });
 
   test('MobileBottomNav should hide relay/calendar for App Owner', async ({ page }) => {
-    await page.goto('https://nexus-sync-8d50b.web.app/login');
+    await page.goto('/login');
     
-    await page.getByTestId('login-email').fill('dias.zd@gmail.com');
-    await page.getByTestId('login-password').fill('Nexus2024!');
+    await page.getByTestId('login-email').fill(TEST_USERS.appOwner.email);
+    await page.getByTestId('login-password').fill(TEST_USERS.appOwner.password);
     await page.getByTestId('login-submit').click();
     
     await expect(page.getByTestId('nav-mobile-dashboard')).toBeVisible({ timeout: 15000 });

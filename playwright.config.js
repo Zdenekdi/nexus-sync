@@ -17,12 +17,12 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './tests',
-  fullyParallel: false,   // Sequential — we have one production DB, avoid race conditions
+  fullyParallel: true,    // Parallelize tests for speed
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0,
-  workers: 1,
-  timeout: 60_000,
-  reporter: 'html',
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 2 : undefined, // Use 2 workers in CI to balance speed and DB load
+  timeout: 45_000,        // Reduce timeout to fail faster
+  reporter: process.env.CI ? 'list' : 'html',
 
   use: {
     baseURL: process.env.FRONTEND_URL || 'https://nexus-sync-8d50b.web.app',

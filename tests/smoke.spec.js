@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { TEST_USERS } from './helpers/api.js';
 
 async function doLogin(page, email, password) {
   console.log(`🔑 Logging in as ${email}...`);
@@ -34,7 +35,7 @@ test.describe('Nexus Hub Multi-Role Smoke', () => {
   test.slow(); // Mark tests as slow to allow for CI fluctuations
 
   test('Login & Dashboard — App Owner', async ({ page }) => {
-    await doLogin(page, 'dias.zd@gmail.com', 'Nexus2024!');
+    await doLogin(page, TEST_USERS.appOwner.email, TEST_USERS.appOwner.password);
     await expect(page.locator('nav').getByText(/agentury|agencies/i).first()).toBeVisible({ timeout: 30000 });
   });
 
