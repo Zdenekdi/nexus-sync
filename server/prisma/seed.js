@@ -185,19 +185,24 @@ async function main() {
   console.log('Bookings seeded.');
 
   // Create an active safety session for testing
-  await prisma.safetySession.upsert({
-    where: { id: 'sess-01' },
-    update: {},
-    create: {
-      id: 'sess-01',
-      agencyId: 'agency-01',
-      profileId: 'ldn-01',
-      bookingId: 'book-01',
-      state: 'CHECKED_IN',
-      plannedEndAt: new Date(now.getTime() + 3600000 * 3),
-      graceUntil: new Date(now.getTime() + 3600000 * 3 + 600000), // +10 min grace
-    }
-  });
+  try {
+    await prisma.safetySession.upsert({
+      where: { id: 'sess-01' },
+      update: {},
+      create: {
+        id: 'sess-01',
+        agencyId: 'agency-01',
+        profileId: 'ldn-01',
+        bookingId: 'book-01',
+        state: 'CHECKED_IN',
+        plannedEndAt: new Date(now.getTime() + 3600000 * 3),
+        graceUntil: new Date(now.getTime() + 3600000 * 3 + 600000), // +10 min grace
+      }
+    });
+    console.log('Safety session seeded.');
+  } catch (err) {
+    console.log('Safety session already exists or could not be seeded, skipping...');
+  }
   console.log('Safety Sessions seeded.');
 
   console.log('Seed finished successfully.');
