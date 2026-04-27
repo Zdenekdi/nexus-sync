@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { NexusContext, useNexus } from './NexusContextCore';
 import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
@@ -9,8 +10,6 @@ import { useSocket } from '../hooks/useSocket';
 import { initPushNotifications, removePushListeners } from '../services/pushService';
 import { TRANSLATIONS } from '../translations';
 import { API_BASE } from '../constants/config';
-
-import { NexusContext, useNexus } from './NexusContextCore';
 
 // Shared AudioContext to prevent exhaustion on mobile devices
 let sharedAudioCtx = null;
