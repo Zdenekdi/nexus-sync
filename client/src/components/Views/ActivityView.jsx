@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Shield, User, RefreshCw, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import axios from 'axios';
 
-import { useNexus } from '../../context/NexusContext';
+import { useNexus } from '../../context/NexusContextCore';
 
 const ACTION_COLORS = {
   LOGIN: '#3b82f6',

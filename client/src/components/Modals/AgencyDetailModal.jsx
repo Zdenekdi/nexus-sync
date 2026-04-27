@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { X, Shield, ShieldCheck, Copy, Edit2, Check } from 'lucide-react';
 import axios from 'axios';
-import { useNexus } from '../../context/NexusContext';
+import { useNexus } from '../../context/NexusContextCore';
 
 const CONTINENTS = {
   'Europe': ['United Kingdom', 'Czech Republic', 'Slovakia', 'Germany', 'Austria', 'France', 'Spain', 'Italy', 'Poland', 'Netherlands', 'Other'],

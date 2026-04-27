@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Shield, Plus, X, Phone, Search, Trash2, Filter } from 'lucide-react';
-import { useNexus } from '../../context/NexusContext';
+import { useNexus } from '../../context/NexusContextCore';
 
 const BlacklistPanel = () => {
   const { t, lang, API_BASE, token, showToast } = useNexus();

@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, useCallback } from 'react';
-import { useNexus } from '../../context/NexusContext';
+import { useNexus } from '../../context/NexusContextCore';
 
 const RelayMode = lazy(() => import('../RelayMode'));
 
