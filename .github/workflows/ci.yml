@@ -88,29 +88,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Full history needed for subtree split
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Push subtree to nexus-backend
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # Isolate server/ and push it to the backend repo
           git subtree split --prefix=server -b server-only
-          
-          # Use extraheader for authentication (more robust for private repos)
           git remote add backend https://github.com/Zdenekdi/nexus-backend.git
           git config --global http.https://github.com/.extraheader "AUTHORIZATION: basic $(echo -n x-access-token:${{ secrets.SYNC_BACKEND_TOKEN }} | base64)"
-          
           git push backend server-only:master --force
 
-  deploy:
-    name: Deploy to Production
+  deploy-backend:
+    name: Deploy Backend (SSH)
     runs-on: ubuntu-latest
-    needs: [test, build-client, sync-backend, e2e-tests]
+    needs: [sync-backend]
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
@@ -120,10 +114,33 @@ jobs:
           password: ${{ secrets.DEPLOY_PASSWORD }}
           script: |
             cd /root/nexus-backend
-            git checkout -- package-lock.json
             git pull origin master
             npm ci --production
             npx prisma generate
             pm2 restart nexus-backend-final
             sleep 3
             pm2 status nexus-backend-final | grep -q online && echo "Deploy OK" || exit 1
+
+  deploy-frontend:
+    name: Deploy Frontend (Firebase)
+    runs-on: ubuntu-latest
+    needs: [build-client, e2e-tests]
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
+      - name: Install & Build
+        run: |
+          cd client
+          npm ci
+          npm run build
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_NEXUS_SYNC_8D50B }}'
+          channelId: live
+          projectId: nexus-sync-8d50b
