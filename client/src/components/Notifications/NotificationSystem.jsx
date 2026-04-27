@@ -1,7 +1,7 @@
 import React from 'react';
 import { MessageSquare, X, MessageCircle } from 'lucide-react';
 
-import { useNexus } from '../../context/NexusContext';
+import { useNexus } from '../../context/ContextHook';
 
 const NotificationSystem = () => {
   const nexus = useNexus();

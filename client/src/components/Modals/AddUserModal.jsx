@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, UserPlus } from 'lucide-react';
 import axios from 'axios';
-import { useNexus } from '../../context/NexusContext';
+import { useNexus } from '../../context/ContextHook';
 
 const AddUserModal = ({ isOpen, onClose, t }) => {
   const { API_BASE, token, addUserModalAgencyId, showToast, initData } = useNexus();

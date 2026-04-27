@@ -14,7 +14,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { useNexus } from '../../context/NexusContext';
+import { useNexus } from '../../context/ContextHook';
 import { useOperatorSip } from '../../hooks/useOperatorSip';
 import { IncomingOperatorCall, ActiveOperatorCall } from './OperatorCallScreen';
 

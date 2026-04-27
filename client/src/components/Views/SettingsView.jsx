@@ -3,7 +3,7 @@ import {
   Activity, Building2, Smartphone, ShieldCheck, Lock 
 } from 'lucide-react';
 
-import { useNexus } from '../../context/NexusContext';
+import { useNexus } from '../../context/ContextHook';
 
 const SettingsView = () => {
   const nexus = useNexus();

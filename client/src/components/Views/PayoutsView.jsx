@@ -4,7 +4,7 @@ import {
   ArrowRight, FileText, User, RefreshCw,
   TrendingUp, Wallet
 } from 'lucide-react';
-import { useNexus } from '../../context/NexusContext';
+import { useNexus } from '../../context/ContextHook';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
 

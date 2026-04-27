@@ -1,21 +1,9 @@
-import React, { createContext, useContext, useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { NexusContext } from './ContextObject';
+import { useNexus } from './ContextHook';
 import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
-
-// -------------------------------------------------------------------------
-// CORE CONTEXT DEFINITION (Must be at the very top of the module)
-// -------------------------------------------------------------------------
-export const NexusContext = createContext(null);
-
-export const useNexus = () => {
-  const context = useContext(NexusContext);
-  if (!context) {
-    throw new Error('useNexus must be used within a NexusProvider');
-  }
-  return context;
-};
-
 import { useAuth } from '../hooks/useAuth';
 import { usePermissions } from '../hooks/usePermissions';
 import { useNexusData } from '../hooks/useNexusData';

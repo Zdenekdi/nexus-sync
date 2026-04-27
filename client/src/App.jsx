@@ -4,7 +4,7 @@ import {
   Shield, Users, Globe, Smartphone, FileSearch, BarChart3, 
   Activity, Settings, UserCheck 
 } from 'lucide-react';
-import { useNexus } from './context/NexusContext';
+import { useNexus } from './context/ContextHook';
 import GlobalAppStyles from './styles/GlobalAppStyles';
 import PremiumSelector from './components/UI/PremiumSelector';
 import ErrorBoundary from './ErrorBoundary';
