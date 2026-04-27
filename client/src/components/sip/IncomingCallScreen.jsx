@@ -23,14 +23,14 @@ export default function IncomingCallScreen({ caller, profileName, onAnswer, onRe
 
   const handleAnswer = async () => {
     if (rejectRef.current) return;
-    try { await NexusSip.answer(); } catch (e) { console.warn('[SIP] answer err', e); }
+    try { await NexusSip.answer(); } catch (_err) { console.warn('[SIP] answer _err', _err); }
     onAnswer?.();
   };
 
   const handleReject = async () => {
     if (rejectRef.current) return;
     rejectRef.current = true;
-    try { await NexusSip.reject(); } catch (e) { console.warn('[SIP] reject err', e); }
+    try { await NexusSip.reject(); } catch (_err) { console.warn('[SIP] reject _err', _err); }
     onReject?.();
   };
 

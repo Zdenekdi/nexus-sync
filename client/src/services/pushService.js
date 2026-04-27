@@ -24,13 +24,13 @@ export const initPushNotifications = async (apiBase, token, onNotification) => {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         registered = true;
-      } catch (err) {
-        console.error('[Push] Token registration failed:', err.message);
+      } catch (_err) {
+        console.error('[Push] Token registration failed:', _err.message);
       }
     });
 
-    PushNotifications.addListener('registrationError', (err) => {
-      console.error('[Push] Registration error:', err);
+    PushNotifications.addListener('registrationError', (_err) => {
+      console.error('[Push] Registration _err:', _err);
     });
 
     PushNotifications.addListener('pushNotificationReceived', (notification) => {
@@ -44,8 +44,8 @@ export const initPushNotifications = async (apiBase, token, onNotification) => {
         if (onNotification) onNotification(action.notification, true);
       }
     });
-  } catch (err) {
-    console.warn('[Push] Init failed (not native?):', err.message);
+  } catch (_err) {
+    console.warn('[Push] Init failed (not native?):', _err.message);
   }
 };
 
@@ -53,5 +53,7 @@ export const removePushListeners = async () => {
   try {
     await PushNotifications.removeAllListeners();
     registered = false;
-  } catch {}
+  } catch (_err) {
+    console.warn('[Push] Failed to remove listeners:', _err.message);
+  }
 };

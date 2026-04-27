@@ -19,7 +19,7 @@ export class DatabaseBackedWhatsAppAdapter extends WhatsAppAdapter {
   async send(message) {
     try {
       // Uložit zprávu do DB
-      const dbMessage = await this.database.messages.createMessage({
+      const dbMessage = await this.databas_err.messages.createMessage({
         ...message,
         channel: 'whatsapp',
         status: 'queued'
@@ -29,16 +29,16 @@ export class DatabaseBackedWhatsAppAdapter extends WhatsAppAdapter {
       const result = await super.send(message);
 
       // Aktualizovat status v DB
-      await this.database.messages.updateMessage?.(dbMessage.id, {
+      await this.databas_err.messages.updateMessage?.(dbMessage.id, {
         status: 'sent',
         externalId: result.id
       });
 
       return result;
-    } catch (error) {
+    } catch (_err) {
       // Log chyby do DB
-      console.error('WhatsApp send error:', error);
-      throw error;
+      console.error('WhatsApp send _err:', _err);
+      throw _err;
     }
   }
 
@@ -57,7 +57,7 @@ export class DatabaseBackedWhatsAppAdapter extends WhatsAppAdapter {
 
   async markAsRead(messageId, conversationId) {
     // Aktualizovat v DB
-    return await this.database.messages.markAsRead(messageId, conversationId);
+    return await this.databas_err.messages.markAsRead(messageId, conversationId);
   }
 }
 
@@ -73,7 +73,7 @@ export class DatabaseBackedSMSAdapter extends SMSAdapter {
   async send(message) {
     try {
       // Uložit zprávu do DB
-      const dbMessage = await this.database.messages.createMessage({
+      const dbMessage = await this.databas_err.messages.createMessage({
         ...message,
         channel: 'sms',
         status: 'queued',
@@ -84,7 +84,7 @@ export class DatabaseBackedSMSAdapter extends SMSAdapter {
       const result = await super.send(message);
 
       // Aktualizovat status
-      await this.database.messages.updateMessage?.(dbMessage.id, {
+      await this.databas_err.messages.updateMessage?.(dbMessage.id, {
         status: 'sent',
         externalId: result.id,
         sentAt: new Date()
@@ -101,9 +101,9 @@ export class DatabaseBackedSMSAdapter extends SMSAdapter {
       }
 
       return result;
-    } catch (error) {
-      console.error('SMS send error:', error);
-      throw error;
+    } catch (_err) {
+      console.error('SMS send _err:', _err);
+      throw _err;
     }
   }
 
@@ -119,7 +119,7 @@ export class DatabaseBackedSMSAdapter extends SMSAdapter {
   }
 
   async markAsRead(messageId, conversationId) {
-    return await this.database.messages.markAsRead(messageId, conversationId);
+    return await this.databas_err.messages.markAsRead(messageId, conversationId);
   }
 }
 
@@ -155,7 +155,7 @@ export class DatabaseBackedWebChatAdapter extends WebChatAdapter {
   async send(message) {
     try {
       // Uložit zprávu do DB
-      const dbMessage = await this.database.messages.createMessage({
+      await this.databas_err.messages.createMessage({
         ...message,
         channel: 'webchat',
         conversationId: message.sessionId,
@@ -175,9 +175,9 @@ export class DatabaseBackedWebChatAdapter extends WebChatAdapter {
       }
 
       return result;
-    } catch (error) {
-      console.error('WebChat send error:', error);
-      throw error;
+    } catch (_err) {
+      console.error('WebChat send _err:', _err);
+      throw _err;
     }
   }
 
@@ -224,8 +224,8 @@ export class DatabaseBackedWebChatAdapter extends WebChatAdapter {
     const result = await super.markAsRead(messageId, sessionId);
 
     // Aktualizovat v DB
-    if (this.database.messages) {
-      await this.database.messages.markAsRead(messageId, sessionId);
+    if (this.databas_err.messages) {
+      await this.databas_err.messages.markAsRead(messageId, sessionId);
     }
 
     return result;

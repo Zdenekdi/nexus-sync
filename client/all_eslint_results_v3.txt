@@ -1,0 +1,133 @@
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/DashboardHome.jsx
+  17:17  error  'showToast' is assigned a value but never used. Allowed unused vars must match /^_[a-zA-Z]|^[A-Z]/u  no-unused-vars
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/PermissionsDashboard.jsx
+  17:6  warning  React Hook useEffect has a missing dependency: 'fetchRoles'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/PlansDashboard.jsx
+  26:6  warning  React Hook useEffect has a missing dependency: 'fetchPlans'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/QAView.jsx
+   82:6   warning  React Hook useMemo has a missing dependency: 'operators'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       react-hooks/exhaustive-deps
+  144:36  error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `operators`, but the source dependencies were [filterOperatorId, profiles, activeOperator, activeRole]. Inferred different dependency than source.
+
+  142 |
+  143 |   // Profiles for the selected operator (or all agency profiles)
+> 144 |   const operatorProfiles = useMemo(() => {
+      |                                    ^^^^^^^
+> 145 |     if (activeRole === 'Model') return (profiles || []).filter(p => p.userId === activeOperator?.id);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 146 |     
+      …
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 171 |     });
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 172 |   }, [filterOperatorId, profiles, activeOperator, activeRole]);
+      | ^^^^ Could not preserve existing manual memoization
+  173 |
+  174 |   // Handle history fetching when client selection changes
+  175 |   useEffect(() => {  react-hooks/preserve-manual-memoization
+  172:6   warning  React Hook useMemo has a missing dependency: 'operators'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       react-hooks/exhaustive-deps
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/Safety/BlacklistPanel.jsx
+  34:6  warning  React Hook useCallback has missing dependencies: 'lang' and 'showToast'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/Safety/SOSPanel.jsx
+  39:6   warning  React Hook useCallback has missing dependencies: 'lang' and 'showToast'. Either include them or remove the dependency array       react-hooks/exhaustive-deps
+  51:69  error    Empty block statement                                                                                                             no-empty
+  76:6   warning  React Hook useEffect has missing dependencies: 'fetchActive' and 'showToast'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/Units/TvDashboard.jsx
+  1:38  error  'useCallback' is defined but never used. Allowed unused vars must match /^_[a-zA-Z]|^[A-Z]/u  no-unused-vars
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/Views/CRMView.jsx
+  21:6  warning  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/Views/DeviceSetupView.jsx
+  67:27  error  Empty block statement  no-empty
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/Views/ReferralsView.jsx
+  28:56  error  'err' is not defined  no-undef
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/Views/RelayModeView.jsx
+  33:49  error  Empty block statement  no-empty
+  40:47  error  Empty block statement  no-empty
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/Views/WebProfilesView.jsx
+  47:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  45 |       // In a real app, we might want to fetch or decrypt these if needed, 
+  46 |       // but for security we usually keep them empty or show as placeholders.
+> 47 |       setAdsPowerId(''); 
+     |       ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  48 |       setPlatformUser('');
+  49 |       setPlatformPass('');
+  50 |       setProxyConfig('');  react-hooks/set-state-in-effect
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/sip/SipManager.jsx
+  48:66  error  'err' is not defined                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             no-undef
+  56:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  54 |   useEffect(() => {
+  55 |     if (!isLoggedIn && sipCredentials !== null) {
+> 56 |       setSipCredentials(null);
+     |       ^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  57 |       fetchedRef.current = false;
+  58 |     }
+  59 |   }, [isLoggedIn, sipCredentials]);  react-hooks/set-state-in-effect
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/hooks/useAuth.js
+   15:37  error    't' is defined but never used. Allowed unused args must match /^_[a-zA-Z]|^[A-Z]/u                                                                                                                                                                                                              no-unused-vars
+   99:6   warning  React Hook useCallback has missing dependencies: 'handleLogoutInternal', 'refreshTimerRef', and 'setShowLanding'. Either include them or remove the dependency array. If 'setShowLanding' changes too often, find the parent component that defines it and wrap that definition in useCallback  react-hooks/exhaustive-deps
+  195:9   warning  The 'handleLogin' function makes the dependencies of useMemo Hook (at line 381) change on every render. To fix this, wrap the definition of 'handleLogin' in its own useCallback() Hook                                                                                                         react-hooks/exhaustive-deps
+  277:6   warning  React Hook useCallback has a missing dependency: 'refreshTimerRef'. Either include it or remove the dependency array                                                                                                                                                                            react-hooks/exhaustive-deps
+  291:9   warning  The 'handleRegisterAgency' function makes the dependencies of useMemo Hook (at line 381) change on every render. Move it inside the useMemo callback. Alternatively, wrap the definition of 'handleRegisterAgency' in its own useCallback() Hook                                                react-hooks/exhaustive-deps
+  307:9   warning  The 'handleRegisterUser' function makes the dependencies of useMemo Hook (at line 381) change on every render. Move it inside the useMemo callback. Alternatively, wrap the definition of 'handleRegisterUser' in its own useCallback() Hook                                                    react-hooks/exhaustive-deps
+  323:9   warning  The 'handleResetRequest' function makes the dependencies of useMemo Hook (at line 381) change on every render. Move it inside the useMemo callback. Alternatively, wrap the definition of 'handleResetRequest' in its own useCallback() Hook                                                    react-hooks/exhaustive-deps
+  337:9   warning  The 'handleResetRequired' function makes the dependencies of useMemo Hook (at line 381) change on every render. Move it inside the useMemo callback. Alternatively, wrap the definition of 'handleResetRequired' in its own useCallback() Hook                                                  react-hooks/exhaustive-deps
+  342:9   warning  The 'handleResetComplete' function makes the dependencies of useMemo Hook (at line 381) change on every render. Move it inside the useMemo callback. Alternatively, wrap the definition of 'handleResetComplete' in its own useCallback() Hook                                                  react-hooks/exhaustive-deps
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/hooks/useChatLogic.js
+  146:6   warning  React Hook useCallback has an unnecessary dependency: 'parseChatId'. Either exclude it or remove the dependency array                                                                                                                            react-hooks/exhaustive-deps
+  162:6   warning  React Hook useCallback has missing dependencies: '_showToast' and 't'. Either include them or remove the dependency array. If '_showToast' changes too often, find the parent component that defines it and wrap that definition in useCallback  react-hooks/exhaustive-deps
+  220:11  warning  React Hook useCallback has a missing dependency: 'setMessages'. Either include it or remove the dependency array. If 'setMessages' changes too often, find the parent component that defines it and wrap that definition in useCallback          react-hooks/exhaustive-deps
+  239:6   warning  React Hook useCallback has missing dependencies: '_showToast' and 't'. Either include them or remove the dependency array. If '_showToast' changes too often, find the parent component that defines it and wrap that definition in useCallback  react-hooks/exhaustive-deps
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/hooks/useNexusData.js
+   52:23  error    'setClientNames' is assigned a value but never used. Allowed unused vars must match /^_[a-zA-Z]|^[A-Z]/u                       no-unused-vars
+  132:54  error    'err' is not defined                                                                                                           no-undef
+  175:17  error    Empty block statement                                                                                                          no-empty
+  255:17  error    Empty block statement                                                                                                          no-empty
+  290:43  error    'err' is not defined                                                                                                           no-undef
+  296:6   warning  React Hook useCallback has missing dependencies: 'hasHydrated' and 'lang'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  310:21  error    'err' is not defined                                                                                                           no-undef
+  359:37  error    'err' is not defined                                                                                                           no-undef
+  362:22  error    'err' is not defined                                                                                                           no-undef
+  378:49  error    'err' is not defined                                                                                                           no-undef
+  435:21  error    'err' is not defined                                                                                                           no-undef
+  464:21  error    'err' is not defined                                                                                                           no-undef
+  497:13  error    'oldEnd' is assigned a value but never used. Allowed unused vars must match /^_[a-zA-Z]|^[A-Z]/u                               no-unused-vars
+  540:45  error    'err' is not defined                                                                                                           no-undef
+  552:21  error    'err' is not defined                                                                                                           no-undef
+  565:53  error    'err' is not defined                                                                                                           no-undef
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/hooks/useOmnichannel/index.js
+  79:6  warning  React Hook useEffect has a missing dependency: 'channels'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+✖ 49 problems (27 errors, 22 warnings)
+

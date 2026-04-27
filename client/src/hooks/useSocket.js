@@ -94,8 +94,8 @@ export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall,
 
       socketRef.current.on('disconnect', () => {});
 
-      socketRef.current.on('connect_error', (error) => {
-        console.error('Socket connection error:', error);
+      socketRef.current.on('connect_error', (_err) => {
+        console.error('Socket connection _err:', _err);
       });
     }
 

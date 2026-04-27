@@ -37,17 +37,17 @@ export class AnalyticsService {
   getOperatorKPIs(operatorId, timeRange = { days: 7 }) {
     const cutoff = new Date(Date.now() - timeRange.days * 24 * 60 * 60 * 1000);
     
-    const operatorEvents = this.events.filter(e =>
-      e.operatorId === operatorId && new Date(e.timestamp) > cutoff
+    const operatorEvents = this.events.filter(_err =>
+      _err.operatorId === operatorId && new Date(_err.timestamp) > cutoff
     );
 
     const kpis = {
       operatorId,
       period: timeRange,
       totalInteractions: operatorEvents.length,
-      messagesSent: operatorEvents.filter(e => e.type === 'message.sent').length,
-      messagesReceived: operatorEvents.filter(e => e.type === 'message.received').length,
-      callsHandled: operatorEvents.filter(e => e.type === 'call.ended').length,
+      messagesSent: operatorEvents.filter(_err => _err.type === 'message.sent').length,
+      messagesReceived: operatorEvents.filter(_err => _err.type === 'message.received').length,
+      callsHandled: operatorEvents.filter(_err => _err.type === 'call.ended').length,
       avgHandleTime: this.calculateAverageHandleTime(operatorEvents),
       customerSatisfaction: this.calculateSatisfaction(operatorEvents),
       responseTime: this.calculateResponseTime(operatorEvents),
@@ -65,23 +65,23 @@ export class AnalyticsService {
   getTalentKPIs(talentId, timeRange = { days: 7 }) {
     const cutoff = new Date(Date.now() - timeRange.days * 24 * 60 * 60 * 1000);
     
-    const talentEvents = this.events.filter(e =>
-      e.talentId === talentId && new Date(e.timestamp) > cutoff
+    const talentEvents = this.events.filter(_err =>
+      _err.talentId === talentId && new Date(_err.timestamp) > cutoff
     );
 
     const kpis = {
       talentId,
       period: timeRange,
-      totalSessions: talentEvents.filter(e => e.type === 'session.start').length,
+      totalSessions: talentEvents.filter(_err => _err.type === 'session.start').length,
       totalEarnings: talentEvents
-        .filter(e => e.type === 'payment.received')
-        .reduce((sum, e) => sum + (e.amount || 0), 0),
+        .filter(_err => _err.type === 'payment.received')
+        .reduce((sum, _err) => sum + (_err.amount || 0), 0),
       avgSessionDuration: this.calculateAverageSessionDuration(talentEvents),
       clientRating: this.calculateAverageRating(talentEvents),
       noShowRate: this.calculateNoShowRate(talentEvents),
       repeatClientRate: this.calculateRepeatClientRate(talentEvents),
-      profileViews: talentEvents.filter(e => e.type === 'profile.viewed').length,
-      profileBookmarks: talentEvents.filter(e => e.type === 'profile.bookmarked').length
+      profileViews: talentEvents.filter(_err => _err.type === 'profile.viewed').length,
+      profileBookmarks: talentEvents.filter(_err => _err.type === 'profile.bookmarked').length
     };
 
     return kpis;
@@ -93,22 +93,22 @@ export class AnalyticsService {
   getAgencyAnalytics(agencyId, timeRange = { days: 30 }) {
     const cutoff = new Date(Date.now() - timeRange.days * 24 * 60 * 60 * 1000);
     
-    const agencyEvents = this.events.filter(e =>
-      e.agencyId === agencyId && new Date(e.timestamp) > cutoff
+    const agencyEvents = this.events.filter(_err =>
+      _err.agencyId === agencyId && new Date(_err.timestamp) > cutoff
     );
 
-    const uniqueOperators = new Set(agencyEvents.map(e => e.operatorId));
-    const uniqueTalents = new Set(agencyEvents.map(e => e.talentId));
+    const uniqueOperators = new Set(agencyEvents.map(_err => _err.operatorId));
+    const uniqueTalents = new Set(agencyEvents.map(_err => _err.talentId));
 
     const analytics = {
       agencyId,
       period: timeRange,
-      totalMessages: agencyEvents.filter(e => e.type.startsWith('message.')).length,
-      totalCalls: agencyEvents.filter(e => e.type.startsWith('call.')).length,
-      totalSessions: agencyEvents.filter(e => e.type === 'session.start').length,
+      totalMessages: agencyEvents.filter(_err => _err.type.startsWith('message.')).length,
+      totalCalls: agencyEvents.filter(_err => _err.type.startsWith('call.')).length,
+      totalSessions: agencyEvents.filter(_err => _err.type === 'session.start').length,
       totalRevenue: agencyEvents
-        .filter(e => e.type === 'payment.received')
-        .reduce((sum, e) => sum + (e.amount || 0), 0),
+        .filter(_err => _err.type === 'payment.received')
+        .reduce((sum, _err) => sum + (_err.amount || 0), 0),
       activeOperators: uniqueOperators.size,
       activeTalents: uniqueTalents.size,
       avgCustomerSatisfaction: this.calculateAverageMetric(
@@ -131,8 +131,8 @@ export class AnalyticsService {
     const now = new Date();
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
 
-    const recentEvents = this.events.filter(e =>
-      e.agencyId === agencyId && new Date(e.timestamp) > oneHourAgo
+    const recentEvents = this.events.filter(_err =>
+      _err.agencyId === agencyId && new Date(_err.timestamp) > oneHourAgo
     );
 
     return {
@@ -140,21 +140,21 @@ export class AnalyticsService {
       agencyId,
       onlineOperators: new Set(
         recentEvents
-          .filter(e => e.type === 'operator.online')
-          .map(e => e.operatorId)
+          .filter(_err => _err.type === 'operator.online')
+          .map(_err => _err.operatorId)
       ).size,
-      activeChats: recentEvents.filter(e =>
-        e.type === 'chat.active'
+      activeChats: recentEvents.filter(_err =>
+        _err.type === 'chat.active'
       ).length,
-      pendingMessages: recentEvents.filter(e =>
-        e.type === 'message.pending'
+      pendingMessages: recentEvents.filter(_err =>
+        _err.type === 'message.pending'
       ).length,
       avgResponseTime: this.calculateResponseTime(recentEvents),
-      messagesLastHour: recentEvents.filter(e =>
-        e.type === 'message.sent'
+      messagesLastHour: recentEvents.filter(_err =>
+        _err.type === 'message.sent'
       ).length,
-      callsLastHour: recentEvents.filter(e =>
-        e.type === 'call.ended'
+      callsLastHour: recentEvents.filter(_err =>
+        _err.type === 'call.ended'
       ).length
     };
   }
@@ -185,51 +185,51 @@ export class AnalyticsService {
     callbacks.forEach(callback => {
       try {
         callback(data);
-      } catch (error) {
-        console.error(`Subscriber error for ${metricName}:`, error);
+      } catch (_err) {
+        console.error(`Subscriber _err for ${metricName}:`, _err);
       }
     });
   }
 
   // Helper methods
   calculateAverageHandleTime(events) {
-    const callEvents = events.filter(e => e.type === 'call.ended');
+    const callEvents = events.filter(_err => _err.type === 'call.ended');
     if (callEvents.length === 0) return 0;
     
-    const totalTime = callEvents.reduce((sum, e) => sum + (e.duration || 0), 0);
+    const totalTime = callEvents.reduce((sum, _err) => sum + (_err.duration || 0), 0);
     return totalTime / callEvents.length / 60; // Return in minutes
   }
 
   calculateSatisfaction(events) {
     const ratings = events
-      .filter(e => e.type === 'feedback.received' && e.rating)
-      .map(e => e.rating);
+      .filter(_err => _err.type === 'feedback.received' && _err.rating)
+      .map(_err => _err.rating);
     
     if (ratings.length === 0) return 0;
     return (ratings.reduce((a, b) => a + b, 0) / ratings.length * 20).toFixed(1);
   }
 
   calculateResponseTime(events) {
-    const responseEvents = events.filter(e => e.responseTime);
+    const responseEvents = events.filter(_err => _err.responseTime);
     if (responseEvents.length === 0) return 0;
     
-    const avgMs = responseEvents.reduce((sum, e) => sum + e.responseTime, 0) / responseEvents.length;
+    const avgMs = responseEvents.reduce((sum, _err) => sum + _err.responseTime, 0) / responseEvents.length;
     return (avgMs / 1000).toFixed(2); // Return in seconds
   }
 
   calculateConversionRate(events) {
     const totalInteractions = events.length;
-    const conversions = events.filter(e => e.type === 'conversion').length;
+    const conversions = events.filter(_err => _err.type === 'conversion').length;
     
     if (totalInteractions === 0) return 0;
     return ((conversions / totalInteractions) * 100).toFixed(2);
   }
 
   calculateOnlineTime(operatorId, cutoff) {
-    const onlineEvents = this.events.filter(e =>
-      e.operatorId === operatorId &&
-      new Date(e.timestamp) > cutoff &&
-      (e.type === 'operator.online' || e.type === 'operator.offline')
+    const onlineEvents = this.events.filter(_err =>
+      _err.operatorId === operatorId &&
+      new Date(_err.timestamp) > cutoff &&
+      (_err.type === 'operator.online' || _err.type === 'operator.offline')
     );
 
     let totalTime = 0;
@@ -249,35 +249,35 @@ export class AnalyticsService {
   }
 
   calculateBreakTime(operatorId, cutoff) {
-    const breakEvents = this.events.filter(e =>
-      e.operatorId === operatorId &&
-      new Date(e.timestamp) > cutoff &&
-      e.type === 'break'
+    const breakEvents = this.events.filter(_err =>
+      _err.operatorId === operatorId &&
+      new Date(_err.timestamp) > cutoff &&
+      _err.type === 'break'
     );
 
-    return breakEvents.reduce((sum, e) => sum + (e.duration || 0), 0) / (60 * 1000); // Return in minutes
+    return breakEvents.reduce((sum, _err) => sum + (_err.duration || 0), 0) / (60 * 1000); // Return in minutes
   }
 
   calculateAverageSessionDuration(events) {
-    const sessionEvents = events.filter(e => e.type === 'session.start' && e.duration);
+    const sessionEvents = events.filter(_err => _err.type === 'session.start' && _err.duration);
     if (sessionEvents.length === 0) return 0;
     
-    const total = sessionEvents.reduce((sum, e) => sum + e.duration, 0);
+    const total = sessionEvents.reduce((sum, _err) => sum + _err.duration, 0);
     return (total / sessionEvents.length / 60).toFixed(2); // Return in minutes
   }
 
   calculateAverageRating(events) {
     const ratings = events
-      .filter(e => e.type === 'rating' && e.score)
-      .map(e => e.score);
+      .filter(_err => _err.type === 'rating' && _err.score)
+      .map(_err => _err.score);
     
     if (ratings.length === 0) return 0;
     return (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(2);
   }
 
   calculateNoShowRate(events) {
-    const bookings = events.filter(e => e.type === 'booking.created').length;
-    const noShows = events.filter(e => e.type === 'session.no_show').length;
+    const bookings = events.filter(_err => _err.type === 'booking.created').length;
+    const noShows = events.filter(_err => _err.type === 'session.no_show').length;
     
     if (bookings === 0) return 0;
     return ((noShows / bookings) * 100).toFixed(2);
@@ -285,8 +285,8 @@ export class AnalyticsService {
 
   calculateRepeatClientRate(events) {
     const clientIds = events
-      .filter(e => e.type === 'session.start')
-      .map(e => e.clientId);
+      .filter(_err => _err.type === 'session.start')
+      .map(_err => _err.clientId);
     
     const repeats = clientIds.filter(
       (id, idx) => clientIds.indexOf(id) !== idx
@@ -299,8 +299,8 @@ export class AnalyticsService {
   getTopPerformers(agencyId, limit = 5) {
     const operatorIds = new Set(
       this.events
-        .filter(e => e.agencyId === agencyId && e.operatorId)
-        .map(e => e.operatorId)
+        .filter(_err => _err.agencyId === agencyId && _err.operatorId)
+        .map(_err => _err.operatorId)
     );
 
     const performers = Array.from(operatorIds).map(opId => ({
@@ -312,8 +312,8 @@ export class AnalyticsService {
   }
 
   calculatePerformanceScore(operatorId) {
-    const events = this.events.filter(e => e.operatorId === operatorId);
-    const messageCount = events.filter(e => e.type === 'message.sent').length;
+    const events = this.events.filter(_err => _err.operatorId === operatorId);
+    const messageCount = events.filter(_err => _err.type === 'message.sent').length;
     const satisfaction = this.calculateSatisfaction(events);
     
     return (messageCount * 0.7) + (satisfaction * 0.3);
@@ -343,8 +343,8 @@ export class AnalyticsService {
 
   calculateAverageMetric(events, metricName) {
     const values = events
-      .filter(e => e[metricName] !== undefined)
-      .map(e => parseFloat(e[metricName]));
+      .filter(_err => _err[metricName] !== undefined)
+      .map(_err => parseFloat(_err[metricName]));
     
     if (values.length === 0) return 0;
     return (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2);

@@ -20,8 +20,8 @@ if (typeof window !== 'undefined') {
 }
 
 // 1. UNIVERSAL ERROR HANDLER (Silent in production, but ready for fatal crashes)
-window.onerror = function (msg, url, line, col, error) {
-  const stack = error && error.stack ? error.stack : 'No stacktrace';
+window.onerror = function (msg, url, line, col, _err) {
+  const stack = _err && _err.stack ? _err.stack : 'No stacktrace';
   console.error(`FATAL ERROR: ${msg}\nAt: ${line}:${col}\nURL: ${url}\n\nStack:\n${stack}`);
   // In production, we keep errors in console to avoid annoying users unless critical
   return false;
@@ -43,8 +43,8 @@ const bootstrap = () => {
         </NexusProvider>
       </ErrorBoundary>
     );
-  } catch (err) {
-    console.error('FATAL BOOT ERROR:', err);
+  } catch (_err) {
+    console.error('FATAL BOOT ERROR:', _err);
   }
 };
 

@@ -79,9 +79,9 @@ const QAView = () => {
     return (profiles || [])
       .filter(p => activeOperator?.isAppOwner || p.clientId === activeOperator?.clientId)
       .map(p => p.id);
-  }, [filterOperatorId, filterProfileId, profiles, activeOperator, activeRole]);
+  }, [filterOperatorId, filterProfileId, profiles, activeOperator, activeRole, operators]);
 
-  // Build list of visible messages filtered by visible profiles
+  // Build list of visibl_err.messages filtered by visible profiles
   const visibleMessages = useMemo(() => {
     const pIds = (visibleProfileIds || []);
     const msgs = (messages || []);
@@ -169,7 +169,7 @@ const QAView = () => {
       
       return isIdMatch || isNameMatch;
     });
-  }, [filterOperatorId, profiles, activeOperator, activeRole]);
+  }, [filterOperatorId, profiles, activeOperator, activeRole, operators]);
 
   // Handle history fetching when client selection changes
   useEffect(() => {
@@ -233,7 +233,7 @@ const QAView = () => {
               type="text"
               placeholder={t('searchPlaceholder')}
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={_err => setSearchQuery(_err.target.value)}
               style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--card-border)', padding: '0.6rem 0.6rem 0.6rem 2.5rem', borderRadius: '10px', color: 'white', fontSize: '0.85rem' }}
             />
           </div>
@@ -324,7 +324,7 @@ const QAView = () => {
                       <input
                         type="text"
                         value={tempName}
-                        onChange={e => setTempName(e.target.value)}
+                        onChange={_err => setTempName(_err.target.value)}
                         placeholder={t('clientNameLabel')}
                         autoFocus
                         style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--accent-color)', padding: '0.5rem 1rem', borderRadius: '8px', color: 'white', fontSize: '1.25rem', fontWeight: '800' }}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { DollarSign, Building2, Zap, Activity, TrendingUp, Users, Server, ShieldCheck, AlertTriangle, Calendar, Loader2, MessageSquare, Copy, X } from 'lucide-react';
 import { RevenueLineChart, ConversionDonutChart, MiniSparkline } from './AnalyticsCharts';
 import { useVultr } from '../hooks/useVultr';
@@ -11,10 +11,10 @@ const DashboardHome = () => {
   const { 
     activeOperator: user, t, lang, agencies, profiles: _profiles, 
     calendar, stats, activeSubscription, isRelayVariant, activeRole,
-    isMobile, isBackgroundLoading, activeProfileId, setActiveProfileId,
-    myProfiles: assignedProfiles, setLinkedSessionId, linkedSessionId,
+    isMobile, isBackgroundLoading,
+    setLinkedSessionId, linkedSessionId,
     pendingNotifications, setPendingNotifications, onDelayBooking,
-    isLoggedIn, showToast
+    isLoggedIn, showToast: _showToast
   } = nexus;
   
   const { status: vultrStatus } = useVultr();
@@ -23,7 +23,32 @@ const DashboardHome = () => {
   const regions = currentAgency.regions || ['uk'];
   const isMultiregion = currentAgency.isInternational || regions.length > 1;
   const defaultCurrency = isMultiregion ? 'EUR' : (regions[0] === 'cz' ? 'CZK' : (regions[0] === 'us' ? 'USD' : 'GBP'));
-  const [dashboardCurrency, setDashboardCurrency] = React.useState(defaultCurrency);
+  const [dashboardCurrency, setDashboardCurrency] = useState(defaultCurrency);
+  
+  // Auto-detect active booking and link it to safety session (for Models)
+  useEffect(() => {
+    if (!isLoggedIn || activeRole !== 'Model' || linkedSessionId) return;
+    
+    const now = new Date();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    
+    const activeEvent = (calendar || []).find(event => {
+      try {
+        const [start, end] = (event.time || '').split(' - ');
+        if (!start || !end) return false;
+        const [sh, sm] = start.split(':').map(Number);
+        const [eh, em] = end.split(':').map(Number);
+        const startMin = sh * 60 + sm;
+        const endMin = eh * 60 + em;
+        // Check if current time is within booking window (plus 5 min grace before)
+        return nowMin >= (startMin - 5) && nowMin < endMin;
+      } catch { return false; }
+    });
+
+    if (activeEvent && activeEvent.id && activeEvent.id !== linkedSessionId) {
+      setLinkedSessionId(activeEvent.id);
+    }
+  }, [calendar, isLoggedIn, activeRole, linkedSessionId, setLinkedSessionId]);
 
   const formatMoney = (val, cur) => {
     const sym = { GBP: '£', EUR: '€', USD: '$', CZK: 'Kč' }[cur] || '£';
@@ -32,102 +57,11 @@ const DashboardHome = () => {
   };
 
   const isCz = lang === 'cz' || lang === 'cs';
-
-  const WelcomeSection = () => (
-    <div style={{ marginBottom: '1.5rem' }}>
-      <h2 id="dashboard-welcome-title" style={{ fontSize: '1.5rem', fontWeight: '900', margin: 0 }}>👋 {isCz ? 'Vítejte zpět' : 'Welcome back'}, {user?.name || 'User'}!</h2>
-      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0.25rem 0 0' }}>{new Date().toLocaleDateString(isCz ? 'cs-CZ' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-    </div>
-  );
-
-  const AlertsSection = () => {
-    const alerts = [];
-    if (activeSubscription) {
-      const now = new Date();
-      const expiresAt = new Date(activeSubscription?.expiresAt || now);
-      const daysLeft = Math.max(0, Math.ceil((expiresAt - now) / 86400000));
-      const status = activeSubscription?.status;
-      if (status === 'EXPIRED') {
-        alerts.push({ message: isCz ? 'Vaše předplatné vypršelo! Obnovte ho pro pokračování.' : 'Your subscription has expired! Renew to continue.', color: '#ef4444' });
-      } else if (status === 'TRIAL' && daysLeft < 7) {
-        alerts.push({ message: isCz ? `Zkušební doba končí za ${daysLeft} dní` : `Trial expires in ${daysLeft} days`, color: '#f59e0b' });
-      }
-    }
-    const myAgency = (agencies || [])?.[0];
-    const hasProfilesInAgency = (stats?.totalProfiles || 0) > 0 || (stats?.activeProfiles || 0) > 0 || (myAgency?.totalProfiles || 0) > 0;
-    
-    if (!hasProfilesInAgency && (_profiles || []).length === 0 && (activeRole === 'App Owner' || activeRole === 'Agency Admin' || activeRole === 'Manager')) {
-      alerts.push({ message: isCz ? 'Vytvořte svůj první profil a začněte' : 'Create your first profile to get started', color: '#3b82f6' });
-    }
-    if (alerts.length === 0) return null;
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
-        {alerts.map((a, i) => (
-          <div key={i} className="glass-card" style={{ padding: '0.85rem 1.25rem', borderLeft: `4px solid ${a.color}`, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <AlertTriangle size={18} color={a.color} style={{ flexShrink: 0 }} />
-            <span style={{ fontSize: '0.85rem', fontWeight: '600', color: a.color }}>{a.message}</span>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  const PendingNotificationsSection = () => {
-    if (!pendingNotifications || pendingNotifications.length === 0) return null;
-    return (
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h3 style={{ fontSize: '0.8rem', fontWeight: '800', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b', letterSpacing: '0.05em' }}>
-          <MessageSquare size={16} />
-          {(isCz ? 'NÁVRHY SMS PRO KLIENTY' : 'PENDING CLIENT SMS').toUpperCase()}
-        </h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {pendingNotifications.map((notif, i) => (
-            <div key={i} className="glass-card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #f59e0b', background: 'rgba(245, 158, 11, 0.03)', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>{notif.clientName} <span style={{ color: 'var(--text-secondary)', fontWeight: '400', fontSize: '0.75rem' }}>({notif.oldTime} → {notif.newTime})</span></div>
-                <button 
-                  onClick={() => setPendingNotifications(prev => prev.filter((_, idx) => idx !== i))}
-                  style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.2rem' }}
-                >
-                  <X size={16} />
-                </button>
-              </div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontStyle: 'italic', background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                "{notif.message}"
-              </div>
-              <button 
-                onClick={() => {
-                  navigator.clipboard.writeText(notif.message);
-                  showToast(isCz ? 'Zkopírováno do schránky' : 'Copied to clipboard', 'success');
-                }}
-                style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', fontWeight: '800', color: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '6px', cursor: 'pointer' }}
-              >
-                <Copy size={14} />
-                {isCz ? 'KOPÍROVAT TEXT' : 'COPY TEXT'}
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
   const isAppOwner = activeRole === 'App Owner';
   const isManager = activeRole === 'Agency Admin' || activeRole === 'Manager';
   const isModel = activeRole === 'Model';
 
-  const SkeletonStatsGrid = ({ columns = 3 }) => (
-    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : `repeat(${columns}, 1fr)`, gap: '1.5rem', marginBottom: '1.5rem' }}>
-      {Array.from({ length: columns }).map((_, i) => (
-        <div key={i} className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <Skeleton width="40px" height="40px" borderRadius="10px" />
-          <Skeleton width="60%" height="12px" />
-          <Skeleton width="40%" height="24px" />
-          <div className="premium-loading-text" style={{ fontSize: '0.6rem', marginTop: 'auto' }}>HYDRATING...</div>
-        </div>
-      ))}
-    </div>
-  );
+
 
   if (isRelayVariant) {
     return (
@@ -141,8 +75,8 @@ const DashboardHome = () => {
         gap: '2rem'
       }}>
         <div className="fade-in">
-          <WelcomeSection />
-          <AlertsSection />
+          <WelcomeSection isCz={isCz} user={user} />
+          <AlertsSection isCz={isCz} activeSubscription={activeSubscription} agencies={agencies} stats={stats} profiles={_profiles} activeRole={activeRole} />
 
           <div style={{ marginBottom: '1.5rem' }}>
             <h2 style={{ fontSize: '1.75rem', fontWeight: '900', letterSpacing: '0.05em' }}>{(t('dailyAgenda') || 'Daily Agenda').toUpperCase()}</h2>
@@ -174,13 +108,13 @@ const DashboardHome = () => {
                     <div style={{ fontSize: '0.75rem', fontWeight: '900', color: 'var(--text-secondary)' }}>{event.duration}</div>
                     <div style={{ display: 'flex', gap: '0.35rem' }}>
                       <button 
-                        onClick={(e) => { e.stopPropagation(); onDelayBooking(event.id, 15); }}
+                        onClick={(_err) => { _err.stopPropagation(); onDelayBooking(event.id, 15); }}
                         style={{ fontSize: '0.65rem', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', padding: '0.25rem 0.5rem', borderRadius: '6px', fontWeight: '800', cursor: 'pointer' }}
                       >
                         +15m
                       </button>
                       <button 
-                        onClick={(e) => { e.stopPropagation(); onDelayBooking(event.id, 30); }}
+                        onClick={(_err) => { _err.stopPropagation(); onDelayBooking(event.id, 30); }}
                         style={{ fontSize: '0.65rem', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', padding: '0.25rem 0.5rem', borderRadius: '6px', fontWeight: '800', cursor: 'pointer' }}
                       >
                         +30m
@@ -268,14 +202,14 @@ const DashboardHome = () => {
     const statusColor = {
       running: "var(--success-color)",
       active: "var(--success-color)",
-      stopped: "var(--error-color)",
-      off: "var(--error-color)",
+      stopped: "var(--_err-color)",
+      off: "var(--_err-color)",
     }[vultrStatus?.power_status?.toLowerCase()] ?? "var(--text-secondary)";
 
     return (
     <div className="fade-in">
-      <WelcomeSection />
-      <AlertsSection />
+      <WelcomeSection isCz={isCz} user={user} />
+      <AlertsSection isCz={isCz} activeSubscription={activeSubscription} agencies={agencies} stats={stats} profiles={_profiles} activeRole={activeRole} />
 
       <div style={{ marginBottom: isMobile ? '1.5rem' : '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'flex-end', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : 0 }}>
         <div>
@@ -371,8 +305,8 @@ const DashboardHome = () => {
 
   const renderManager = () => (
     <div className="fade-in">
-      <WelcomeSection />
-      <AlertsSection />
+      <WelcomeSection isCz={isCz} user={user} />
+      <AlertsSection isCz={isCz} activeSubscription={activeSubscription} agencies={agencies} stats={stats} profiles={_profiles} activeRole={activeRole} />
 
       {!isMobile && (
         <div style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
@@ -499,8 +433,8 @@ const DashboardHome = () => {
 
   const renderOperator = () => (
     <div className="fade-in">
-      <WelcomeSection />
-      <AlertsSection />
+      <WelcomeSection isCz={isCz} user={user} />
+      <AlertsSection isCz={isCz} activeSubscription={activeSubscription} agencies={agencies} stats={stats} profiles={_profiles} activeRole={activeRole} />
 
       <div style={{ marginBottom: isMobile ? '1.5rem' : '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'center' : 'flex-end', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : 0 }}>
         <div style={{ textAlign: isMobile ? 'center' : 'left' }}>
@@ -554,41 +488,17 @@ const DashboardHome = () => {
   );
 
   const renderModel = () => {
-    // Auto-detect active booking and link it to safety session if not already linked
-    React.useEffect(() => {
-      if (!isLoggedIn || activeRole !== 'Model' || linkedSessionId) return;
-      
-      const now = new Date();
-      const nowMin = now.getHours() * 60 + now.getMinutes();
-      
-      const activeEvent = (calendar || []).find(event => {
-        try {
-          const [start, end] = (event.time || '').split(' - ');
-          if (!start || !end) return false;
-          const [sh, sm] = start.split(':').map(Number);
-          const [eh, em] = end.split(':').map(Number);
-          const startMin = sh * 60 + sm;
-          const endMin = eh * 60 + em;
-          // Check if current time is within booking window (plus 5 min grace before)
-          return nowMin >= (startMin - 5) && nowMin < endMin;
-        } catch { return false; }
-      });
-
-      if (activeEvent && activeEvent.id && activeEvent.id !== linkedSessionId) {
-        setLinkedSessionId(activeEvent.id);
-      }
-    }, [calendar, isLoggedIn, activeRole, linkedSessionId, setLinkedSessionId]);
 
     return (
       <div className="fade-in">
-        <WelcomeSection />
-        <AlertsSection />
+        <WelcomeSection isCz={isCz} user={user} />
+        <AlertsSection isCz={isCz} activeSubscription={activeSubscription} agencies={agencies} stats={stats} profiles={_profiles} activeRole={activeRole} />
 
         <div style={{ marginBottom: isMobile ? '1.5rem' : '2rem' }}>
           <SafetyControlCard />
         </div>
 
-        <PendingNotificationsSection />
+        <PendingNotificationsSection isCz={isCz} pendingNotifications={pendingNotifications} setPendingNotifications={setPendingNotifications} onDelayBooking={onDelayBooking} />
 
         <div style={{ marginBottom: isMobile ? '1.1rem' : '2.5rem' }}>
           <h2 style={{ fontSize: isMobile ? '1.35rem' : '2rem', fontWeight: '900', lineHeight: 1.15 }}>{t('dailyAgenda')}</h2>
@@ -640,3 +550,95 @@ const DashboardHome = () => {
 };
 
 export default DashboardHome;
+
+const WelcomeSection = ({ isCz, user }) => (
+  <div style={{ marginBottom: '1.5rem' }}>
+    <h2 id="dashboard-welcome-title" style={{ fontSize: '1.5rem', fontWeight: '900', margin: 0 }}>👋 {isCz ? 'Vítejte zpět' : 'Welcome back'}, {user?.name || 'User'}!</h2>
+    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0.25rem 0 0' }}>{new Date().toLocaleDateString(isCz ? 'cs-CZ' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+  </div>
+);
+
+const AlertsSection = ({ isCz, activeSubscription, agencies, stats, profiles, activeRole }) => {
+  const alerts = [];
+  if (activeSubscription) {
+    const now = new Date();
+    const expiresAt = new Date(activeSubscription?.expiresAt || now);
+    const daysLeft = Math.max(0, Math.ceil((expiresAt - now) / 86400000));
+    const status = activeSubscription?.status;
+    if (status === 'EXPIRED') {
+      alerts.push({ message: isCz ? 'Vaše předplatné vypršelo! Obnovte ho pro pokračování.' : 'Your subscription has expired! Renew to continue.', color: '#ef4444' });
+    } else if (status === 'TRIAL' && daysLeft < 7) {
+      alerts.push({ message: isCz ? `Zkušební doba končí za ${daysLeft} dní` : `Trial expires in ${daysLeft} days`, color: '#f59e0b' });
+    }
+  }
+  const myAgency = (agencies || [])?.[0];
+  const hasProfilesInAgency = (stats?.totalProfiles || 0) > 0 || (stats?.activeProfiles || 0) > 0 || (myAgency?.totalProfiles || 0) > 0;
+  
+  if (!hasProfilesInAgency && (profiles || []).length === 0 && (activeRole === 'App Owner' || activeRole === 'Agency Admin' || activeRole === 'Manager')) {
+    alerts.push({ message: isCz ? 'Vytvořte svůj první profil a začněte' : 'Create your first profile to get started', color: '#3b82f6' });
+  }
+  if (alerts.length === 0) return null;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+      {alerts.map((a, i) => (
+        <div key={i} className="glass-card" style={{ padding: '0.85rem 1.25rem', borderLeft: `4px solid ${a.color}`, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <AlertTriangle size={18} color={a.color} style={{ flexShrink: 0 }} />
+          <span style={{ fontSize: '0.85rem', fontWeight: '600', color: a.color }}>{a.message}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const SkeletonStatsGrid = ({ columns = 3, isMobile }) => (
+  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : `repeat(${columns}, 1fr)`, gap: '1.5rem', marginBottom: '1.5rem' }}>
+    {Array.from({ length: columns }).map((_, i) => (
+      <div key={i} className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <Skeleton width="40px" height="40px" borderRadius="10px" />
+        <Skeleton width="60%" height="12px" />
+        <Skeleton width="40%" height="24px" />
+        <div className="premium-loading-text" style={{ fontSize: '0.6rem', marginTop: 'auto' }}>HYDRATING...</div>
+      </div>
+    ))}
+  </div>
+);
+
+const PendingNotificationsSection = ({ isCz, pendingNotifications, setPendingNotifications, showToast }) => {
+  if (!pendingNotifications || pendingNotifications.length === 0) return null;
+  return (
+    <div style={{ marginBottom: '1.5rem' }}>
+      <h3 style={{ fontSize: '0.8rem', fontWeight: '800', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b', letterSpacing: '0.05em' }}>
+        <MessageSquare size={16} />
+        {(isCz ? 'NÁVRHY SMS PRO KLIENTY' : 'PENDING CLIENT SMS').toUpperCase()}
+      </h3>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        {pendingNotifications.map((notif, i) => (
+          <div key={i} className="glass-card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #f59e0b', background: 'rgba(245, 158, 11, 0.03)', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>{notif.clientName} <span style={{ color: 'var(--text-secondary)', fontWeight: '400', fontSize: '0.75rem' }}>({notif.oldTime} → {notif.newTime})</span></div>
+              <button 
+                onClick={() => setPendingNotifications(prev => prev.filter((_, idx) => idx !== i))}
+                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.2rem' }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontStyle: 'italic', background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              "{notif.message}"
+            </div>
+            <button 
+              onClick={() => {
+                navigator.clipboard.writeText(notif.message);
+                showToast(isCz ? 'Zkopírováno do schránky' : 'Copied to clipboard', 'success');
+              }}
+              style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', fontWeight: '800', color: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '6px', cursor: 'pointer' }}
+            >
+              <Copy size={14} />
+              {isCz ? 'KOPÍROVAT TEXT' : 'COPY TEXT'}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};

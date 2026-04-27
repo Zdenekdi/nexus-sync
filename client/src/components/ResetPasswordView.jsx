@@ -4,10 +4,10 @@ import { ShieldCheck, Lock } from 'lucide-react';
 const ResetPasswordView = ({ onComplete, t }) => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
+  const [_err, setError] = useState('');
 
-  const handleReset = (e) => {
-    e.preventDefault();
+  const handleReset = (_err) => {
+    _err.preventDefault();
     if (newPassword !== confirmPassword) {
       setError(t('passwordMismatch'));
       return;
@@ -33,17 +33,17 @@ const ResetPasswordView = ({ onComplete, t }) => {
             <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('newPasswordLabel').toUpperCase()}</label>
             <div style={{ position: 'relative' }}>
               <Lock size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
-              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" required style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '1rem 1rem 1rem 3rem', borderRadius: '12px', color: 'white' }} />
+              <input type="password" value={newPassword} onChange={(_err) => setNewPassword(_err.target.value)} placeholder="••••••••" required style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '1rem 1rem 1rem 3rem', borderRadius: '12px', color: 'white' }} />
             </div>
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>{t('confirmPasswordLabel').toUpperCase()}</label>
             <div style={{ position: 'relative' }}>
               <Lock size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
-              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" required style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '1rem 1rem 1rem 3rem', borderRadius: '12px', color: 'white' }} />
+              <input type="password" value={confirmPassword} onChange={(_err) => setConfirmPassword(_err.target.value)} placeholder="••••••••" required style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '1rem 1rem 1rem 3rem', borderRadius: '12px', color: 'white' }} />
             </div>
           </div>
-          {error && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', fontWeight: '700', textAlign: 'center' }}>{error}</div>}
+          {_err && <div style={{ color: 'var(--_err-color)', fontSize: '0.85rem', fontWeight: '700', textAlign: 'center' }}>{_err}</div>}
           <button type="submit" className="action-btn" style={{ background: 'var(--accent-color)', color: 'white', padding: '1.1rem', fontSize: '1rem', fontWeight: '800', boxShadow: '0 10px 25px var(--accent-glow)', marginTop: '1rem' }}>{t('resetButton')}</button>
         </form>
       </div>

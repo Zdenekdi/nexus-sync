@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Shield, Lock, Globe, Building2, Users, Package as PackageIcon, Activity, MessageSquare, Save, RefreshCw, AlertCircle } from 'lucide-react';
 
@@ -12,11 +12,7 @@ const PermissionsDashboard = ({ agencyId = null, onUpdate = null }) => {
   const [savingId, setSavingId] = useState(null);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchRoles();
-  }, [agencyId]);
-
-  const fetchRoles = async () => {
+  const fetchRoles = useCallback(async () => {
     try {
       setLoading(true);
       const res = await axios.get(`${API_BASE}/agency/roles${agencyId ? `?agencyId=${agencyId}` : ''}`, {
@@ -24,13 +20,17 @@ const PermissionsDashboard = ({ agencyId = null, onUpdate = null }) => {
       });
       setRoles(res.data);
       setError(null);
-    } catch (err) {
-      console.error('Failed to fetch roles:', err);
+    } catch (_err) {
+      console.error('Failed to fetch roles:', _err);
       setError(lang === 'cz' ? 'Nepodařilo se načíst oprávnění.' : 'Failed to load permissions.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_BASE, agencyId, token, lang]);
+
+  useEffect(() => {
+    fetchRoles();
+  }, [fetchRoles]);
 
   const handleToggle = (roleId, permKey) => {
     setRoles(prev => prev.map(role => {
@@ -53,18 +53,21 @@ const PermissionsDashboard = ({ agencyId = null, onUpdate = null }) => {
       const role = (roles || []).find(r => r.id === id);
       if (!role) return;
       
-      await axios.patch(`${API_BASE}/agency/roles/${id}/permissions`, {
+      const { data: result } = await axios.patch(`${API_BASE}/agency/roles/${id}/permissions`, {
         permissions: role.permissions
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
-      if (onUpdate) onUpdate();
-      showToast(lang === 'cz' ? 'Oprávnění uložena.' : 'Permissions saved.', 'success');
-    } catch (err) {
-      console.error('Save failed:', err);
+      if (result.success) {
+        showToast(lang === 'cz' ? 'Oprávnění uložena.' : 'Permissions saved.', 'success');
+        if (onUpdate) onUpdate();
+      } else {
+        showToast(lang === 'cz' ? 'Nepodařilo se uložit oprávnění.' : 'Failed to save permissions.', 'error');
+      }
+      setSavingId(null);
+    } catch (_err) {
+      console.error('Save failed:', _err);
       showToast(lang === 'cz' ? 'Nepodařilo se uložit oprávnění.' : 'Failed to save permissions.', 'error');
-    } finally {
       setSavingId(null);
     }
   };

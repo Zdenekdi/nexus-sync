@@ -30,14 +30,14 @@ const RelayModeView = () => {
   const processRelayOutbox = useCallback(async () => {
     const plugin = window.Capacitor?.Plugins?.NexusRelay;
     if (!plugin) return;
-    try { await plugin.processOutbox(); } catch {}
+    try { await plugin.processOutbox(); } catch { /* ignore */ }
   }, []);
 
   // Sync SMS history (Capacitor native only)
   const syncSmsHistory = useCallback(async () => {
     const plugin = window.Capacitor?.Plugins?.NexusRelay;
     if (!plugin) return;
-    try { await plugin.syncHistory(); } catch {}
+    try { await plugin.syncHistory(); } catch { /* ignore */ }
   }, []);
 
   if (!operator) {

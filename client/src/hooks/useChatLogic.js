@@ -143,7 +143,7 @@ export function useChatLogic({
     }
 
     return normalizedMessage;
-  }, [selectedChatId, activeOperator?.profileId, activeProfileId, normalizeProfileId, parseChatId, setMessages]);
+  }, [selectedChatId, activeOperator?.profileId, activeProfileId, normalizeProfileId, setMessages, setChatMessages]);
 
   const fetchChatMessages = useCallback(async (chatId) => {
     if (!token || !chatId) return;
@@ -153,13 +153,13 @@ export function useChatLogic({
         headers: { Authorization: `Bearer ${token}` }
       });
       setChatMessages(res.data || []);
-    } catch (err) {
-      console.error('Failed to fetch chat messages:', err);
+    } catch (_err) {
+      console.error('Failed to fetch chat messages:', _err);
       if (_showToast) _showToast(t?.('fetchMessagesError') || 'Failed to load messages', 'error');
     } finally {
       setIsHistoryLoading(false);
     }
-  }, [token, API_BASE]);
+  }, [token, API_BASE, _showToast, t]);
 
   const filteredMessages = useMemo(() => {
     const toTimestamp = (message) => {
@@ -198,12 +198,12 @@ export function useChatLogic({
       if (res.data) {
         setMessageValue('');
       }
-    } catch (error) {
-      console.error('Send message error:', error);
+    } catch (_err) {
+      console.error('Send message _err:', _err);
       addNotification({
         title: t('sendError') || 'Error',
         message: t('sendErrorMessage') || 'Could not send message. Please check the relay device.',
-        type: 'error'
+        type: '_err'
       });
     }
   };
@@ -215,9 +215,9 @@ export function useChatLogic({
         headers: { Authorization: `Bearer ${token}` }
       });
       setMessages(res.data || []);
-    } catch (err) {
-      console.error('Failed to refresh messages:', err);
-    }  }, [token, API_BASE]);
+    } catch (_err) {
+      console.error('Failed to refresh messages:', _err);
+    }  }, [token, API_BASE, setMessages]);
 
   const handleSaveNote = useCallback(async () => {
     if (!internalNote.trim() || !activeContactId || !activeProfileId) return;
@@ -232,11 +232,11 @@ export function useChatLogic({
         [activeContactId]: [res.data, ...(prev[activeContactId] || [])]
       }));
       setInternalNote('');
-    } catch (err) {
-      console.error('[Notes] save error:', err.message);
+    } catch (_err) {
+      console.error('[Notes] save _err:', _err.message);
       if (_showToast) _showToast(t?.('saveNoteError') || 'Failed to save note', 'error');
     }
-  }, [internalNote, activeContactId, activeProfileId, API_BASE, token]);
+  }, [internalNote, activeContactId, activeProfileId, API_BASE, token, _showToast, t]);
 
   const handleDeleteNote = useCallback(async (from, noteId) => {
     try {
@@ -245,8 +245,8 @@ export function useChatLogic({
         ...prev,
         [from]: (prev[from] || []).filter(n => n.id !== noteId)
       }));
-    } catch (err) {
-      console.error('[Notes] delete error:', err.message);
+    } catch (_err) {
+      console.error('[Notes] delete _err:', _err.message);
     }
   }, [API_BASE, token]);
 

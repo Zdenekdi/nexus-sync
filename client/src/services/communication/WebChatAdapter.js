@@ -19,10 +19,10 @@ export class WebChatAdapter extends ChannelAdapter {
       // Initialize WebSocket connection for real-time chat
       this.isConnected = true;
       return { success: true, channel: 'webchat' };
-    } catch (error) {
-      console.error('WebChat connection failed:', error);
+    } catch (_err) {
+      console.error('WebChat connection failed:', _err);
       this.isConnected = false;
-      throw error;
+      throw _err;
     }
   }
 
@@ -252,8 +252,8 @@ export class WebChatAdapter extends ChannelAdapter {
     this.eventHandlers.get(eventType).forEach(handler => {
       try {
         handler(data);
-      } catch (error) {
-        console.error(`Error in ${eventType} handler:`, error);
+      } catch (_err) {
+        console.error(`Error in ${eventType} handler:`, _err);
       }
     });
   }

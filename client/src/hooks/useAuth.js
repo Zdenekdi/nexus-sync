@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
 import { Device } from '@capacitor/device';
@@ -12,7 +12,7 @@ function generateSecureInstallationId() {
 /**
  * Custom hook to manage authentication state and logic for Nexus Hub.
  */
-export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setActiveProfileId, setShowLanding }) {
+export function useAuth({ API_BASE, _t, setIsRelayMode, setSelectedChatId, setActiveProfileId, setShowLanding }) {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem('nexus_isLoggedIn') === 'true';
   });
@@ -24,8 +24,8 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
         let parsed = null;
         try {
           parsed = JSON.parse(saved);
-        } catch (e) {
-          console.error('[Auth] Failed to parse saved operator', e);
+        } catch (_err) {
+          console.error('[Auth] Failed to parse saved operator', _err);
           return null;
         }
 
@@ -45,8 +45,8 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
         let parsed = null;
         try {
           parsed = JSON.parse(saved);
-        } catch (e) {
-          console.error('[Auth] Failed to parse saved client', e);
+        } catch (_err) {
+          console.error('[Auth] Failed to parse saved client', _err);
           return null;
         }
         if (parsed) return parsed;
@@ -60,7 +60,7 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
   const [tempUser, setTempUser] = useState(null);
   const [originalOperator, setOriginalOperator] = useState(null);
   const [isLoginLoading, setIsLoginLoading] = useState(false);
-  const refreshTimerRef = { current: null };
+  const refreshTimerRef = useRef(null);
 
   const isNativeApp = Capacitor.isNativePlatform();
 
@@ -92,16 +92,14 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
         } else {
           console.warn(`[Auth] Refresh failed with status ${res.status}, keeping session for retry`);
         }
-      } catch (err) {
-        console.error('[Auth] Refresh error:', err);
+      } catch (_err) {
+        console.error('[Auth] Refresh _err:', _err);
       }
     }, refreshMs);
-  }, [API_BASE]);
+  }, [API_BASE, handleLogoutInternal, setShowLanding]);
 
-  // On mount, if logged in, schedule refresh
   useEffect(() => {
     if (isLoggedIn && token) {
-      try {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const expiresIn = payload.exp - Math.floor(Date.now() / 1000);
@@ -112,13 +110,12 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
           const storedRefreshToken = localStorage.getItem('nexus_refreshToken');
           if (storedRefreshToken) scheduleTokenRefresh(0);
         }
-      } catch (err) {
-        console.warn('[Auth] Token parsing failed', err);
+      } catch (_err) {
+        console.warn('[Auth] Token parsing failed', _err);
       }
-      } catch { /* ignore parse errors */ }
     }
     return () => { if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isLoggedIn, token, scheduleTokenRefresh]);
 
   // Detect App Variant
   useEffect(() => {
@@ -129,7 +126,7 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
           if (info.id === 'com.nexushub.relay') {
             setAppVariant('relay');
           }
-        } catch (e) { console.error('Variant detection failed', e); }
+        } catch (_err) { console.error('Variant detection failed', _err); }
       } else {
         const params = new URLSearchParams(window.location.search);
         if (params.get('mode') === 'relay') {
@@ -168,8 +165,8 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
       });
       
       console.log('[Native] Device binding verified');
-    } catch (err) {
-      console.warn('[Native] Device binding failed', err.message);
+    } catch (_err) {
+      console.warn('[Native] Device binding failed', _err.message);
     }
   }, [isNativeApp, API_BASE]);
 
@@ -187,12 +184,12 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
           localStorage.setItem('nexus_relay_rcs_first_login_prompted', 'true');
         }
       }
-    } catch (err) {
-      console.warn('[RCS] Initial request failed', err);
+    } catch (_err) {
+      console.warn('[RCS] Initial request failed', _err);
     }
   }, [isNativeApp, shouldAutoRelay]);
 
-  const handleLogin = async (email, password) => {
+  const handleLogin = useCallback(async (email, password) => {
     setIsLoginLoading(true);
     try {
       const res = await fetch(`${API_BASE}/auth/login`, {
@@ -237,8 +234,8 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
                 });
                 console.log('[Relay] Background service started for Model');
               }
-            } catch (e) {
-              console.warn('[Relay] Background service start failed:', e.message);
+            } catch (_err) {
+              console.warn('[Relay] Background service start failed:', _err.message);
             }
           }
           window.history.replaceState(null, '', '/dashboard');
@@ -246,15 +243,15 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
         return { success: true };
       } else {
         const errorData = await res.json().catch(() => ({}));
-        return { success: false, error: errorData.message || 'loginError' };
+        return { success: false, _err: errorData.message || 'loginError' };
       }
-    } catch (err) {
-      console.error('[Auth] Login failed:', err);
-      return { success: false, error: 'connectionError', detail: err.message || String(err) };
+    } catch (_err) {
+      console.error('[Auth] Login failed:', _err);
+      return { success: false, _err: 'connectionError', detail: _err.message || String(_err) };
     } finally {
       setIsLoginLoading(false);
     }
-  };
+  }, [API_BASE, isNativeApp, maybePromptRcsAccessOnFirstLogin, scheduleTokenRefresh, setIsRelayMode, shouldAutoRelay, verifyNativeDeviceBinding]);
 
   const handleLogoutInternal = useCallback(() => {
     if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
@@ -288,7 +285,7 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
     handleLogoutInternal();
   }, [API_BASE, handleLogoutInternal]);
 
-  const handleRegisterAgency = async (data) => {
+  const handleRegisterAgency = useCallback(async (data) => {
     try {
       const res = await fetch(`${API_BASE}/auth/register-agency`, {
         method: 'POST',
@@ -297,14 +294,14 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
       });
       const body = await res.json().catch(() => ({}));
       if (res.ok) return { success: true, inviteCode: body.inviteCode };
-      return { success: false, error: body.message || 'Registration failed' };
-    } catch (err) {
-      console.error('[Auth] Agency registration failed:', err);
-      return { success: false, error: 'Connection error' };
+      return { success: false, _err: body.message || 'Registration failed' };
+    } catch (_err) {
+      console.error('[Auth] Agency registration failed:', _err);
+      return { success: false, _err: 'Connection _err' };
     }
-  };
+  }, [API_BASE]);
 
-  const handleRegisterUser = async (data) => {
+  const handleRegisterUser = useCallback(async (data) => {
     try {
       const res = await fetch(`${API_BASE}/auth/register-user`, {
         method: 'POST',
@@ -313,14 +310,14 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
       });
       const body = await res.json().catch(() => ({}));
       if (res.ok) return { success: true };
-      return { success: false, error: body.message || 'Registration failed' };
-    } catch (err) {
-      console.error('[Auth] User registration failed:', err);
-      return { success: false, error: 'Connection error' };
+      return { success: false, _err: body.message || 'Registration failed' };
+    } catch (_err) {
+      console.error('[Auth] User registration failed:', _err);
+      return { success: false, _err: 'Connection _err' };
     }
-  };
+  }, [API_BASE]);
 
-  const handleResetRequest = async (email) => {
+  const handleResetRequest = useCallback(async (email) => {
     try {
       await fetch(`${API_BASE}/auth/reset-password-request`, {
         method: 'POST',
@@ -328,18 +325,18 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
         body: JSON.stringify({ email }),
       });
       return true;
-    } catch (err) {
-      console.error('[Auth] Reset request failed:', err);
+    } catch (_err) {
+      console.error('[Auth] Reset request failed:', _err);
       return false;
     }
-  };
+  }, [API_BASE]);
 
-  const handleResetRequired = (user) => {
+  const handleResetRequired = useCallback((user) => {
     setTempUser(user);
     setShowResetPassword(true);
-  };
+  }, []);
 
-  const handleResetComplete = (newPassword, operators = [], setOperators) => {
+  const handleResetComplete = useCallback((newPassword, operators = [], setOperators) => {
     if (!tempUser) return;
     
     const operatorsList = operators || [];
@@ -355,7 +352,7 @@ export function useAuth({ API_BASE, t, setIsRelayMode, setSelectedChatId, setAct
     
     setShowResetPassword(false);
     setTempUser(null);
-  };
+  }, [handleLogin, tempUser]);
 
   return React.useMemo(() => ({
     isLoggedIn, setIsLoggedIn,

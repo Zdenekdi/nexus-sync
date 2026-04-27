@@ -59,9 +59,9 @@ const AddUserModal = ({ isOpen, onClose, t }) => {
       showToast('Manager assigned successfully', 'success');
       onClose();
       if (initData) initData();
-    } catch (err) {
-      console.error(err);
-      showToast(err.response?.data?.message || 'Failed to add user', 'error');
+    } catch (_err) {
+      console.error(_err);
+      showToast(_err.response?.data?.message || 'Failed to add user', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -89,8 +89,8 @@ const AddUserModal = ({ isOpen, onClose, t }) => {
             <input 
               type="text" 
               value={data.name} 
-              onChange={e => setData({...data, name: e.target.value})} 
-              placeholder="e.g. John Doe"
+              onChange={_err => setData({...data, name: _err.target.value})} 
+              placeholder="_err.g. John Doe"
               style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }} 
             />
           </div>
@@ -100,7 +100,7 @@ const AddUserModal = ({ isOpen, onClose, t }) => {
             <input 
               type="email" 
               value={data.email} 
-              onChange={e => setData({...data, email: e.target.value})} 
+              onChange={_err => setData({...data, email: _err.target.value})} 
               placeholder="manager@agency.com"
               style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }} 
             />
@@ -119,7 +119,7 @@ const AddUserModal = ({ isOpen, onClose, t }) => {
             <input 
               type="text" 
               value={data.password} 
-              onChange={e => setData({...data, password: e.target.value})} 
+              onChange={_err => setData({...data, password: _err.target.value})} 
               placeholder="Secure password"
               style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }} 
             />

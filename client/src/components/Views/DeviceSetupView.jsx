@@ -64,7 +64,7 @@ const DeviceSetupView = () => {
                     const r = await fetch(`${API_BASE}/vultr/apk-info`, { headers: { Authorization: `Bearer ${token}` } });
                     const d = await r.json();
                     setRelayApkInfo(d);
-                  } catch {}
+                  } catch { /* ignore */ }
                 }
               }}
             >

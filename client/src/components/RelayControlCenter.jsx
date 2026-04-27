@@ -16,7 +16,7 @@ const RelayControlCenter = () => {
     switch (status) {
       case 'Active': return 'var(--success-color)';
       case 'Pending': return '#f59e0b';
-      case 'Error': return 'var(--error-color)';
+      case 'Error': return 'var(--_err-color)';
       default: return 'var(--text-secondary)';
     }
   };
@@ -128,8 +128,8 @@ const RelayControlCenter = () => {
                       style={{ 
                         cursor: s.status === 'Active' ? 'pointer' : 'default', 
                         opacity: s.status === 'Active' ? 1 : 0.5,
-                        borderColor: 'var(--error-color)',
-                        color: 'var(--error-color)',
+                        borderColor: 'var(--_err-color)',
+                        color: 'var(--_err-color)',
                         background: 'rgba(239, 68, 68, 0.05)'
                       }}
                       onClick={() => s.status === 'Active' && handleRevokeBinding(s.installationId)}

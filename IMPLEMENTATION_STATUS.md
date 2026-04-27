@@ -47,6 +47,15 @@
    - Fixed duplicate exports in `DatabaseAdapters.js`.
    - Resolved Vite config ESLint error (`process` not defined).
 
+### ✅ Dokončeno
+...
+8. **Backend Messaging (Existing)** ✓
+   - `messageController` - Full CRUD for messages & chats
+   - `deviceController` - SMS/Call relay with webhook & GoIP support
+   - `Socket.io` - Real-time message & call event broadcasting
+   - `PushService` - FCM integration for background alerts
+   - `API Client` - Unified frontend-to-backend bridge
+
 ### 🔄 Probíhá
 
 - Oprava zbývajících ESLint chyb (135 errors)
@@ -59,16 +68,11 @@
 1. **Oprava zbývajících linting chyb**
    - Vyřešit zbývající `no-unused-vars` a hook dependencies.
 
-2. **Backend implementace**
-   - Message storage (Firebase/DB)
-   - WebSocket server pro real-time updates
-   - Webhook endpoints pro komunikační kanály
-   - API endpoints pro synchronizaci
+2. **Backend implementace (Omnichannel Extensions)**
+   - Rozšíření `messageController` pro generic WhatsApp/WebChat routing (pokud bude vyžadováno nad rámec stávajícího Relay).
 
 3. **Integration do InboxView**
-   - Sjednocené rozhraní pro všechny kanály
-   - Message routing a display
-   - Conversation management
+   - Sjednocené rozhraní využívající nové Omnichannel služby nad stávajícím API.
 
 4. **Testing**
    - Unit tests pro services

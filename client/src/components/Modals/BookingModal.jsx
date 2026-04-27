@@ -63,7 +63,7 @@ const BookingModal = ({ isOpen, onClose, form, onFormChange, onSave, lang }) => 
           <div style={{ position: 'relative' }}>
             <input 
               value={form.title} 
-              onChange={e => onFormChange({...form, title: e.target.value})} 
+              onChange={_err => onFormChange({...form, title: _err.target.value})} 
               placeholder={lang === 'cz' ? 'Název schůzky (jméno klienta)' : 'Booking title (client name)'} 
               style={{ width: '100%', padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '12px', color: 'white', fontSize: '0.95rem' }} 
             />
@@ -74,7 +74,7 @@ const BookingModal = ({ isOpen, onClose, form, onFormChange, onSave, lang }) => 
               <MapPin size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--warning-color)', opacity: 0.8 }} />
               <input 
                 value={form.address || ''} 
-                onChange={e => onFormChange({...form, address: e.target.value})} 
+                onChange={_err => onFormChange({...form, address: _err.target.value})} 
                 placeholder={lang === 'cz' ? 'Adresa výjezdu (ulice, město...)' : 'Outcall address (street, city...)'} 
                 style={{ 
                   width: '100%', 
@@ -93,12 +93,12 @@ const BookingModal = ({ isOpen, onClose, form, onFormChange, onSave, lang }) => 
           )}
 
           <div style={{ position: 'relative' }}>
-             <input type="date" value={form.date} onChange={e => onFormChange({...form, date: e.target.value})} style={{ width: '100%', padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '12px', color: 'white', colorScheme: 'dark' }} />
+             <input type="date" value={form.date} onChange={_err => onFormChange({...form, date: _err.target.value})} style={{ width: '100%', padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '12px', color: 'white', colorScheme: 'dark' }} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <input type="time" value={form.startTime} onChange={e => onFormChange({...form, startTime: e.target.value})} style={{ width: '100%', padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid var(--card-border)', color: 'white', colorScheme: 'dark' }} />
-            <input type="time" value={form.endTime} onChange={e => onFormChange({...form, endTime: e.target.value})} style={{ width: '100%', padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid var(--card-border)', color: 'white', colorScheme: 'dark' }} />
+            <input type="time" value={form.startTime} onChange={_err => onFormChange({...form, startTime: _err.target.value})} style={{ width: '100%', padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid var(--card-border)', color: 'white', colorScheme: 'dark' }} />
+            <input type="time" value={form.endTime} onChange={_err => onFormChange({...form, endTime: _err.target.value})} style={{ width: '100%', padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid var(--card-border)', color: 'white', colorScheme: 'dark' }} />
           </div>
 
           <button 

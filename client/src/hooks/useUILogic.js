@@ -53,8 +53,8 @@ export function useUILogic({ token, API_BASE, showToast, lang }) {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTranslatedText(res.data.translatedText);
-    } catch (err) {
-      console.error('Translation error:', err);
+    } catch (_err) {
+      console.error('Translation _err:', _err);
       showToast('Translation failed', 'error');
     } finally {
       setIsTranslating(false);

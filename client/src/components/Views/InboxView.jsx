@@ -18,12 +18,13 @@ const InboxView = () => {
     filteredMessages, selectedChat, chatMessages, isHistoryLoading,
     chatScrollRef, isUserScrolled, typingProfiles, inlinePanelTab,
     setInlinePanelTab, activeOperator, setShowPanicConfirm,
-    detectedMeeting, setDetectedMeeting, messageValue, setMessageValue,
+    detectedMeeting: _unused_meeting, setDetectedMeeting: _unused_setMeeting, messageValue, setMessageValue,
     bookingSchedule, calViewDate, setCalViewDate, setIsBookingModalOpen,
     setNewBookingForm, activeContextTab, setActiveContextTab, lang, t,
     activeProfile, handleSendMessage, handleTranslate, handleSaveNote,
-    handleDeleteNote, startCall, handleQuickSaveMeeting, showToast,
-    initData: refreshData, isBackgroundLoading, fetchClientByPhone
+    handleDeleteNote, startCall, handleQuickSaveMeeting: _unused_saveMeeting, showToast,
+    initData: refreshData, isBackgroundLoading, fetchClientByPhone,
+    setActiveTab
   } = nexus;
 
   const [clientCrmData, setClientCrmData] = React.useState(null);
@@ -56,8 +57,8 @@ const InboxView = () => {
         const data = await res.json();
         setAiSuggestions(data.suggestions || []);
       }
-    } catch (err) {
-      console.error('AI Suggestion error:', err);
+    } catch (_err) {
+      console.error('AI Suggestion _err:', _err);
     } finally {
       setIsAiLoading(false);
     }
@@ -67,7 +68,7 @@ const InboxView = () => {
     if (selectedChat?.from && activeContextTab === 'crm') {
       loadClientCrm();
     }
-  }, [selectedChat?.from, activeContextTab]);
+  }, [selectedChat?.from, activeContextTab, loadClientCrm]);
 
   React.useEffect(() => {
     if (selectedChatId && inlinePanelTab === 'ai') {
@@ -75,33 +76,33 @@ const InboxView = () => {
     }
   }, [selectedChatId, inlinePanelTab, loadAiSuggestions]);
 
-  const loadClientCrm = async () => {
+  const loadClientCrm = React.useCallback(async () => {
     setIsCrmLoading(true);
     const data = await fetchClientByPhone(selectedChat.from);
     setClientCrmData(data);
     setIsCrmLoading(false);
-  };
+  }, [fetchClientByPhone, selectedChat?.from]);
 
   // Pull to refresh logic
   const [pullDistance, setPullDistance] = React.useState(0);
   const pullStartRef = React.useRef(0);
   const isPullingRef = React.useRef(false);
 
-  const handleTouchStart = (e) => {
+  const handleTouchStart = (_err) => {
     const scrollEl = document.querySelector('.inbox-scroll-container');
     if (scrollEl && scrollEl.scrollTop === 0) {
-      pullStartRef.current = e.touches[0].clientY;
+      pullStartRef.current = _err.touches[0].clientY;
       isPullingRef.current = true;
     }
   };
 
-  const handleTouchMove = (e) => {
+  const handleTouchMove = (_err) => {
     if (!isPullingRef.current) return;
-    const currentY = e.touches[0].clientY;
+    const currentY = _err.touches[0].clientY;
     const distance = currentY - pullStartRef.current;
     if (distance > 0) {
       setPullDistance(Math.min(distance * 0.4, 80));
-      if (distance > 10) e.preventDefault();
+      if (distance > 10) _err.preventDefault();
     }
   };
 
@@ -302,8 +303,8 @@ const InboxView = () => {
                 </div>
                 <div
                   ref={chatScrollRef}
-                  onScroll={(e) => {
-                    const el = e.currentTarget;
+                  onScroll={(_err) => {
+                    const el = _err.currentTarget;
                     const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
                     isUserScrolled.current = distFromBottom > 100;
                   }}
@@ -381,8 +382,8 @@ const InboxView = () => {
                                      key={i} 
                                      onClick={() => setMessageValue(s)}
                                      style={{ background: 'rgba(167, 139, 250, 0.08)', border: '1px solid rgba(167, 139, 250, 0.2)', padding: '0.5rem 0.75rem', borderRadius: '10px', color: 'white', fontSize: '0.75rem', textAlign: 'left', cursor: 'pointer', maxWidth: '100%', transition: 'all 0.2s' }}
-                                     onMouseEnter={e => e.currentTarget.style.background = 'rgba(167, 139, 250, 0.15)'}
-                                     onMouseLeave={e => e.currentTarget.style.background = 'rgba(167, 139, 250, 0.08)'}
+                                     onMouseEnter={_err => _err.currentTarget.style.background = 'rgba(167, 139, 250, 0.15)'}
+                                     onMouseLeave={_err => _err.currentTarget.style.background = 'rgba(167, 139, 250, 0.08)'}
                                    >
                                      {s}
                                    </button>
@@ -397,30 +398,29 @@ const InboxView = () => {
                          )}
                          {inlinePanelTab === 'notes' && (
                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                             <textarea value={internalNote} onChange={e => setInternalNote(e.target.value)} placeholder={lang === 'cz' ? 'Napište poznámku...' : 'Write note...'} style={{ flex: 1, minHeight: '60px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '10px', padding: '0.5rem', color: '#f59e0b', fontSize: '0.8rem', resize: 'none' }} />
+                             <textarea value={internalNote} onChange={_err => setInternalNote(_err.target.value)} placeholder={lang === 'cz' ? 'Napište poznámku...' : 'Write note...'} style={{ flex: 1, minHeight: '60px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '10px', padding: '0.5rem', color: '#f59e0b', fontSize: '0.8rem', resize: 'none' }} />
                              <button onClick={handleSaveNote} style={{ background: '#f59e0b', color: 'black', border: 'none', borderRadius: '8px', padding: '0 0.75rem', fontWeight: '900', fontSize: '0.7rem' }}>ULOŽIT</button>
                            </div>
                          )}
-                         {/* Translator and Replies integration similarly... */}
                       </div>
                     )}
 
-                   <div style={{ padding: '0.75rem 1rem', display: 'flex', gap: '0.75rem' }}>
-                      <input 
-                        type="text" 
-                        value={messageValue}
-                        onChange={(e) => setMessageValue(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter' && messageValue.trim()) handleSendMessage(messageValue); }}
-                        placeholder={lang === 'cz' ? 'Napište zprávu...' : 'Type a message...'} 
-                        style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.85rem 1rem', borderRadius: '12px', color: 'white', fontSize: '0.9rem' }} 
-                      />
-                      <button 
-                        onClick={() => { if (messageValue.trim()) handleSendMessage(messageValue); }}
-                        style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0 1.2rem', borderRadius: '12px', fontWeight: '900', fontSize: '0.8rem' }}
-                      >
-                        POSLAT
-                      </button>
-                   </div>
+                    <div style={{ padding: '0.75rem 1rem', display: 'flex', gap: '0.75rem' }}>
+                       <input 
+                         type="text" 
+                         value={messageValue}
+                         onChange={(_err) => setMessageValue(_err.target.value)}
+                         onKeyDown={(_err) => { if (_err.key === 'Enter' && messageValue.trim()) handleSendMessage(messageValue); }}
+                         placeholder={lang === 'cz' ? 'Napište zprávu...' : 'Type a message...'} 
+                         style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.85rem 1rem', borderRadius: '12px', color: 'white', fontSize: '0.9rem' }} 
+                       />
+                       <button 
+                         onClick={() => { if (messageValue.trim()) handleSendMessage(messageValue); }}
+                         style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0 1.2rem', borderRadius: '12px', fontWeight: '900', fontSize: '0.8rem' }}
+                       >
+                         POSLAT
+                       </button>
+                    </div>
                 </div>
               </div>
             ) : (
@@ -473,7 +473,7 @@ const InboxView = () => {
                   <div style={{ padding: '1.25rem', flex: '1 1 0', minHeight: 0, maxHeight: '45%', overflowY: 'auto' }}>
                     {activeContextTab === 'translator' ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        <textarea value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder={t('typeResponse')} style={{ width: '100%', height: '100px', background: 'rgba(0, 0, 0, 0.2)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem', color: 'white', resize: 'none' }} />
+                        <textarea value={sourceText} onChange={(_err) => setSourceText(_err.target.value)} placeholder={t('typeResponse')} style={{ width: '100%', height: '100px', background: 'rgba(0, 0, 0, 0.2)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem', color: 'white', resize: 'none' }} />
                         <button onClick={handleTranslate} disabled={isTranslating} style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0.75rem 1rem', borderRadius: '12px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                           {isTranslating ? (<><div className="loader-dots" style={{ display: 'flex', gap: '4px' }}><span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span><span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span><span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span></div>{t('translating')}</>) : (<><Sparkles size={16} /> {lang === 'cz' ? 'PŘELOŽIT PŘES AI' : 'TRANSLATE VIA AI'}</>)}
                         </button>
@@ -489,7 +489,7 @@ const InboxView = () => {
                       </div>
                     ) : activeContextTab === 'note' ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <textarea value={internalNote} onChange={(e) => setInternalNote(e.target.value)} placeholder="Add internal note..." style={{ width: '100%', minHeight: '100px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '12px', padding: '1rem', color: '#f59e0b' }} />
+                        <textarea value={internalNote} onChange={(_err) => setInternalNote(_err.target.value)} placeholder="Add internal note..." style={{ width: '100%', minHeight: '100px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '12px', padding: '1rem', color: '#f59e0b' }} />
                         <button onClick={handleSaveNote} disabled={!internalNote.trim()} style={{ alignSelf: 'flex-end', background: 'rgba(245,158,11,0.2)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.4)', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: '700' }}>Save Note</button>
                         {(clientNotes[selectedChat?.from] || []).length > 0 && (
                           <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

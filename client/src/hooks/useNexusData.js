@@ -49,7 +49,7 @@ export function useNexusData({
   const [isDataLoading, setIsDataLoading] = useState(false);
   const [isBackgroundLoading, setIsBackgroundLoading] = useState(false);
   const [hasHydrated, setHasHydrated] = useState(() => localStorage.getItem('nexus_hydrated') === 'true');
-  const [clientNames, setClientNames] = useState({});
+  const [clientNames] = useState({});
 
   // Global Features & Training Actions
   const handleFeatureToggle = useCallback((feature, i) => {
@@ -105,7 +105,7 @@ export function useNexusData({
         headers: { Authorization: `Bearer ${token}` }
       });
       setRelayOnline(res.data.online);
-    } catch (e) {
+    } catch {
       setRelayOnline(false);
     }
   }, [isLoggedIn, token, API_BASE]);
@@ -128,8 +128,8 @@ export function useNexusData({
     try {
       const res = await axios.get(url, { ...config, timeout: 10000 });
       return res;
-    } catch (err) {
-      console.warn(`[API] Fetch failed for ${url}:`, err.message);
+    } catch (_err) {
+      console.warn(`[API] Fetch failed for ${url}:`, _err.message);
       return { data: null };
     }
   }, []);
@@ -172,7 +172,7 @@ export function useNexusData({
         try {
           const endAt = new Date(safetyRes.data.plannedEndAt).getTime();
           if (!isNaN(endAt)) setTimeLeft(Math.floor((endAt - Date.now()) / 1000));
-        } catch (e) {}
+        } catch { /* ignore date parse _err */ }
       }
 
       // UNLOCK SIDEBAR AS SOON AS CRITICAL DATA IS READY
@@ -252,7 +252,7 @@ export function useNexusData({
         try {
           const ownAgencyRes = await axiosWithTiming(`${API_BASE}/agency/settings`, { headers: { Authorization: `Bearer ${token}` } });
           if (ownAgencyRes?.data) agencyData = [ownAgencyRes.data];
-        } catch (e) {}
+        } catch { /* ignore agency fetch _err */ }
       }
       if (agencyData) setAgencies(Array.isArray(agencyData) ? agencyData : [agencyData]);
 
@@ -286,14 +286,14 @@ export function useNexusData({
         });
       }
 
-    } catch (err) {
-      console.error('[Data] Init error:', err);
+    } catch (_err) {
+      console.error('[Data] Init _err:', _err);
       setIsDataLoading(false);
     } finally {
       clearTimeout(safetyTimer);
       setIsBackgroundLoading(false);
     }
-  }, [isLoggedIn, token, API_BASE, axiosWithTiming, normalizeProfileId, setMessages, setActiveOperator, setActiveSafetySession, setIsTimerActive, setTimeLeft]);
+  }, [isLoggedIn, token, API_BASE, axiosWithTiming, normalizeProfileId, setMessages, setActiveOperator, setActiveSafetySession, setIsTimerActive, setTimeLeft, hasHydrated, lang]);
 
   useEffect(() => {
     initData();
@@ -306,8 +306,8 @@ export function useNexusData({
         headers: { Authorization: `Bearer ${token}` }
       });
       initData();
-    } catch (err) {
-      console.error(err);
+    } catch (_err) {
+      console.error(_err);
       if (showToast) showToast(lang === 'cz' ? 'Nepodařilo se uložit popis.' : 'Failed to save description.', 'error');
     }
   }, [activeProfileId, bioText, token, API_BASE, initData, showToast, lang]);
@@ -355,11 +355,11 @@ export function useNexusData({
         }, 1000);
       }, 3000);
 
-    } catch (err) {
-      console.error('Sync failed:', err);
+    } catch (_err) {
+      console.error('Sync failed:', _err);
       setIsSyncing(false);
-      _setSyncStatus({ aw: 'error', ege: 'error', tpb: 'error' });
-      const errMsg = err.response?.data?.message || (lang === 'cz' ? 'Synchronizace selhala.' : 'Synchronization failed.');
+      _setSyncStatus({ aw: '_err', ege: '_err', tpb: '_err' });
+      const errMsg = _err.response?.data?.message || (lang === 'cz' ? 'Synchronizace selhala.' : 'Synchronization failed.');
       if (showToast) showToast(errMsg, 'error');
     }
   }, [activeProfileId, bioText, token, API_BASE, profiles, showToast, lang]);
@@ -374,8 +374,8 @@ export function useNexusData({
       });
       if (showToast) showToast(lang === 'cz' ? 'Přihlašovací údaje byly bezpečně uloženy.' : 'Credentials securely saved.', 'success');
       initData();
-    } catch (err) {
-      console.error('Save credentials failed:', err);
+    } catch (_err) {
+      console.error('Save credentials failed:', _err);
       if (showToast) showToast(lang === 'cz' ? 'Nepodařilo se uložit údaje.' : 'Failed to save credentials.', 'error');
     }
   }, [activeProfileId, token, API_BASE, initData, showToast, lang]);
@@ -431,8 +431,8 @@ export function useNexusData({
       
       if (showToast) showToast(lang === 'cz' ? 'Synchronizace kalendáře nastavena.' : 'Calendar sync configured.', 'success');
       setIsCalendarSyncOpen(false);
-    } catch (err) {
-      console.error(err);
+    } catch (_err) {
+      console.error(_err);
       if (showToast) showToast(lang === 'cz' ? 'Chyba při nastavování synchronizace.' : 'Error setting up sync.', 'error');
     } finally {
       setIsSyncing(false);
@@ -460,8 +460,8 @@ export function useNexusData({
       setIsBookingModalOpen(false);
       setNewBookingForm({ title: '', date: new Date().toISOString().split('T')[0], startTime: '10:00', endTime: '11:00', locationType: 'incall', address: '' });
       initData();
-    } catch (err) {
-      console.error(err);
+    } catch (_err) {
+      console.error(_err);
       if (showToast) showToast(lang === 'cz' ? 'Chyba při ukládání.' : 'Error saving booking.', 'error');
     } finally {
       setIsDataLoading(false);
@@ -480,9 +480,9 @@ export function useNexusData({
       if (bookingIndex === -1) return;
 
       const parseTime = (timeStr) => {
-        const [s, e] = (timeStr || '10:00 - 11:00').split(' - ');
+        const [s, _err] = (timeStr || '10:00 - 11:00').split(' - ');
         const [sh, sm] = s.split(':').map(Number);
-        const [eh, em] = e.split(':').map(Number);
+        const [eh, em] = _err.split(':').map(Number);
         return { start: (sh || 0) * 60 + (sm || 0), end: (eh || 0) * 60 + (em || 0) };
       };
 
@@ -494,7 +494,7 @@ export function useNexusData({
 
       const booking = updatedCalendar[bookingIndex];
       const times = parseTime(booking.time);
-      const oldEnd = times.end;
+      const _oldEnd = times.end;
       const newEnd = times.end + delayMinutes;
       
       booking.time = `${formatTime(times.start)} - ${formatTime(newEnd)}`;
@@ -536,8 +536,8 @@ export function useNexusData({
       if (showToast) showToast(lang === 'cz' ? 'Agenda byla posunuta.' : 'Agenda has been shifted.', 'success');
       
       return postponedSms;
-    } catch (err) {
-      console.error('Delay booking error:', err);
+    } catch (_err) {
+      console.error('Delay booking _err:', _err);
       return [];
     }
   }, [calendar, lang, showToast]);
@@ -548,8 +548,8 @@ export function useNexusData({
         profileId: activeProfileId, title: `Meeting: ${meeting.time}`, date: meeting.date, startTime: meeting.time, duration: meeting.duration
       }, { headers: { Authorization: `Bearer ${token}` } });
       initData();
-    } catch (err) {
-      console.error(err);
+    } catch (_err) {
+      console.error(_err);
       if (showToast) showToast(lang === 'cz' ? 'Nepodařilo se uložit schůzku.' : 'Failed to save meeting.', 'error');
     }
   }, [activeProfileId, token, API_BASE, initData, showToast, lang]);
@@ -561,8 +561,8 @@ export function useNexusData({
         headers: { Authorization: `Bearer ${token}` }
       });
       return res.data;
-    } catch (err) {
-      console.error('Failed to fetch client info:', err);
+    } catch (_err) {
+      console.error('Failed to fetch client info:', _err);
       return null;
     }
   }, [API_BASE, token]);

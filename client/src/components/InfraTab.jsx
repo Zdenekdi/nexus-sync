@@ -26,7 +26,7 @@ import { useNexus } from '../context/NexusContext';
 function InfraTab() {
   const nexus = useNexus();
   const { t: _t } = nexus;
-  const { status, bandwidth, stats, loading, cmdOutput, clearCmdOutput, error, serverAction, runCommand, gitPull, apkInfo, uploadApk, uploadProgress } = useVultr();
+  const { status, bandwidth, stats, loading, cmdOutput, clearCmdOutput, _err, serverAction, runCommand, gitPull, apkInfo, uploadApk, uploadProgress } = useVultr();
   const [command, setCommand] = useState("");
   const [repoPath, setRepoPath] = useState("~/nexus-backend");
   const [apkError, setApkError] = useState(null);
@@ -40,14 +40,14 @@ function InfraTab() {
     if (!file.name.endsWith('.apk')) { setApkError('Pouze soubory .apk jsou povoleny'); return; }
     setApkError(null); setApkSuccess(false);
     try { await uploadApk(file, apkVersion); setApkSuccess(true); setTimeout(() => setApkSuccess(false), 4000); }
-    catch(err) { setApkError(err.response?.data?.error || err.message); }
+    catch (_err) { setApkError(_err.response?.data?.error || _err.message); }
   };
 
   const statusColor = {
     running: "var(--success-color)",
     active: "var(--success-color)",
-    stopped: "var(--error-color)",
-    off: "var(--error-color)",
+    stopped: "var(--_err-color)",
+    off: "var(--_err-color)",
     pending: "var(--accent-color)",
     starting: "var(--accent-color)",
     stopping: "var(--accent-color)",
@@ -76,10 +76,10 @@ function InfraTab() {
       width: '100%'
     }}>
       
-      {error && (
+      {_err && (
         <div className="glass-card" style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '0.75rem', borderRadius: '12px' }}>
-          <AlertCircle size={20} color="var(--error-color)" />
-          <div style={{ fontSize: '0.85rem', color: 'var(--error-color)', fontWeight: '600' }}>{error}</div>
+          <AlertCircle size={20} color="var(--_err-color)" />
+          <div style={{ fontSize: '0.85rem', color: 'var(--_err-color)', fontWeight: '600' }}>{_err}</div>
         </div>
       )}
 
@@ -159,8 +159,8 @@ function InfraTab() {
               <button 
                 onClick={() => serverAction("stop")} 
                 disabled={loading || status?.power_status === 'stopped'}
-                className="action-button error"
-                style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: 'var(--error-color)', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: (loading || status?.power_status === 'stopped') ? 0.3 : 1 }}
+                className="action-button _err"
+                style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: 'var(--_err-color)', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: (loading || status?.power_status === 'stopped') ? 0.3 : 1 }}
               >
                 <Square size={14} fill="currentColor" /> STOP
               </button>
@@ -188,7 +188,7 @@ function InfraTab() {
               <div style={{ flex: 1, position: 'relative' }}>
                  <input 
                   value={repoPath} 
-                  onChange={e => setRepoPath(e.target.value)}
+                  onChange={_err => setRepoPath(_err.target.value)}
                   style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '0.7rem 0.7rem 0.7rem 2.2rem', color: 'white', fontSize: '0.8rem', boxSizing: 'border-box' }}
                   placeholder="Path (~/app)"
                 />
@@ -215,8 +215,8 @@ function InfraTab() {
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <input 
                 value={command} 
-                onChange={e => setCommand(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && runCommand(command)}
+                onChange={_err => setCommand(_err.target.value)}
+                onKeyDown={_err => _err.key === "Enter" && runCommand(command)}
                 style={{ flex: 1, background: 'rgba(0,0,0,0.3)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '0.7rem 1rem', color: '#10b981', fontSize: '0.8rem', fontFamily: 'monospace' }}
                 placeholder="root@vultr:~# command"
               />
@@ -278,9 +278,9 @@ function InfraTab() {
             )}
 
             <input ref={fileInputRef} type="file" accept=".apk" style={{ display: 'none' }}
-              onChange={async (e) => {
-                await handleApkFile(e.target.files?.[0]);
-                e.target.value = '';
+              onChange={async (_err) => {
+                await handleApkFile(_err.target.files?.[0]);
+                _err.target.value = '';
               }}
             />
 
@@ -288,7 +288,7 @@ function InfraTab() {
               <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Verze:</span>
               <input
                 value={apkVersion}
-                onChange={e => setApkVersion(e.target.value)}
+                onChange={_err => setApkVersion(_err.target.value)}
                 placeholder="1.0"
                 style={{ flex: 1, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--card-border)', borderRadius: '8px', padding: '0.35rem 0.6rem', color: 'white', fontSize: '0.78rem' }}
               />
@@ -297,12 +297,12 @@ function InfraTab() {
             {/* Drag-and-drop zone */}
             <div
               onClick={() => uploadProgress === null && fileInputRef.current?.click()}
-              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
-              onDragEnter={(e) => { e.preventDefault(); setIsDragging(true); }}
-              onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
-              onDrop={async (e) => {
-                e.preventDefault(); e.stopPropagation(); setIsDragging(false);
-                const file = e.dataTransfer.files?.[0];
+              onDragOver={(_err) => { _err.preventDefault(); _err.stopPropagation(); setIsDragging(true); }}
+              onDragEnter={(_err) => { _err.preventDefault(); setIsDragging(true); }}
+              onDragLeave={(_err) => { _err.preventDefault(); setIsDragging(false); }}
+              onDrop={async (_err) => {
+                _err.preventDefault(); _err.stopPropagation(); setIsDragging(false);
+                const file = _err.dataTransfer.files?.[0];
                 await handleApkFile(file);
               }}
               style={{
@@ -338,7 +338,7 @@ function InfraTab() {
               )}
             </div>
 
-            {apkError && <div style={{ fontSize: '0.72rem', color: 'var(--error-color)', marginTop: '0.5rem' }}>{apkError}</div>}
+            {apkError && <div style={{ fontSize: '0.72rem', color: 'var(--_err-color)', marginTop: '0.5rem' }}>{apkError}</div>}
             {apkSuccess && <div style={{ fontSize: '0.72rem', color: 'var(--success-color)', marginTop: '0.5rem' }}>✓ APK nahráno úspěšně</div>}
           </div>
         </div>

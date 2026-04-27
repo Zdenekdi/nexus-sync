@@ -41,7 +41,7 @@ const AgencyDetailModal = ({
         ? 'Global Scope' 
         : `${editContinent} - ${editCountry}`;
         
-      const res = await axios.patch(`${API_BASE}/agency/settings`, {
+      await axios.patch(`${API_BASE}/agency/settings`, {
         agencyId: agency.id,
         email: editEmail,
         region: formattedRegion
@@ -52,8 +52,8 @@ const AgencyDetailModal = ({
       setAgencyDetailModalData({ ...agency, email: editEmail, region: formattedRegion });
       setIsEditing(false);
       if (initData) initData();
-    } catch (err) {
-      console.error('Failed to update agency:', err);
+    } catch (_err) {
+      console.error('Failed to update agency:', _err);
       showToast('Failed to update agency', 'error');
     } finally {
       setIsSaving(false);
@@ -74,7 +74,7 @@ const AgencyDetailModal = ({
                     <input 
                       type="email" 
                       value={editEmail} 
-                      onChange={e => setEditEmail(e.target.value)} 
+                      onChange={_err => setEditEmail(_err.target.value)} 
                       placeholder="Agency Email"
                       style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--accent-color)', color: 'white', padding: '0.25rem 0.6rem', borderRadius: '6px', fontSize: '0.8rem', width: '200px' }}
                     />
@@ -87,8 +87,8 @@ const AgencyDetailModal = ({
                     <div style={{ display: 'flex', gap: '0.4rem' }}>
                       <select 
                         value={editContinent} 
-                        onChange={e => {
-                          const newContinent = e.target.value;
+                        onChange={_err => {
+                          const newContinent = _err.target.value;
                           setEditContinent(newContinent);
                           setEditCountry(CONTINENTS[newContinent][0]);
                         }} 
@@ -98,7 +98,7 @@ const AgencyDetailModal = ({
                       </select>
                       <select 
                         value={editCountry} 
-                        onChange={e => setEditCountry(e.target.value)} 
+                        onChange={_err => setEditCountry(_err.target.value)} 
                         style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--accent-color)', color: 'white', padding: '0.25rem 0.6rem', borderRadius: '6px', fontSize: '0.8rem', width: '120px' }}
                       >
                         {CONTINENTS[editContinent]?.map(c => <option key={c} value={c}>{c}</option>)}

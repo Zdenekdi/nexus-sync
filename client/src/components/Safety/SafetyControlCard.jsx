@@ -1,4 +1,5 @@
-import { Shield, Clock, CheckCircle, LogOut, Zap, Mic, MicOff, Battery, Phone, PhoneOff, UserCheck, XCircle, Bluetooth, Activity, Settings, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Shield, Clock, CheckCircle, LogOut, Zap, Mic, MicOff, Battery, Phone, PhoneOff, UserCheck, XCircle, Bluetooth, Activity, Settings, ChevronDown, Volume2 } from 'lucide-react';
 import { useNexus } from '../../context/NexusContext';
 
 const SafetyControlCard = () => {
@@ -6,11 +7,11 @@ const SafetyControlCard = () => {
     t, lang, isMobile, sosActive, linkedSessionId, checkinMinutes, setCheckinMinutes,
     checkinTimerEnd, checkinRemaining, triggerSOS, cancelSOS, 
     startCheckinTimer, resetCheckinTimer, confirmDeparture,
-    SAFETY_SUGGESTIONS, onDelayBooking, pendingNotifications,
+    SAFETY_SUGGESTIONS, onDelayBooking,
     linkedTrackerId, lastTrackerUpdate, voiceGuardianActive, handleToggleVoiceGuardian,
     batteryLevel, incomingGhostCall, setIncomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity,
     heartRate, hrThreshold, setHrThreshold, isBluetoothConnected, setIsBluetoothConnected,
-    audioSentinelActive, setAudioSentinelActive
+    audioSentinelActive, setAudioSentinelActive, showToast
   } = useNexus();
 
   const isCz = lang === 'cz' || lang === 'cs';
@@ -22,6 +23,12 @@ const SafetyControlCard = () => {
     if (s.includes('h')) mins = parseFloat(s) * 60;
     setCheckinMinutes(mins);
   };
+
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const formatRemaining = (ms) => {
     const totalSeconds = Math.floor(ms / 1000);
@@ -68,13 +75,13 @@ const SafetyControlCard = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#22c55e', fontWeight: 700 }}>
              <div style={{ 
                width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e',
-               animation: (lastTrackerUpdate && (Date.now() - lastTrackerUpdate < 45000)) ? 'pulse-signal 1.5s infinite' : 'none'
+               animation: (lastTrackerUpdate && (now - lastTrackerUpdate < 45000)) ? 'pulse-signal 1.5s infinite' : 'none'
              }} />
              {isCz ? 'Zdroj: Tracker' : 'Source: Tracker'}
           </div>
           <div style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>
             {lastTrackerUpdate 
-              ? (isCz ? `Aktivní před ${Math.floor((Date.now() - lastTrackerUpdate)/1000)}s` : `Active ${Math.floor((Date.now() - lastTrackerUpdate)/1000)}s ago`)
+              ? (isCz ? `Aktivní před ${Math.floor((now - lastTrackerUpdate)/1000)}s` : `Active ${Math.floor((now - lastTrackerUpdate)/1000)}s ago`)
               : (isCz ? 'Čekání na signál...' : 'Waiting for signal...')}
           </div>
         </div>
@@ -280,7 +287,7 @@ const SafetyControlCard = () => {
               <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'white' }}>{t.ghostCall}</div>
               <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
                 {ghostCallScheduledAt 
-                  ? (isCz ? `Vyzvánění začne za ${Math.ceil((ghostCallScheduledAt - Date.now())/1000)}s` : `Calling in ${Math.ceil((ghostCallScheduledAt - Date.now())/1000)}s`)
+                  ? (isCz ? `Vyzvánění začne za ${Math.ceil((ghostCallScheduledAt - now)/1000)}s` : `Calling in ${Math.ceil((ghostCallScheduledAt - now)/1000)}s`)
                   : t.ghostCallDesc}
               </div>
             </div>
@@ -330,7 +337,7 @@ const SafetyControlCard = () => {
               <div style={{ position: 'relative', flex: 1 }}>
                 <input
                   type="number" min="5" max="480" value={checkinMinutes}
-                  onChange={e => setCheckinMinutes(Math.max(5, Math.min(480, Number(e.target.value))))}
+                  onChange={_err => setCheckinMinutes(Math.max(5, Math.min(480, Number(_err.target.value))))}
                   style={{ 
                     width: '100%', 
                     padding: '0.8rem 1rem', 
@@ -480,7 +487,7 @@ const SafetyControlCard = () => {
              </div>
              <input 
                type="range" min="100" max="180" value={hrThreshold}
-               onChange={(e) => setHrThreshold(Number(e.target.value))}
+               onChange={(_err) => setHrThreshold(Number(_err.target.value))}
                style={{ width: '100%', accentColor: 'var(--accent-color)', height: '4px', cursor: 'pointer' }}
              />
           </div>

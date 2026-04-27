@@ -45,8 +45,8 @@ const AppOwnerPlansDashboard = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         setStats(r.data);
-      } catch (e) {
-        console.error('Failed to fetch admin stats:', e);
+      } catch (_err) {
+        console.error('Failed to fetch admin stats:', _err);
       } finally {
         setLoading(false);
       }
@@ -99,10 +99,10 @@ const AppOwnerPlansDashboard = () => {
               transition: 'all 0.2s',
               whiteSpace: 'nowrap'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent-color)'}
-            onMouseLeave={(e) => {
+            onMouseEnter={(_err) => _err.currentTarget.style.color = 'var(--accent-color)'}
+            onMouseLeave={(_err) => {
               if (activeTab !== tab.id) {
-                e.currentTarget.style.color = 'var(--text-secondary)';
+                _err.currentTarget.style.color = 'var(--text-secondary)';
               }
             }}
           >

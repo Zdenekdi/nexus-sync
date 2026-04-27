@@ -7,13 +7,13 @@ const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/ap
 const PinModal = ({ onSuccess, onCancel, title, description }) => {
   const { t, token } = useNexus();
   const [pin, setPin] = useState(['', '', '', '']);
-  const [error, setError] = useState('');
+  const [_err, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const inputRefs = [useRef(), useRef(), useRef(), useRef()];
-
+  const inputRefs = useRef([]);
+  
   useEffect(() => {
     // Auto-focus first input
-    if (inputRefs[0].current) inputRefs[0].current.focus();
+    if (inputRefs.current[0]) inputRefs.current[0].focus();
   }, []);
 
   const handleChange = (index, value) => {
@@ -25,16 +25,16 @@ const PinModal = ({ onSuccess, onCancel, title, description }) => {
     setError('');
 
     // Auto-advance
-    if (value && index < 3) {
-      inputRefs[index + 1].current.focus();
+    if (value && index < 3 && inputRefs.current[index + 1]) {
+      inputRefs.current[index + 1].focus();
     }
   };
 
-  const handleKeyDown = (index, e) => {
-    if (e.key === 'Backspace' && !pin[index] && index > 0) {
-      inputRefs[index - 1].current.focus();
+  const handleKeyDown = (index, _err) => {
+    if (_err.key === 'Backspace' && !pin[index] && index > 0 && inputRefs.current[index - 1]) {
+      inputRefs.current[index - 1].focus();
     }
-    if (e.key === 'Enter' && pin.every(v => v)) {
+    if (_err.key === 'Enter' && pin.every(v => v)) {
       handleSubmit();
     }
   };
@@ -59,9 +59,9 @@ const PinModal = ({ onSuccess, onCancel, title, description }) => {
       } else {
         setError(t?.invalidPin || 'Nesprávný bezpečnostní PIN');
         setPin(['', '', '', '']);
-        inputRefs[0].current.focus();
+        if (inputRefs.current[0]) inputRefs.current[0].focus();
       }
-    } catch (err) {
+    } catch {
       setError('Chyba spojení se serverem');
     } finally {
       setLoading(false);
@@ -82,18 +82,18 @@ const PinModal = ({ onSuccess, onCancel, title, description }) => {
           {pin.map((digit, idx) => (
             <input
               key={idx}
-              ref={inputRefs[idx]}
+              ref={el => inputRefs.current[idx] = el}
               type="password"
               inputMode="numeric"
               maxLength={1}
               value={digit}
-              onChange={(e) => handleChange(idx, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(idx, e)}
+              onChange={(_err) => handleChange(idx, _err.target.value)}
+              onKeyDown={(_err) => handleKeyDown(idx, _err)}
               style={{
                 width: '50px',
                 height: '60px',
                 background: 'rgba(255,255,255,0.05)',
-                border: `2px solid ${error ? 'var(--error-color)' : (digit ? 'var(--accent-color)' : 'var(--card-border)')}`,
+                border: `2px solid ${_err ? 'var(--_err-color)' : (digit ? 'var(--accent-color)' : 'var(--card-border)')}`,
                 borderRadius: '12px',
                 textAlign: 'center',
                 fontSize: '1.5rem',
@@ -106,9 +106,9 @@ const PinModal = ({ onSuccess, onCancel, title, description }) => {
           ))}
         </div>
 
-        {error && (
-          <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', marginBottom: '1.5rem' }}>
-            <AlertTriangle size={14} /> {error}
+        {_err && (
+          <div style={{ color: 'var(--_err-color)', fontSize: '0.85rem', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', marginBottom: '1.5rem' }}>
+            <AlertTriangle size={14} /> {_err}
           </div>
         )}
 

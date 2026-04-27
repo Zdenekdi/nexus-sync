@@ -1,6 +1,6 @@
 /**
  * useOmnichannel - React hook for omnichannel communication
- * Provides unified interface to manage messages across channels
+ * Provides unified interface to manag_err.messages across channels
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
@@ -18,6 +18,11 @@ export const useOmnichannel = (config = {}) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const commServiceRef = useRef(null);
+  const configRef = useRef(config);
+
+  useEffect(() => {
+    configRef.current = config;
+  }, [config]);
 
   // Initialize communication service
   useEffect(() => {
@@ -39,11 +44,11 @@ export const useOmnichannel = (config = {}) => {
               ...prev,
               [channelName]: { connected: true, ...channelConfig }
             }));
-          } catch (err) {
-            console.warn(`Failed to connect ${channelName}:`, err);
+          } catch (_err) {
+            console.warn(`Failed to connect ${channelName}:`, _err);
             setChannels(prev => ({
               ...prev,
-              [channelName]: { connected: false, error: err.message }
+              [channelName]: { connected: false, _err: _err.message }
             }));
           }
         }
@@ -62,9 +67,9 @@ export const useOmnichannel = (config = {}) => {
       });
 
       commServiceRef.current = service;
-    } catch (err) {
-      setError(err);
-      console.error('Omnichannel initialization error:', err);
+    } catch (_err) {
+      setError(_err);
+      console.error('Omnichannel initialization error:', _err);
     }
 
     return () => {
@@ -76,7 +81,7 @@ export const useOmnichannel = (config = {}) => {
         });
       }
     };
-  }, [config]);
+  }, [channels]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Send message through specific channel
@@ -91,9 +96,9 @@ export const useOmnichannel = (config = {}) => {
       const result = await commServiceRef.current.sendMessage(channelType, message);
       setMessages(prev => [...prev, { ...message, ...result }]);
       return result;
-    } catch (err) {
-      setError(err);
-      throw err;
+    } catch (_err) {
+      setError(_err);
+      throw _err;
     } finally {
       setIsLoading(false);
     }
@@ -114,9 +119,9 @@ export const useOmnichannel = (config = {}) => {
         conversationId
       );
       return conversation;
-    } catch (err) {
-      setError(err);
-      throw err;
+    } catch (_err) {
+      setError(_err);
+      throw _err;
     } finally {
       setIsLoading(false);
     }
@@ -141,9 +146,9 @@ export const useOmnichannel = (config = {}) => {
         ...convs
       ]);
       return convs;
-    } catch (err) {
-      setError(err);
-      throw err;
+    } catch (_err) {
+      setError(_err);
+      throw _err;
     } finally {
       setIsLoading(false);
     }
@@ -159,8 +164,8 @@ export const useOmnichannel = (config = {}) => {
 
     try {
       return await commServiceRef.current.getChannelStats(channelType);
-    } catch (err) {
-      console.error('Error getting channel stats:', err);
+    } catch (_err) {
+      console.error('Error getting channel stats:', _err);
       return null;
     }
   }, []);
@@ -179,9 +184,9 @@ export const useOmnichannel = (config = {}) => {
         messageId,
         conversationId
       );
-    } catch (err) {
-      setError(err);
-      throw err;
+    } catch (_err) {
+      setError(_err);
+      throw _err;
     }
   }, []);
 

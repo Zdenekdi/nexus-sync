@@ -19,10 +19,10 @@ export class WhatsAppAdapter extends ChannelAdapter {
       // Initialize WhatsApp Business API client
       this.isConnected = true;
       return { success: true, channel: 'whatsapp' };
-    } catch (error) {
-      console.error('WhatsApp connection failed:', error);
+    } catch (_err) {
+      console.error('WhatsApp connection failed:', _err);
       this.isConnected = false;
-      throw error;
+      throw _err;
     }
   }
 
@@ -39,7 +39,7 @@ export class WhatsAppAdapter extends ChannelAdapter {
     const formatted = this.formatOutgoing(message);
     
     try {
-      // Queue message for sending
+      // Queu_err.message for sending
       const messageId = `wa_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       this.messageQueue.push({
         id: messageId,
@@ -60,9 +60,9 @@ export class WhatsAppAdapter extends ChannelAdapter {
         timestamp: new Date(),
         channel: 'whatsapp'
       };
-    } catch (error) {
-      console.error('WhatsApp send error:', error);
-      throw error;
+    } catch (_err) {
+      console.error('WhatsApp send _err:', _err);
+      throw _err;
     }
   }
 
@@ -140,7 +140,7 @@ export class WhatsAppAdapter extends ChannelAdapter {
       return null;
     }
 
-    const msg = rawData.entry[0].changes[0].value.messages[0];
+    const msg = rawData.entry[0].changes[0].valu_err.messages[0];
     return {
       id: msg.id,
       from: msg.from,
@@ -175,8 +175,8 @@ export class WhatsAppAdapter extends ChannelAdapter {
     for (const handler of handlers) {
       try {
         await handler(payload);
-      } catch (error) {
-        console.error('Webhook handler error:', error);
+      } catch (_err) {
+        console.error('Webhook handler _err:', _err);
       }
     }
   }

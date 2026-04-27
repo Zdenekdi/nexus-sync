@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Shield, Activity, Battery, MapPin, AlertTriangle, Monitor, Volume2 } from 'lucide-react';
 import { useNexus } from '../../context/NexusContext';
 
@@ -8,14 +8,13 @@ const TvDashboard = () => {
     activeBioWarning, 
     playBeep, 
     lang, 
-    activeSafetySession, 
-    gpsHistory,
+     _gpsHistory,
     batteryLevel,
     heartRate
   } = useNexus();
 
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [beepActive, setBeepActive] = useState(false);
+  const beepActive = !!(sosActive || activeBioWarning);
 
   // Update clock
   useEffect(() => {
@@ -25,17 +24,14 @@ const TvDashboard = () => {
 
   // Beep logic for TV Dashboard
   useEffect(() => {
-    let interval;
-    if (sosActive || activeBioWarning) {
-      setBeepActive(true);
-      interval = setInterval(() => {
-        playBeep();
-      }, 2000); // Repeated beep every 2 seconds
-    } else {
-      setBeepActive(false);
-    }
+    if (!beepActive) return;
+    
+    const interval = setInterval(() => {
+      playBeep();
+    }, 2000); // Repeated beep every 2 seconds
+    
     return () => clearInterval(interval);
-  }, [sosActive, activeBioWarning, playBeep]);
+  }, [beepActive, playBeep]);
 
   const isCz = lang === 'cz';
 
@@ -127,7 +123,7 @@ const TvDashboard = () => {
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          {gpsHistory.length > 0 ? (
+          { _gpsHistory.length > 0 ? (
             <div style={{ textAlign: 'center' }}>
               <MapPin size={80} color="var(--accent-color)" />
               <p style={{ fontSize: '1.5rem', marginTop: '1rem', color: 'rgba(255,255,255,0.5)' }}>Map Stream Active</p>

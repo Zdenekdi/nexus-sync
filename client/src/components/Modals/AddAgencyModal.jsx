@@ -1,5 +1,5 @@
 /* src/components/Modals/AddAgencyModal.jsx */
-import React, { useEffect } from 'react';
+import React from 'react';
 import { X } from 'lucide-react';
 
 const CONTINENTS = {
@@ -21,18 +21,6 @@ const AddAgencyModal = ({ isOpen, onClose, token: _token, onAdd, t }) => {
     email: ''
   });
 
-  // Reset form when opened
-  useEffect(() => {
-    if (isOpen) {
-      setData({
-        name: '',
-        continent: 'Europe',
-        country: 'United Kingdom',
-        tier: 'Standard',
-        email: ''
-      });
-    }
-  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -57,15 +45,15 @@ const AddAgencyModal = ({ isOpen, onClose, token: _token, onAdd, t }) => {
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={20} /></button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-          <input type="text" value={data.name} onChange={e => setData({...data, name: e.target.value})} placeholder={t('agencyName') || 'Agency Name'} style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }} />
+          <input type="text" value={data.name} onChange={_err => setData({...data, name: _err.target.value})} placeholder={t('agencyName') || 'Agency Name'} style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }} />
           
           <div style={{ display: 'flex', gap: '0.8rem' }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', fontWeight: '600' }}>CONTINENT / REGION</div>
               <select 
                 value={data.continent} 
-                onChange={e => {
-                  const newContinent = e.target.value;
+                onChange={_err => {
+                  const newContinent = _err.target.value;
                   setData({...data, continent: newContinent, country: CONTINENTS[newContinent][0]});
                 }} 
                 style={{ width: '100%', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
@@ -79,7 +67,7 @@ const AddAgencyModal = ({ isOpen, onClose, token: _token, onAdd, t }) => {
               <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', fontWeight: '600' }}>COUNTRY</div>
               <select 
                 value={data.country} 
-                onChange={e => setData({...data, country: e.target.value})} 
+                onChange={_err => setData({...data, country: _err.target.value})} 
                 style={{ width: '100%', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}
               >
                 {CONTINENTS[data.continent].map(country => (
@@ -91,7 +79,7 @@ const AddAgencyModal = ({ isOpen, onClose, token: _token, onAdd, t }) => {
 
           <div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', fontWeight: '600' }}>SUBSCRIPTION PLAN</div>
-            <select value={data.tier} onChange={e => setData({...data, tier: e.target.value})} style={{ width: '100%', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}>
+            <select value={data.tier} onChange={_err => setData({...data, tier: _err.target.value})} style={{ width: '100%', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }}>
               <option value="Standard">Standard</option>
               <option value="Professional">Professional</option>
               <option value="Enterprise">Enterprise</option>
@@ -100,7 +88,7 @@ const AddAgencyModal = ({ isOpen, onClose, token: _token, onAdd, t }) => {
           
           <div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', fontWeight: '600' }}>AGENCY EMAIL (Optional)</div>
-            <input type="email" value={data.email} onChange={e => setData({...data, email: e.target.value})} placeholder="contact@agency.com" style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }} />
+            <input type="email" value={data.email} onChange={_err => setData({...data, email: _err.target.value})} placeholder="contact@agency.com" style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }} />
           </div>
         </div>
         <div style={{ display: 'flex', gap: '1rem', marginTop: '2.5rem' }}>

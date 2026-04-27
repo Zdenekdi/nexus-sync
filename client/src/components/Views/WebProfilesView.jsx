@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
   ChevronDown, Image, FileEdit, RefreshCw, Check, X, AlertTriangle 
 } from 'lucide-react';
@@ -39,14 +40,14 @@ const WebProfilesView = () => {
   const [proxyConfig, setProxyConfig] = useState('');
 
   // Update fields when activeProfile changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (activeProfile) {
-      // In a real app, we might want to fetch or decrypt these if needed, 
-      // but for security we usually keep them empty or show as placeholders.
-      setAdsPowerId(''); 
-      setPlatformUser('');
-      setPlatformPass('');
-      setProxyConfig('');
+      Promise.resolve().then(() => {
+        setAdsPowerId(''); 
+        setPlatformUser('');
+        setPlatformPass('');
+        setProxyConfig('');
+      });
     }
   }, [activeProfileId, activeProfile]);
 
@@ -101,7 +102,7 @@ const WebProfilesView = () => {
                 padding: '4px 10px', 
                 borderRadius: '20px', 
                 background: relayOnline ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                color: relayOnline ? 'var(--success-color)' : 'var(--error-color)',
+                color: relayOnline ? 'var(--success-color)' : 'var(--_err-color)',
                 border: `1px solid ${relayOnline ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
                 fontWeight: '800'
               }}>
@@ -116,7 +117,7 @@ const WebProfilesView = () => {
                   className="note-input" 
                   style={{ background: 'rgba(255,255,255,0.05)' }}
                   value={automationPlatform}
-                  onChange={(e) => setAutomationPlatform(e.target.value)}
+                  onChange={(_err) => setAutomationPlatform(_err.target.value)}
                 >
                   <option value="adultwork">Adultwork.com</option>
                   <option value="amateri">Amateri.com</option>
@@ -130,7 +131,7 @@ const WebProfilesView = () => {
                   className="note-input" 
                   placeholder="např. j8f2k9l" 
                   value={adsPowerId}
-                  onChange={(e) => setAdsPowerId(e.target.value)}
+                  onChange={(_err) => setAdsPowerId(_err.target.value)}
                 />
               </div>
             </div>
@@ -143,7 +144,7 @@ const WebProfilesView = () => {
                   className="note-input" 
                   placeholder="Login k webu" 
                   value={platformUser}
-                  onChange={(e) => setPlatformUser(e.target.value)}
+                  onChange={(_err) => setPlatformUser(_err.target.value)}
                 />
               </div>
               <div className="input-group-premium">
@@ -153,7 +154,7 @@ const WebProfilesView = () => {
                   className="note-input" 
                   placeholder="••••••••" 
                   value={platformPass}
-                  onChange={(e) => setPlatformPass(e.target.value)}
+                  onChange={(_err) => setPlatformPass(_err.target.value)}
                 />
               </div>
             </div>
@@ -165,7 +166,7 @@ const WebProfilesView = () => {
                 className="note-input" 
                 placeholder="host:port:user:pass" 
                 value={proxyConfig}
-                onChange={(e) => setProxyConfig(e.target.value)}
+                onChange={(_err) => setProxyConfig(_err.target.value)}
               />
             </div>
 
@@ -191,7 +192,7 @@ const WebProfilesView = () => {
                       const res = await axios.get(`${API_BASE}/auth/relay-token`, { headers: { Authorization: `Bearer ${token}` } });
                       navigator.clipboard.writeText(res.data.token);
                       showToast(lang === 'cz' ? 'Token zkopírován!' : 'Token copied!', 'success');
-                    } catch (e) {
+                    } catch {
                       showToast('Chyba při generování tokenu', 'error');
                     }
                   }}
@@ -212,8 +213,8 @@ const WebProfilesView = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Image size={20} color="var(--accent-color)" /> {t('gallery')}</h3>
               <>
-               <input type="file" id="photo-upload-input" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
-                 const file = e.target.files?.[0];
+               <input type="file" id="photo-upload-input" accept="image/*" style={{ display: 'none' }} onChange={(_err) => {
+                 const file = _err.target.files?.[0];
                  if (file) showToast((lang === 'cz' ? 'Foto vybráno: ' : 'Photo selected: ') + file.name, 'success');
                }} />
                <button className="action-btn" onClick={() => document.getElementById('photo-upload-input').click()} style={{ width: 'auto', padding: '0.5rem 1rem', marginTop: 0, fontSize: '0.8rem' }}>+ {t('uploadPhoto')}</button>
@@ -279,7 +280,7 @@ const WebProfilesView = () => {
                     paddingBottom: '1rem'
                   }} 
                   value={bioText || activeProfile?.description || ''}
-                  onChange={e => setBioText(e.target.value)}
+                  onChange={_err => setBioText(_err.target.value)}
                   placeholder={t('bioPlaceholder')}
                 ></textarea>
                 <div style={{ marginTop: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', fontWeight: '600' }}>

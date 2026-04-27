@@ -24,13 +24,13 @@ export class APIClient {
     // Interceptor pro refresh tokenu
     this.client.interceptors.response.use(
       response => response,
-      async (error) => {
-        if (error.response?.status === 401) {
+      async (_err) => {
+        if (_err.response?.status === 401) {
           // Token expired - refresh nebo logout
           console.warn('Token expired');
           throw new Error('Auth token expired');
         }
-        throw error;
+        throw _err;
       }
     );
   }

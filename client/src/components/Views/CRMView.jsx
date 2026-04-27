@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Search, Filter, UserCheck, TrendingUp, Calendar, 
   MessageSquare, Star, Clock, AlertTriangle, ChevronRight,
@@ -9,18 +9,14 @@ import { useNexus } from '../../context/NexusContext';
 const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
 
 const CRMView = () => {
-  const { t, token } = useNexus();
+  const { _t, token } = useNexus();
   const [clients, setClients] = useState([]);
   const [stats, setStats] = useState({ totalClients: 0, vipClients: 0, totalRevenue: 0 });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all'); // all, vip, inactive
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const headers = { 'Authorization': `Bearer ${token}` };
@@ -35,12 +31,16 @@ const CRMView = () => {
         setClients(clientsData);
         setStats(statsData);
       }
-    } catch (err) {
-      console.error('Failed to fetch CRM data', err);
+    } catch {
+      console.error('Failed to fetch CRM data');
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const filteredClients = clients.filter(c => {
     const matchesSearch = (c.phone || '').includes(searchTerm) || (c.name || '').toLowerCase().includes(searchTerm.toLowerCase());
@@ -102,7 +102,7 @@ const CRMView = () => {
               type="text" 
               placeholder="Search by phone or name..."
               value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
+              onChange={_err => setSearchTerm(_err.target.value)}
               style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '0.8rem 1rem 0.8rem 2.8rem', color: 'white', fontSize: '0.9rem' }}
             />
           </div>
