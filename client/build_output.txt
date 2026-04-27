@@ -1,0 +1,29 @@
+
+> client@3.21.0 build
+> vite build
+
+vite v7.3.1 building client environment for production...
+transforming...
+✓ 1963 modules transformed.
+✗ Build failed in 981ms
+error during build:
+src/App.jsx (7:9): "useNexus" is not exported by "src/context/NexusContext.jsx", imported by "src/App.jsx".
+file: /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/App.jsx:7:9
+
+5:   Activity, Settings, UserCheck 
+6: } from 'lucide-react';
+7: import { useNexus } from './context/NexusContext';
+            ^
+8: import GlobalAppStyles from './styles/GlobalAppStyles';
+9: import PremiumSelector from './components/UI/PremiumSelector';
+
+    at getRollupError (file:///Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/node_modules/rollup/dist/es/shared/parseAst.js:406:41)
+    at error (file:///Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/node_modules/rollup/dist/es/shared/parseAst.js:402:42)
+    at Module.error (file:///Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/node_modules/rollup/dist/es/shared/node-entry.js:17065:16)
+    at Module.traceVariable (file:///Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/node_modules/rollup/dist/es/shared/node-entry.js:17477:29)
+    at ModuleScope.findVariable (file:///Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/node_modules/rollup/dist/es/shared/node-entry.js:15090:39)
+    at FunctionScope.findVariable (file:///Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/node_modules/rollup/dist/es/shared/node-entry.js:5676:38)
+    at FunctionBodyScope.findVariable (file:///Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/node_modules/rollup/dist/es/shared/node-entry.js:5676:38)
+    at Identifier.bind (file:///Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/node_modules/rollup/dist/es/shared/node-entry.js:5450:40)
+    at CallExpression.bind (file:///Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/node_modules/rollup/dist/es/shared/node-entry.js:2832:23)
+    at CallExpression.bind (file:///Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/node_modules/rollup/dist/es/shared/node-entry.js:12199:15)

@@ -10,7 +10,8 @@ import { initPushNotifications, removePushListeners } from '../services/pushServ
 import { TRANSLATIONS } from '../translations';
 import { API_BASE } from '../constants/config';
 
-import { NexusContext } from './NexusContextCore';
+import { NexusContext, useNexus } from './NexusContextCore';
+export { NexusContext, useNexus };
 
 // Shared AudioContext to prevent exhaustion on mobile devices
 let sharedAudioCtx = null;
