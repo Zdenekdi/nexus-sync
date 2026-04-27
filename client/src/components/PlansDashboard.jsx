@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CreditCard, Users, Check, FileEdit, CheckCheck, Zap, RefreshCw, AlertCircle, Package as PackageIcon } from 'lucide-react';
 
-import { NexusContext } from '../context/ContextHook';
+import { useNexus } from '../context/ContextHook';
 
 const PlansDashboard = () => {
-  const { t, activeOperator, activeRole, subscriptionPlans, fetchPlans, updatePlans, isPlansLoading, activeMarket, setActiveMarket, agencies, isMobile, showToast, lang } = useContext(NexusContext);
+  const { t, activeOperator, activeRole, subscriptionPlans, fetchPlans, updatePlans, isPlansLoading, activeMarket, setActiveMarket, agencies, isMobile, showToast, lang } = useNexus();
   const currentAgency = agencies[0];
   const [editingPlan, setEditingPlan] = useState(null);
   
