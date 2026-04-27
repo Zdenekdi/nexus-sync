@@ -24,8 +24,8 @@ export default function CallHistory({ onCallBack, style }) {
     try {
       const { calls: data } = await NexusSip.getCallHistory();
       setCalls(Array.isArray(data) ? data : []);
-    } catch (e) {
-      console.warn('[SIP] getCallHistory error', e);
+    } catch (_err) {
+      console.warn('[SIP] getCallHistory _err', _err);
       setCalls([]);
     } finally {
       setLoading(false);
@@ -271,7 +271,7 @@ export default function CallHistory({ onCallBack, style }) {
                   onClick={() => setSelected(call)}
                   role="button"
                   tabIndex={0}
-                  onKeyDown={e => e.key === 'Enter' && setSelected(call)}
+                  onKeyDown={_err => _err.key === 'Enter' && setSelected(call)}
                 >
                   {/* Ikona směru */}
                   <div className="ch-icon-wrap"
@@ -303,7 +303,7 @@ export default function CallHistory({ onCallBack, style }) {
         {/* Action sheet */}
         {selected && (
           <div className="ch-sheet-bg" onClick={() => setSelected(null)}>
-            <div className="ch-sheet" onClick={e => e.stopPropagation()}>
+            <div className="ch-sheet" onClick={_err => _err.stopPropagation()}>
               <div className="ch-sheet-handle" />
               <div className="ch-sheet-caller">{selected.caller || 'Neznámé číslo'}</div>
               <div className="ch-sheet-sub">

@@ -36,8 +36,8 @@ const ActivityView = () => {
       setLogs(res.data.logs || []);
       setTotal(res.data.total || 0);
       setPages(res.data.pages || 1);
-    } catch (err) {
-      console.error('Failed to load audit logs:', err);
+    } catch (_err) {
+      console.error('Failed to load audit logs:', _err);
     } finally {
       setIsLoading(false);
     }
@@ -70,7 +70,7 @@ const ActivityView = () => {
             <input
               type="text"
               value={filterAction}
-              onChange={e => { setFilterAction(e.target.value); setPage(1); }}
+              onChange={_err => { setFilterAction(_err.target.value); setPage(1); }}
               placeholder={cz ? 'Filtrovat akci...' : 'Filter action...'}
               style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.5rem 0.75rem 0.5rem 2rem', borderRadius: '8px', color: 'white', fontSize: '0.8rem', width: '180px' }}
             />

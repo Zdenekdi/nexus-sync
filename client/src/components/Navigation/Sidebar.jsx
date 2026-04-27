@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import { 
   LayoutDashboard, MessageSquare, Calendar, Users, BarChart3, 
   Settings, Activity, Radio, Globe, Smartphone, FileSearch, 
@@ -7,16 +7,27 @@ import {
 } from 'lucide-react';
 import { useNexus } from '../../context/NexusContext';
 
+const TooltipItem = ({ label, children, isMobile, isSidebarCollapsed }) => {
+  if (isMobile) return <>{children}</>;
+  return (
+    <div style={{ position: 'relative' }} className="sidebar-tooltip-wrap">
+      {children}
+      {isSidebarCollapsed && (
+        <span className="sidebar-tooltip-text">{label}</span>
+      )}
+    </div>
+  );
+};
+
 const Sidebar = () => {
   const nexus = useNexus();
   const { 
-    activeTab, setActiveTab, t, lang, setLang, 
+    activeTab, setActiveTab, t, 
     activeOperator, logout, isMobile, 
-    totalUnread, profiles,
+    totalUnread,
     activeProfile, setActiveProfileId, activeRole,
     isSidebarCollapsed, isAllowed,
     onlineOnly, setOnlineOnly,
-    isDataLoading,
     isSidebarOpen, setIsSidebarOpen
   } = nexus;
 
@@ -43,17 +54,6 @@ const Sidebar = () => {
     return null;
   }
 
-  const TooltipItem = ({ label, children }) => {
-    if (isMobile) return <>{children}</>;
-    return (
-      <div style={{ position: 'relative' }} className="sidebar-tooltip-wrap">
-        {children}
-        {isSidebarCollapsed && (
-          <span className="sidebar-tooltip-text">{label}</span>
-        )}
-      </div>
-    );
-  };
 
   return (
     <>
@@ -137,7 +137,7 @@ const Sidebar = () => {
         {/* Navigation */}
         <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1.5rem' }} className="custom-scrollbar">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <TooltipItem label={capitalize(t('dashboard'))}>
+            <TooltipItem label={capitalize(t('dashboard'))} isMobile={isMobile} isSidebarCollapsed={isSidebarCollapsed}>
               <button data-testid="nav-link-dashboard" onClick={() => handleNavigation('dashboard')} className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === 'dashboard' ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
                 <LayoutDashboard size={20} color={activeTab === 'dashboard' ? 'var(--accent-color)' : 'var(--text-secondary)'} />
                 {!isSidebarCollapsed && <span style={{ color: activeTab === 'dashboard' ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === 'dashboard' ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(t('dashboard'))}</span>}
@@ -155,7 +155,7 @@ const Sidebar = () => {
                     { id: 'plans', icon: CreditCard, label: t('plansManagement') },
                     { id: 'features', icon: Zap, label: t('features') },
                   ].map(item => (
-                    <TooltipItem key={item.id} label={capitalize(item.label)}>
+                    <TooltipItem key={item.id} label={capitalize(item.label)} isMobile={isMobile} isSidebarCollapsed={isSidebarCollapsed}>
                       <button data-testid={`nav-link-${item.id}`} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
                         <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
                         {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(item.label)}</span>}
@@ -185,7 +185,7 @@ const Sidebar = () => {
                       { id: 'payouts', icon: Wallet, label: t('payouts') || 'Výplaty', perm: 'analytics' },
                       { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
                     ].filter(item => !item.perm || isAllowed(item.perm)).map(item => (
-                      <TooltipItem key={item.id} label={capitalize(item.label)}>
+                      <TooltipItem key={item.id} label={capitalize(item.label)} isMobile={isMobile} isSidebarCollapsed={isSidebarCollapsed}>
                         <button onClick={() => handleNavigation(item.id)} data-testid={`nav-link-${item.id}`} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
                           <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
                           {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(item.label)}</span>}
@@ -240,7 +240,7 @@ const Sidebar = () => {
                 <div style={{ fontSize: '0.6rem', color: 'var(--accent-color)', fontWeight: '800' }}>{displayRoleString.toUpperCase()}</div>
               </div>
             )}
-            {(!isSidebarCollapsed || isMobile) && <button onClick={handleLogout} style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: 'var(--error-color)', width: '28px', height: '28px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><LogOut size={14} /></button>}
+            {(!isSidebarCollapsed || isMobile) && <button onClick={handleLogout} style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: 'var(--_err-color)', width: '28px', height: '28px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><LogOut size={14} /></button>}
           </div>
         </div>
       </div>

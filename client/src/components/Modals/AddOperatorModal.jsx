@@ -14,8 +14,8 @@ const AddOperatorModal = ({ isOpen, onClose, data, onDataChange, onAdd, t, lang,
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={20} /></button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <input type="text" value={data.name} onChange={e => onDataChange({...data, name: e.target.value})} placeholder={t('fullName')} style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }} />
-          <input type="email" value={data.email} onChange={e => onDataChange({...data, email: e.target.value})} placeholder={t('emailAddress')} style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }} />
+          <input type="text" value={data.name} onChange={_err => onDataChange({...data, name: _err.target.value})} placeholder={t('fullName')} style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }} />
+          <input type="email" value={data.email} onChange={_err => onDataChange({...data, email: _err.target.value})} placeholder={t('emailAddress')} style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }} />
           <PremiumSelector
             options={[
               { id: 'Model', name: lang === 'cz' ? 'Modelka' : 'Model' },

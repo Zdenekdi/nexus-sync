@@ -93,7 +93,7 @@ const CalendarView = () => {
                 type="text"
                 placeholder="https://calendar.google.com/calendar/ical/..."
                 value={calendarSyncUrl || ''}
-                onChange={(e) => setCalendarSyncUrl(e.target.value)}
+                onChange={(_err) => setCalendarSyncUrl(_err.target.value)}
                 style={{ 
                   flex: 1, 
                   padding: '1rem 1.25rem', 
@@ -172,14 +172,14 @@ const CalendarView = () => {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: '700', fontSize: isMobile ? '0.9rem' : '1rem', marginBottom: '0.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.title}</div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: (event.status || '').toLowerCase() === 'busy' ? 'var(--error-color)' : 'var(--success-color)' }}></div>
+                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: (event.status || '').toLowerCase() === 'busy' ? 'var(--_err-color)' : 'var(--success-color)' }}></div>
                         {(event.status || 'AVAILABLE').toUpperCase()}
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '1rem' }}>
                       {activeTimerEvent?.id === event.id ? (
                         <button 
-                          data-testid={`btn-checkout-${event.id}`} onClick={(e) => { e.stopPropagation(); handleCheckOut(); }}
+                          data-testid={`btn-checkout-${event.id}`} onClick={(_err) => { _err.stopPropagation(); handleCheckOut(); }}
                           className="action-btn" 
                           style={{ margin: 0, padding: isMobile ? '0.4rem 0.6rem' : '0.5rem 1rem', background: 'var(--success-color)', fontSize: '0.7rem' }}
                         >
@@ -187,7 +187,7 @@ const CalendarView = () => {
                         </button>
                       ) : (
                         <button 
-                          data-testid={`btn-checkin-${event.id}`} onClick={(e) => { e.stopPropagation(); handleCheckIn(event); }}
+                          data-testid={`btn-checkin-${event.id}`} onClick={(_err) => { _err.stopPropagation(); handleCheckIn(event); }}
                           className="action-btn" 
                           style={{ margin: 0, padding: isMobile ? '0.4rem 0.6rem' : '0.5rem 1rem', background: isTimerActive ? 'rgba(255,255,255,0.05)' : 'var(--accent-color)', fontSize: '0.7rem', opacity: isTimerActive ? 0.5 : 1 }}
                           disabled={isTimerActive}
@@ -197,7 +197,7 @@ const CalendarView = () => {
                       )}
                       <div style={{ position: 'relative' }}>
                         <button
-                          onClick={(e) => { e.stopPropagation(); setOpenBookingMenuId(openBookingMenuId === event.id ? null : event.id); }}
+                          onClick={(_err) => { _err.stopPropagation(); setOpenBookingMenuId(openBookingMenuId === event.id ? null : event.id); }}
                           style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.35rem', borderRadius: '6px', display: 'flex', alignItems: 'center' }}
                         >
                           <MoreVertical size={16} />
@@ -205,7 +205,7 @@ const CalendarView = () => {
                         {openBookingMenuId === event.id && (
                           <div
                             style={{ position: 'absolute', right: 0, top: '100%', zIndex: 999, minWidth: '140px', background: '#1a1d27', border: '1px solid var(--card-border)', borderRadius: '10px', boxShadow: '0 8px 24px rgba(0,0,0,0.4)', padding: '0.35rem', marginTop: '4px' }}
-                            onClick={e => e.stopPropagation()}
+                            onClick={_err => _err.stopPropagation()}
                           >
                             <button onClick={() => handleEditBooking(event)} style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', color: 'white', padding: '0.5rem 0.75rem', borderRadius: '7px', cursor: 'pointer', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                               ✏️ Upravit

@@ -9,7 +9,7 @@ import { useNexus } from '../../context/NexusContext';
 const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
 
 const PayoutsView = () => {
-  const { t, token, isMobile, lang } = useNexus();
+  const { _t, token, isMobile, lang } = useNexus();
   const [summary, setSummary] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState({
@@ -27,8 +27,8 @@ const PayoutsView = () => {
         const data = await res.json();
         setSummary(data);
       }
-    } catch (err) {
-      console.error('Failed to fetch payout summary:', err);
+    } catch (_err) {
+      console.error('Failed to fetch payout summary:', _err);
     } finally {
       setLoading(false);
     }
@@ -89,7 +89,7 @@ const PayoutsView = () => {
           <input 
             type="date" 
             value={dateRange.start}
-            onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
+            onChange={(_err) => setDateRange({...dateRange, start: _err.target.value})}
             style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.75rem', borderRadius: '10px', color: 'white' }} 
           />
         </div>
@@ -98,7 +98,7 @@ const PayoutsView = () => {
           <input 
             type="date" 
             value={dateRange.end}
-            onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
+            onChange={(_err) => setDateRange({...dateRange, end: _err.target.value})}
             style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.75rem', borderRadius: '10px', color: 'white' }} 
           />
         </div>

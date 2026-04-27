@@ -9,7 +9,7 @@ import { useNexus } from '../../context/NexusContext';
 const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
 
 const ReferralsView = () => {
-  const { t, token, isMobile, lang, showToast } = useNexus();
+  const { _t, lang, isMobile, token, showToast } = useNexus();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -24,8 +24,8 @@ const ReferralsView = () => {
         const data = await res.json();
         setStats(data);
       }
-    } catch (err) {
-      console.error('Failed to fetch referral stats:', err);
+    } catch (_err) {
+      console.error('Failed to fetch referral stats:', _err);
     } finally {
       setLoading(false);
     }
@@ -45,7 +45,7 @@ const ReferralsView = () => {
         fetchStats();
         showToast(lang === 'cz' ? 'Referral kód vygenerován!' : 'Referral code generated!', 'success');
       }
-    } catch (err) {
+    } catch {
       showToast('Error generating code', 'error');
     }
   };

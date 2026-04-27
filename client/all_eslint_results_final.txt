@@ -1,0 +1,34 @@
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/PermissionsDashboard.jsx
+  17:6  warning  React Hook useEffect has a missing dependency: 'fetchRoles'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/PlansDashboard.jsx
+  26:6  warning  React Hook useEffect has a missing dependency: 'fetchPlans'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/Safety/BlacklistPanel.jsx
+  34:6  warning  React Hook useCallback has missing dependencies: 'lang' and 'showToast'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/Safety/SOSPanel.jsx
+  39:6  warning  React Hook useCallback has missing dependencies: 'lang' and 'showToast'. Either include them or remove the dependency array       react-hooks/exhaustive-deps
+  76:6  warning  React Hook useEffect has missing dependencies: 'fetchActive' and 'showToast'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/Views/CRMView.jsx
+  23:9  warning  The 'fetchData' function makes the dependencies of useEffect Hook (at line 21) change on every render. To fix this, wrap the definition of 'fetchData' in its own useCallback() Hook  react-hooks/exhaustive-deps
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/Views/DeviceSetupView.jsx
+  67:27  error  Empty block statement  no-empty
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/Views/ReferralsView.jsx
+  12:43  error  'activeOperator' is assigned a value but never used. Allowed unused vars must match /^_[a-zA-Z]|^[A-Z]/u  no-unused-vars
+  48:14  error  'err' is defined but never used                                                                           no-unused-vars
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/hooks/useOmnichannel/index.js
+   79:6  warning  React Hook useEffect has a missing dependency: 'channels'. Either include it or remove the dependency array         react-hooks/exhaustive-deps
+  100:6  warning  React Hook useCallback has an unnecessary dependency: 'channels'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+  123:6  warning  React Hook useCallback has an unnecessary dependency: 'channels'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+  150:6  warning  React Hook useCallback has an unnecessary dependency: 'channels'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+  166:6  warning  React Hook useCallback has an unnecessary dependency: 'channels'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+  186:6  warning  React Hook useCallback has an unnecessary dependency: 'channels'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+
+✖ 15 problems (3 errors, 12 warnings)
+

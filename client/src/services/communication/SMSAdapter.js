@@ -19,10 +19,10 @@ export class SMSAdapter extends ChannelAdapter {
       // Initialize SMS gateway client
       this.isConnected = true;
       return { success: true, channel: 'sms', gateway: this.gateway };
-    } catch (error) {
-      console.error('SMS connection failed:', error);
+    } catch (_err) {
+      console.error('SMS connection failed:', _err);
       this.isConnected = false;
-      throw error;
+      throw _err;
     }
   }
 
@@ -58,9 +58,9 @@ export class SMSAdapter extends ChannelAdapter {
         channel: 'sms',
         cost: this.calculateSMSCost(formatted.Body)
       };
-    } catch (error) {
-      console.error('SMS send error:', error);
-      throw error;
+    } catch (_err) {
+      console.error('SMS send _err:', _err);
+      throw _err;
     }
   }
 
@@ -184,8 +184,8 @@ export class SMSAdapter extends ChannelAdapter {
     if (this.webhookHandler) {
       try {
         await this.webhookHandler(payload);
-      } catch (error) {
-        console.error('SMS webhook handler error:', error);
+      } catch (_err) {
+        console.error('SMS webhook handler _err:', _err);
       }
     }
   }

@@ -1,0 +1,31 @@
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/DashboardHome.jsx
+  17:17  error  'showToast' is assigned a value but never used. Allowed unused vars must match /^_[a-zA-Z]|^[A-Z]/u  no-unused-vars
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/PermissionsDashboard.jsx
+  17:6  warning  React Hook useEffect has a missing dependency: 'fetchRoles'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/PlansDashboard.jsx
+  26:6  warning  React Hook useEffect has a missing dependency: 'fetchPlans'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/Safety/BlacklistPanel.jsx
+  34:6  warning  React Hook useCallback has missing dependencies: 'lang' and 'showToast'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/Safety/SOSPanel.jsx
+  39:6  warning  React Hook useCallback has missing dependencies: 'lang' and 'showToast'. Either include them or remove the dependency array       react-hooks/exhaustive-deps
+  76:6  warning  React Hook useEffect has missing dependencies: 'fetchActive' and 'showToast'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/Views/CRMView.jsx
+  21:6  warning  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/Views/DeviceSetupView.jsx
+  67:27  error  Empty block statement  no-empty
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/Views/ReferralsView.jsx
+  28:7  error  Parsing error: Unexpected token console
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/hooks/useOmnichannel/index.js
+  79:6  warning  React Hook useEffect has a missing dependency: 'channels'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+✖ 10 problems (3 errors, 7 warnings)
+

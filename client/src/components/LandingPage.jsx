@@ -270,7 +270,7 @@ const LandingPage = () => {
       gettingStartedTitle: "Jak začít?",
       gettingStartedDesc: "Začněte používat Nexus Hub ve třech jednoduchých krocích.",
       steps: [
-        { num: "1", title: "Zaregistrujte agenturu", desc: "Klikněte na \"Vstoupit do aplikace\" a zvolte záložku \"Nová agentura\". Vyplňte název agentury, vaše jméno, e-mail a heslo. Po registraci obdržíte unikátní zvací kód." },
+        { num: "1", title: "Zaregistrujte agenturu", desc: "Klikněte na \"Vstoupit do aplikace\" a zvolte záložku \"Nová agentura\". Vyplňte název agentury, vaše jméno, _err-mail a heslo. Po registraci obdržíte unikátní zvací kód." },
         { num: "2", title: "Pozvěte svůj tým", desc: "Sdílejte zvací kód (např. NEXUS-A1B2C3) se svými operátorkami a modelkami. Každý člen se zaregistruje přes záložku \"Připojit se\" na přihlašovací stránce a vybere svou roli." },
         { num: "3", title: "Spravujte vše z jednoho místa", desc: "Po přihlášení máte přístup k dashboardu s kompletním přehledem. Nastavte profily, oprávnění a začněte pracovat." }
       ]
@@ -362,7 +362,7 @@ const LandingPage = () => {
       gettingStartedDesc: "Start using Nexus Hub in three simple steps.",
       steps: [
         { num: "1", title: "Register Your Agency", desc: "Click \"Enter Application\" and select the \"New Agency\" tab. Fill in your agency name, your name, email, and password. After registration you'll receive a unique invite code." },
-        { num: "2", title: "Invite Your Team", desc: "Share the invite code (e.g. NEXUS-A1B2C3) with your operators and models. Each member registers via the \"Join Agency\" tab on the login page and selects their role." },
+        { num: "2", title: "Invite Your Team", desc: "Share the invite code (_err.g. NEXUS-A1B2C3) with your operators and models. Each member registers via the \"Join Agency\" tab on the login page and selects their role." },
         { num: "3", title: "Manage Everything in One Place", desc: "Once logged in, you have access to a full dashboard. Set up profiles, permissions, and start working." }
       ]
     }

@@ -14,8 +14,8 @@
  *   });
  *
  *   // Příchozí hovor
- *   NexusSip.addListener('incomingCall', (e) => {
- *     console.log('Volá:', e.callerId); // e.callerId === e.caller (obě fungují)
+ *   NexusSip.addListener('incomingCall', (_err) => {
+ *     console.log('Volá:', _err.callerId); // _err.callerId === _err.caller (obě fungují)
  *   });
  *
  *   await NexusSip.answer();   // přijmout
@@ -29,7 +29,7 @@
  *
  *   const { sipState, incomingCall, answer, reject, hangup, toggleMute } =
  *     useSipCall({ server, username, password, port }, {
- *       onIncoming: (e) => showIncomingScreen(e),
+ *       onIncoming: (_err) => showIncomingScreen(_err),
  *       onAnswered: ()  => showActiveCallScreen(),
  *       onEnded:    ()  => hideCallScreen(),
  *     });
@@ -87,8 +87,8 @@ export function useSipCall(config, handlers = {}) {
       port:     config.port     || 5060,
     }).then(() => {
       setSipState('registered');
-    }).catch(err => {
-      console.warn('[SIP] initialize error:', err);
+    }).catch(_err => {
+      console.warn('[SIP] initialize _err:', _err);
       setSipState('idle');
     });
 

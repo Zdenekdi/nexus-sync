@@ -83,14 +83,14 @@ const ProfilesView = () => {
               <div style={{ flex: isMobile ? '1 1 auto' : '0 0 250px' }}>
                 <div style={{ fontSize: '1.75rem', fontWeight: '900', marginBottom: '0.5rem' }}>{profile.name}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.5rem' }}>
-                  <div style={{ padding: '0.2rem 0.6rem', borderRadius: '4px', background: activeCount > 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: activeCount > 0 ? 'var(--success-color)' : 'var(--error-color)', fontSize: '0.7rem', fontWeight: '900', border: '1px solid currentColor' }}>
+                  <div style={{ padding: '0.2rem 0.6rem', borderRadius: '4px', background: activeCount > 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: activeCount > 0 ? 'var(--success-color)' : 'var(--_err-color)', fontSize: '0.7rem', fontWeight: '900', border: '1px solid currentColor' }}>
                     {activeCount > 0 ? `${activeCount} ${t('operatorsActive')}` : t('noCoverage')}
                   </div>
                 </div>
                 <button
                   onClick={() => toggleOperatorStatus(profile.id, activeOperator?.id)}
                   className={`action-btn ${isMyProfile ? 'active' : ''}`}
-                  style={{ background: isMyProfile ? 'rgba(239, 68, 68, 0.2)' : 'var(--accent-color)', color: isMyProfile ? 'var(--error-color)' : 'white' }}
+                  style={{ background: isMyProfile ? 'rgba(239, 68, 68, 0.2)' : 'var(--accent-color)', color: isMyProfile ? 'var(--_err-color)' : 'white' }}
                 >
                   {isMyProfile ? t('deactivateMySeat') : t('activateMySeat')}
                 </button>

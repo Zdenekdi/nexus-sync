@@ -73,11 +73,12 @@ const Onboarding = () => {
       descEn: 'No sharing of personal data. Communicate safely through our infrastructure and protect what is yours.',
     }
   ];
-  const onComplete = () => {
+  const onComplete = useCallback(() => {
     setShowOnboarding(false);
     setShowLanding(false);
     setHasSeenOnboarding(true);
-  };
+  }, [setShowOnboarding, setShowLanding, setHasSeenOnboarding]);
+
   const [current, setCurrent] = useState(0);
   const [animating, setAnimating] = useState(false);
   const touchStartX = useRef(null);
@@ -97,7 +98,7 @@ const Onboarding = () => {
     if (current < slides.length - 1) {
       goToSlide(current + 1);
     }
-  }, [current, goToSlide]);
+  }, [current, goToSlide, slides.length]);
 
   const handleComplete = useCallback(() => {
     localStorage.setItem(STORAGE_KEY, 'true');
@@ -110,15 +111,15 @@ const Onboarding = () => {
     onComplete();
   }, [onComplete, setShowLanding]);
 
-  const onTouchStart = useCallback((e) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
+  const onTouchStart = useCallback((_err) => {
+    touchStartX.current = _err.touches[0].clientX;
+    touchStartY.current = _err.touches[0].clientY;
   }, []);
 
-  const onTouchEnd = useCallback((e) => {
+  const onTouchEnd = useCallback((_err) => {
     if (touchStartX.current === null) return;
-    const dx = e.changedTouches[0].clientX - touchStartX.current;
-    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    const dx = _err.changedTouches[0].clientX - touchStartX.current;
+    const dy = _err.changedTouches[0].clientY - touchStartY.current;
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
       if (dx < 0 && current < slides.length - 1) {
         next();
@@ -128,7 +129,7 @@ const Onboarding = () => {
     }
     touchStartX.current = null;
     touchStartY.current = null;
-  }, [current, next, goToSlide]);
+  }, [current, next, goToSlide, slides.length]);
 
   const slide = slides[current];
   const isLast = current === slides.length - 1;
@@ -301,8 +302,8 @@ const Onboarding = () => {
               letterSpacing: '0.01em',
               transition: 'transform 0.15s ease, box-shadow 0.15s ease',
             }}
-            onTouchStart={e => e.currentTarget.style.transform = 'scale(0.97)'}
-            onTouchEnd={e => e.currentTarget.style.transform = 'scale(1)'}
+            onTouchStart={_err => _err.currentTarget.style.transform = 'scale(0.97)'}
+            onTouchEnd={_err => _err.currentTarget.style.transform = 'scale(1)'}
           >
             {isCz ? 'Vstoupit do aplikace →' : 'Enter Application →'}
           </button>
@@ -324,8 +325,8 @@ const Onboarding = () => {
               letterSpacing: '0.01em',
               transition: 'all 0.15s ease',
             }}
-            onTouchStart={e => e.currentTarget.style.opacity = '0.7'}
-            onTouchEnd={e => e.currentTarget.style.opacity = '1'}
+            onTouchStart={_err => _err.currentTarget.style.opacity = '0.7'}
+            onTouchEnd={_err => _err.currentTarget.style.opacity = '1'}
           >
             {isCz ? 'Pokračovat →' : 'Continue →'}
           </button>

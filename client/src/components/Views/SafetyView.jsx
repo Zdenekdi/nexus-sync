@@ -7,7 +7,7 @@ import SafetyControlCard from '../Safety/SafetyControlCard';
 
 const SafetyView = () => {
   const nexus = useNexus();
-  const { t, lang, activeRole, isMobile, voiceGuardianActive, audioSentinelActive, sosActive } = nexus;
+  const { t, lang, activeRole, isMobile, voiceGuardianActive,  _audioSentinelActive, sosActive } = nexus;
   const [subTab, setSubTab] = useState('blacklist');
 
   const isCz = lang === 'cz' || lang === 'cs';

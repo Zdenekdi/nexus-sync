@@ -138,8 +138,8 @@ const SettingsView = () => {
                         const data = await res.json();
                         showToast(data.message || 'Error', 'error');
                       }
-                    } catch (e) {
-                      showToast('Network error', 'error');
+                    } catch {
+                      showToast('Network _err', 'error');
                     }
                   }}
                   className="action-btn" 
@@ -241,7 +241,7 @@ const SettingsView = () => {
               </div>
               <select 
                 value={agencySettings?.safetyAlertMode || 'MANAGERS_AND_ASSIGNED'}
-                onChange={(e) => updateAgencySettings({ safetyAlertMode: e.target.value })}
+                onChange={(_err) => updateAgencySettings({ safetyAlertMode: _err.target.value })}
                 className="glass-input"
                 style={{ width: isMobile ? '100%' : 'auto', padding: '0.5rem 1rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid var(--accent-color)', color: 'white', fontWeight: '700' }}
               >
@@ -257,8 +257,8 @@ const SettingsView = () => {
               </div>
               <select
                 value={departureIntervalMin}
-                onChange={(e) => {
-                  const v = parseInt(e.target.value, 10);
+                onChange={(_err) => {
+                  const v = parseInt(_err.target.value, 10);
                   setDepartureIntervalMin(v);
                   localStorage.setItem('nexus_departure_interval', String(v));
                 }}
@@ -284,7 +284,7 @@ const SettingsView = () => {
                 </div>
                 <div 
                   className={`status-badge ${isMaintenanceMode ? 'active' : ''}`} 
-                  style={{ cursor: 'pointer', background: isMaintenanceMode ? 'var(--error-color)' : 'rgba(255,255,255,0.06)' }}
+                  style={{ cursor: 'pointer', background: isMaintenanceMode ? 'var(--_err-color)' : 'rgba(255,255,255,0.06)' }}
                   onClick={() => setIsMaintenanceMode(!isMaintenanceMode)}
                 >
                   {isMaintenanceMode ? 'ACTIVE' : 'INACTIVE'}
@@ -298,7 +298,7 @@ const SettingsView = () => {
                     placeholder="Type an announcement to show to all users..." 
                     style={{ flex: 1, padding: '0.75rem' }}
                     value={globalAnnouncement}
-                    onChange={(e) => setGlobalAnnouncement(e.target.value)}
+                    onChange={(_err) => setGlobalAnnouncement(_err.target.value)}
                   />
                   <button className="action-btn" style={{ width: 'auto', padding: '0 1.5rem' }} onClick={() => showToast('Announcement published!', 'success')}>PUBLISH</button>
                 </div>

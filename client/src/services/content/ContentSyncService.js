@@ -49,10 +49,10 @@ export class ContentSyncService {
           success: true,
           data: result
         };
-      } catch (error) {
+      } catch (_err) {
         sync.results[portalName] = {
           success: false,
-          error: error.message
+          _err: _err.message
         };
       }
     }
@@ -89,10 +89,10 @@ export class ContentSyncService {
           uploadedCount: result.uploadedCount,
           data: result
         };
-      } catch (error) {
+      } catch (_err) {
         sync.results[portalName] = {
           success: false,
-          error: error.message
+          _err: _err.message
         };
       }
     }
@@ -132,10 +132,10 @@ export class ContentSyncService {
           success: true,
           data: result
         };
-      } catch (error) {
+      } catch (_err) {
         sync.results[portalName] = {
           success: false,
-          error: error.message
+          _err: _err.message
         };
       }
     }
@@ -189,17 +189,17 @@ export class ContentSyncService {
         portal: portalName,
         data: profile
       };
-    } catch (error) {
+    } catch (_err) {
       return {
         success: false,
         portal: portalName,
-        error: error.message
+        _err: _err.message
       };
     }
   }
 
   /**
-   * Scheduled sync (e.g., run every hour)
+   * Scheduled sync (_err.g., run every hour)
    */
   async startScheduledSync(interval = 60 * 60 * 1000) {
     if (this.isRunning) {
@@ -215,8 +215,8 @@ export class ContentSyncService {
         for (const sync of this.syncQueue.filter(s => s.status === 'pending')) {
           await this.retrySync(sync);
         }
-      } catch (error) {
-        console.error('Scheduled sync error:', error);
+      } catch (_err) {
+        console.error('Scheduled sync _err:', _err);
       }
     };
 
@@ -248,8 +248,8 @@ export class ContentSyncService {
       try {
         // Retry logic here
         retries++;
-      } catch (error) {
-        console.error(`Sync retry ${retries} failed:`, error);
+      } catch (_err) {
+        console.error(`Sync retry ${retries} failed:`, _err);
       }
     }
 

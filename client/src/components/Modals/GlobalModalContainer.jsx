@@ -75,8 +75,8 @@ const GlobalModalContainer = () => {
             setProfiles(prev => prev.map(p => p.id === editingProfileData.id ? { ...p, ...editingProfileData } : p));
             showToast(t('profileSavedMsg') || (lang === 'cz' ? 'Profil úspěšně uložen' : 'Profile properly saved'), 'success');
             setIsEditProfileOpen(false);
-          } catch (e) {
-            console.error('Failed to update profile:', e);
+          } catch (_err) {
+            console.error('Failed to update profile:', _err);
             showToast(lang === 'cz' ? 'Chyba při ukládání profilu' : 'Error saving profile', 'error');
           }
         }}
@@ -107,8 +107,8 @@ const GlobalModalContainer = () => {
               showToast(lang === 'cz' ? 'Agentura byla vytvořena' : 'Agency provisioned successfully', 'success');
               setIsAddAgencyOpen(false);
               if (initData) initData();
-            } catch (err) {
-              console.error(err);
+            } catch (_err) {
+              console.error(_err);
               showToast(lang === 'cz' ? 'Chyba při vytváření agentury' : 'Failed to provision agency', 'error');
             }
           }}

@@ -9,9 +9,7 @@ const HierarchyView = () => {
     activeRole,
     activeOperator,
     operators,
-    profiles,
-    agencies,
-    lang
+    profiles
   } = nexus;
 
   // Define the role hierarchy order (omitted App Owner to keep it agency-specific)

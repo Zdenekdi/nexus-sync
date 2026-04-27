@@ -34,18 +34,18 @@ export default function ActiveCallScreen({ caller, profileName, onEnd }) {
   const toggleMute = useCallback(async () => {
     const next = !isMuted;
     setIsMuted(next);
-    try { await NexusSip.mute({ muted: next }); } catch (e) { console.warn(e); }
+    try { await NexusSip.mute({ muted: next }); } catch (_err) { console.warn(_err); }
   }, [isMuted]);
 
   const toggleSpeaker = useCallback(async () => {
     const next = !isSpeaker;
     setIsSpeaker(next);
-    try { await NexusSip.setSpeaker({ enabled: next }); } catch (e) { console.warn(e); }
+    try { await NexusSip.setSpeaker({ enabled: next }); } catch (_err) { console.warn(_err); }
   }, [isSpeaker]);
 
   const hangup = useCallback(async () => {
     clearInterval(timerRef.current);
-    try { await NexusSip.hangup(); } catch (e) { console.warn(e); }
+    try { await NexusSip.hangup(); } catch (_err) { console.warn(_err); }
     onEnd?.();
   }, [onEnd]);
 

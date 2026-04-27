@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
@@ -10,8 +10,7 @@ import { initPushNotifications, removePushListeners } from '../services/pushServ
 import { TRANSLATIONS } from '../translations';
 import { API_BASE } from '../constants/config';
 
-// 1. Context Definition
-export const NexusContext = createContext(null);
+import { NexusContext } from './NexusContextCore';
 
 // Shared AudioContext to prevent exhaustion on mobile devices
 let sharedAudioCtx = null;
@@ -19,44 +18,26 @@ const getSharedAudioCtx = () => {
   if (!sharedAudioCtx) {
     try {
       sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    } catch (e) {
-      console.warn('[Nexus-Audio] AudioContext initialization failed:', e);
+    } catch {
+      // AudioContext failure
     }
   }
   return sharedAudioCtx;
 };
 
-// 2. Main Hook - using explicit React.useContext and function declaration for hoisting stability
-// Consistently use function decoration for hoisting stability in production builds
-export function useNexus() {
-  const context = React.useContext(NexusContext);
-  
-  if (!context) {
-    const errorMsg = '[NexusContext] useNexus was called outside of NexusProvider. This is a critical initialization failure.';
-    console.error(errorMsg);
-    
-    // In production crash scenarios, we throw to trigger the ErrorBoundary or window.onerror
-    const err = new Error(errorMsg);
-    // Add extra diagnostic info
-    err.code = 'NEXUS_CONTEXT_MISSING';
-    throw err;
-  }
-  
-  return context;
-}
 
 const getSafeStorage = (key, fallback) => {
   try {
     return localStorage.getItem(key) || fallback;
-  } catch (e) {
-    console.warn('[Nexus-Bootstrap] Storage access failed:', e);
+  } catch (_err) {
+    console.warn('[Nexus-Bootstrap] Storage access failed:', _err);
     return fallback;
   }
 };
 
 export const NexusProvider = ({ children }) => {
   // 1. Core UI States
-  const [lang, setLang] = React.useState(() => {
+  const [lang, setLang] = useState(() => {
     const stored = getSafeStorage('nexus_lang', null);
     if (stored) return stored;
     
@@ -72,7 +53,7 @@ export const NexusProvider = ({ children }) => {
   // -------------------------------------------------------------------------
   // SECURE TRANSLATION ENGINE (Ultra-Hardened for Production)
   // -------------------------------------------------------------------------
-  const t = React.useCallback((key, params = {}) => {
+  const t = useCallback((key, params = {}) => {
     try {
       if (!key || typeof key !== 'string') return key || '';
       
@@ -90,13 +71,13 @@ export const NexusProvider = ({ children }) => {
         });
       }
       return text;
-    } catch (err) {
-      console.error('[NexusContext] Translation fallback triggered for:', key, err);
+    } catch (_err) {
+      console.error('[NexusContext] Translation fallback triggered for:', key, _err);
       return String(key || '');
     }
   }, [lang]);
 
-  const [activeTab, setActiveTab] = React.useState(() => {
+  const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname.substring(1);
       if (path && path !== '' && path !== 'dashboard') {
@@ -105,9 +86,9 @@ export const NexusProvider = ({ children }) => {
     }
     return localStorage.getItem('nexus_active_tab') || 'dashboard';
   });
-  const [activeMarket, setActiveMarket] = React.useState(localStorage.getItem('nexus_active_market') || 'cz');
-  const [activeProfileId, setActiveProfileId] = React.useState(localStorage.getItem('nexus_active_profile_id') || 'all');
-  const [showLanding, setShowLanding] = React.useState(() => {
+  const [activeMarket, setActiveMarket] = useState(localStorage.getItem('nexus_active_market') || 'cz');
+  const [activeProfileId, setActiveProfileId] = useState(localStorage.getItem('nexus_active_profile_id') || 'all');
+  const [showLanding, setShowLanding] = useState(() => {
     if (typeof window !== 'undefined') {
       // If we are in a mobile app, we usually skip landing unless explicitly asked
       if (Capacitor.isNativePlatform()) {
@@ -124,38 +105,32 @@ export const NexusProvider = ({ children }) => {
     }
     return true;
   });
-  const [hasSeenOnboarding, setHasSeenOnboarding] = React.useState(() => {
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('nexus_onboarding_seen') === 'true';
     }
     return false;
   });
-  const [showOnboarding, setShowOnboarding] = React.useState(!hasSeenOnboarding && Capacitor.isNativePlatform());
+  const [showOnboarding, setShowOnboarding] = useState(!hasSeenOnboarding && Capacitor.isNativePlatform());
 
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
-  const [onlineOnly, setOnlineOnly] = React.useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
-  const [mobileView, setMobileView] = React.useState('list'); 
-  const [inlinePanelTab, setInlinePanelTab] = React.useState(null);
-  const [activeContextTab, setActiveContextTab] = React.useState('translator');
-  const [sourceText, setSourceText] = React.useState("");
-  const [translatedText, setTranslatedText] = React.useState("");
-  const [isTranslating, setIsTranslating] = React.useState(false);
-  const [internalNote, setInternalNote] = React.useState("");
-  const [detectedMeeting, setDetectedMeeting] = React.useState(null);
-  const [typingProfiles, setTypingProfiles] = React.useState({});
-  const [showPanicConfirm, setShowPanicConfirm] = React.useState(false);
-  const [justLoggedOut, setJustLoggedOut] = React.useState(false);
-  const [isRelayActive, setIsRelayActive] = React.useState(() => localStorage.getItem('nexus_relay_active') === 'true');
-  const [relaySimSlot, setRelaySimSlot] = React.useState(() => localStorage.getItem('nexus_relay_sim_slot') || 'auto');
-  const [relayLogs, setRelayLogs] = React.useState(() => {
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [onlineOnly, setOnlineOnly] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [mobileView, setMobileView] = useState('list'); 
+  const [inlinePanelTab, setInlinePanelTab] = useState(null);
+  const [sourceText, setSourceText] = useState("");
+  const [translatedText, setTranslatedText] = useState("");
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [isRelayActive, setIsRelayActive] = useState(() => localStorage.getItem('nexus_relay_active') === 'true');
+  const [relaySimSlot, setRelaySimSlot] = useState(() => localStorage.getItem('nexus_relay_sim_slot') || 'auto');
+  const [relayLogs, setRelayLogs] = useState(() => {
     try {
       const saved = localStorage.getItem('nexus_relay_logs');
       return saved ? JSON.parse(saved) : [];
     } catch { return []; }
   });
 
-  const addRelayLog = React.useCallback((type, from, content, direction, status = 'pending') => {
+  const addRelayLog = useCallback((type, from, content, direction, status = 'pending') => {
     const newLog = {
       id: 'relay_' + Date.now() + '_' + Math.random(),
       transport: type,
@@ -174,7 +149,7 @@ export const NexusProvider = ({ children }) => {
     return newLog.id;
   }, []);
 
-  const updateRelayLogStatus = React.useCallback((logId, newStatus) => {
+  const updateRelayLogStatus = useCallback((logId, newStatus) => {
     setRelayLogs(prev => {
       const updated = prev.map(l => l.id === logId ? { ...l, status: newStatus } : l);
       localStorage.setItem('nexus_relay_logs', JSON.stringify(updated));
@@ -184,57 +159,41 @@ export const NexusProvider = ({ children }) => {
 
 
   // 1.1 Safety & SOS State (Globalized)
-  const [activeSafetySession, setActiveSafetySession] = React.useState(null);
-  const [sosActive, setSosActive] = React.useState(false);
-  const [linkedTrackerId, setLinkedTrackerId] = React.useState(() => localStorage.getItem('nexus_linkedTrackerId') || null);
-  const [trackerStatus, setTrackerStatus] = React.useState('disconnected');
-  const [lastTrackerUpdate, setLastTrackerUpdate] = React.useState(null);
-  const [gpsHistory, setGpsHistory] = React.useState([]);
-  const [sosAlertId, setSosAlertId] = React.useState(null);
-  const [linkedSessionId, setLinkedSessionId] = React.useState(null);
-  const [checkinMinutes, setCheckinMinutes] = React.useState(60);
-  const [checkinTimerEnd, setCheckinTimerEnd] = React.useState(null);
-  const [checkinRemaining, setCheckinRemaining] = React.useState(null);
-  const [voiceGuardianActive, setVoiceGuardianActive] = React.useState(false);
-  const [batteryLevel, setBatteryLevel] = React.useState(null);
-  const [incomingGhostCall, setIncomingGhostCall] = React.useState(false);
-  const [ghostCallScheduledAt, setGhostCallScheduledAt] = React.useState(null);
+  const [heartRate, setHeartRate] = useState(0);
+  const [hrThreshold, setHrThreshold] = useState(() => Number(localStorage.getItem('nexus_hrThreshold')) || 130);
+  const [isBluetoothConnected, setIsBluetoothConnected] = useState(false);
+  const [isTvMode, setIsTvMode] = useState(false);
+  const [tvToken, setTvToken] = useState(null);
+  const [activeBioWarning, setActiveBioWarning] = useState(null);
+  const [linkedTrackerId, setLinkedTrackerId] = useState(() => localStorage.getItem('nexus_linkedTrackerId') || null);
+  const [trackerStatus, setTrackerStatus] = useState('disconnected');
+  const [audioSentinelActive, setAudioSentinelActive] = useState(() => localStorage.getItem('nexus_audio_sentinel') === 'true');
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [pinModalPromise, setPinModalPromise] = useState(null);
   
-  // 1.2 IoT & Biometric States (Guardian IoT Suite)
-  const [heartRate, setHeartRate] = React.useState(0);
-  const [hrThreshold, setHrThreshold] = React.useState(() => Number(localStorage.getItem('nexus_hrThreshold')) || 130);
-  const [isBluetoothConnected, setIsBluetoothConnected] = React.useState(false);
-  const [isTvMode, setIsTvMode] = React.useState(false);
-  const [tvToken, setTvToken] = React.useState(null);
-  const [activeBioWarning, setActiveBioWarning] = React.useState(null);
-  const [audioSentinelActive, setAudioSentinelActive] = React.useState(() => localStorage.getItem('nexus_audio_sentinel') === 'true');
-  const [isPinModalOpen, setIsPinModalOpen] = React.useState(false);
-  const [pinModalPromise, setPinModalPromise] = React.useState(null);
-  
-  const checkinIntervalRef = React.useRef(null);
-  const gpsWatchRef = React.useRef(null);
-  const recognitionRef = React.useRef(null);
+  const checkinIntervalRef = useRef(null);
+  const gpsWatchRef = useRef(null);
+  const recognitionRef = useRef(null);
   
   // Modals state
-  const [agencyDetailModalData, setAgencyDetailModalData] = React.useState(null);
-  const [isAddAgencyOpen, setIsAddAgencyOpen] = React.useState(false);
-  const [isBugReportOpen, setIsBugReportOpen] = React.useState(false);
-  const [isAddUserOpen, setIsAddUserOpen] = React.useState(false);
-  const [addUserModalAgencyId, setAddUserModalAgencyId] = React.useState(null);
-  const [isEditProfileOpen, setIsEditProfileOpen] = React.useState(false);
-  const [editingProfileData, setEditingProfileData] = React.useState(null);
+  const [agencyDetailModalData, setAgencyDetailModalData] = useState(null);
+  const [isAddAgencyOpen, setIsAddAgencyOpen] = useState(false);
+  const [isBugReportOpen, setIsBugReportOpen] = useState(false);
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [addUserModalAgencyId, setAddUserModalAgencyId] = useState(null);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [editingProfileData, setEditingProfileData] = useState(null);
 
   // 3. IoT & Auth Persistence
-  React.useEffect(() => {
+  useEffect(() => {
     localStorage.setItem('nexus_hrThreshold', hrThreshold);
   }, [hrThreshold]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     localStorage.setItem('nexus_audio_sentinel', String(audioSentinelActive));
   }, [audioSentinelActive]);
 
-  // Detected TV Token on mount
-  React.useEffect(() => {
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('tvToken');
     if (token) {
@@ -247,7 +206,7 @@ export const NexusProvider = ({ children }) => {
     }
   }, [setActiveTab, setShowLanding]);
 
-  const playBeep = React.useCallback((freq = 880, duration = 0.1, gain = 0.05) => {
+  const playBeep = useCallback((freq = 880, duration = 0.1, gain = 0.05) => {
     try {
       const audioCtx = getSharedAudioCtx();
       if (!audioCtx) return;
@@ -268,12 +227,12 @@ export const NexusProvider = ({ children }) => {
 
       oscillator.start();
       oscillator.stop(audioCtx.currentTime + duration); 
-    } catch (e) {
-      console.warn('[IoT-Audio] Beep failed:', e);
+    } catch (_err) {
+      console.warn('[IoT-Audio] Beep failed:', _err);
     }
   }, []);
 
-  const triggerSilentSOS = React.useCallback(async (type, payload = {}) => {
+  const triggerSilentSOS = useCallback(async (type, payload = {}) => {
     console.log(`[Guardian-IoT] Triggering Silent SOS: ${type}`, payload);
     // In production, this would be an axios.post to /safety/silent-alarm
     // For now, we simulate the backend notification
@@ -287,8 +246,7 @@ export const NexusProvider = ({ children }) => {
     // Logic for sending to manager via socket or API would go here
   }, []);
 
-  // Bio-Panic Monitoring Logic
-  React.useEffect(() => {
+  useEffect(() => {
     if (heartRate > hrThreshold && !sosActive && !isTvMode) {
       const timer = setTimeout(() => {
         if (heartRate > hrThreshold) {
@@ -299,8 +257,7 @@ export const NexusProvider = ({ children }) => {
     }
   }, [heartRate, hrThreshold, sosActive, isTvMode, triggerSilentSOS]);
 
-  // Audio Sentinel (Pulse Beeps)
-  React.useEffect(() => {
+  useEffect(() => {
     if (!audioSentinelActive || sosActive) return;
     
     // Pulse beep every 10 seconds to confirm safety monitoring is alive
@@ -312,10 +269,10 @@ export const NexusProvider = ({ children }) => {
   }, [audioSentinelActive, sosActive, playBeep]);
 
   // -- Memoized Identity-Stable Callbacks for useAuth --
-  const memoizedSetIsRelayMode = React.useCallback(() => {}, []);
-  const memoizedSetSelectedChatId = React.useCallback(() => {}, []);
-  const memoizedSetActiveProfileId = React.useCallback((id) => setActiveProfileId(id), []);
-  const memoizedSetShowLanding = React.useCallback((val) => setShowLanding(val), []);
+  const memoizedSetIsRelayMode = useCallback(() => {}, []);
+  const memoizedSetSelectedChatId = useCallback(() => {}, []);
+  const memoizedSetActiveProfileId = useCallback((id) => setActiveProfileId(id), []);
+  const memoizedSetShowLanding = useCallback((val) => setShowLanding(val), []);
 
   // 4. Authentication Hook - Now with stabilized identities
   const auth = useAuth({ 
@@ -329,27 +286,46 @@ export const NexusProvider = ({ children }) => {
   const { activeOperator: authUser, token, handleLogout: logout, isLoggedIn } = auth;
 
   // 3. Other Core Components Logic
-  const chatScrollRef = React.useRef(null);
-  const isUserScrolled = React.useRef(false);
-  const [messages, setMessages] = React.useState([]);
-  const [selectedChatId, setSelectedChatId] = React.useState(null);
-  const [messageValue, setMessageValue] = React.useState("");
-  const [clientNotes, setClientNotes] = React.useState({});
-  const [calViewDate, setCalViewDate] = React.useState(new Date());
-  const [isHistoryLoading, setIsHistoryLoading] = React.useState(false);
-  const [chatHistory, setChatHistory] = React.useState([]);
-  const [_toasts, _setToasts] = React.useState([]);
+  const chatScrollRef = useRef(null);
+  const isUserScrolled = useRef(false);
+  const [messages, setMessages] = useState([]);
+  const [selectedChatId, setSelectedChatId] = useState(null);
+  const [messageValue, setMessageValue] = useState("");
+  const [clientNotes, setClientNotes] = useState({});
+  const [internalNote, setInternalNote] = useState("");
+  const [detectedMeeting, setDetectedMeeting] = useState(null);
+  const [typingProfiles, setTypingProfiles] = useState({});
+  const [showPanicConfirm, setShowPanicConfirm] = useState(false);
+  const [sosActive, setSosActive] = useState(false);
+  const [linkedSessionId, setLinkedSessionId] = useState(null);
+  const [checkinMinutes, setCheckinMinutes] = useState(60);
+  const [checkinTimerEnd, setCheckinTimerEnd] = useState(null);
+  const [checkinRemaining, setCheckinRemaining] = useState(null);
+  const [voiceGuardianActive, setVoiceGuardianActive] = useState(false);
+  const [batteryLevel, setBatteryLevel] = useState(null);
+  const [incomingGhostCall, setIncomingGhostCall] = useState(false);
+  const [ghostCallScheduledAt, setGhostCallScheduledAt] = useState(null);
 
-  const [isMobile, setIsMobile] = React.useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
-  const isNativeApp = React.useMemo(() => Capacitor.isNativePlatform(), []);
+  const [calViewDate, setCalViewDate] = useState(new Date());
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [chatHistory, setChatHistory] = useState([]);
+  const [_toasts, _setToasts] = useState([]);
 
-  React.useEffect(() => {
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+  const isNativeApp = useMemo(() => Capacitor.isNativePlatform(), []);
+
+  const [ _gpsHistory, setGpsHistory] = useState([]);
+  const [lastTrackerUpdate, setLastTrackerUpdate] = useState(null);
+  const [activeSafetySession, _setActiveSafetySession] = useState(null);
+  const [sosAlertId, setSosAlertId] = useState(null);
+
+  useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isNativeApp) return;
     let listener;
     try {
@@ -360,78 +336,74 @@ export const NexusProvider = ({ children }) => {
           CapacitorApp.exitApp();
         }
       });
-    } catch (e) {
-      console.warn('[App] Back button listener setup failed:', e);
+    } catch (_err) {
+      console.warn('[App] Back button listener setup failed:', _err);
     }
     return () => { listener?.remove?.(); };
   }, [isNativeApp]);
 
-  const showToast = React.useCallback((message, type = 'info') => {
+  const showToast = useCallback((message, type = 'info') => {
     const id = Date.now();
     _setToasts(prev => [...prev.slice(-4), { id, message, type }]);
     setTimeout(() => _setToasts(prev => prev.filter(t => t.id !== id)), 4000);
   }, []);
 
-  const [activeOperatorState, setActiveOperatorState] = React.useState(null);
-  const [subscriptionPlans, setSubscriptionPlans] = React.useState([
+  const [activeOperatorState, setActiveOperatorState] = useState(null);
+  const [subscriptionPlans, setSubscriptionPlans] = useState([
     { id: 'basic', name: 'Basic', descriptionKey: 'basicDesc', prices: { cz: '2900', eu: '120', us: '130', uk: '110' }, profilesLimit: 5, features: ['feat_profiles', 'feat_analytics_basic', 'feat_support'] },
     { id: 'pro', name: 'Pro', descriptionKey: 'proDesc', prices: { cz: '5900', eu: '240', us: '260', uk: '220' }, profilesLimit: 10, features: ['feat_all_basic', 'feat_analytics_adv', 'feat_ai_opt'] },
     { id: 'agency', name: 'Agency', descriptionKey: 'agencyDesc', prices: { cz: '9900', eu: '400', us: '440', uk: '360' }, profilesLimit: 20, features: ['feat_all_pro', 'feat_audit_logs', 'feat_api_access'] }
   ]);
-  const [isPlansLoading, setIsPlansLoading] = React.useState(false);
-  const [globalSettings, setGlobalSettings] = React.useState([]);
+  const [isPlansLoading, setIsPlansLoading] = useState(false);
+  const [globalSettings, setGlobalSettings] = useState([]);
 
-  const fetchGlobalSettings = React.useCallback(async () => {
+  const fetchGlobalSettings = useCallback(async () => {
     if (!token) return;
     try {
       const res = await axios.get(`${API_BASE}/admin/settings`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setGlobalSettings(res.data);
-    } catch (err) {
-      console.error('Fetch global settings error:', err);
+    } catch (_err) {
+      console.error('Fetch global settings _err:', _err);
     }
-  }, [token, API_BASE]);
+  }, [token]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const interceptor = axios.interceptors.response.use(
       (response) => response,
-      async (error) => {
-        const originalRequest = error.config;
-        if (error.response?.status === 401 && !originalRequest._retry) {
+      async (_err) => {
+        const originalRequest = _err.config;
+        if (_err.response?.status === 401 && !originalRequest._retry) {
           originalRequest._retry = true;
           const storedRefreshToken = localStorage.getItem('nexus_refreshToken');
           if (storedRefreshToken) {
             try {
-              const res = await fetch(`${API_BASE}/auth/refresh`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ refreshToken: storedRefreshToken }),
-              });
-              if (res.ok) {
-                const data = await res.json();
-                localStorage.setItem('nexus_token', data.token);
-                localStorage.setItem('nexus_refreshToken', data.refreshToken);
-                auth.setToken(data.token);
-                originalRequest.headers.Authorization = `Bearer ${data.token}`;
+              const res = await axios.post(`${API_BASE}/auth/refresh`, { refreshToken: storedRefreshToken });
+              if (res.data?.token) {
+                localStorage.setItem('nexus_token', res.data.token);
+                originalRequest.headers['Authorization'] = `Bearer ${res.data.token}`;
                 return axios(originalRequest);
               }
-            } catch { /* refresh failed */ }
+            } catch {
+              logout();
+            }
+          } else {
+            logout();
           }
-          logout();
         }
-        return Promise.reject(error);
+        return Promise.reject(_err);
       }
     );
     return () => axios.interceptors.response.eject(interceptor);
   }, [logout]); 
 
-  const memoizedSetActiveOperator = React.useCallback((op) => setActiveOperatorState(op), []);
-  const memoizedSetMessages = React.useCallback((msgs) => setMessages(msgs), []);
+  const memoizedSetActiveOperator = useCallback((op) => setActiveOperatorState(op), []);
+  const memoizedSetMessages = useCallback((msgs) => setMessages(msgs), []);
   
   // ── Safety Methods ─────────────────────────────────────────────────────────
   
-  const getGPSPosition = React.useCallback(async () => {
+  const getGPSPosition = useCallback(async () => {
     try {
       if (Capacitor.isNativePlatform()) {
         const { Geolocation } = await import('@capacitor/geolocation');
@@ -441,14 +413,14 @@ export const NexusProvider = ({ children }) => {
       return new Promise((resolve, reject) =>
         navigator.geolocation.getCurrentPosition(
           (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy }),
-          (err) => reject(err),
+          (_err) => reject(_err),
           { timeout: 5000, enableHighAccuracy: true }
         )
       );
     } catch { return { lat: null, lng: null, accuracy: null }; }
   }, []);
 
-  const triggerSOS = React.useCallback(async (type = 'manual') => {
+  const triggerSOS = useCallback(async (type = 'manual') => {
     if (sosActive) return;
     try {
       const { lat, lng, accuracy } = await getGPSPosition();
@@ -460,12 +432,12 @@ export const NexusProvider = ({ children }) => {
       setSosActive(true);
       setSosAlertId(res.data?.id);
       showToast(lang === 'cz' ? '🆘 SOS ACTIVATED' : '🆘 SOS AKTIVOVÁNO', 'error');
-    } catch (err) {
-      console.warn('[SOS] Failed to trigger:', err.message);
+    } catch (_err) {
+      console.warn('[SOS] Failed to trigger:', _err.message);
     }
-  }, [sosActive, API_BASE, token, activeProfileId, getGPSPosition, showToast, lang]);
+  }, [sosActive, token, activeProfileId, getGPSPosition, showToast, lang]);
 
-  const cancelSOS = React.useCallback(async () => {
+  const cancelSOS = useCallback(async () => {
     if (!sosAlertId) {
       setSosActive(false);
       return;
@@ -475,20 +447,22 @@ export const NexusProvider = ({ children }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
       showToast(lang === 'cz' ? '✅ SOS zrušeno' : '✅ SOS resolved', 'success');
-    } catch {}
+    } catch {
+      // Ignore
+    }
     setSosActive(false);
     setSosAlertId(null);
     setLinkedSessionId(null);
-  }, [sosAlertId, API_BASE, token, showToast, lang]);
+  }, [sosAlertId, token, showToast, lang]);
 
-  const startCheckinTimer = React.useCallback((minutes) => {
+  const startCheckinTimer = useCallback((minutes) => {
     const mins = minutes || checkinMinutes;
     const endTime = Date.now() + mins * 60 * 1000;
     setCheckinTimerEnd(endTime);
     showToast(lang === 'cz' ? `⏰ Odpočet spuštěn: ${mins} min` : `⏰ Timer started: ${mins} min`, 'info');
   }, [checkinMinutes, showToast, lang]);
 
-  const resetCheckinTimer = React.useCallback(async () => {
+  const resetCheckinTimer = useCallback(async () => {
     setCheckinTimerEnd(null);
     setCheckinRemaining(null);
     if (checkinIntervalRef.current) clearInterval(checkinIntervalRef.current);
@@ -498,11 +472,13 @@ export const NexusProvider = ({ children }) => {
           headers: { Authorization: `Bearer ${token}` }
         });
         showToast(lang === 'cz' ? '✓ Stav potvrzen' : '✓ Status confirmed', 'success');
-      } catch {}
+      } catch {
+      // Ignore
     }
-  }, [linkedSessionId, API_BASE, token, showToast, lang]);
+    }
+  }, [linkedSessionId, token, showToast, lang]);
 
-  const handleConfirmDeparture = React.useCallback(async () => {
+  const handleConfirmDeparture = useCallback(async () => {
     if (!linkedSessionId) return;
     try {
       await axios.post(`${API_BASE}/safety/sessions/${linkedSessionId}/departure`, {}, {
@@ -510,34 +486,13 @@ export const NexusProvider = ({ children }) => {
       });
       // Assuming fetchActiveSafetySession is available via nexusData or similar
       showToast(lang === 'cz' ? 'Klient odešel, odjezd potvrzen.' : 'Client left, departure confirmed.', 'success');
-    } catch (err) {
-      console.error(err);
+    } catch (_err) {
+      console.error(_err);
     }
-  }, [linkedSessionId, API_BASE, token, showToast, lang]);
+  }, [linkedSessionId, token, showToast, lang]);
 
-  const handlePairTracker = React.useCallback(async (imei) => {
-    if (!imei) return;
-    try {
-      // Simulation of API call to bind tracker
-      console.log('[NexusContext] Pairing external tracker:', imei);
-      setLinkedTrackerId(imei);
-      localStorage.setItem('nexus_linkedTrackerId', imei);
-      setTrackerStatus('connected');
-      showToast(lang === 'cz' ? 'Tracker byl úspěšně spárován.' : 'Tracker successfully paired.', 'success');
-    } catch (err) {
-      console.error(err);
-      showToast(lang === 'cz' ? 'Chyba při párování trackeru.' : 'Error pairing tracker.', 'error');
-    }
-  }, [lang, showToast]);
 
-  const handleUnpairTracker = React.useCallback(() => {
-    setLinkedTrackerId(null);
-    localStorage.removeItem('nexus_linkedTrackerId');
-    setTrackerStatus('disconnected');
-    showToast(lang === 'cz' ? 'Tracker byl odpojen.' : 'Tracker disconnected.', 'info');
-  }, [lang, showToast]);
-
-  const handleToggleVoiceGuardian = React.useCallback(() => {
+  const handleToggleVoiceGuardian = useCallback(() => {
     if (voiceGuardianActive) {
       setVoiceGuardianActive(false);
       showToast(lang === 'cz' ? 'Hlasový dohled vypnut.' : 'Voice Guardian deactivated.', 'info');
@@ -547,7 +502,7 @@ export const NexusProvider = ({ children }) => {
     }
   }, [voiceGuardianActive, lang, showToast]);
 
-  const triggerGhostCall = React.useCallback((delaySec = 20) => {
+  const triggerGhostCall = useCallback((delaySec = 20) => {
     const scheduledAt = Date.now() + (delaySec * 1000);
     setGhostCallScheduledAt(scheduledAt);
     showToast(lang === 'cz' ? `Hovor naplánován za ${delaySec}s.` : `Call scheduled in ${delaySec}s.`, 'info');
@@ -558,7 +513,7 @@ export const NexusProvider = ({ children }) => {
     }, delaySec * 1000);
   }, [lang, showToast]);
 
-  const verifyIdentity = React.useCallback(async () => {
+  const verifyIdentity = useCallback(async () => {
     return new Promise((resolve) => {
       setPinModalPromise({ resolve });
       setIsPinModalOpen(true);
@@ -566,7 +521,7 @@ export const NexusProvider = ({ children }) => {
   }, []);
 
   // Effects for Safety
-  React.useEffect(() => {
+  useEffect(() => {
     if (!checkinTimerEnd) return;
     checkinIntervalRef.current = setInterval(() => {
       const remaining = checkinTimerEnd - Date.now();
@@ -582,7 +537,7 @@ export const NexusProvider = ({ children }) => {
     return () => clearInterval(checkinIntervalRef.current);
   }, [checkinTimerEnd, triggerSOS]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!sosActive || !sosAlertId) {
       if (gpsWatchRef.current) clearInterval(gpsWatchRef.current);
       return;
@@ -599,13 +554,15 @@ export const NexusProvider = ({ children }) => {
         await axios.post(`${API_BASE}/sos/${sosAlertId}/location`, {
           lat, lng, accuracy, capturedAt: timestamp
         }, { headers: { Authorization: `Bearer ${token}` } });
-      } catch {}
+      } catch {
+      // Ignore
+    }
     }, 15000);
     return () => clearInterval(gpsWatchRef.current);
-  }, [sosActive, sosAlertId, API_BASE, token, getGPSPosition]);
+  }, [sosActive, sosAlertId, token, getGPSPosition]);
 
   // Voice Guardian Lifecycle
-  React.useEffect(() => {
+  useEffect(() => {
     if (!voiceGuardianActive) {
       if (recognitionRef.current) {
         recognitionRef.current.onend = null;
@@ -643,7 +600,7 @@ export const NexusProvider = ({ children }) => {
     };
 
     recognition.onerror = (event) => {
-      console.warn('[VoiceGuardian] Recognition error:', event.error);
+      console.warn('[VoiceGuardian] Recognition _err:', event.error);
       if (event.error === 'not-allowed') {
         showToast(lang === 'cz' ? 'Přístup k mikrofonu byl zamítnut.' : 'Microphone access denied.', 'error');
         setVoiceGuardianActive(false);
@@ -664,7 +621,7 @@ export const NexusProvider = ({ children }) => {
     };
 
     recognitionRef.current = recognition;
-    try { recognition.start(); } catch (err) { console.error('[VoiceGuardian] Start error:', err); }
+    try { recognition.start(); } catch (_err) { console.error('[VoiceGuardian] Start _err:', _err); }
 
     return () => {
       if (recognitionRef.current) {
@@ -675,12 +632,12 @@ export const NexusProvider = ({ children }) => {
   }, [voiceGuardianActive, sosActive, lang, triggerSOS, showToast]);
 
   // Battery Sentinel
-  React.useEffect(() => {
+  useEffect(() => {
     if (!navigator.getBattery) return;
     
     let batteryInstance = null;
-    const handleLevelChange = (e) => {
-      const b = e.target || batteryInstance;
+    const handleLevelChange = (_err) => {
+      const b = _err.target || batteryInstance;
       if (b) setBatteryLevel(Math.floor(b.level * 100));
     };
 
@@ -697,10 +654,10 @@ export const NexusProvider = ({ children }) => {
     };
   }, []); // Only once, battery level is monitored via event
 
-  const memoizedSetActiveSafetySession = React.useCallback(() => {}, []);
-  const memoizedSetIsTimerActive = React.useCallback(() => {}, []);
-  const memoizedSetTimeLeft = React.useCallback(() => {}, []);
-  const memoizedNormalizeProfileId = React.useCallback((id) => id, []);
+  const memoizedSetActiveSafetySession = useCallback(() => {}, []);
+  const memoizedSetIsTimerActive = useCallback(() => {}, []);
+  const memoizedSetTimeLeft = useCallback(() => {}, []);
+  const memoizedNormalizeProfileId = useCallback((id) => id, []);
 
   const nexusData = useNexusData({
     token,
@@ -717,7 +674,7 @@ export const NexusProvider = ({ children }) => {
     lang
   });
 
-  const activeOperator = React.useMemo(() => {
+  const activeOperator = useMemo(() => {
     const base = authUser || {};
     const update = activeOperatorState || {};
     const combined = { ...base, ...update };
@@ -742,13 +699,13 @@ export const NexusProvider = ({ children }) => {
       isAppOwner: rawRole === 'APP OWNER' || rawRole === 'SUPER_ADMIN',
       isModel: rawRole === 'MODEL' || rawRole === 'MODELKA'
     };
-  }, [activeOperatorState, authUser, isLoggedIn]);
+  }, [activeOperatorState, authUser]);
 
   const { activeRole, isAllowed } = usePermissions(activeOperator, nexusData.rolePermissions);
 
-  const [pendingNotifications, setPendingNotifications] = React.useState([]);
+  const [pendingNotifications, setPendingNotifications] = useState([]);
 
-  const onDelayBooking = React.useCallback(async (id, mins) => {
+  const onDelayBooking = useCallback(async (id, mins) => {
     const drafts = await nexusData.handleDelayBooking(id, mins);
     
     // If we are currently in a linked safety session, extend the timer too
@@ -766,22 +723,22 @@ export const NexusProvider = ({ children }) => {
     }
   }, [nexusData, linkedSessionId, checkinTimerEnd]);
 
-  const [incomingRelayCall, setIncomingRelayCall] = React.useState(null);
-  const handleNewMessage = React.useCallback((data) => {
+  const [incomingRelayCall, setIncomingRelayCall] = useState(null);
+  const handleNewMessage = useCallback((data) => {
     if (data?.message) {
       setMessages(prev => [...prev.slice(-199), data.message]);
     }
   }, []);
-  const handleMessageUpdated = React.useCallback((data) => {
+  const handleMessageUpdated = useCallback((data) => {
     if (data?.message) {
       setMessages(prev => prev.map(m => m.id === data.message.id ? { ...m, ...data.message } : m));
     }
   }, []);
-  const handleIncomingCall = React.useCallback((data) => setIncomingRelayCall(data), []);
-  const handleEmergencyAlert = React.useCallback((_data) => {
+  const handleIncomingCall = useCallback((data) => setIncomingRelayCall(data), []);
+  const handleEmergencyAlert = useCallback((_data) => {
     showToast(lang === 'cz' ? '🚨 Nouzový poplach!' : '🚨 Emergency alert!', 'error');
   }, [showToast, lang]);
-  const handleRelayCommand = React.useCallback(async (data) => {
+  const handleRelayCommand = useCallback(async (data) => {
     if (!data) return;
     
     console.log('[Nexus-Relay-DEBUG] Incoming command data:', data);
@@ -842,32 +799,30 @@ export const NexusProvider = ({ children }) => {
         console.warn('[Nexus-Relay] Relay command received but native plugin not available');
         showToast(lang === 'cz' ? 'Chyba: Relay plugin nedostupný' : 'Error: Relay plugin unavailable', 'error');
       }
-    } catch (err) {
-      console.error('[Nexus-Relay] Failed to execute remote send command:', err);
+    } catch (_err) {
+      console.error('[Nexus-Relay] Failed to execute remote send command:', _err);
       updateRelayLogStatus(logId, 'failed');
-      showToast(lang === 'cz' ? `SMS selhala: ${err.message || 'Neznámá chyba'}` : `SMS failed: ${err.message || 'Unknown error'}`, 'error');
+      showToast(lang === 'cz' ? `SMS selhala: ${_err.message || 'Neznámá chyba'}` : `SMS failed: ${_err.message || 'Unknown _err'}`, 'error');
       
       if (messageId) {
-        try {
-          await axios.patch(`${API_BASE}/messages/${messageId}/status`, 
-            { status: 'failed', error: err.message },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-        } catch (e) {}
+        axios.patch(`${API_BASE}/messages/${messageId}/status`, 
+          { status: 'failed', _err: _err.message },
+          { headers: { Authorization: `Bearer ${token}` } }
+        ).catch(() => {});
       }
     }
-  }, [API_BASE, token, isRelayActive, relaySimSlot, lang, showToast]);
+  }, [token, isRelayActive, relaySimSlot, lang, showToast, addRelayLog, updateRelayLogStatus]);
   
-  const handleRelayEvent = React.useCallback((data) => {
+  const handleRelayEvent = useCallback((data) => {
     if (data?.type === 'SYNC_COMPLETED') {
       showToast(lang === 'cz' ? '✅ Synchronizace přes Local Agent dokončena' : '✅ Sync via Local Agent completed', 'success');
       // Tady bychom mohli v budoucnu spustit refresh dat nebo aktualizovat specifický status profilu
     }
   }, [lang, showToast]);
 
-  const handleSipIncomingCall = React.useCallback((_data) => {}, []);
+  const handleSipIncomingCall = useCallback((_data) => {}, []);
 
-  const syncRelayToNative = React.useCallback(async (active) => {
+  const syncRelayToNative = useCallback(async (active) => {
     if (!Capacitor.isNativePlatform() || !window.Capacitor?.Plugins?.NexusRelay) return;
     
     const installationId = localStorage.getItem('nexus_installation_id');
@@ -887,13 +842,13 @@ export const NexusProvider = ({ children }) => {
       });
       
       console.log(`[Nexus-Relay] Native sync: active=${active}, profileId=${profileId}`);
-    } catch (error) {
-      console.warn('[Nexus-Relay] Native sync failed:', error);
+    } catch (_err) {
+      console.warn('[Nexus-Relay] Native sync failed:', _err);
     }
-  }, [activeOperator, relaySimSlot, API_BASE]);
+  }, [activeOperator, relaySimSlot]);
 
   // Persistent Relay Lifecycle
-  React.useEffect(() => {
+  useEffect(() => {
     if (isLoggedIn && activeOperator?.isModel && !isRelayActive && localStorage.getItem('nexus_relay_ever_enabled') !== 'true') {
       // Auto-enable for models who haven't explicitly disabled it
       setIsRelayActive(true);
@@ -902,7 +857,7 @@ export const NexusProvider = ({ children }) => {
     }
   }, [isLoggedIn, activeOperator, isRelayActive]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isLoggedIn) {
       syncRelayToNative(isRelayActive);
     }
@@ -910,7 +865,7 @@ export const NexusProvider = ({ children }) => {
 
   useSocket(token, handleNewMessage, handleMessageUpdated, handleIncomingCall, handleEmergencyAlert, handleSipIncomingCall, handleRelayCommand, handleRelayEvent);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isLoggedIn || !token) return;
     initPushNotifications(API_BASE, token, async (notification, tapped) => {
       const data = notification?.data;
@@ -932,18 +887,17 @@ export const NexusProvider = ({ children }) => {
       }
     });
     return () => { removePushListeners(); };
-  }, [isLoggedIn, token, showToast, lang]);
+  }, [isLoggedIn, token, showToast, lang, handleRelayCommand]);
 
-  const onLogin = React.useCallback(async (email, password) => {
+  const onLogin = useCallback(async (email, password) => {
     const result = await auth.handleLogin(email, password);
     if (result?.success) {
       setShowLanding(false);
       setActiveTab('dashboard');
-      setJustLoggedOut(false);
       return true;
     }
     const errorMessages = {
-      connectionError: lang === 'cz' ? 'Chyba připojení. Zkontrolujte internet.' : 'Connection error. Please check your internet.',
+      connectionError: lang === 'cz' ? 'Chyba připojení. Zkontrolujte internet.' : 'Connection _err. Please check your internet.',
       loginError: lang === 'cz' ? 'Neplatné přihlašovací údaje.' : 'Invalid credentials.',
     };
     const msg = result?.detail || errorMessages[result?.error] || result?.error || (lang === 'cz' ? 'Přihlášení se nezdařilo.' : 'Login failed.');
@@ -951,9 +905,9 @@ export const NexusProvider = ({ children }) => {
     return { success: false, message: msg };
   }, [auth, showToast, lang]);
 
-  const profiles = nexusData.profiles || [];
+  const profiles = useMemo(() => nexusData.profiles || [], [nexusData.profiles]);
   
-  const myProfiles = React.useMemo(() => {
+  const myProfiles = useMemo(() => {
     if (!activeOperator) return [];
     
     // Normalize operator ID and role for reliable comparison
@@ -1017,7 +971,7 @@ export const NexusProvider = ({ children }) => {
 
   // SECURITY ENFORCEMENT: For Models, ensure activeProfileId is NEVER 'all' if they have profiles.
   // This prevents accidental exposure of "Agency-wide" data views.
-  React.useEffect(() => {
+  useEffect(() => {
     if (activeOperator?.isModel && activeProfileId === 'all' && myProfiles.length > 0) {
       console.log('[NexusContext] Enforcing specific profile filter for model user');
       setActiveProfileId(String(myProfiles[0].id));
@@ -1025,21 +979,21 @@ export const NexusProvider = ({ children }) => {
   }, [activeOperator, activeProfileId, myProfiles, setActiveProfileId]);
 
 
-  const fetchPlans = React.useCallback(async () => {
+  const fetchPlans = useCallback(async () => {
     try {
       setIsPlansLoading(true);
       const res = await axios.get(`${API_BASE}/subscriptions/plans`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSubscriptionPlans(res.data);
-    } catch (err) {
-      console.error('Fetch plans error:', err);
+    } catch (_err) {
+      console.error('Fetch plans _err:', _err);
     } finally {
       setIsPlansLoading(false);
     }
-  }, [token, API_BASE]);
+  }, [token]);
 
-  const updatePlans = React.useCallback(async (newPlans) => {
+  const updatePlans = useCallback(async (newPlans) => {
     try {
       setIsPlansLoading(true);
       await axios.post(`${API_BASE}/subscriptions/config`, { plans: newPlans }, {
@@ -1047,20 +1001,20 @@ export const NexusProvider = ({ children }) => {
       });
       setSubscriptionPlans(newPlans);
       return { success: true };
-    } catch (err) {
-      console.error('Update plans error:', err);
-      return { success: false, error: err.message };
+    } catch (_err) {
+      console.error('Update plans _err:', _err);
+      return { success: false, _err: _err.message };
     } finally {
       setIsPlansLoading(false);
     }
-  }, [token, API_BASE]);
+  }, [token]);
 
-  const activeProfile = React.useMemo(() => 
+  const activeProfile = useMemo(() => 
     (profiles || []).find(p => p.id === activeProfileId) || (myProfiles || [])[0] || null,
     [profiles, activeProfileId, myProfiles]
   );
 
-  const filteredMessages = React.useMemo(() => {
+  const filteredMessages = useMemo(() => {
     const rawMessages = messages || [];
     
     // SECURITY: If user is a model, strictly filter by their assigned profiles (myProfiles)
@@ -1073,7 +1027,7 @@ export const NexusProvider = ({ children }) => {
         return myProfileIds.has(msgProfileId);
       });
       
-      // DIAGNOSTIC (Internal): If we have messages in system but filter result is 0, 
+      // DIAGNOSTIC (Internal): If we hav_err.messages in system but filter result is 0, 
       // check if activeOperator.profileId exists as a fallback.
       if (baseMessages.length === 0 && rawMessages.length > 0 && activeOperator.profileId) {
         baseMessages = rawMessages.filter(m => String(m.profileId || m.profile_id) === String(activeOperator.profileId));
@@ -1087,9 +1041,9 @@ export const NexusProvider = ({ children }) => {
     return baseMessages.filter(m => String(m.profileId || m.profile_id || '') === currentProfileId);
   }, [messages, activeProfile, activeProfileId, activeOperator, myProfiles]);
 
-  const selectedChat = React.useMemo(() => (messages || []).find(m => m.id === selectedChatId) || null, [messages, selectedChatId]);
+  const selectedChat = useMemo(() => (messages || []).find(m => m.id === selectedChatId) || null, [messages, selectedChatId]);
 
-  const chatMessages = React.useMemo(() => {
+  const chatMessages = useMemo(() => {
     if (!selectedChatId) return [];
     // Only return chatHistory if it actually belongs to the selected chat
     const filteredHistory = (chatHistory || []).filter(m => String(m.chatId) === String(selectedChatId));
@@ -1099,7 +1053,7 @@ export const NexusProvider = ({ children }) => {
     return (messages || []).filter(m => String(m.chatId) === String(selectedChatId));
   }, [messages, selectedChatId, chatHistory]);
 
-  const fetchChatMessages = React.useCallback(async (chatId) => {
+  const fetchChatMessages = useCallback(async (chatId) => {
     if (!token || !chatId) return;
     try {
       setIsHistoryLoading(true);
@@ -1120,25 +1074,25 @@ export const NexusProvider = ({ children }) => {
         };
       });
       setChatHistory(history);
-    } catch (err) { console.error('Failed to fetch chat messages:', err); } finally { setIsHistoryLoading(false); }
-  }, [token, API_BASE, lang]);
+    } catch (_err) { console.error('Failed to fetch chat messages:', _err); } finally { setIsHistoryLoading(false); }
+  }, [token, lang]);
 
   // ── Automatic History Fetching ──────────────────────────────────────────
-  React.useEffect(() => {
+  useEffect(() => {
     if (selectedChatId) {
       setChatHistory([]); // Clear immediately to show loader/fresh state
       fetchChatMessages(selectedChatId);
     } else {
       setChatHistory([]);
     }
-  }, [selectedChatId]); // Removed fetchChatMessages from deps to avoid infinite loops if it's not memoized properly (though it is)
+  }, [selectedChatId, fetchChatMessages]);
 
-  const totalUnread = React.useMemo(() => {
+  const totalUnread = useMemo(() => {
     const myProfileIds = new Set((myProfiles || []).map(p => p.id));
     return (messages || []).filter(m => m.status === 'unread' && myProfileIds.has(m.profileId)).length;
   }, [messages, myProfiles]);
 
-  const handleSendMessage = React.useCallback(async (text) => {
+  const handleSendMessage = useCallback(async (text) => {
     if (!text.trim() || !selectedChatId || !token) return;
     
     const tempId = Date.now();
@@ -1187,21 +1141,21 @@ export const NexusProvider = ({ children }) => {
         
         setChatHistory(prev => prev.map(m => m.id === tempId ? realMsg : m));
       }
-    } catch (err) {
-      console.error('[Nexus-Messaging] Failed to send message:', err);
+    } catch (_err) {
+      console.error('[Nexus-Messaging] Failed to send message:', _err);
       showToast(lang === 'cz' ? 'Zprávu se nepodařilo odeslat na server.' : 'Failed to send message to server.', 'error');
       // Mark as failed in UI
       setChatHistory(prev => prev.map(m => m.id === tempId ? { ...m, status: 'failed' } : m));
     }
-  }, [selectedChatId, activeProfileId, token, API_BASE, lang, activeOperator, showToast]);
+  }, [selectedChatId, token, lang, activeOperator, showToast]);
 
-  const handleTranslate = React.useCallback(async () => {
+  const handleTranslate = useCallback(async () => {
     if (!sourceText.trim()) return;
     setIsTranslating(true);
     setTimeout(() => { setTranslatedText(`[Translated to EN]: ${sourceText}`); setIsTranslating(false); }, 1000);
   }, [sourceText]);
 
-  const handleSaveNote = React.useCallback(() => {
+  const handleSaveNote = useCallback(() => {
     if (!internalNote.trim() || !selectedChatId || !selectedChat) return;
     const from = selectedChat.from;
     const newNote = { id: Date.now(), text: internalNote, author: activeOperator.name, timestamp: new Date().toLocaleTimeString() };
@@ -1209,20 +1163,20 @@ export const NexusProvider = ({ children }) => {
     setInternalNote("");
   }, [internalNote, selectedChatId, selectedChat, activeOperator]);
 
-  const handleDeleteNote = React.useCallback((client, noteId) => {
+  const handleDeleteNote = useCallback((client, noteId) => {
     setClientNotes(prev => ({ ...prev, [client]: (prev[client] || []).filter(n => n.id !== noteId) }));
   }, []);
 
-  const startCall = React.useCallback(() => showToast(lang === 'cz' ? 'Inicializace VoIP spojení...' : 'Initializing secure VoIP relay...', 'info'), [showToast, lang]);
+  const startCall = useCallback(() => showToast(lang === 'cz' ? 'Inicializace VoIP spojení...' : 'Initializing secure VoIP relay...', 'info'), [showToast, lang]);
 
-  const handleQuickSaveMeeting = React.useCallback(() => {
+  const handleQuickSaveMeeting = useCallback(() => {
     if (!detectedMeeting) return;
     nexusData.handleQuickSaveMeeting(detectedMeeting);
     setDetectedMeeting(null);
   }, [detectedMeeting, nexusData]);
 
   // ── Android Back Button Handling ──────────────────────────────────────────
-  React.useEffect(() => {
+  useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
     let backListener = null;
@@ -1267,26 +1221,24 @@ export const NexusProvider = ({ children }) => {
         backListener.remove();
       }
     };
-  }, [
-    isSidebarOpen, selectedChatId, activeTab, mobileView,
+  }, [isSidebarOpen, selectedChatId, activeTab, mobileView,
     isBugReportOpen, isAddAgencyOpen, isAddUserOpen, agencyDetailModalData,
-    nexusData.isBookingModalOpen, setSelectedChatId, setMobileView, setActiveTab
+    nexusData, setSelectedChatId, setMobileView, setActiveTab
   ]);
 
-  const value = {
+  const value = useMemo(() => ({
     t, lang, setLang, activeTab, setActiveTab, activeMarket, setActiveMarket,
     loading: nexusData.isDataLoading, activeOperator, activeRole, isAllowed,
-    isLoggedIn, token, logout: () => { logout(); setShowLanding(true); setJustLoggedOut(true); }, 
+    isLoggedIn, token, logout: () => { logout(); setShowLanding(true); }, 
     onLogin, onRegisterAgency: auth.handleRegisterAgency, onRegisterUser: auth.handleRegisterUser,
-    justLoggedOut, setJustLoggedOut,
     isAppOwner: activeOperator?.isAppOwner || false,
     isManager: activeOperator?.isManager || false,
     isAdmin: activeOperator?.isAdmin || false,
     API_BASE, showLanding: showLanding ?? !isLoggedIn, setShowLanding, hasSeenOnboarding, setHasSeenOnboarding, showOnboarding, setShowOnboarding,
     updatePlans, fetchPlans, subscriptionPlans, isPlansLoading, showToast, contextToasts: _toasts,
     isMobile, isNativeApp, isSidebarCollapsed, setIsSidebarCollapsed, mobileView, setMobileView,
-    inlinePanelTab, setInlinePanelTab, isTranslating, setIsTranslating, internalNote, setInternalNote,
-    clientNotes, detectedMeeting, setDetectedMeeting, typingProfiles, setTypingProfiles,
+    inlinePanelTab, setInlinePanelTab, sourceText, setSourceText, translatedText, setTranslatedText, isTranslating, setIsTranslating,
+    internalNote, setInternalNote, clientNotes, detectedMeeting, setDetectedMeeting, typingProfiles, setTypingProfiles,
     showPanicConfirm, setShowPanicConfirm, chatScrollRef, isUserScrolled, incomingRelayCall, setIncomingRelayCall,
     activeSafetySession, sosActive, linkedSessionId, checkinMinutes, setCheckinMinutes,
     checkinTimerEnd, checkinRemaining, triggerSOS, cancelSOS, 
@@ -1309,13 +1261,10 @@ export const NexusProvider = ({ children }) => {
       setIsRelayActive(val);
       localStorage.setItem('nexus_relay_active', String(val));
     }, 
-    relaySimSlot, setRelaySimSlot: (val) => {
-      setRelaySimSlot(val);
-      localStorage.setItem('nexus_relay_sim_slot', val);
-    },
-    relayLogs, setRelayLogs, addRelayLog, updateRelayLogStatus,
+    relaySimSlot, setRelaySimSlot, relayLogs, setRelayLogs, addRelayLog, updateRelayLogStatus,
+    linkedTrackerId, setLinkedTrackerId, trackerStatus, setTrackerStatus,
     messageValue, setMessageValue, calViewDate, setCalViewDate, globalSettings, fetchGlobalSettings,
-    gpsHistory, lastTrackerUpdate,
+     _gpsHistory, lastTrackerUpdate,
     voiceGuardianActive, handleToggleVoiceGuardian,
     batteryLevel, incomingGhostCall, setIncomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity,
     heartRate, setHeartRate, hrThreshold, setHrThreshold, isBluetoothConnected, setIsBluetoothConnected,
@@ -1324,31 +1273,63 @@ export const NexusProvider = ({ children }) => {
     isPinModalOpen, setIsPinModalOpen, pinModalPromise, setPinModalPromise,
     handleUpdateGlobalSetting: async (key, value) => {
       try {
-        const res = await axios.post(`${API_BASE}/admin/settings`, { key, value }, { headers: { Authorization: `Bearer ${token}` } });
+        const res = await axios.patch(`${API_BASE}/admin/settings/${key}`, { value }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         setGlobalSettings(prev => {
-          const exists = prev.find(s => s.key === key);
-          if (exists) return prev.map(s => s.key === key ? res.data : s);
-          return [...prev, res.data];
+          const updated = [...prev];
+          const idx = updated.findIndex(s => s.key === key);
+          if (idx > -1) updated[idx].value = value;
+          else updated.push({ key, value });
+          return updated;
         });
         showToast(lang === 'cz' ? 'Nastavení uloženo ✓' : 'Setting saved ✓', 'success');
         return { success: true, data: res.data };
-      } catch (err) { return { success: false }; }
+      } catch { return { success: false }; }
     },
-    handleRelayCommand,
-    ...nexusData
-  };
-
-  React.useEffect(() => {
+    handleRelayCommand
+  }), [
+    t, lang, setLang, activeTab, setActiveTab, activeMarket, setActiveMarket,
+    nexusData, activeOperator, activeRole, isAllowed,
+    isLoggedIn, token, logout, onLogin, auth,
+    showLanding, setShowLanding, hasSeenOnboarding, setHasSeenOnboarding, showOnboarding, setShowOnboarding,
+    updatePlans, fetchPlans, subscriptionPlans, isPlansLoading, showToast, _toasts,
+    isMobile, isNativeApp, isSidebarCollapsed, setIsSidebarCollapsed, mobileView, setMobileView,
+    inlinePanelTab, setInlinePanelTab, sourceText, setSourceText, translatedText, setTranslatedText, isTranslating, setIsTranslating,
+    internalNote, setInternalNote, clientNotes, detectedMeeting, setDetectedMeeting, typingProfiles, setTypingProfiles,
+    showPanicConfirm, setShowPanicConfirm, chatScrollRef, isUserScrolled, incomingRelayCall, setIncomingRelayCall,
+    activeSafetySession, sosActive, linkedSessionId, checkinMinutes, setCheckinMinutes,
+    checkinTimerEnd, checkinRemaining, triggerSOS, cancelSOS, 
+    startCheckinTimer, resetCheckinTimer, handleConfirmDeparture,
+    pendingNotifications, setPendingNotifications, onDelayBooking,
+    agencyDetailModalData, setAgencyDetailModalData, isAddAgencyOpen, setIsAddAgencyOpen,
+    isBugReportOpen, setIsBugReportOpen, isAddUserOpen, setIsAddUserOpen, addUserModalAgencyId, setAddUserModalAgencyId,
+    isEditProfileOpen, setIsEditProfileOpen, editingProfileData, setEditingProfileData,
+    handleSendMessage, handleTranslate, handleSaveNote, handleDeleteNote, startCall, handleQuickSaveMeeting,
+    activeProfile, activeProfileId, setActiveProfileId, profiles, myProfiles, onlineOnly, setOnlineOnly, 
+    isSidebarOpen, setIsSidebarOpen, totalUnread, messages, filteredMessages, selectedChatId, setSelectedChatId,
+    selectedChat, chatMessages, chatHistory, fetchChatMessages, isHistoryLoading, setIsHistoryLoading,
+    isRelayActive, setIsRelayActive, relaySimSlot, setRelaySimSlot, relayLogs, setRelayLogs, addRelayLog, updateRelayLogStatus,
+    linkedTrackerId, setLinkedTrackerId, trackerStatus, setTrackerStatus,
+    messageValue, setMessageValue, calViewDate, setCalViewDate, globalSettings, fetchGlobalSettings,
+     _gpsHistory, lastTrackerUpdate, voiceGuardianActive, handleToggleVoiceGuardian,
+    batteryLevel, incomingGhostCall, setIncomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity,
+    heartRate, setHeartRate, hrThreshold, setHrThreshold, isBluetoothConnected, setIsBluetoothConnected,
+    isTvMode, tvToken, activeBioWarning, setActiveBioWarning, playBeep, triggerSilentSOS,
+    audioSentinelActive, setAudioSentinelActive, isPinModalOpen, setIsPinModalOpen, pinModalPromise, setPinModalPromise,
+    handleRelayCommand
+  ]);
+  useEffect(() => {
     if (isLoggedIn && (authUser?.isAppOwner || authUser?.isManager)) {
       fetchGlobalSettings();
     }
   }, [isLoggedIn, authUser, fetchGlobalSettings]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     localStorage.setItem('nexus_lang', lang);
     localStorage.setItem('nexus_active_tab', activeTab);
     localStorage.setItem('nexus_active_market', activeMarket);
-    if (activeProfileId) localStorage.setItem('nexus_active_profile_id', activeProfileId);
+    if (activeProfileId) localStorage.setItem('nexus_active_profile_id');
     
     if (typeof window !== 'undefined') {
       const currentPath = window.location.pathname;
@@ -1373,7 +1354,7 @@ export const NexusProvider = ({ children }) => {
       {_toasts.length > 0 && (
         <div style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 99999, display: 'flex', flexDirection: 'column', gap: '0.5rem', pointerEvents: 'none' }}>
           {_toasts.map(toast => (
-            <div key={toast.id} style={{ pointerEvents: 'auto', padding: '0.75rem 1.25rem', borderRadius: '12px', color: 'white', background: toast.type === 'error' ? '#ef4444' : '#3b82f6' }}>{toast.message}</div>
+            <div key={toast.id} style={{ pointerEvents: 'auto', padding: '0.75rem 1.25rem', borderRadius: '12px', color: 'white', background: toast.type === '_err' ? '#ef4444' : '#3b82f6' }}>{toast.message}</div>
           ))}
         </div>
       )}

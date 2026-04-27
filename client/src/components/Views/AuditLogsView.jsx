@@ -32,8 +32,8 @@ const AuditLogsView = () => {
         setTotal(data.total);
         setPages(data.pages);
       }
-    } catch (err) {
-      console.error('Failed to fetch audit logs:', err);
+    } catch (_err) {
+      console.error('Failed to fetch audit logs:', _err);
     } finally {
       setLoading(false);
     }
@@ -65,9 +65,9 @@ const AuditLogsView = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: isMobile ? '1.5rem' : '3rem', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : 0 }}>
         <div>
           <h2 style={{ fontSize: isMobile ? '1.75rem' : '2.5rem', fontWeight: '900', marginBottom: '0.5rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <Shield size={isMobile ? 24 : 32} color="var(--accent-color)" /> {t?.auditLogs || 'Auditní Logy'}
+            <Shield size={isMobile ? 24 : 32} color="var(--accent-color)" /> {t('auditLogs')}
           </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1.1rem' }}>Historie akcí a bezpečnostních událostí v agentuře.</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1.1rem' }}>{t('auditLogsDesc')}</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
            <button onClick={fetchLogs} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.75rem', borderRadius: '12px', color: 'white', cursor: 'pointer' }}>
@@ -84,7 +84,7 @@ const AuditLogsView = () => {
             type="text" 
             placeholder="Hledat akci (např. login, delete)..." 
             value={searchQuery}
-            onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+            onChange={(_err) => { setSearchQuery(_err.target.value); setPage(1); }}
             style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.8rem 0.8rem 0.8rem 2.75rem', borderRadius: '12px', color: 'white', fontSize: '0.9rem' }} 
           />
         </div>

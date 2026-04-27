@@ -74,8 +74,8 @@ export const useNotifications = ({
           },
         }],
       });
-    } catch (error) {
-      console.warn('[Notifications] Failed to schedule local notification', error);
+    } catch (_err) {
+      console.warn('[Notifications] Failed to schedule local notification', _err);
     }
   }, [isAppVisible, isNativeApp, t]);
 

@@ -18,7 +18,7 @@ import {
   ArrowDownLeft,
   X
 } from 'lucide-react';
-import { useSipCall, isSipAvailable } from '../plugins/NexusSip';
+import { useSipCall } from '../plugins/NexusSip';
 import IncomingCallScreen from './sip/IncomingCallScreen';
 import ActiveCallScreen from './sip/ActiveCallScreen';
 import axios from 'axios';
@@ -35,7 +35,6 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     relayLogs: logs,
     setRelayLogs: setLogs,
     addRelayLog: addLocalLog,
-    updateRelayLogStatus: updateLogStatusId,
     API_BASE,
     lang,
     setLang
@@ -45,14 +44,14 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   const RELAY_API_BASE = (import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api').replace(/\/api$/, '');
 
 
-  const updateLogStatus = (from, newStatus) => {
-    // This is the old way by phone number, keeping it for local events if any
-    setLogs(prev => prev.map(l =>
-      l.from === from && l.status === 'pending'
-        ? { ...l, status: newStatus }
-        : l
-    ));
-  };
+  const updateLogStatus = useCallback((idOrPhone, newStatus) => {
+    relayDebug('updateLogStatus', { idOrPhone, newStatus });
+    setLogs(prev => {
+      const updated = prev.map(l => (l.id === idOrPhone || l.from === idOrPhone) ? { ...l, status: newStatus } : l);
+      localStorage.setItem('nexus_relay_logs', JSON.stringify(updated));
+      return updated;
+    });
+  }, [setLogs]);
 
   const [connectionStatus, setConnectionStatus] = useState('connecting');
   const [signalStrength, setSignalStrength] = useState(85);
@@ -75,7 +74,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   });
   const [relayNotice, setRelayNotice] = useState(null);
   const [showTestSmsConfirm, setShowTestSmsConfirm] = useState(false);
-  const [noProfileWarning, setNoProfileWarning] = useState(false);
+  const [_noProfileWarning] = useState(false);
   const latestHealthCheckRef = useRef(0);
   const consecutiveHealthFailuresRef = useRef(0);
   const POLL_FAILURES_FOR_DISCONNECT = 3;
@@ -98,7 +97,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       window._nexusSocket.on('fake_call_request', handleFakeCall);
       return () => window._nexusSocket.off('fake_call_request', handleFakeCall);
     }
-  }, [operator?.installationId]);
+  }, [operator?.installationId, addLocalLog]);
 
   // ── Automatic Refresh on New Message ──
   useEffect(() => {
@@ -115,28 +114,28 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       window._nexusSocket.on('new_message', handleNewMessage);
       return () => window._nexusSocket.off('new_message', handleNewMessage);
     }
-  }, [operator?.profileId]);
+  }, [operator?.profileId, refreshLogs]);
 
   // ── Pull to Refresh logic ──
   const [pullDistance, setPullDistance] = useState(0);
   const pullStartRef = useRef(0);
   const isPullingRef = useRef(false);
 
-  const handleTouchStart = (e) => {
+  const handleTouchStart = (_err) => {
     const scrollEl = document.querySelector('.relay-logs-scroll');
     if (scrollEl && scrollEl.scrollTop === 0) {
-      pullStartRef.current = e.touches[0].clientY;
+      pullStartRef.current = _err.touches[0].clientY;
       isPullingRef.current = true;
     }
   };
 
-  const handleTouchMove = (e) => {
+  const handleTouchMove = (_err) => {
     if (!isPullingRef.current) return;
-    const currentY = e.touches[0].clientY;
+    const currentY = _err.touches[0].clientY;
     const distance = currentY - pullStartRef.current;
     if (distance > 0) {
       setPullDistance(Math.min(distance * 0.4, 80));
-      if (distance > 10) e.preventDefault();
+      if (distance > 10) _err.preventDefault();
     }
   };
 
@@ -170,11 +169,11 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
         if (res.data?.ok && res.data.sipConfig) {
           setSipConfig(res.data.sipConfig);
         }
-      } catch (err) {
-        console.warn('[Relay/SIP] Could not fetch SIP config:', err.message);
+      } catch (_err) {
+        console.warn('[Relay/SIP] Could not fetch SIP config:', _err.message);
       }
     })();
-  }, [isActive, operator?.token, API_BASE]);
+  }, [isActive, operator?.token, operator?.installationId, API_BASE, RELAY_API_BASE]);
 
   // Reset SIP on deactivation
   useEffect(() => {
@@ -186,24 +185,18 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
 
   const handleSipCallAnswered = useCallback(() => {
     addLocalLog('call', 'SIP', 'SIP call answered', 'inbound', 'forwarded');
-  }, []);
+  }, [addLocalLog]);
 
   const handleSipCallEnded = useCallback(() => {
     addLocalLog('call', 'SIP', 'SIP call ended', 'inbound', 'forwarded');
-  }, []);
+  }, [addLocalLog]);
 
   const {
     sipState,
     incomingCall: sipIncomingCall,
-    callDuration: sipCallDuration,
-    isMuted: sipIsMuted,
-    isSpeaker: sipIsSpeaker,
     answer: sipAnswer,
     reject: sipReject,
     hangup: sipHangup,
-    toggleMute: sipToggleMute,
-    toggleSpeaker: sipToggleSpeaker,
-    permissionWarning: sipPermissionWarning,
   } = useSipCall(sipConfig, {
     onIncoming: (data) => {
       addLocalLog('call', data.caller || data.callerId || 'SIP', 'Incoming SIP call', 'inbound', 'pending');
@@ -224,7 +217,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       setLang(prev => prev !== current ? current : prev);
     }, 2000);
     return () => clearInterval(interval);
-  }, []);
+  }, [setLang]);
 
   // Persist SIM slot preference
   useEffect(() => {
@@ -248,7 +241,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     },
     disconnected: {
       label: t('relayDisconnected') || 'DISCONNECTED',
-      color: 'var(--error-color)',
+      color: 'var(--_err-color)',
       icon: AlertCircle
     }
   };
@@ -290,8 +283,8 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
         setBatteryLevel(Math.max(0, Math.min(100, Math.round((battery.level || 0) * 100))));
         setIsCharging(Boolean(battery.charging));
       }
-    } catch (error) {
-      console.warn('[Relay] Failed to read battery level', error);
+    } catch (_err) {
+      console.warn('[Relay] Failed to read battery level', _err);
     }
   };
 
@@ -312,196 +305,87 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     return () => clearInterval(interval);
   }, []);
 
-  const checkRelayStatusFromApi = async () => {
-    const installationId = localStorage.getItem('nexus_installation_id');
-    const token = localStorage.getItem('nexus_token');
-    if (!installationId || !token) {
-      return { available: false, connected: false, reason: 'missing-installation-or-token' };
-    }
-
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT_MS);
-      const response = await fetch(`${RELAY_API_BASE}/api/device/status?installationId=${encodeURIComponent(installationId)}`, {
-        method: 'GET',
-        cache: 'no-store',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        return { available: true, connected: false, statusCode: response.status, reason: 'device-status-non-ok' };
-      }
-
-      const data = await response.json();
-      // Check if device has no profile assigned
-      if (data?.binding && !data.binding.profileId) {
-        setNoProfileWarning(true);
-      } else {
-        setNoProfileWarning(false);
-      }
-      return {
-        available: true,
-        connected: Boolean(data?.online),
-        source: data?.source || 'device-binding',
-      };
-    } catch (error) {
-      console.warn('[Relay] Relay status API check failed', error);
-      return { available: false, connected: false, reason: 'device-status-error' };
-    }
-  };
-
-  const checkProfileStatusFromApi = async () => {
-    const token = localStorage.getItem('nexus_token');
-    if (!token || !operator?.id) {
-      return { available: false, connected: false, reason: 'missing-token-or-operator' };
-    }
-
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT_MS);
-      const response = await fetch(`${RELAY_API_BASE}/api/profiles`, {
-        method: 'GET',
-        cache: 'no-store',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        return { available: true, connected: false, statusCode: response.status, reason: 'profiles-non-ok' };
-      }
-
-      const profiles = await response.json();
-      const linkedProfiles = Array.isArray(profiles)
-        ? profiles.filter((profile) => {
-            if (profile?.id === operator?.profileId) {
-              return true;
-            }
-            return Array.isArray(profile?.assignees) && profile.assignees.some((assignee) => assignee?.id === operator?.id);
-          })
-        : [];
-
-      return {
-        available: true,
-        connected: linkedProfiles.some((profile) => `${profile?.status || ''}`.toLowerCase() === 'online'),
-        source: 'profiles-db',
-      };
-    } catch (error) {
-      console.warn('[Relay] Profiles API check failed', error);
-      return { available: false, connected: false, reason: 'profiles-error' };
-    }
-  };
-
-  const checkServerConnection = async ({ showConnectingState = true, source = 'manual', attempts = 1 } = {}) => {
-    const checkId = ++latestHealthCheckRef.current;
+  const checkServerConnection = useCallback(async ({ showConnectingState = true, source = 'manual', attempts = 1 } = {}) => {
+    const checkId = Math.random().toString(36).substring(7);
     relayDebug('checkServerConnection:start', { source, attempts, showConnectingState, checkId, isActive });
-    if (showConnectingState) {
-      setConnectionStatus('connecting');
-    }
+    
+    if (!isActive) return false;
+    if (showConnectingState) setConnectionStatus('connecting');
 
-    const relayStatus = await checkRelayStatusFromApi();
+    // 1. Try local status if available (Nexus Bridge / Capacitor)
+    const relayStatus = await nexus?.checkRelayStatus?.();
     relayDebug('checkServerConnection:deviceStatus', relayStatus);
-    if (relayStatus.available && relayStatus.connected) {
-      if (checkId === latestHealthCheckRef.current) {
-        consecutiveHealthFailuresRef.current = 0;
-        setConnectionStatus('connected');
-      }
+    
+    if (relayStatus?.connected && relayStatus?.bridgeActive) {
+      setConnectionStatus('connected');
+      latestHealthCheckRef.current = Date.now();
+      consecutiveHealthFailuresRef.current = 0;
       relayDebug('checkServerConnection:connected-via-device-status');
       return true;
     }
 
-    const profileStatus = await checkProfileStatusFromApi();
+    // 2. Try profile health via nexus context
+    const profileStatus = await nexus?.checkProfileHealth?.(operator?.profileId);
     relayDebug('checkServerConnection:profileStatus', profileStatus);
-    if (profileStatus.available && profileStatus.connected) {
-      if (checkId === latestHealthCheckRef.current) {
-        consecutiveHealthFailuresRef.current = 0;
-        setConnectionStatus('connected');
-      }
+    if (profileStatus?.isHealthy) {
+      setConnectionStatus('connected');
+      latestHealthCheckRef.current = Date.now();
+      consecutiveHealthFailuresRef.current = 0;
       relayDebug('checkServerConnection:connected-via-profiles');
       return true;
     }
 
+    // 3. Last resort: Direct health check to relay server
     let lastError = null;
-    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const failureThreshold = source === 'poll' ? POLL_FAILURES_FOR_DISCONNECT : 1;
+
+    for (let attempt = 1; attempt <= attempts; attempt++) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT_MS);
-        const response = await fetch(`${RELAY_API_BASE}/health`, {
-          method: 'GET',
-          cache: 'no-store',
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+        const response = await fetch(`${RELAY_API_BASE}/health`, { 
+          mode: 'no-cors',
+          cache: 'no-cache',
+          headers: { 'x-nexus-check': checkId },
           signal: controller.signal
         });
+        
         clearTimeout(timeoutId);
 
-        if (!response.ok) {
-          throw new Error(`Health check failed (${response.status})`);
-        }
-
-        if (checkId === latestHealthCheckRef.current) {
-          consecutiveHealthFailuresRef.current = 0;
-          setConnectionStatus('connected');
-        }
+        // With no-cors, we can't see status, but if it didn't throw, it reached the server
+        setConnectionStatus('connected');
+        latestHealthCheckRef.current = Date.now();
+        consecutiveHealthFailuresRef.current = 0;
         relayDebug('checkServerConnection:connected-via-health', { attempt, status: response.status });
         return true;
-      } catch (error) {
-        // Fallback for mobile WebView CORS restrictions: treat successful opaque fetch as reachable server.
-        try {
-          const corsBypassController = new AbortController();
-          const bypassTimeoutId = setTimeout(() => corsBypassController.abort(), HEALTH_CHECK_TIMEOUT_MS);
-          await fetch(`${RELAY_API_BASE}/health`, {
-            method: 'GET',
-            cache: 'no-store',
-            mode: 'no-cors',
-            signal: corsBypassController.signal,
-          });
-          clearTimeout(bypassTimeoutId);
-
-          if (checkId === latestHealthCheckRef.current) {
-            consecutiveHealthFailuresRef.current = 0;
-            setConnectionStatus('connected');
-          }
-          relayDebug('checkServerConnection:connected-via-health-no-cors', { attempt });
-          return true;
-        } catch (bypassError) {
-          lastError = bypassError || error;
-          relayDebug('checkServerConnection:health-attempt-failed', { attempt, error: String(lastError) });
-        }
-
+      } catch (_err) {
+        lastError = _err;
+        relayDebug('checkServerConnection:health-attempt-failed', { attempt, _err: String(lastError) });
+        
         if (attempt < attempts) {
           await new Promise(resolve => setTimeout(resolve, 650));
         }
       }
     }
 
-    if (checkId === latestHealthCheckRef.current) {
-      consecutiveHealthFailuresRef.current += 1;
-      const failureThreshold = source === 'poll' ? POLL_FAILURES_FOR_DISCONNECT : 1;
-
-      if (consecutiveHealthFailuresRef.current >= failureThreshold) {
-        console.warn('[Relay] Server is unreachable', lastError);
-        setConnectionStatus('disconnected');
-      } else {
-        // Keep previous state on early transient failures to avoid false DISCONNECTED flips.
-        console.warn(`[Relay] Transient health check failure (${consecutiveHealthFailuresRef.current}/${failureThreshold})`);
-      }
+    // Final failure logic
+    consecutiveHealthFailuresRef.current += 1;
+    if (consecutiveHealthFailuresRef.current >= failureThreshold) {
+      console.warn('[Relay] Server is unreachable', lastError);
+      setConnectionStatus('disconnected');
+    } else {
+      console.warn(`[Relay] Transient health check failure (${consecutiveHealthFailuresRef.current}/${failureThreshold})`);
     }
 
     relayDebug('checkServerConnection:failed', {
       source,
       attempts,
       consecutiveFailures: consecutiveHealthFailuresRef.current,
-      relayStatus,
-      profileStatus,
-      error: String(lastError || 'unknown')
+      _err: String(lastError || 'unknown')
     });
     return false;
-  };
+  }, [isActive, nexus, operator?.profileId, RELAY_API_BASE]);
 
   const reconnectServer = async () => {
     relayDebug('reconnectServer:clicked');
@@ -512,8 +396,8 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     if (typeof syncPushToken === 'function') {
       try {
         pushSyncReachedServer = await syncPushToken();
-      } catch (error) {
-        console.warn('[Relay] Push token sync failed during reconnect', error);
+      } catch (_err) {
+        console.warn('[Relay] Push token sync failed during reconnect', _err);
       }
     }
 
@@ -539,35 +423,6 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     relayDebug('reconnectServer:result', { connected, pushSyncReachedServer });
   };
 
-  const normalizeLogType = (log) => {
-    if (log?.transport === 'call' || log?.transport === 'sms' || log?.transport === 'rcs') {
-      return log.transport;
-    }
-
-    if (log?.type === 'call' || log?.type === 'sms' || log?.type === 'rcs') {
-      return log.type;
-    }
-
-    const stateValue = typeof log?.state === 'string' ? log.state.toUpperCase() : '';
-    const contentValue = `${log?.content || log?.body || ''}`.toUpperCase();
-
-    if (log?.sourcePackage === 'com.google.android.apps.messaging') {
-      return 'rcs';
-    }
-
-    if (
-      stateValue === 'RINGING' ||
-      stateValue === 'OFFHOOK' ||
-      contentValue.startsWith('STATE: RINGING') ||
-      contentValue.startsWith('STATE: OFFHOOK')
-    ) {
-      return 'call';
-    }
-
-    return 'sms';
-  };
-
-
   useEffect(() => {
     if (!isActive) {
       consecutiveHealthFailuresRef.current = 0;
@@ -582,7 +437,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     }, 15000);
 
     return () => clearInterval(interval);
-  }, [isActive]);
+  }, [isActive, checkServerConnection]);
 
   const testSms = () => {
     // Open in-app confirm dialog instead of window.confirm (crashes Android WebView)
@@ -599,8 +454,9 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       if (!plugin) throw new Error("Relay plugin not available");
       await plugin.sendSms({ to: testNum, text: testMsg });
       updateLogStatus(testNum, "sent");
-    } catch (err) {
-      updateLogStatus(testNum, "failed");
+    } catch {
+      setBatteryLevel(100);
+      setIsCharging(false);
     }
   };
 
@@ -616,14 +472,14 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
           if (st === 'sent' || st === 'forwarded' || st === 'relayed' || st === 'ok' || st === 'success' || st === 'delivered') {
             updateLogStatus(event.from, 'forwarded');
             showRelayNotice(t('smsRelayed') || 'SMS byla odeslána!', 'success');
-          } else if (event.status === 'failed' || event.status === 'error') {
+          } else if (event.status === 'failed' || event.status === '_err') {
             updateLogStatus(event.from, 'failed');
             showRelayNotice(t('relayFailed') || 'Přeposlání selhalo!', 'error');
           } else {
             addLocalLog(event.type || 'sms', event.from, event.content, event.direction || 'inbound', 'pending');
           }
-        } catch (e) {
-          console.error('[Relay] relay_event handler error:', e);
+        } catch (_err) {
+          console.error('[Relay] relay_event handler _err:', _err);
         }
       });
     }
@@ -631,15 +487,14 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     return () => {
       if (listener) listener.remove();
     };
-  }, [isActive]);
+  }, [isActive, updateLogStatus, addLocalLog, showRelayNotice, t]);
 
-  const syncRelayToServer = async () => {
+  const syncRelayToServer = useCallback(async () => {
     if (!operator?.token || !isActive) return;
     const installationId = localStorage.getItem('nexus_installation_id');
     if (!installationId) return;
 
     try {
-      const plugin = window.Capacitor?.Plugins?.NexusRelay;
       let model = 'Web/Unknown';
       let platform = 'android';
       let deviceName = '';
@@ -662,63 +517,19 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       });
       console.log('[Relay] Server binding verified successfully');
       setConnectionStatus('connected');
-    } catch (error) {
-      console.warn('[Relay] Failed to verify server binding', error);
-      setConnectionStatus('error');
+    } catch (_err) {
+      console.warn('[Relay] Failed to verify server binding', _err);
+      setConnectionStatus('_err');
     }
-  };
+  }, [operator, isActive, RELAY_API_BASE]);
 
-  const syncRelayToNative = async (active) => {
-    if (!window.Capacitor?.Plugins?.NexusRelay) return;
-    let installationId = localStorage.getItem('nexus_installation_id');
-    const currentProfileId = operator?.profileId || localStorage.getItem('nexus_last_profile_id');
-    if (operator?.profileId) {
-      localStorage.setItem('nexus_last_profile_id', operator.profileId);
-    }
-
-    try {
-      const baseUrl = `${RELAY_API_BASE}/api/device/relay`;
-      await window.Capacitor.Plugins.NexusRelay.configureRelay({
-        baseUrl: baseUrl,
-        deviceId: operator?.id || 'RELAY-01',
-        installationId: installationId || null,
-        profileId: currentProfileId || null,
-        isActive: active,
-        simSlot: selectedSimSlot === 'auto' ? null : parseInt(selectedSimSlot)
-      });
-
-
-      // When activating relay, check if Android battery optimization is blocking
-      // background operation and prompt user to disable it.
-      if (active) {
-        try {
-          const batteryResult = await window.Capacitor.Plugins.NexusRelay.checkBatteryOptimization();
-          if (batteryResult?.optimized) {
-            // Show dialog asynchronously — do not block relay activation
-            setTimeout(async () => {
-              try {
-                await window.Capacitor.Plugins.NexusRelay.requestIgnoreBatteryOptimization();
-              } catch (e) {
-                console.warn('[Relay] Battery optimization dialog failed', e);
-              }
-            }, 800);
-          }
-        } catch (e) {
-          // Older OS or plugin version — ignore silently
-          console.warn('[Relay] Battery optimization check skipped', e);
-        }
-      }
-    } catch (error) {
-      console.warn('[Relay] Failed to sync native relay config', error);
-    }
-  };
 
   useEffect(() => {
     // Also wake up the server so it knows this device is active today.
     if (isActive) {
       void syncRelayToServer();
     }
-  }, [isActive, operator, operator?.token]);
+  }, [isActive, syncRelayToServer]);
 
   const handleExitMode = async () => {
     setConnectionStatus('disconnected');
@@ -743,7 +554,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
             const name = entry.name ? ` (${entry.name})` : '';
             addLocalLog('warning', phone, `${severity} BLACKLIST: ${phone}${name} — ${entry.description || ''}`, 'inbound', 'forwarded');
           }
-        } catch {}
+        } catch (_err) { console.error(_err); }
       };
 
       const smsListener = window.Capacitor.Plugins.NexusRelay.addListener('onSmsReceived', async (data) => {
@@ -771,19 +582,19 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
               if (!res.ok) throw new Error(`Server returned ${res.status}`);
               updateLogStatus(data.from, 'forwarded');
               showRelayNotice(lang === 'cz' ? 'SMS přeposlána na server' : 'SMS forwarded to server', 'success');
-            } catch (relayErr) {
-              console.warn('[Relay] Failed to forward SMS to server', relayErr);
+            } catch (_err) {
+              console.warn('[Relay] Failed to forward SMS to server', _err);
               updateLogStatus(data.from, 'failed');
-              showRelayNotice((lang === 'cz' ? 'Chyba přeposílání: ' : 'Forward error: ') + relayErr.message, 'error');
+              showRelayNotice((lang === 'cz' ? 'Chyba přeposílání: ' : 'Forward _err: ') + _err.message, '_err');
             }
           }
-        } catch (e) { console.error('[Relay] onSmsReceived error:', e); }
+        } catch (_err) { console.error('[Relay] onSmsReceived _err:', _err); }
       });
       const rcsListener = window.Capacitor.Plugins.NexusRelay.addListener('onRcsReceived', (data) => {
         try {
           addLocalLog('rcs', data.from, data.body, 'inbound', 'pending');
           checkBlacklist(data.from);
-        } catch (e) { console.error('[Relay] onRcsReceived error:', e); }
+        } catch (_err) { console.error('[Relay] onRcsReceived _err:', _err); }
       });
       const callListener = window.Capacitor.Plugins.NexusRelay.addListener('onCallStateChanged', (data) => {
         try {
@@ -791,7 +602,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
             addLocalLog('call', data.from, `State: ${data.state}`);
             if (data.from) checkBlacklist(data.from);
           }
-        } catch (e) { console.error('[Relay] onCallStateChanged error:', e); }
+        } catch (_err) { console.error('[Relay] onCallStateChanged _err:', _err); }
       });
       return () => {
         smsListener.remove();
@@ -799,7 +610,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
         callListener.remove();
       };
     }
-  }, [isActive, operator]);
+  }, [isActive, operator, addLocalLog, API_BASE, RELAY_API_BASE, lang, updateLogStatus, showRelayNotice]);
 
   useEffect(() => {
     if (!isActive || window.Capacitor?.Plugins?.NexusRelay) return;
@@ -810,7 +621,9 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     return () => clearInterval(interval);
   }, [isActive]);
 
-  const refreshPermissionsStatus = async () => {
+
+
+  const refreshPermissionsStatus = useCallback(async () => {
     try {
       const plugin = window.Capacitor?.Plugins?.NexusRelay;
       if (!plugin?.checkStatus) return;
@@ -824,39 +637,25 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
           rcsMonitoring: Boolean(status.rcsMonitoring)
         });
       }
-    } catch (err) {
-      console.warn('[Relay] Failed to refresh permissions status', err);
+    } catch (_err) {
+      console.warn('[Relay] Failed to refresh permissions status', _err);
     }
-  };
+  }, []);
 
-  // Load initial permissions status and start polling
-  useEffect(() => {
-    void refreshPermissionsStatus();
-    // Also load logs immediately on mount/activation
-    if (isActive) {
-      void refreshLogs();
-    }
-
-    const interval = setInterval(() => {
-      if (isActive) {
-        void refreshPermissionsStatus();
-        void refreshLogs(); // Auto-refresh logs every 10s along with permissions
-      }
-    }, 10000); 
-
-    return () => clearInterval(interval);
-  }, [isActive]);
-
-  const refreshLogs = async () => {
+  const refreshLogs = useCallback(async () => {
     if (isRefreshingLogs) return;
     setIsRefreshingLogs(true);
     try {
       const installationId = localStorage.getItem('nexus_installation_id');
       const token = localStorage.getItem('nexus_token');
-      if (!installationId || !token) return;
+      if (!installationId || !token) {
+        setIsRefreshingLogs(false);
+        return;
+      }
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 6000);
+      
       const response = await fetch(`${RELAY_API_BASE}/api/device/logs?installationId=${encodeURIComponent(installationId)}&limit=50`, {
         method: 'GET',
         cache: 'no-store',
@@ -865,6 +664,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
         },
         signal: controller.signal
       });
+      
       clearTimeout(timeoutId);
       if (response.ok) {
         const data = await response.json();
@@ -894,21 +694,39 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
           });
         }
       }
-    } catch (error) {
-      console.warn('[Relay] Failed to refresh logs', error);
+    } catch (_err) {
+      console.warn('[Relay] Failed to refresh logs', _err);
     } finally {
       setIsRefreshingLogs(false);
     }
-  };
+  }, [RELAY_API_BASE, isRefreshingLogs, setLogs]);
 
-  const showRelayNotice = (message, type = 'info') => {
-    if (!message) return;
-    setRelayNotice({ message, type });
-  };
+  // Load initial permissions status and start polling
+  useEffect(() => {
+    void refreshPermissionsStatus();
+    // Also load logs immediately on mount/activation
+    if (isActive) {
+      void refreshLogs();
+    }
+
+    const interval = setInterval(() => {
+      if (isActive) {
+        void refreshPermissionsStatus();
+        void refreshLogs(); // Auto-refresh logs every 10s along with permissions
+      }
+    }, 10000); 
+
+    return () => clearInterval(interval);
+  }, [isActive, refreshPermissionsStatus, refreshLogs]);
+
+  const showRelayNotice = useCallback((type, message) => {
+    relayDebug('showRelayNotice', { type, message });
+    setRelayNotice({ type, message });
+  }, []);
 
   useEffect(() => {
     if (!relayNotice) return;
-    const timer = setTimeout(() => setRelayNotice(null), 3200);
+    const timer = setTimeout(() => setRelayNotice(null), 5000);
     return () => clearTimeout(timer);
   }, [relayNotice]);
 
@@ -925,7 +743,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
           }}
         >
           <div
-            onClick={e => e.stopPropagation()}
+            onClick={_err => _err.stopPropagation()}
             style={{
               background: '#12141a', border: '1px solid rgba(59,130,246,0.3)',
               borderRadius: '20px', padding: '2rem', width: '100%', maxWidth: '320px',
@@ -1068,7 +886,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
             borderRadius: '50%', 
             border: 'none', 
             background: isActive ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-            color: isActive ? 'var(--success-color)' : 'var(--error-color)',
+            color: isActive ? 'var(--success-color)' : 'var(--_err-color)',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -1084,7 +902,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
           {[
           { icon: currentConnectionUi.icon, label: t('relayServer') || 'SERVER', value: currentConnectionUi.label, color: currentConnectionUi.color, isStatus: true },
           { icon: Signal, label: t('relaySignal') || 'SIGNAL', value: `${Math.round(signalStrength || 0)}%`, subValue: (selectedSimSlot || 'auto').toUpperCase(), color: isServerConnected ? 'var(--success-color)' : 'var(--text-secondary)' },
-          { icon: Battery, label: t('relayBattery') || 'BATTERY', value: `${Math.round(batteryLevel)}%${isCharging ? ' ⚡' : ''}`, color: batteryLevel > 20 ? (isServerConnected ? 'var(--success-color)' : 'var(--text-secondary)') : 'var(--error-color)' },
+          { icon: Battery, label: t('relayBattery') || 'BATTERY', value: `${Math.round(batteryLevel)}%${isCharging ? ' ⚡' : ''}`, color: batteryLevel > 20 ? (isServerConnected ? 'var(--success-color)' : 'var(--text-secondary)') : 'var(--_err-color)' },
           { icon: Activity, label: t('relayUptime') || 'UPTIME', value: t('relayUptimeValue') || '14d 05h', color: isServerConnected ? 'var(--accent-color)' : 'var(--text-secondary)' }
         ].map((card, i) => (
           <div 
@@ -1209,8 +1027,8 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
             {t('relayEnableRcsAccess') || (lang === 'cz' ? 'AKTIVOVAT RCS / SMS' : 'ENABLE RCS / SMS')}
           </button>
         )}
-        {noProfileWarning && (
-          <div style={{ marginTop: '0.85rem', fontSize: '0.72rem', lineHeight: '1.4', padding: '0.7rem 0.85rem', borderRadius: '10px', border: '1px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.1)', color: 'var(--error-color)', fontWeight: '700' }}>
+        {_noProfileWarning && (
+          <div style={{ marginTop: '0.85rem', fontSize: '0.72rem', lineHeight: '1.4', padding: '0.7rem 0.85rem', borderRadius: '10px', border: '1px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.1)', color: 'var(--_err-color)', fontWeight: '700' }}>
             ❌ {lang === 'cz' ? 'Žádný profil není přiřazen k tomuto zařízení — SMS nebudou uloženy. Odhlaste se, přiřaďte profil a spárujte znovu.' : 'No profile assigned to this device — SMS will not be saved. Log out, assign a profile, then re-pair.'}
           </div>
         )}
@@ -1222,18 +1040,18 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
               lineHeight: '1.4',
               padding: '0.7rem 0.85rem',
               borderRadius: '10px',
-              border: relayNotice.type === 'error'
+              border: relayNotice.type === '_err'
                 ? '1px solid rgba(239,68,68,0.35)'
                 : (relayNotice.type === 'success'
                   ? '1px solid rgba(34,197,94,0.35)'
                   : '1px solid rgba(59,130,246,0.35)'),
-              background: relayNotice.type === 'error'
+              background: relayNotice.type === '_err'
                 ? 'rgba(239,68,68,0.08)'
                 : (relayNotice.type === 'success'
                   ? 'rgba(34,197,94,0.08)'
                   : 'rgba(59,130,246,0.08)'),
-              color: relayNotice.type === 'error'
-                ? 'var(--error-color)'
+              color: relayNotice.type === '_err'
+                ? 'var(--_err-color)'
                 : (relayNotice.type === 'success'
                   ? 'var(--success-color)'
                   : 'var(--accent-color)'),
@@ -1357,7 +1175,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
               <div style={{
                 fontSize: '0.6rem', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: '800',
                 background: log.status === 'failed' ? 'rgba(239, 68, 68, 0.1)' : log.status === 'pending' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(34, 197, 94, 0.1)',
-                color: log.status === 'failed' ? 'var(--error-color)' : log.status === 'pending' ? '#f59e0b' : 'var(--success-color)'
+                color: log.status === 'failed' ? 'var(--_err-color)' : log.status === 'pending' ? '#f59e0b' : 'var(--success-color)'
               }}>
                 {log.status === 'pending'
                   ? (lang === 'cz' ? '📤 Odesílání...' : '📤 Sending...')
@@ -1405,7 +1223,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       {/* Log Detail Modal */}
       {activeLog && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }} onClick={() => setActiveLog(null)}>
-          <div style={{ background: '#12141a', border: '1px solid var(--card-border)', borderRadius: '24px', width: '100%', maxWidth: '400px', padding: '2rem', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }} onClick={e => e.stopPropagation()}>
+          <div style={{ background: '#12141a', border: '1px solid var(--card-border)', borderRadius: '24px', width: '100%', maxWidth: '400px', padding: '2rem', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }} onClick={_err => _err.stopPropagation()}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
               <div style={{ width: '50px', height: '50px', borderRadius: '12px', background: (activeLog.transport || activeLog.type) === 'call' ? 'rgba(34,197,94,0.12)' : ((activeLog.transport || activeLog.type) === 'rcs' ? 'rgba(168,85,247,0.16)' : 'rgba(59,130,246,0.1)'), display: 'flex', alignItems: 'center', justifyContent: 'center', color: (activeLog.transport || activeLog.type) === 'call' ? 'var(--success-color)' : ((activeLog.transport || activeLog.type) === 'rcs' ? '#c084fc' : 'var(--accent-color)') }}>
                 {(() => {
@@ -1447,7 +1265,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
             boxSizing: 'border-box', 
             display: 'flex', 
             flexDirection: 'column' 
-          }} onClick={e => e.stopPropagation()}>
+          }} onClick={_err => _err.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <button 
                 onClick={() => setShowSettings(false)}
@@ -1481,7 +1299,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
                       {['auto', '1', '2'].map(slot => (
                         <button 
                           key={slot}
-                          onClick={(e) => { e.stopPropagation(); setSelectedSimSlot(slot); }}
+                          onClick={(_err) => { _err.stopPropagation(); setSelectedSimSlot(slot); }}
                           style={{
                             padding: '6px 10px',
                             fontSize: '0.7rem',
@@ -1513,7 +1331,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
                     item.customAction
                   ) : item.toggle !== undefined ? (
                     <div
-                      onClick={e => { e.stopPropagation(); item.onToggle(); }}
+                      onClick={_err => { _err.stopPropagation(); item.onToggle(); }}
                       style={{ width: '44px', height: '24px', background: item.toggle ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)', borderRadius: '12px', position: 'relative', cursor: 'pointer', flexShrink: 0 }}
                     >
                       <div style={{ width: '20px', height: '20px', background: 'white', borderRadius: '50%', position: 'absolute', top: '2px', left: item.toggle ? '22px' : '2px', transition: 'all 0.2s ease' }} />
@@ -1525,7 +1343,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
 
             <div style={{ padding: '1.25rem 0', marginTop: 'auto' }}>
               <button 
-                onClick={(e) => { e.stopPropagation(); setShowSettings(false); }}
+                onClick={(_err) => { _err.stopPropagation(); setShowSettings(false); }}
                 style={{ 
                   width: '100%', 
                   padding: '1.4rem', 

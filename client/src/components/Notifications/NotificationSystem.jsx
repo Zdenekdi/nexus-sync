@@ -118,7 +118,7 @@ const NotificationSystem = () => {
                   marginBottom: '1rem',
                   position: 'relative',
                   borderLeft: `4px solid ${
-                    n.type === 'emergency' ? 'var(--error-color)' :
+                    n.type === 'emergency' ? 'var(--_err-color)' :
                     n.type === 'success' ? 'var(--success-color)' :
                     n.type === 'warning' ? 'var(--warning-color)' : 'var(--accent-color)'
                   }`,

@@ -78,7 +78,7 @@ const AgenciesView = () => {
                         <span style={{ 
                           padding: '0.2rem 0.6rem', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '800',
                           background: sub.status === 'active' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                          color: sub.status === 'active' ? 'var(--success-color)' : 'var(--error-color)'
+                          color: sub.status === 'active' ? 'var(--success-color)' : 'var(--_err-color)'
                         }}>
                           {(sub.status || 'INACTIVE').toUpperCase()}
                         </span>

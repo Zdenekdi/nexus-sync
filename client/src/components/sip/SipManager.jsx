@@ -12,10 +12,10 @@
  *   <SipManager />
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useNexus } from '../../context/NexusContext';
-import { useOperatorSip } from './OperatorSipClient';
+import { useOperatorSip } from '../../hooks/useOperatorSip';
 import { IncomingOperatorCall, ActiveOperatorCall } from './OperatorCallScreen';
 
 const SIP_WS_URL = import.meta.env.VITE_SIP_WS_URL || 'wss://nexus-api.myvnc.com:8089/ws';
@@ -44,19 +44,19 @@ export default function SipManager() {
         if (res.data?.ok && res.data.sipConfig) {
           setSipCredentials(res.data.sipConfig);
         }
-      } catch (err) {
-        console.warn('[SipManager] Could not fetch SIP config:', err.message);
+      } catch (_err) {
+        console.warn('[SipManager] Could not fetch SIP config:', _err.message);
       }
     })();
   }, [isLoggedIn, token, isSipRole, API_BASE]);
 
   // Reset on logout
   useEffect(() => {
-    if (!isLoggedIn) {
-      setSipCredentials(null);
+    if (!isLoggedIn && sipCredentials !== null) {
+      Promise.resolve().then(() => setSipCredentials(null));
       fetchedRef.current = false;
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, sipCredentials]);
 
   // Initialize WebRTC SIP via JsSIP
   const sipConfig = sipCredentials ? {
@@ -66,7 +66,7 @@ export default function SipManager() {
   } : null;
 
   const {
-    sipStatus,
+    sipStatus: _sipStatus,
     callSession,
     activeCall,
     callDuration,

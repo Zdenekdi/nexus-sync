@@ -4,7 +4,7 @@ import { useNexus } from '../../context/NexusContext';
 import axios from 'axios';
 
 const SafetyGuardView = () => {
-  const { t, lang, API_BASE, token, showToast, isMobile } = useNexus();
+  const { _t, lang, API_BASE, token, showToast, isMobile } = useNexus();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -22,8 +22,8 @@ const SafetyGuardView = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSessions(res.data || []);
-    } catch (err) {
-      console.error('Failed to fetch safety sessions:', err);
+    } catch (_err) {
+      console.error('Failed to fetch safety sessions:', _err);
       showToast(isCz ? 'Nepodařilo se načíst data' : 'Failed to load safety data', 'error');
     } finally {
       setLoading(false);
@@ -109,7 +109,7 @@ const SafetyGuardView = () => {
             type="text" 
             placeholder={isCz ? "Hledat modelku..." : "Search model..."}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(_err) => setSearch(_err.target.value)}
             style={{ 
               width: '100%', padding: '0.85rem 1rem 0.85rem 3rem', borderRadius: '14px', 
               background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)',

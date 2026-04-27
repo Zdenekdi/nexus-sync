@@ -4,13 +4,13 @@ import { AlertTriangle } from 'lucide-react';
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, _err: null };
   }
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
+  static getDerivedStateFromError(_err) {
+    return { hasError: true, _err };
   }
-  componentDidCatch(error, errorInfo) {
-    console.error("Critical Runtime Error:", error, errorInfo);
+  componentDidCatch(_err, errorInfo) {
+    console.error("Critical Runtime Error:", _err, errorInfo);
   }
   render() {
     if (this.state.hasError) {

@@ -5,7 +5,7 @@ const GlobalAppStyles = () => {
     <style>{`
       .fade-in { animation: fadeIn 0.4s ease-out; }
       @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-      .unread-badge { margin-left: auto; background: var(--error-color); color: white; font-size: 0.7rem; font-weight: 800; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; padding: 0 5px; }
+      .unread-badge { margin-left: auto; background: var(--_err-color); color: white; font-size: 0.7rem; font-weight: 800; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; padding: 0 5px; }
       .avatar-circle { width: 48px; height: 48px; background: rgba(59, 130, 246, 0.1); border-radius: 50%; display: flex; alignItems: center; justifyContent: center; }
       .message-bubble-in { 
         align-self: flex-start; 
@@ -54,13 +54,13 @@ const GlobalAppStyles = () => {
       .avatar-pulse { width: 56px; height: 56px; background: var(--accent-color); border-radius: 16px; display: flex; align-items: center; justify-content: center; animation: ringPulse 2s infinite; }
       @keyframes ringPulse { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
       .circle-btn { width: 44px; height: 44px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-      .circle-btn.decline { background: var(--error-color); color: white; }
+      .circle-btn.decline { background: var(--_err-color); color: white; }
       .circle-btn.accept { background: var(--success-color); color: white; }
 
       select::-ms-expand { display: none; }
       select { -webkit-appearance: none; appearance: none; }
 
-      .action-btn.active { background: rgba(239, 68, 68, 0.1) !important; color: var(--error-color) !important; border-color: var(--error-color) !important; }
+      .action-btn.active { background: rgba(239, 68, 68, 0.1) !important; color: var(--_err-color) !important; border-color: var(--_err-color) !important; }
 
       .toggle-switch.active { box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
       .toggle-switch:hover { border-color: var(--accent-color) !important; }

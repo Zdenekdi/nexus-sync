@@ -49,14 +49,14 @@ export class CommunicationService {
         timestamp: new Date()
       });
       return result;
-    } catch (error) {
+    } catch (_err) {
       this.emitEvent('messageError', {
         channel: channelType,
         message,
-        error,
+        _err,
         timestamp: new Date()
       });
-      throw error;
+      throw _err;
     }
   }
 
@@ -82,8 +82,8 @@ export class CommunicationService {
     for (const handler of this.messageHandlers) {
       try {
         await handler(normalizedMessage);
-      } catch (error) {
-        console.error('Message handler error:', error);
+      } catch (_err) {
+        console.error('Message handler _err:', _err);
       }
     }
 
@@ -148,8 +148,8 @@ export class CommunicationService {
     handlers.forEach(handler => {
       try {
         handler(data);
-      } catch (error) {
-        console.error(`Error in ${event} handler:`, error);
+      } catch (_err) {
+        console.error(`Error in ${event} handler:`, _err);
       }
     });
   }

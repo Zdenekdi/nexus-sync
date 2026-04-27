@@ -8,7 +8,7 @@ export function useVultr() {
   const [bandwidth, setBandwidth] = useState(null);
   const [loading, setLoading] = useState(false);
   const [cmdOutput, setCmdOutput] = useState("");
-  const [error, setError] = useState(null);
+  const [_err, setError] = useState(null);
 
   const getHeaders = useCallback(() => {
     const token = localStorage.getItem('nexus_token');
@@ -22,9 +22,9 @@ export function useVultr() {
       const { data } = await axios.get(`${API_BASE}/vultr/status`, getHeaders());
       setStatus(data);
       setError(null);
-    } catch (err) {
-      console.error("Failed to fetch Vultr status:", err);
-      setError(err.response?.data?.error || err.message);
+    } catch (_err) {
+      console.error("Failed to fetch Vultr status:", _err);
+      setError(_err.response?.data?.error || _err.message);
     }
   }, [getHeaders]);
 
@@ -32,8 +32,8 @@ export function useVultr() {
     try {
       const { data } = await axios.get(`${API_BASE}/vultr/bandwidth`, getHeaders());
       setBandwidth(data);
-    } catch (err) {
-      console.warn("Failed to fetch Vultr bandwidth:", err);
+    } catch (_err) {
+      console.warn("Failed to fetch Vultr bandwidth:", _err);
     }
   }, [getHeaders]);
 
@@ -45,8 +45,8 @@ export function useVultr() {
     try {
       const { data } = await axios.get(`${API_BASE}/agency/stats`, getHeaders());
       setStats(data);
-    } catch (err) {
-      console.warn("Failed to fetch global stats:", err);
+    } catch (_err) {
+      console.warn("Failed to fetch global stats:", _err);
     }
   }, [getHeaders]);
 
@@ -54,8 +54,8 @@ export function useVultr() {
     try {
       const { data } = await axios.get(`${API_BASE}/vultr/apk-info`, getHeaders());
       setApkInfo(data);
-    } catch (err) {
-      console.warn("Failed to fetch APK info:", err);
+    } catch (_err) {
+      console.warn("Failed to fetch APK info:", _err);
     }
   }, [getHeaders]);
 
@@ -76,8 +76,8 @@ export function useVultr() {
     try {
       await axios.post(`${API_BASE}/vultr/${action}`, {}, getHeaders());
       setTimeout(fetchStatus, 3500);
-    } catch (err) {
-      setError(err.response?.data?.error || err.message);
+    } catch (_err) {
+      setError(_err.response?.data?.error || _err.message);
     } finally {
       setLoading(false);
     }
@@ -89,8 +89,8 @@ export function useVultr() {
     try {
       const { data } = await axios.post(`${API_BASE}/vultr/command`, { command }, getHeaders());
       setCmdOutput(data.stdout || data.stderr || "Žádný výstup");
-    } catch (err) {
-      setCmdOutput("Error: " + (err.response?.data?.error || err.message));
+    } catch (_err) {
+      setCmdOutput("Error: " + (_err.response?.data?.error || _err.message));
     }
   };
 
@@ -99,8 +99,8 @@ export function useVultr() {
     try {
       const { data } = await axios.post(`${API_BASE}/vultr/git-pull`, { path }, getHeaders());
       setCmdOutput(data.stdout || data.stderr || "Git pull dokončen");
-    } catch (err) {
-      setCmdOutput("Error: " + (err.response?.data?.error || err.message));
+    } catch (_err) {
+      setCmdOutput("Error: " + (_err.response?.data?.error || _err.message));
     }
   };
 
@@ -115,16 +115,16 @@ export function useVultr() {
       const token = localStorage.getItem("nexus_token");
       const { data } = await axios.post(`${API_BASE}/vultr/upload-apk`, formData, {
         headers: { Authorization: `Bearer ${token}` },
-        onUploadProgress: (e) => setUploadProgress(Math.round((e.loaded / e.total) * 100))
+        onUploadProgress: (_err) => setUploadProgress(Math.round((_err.loaded / _err.total) * 100))
       });
       setApkInfo({ available: true, ...data });
       setUploadProgress(null);
       return data;
-    } catch (err) {
+    } catch (_err) {
       setUploadProgress(null);
-      throw err;
+      throw _err;
     }
   };
 
-  return { status, bandwidth, stats, loading, cmdOutput, clearCmdOutput, error, serverAction, runCommand, gitPull, fetchStatus, apkInfo, uploadApk, uploadProgress };
+  return { status, bandwidth, stats, loading, cmdOutput, clearCmdOutput, _err, serverAction, runCommand, gitPull, fetchStatus, apkInfo, uploadApk, uploadProgress };
 }

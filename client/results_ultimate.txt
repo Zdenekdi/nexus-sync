@@ -1,0 +1,17 @@
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/PermissionsDashboard.jsx
+  17:6  warning  React Hook useEffect has a missing dependency: 'fetchRoles'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/components/PlansDashboard.jsx
+  26:6  warning  React Hook useEffect has a missing dependency: 'fetchPlans'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/client/src/hooks/useOmnichannel/index.js
+   79:6  warning  React Hook useEffect has a missing dependency: 'channels'. Either include it or remove the dependency array         react-hooks/exhaustive-deps
+  100:6  warning  React Hook useCallback has an unnecessary dependency: 'channels'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+  123:6  warning  React Hook useCallback has an unnecessary dependency: 'channels'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+  150:6  warning  React Hook useCallback has an unnecessary dependency: 'channels'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+  166:6  warning  React Hook useCallback has an unnecessary dependency: 'channels'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+  186:6  warning  React Hook useCallback has an unnecessary dependency: 'channels'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+
+✖ 8 problems (0 errors, 8 warnings)
+

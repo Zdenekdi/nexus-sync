@@ -30,7 +30,7 @@ const BugReportModal = ({ isOpen, onClose, activeOperator, activeClient, t, lang
 
         <textarea
           value={bugDescription}
-          onChange={(e) => setBugDescription(e.target.value)}
+          onChange={(_err) => setBugDescription(_err.target.value)}
           placeholder={t('bugPlaceholder')}
           style={{
             width: '100%', height: '150px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)',

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, memo, useMemo, useCallback } from 'react';
 import { useNexus } from '../context/NexusContext';
-import axios from 'axios';
 import { 
   Lock, Mail, ArrowRight, Loader2, 
   Globe, Zap, CheckCircle2, User, Building2, KeyRound, Copy, Check,
@@ -75,7 +74,7 @@ const MemoInput = memo(({ label, icon: Icon, type, value, onChange, placeholder,
       <input 
         type={showToggle ? (isToggled ? 'text' : 'password') : type}
         value={value}
-        onChange={e => onChange(e.target.value)}
+        onChange={_err => onChange(_err.target.value)}
         placeholder={placeholder}
         style={{ ...STYLES.input, paddingRight: showToggle ? '2.5rem' : '0.85rem' }}
         {...props}
@@ -98,14 +97,14 @@ const PasswordRequirements = memo(({ password, isCz }) => {
     { label: isCz ? 'Aspoň jedno číslo' : 'At least one number', met: /[0-9]/.test(password) }
   ];
 
-  const getStrength = (pw) => {
+  const getStrength = () => {
     const metCount = requirements.filter(r => r.met).length;
     if (metCount === 3) return { color: '#10b981', label: isCz ? 'Silné' : 'Strong', width: '100%' };
     if (metCount === 2) return { color: '#f59e0b', label: isCz ? 'Střední' : 'Medium', width: '66%' };
     return { color: '#ef4444', label: isCz ? 'Slabé' : 'Weak', width: '33%' };
   };
 
-  const strength = getStrength(password);
+  const strength = getStrength();
 
   return (
     <div style={{ marginTop: '0.5rem', animation: 'fadeInUp 0.3s ease-out' }}>
@@ -159,15 +158,12 @@ const LoginScreen = () => {
   const [regAgencyName, setRegAgencyName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
-  const [regReferralCode, setRegReferralCode] = useState('');
   const [joinFullName, setJoinFullName] = useState('');
   const [joinEmail, setJoinEmail] = useState('');
   const [joinPassword, setJoinPassword] = useState('');
   const [joinInviteCode, setJoinInviteCode] = useState('');
-  const [joinRole, setJoinRole] = useState('Operator');
 
   const isCz = useMemo(() => lang === 'cz' || lang === 'cs', [lang]);
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   useEffect(() => {
     const timer = setTimeout(() => setIsMounting(false), 500);
@@ -184,32 +180,32 @@ const LoginScreen = () => {
     }
   }, [justLoggedOut, setJustLoggedOut]);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const handleLogin = async (_err) => {
+    _err.preventDefault();
     if (!email || !password) {
       showToast(isCz ? 'Vyplňte všechna pole' : 'Please fill in all fields', 'error');
       return;
     }
     setLoading(true);
     try { await onLogin(email, password); } 
-    catch (err) { console.error(err); } 
+    catch (_err) { console.error(_err); } 
     finally { setLoading(false); }
   };
 
-  const handleRegisterAgency = async (e) => {
-    e.preventDefault();
+  const handleRegisterAgency = async (_err) => {
+    _err.preventDefault();
     if (regPassword.length < 8) {
       showToast(isCz ? 'Heslo musí mít alespoň 8 znaků' : 'Password too short', 'error');
       return;
     }
     setLoading(true);
     try {
-      const result = await onRegisterAgency({ fullName: regFullName, agencyName: regAgencyName, email: regEmail, password: regPassword, referralCode: regReferralCode });
+      const result = await onRegisterAgency({ fullName: regFullName, agencyName: regAgencyName, email: regEmail, password: regPassword });
       if (result?.success) {
         showToast(isCz ? 'Agentura registrována!' : 'Agency registered!', 'success');
         setCreatedInviteCode(result.inviteCode);
       }
-    } catch (err) { console.error(err); } 
+    } catch (_err) { console.error(_err); } 
     finally { setLoading(false); }
   };
 
@@ -292,8 +288,8 @@ const LoginScreen = () => {
 
                   {(tab === 'join-agency' || tab === 'join-agency-expanded') && (
                     <form 
-                      onSubmit={async (e) => {
-                        e.preventDefault();
+                      onSubmit={async (_err) => {
+                        _err.preventDefault();
                         if (!joinInviteCode) return showToast(isCz ? 'Zadejte kód' : 'Enter code', 'error');
                         
                         if (tab === 'join-agency') {
@@ -321,9 +317,9 @@ const LoginScreen = () => {
                           } else {
                             showToast(result?.error || (isCz ? 'Registrace se nezdařila' : 'Registration failed'), 'error');
                           }
-                        } catch (err) {
-                          console.error(err);
-                          showToast(isCz ? 'Chyba připojení' : 'Connection error', 'error');
+                        } catch (_err) {
+                          console.error(_err);
+                          showToast(isCz ? 'Chyba připojení' : 'Connection _err', 'error');
                         } finally {
                           setLoading(false);
                         }
@@ -363,8 +359,8 @@ const LoginScreen = () => {
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.25rem' }}>
           <button 
             type="button"
-            onClick={(e) => {
-              e.preventDefault();
+            onClick={(_err) => {
+              _err.preventDefault();
               setShowLanding(true);
             }} 
             style={{ 
@@ -381,8 +377,8 @@ const LoginScreen = () => {
               gap: '8px',
               transition: 'all 0.2s ease'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.color = 'white'}
-            onMouseLeave={(e) => e.currentTarget.style.color = '#94a3b8'}
+            onMouseEnter={(_err) => _err.currentTarget.style.color = 'white'}
+            onMouseLeave={(_err) => _err.currentTarget.style.color = '#94a3b8'}
           >
             <Globe size={14} /> {t('backToProduct')}
           </button>
