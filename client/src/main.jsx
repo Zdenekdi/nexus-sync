@@ -1,7 +1,7 @@
 import { createRoot } from 'react-dom/client'
 import React from 'react'
 import App from './App'
-import { NexusProvider } from './context/NexusContext'
+import { NexusProvider } from './context/NexusContext.jsx'
 import ErrorBoundary from './ErrorBoundary'
 import './index.css'
 
