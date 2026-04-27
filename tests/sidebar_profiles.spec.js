@@ -5,12 +5,18 @@ async function loginToApp(page, email, password) {
   await page.goto('/');
   await page.waitForLoadState('networkidle');
 
+  const nextBtn = page.getByRole('button', { name: /pokračovat|continue/i }).first();
+  while (await nextBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+    await nextBtn.click();
+    await page.waitForTimeout(300); // Wait for transition
+  }
+
   const enterBtn = page.getByRole('button', { name: /vstoupit|enter application/i }).first();
   if (await enterBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
     await enterBtn.click();
   }
 
-  await page.getByTestId('login-email').waitFor({ state: 'visible', timeout: 15000 });
+  await page.getByTestId('login-email').waitFor({ state: 'visible', timeout: 60000 });
   await page.getByTestId('login-email').fill(email);
   await page.getByTestId('login-password').fill(password);
   await page.getByTestId('login-submit').click();

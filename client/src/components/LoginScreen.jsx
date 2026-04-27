@@ -77,6 +77,7 @@ const MemoInput = memo(({ label, icon: Icon, type, value, onChange, placeholder,
         onChange={_err => onChange(_err.target.value)}
         placeholder={placeholder}
         style={{ ...STYLES.input, paddingRight: showToggle ? '2.5rem' : '0.85rem' }}
+        data-testid={props['data-testid']}
         {...props}
       />
       {showToggle && (
@@ -262,9 +263,9 @@ const LoginScreen = () => {
                 <>
                   {tab === 'login' && (
                     <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      <MemoInput label={isCz ? 'E-mail' : 'Email'} icon={Mail} type="email" value={email} onChange={setEmail} placeholder="you@email.com" autoFocus />
-                      <MemoInput label={isCz ? 'Heslo' : 'Password'} icon={Lock} value={password} onChange={setPassword} placeholder="••••••••" showToggle onToggle={() => setShowPassword(!showPassword)} isToggled={showPassword} />
-                      <button type="submit" disabled={loading} style={STYLES.submitButton}>
+                      <MemoInput label={isCz ? 'E-mail' : 'Email'} icon={Mail} type="email" value={email} onChange={setEmail} placeholder="you@email.com" data-testid="login-email" autoFocus />
+                      <MemoInput label={isCz ? 'Heslo' : 'Password'} icon={Lock} value={password} onChange={setPassword} placeholder="••••••••" showToggle onToggle={() => setShowPassword(!showPassword)} isToggled={showPassword} data-testid="login-password" />
+                      <button type="submit" disabled={loading} style={STYLES.submitButton} data-testid="login-submit">
                         {loading ? <Loader2 className="animate-spin" size={16} /> : <>{isCz ? 'Přihlásit' : 'Sign In'}<ArrowRight size={16} /></>}
                       </button>
                     </form>

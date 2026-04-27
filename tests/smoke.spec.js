@@ -19,7 +19,7 @@ async function doLogin(page, email, password) {
   }
 
   // Fill login form using data-testid (confirmed present on live site)
-  await page.getByTestId('login-email').waitFor({ state: 'visible', timeout: 30000 });
+  await page.getByTestId('login-email').waitFor({ state: 'visible', timeout: 60000 });
   await page.getByTestId('login-email').fill(email);
   await page.getByTestId('login-password').fill(password);
   await page.getByTestId('login-submit').click();

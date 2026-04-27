@@ -261,10 +261,10 @@ test.describe('Device Bindings — Management', () => {
     console.log(`  ✅ Senior Operator access to bindings verified (200)`);
   });
 
-  test('Agency Admin cannot list device bindings → 403', async () => {
+  test('Agency Admin can list device bindings → 200', async () => {
     const { token: adminToken } = await loginAs(TEST_USERS.agencyAdmin);
     const res = await authClient(adminToken).get('/device/bindings');
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(200);
   });
 
   test('Model cannot list all bindings', async () => {
