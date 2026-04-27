@@ -1,5 +1,5 @@
 import { LayoutDashboard, MessageSquare, Zap, Calendar } from 'lucide-react';
-import { useNexus } from '../../context/NexusContextCore';
+import { useNexus } from '../../context/NexusContext';
 
 const MobileBottomNav = () => {
   const nexus = useNexus();

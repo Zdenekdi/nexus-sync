@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Clock, CheckCircle, LogOut, Zap, Mic, MicOff, Battery, Phone, PhoneOff, UserCheck, XCircle, Bluetooth, Activity, Settings, ChevronDown, Volume2 } from 'lucide-react';
-import { useNexus } from '../../context/NexusContextCore';
+import { useNexus } from '../../context/NexusContext';
 
 const SafetyControlCard = () => {
   const { 

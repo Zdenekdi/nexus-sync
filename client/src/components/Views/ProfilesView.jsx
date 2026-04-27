@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 
-import { useNexus } from '../../context/NexusContextCore';
+import { useNexus } from '../../context/NexusContext';
 
 const ProfilesView = () => {
   const nexus = useNexus();

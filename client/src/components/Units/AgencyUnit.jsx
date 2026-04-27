@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNexus } from '../../context/NexusContextCore';
+import { useNexus } from '../../context/NexusContext';
 import HierarchyView from '../Views/HierarchyView';
 import AnalyticsView from '../Views/AnalyticsView';
 import ActivityView from '../Views/ActivityView';

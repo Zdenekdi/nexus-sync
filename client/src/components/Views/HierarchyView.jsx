@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNexus } from '../../context/NexusContextCore';
+import { useNexus } from '../../context/NexusContext';
 
 const HierarchyView = () => {
   const nexus = useNexus();

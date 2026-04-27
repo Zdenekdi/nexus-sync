@@ -1,7 +1,7 @@
 import React from 'react';
 import { Smartphone, Download, Zap } from 'lucide-react';
 
-import { useNexus } from '../../context/NexusContextCore';
+import { useNexus } from '../../context/NexusContext';
 
 const DeviceSetupView = () => {
   const nexus = useNexus();

@@ -2,7 +2,7 @@
 import React from 'react';
 import { CreditCard, Check } from 'lucide-react';
 
-import { useNexus } from '../../context/NexusContextCore';
+import { useNexus } from '../../context/NexusContext';
 
 const PlansView = () => {
   const nexus = useNexus();

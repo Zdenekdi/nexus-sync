@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from 'react';
-import { useNexus } from '../../context/NexusContextCore';
+import { useNexus } from '../../context/NexusContext';
 
 /**
  * Helper to handle dynamic import failures (_err.g. after a new deployment)

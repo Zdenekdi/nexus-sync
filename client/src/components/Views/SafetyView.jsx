@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Shield, AlertTriangle, Phone, Activity, Lock, Eye, Mic } from 'lucide-react';
-import { useNexus } from '../../context/NexusContextCore';
+import { useNexus } from '../../context/NexusContext';
 import BlacklistPanel from '../Safety/BlacklistPanel';
 import SOSPanel from '../Safety/SOSPanel';
 import SafetyControlCard from '../Safety/SafetyControlCard';

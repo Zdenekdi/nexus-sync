@@ -20,7 +20,7 @@ import {
   ChevronUp
 } from 'lucide-react';
 
-import { useNexus } from '../context/NexusContextCore';
+import { useNexus } from '../context/NexusContext';
 
 // Scroll-reveal hook
 const useScrollReveal = () => {

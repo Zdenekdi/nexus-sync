@@ -1,6 +1,6 @@
 import React from 'react';
 import axios from 'axios';
-import { useNexus } from '../../context/NexusContextCore';
+import { useNexus } from '../../context/NexusContext';
 
 // Modals & Overlays
 import BugReportModal from './BugReportModal';
