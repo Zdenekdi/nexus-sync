@@ -48,6 +48,70 @@ export const NexusProvider = ({ children }) => {
     }
     return 'en';
   });
+
+  // Consolidated States (To prevent ReferenceError in production builds)
+  const [heartRate, setHeartRate] = useState(0);
+  const [hrThreshold, setHrThreshold] = useState(() => Number(localStorage.getItem('nexus_hrThreshold')) || 130);
+  const [isBluetoothConnected, setIsBluetoothConnected] = useState(false);
+  const [isTvMode, setIsTvMode] = useState(false);
+  const [tvToken, setTvToken] = useState(null);
+  const [activeBioWarning, setActiveBioWarning] = useState(null);
+  const [linkedTrackerId, setLinkedTrackerId] = useState(() => localStorage.getItem('nexus_linkedTrackerId') || null);
+  const [trackerStatus, setTrackerStatus] = useState('disconnected');
+  const [audioSentinelActive, setAudioSentinelActive] = useState(() => localStorage.getItem('nexus_audio_sentinel') === 'true');
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [pinModalPromise, setPinModalPromise] = useState(null);
+  const [agencyDetailModalData, setAgencyDetailModalData] = useState(null);
+  const [isAddAgencyOpen, setIsAddAgencyOpen] = useState(false);
+  const [isBugReportOpen, setIsBugReportOpen] = useState(false);
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [addUserModalAgencyId, setAddUserModalAgencyId] = useState(null);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [editingProfileData, setEditingProfileData] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [selectedChatId, setSelectedChatId] = useState(null);
+  const [messageValue, setMessageValue] = useState("");
+  const [clientNotes, setClientNotes] = useState({});
+  const [internalNote, setInternalNote] = useState("");
+  const [detectedMeeting, setDetectedMeeting] = useState(null);
+  const [typingProfiles, setTypingProfiles] = useState({});
+  const [showPanicConfirm, setShowPanicConfirm] = useState(false);
+  const [sosActive, setSosActive] = useState(false);
+  const [linkedSessionId, setLinkedSessionId] = useState(null);
+  const [checkinMinutes, setCheckinMinutes] = useState(60);
+  const [checkinTimerEnd, setCheckinTimerEnd] = useState(null);
+  const [checkinRemaining, setCheckinRemaining] = useState(null);
+  const [voiceGuardianActive, setVoiceGuardianActive] = useState(false);
+  const [batteryLevel, setBatteryLevel] = useState(null);
+  const [incomingGhostCall, setIncomingGhostCall] = useState(false);
+  const [ghostCallScheduledAt, setGhostCallScheduledAt] = useState(null);
+  const [calViewDate, setCalViewDate] = useState(new Date());
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [chatHistory, setChatHistory] = useState([]);
+  const [_toasts, _setToasts] = useState([]);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+  const [ _gpsHistory, setGpsHistory] = useState([]);
+  const [lastTrackerUpdate, setLastTrackerUpdate] = useState(null);
+  const [activeSafetySession, _setActiveSafetySession] = useState(null);
+  const [sosAlertId, setSosAlertId] = useState(null);
+  const isNativeApp = useMemo(() => Capacitor.isNativePlatform(), []);
+
+  const checkinIntervalRef = useRef(null);
+  const gpsWatchRef = useRef(null);
+  const recognitionRef = useRef(null);
+  const chatScrollRef = useRef(null);
+  const isUserScrolled = useRef(false);
+
+  const [activeOperatorState, setActiveOperatorState] = useState(null);
+  const [subscriptionPlans, setSubscriptionPlans] = useState([
+    { id: 'basic', name: 'Basic', descriptionKey: 'basicDesc', prices: { cz: '2900', eu: '120', us: '130', uk: '110' }, profilesLimit: 5, features: ['feat_profiles', 'feat_analytics_basic', 'feat_support'] },
+    { id: 'pro', name: 'Pro', descriptionKey: 'proDesc', prices: { cz: '5900', eu: '240', us: '260', uk: '220' }, profilesLimit: 10, features: ['feat_all_basic', 'feat_analytics_adv', 'feat_ai_opt'] },
+    { id: 'agency', name: 'Agency', descriptionKey: 'agencyDesc', prices: { cz: '9900', eu: '400', us: '440', uk: '360' }, profilesLimit: 20, features: ['feat_all_pro', 'feat_audit_logs', 'feat_api_access'] }
+  ]);
+  const [isPlansLoading, setIsPlansLoading] = useState(false);
+  const [globalSettings, setGlobalSettings] = useState([]);
+  const [pendingNotifications, setPendingNotifications] = useState([]);
+  const [incomingRelayCall, setIncomingRelayCall] = useState(null);
   
   // Translation helper - needed for useAuth
   // -------------------------------------------------------------------------
@@ -158,31 +222,6 @@ export const NexusProvider = ({ children }) => {
   }, []);
 
 
-  // 1.1 Safety & SOS State (Globalized)
-  const [heartRate, setHeartRate] = useState(0);
-  const [hrThreshold, setHrThreshold] = useState(() => Number(localStorage.getItem('nexus_hrThreshold')) || 130);
-  const [isBluetoothConnected, setIsBluetoothConnected] = useState(false);
-  const [isTvMode, setIsTvMode] = useState(false);
-  const [tvToken, setTvToken] = useState(null);
-  const [activeBioWarning, setActiveBioWarning] = useState(null);
-  const [linkedTrackerId, setLinkedTrackerId] = useState(() => localStorage.getItem('nexus_linkedTrackerId') || null);
-  const [trackerStatus, setTrackerStatus] = useState('disconnected');
-  const [audioSentinelActive, setAudioSentinelActive] = useState(() => localStorage.getItem('nexus_audio_sentinel') === 'true');
-  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
-  const [pinModalPromise, setPinModalPromise] = useState(null);
-  
-  const checkinIntervalRef = useRef(null);
-  const gpsWatchRef = useRef(null);
-  const recognitionRef = useRef(null);
-  
-  // Modals state
-  const [agencyDetailModalData, setAgencyDetailModalData] = useState(null);
-  const [isAddAgencyOpen, setIsAddAgencyOpen] = useState(false);
-  const [isBugReportOpen, setIsBugReportOpen] = useState(false);
-  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
-  const [addUserModalAgencyId, setAddUserModalAgencyId] = useState(null);
-  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-  const [editingProfileData, setEditingProfileData] = useState(null);
 
   // 3. IoT & Auth Persistence
   useEffect(() => {
@@ -285,39 +324,6 @@ export const NexusProvider = ({ children }) => {
   });
   const { activeOperator: authUser, token, handleLogout: logout, isLoggedIn } = auth;
 
-  // 3. Other Core Components Logic
-  const chatScrollRef = useRef(null);
-  const isUserScrolled = useRef(false);
-  const [messages, setMessages] = useState([]);
-  const [selectedChatId, setSelectedChatId] = useState(null);
-  const [messageValue, setMessageValue] = useState("");
-  const [clientNotes, setClientNotes] = useState({});
-  const [internalNote, setInternalNote] = useState("");
-  const [detectedMeeting, setDetectedMeeting] = useState(null);
-  const [typingProfiles, setTypingProfiles] = useState({});
-  const [showPanicConfirm, setShowPanicConfirm] = useState(false);
-  const [sosActive, setSosActive] = useState(false);
-  const [linkedSessionId, setLinkedSessionId] = useState(null);
-  const [checkinMinutes, setCheckinMinutes] = useState(60);
-  const [checkinTimerEnd, setCheckinTimerEnd] = useState(null);
-  const [checkinRemaining, setCheckinRemaining] = useState(null);
-  const [voiceGuardianActive, setVoiceGuardianActive] = useState(false);
-  const [batteryLevel, setBatteryLevel] = useState(null);
-  const [incomingGhostCall, setIncomingGhostCall] = useState(false);
-  const [ghostCallScheduledAt, setGhostCallScheduledAt] = useState(null);
-
-  const [calViewDate, setCalViewDate] = useState(new Date());
-  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
-  const [chatHistory, setChatHistory] = useState([]);
-  const [_toasts, _setToasts] = useState([]);
-
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
-  const isNativeApp = useMemo(() => Capacitor.isNativePlatform(), []);
-
-  const [ _gpsHistory, setGpsHistory] = useState([]);
-  const [lastTrackerUpdate, setLastTrackerUpdate] = useState(null);
-  const [activeSafetySession, _setActiveSafetySession] = useState(null);
-  const [sosAlertId, setSosAlertId] = useState(null);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -348,14 +354,6 @@ export const NexusProvider = ({ children }) => {
     setTimeout(() => _setToasts(prev => prev.filter(t => t.id !== id)), 4000);
   }, []);
 
-  const [activeOperatorState, setActiveOperatorState] = useState(null);
-  const [subscriptionPlans, setSubscriptionPlans] = useState([
-    { id: 'basic', name: 'Basic', descriptionKey: 'basicDesc', prices: { cz: '2900', eu: '120', us: '130', uk: '110' }, profilesLimit: 5, features: ['feat_profiles', 'feat_analytics_basic', 'feat_support'] },
-    { id: 'pro', name: 'Pro', descriptionKey: 'proDesc', prices: { cz: '5900', eu: '240', us: '260', uk: '220' }, profilesLimit: 10, features: ['feat_all_basic', 'feat_analytics_adv', 'feat_ai_opt'] },
-    { id: 'agency', name: 'Agency', descriptionKey: 'agencyDesc', prices: { cz: '9900', eu: '400', us: '440', uk: '360' }, profilesLimit: 20, features: ['feat_all_pro', 'feat_audit_logs', 'feat_api_access'] }
-  ]);
-  const [isPlansLoading, setIsPlansLoading] = useState(false);
-  const [globalSettings, setGlobalSettings] = useState([]);
 
   const fetchGlobalSettings = useCallback(async () => {
     if (!token) return;
@@ -703,7 +701,6 @@ export const NexusProvider = ({ children }) => {
 
   const { activeRole, isAllowed } = usePermissions(activeOperator, nexusData.rolePermissions);
 
-  const [pendingNotifications, setPendingNotifications] = useState([]);
 
   const onDelayBooking = useCallback(async (id, mins) => {
     const drafts = await nexusData.handleDelayBooking(id, mins);
@@ -723,7 +720,6 @@ export const NexusProvider = ({ children }) => {
     }
   }, [nexusData, linkedSessionId, checkinTimerEnd]);
 
-  const [incomingRelayCall, setIncomingRelayCall] = useState(null);
   const handleNewMessage = useCallback((data) => {
     if (data?.message) {
       setMessages(prev => [...prev.slice(-199), data.message]);
