@@ -1330,7 +1330,7 @@ export const NexusProvider = ({ children }) => {
     localStorage.setItem('nexus_lang', lang);
     localStorage.setItem('nexus_active_tab', activeTab);
     localStorage.setItem('nexus_active_market', activeMarket);
-    if (activeProfileId) localStorage.setItem('nexus_active_profile_id');
+    if (activeProfileId) localStorage.setItem('nexus_active_profile_id', activeProfileId);
     
     if (typeof window !== 'undefined') {
       const currentPath = window.location.pathname;
