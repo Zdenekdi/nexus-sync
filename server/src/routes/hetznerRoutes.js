@@ -43,8 +43,8 @@ router.get("/status", async (req, res) => {
       ram: server.server_type?.memory || 0,
     });
   } catch (err) {
-    logger.error("Hetzner Status Error:", err.message);
-    res.status(err.response?.status || 500).json({ message: 'Failed to fetch Hetzner status' });
+    logger.error(`Hetzner Status Error: ${err.message}`);
+    res.status(500).json({ message: 'Failed to fetch Hetzner status' });
   }
 });
 

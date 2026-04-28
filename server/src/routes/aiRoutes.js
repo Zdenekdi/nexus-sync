@@ -17,6 +17,7 @@ router.post('/test', authenticateToken, async (req, res) => {
     const response = await aiService.generateResponse(prompt, system);
     res.json({ response });
   } catch (error) {
+    logger.error(`AI Test Error: ${error.message}`);
     res.status(500).json({ error: error.message });
   }
 });
@@ -46,6 +47,7 @@ router.post('/suggest', authenticateToken, async (req, res) => {
     const response = await aiService.suggestReply(messages, profileContext);
     res.json({ response });
   } catch (error) {
+    logger.error(`AI Suggest Error: ${error.message}`);
     res.status(500).json({ error: error.message });
   }
 });
