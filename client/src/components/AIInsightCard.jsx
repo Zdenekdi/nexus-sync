@@ -279,7 +279,5 @@ const AIInsightCard = ({ stats, agencies, systemHealth }) => {
     </>
   );
 };
-  );
-};
 
 export default AIInsightCard;
