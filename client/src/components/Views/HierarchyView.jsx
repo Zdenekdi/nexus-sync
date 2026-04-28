@@ -4,13 +4,13 @@ import { useNexus } from '../../context/ContextHook';
 const HierarchyView = () => {
   const nexus = useNexus();
   const {
-    isMobile,
-    t,
-    activeRole,
-    activeOperator,
-    operators,
-    profiles
-  } = nexus;
+    isMobile = false,
+    t = (k) => k,
+    activeRole = '',
+    activeOperator = null,
+    operators = [],
+    profiles = []
+  } = nexus || {};
 
   // Define the role hierarchy order (omitted App Owner to keep it agency-specific)
   const roleHierarchy = ['Agency Admin', 'Manager', 'Senior Operator', 'Operator', 'Model'];
