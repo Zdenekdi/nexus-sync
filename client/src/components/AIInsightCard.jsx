@@ -6,31 +6,55 @@ import { useNexus } from '../context/ContextHook';
 /**
  * AI Insight Card - Displays smart analysis from Llama 3.1
  */
-const AIInsightCard = ({ stats, agencies }) => {
-  const { lang, t, setActiveTab } = useNexus();
+const AIInsightCard = ({ stats, agencies, systemHealth }) => {
+  const { lang, t, setActiveTab, activeRole } = useNexus();
   const { askAi, isAiLoading, aiError } = useAI();
   const [insight, setInsight] = useState(null);
 
   const generateInsight = async () => {
     const isCz = lang === 'cz' || lang === 'cs';
-    const agencyName = agencies?.[0]?.name || 'Nexus Hub';
+    const isAppOwner = activeRole === 'App Owner';
     
-    // Prepare context for the AI
-    const context = `
-      Data pro analytiku:
-      - Obrat: ${stats?.revenue || '0'}
-      - Aktivita zpráv: ${stats?.totalMessages || 0}
-      - Počet spravovaných účtů: ${stats?.totalProfiles || 0}
-      - Růst: ${stats?.commissionGrowth || 'STABLE'}
-    `;
+    let context = "";
+    let systemPrompt = "";
+    let userPrompt = "";
 
-    const systemPrompt = isCz 
-      ? "Jsi Nexus AI, elitní business analytik pro digitální mediální agentury. Zaměřuješ se VÝHRADNĚ na ekonomický růst, efektivitu a statistiky. Tvé odpovědi jsou stručné, profesionální a motivační. Používej odrážky. Pokud jsou data nízká, buď povzbudivý."
-      : "You are Nexus AI, an elite business analyst for digital media agencies. You focus EXCLUSIVELY on economic growth, efficiency, and statistics. Your answers are concise, professional, and motivational. Use bullet points. If data is low, be encouraging.";
+    if (isAppOwner && systemHealth) {
+      // Technical Perspective for App Owner
+      context = `
+        Technický stav platformy:
+        - CPU Load: ${systemHealth.cpu.loadAvg[0]}
+        - Memory: ${systemHealth.memory.percent}% (${systemHealth.memory.used} / ${systemHealth.memory.total})
+        - Disk: ${systemHealth.disk.percent} (${systemHealth.disk.used})
+        - Uptime: ${systemHealth.uptime.days}d ${systemHealth.uptime.hours}h
+        - Aktivita: ${stats?.totalMessages || 0} zpráv dnes, ${stats?.totalAgencies || 0} aktivních agentur.
+      `;
 
-    const userPrompt = isCz
-      ? `Analyzuj tato ekonomická data a napiš 3 krátké body (každý max 10 slov), co je dnes klíčové pro růst firmy. Zde jsou data: ${context}`
-      : `Analyze these economic metrics and write 3 short bullet points (max 10 words each) on what is key for business growth today. Here is the data: ${context}`;
+      systemPrompt = isCz
+        ? "Jsi Nexus AI, technologický ředitel (CTO) a systémový architekt. Tvým úkolem je monitorovat zdraví platformy a upozorňovat na technické anomálie nebo úzká hrdla. Buď velmi stručný, technický a věcný. Používej odrážky."
+        : "You are Nexus AI, a CTO and System Architect. Your job is to monitor platform health and flag technical anomalies or bottlenecks. Be very concise, technical, and factual. Use bullet points.";
+
+      userPrompt = isCz
+        ? `Analyzuj tento stav infrastruktury a napiš 3 krátké technické postřehy o stabilitě a výkonu systému. Zde jsou data: ${context}`
+        : `Analyze this infrastructure state and write 3 short technical insights about system stability and performance. Here is the data: ${context}`;
+    } else {
+      // Business Perspective for Managers/Operators
+      context = `
+        Data pro analytiku:
+        - Obrat: ${stats?.revenue || '0'}
+        - Aktivita zpráv: ${stats?.totalMessages || 0}
+        - Počet spravovaných účtů: ${stats?.totalProfiles || 0}
+        - Růst: ${stats?.commissionGrowth || 'STABLE'}
+      `;
+
+      systemPrompt = isCz 
+        ? "Jsi Nexus AI, elitní business analytik pro digitální mediální agentury. Zaměřuješ se VÝHRADNĚ na ekonomický růst, efektivitu a statistiky. Tvé odpovědi jsou stručné, profesionální a motivační. Používej odrážky. Pokud jsou data nízká, buď povzbudivý."
+        : "You are Nexus AI, an elite business analyst for digital media agencies. You focus EXCLUSIVELY on economic growth, efficiency, and statistics. Your answers are concise, professional, and motivational. Use bullet points. If data is low, be encouraging.";
+
+      userPrompt = isCz
+        ? `Analyzuj tato ekonomická data a napiš 3 krátké body (každý max 10 slov), co je dnes klíčové pro růst firmy. Zde jsou data: ${context}`
+        : `Analyze these economic metrics and write 3 short bullet points (max 10 words each) on what is key for business growth today. Here is the data: ${context}`;
+    }
 
     const response = await askAi(userPrompt, systemPrompt);
     if (response) {
