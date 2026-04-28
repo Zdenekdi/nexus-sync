@@ -498,7 +498,7 @@ const InboxView = () => {
                   </button>
                 </div>
               )}
-              {selectedChat ? (
+              {selectedChat && (
                 <div style={{ display: 'flex', flex: 1, flexDirection: 'column', overflow: 'hidden' }}>
                    {/* Tab bar */}
                    <div style={{ display: 'flex', borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)' }}>
