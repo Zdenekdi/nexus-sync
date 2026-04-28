@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const aiService = require('../services/aiService');
+const logger = require('../services/logger');
 const authenticateToken = require('../middleware/authMiddleware');
 
 const prisma = require('../services/db');
