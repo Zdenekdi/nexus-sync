@@ -1301,6 +1301,20 @@ export const TRANSLATIONS = {
         qa_hub: 'QA Centrum',
         messaging: 'Zprávy',
         maintenance: 'Údržba serveru',
-        plansManagement: 'Správa tarifů'
+        plansManagement: 'Správa tarifů',
+        systemHealth: 'Zdraví systému',
+        serverMetrics: 'Metriky serveru',
+        cpuLoad: 'Zátěž CPU',
+        ramUsage: 'Využití RAM',
+        diskSpace: 'Místo na disku',
+        uptime: 'Doba běhu',
+        platform: 'Platforma',
+        platformInfo: 'Informace o platformě',
+        cores: 'Jádra',
+        realTimeStatus: 'STAV SERVERU V REÁLNÉM ČASE',
+        monitoringNote: 'Přímý monitoring hlavní infrastruktury a cloudových zdrojů.',
+        days: 'dní',
+        hours: 'hodin',
+        minutes: 'minut'
     }
 };
