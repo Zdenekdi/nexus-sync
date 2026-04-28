@@ -5,7 +5,7 @@ import {
   ArrowUpRight, ArrowDownRight, CheckCircle, AlertTriangle
 } from 'lucide-react';
 import axios from 'axios';
-import { useNexus } from '../../context/ContextHook';
+import { useNexus } from '../context/ContextHook';
 
 const SystemHealthTab = ({ server }) => {
   const nexus = useNexus();
