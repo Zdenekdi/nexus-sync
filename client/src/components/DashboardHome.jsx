@@ -240,7 +240,7 @@ const DashboardHome = () => {
     <div className="fade-in">
       <WelcomeSection isCz={isCz} user={user} />
       <div style={{ marginBottom: '2rem' }}>
-        <AIInsightCard stats={stats} agencies={agencies} />
+        <AIInsightCard stats={stats} agencies={agencies} systemHealth={systemHealth} />
       </div>
       <AlertsSection isCz={isCz} activeSubscription={activeSubscription} agencies={agencies} stats={stats} profiles={_profiles} activeRole={activeRole} />
 
