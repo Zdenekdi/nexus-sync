@@ -112,15 +112,16 @@ const HierarchyView = () => {
               }}>
                 {usersInTier.map(op => {
                    let visibleModelsCount = 0;
-                   const opId = String(op.id || op._id || '');
+                   const opId = String(op?.id || op?._id || '');
+                   if (!opId) return null;
 
                    if (op.role === 'APP OWNER' || op.role === 'AGENCY ADMIN' || op.role === 'MANAGER') {
                      // Tyto role vidí všechny profily agentury
                      visibleModelsCount = (profiles || []).length;
                    } else {
                      // Senior Operator a Operator vidí pouze ty profily, které jim byly manuálně přiřazeny
-                     // Kontrolujeme jak .assignees (IDs/Objects), tak .operators (v některých verzích dat)
                      const assignedModels = (profiles || []).filter(p => {
+                       if (!p) return false;
                        const asgs = Array.isArray(p.assignees) ? p.assignees : [];
                        const ops = Array.isArray(p.operators) ? p.operators : [];
                        return asgs.some(a => String(a?.id || a?._id || a) === opId) || 
