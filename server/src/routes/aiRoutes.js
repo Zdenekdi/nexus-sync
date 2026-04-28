@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const aiService = require('../services/aiService');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/authMiddleware');
 
 /**
  * @route POST /api/ai/test
