@@ -79,6 +79,23 @@ const ProfilesView = () => {
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+        {(allAgencyProfiles || []).length === 0 && (
+          <div style={{ 
+            padding: '4rem', 
+            textAlign: 'center', 
+            background: 'var(--card-bg)', 
+            borderRadius: '16px', 
+            border: '1px dashed var(--border-color)',
+            color: 'var(--text-secondary)'
+          }}>
+            <p style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+              {lang === 'cz' ? 'Nebyly nalezeny žádné profily' : 'No profiles found'}
+            </p>
+            <p style={{ fontSize: '0.9rem' }}>
+              {lang === 'cz' ? 'Zkontrolujte přiřazení rolí nebo zkuste stránku obnovit.' : 'Check role assignments or try refreshing the page.'}
+            </p>
+          </div>
+        )}
         {(allAgencyProfiles || []).map((profile, i) => {
           const isMyProfile = (myProfiles || []).find(p => p.id === profile.id);
           const activeCount = ((profile.operators || []).filter(op => op.active).length || 0) + ((profile.assignees || []).length || 0);
@@ -91,6 +108,11 @@ const ProfilesView = () => {
                   <div style={{ padding: '0.2rem 0.6rem', borderRadius: '4px', background: activeCount > 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: activeCount > 0 ? 'var(--success-color)' : 'var(--_err-color)', fontSize: '0.7rem', fontWeight: '900', border: '1px solid currentColor' }}>
                     {activeCount > 0 ? `${activeCount} ${t('operatorsActive')}` : t('noCoverage')}
                   </div>
+                  {profile.lastOnline && (
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
+                      {lang === 'cz' ? 'Naposledy online:' : 'Last online:'} {new Date(profile.lastOnline).toLocaleString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => toggleOperatorStatus(profile.id, activeOperator?.id)}

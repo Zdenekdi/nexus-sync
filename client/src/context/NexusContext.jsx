@@ -918,7 +918,7 @@ export const NexusProvider = ({ children }) => {
     const rawRoleStr = String(activeRole || '').toLowerCase();
     
     // Roles that should see ALL agency profiles by default
-    const isAgencyLevel = ['agency admin', 'manager', 'senior operator', 'senior manager', 'owner'].includes(rawRoleStr);
+    const isAgencyLevel = ['agency admin', 'manager', 'senior operator', 'senior manager', 'owner'].includes(rawRoleStr.trim());
     
     // Calculate base profiles before final filtering
     let filtered = [];

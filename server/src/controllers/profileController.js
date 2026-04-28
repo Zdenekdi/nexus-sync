@@ -10,14 +10,21 @@ function parseData(raw) {
 
 exports.getProfiles = async (req, res) => {
   try {
-    const { role, agencyId } = req.user;
-    console.log(`[Backend Profile Fetch] User: ${req.user.name}, Role: ${role?.name || 'Unknown'}, AgencyId: ${agencyId}`);
+    const { role, agencyId, id: userId } = req.user;
     const isAppOwner = role?.isAppOwner;
+    const isManager = role?.isManager || role?.name === 'Senior Operator' || role?.name === 'Manager';
+
+    console.log(`[Backend Profile Fetch] User: ${req.user.name} (ID: ${userId}), Role: ${role?.name}, AgencyId: ${agencyId}`);
 
     const profiles = await prisma.profile.findMany({
       where: isAppOwner ? {} : { agencyId },
       include: { 
         assignees: { select: { id: true, name: true } },
+        deviceBindings: {
+          select: { lastSeenAt: true },
+          orderBy: { lastSeenAt: 'desc' },
+          take: 1
+        },
         bookings: {
           where: { status: 'confirmed' },
           select: { price: true }
@@ -32,13 +39,18 @@ exports.getProfiles = async (req, res) => {
       const totalRevenue = bookings.reduce((sum, b) => sum + (b.price || 0), 0);
       const totalBookings = bookings.length;
       
+      // Get the latest lastSeenAt from bindings
+      const lastOnline = profile.deviceBindings?.[0]?.lastSeenAt || null;
+      
       return { 
         ...profile, 
         data, 
         quickReplies: data.quickReplies || [],
         totalRevenue,
         totalBookings,
-        bookings: undefined // Remove detailed bookings to keep payload small
+        lastOnline,
+        deviceBindings: undefined, // Keep payload small
+        bookings: undefined
       };
     });
 
