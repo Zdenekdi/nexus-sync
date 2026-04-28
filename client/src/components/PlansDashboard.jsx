@@ -118,7 +118,7 @@ const PlansDashboard = () => {
                 boxShadow: isActive ? '0 0 30px rgba(99, 102, 241, 0.2)' : 'none'
               }}
             >
-              {isActive && (
+              {isActive && activeRole !== 'App Owner' && (
                 <div style={{ 
                   position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)',
                   background: 'var(--accent-color)', color: 'white', padding: '0.25rem 0.75rem',
@@ -158,13 +158,13 @@ const PlansDashboard = () => {
                       </div>
                     ))}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.85rem' }}>
-                    <Users size={14} color="var(--accent-color)" />
+                    <CheckCheck size={14} color="var(--accent-color)" />
                     <span>{plan.profilesLimit === -1 ? (lang === 'cz' ? 'Neomezený počet profilů' : 'Unlimited profiles') : (t('profilesLimitLabel', { count: plan.profilesLimit }) || 'Až {count} profilů').toString().replace('{count}', plan.profilesLimit)}</span>
                   </div>
                 </div>
               </div>
               
-              {activeOperator?.role === 'APP OWNER' ? (
+              {activeRole === 'App Owner' ? (
                 <button 
                   onClick={() => setEditingPlan(plan)}
                   style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
@@ -194,7 +194,7 @@ const PlansDashboard = () => {
       {/* ADD-ON MARKETPLACE */}
       <div style={{ marginTop: '4rem' }}>
         <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <Zap size={24} color="var(--accent-color)" /> {t('addOnMarketplaceTitle') || 'Doplňkové funkce & Role'}
+          <Zap size={24} color="var(--accent-color)" /> {lang === 'cz' ? 'Doplňkové funkce & Role' : 'Add-on Features & Roles'}
         </h3>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
           {[
