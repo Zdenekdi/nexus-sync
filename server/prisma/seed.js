@@ -80,13 +80,15 @@ async function main() {
             const targetId = existingByEmail ? existingByEmail.id : existingById.id;
             console.log(`Updating existing user: ${user.email} (ID: ${targetId})`);
             
-            // Update role if needed
+            // Update role AND password
             const role = await prisma.role.findFirst({ where: { name: user.roleName } });
+            const hashedPassword = await bcrypt.hash(user.password, 10);
             await prisma.user.update({
                 where: { id: targetId },
                 data: {
                     email: user.email,
                     name: user.name,
+                    password: hashedPassword,
                     roleId: role.id,
                     agencyId: user.agencyId
                 }
