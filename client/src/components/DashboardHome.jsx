@@ -6,6 +6,8 @@ import { useVultr } from '../hooks/useVultr';
 import { useNexus } from '../context/ContextHook';
 import Skeleton from './UI/Skeleton';
 import SafetyControlCard from './Safety/SafetyControlCard';
+import AIInsightCard from './AIInsightCard';
+import { Banknote } from 'lucide-react';
 
 const DashboardHome = () => {
   const nexus = useNexus();
@@ -230,6 +232,9 @@ const DashboardHome = () => {
     return (
     <div className="fade-in">
       <WelcomeSection isCz={isCz} user={user} />
+      <div style={{ marginBottom: '2rem' }}>
+        <AIInsightCard stats={stats} agencies={agencies} />
+      </div>
       <AlertsSection isCz={isCz} activeSubscription={activeSubscription} agencies={agencies} stats={stats} profiles={_profiles} activeRole={activeRole} />
 
       <div style={{ marginBottom: isMobile ? '1.5rem' : '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'flex-end', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : 0 }}>

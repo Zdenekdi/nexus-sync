@@ -69,6 +69,8 @@ const SystemHealthTab = ({ server }) => {
   };
 
   useEffect(() => {
+    setHealth(null);
+    setError(null);
     fetchHealth();
     if (isMainHub) {
       const interval = setInterval(fetchHealth, 30000);
@@ -183,7 +185,7 @@ const SystemHealthTab = ({ server }) => {
         {/* System Information */}
         <div className="glass-card" style={{ padding: '2rem', background: 'rgba(0,0,0,0.2)' }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.5rem' }}>
-            {t('platform')} Info
+            {t('platformInfo')}
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <InfoRow label="Kernel" value={`${health?.platform} ${health?.release}`} />
