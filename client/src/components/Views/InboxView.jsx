@@ -57,7 +57,7 @@ const InboxView = () => {
   const loadAiSuggestions = React.useCallback(async () => {
     if (!selectedChat || !chatMessages.length) return;
     
-    setIsAiLoading(true);
+    
     try {
       const history = chatMessages.slice(-10).map(m => ({
         role: m.direction === 'OUTBOUND' ? 'assistant' : 'user',
@@ -75,7 +75,7 @@ const InboxView = () => {
     } catch (_err) {
       console.error("AI load error:", _err);
     } finally {
-      setIsAiLoading(false);
+    
     }
   }, [selectedChat, chatMessages, activeProfileId, getSuggestion]);
 

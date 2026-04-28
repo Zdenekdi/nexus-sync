@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Brain, ArrowRight, RefreshCw, AlertCircle, Quote } from 'lucide-react';
+import { Sparkles, Brain, ArrowRight, RefreshCw, AlertCircle, Quote, Zap, X, Activity, HardDrive } from 'lucide-react';
 import { useAI } from '../hooks/useAI';
 import { useNexus } from '../context/ContextHook';
 
