@@ -153,9 +153,8 @@ export const NexusProvider = ({ children }) => {
   const [activeMarket, setActiveMarket] = useState(localStorage.getItem('nexus_active_market') || 'cz');
   const [activeProfileId, setActiveProfileId] = useState(localStorage.getItem('nexus_active_profile_id') || 'all');
   const [availableServers, setAvailableServers] = useState([
-    { id: 'main-hub', name: 'Main Hub', ip: '78.141.202.139', region: 'Frankfurt', type: 'Primary' },
-    { id: 'relay-uk', name: 'Relay Node UK', ip: '45.76.130.11', region: 'London', type: 'Relay' },
-    { id: 'relay-cz', name: 'Relay Node CZ', ip: '1.2.3.4', region: 'Prague', type: 'Relay' }
+    { id: 'main-hub', name: 'Main Production Hub', ip: '78.141.202.139', region: 'Frankfurt', type: 'Primary' },
+    { id: 'ai-node', name: 'AI Infrastructure Node', ip: '178.105.39.179', region: 'Nuremberg', type: 'AI' }
   ]);
   const [selectedServerId, setSelectedServerId] = useState('main-hub');
   const [showLanding, setShowLanding] = useState(() => {

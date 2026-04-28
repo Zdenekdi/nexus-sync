@@ -237,17 +237,48 @@ const DashboardHome = () => {
           <h2 style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '900', letterSpacing: '0.05em' }}>{(t('globalOverview') || 'Global Overview').toUpperCase()}</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1rem' }}>{t('globalHealthDesc')}</p>
         </div>
-        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '0.5rem', display: 'flex', gap: '0.25rem' }}>
-          {['cz', 'eu', 'uk', 'us'].map(market => (
-            <button
-              key={market}
-              data-testid={`market-selector-${market}`}
-              onClick={() => nexus.setActiveMarket(market)}
-              style={{ padding: '0.4rem 0.8rem', borderRadius: '10px', background: nexus.activeMarket === market ? 'rgba(59, 130, 246, 0.2)' : 'transparent', color: nexus.activeMarket === market ? '#60a5fa' : 'var(--text-secondary)', border: 'none', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer' }}
+        
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Server Selector for Super Admin */}
+          <div style={{ position: 'relative' }}>
+            <select 
+              value={nexus.selectedServerId}
+              onChange={(e) => nexus.setSelectedServerId(e.target.value)}
+              style={{
+                appearance: 'none',
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid var(--card-border)',
+                borderRadius: '12px',
+                padding: '0.6rem 2.5rem 0.6rem 1rem',
+                color: 'white',
+                fontSize: '0.8rem',
+                fontWeight: '700',
+                cursor: 'pointer',
+                outline: 'none',
+                minWidth: '200px'
+              }}
             >
-              {market.toUpperCase()}
-            </button>
-          ))}
+              {(nexus.availableServers || []).map(server => (
+                <option key={server.id} value={server.id} style={{ background: '#111', color: 'white' }}>
+                  {server.name} ({server.id === 'main-hub' ? 'Primary' : 'Relay'})
+                </option>
+              ))}
+            </select>
+            <Server size={14} color="var(--accent-color)" style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+          </div>
+
+          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '0.5rem', display: 'flex', gap: '0.25rem' }}>
+            {['cz', 'eu', 'uk', 'us'].map(market => (
+              <button
+                key={market}
+                data-testid={`market-selector-${market}`}
+                onClick={() => nexus.setActiveMarket(market)}
+                style={{ padding: '0.4rem 0.8rem', borderRadius: '10px', background: nexus.activeMarket === market ? 'rgba(59, 130, 246, 0.2)' : 'transparent', color: nexus.activeMarket === market ? '#60a5fa' : 'var(--text-secondary)', border: 'none', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer' }}
+              >
+                {market.toUpperCase()}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -258,12 +289,24 @@ const DashboardHome = () => {
             <div className="premium-loading-text" style={{ fontSize: '0.6rem', letterSpacing: '0.2em', opacity: 0.5 }}>HYDRATING_GLOBAL_METRICS...</div>
           </div>
         </div>
+      ) : nexus.selectedServerId !== 'main-hub' ? (
+        <div className="glass-card fade-in" style={{ padding: '3rem', textAlign: 'center', borderRadius: '24px', background: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.01) 100%)' }}>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <Activity size={48} color="var(--accent-color)" style={{ opacity: 0.5 }} />
+          </div>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.5rem' }}>{lang === 'cz' ? 'Monitoring Relay Uzlu' : 'Relay Node Monitoring'}</h3>
+          <p style={{ color: 'var(--text-secondary)', maxWidth: '500px', margin: '0 auto', fontSize: '0.9rem', lineHeight: '1.6' }}>
+            {lang === 'cz' 
+              ? 'Tento uzel funguje jako zabezpečená brána. Detailní telemetrie v reálném čase pro tento region bude brzy dostupná.'
+              : 'This node operates as a secure relay gateway. Detailed real-time telemetry for this region will be available soon.'}
+          </p>
+        </div>
       ) : (
       <>
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(240px, 1fr))', gap: isMobile ? '1rem' : '1.5rem', marginBottom: isMobile ? '1.5rem' : '3rem' }}>
         {[
-          { label: t('totalRevenue'), value: stats?.revenue || '£0.00', icon: <DollarSign color="#10b981" />, growth: stats?.commissionGrowth || 'STABLE', chart: stats?.sparklineData || stats?.chartData || [0,0,0,0,0,0,0] },
+          { label: t('totalRevenue'), value: stats?.revenue || '£0.00', icon: <Banknote color="#10b981" />, growth: stats?.commissionGrowth || 'STABLE', chart: stats?.sparklineData || stats?.chartData || [0,0,0,0,0,0,0] },
           { label: (t('agencies') || 'Agencies').toUpperCase(), value: stats?.totalAgencies || (agencies || []).length, icon: <Building2 color="#3b82f6" />, growth: 'PROD', chart: [0,0,0,0,0,0,0] },
           { label: 'SERVER LOAD', value: systemHealth ? `${systemHealth.cpu.loadAvg[0]}` : (vultrStatus?.power_status || 'CHECKING...').toUpperCase(), icon: <Server color={statusColor} />, growth: systemHealth ? `${systemHealth.memory.percent}% RAM` : (vultrStatus?.main_ip || 'PENDING'), chart: [0,0,0,0,0,0,0], isStatus: true },
           { label: 'DISK SPACE', value: systemHealth ? `${systemHealth.disk.percent}` : stats?.totalProfiles || '0', icon: systemHealth ? <HardDrive color="#f59e0b" /> : <Zap color="#f59e0b" />, growth: systemHealth ? systemHealth.disk.used : 'STABLE', chart: [0,0,0,0,0,0,0], isStatus: !!systemHealth },
