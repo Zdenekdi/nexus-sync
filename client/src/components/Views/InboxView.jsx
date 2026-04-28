@@ -10,30 +10,23 @@ import PremiumSelector from '../UI/PremiumSelector';
 
 const InboxView = () => {
   const nexus = useNexus();
-  const {
-    isMobile, mobileView, setMobileView, activeProfileId, setActiveProfileId,
-    myProfiles: assignedProfiles, selectedChatId, setSelectedChatId,
-    isTranslating, sourceText, setSourceText, translatedText,
-    internalNote, setInternalNote, clientNotes, clientNames,
-    filteredMessages, selectedChat, chatMessages, isHistoryLoading,
-    chatScrollRef, isUserScrolled, typingProfiles, inlinePanelTab,
-    setInlinePanelTab, activeOperator, setShowPanicConfirm,
-    detectedMeeting: _unused_meeting, setDetectedMeeting: _unused_setMeeting, messageValue, setMessageValue,
-    bookingSchedule, calViewDate, setCalViewDate, setIsBookingModalOpen,
-    setNewBookingForm, activeContextTab, setActiveContextTab, lang, t,
-    activeProfile, handleSendMessage, handleTranslate, handleSaveNote,
-    handleDeleteNote, startCall, handleQuickSaveMeeting: _unused_saveMeeting, showToast,
-    initData: refreshData, isBackgroundLoading, fetchClientByPhone,
-    setActiveTab
-  } = nexus;
-
-  const [clientCrmData, setClientCrmData] = React.useState(null);
-  const [isCrmLoading, setIsCrmLoading] = React.useState(false);
-  const [aiSuggestions, setAiSuggestions] = React.useState([]);
-  const [isAiLoading, setIsAiLoading] = React.useState(false);
+  
+  // 1. All functions must be defined BEFORE useEffects to avoid TDZ in production
+  const loadClientCrm = React.useCallback(async () => {
+    if (!nexus || !selectedChat?.from) return;
+    setIsCrmLoading(true);
+    try {
+      const data = await nexus.fetchClientByPhone(selectedChat.from);
+      setClientCrmData(data);
+    } catch (err) {
+      console.error("CRM Load error:", err);
+    } finally {
+      setIsCrmLoading(false);
+    }
+  }, [nexus?.fetchClientByPhone, selectedChat?.from]);
 
   const loadAiSuggestions = React.useCallback(async () => {
-    if (!selectedChat) return;
+    if (!nexus || !selectedChat) return;
     setIsAiLoading(true);
     try {
       const lastInbound = [...chatMessages].reverse().find(m => m.from === selectedChat.from);
@@ -49,7 +42,7 @@ const InboxView = () => {
           messageText: text,
           chatId: selectedChatId,
           profileId: activeProfileId,
-          lang
+          lang: nexus.lang
         })
       });
 
@@ -62,8 +55,34 @@ const InboxView = () => {
     } finally {
       setIsAiLoading(false);
     }
-  }, [selectedChat, chatMessages, selectedChatId, activeProfileId, lang, nexus.token]);
+  }, [selectedChat, chatMessages, selectedChatId, activeProfileId, nexus?.lang, nexus?.token]);
 
+  // 2. Destructure with safety
+  const {
+    isMobile = false, mobileView = 'list', setMobileView = () => {}, 
+    activeProfileId = 'all', setActiveProfileId = () => {},
+    myProfiles: assignedProfiles = [], selectedChatId = null, setSelectedChatId = () => {},
+    isTranslating = false, sourceText = '', setSourceText = () => {}, translatedText = '',
+    internalNote = '', setInternalNote = () => {}, clientNotes = {}, clientNames = {},
+    filteredMessages = [], selectedChat = null, chatMessages = [], isHistoryLoading = false,
+    chatScrollRef = null, isUserScrolled = { current: false }, typingProfiles = {}, inlinePanelTab = null,
+    setInlinePanelTab = () => {}, activeOperator = null, setShowPanicConfirm = () => {},
+    messageValue = '', setMessageValue = () => {},
+    bookingSchedule = [], calViewDate = new Date(), setCalViewDate = () => {}, setIsBookingModalOpen = () => {},
+    setNewBookingForm = () => {}, activeContextTab = 'translator', setActiveContextTab = () => {}, 
+    lang = 'en', t = (k) => k,
+    activeProfile = null, handleSendMessage = () => {}, handleTranslate = () => {}, handleSaveNote = () => {},
+    handleDeleteNote = () => {}, startCall = () => {}, showToast = () => {},
+    initData: refreshData = () => {}, isBackgroundLoading = false, fetchClientByPhone = () => {},
+    setActiveTab = () => {}
+  } = nexus || {};
+
+  const [clientCrmData, setClientCrmData] = React.useState(null);
+  const [isCrmLoading, setIsCrmLoading] = React.useState(false);
+  const [aiSuggestions, setAiSuggestions] = React.useState([]);
+  const [isAiLoading, setIsAiLoading] = React.useState(false);
+
+  // 3. UseEffects AFTER definitions
   React.useEffect(() => {
     if (selectedChat?.from && activeContextTab === 'crm') {
       loadClientCrm();
@@ -76,12 +95,6 @@ const InboxView = () => {
     }
   }, [selectedChatId, inlinePanelTab, loadAiSuggestions]);
 
-  const loadClientCrm = React.useCallback(async () => {
-    setIsCrmLoading(true);
-    const data = await fetchClientByPhone(selectedChat.from);
-    setClientCrmData(data);
-    setIsCrmLoading(false);
-  }, [fetchClientByPhone, selectedChat?.from]);
 
   // Pull to refresh logic
   const [pullDistance, setPullDistance] = React.useState(0);
