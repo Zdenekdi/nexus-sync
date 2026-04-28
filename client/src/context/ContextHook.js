@@ -7,8 +7,6 @@ import { NexusContext } from './ContextObject';
  */
 export const useNexus = () => {
   const context = useContext(NexusContext);
-  if (!context) {
-    throw new Error('useNexus must be used within a NexusProvider');
-  }
-  return context;
+  // Return a safe empty object if context is missing during boot/transitions
+  return context || {};
 };
