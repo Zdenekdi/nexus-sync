@@ -7,7 +7,7 @@ import { useNexus } from '../context/ContextHook';
  * AI Insight Card - Displays smart analysis from Llama 3.1
  */
 const AIInsightCard = ({ stats, agencies }) => {
-  const { lang, t } = useNexus();
+  const { lang, t, setActiveTab } = useNexus();
   const { askAi, isAiLoading, aiError } = useAI();
   const [insight, setInsight] = useState(null);
 
@@ -17,20 +17,20 @@ const AIInsightCard = ({ stats, agencies }) => {
     
     // Prepare context for the AI
     const context = `
-      Data pro agenturu ${agencyName}:
-      - Celkový obrat: ${stats?.revenue || '0'}
-      - Celkový počet zpráv: ${stats?.totalMessages || 0}
-      - Počet profilů: ${stats?.totalProfiles || 0}
-      - Růst provizí: ${stats?.commissionGrowth || '0%'}
+      Data pro analytiku:
+      - Obrat: ${stats?.revenue || '0'}
+      - Aktivita zpráv: ${stats?.totalMessages || 0}
+      - Počet spravovaných účtů: ${stats?.totalProfiles || 0}
+      - Růst: ${stats?.commissionGrowth || 'STABLE'}
     `;
 
     const systemPrompt = isCz 
-      ? "Jsi Nexus AI, elitní business analytik pro OnlyFans agentury. Tvé odpovědi jsou stručné, profesionální a motivační. Používej odrážky."
-      : "You are Nexus AI, an elite business analyst for OnlyFans agencies. Your answers are concise, professional, and motivational. Use bullet points.";
+      ? "Jsi Nexus AI, elitní business analytik pro digitální mediální agentury. Zaměřuješ se VÝHRADNĚ na ekonomický růst, efektivitu a statistiky. Tvé odpovědi jsou stručné, profesionální a motivační. Používej odrážky. Pokud jsou data nízká, buď povzbudivý."
+      : "You are Nexus AI, an elite business analyst for digital media agencies. You focus EXCLUSIVELY on economic growth, efficiency, and statistics. Your answers are concise, professional, and motivational. Use bullet points. If data is low, be encouraging.";
 
     const userPrompt = isCz
-      ? `Analyzuj tato data a napiš 3 krátké body (každý max 10 slov), co je dnes důležité. Zde jsou data: ${context}`
-      : `Analyze this data and write 3 short bullet points (max 10 words each) on what is important today. Here is the data: ${context}`;
+      ? `Analyzuj tato ekonomická data a napiš 3 krátké body (každý max 10 slov), co je dnes klíčové pro růst firmy. Zde jsou data: ${context}`
+      : `Analyze these economic metrics and write 3 short bullet points (max 10 words each) on what is key for business growth today. Here is the data: ${context}`;
 
     const response = await askAi(userPrompt, systemPrompt);
     if (response) {
@@ -108,7 +108,22 @@ const AIInsightCard = ({ stats, agencies }) => {
             }}>
               {insight}
             </div>
-            <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--accent-color)', fontWeight: '800' }}>
+            <div 
+              onClick={() => setActiveTab('analytics')}
+              style={{ 
+                marginTop: '1.5rem', 
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                gap: '0.5rem', 
+                fontSize: '0.75rem', 
+                color: 'var(--accent-color)', 
+                fontWeight: '800',
+                cursor: 'pointer',
+                transition: 'opacity 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+            >
               {isCz ? 'ZOBRAZIT DETAILNÍ ANALÝZU' : 'VIEW DETAILED ANALYSIS'} <ArrowRight size={14} />
             </div>
           </div>
