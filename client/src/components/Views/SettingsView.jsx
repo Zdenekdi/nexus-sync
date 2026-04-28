@@ -8,29 +8,30 @@ import { useNexus } from '../../context/ContextHook';
 const SettingsView = () => {
   const nexus = useNexus();
   const {
-    isMobile,
-    t,
-    lang,
-    activeRole,
-    activeOperator,
-    agencies,
-    operators: availableOperators,
-    sessions,
-    profiles,
-    handleRevokeBinding,
-    agencySettings,
-    updateAgencySettings,
-    departureIntervalMin,
-    setDepartureIntervalMin,
-    isMaintenanceMode,
-    setIsMaintenanceMode,
-    globalAnnouncement,
-    setGlobalAnnouncement,
-    isAllowed,
-    showToast
-  } = nexus;
+    isMobile = false,
+    t = (k) => k,
+    lang = 'cz',
+    activeRole = '',
+    activeOperator = null,
+    agencies = [],
+    operators: availableOperators = [],
+    sessions = [],
+    profiles = [],
+    handleRevokeBinding = () => {},
+    agencySettings = {},
+    updateAgencySettings = () => {},
+    departureIntervalMin = 15,
+    setDepartureIntervalMin = () => {},
+    isMaintenanceMode = false,
+    setIsMaintenanceMode = () => {},
+    globalAnnouncement = '',
+    setGlobalAnnouncement = () => {},
+    isAllowed = () => false,
+    showToast = () => {},
+    setLang = () => {}
+  } = nexus || {};
 
-  const activeClient = agencies[0]; // Logic for multi-agency can be added later
+  const activeClient = (agencies || [])[0] || null;
   return (
     <div data-testid="page-settings-container" style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto' }} className="fade-in custom-scrollbar">
       <h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('controlCenter')}</h2>
@@ -71,11 +72,11 @@ const SettingsView = () => {
               </div>
               <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', padding: '3px', borderRadius: '12px', border: '1px solid var(--card-border)', width: '120px' }}>
                 <button 
-                  onClick={() => nexus.setLang('cz')} 
+                  onClick={() => setLang('cz')} 
                   style={{ flex: 1, padding: '8px 0', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '9px', fontSize: '0.75rem', fontWeight: '900', cursor: 'pointer', transition: 'all 0.2s' }}
                 >CZ</button>
                 <button 
-                  onClick={() => nexus.setLang('en')} 
+                  onClick={() => setLang('en')} 
                   style={{ flex: 1, padding: '8px 0', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '9px', fontSize: '0.75rem', fontWeight: '900', cursor: 'pointer', transition: 'all 0.2s' }}
                 >EN</button>
               </div>
