@@ -193,6 +193,8 @@ export const NexusProvider = ({ children }) => {
   const [sourceText, setSourceText] = useState("");
   const [translatedText, setTranslatedText] = useState("");
   const [isTranslating, setIsTranslating] = useState(false);
+  const [activeContextTab, setActiveContextTab] = useState('translator');
+  const [translateTargetLang, setTranslateTargetLang] = useState('AUTO');
   const [isRelayActive, setIsRelayActive] = useState(() => localStorage.getItem('nexus_relay_active') === 'true');
   const [relaySimSlot, setRelaySimSlot] = useState(() => localStorage.getItem('nexus_relay_sim_slot') || 'auto');
   const [relayLogs, setRelayLogs] = useState(() => {
@@ -1151,10 +1153,34 @@ export const NexusProvider = ({ children }) => {
   }, [selectedChatId, token, lang, activeOperator, showToast]);
 
   const handleTranslate = useCallback(async () => {
-    if (!sourceText.trim()) return;
-    setIsTranslating(true);
-    setTimeout(() => { setTranslatedText(`[Translated to EN]: ${sourceText}`); setIsTranslating(false); }, 1000);
-  }, [sourceText]);
+    if (!sourceText.trim() || !token) return;
+    try {
+      setIsTranslating(true);
+      setTranslatedText("");
+      
+      let systemPrompt = "";
+      if (translateTargetLang === 'AUTO') {
+        systemPrompt = "Jsi profesionální překladatel. Detekuj jazyk a přelož text: pokud je český, přelož ho do angličtiny. Pokud je jakýkoliv jiný, přelož ho do češtiny. Vrať POUZE překlad.";
+      } else {
+        const langNames = { 'cs': 'češtiny', 'en': 'angličtiny', 'de': 'němčiny', 'fr': 'francouzštiny', 'es': 'španělštiny' };
+        const target = langNames[translateTargetLang] || translateTargetLang;
+        systemPrompt = `Jsi profesionální překladatel. Přelož zadaný text do ${target}. Vrať POUZE překlad.`;
+      }
+
+      const res = await axios.post(`${API_BASE}/ai/test`, {
+        prompt: sourceText,
+        system: systemPrompt
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setTranslatedText(res.data.response || res.data.translated);
+    } catch (err) {
+      console.error("Translation error:", err);
+      showToast(lang === 'cz' ? "Překlad se nezdařil" : "Translation failed", "error");
+    } finally {
+      setIsTranslating(false);
+    }
+  }, [sourceText, token, lang, API_BASE, showToast, translateTargetLang]);
 
   const handleSaveNote = useCallback(() => {
     if (!internalNote.trim() || !selectedChatId || !selectedChat) return;
@@ -1240,6 +1266,8 @@ export const NexusProvider = ({ children }) => {
     isMobile, isNativeApp, isSidebarCollapsed, setIsSidebarCollapsed, mobileView, setMobileView,
     inlinePanelTab, setInlinePanelTab, sourceText, setSourceText, translatedText, setTranslatedText, isTranslating, setIsTranslating,
     internalNote, setInternalNote, clientNotes, detectedMeeting, setDetectedMeeting, typingProfiles, setTypingProfiles,
+    activeContextTab, setActiveContextTab,
+    translateTargetLang, setTranslateTargetLang,
     showPanicConfirm, setShowPanicConfirm, chatScrollRef, isUserScrolled, incomingRelayCall, setIncomingRelayCall,
     activeSafetySession, sosActive, linkedSessionId, checkinMinutes, setCheckinMinutes,
     checkinTimerEnd, checkinRemaining, triggerSOS, cancelSOS, 
@@ -1306,6 +1334,8 @@ export const NexusProvider = ({ children }) => {
     isMobile, isNativeApp, isSidebarCollapsed, setIsSidebarCollapsed, mobileView, setMobileView,
     inlinePanelTab, setInlinePanelTab, sourceText, setSourceText, translatedText, setTranslatedText, isTranslating, setIsTranslating,
     internalNote, setInternalNote, clientNotes, detectedMeeting, setDetectedMeeting, typingProfiles, setTypingProfiles,
+    activeContextTab, setActiveContextTab,
+    translateTargetLang, setTranslateTargetLang,
     showPanicConfirm, setShowPanicConfirm, chatScrollRef, isUserScrolled, incomingRelayCall, setIncomingRelayCall,
     activeSafetySession, sosActive, linkedSessionId, checkinMinutes, setCheckinMinutes,
     checkinTimerEnd, checkinRemaining, triggerSOS, cancelSOS, 

@@ -25,6 +25,7 @@ const InboxView = () => {
     messageValue = '', setMessageValue = () => {},
     bookingSchedule = [], calViewDate = new Date(), setCalViewDate = () => {}, setIsBookingModalOpen = () => {},
     setNewBookingForm = () => {}, activeContextTab = 'translator', setActiveContextTab = () => {}, 
+    translateTargetLang = 'AUTO', setTranslateTargetLang = () => {},
     lang = 'en', t = (k) => k, token = '', API_BASE = '',
     activeProfile = null, handleSendMessage = () => {}, handleTranslate = () => {}, handleSaveNote = () => {},
     handleDeleteNote = () => {}, startCall = () => {}, showToast = () => {},
@@ -51,20 +52,32 @@ const InboxView = () => {
     }
   }, [fetchClientByPhone, selectedChat?.from]);
 
+  const lastMsgId = chatMessages.length > 0 ? chatMessages[chatMessages.length - 1].id : null;
+
   const loadAiSuggestions = React.useCallback(async () => {
     if (!selectedChat || !chatMessages.length) return;
     
-    // Prepare last 10 messages for context
-    const history = chatMessages.slice(-10).map(m => ({
-      role: m.direction === 'OUTBOUND' ? 'assistant' : 'user',
-      content: m.text
-    }));
+    // Check if the last message is from user before generating
+    const lastMsg = chatMessages[chatMessages.length - 1];
+    if (lastMsg.direction !== 'INBOUND') return;
 
-    const suggestion = await getSuggestion(history, activeProfileId);
-    if (suggestion) {
-      setAiSuggestions([suggestion]);
-    } else {
-      setAiSuggestions([]);
+    try {
+      setIsAiLoading(true);
+      const history = chatMessages.slice(-10).map(m => ({
+        role: m.direction === 'OUTBOUND' ? 'assistant' : 'user',
+        content: m.text
+      }));
+
+      const suggestion = await getSuggestion(history, activeProfileId);
+      if (suggestion) {
+        setAiSuggestions([suggestion]);
+      } else {
+        setAiSuggestions([]);
+      }
+    } catch (_err) {
+      console.error("AI load error:", _err);
+    } finally {
+      setIsAiLoading(false);
     }
   }, [selectedChat, chatMessages, activeProfileId, getSuggestion]);
 
@@ -76,10 +89,13 @@ const InboxView = () => {
   }, [selectedChat?.from, activeContextTab, loadClientCrm]);
 
   React.useEffect(() => {
-    if (selectedChatId && inlinePanelTab === 'ai') {
-      loadAiSuggestions();
+    if (selectedChatId && inlinePanelTab === 'ai' && chatMessages.length > 0) {
+      const lastMsg = chatMessages[chatMessages.length - 1];
+      if (lastMsg.direction === 'INBOUND') {
+        loadAiSuggestions();
+      }
     }
-  }, [selectedChatId, inlinePanelTab, loadAiSuggestions]);
+  }, [selectedChatId, inlinePanelTab, lastMsgId]);
 
 
   // Pull to refresh logic
@@ -469,9 +485,37 @@ const InboxView = () => {
                      </button>
                    </div>
                   {/* Tab content */}
-                  <div style={{ padding: '1.25rem', flex: '1 1 0', minHeight: 0, maxHeight: '45%', overflowY: 'auto' }}>
+                  <div style={{ padding: '1.25rem', flex: '1', minHeight: 0, overflowY: 'auto' }}>
                     {activeContextTab === 'translator' ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {/* Language Selection */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            {lang === 'cz' ? 'Cílový jazyk' : 'Target Language'}
+                          </div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                            {['AUTO', 'en', 'cs', 'de', 'fr', 'es'].map(l => (
+                              <button 
+                                key={l}
+                                onClick={() => setTranslateTargetLang(l)}
+                                style={{ 
+                                  padding: '0.3rem 0.6rem', 
+                                  borderRadius: '8px', 
+                                  fontSize: '0.65rem', 
+                                  fontWeight: '800', 
+                                  cursor: 'pointer',
+                                  border: '1px solid',
+                                  transition: 'all 0.2s ease',
+                                  background: translateTargetLang === l ? 'var(--accent-color)' : 'rgba(255,255,255,0.05)',
+                                  borderColor: translateTargetLang === l ? 'var(--accent-color)' : 'var(--card-border)',
+                                  color: translateTargetLang === l ? 'white' : 'var(--text-secondary)'
+                                }}
+                              >
+                                {l.toUpperCase()}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                         <textarea value={sourceText} onChange={(_err) => setSourceText(_err.target.value)} placeholder={t('typeResponse')} style={{ width: '100%', height: '100px', background: 'rgba(0, 0, 0, 0.2)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem', color: 'white', resize: 'none' }} />
                         <button onClick={handleTranslate} disabled={isTranslating} style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0.75rem 1rem', borderRadius: '12px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                           {isTranslating ? (<><div className="loader-dots" style={{ display: 'flex', gap: '4px' }}><span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span><span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span><span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span></div>{t('translating')}</>) : (<><Sparkles size={16} /> {lang === 'cz' ? 'PŘELOŽIT PŘES AI' : 'TRANSLATE VIA AI'}</>)}
