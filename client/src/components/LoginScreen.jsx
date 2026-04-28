@@ -3,7 +3,7 @@ import { useNexus } from '../context/ContextHook';
 import { 
   Lock, Mail, ArrowRight, Loader2, 
   Globe, Zap, CheckCircle2, User, Building2, KeyRound, Copy, Check,
-  Eye, EyeOff
+  Eye, EyeOff, AlertTriangle
 } from 'lucide-react';
 
 import { API_BASE, APP_VERSION } from '../constants/config';
@@ -181,15 +181,26 @@ const LoginScreen = () => {
     }
   }, [justLoggedOut, setJustLoggedOut]);
 
+  const [authError, setAuthError] = useState(null);
+
   const handleLogin = async (_err) => {
     _err.preventDefault();
+    setAuthError(null);
     if (!email || !password) {
-      showToast(isCz ? 'Vyplňte všechna pole' : 'Please fill in all fields', 'error');
+      setAuthError(isCz ? 'Vyplňte všechna pole' : 'Please fill in all fields');
       return;
     }
     setLoading(true);
-    try { await onLogin(email, password); } 
-    catch (_err) { console.error(_err); } 
+    try { 
+      const result = await onLogin(email, password); 
+      if (result && !result.success) {
+        setAuthError(result.error || (isCz ? 'Nesprávné přihlašovací údaje' : 'Invalid credentials'));
+      }
+    } 
+    catch (_err) { 
+      console.error(_err);
+      setAuthError(isCz ? 'Chyba serveru nebo sítě' : 'Server or network error');
+    } 
     finally { setLoading(false); }
   };
 
@@ -263,7 +274,13 @@ const LoginScreen = () => {
                 <>
                   {tab === 'login' && (
                     <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      <MemoInput label={isCz ? 'E-mail' : 'Email'} icon={Mail} type="email" value={email} onChange={setEmail} placeholder="you@email.com" data-testid="login-email" autoFocus />
+                      {authError && (
+                        <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '0.75rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.75rem', animation: 'fadeInUp 0.3s ease-out', marginBottom: '0.5rem' }}>
+                          <AlertTriangle color="#ef4444" size={18} />
+                          <span style={{ color: '#f87171', fontSize: '0.8rem', fontWeight: '700' }}>{authError}</span>
+                        </div>
+                      )}
+                      <MemoInput label={isCz ? 'E-mail' : 'Email'} icon={Mail} type="email" value={email} onChange={(v) => { setEmail(v); setAuthError(null); }} placeholder="you@email.com" data-testid="login-email" autoFocus />
                       <MemoInput label={isCz ? 'Heslo' : 'Password'} icon={Lock} value={password} onChange={setPassword} placeholder="••••••••" showToggle onToggle={() => setShowPassword(!showPassword)} isToggled={showPassword} data-testid="login-password" />
                       <button type="submit" disabled={loading} style={STYLES.submitButton} data-testid="login-submit">
                         {loading ? <Loader2 className="animate-spin" size={16} /> : <>{isCz ? 'Přihlásit' : 'Sign In'}<ArrowRight size={16} /></>}

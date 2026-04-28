@@ -2,7 +2,7 @@ import React from 'react';
 import { useNexus } from '../../context/ContextHook';
 
 const HierarchyView = () => {
-  const nexus = useNexus();
+  const nexus = useNexus() || {};
   const {
     isMobile = false,
     t = (k) => k,
@@ -10,7 +10,7 @@ const HierarchyView = () => {
     activeOperator = null,
     operators = [],
     profiles = []
-  } = nexus || {};
+  } = nexus;
 
   // Define the role hierarchy order (omitted App Owner to keep it agency-specific)
   const roleHierarchy = ['Agency Admin', 'Manager', 'Senior Operator', 'Operator', 'Model'];
@@ -169,7 +169,7 @@ const HierarchyView = () => {
                         <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
                           <span style={{ color: visibleModelsCount > 0 ? 'var(--accent-color)' : 'inherit', fontWeight: visibleModelsCount > 0 ? '600' : 'normal' }}>
                             {visibleModelsCount}
-                          </span> {visibleModelsCount === 1 ? t('profile').toLowerCase() : t('profiles').toLowerCase()}
+                          </span> {visibleModelsCount === 1 ? t('profile').toLowerCase() : (visibleModelsCount >= 2 && visibleModelsCount <= 4) ? (t('profiles_2_4') || 'profily').toLowerCase() : (t('profiles_5_plus') || 'profilů').toLowerCase()}
                         </div>
                       )}
 

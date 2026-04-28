@@ -4,7 +4,16 @@ import { useNexus } from '../../context/ContextHook';
 import axios from 'axios';
 
 const SafetyGuardView = () => {
-  const { _t, lang, API_BASE, token, showToast, isMobile } = useNexus();
+  const nexus = useNexus() || {};
+  const { 
+    t = (k) => k, 
+    lang = 'en', 
+    API_BASE = '', 
+    token = '', 
+    showToast = () => {}, 
+    isMobile = false 
+  } = nexus;
+
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -14,6 +23,7 @@ const SafetyGuardView = () => {
   const isCz = lang === 'cz' || lang === 'cs';
 
   const fetchSessions = useCallback(async (isRefresh = false) => {
+    if (!token || !API_BASE) return;
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
     
@@ -76,7 +86,7 @@ const SafetyGuardView = () => {
             </h2>
           </div>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-             <Activity size={12} color="#10b981" /> {isCz ? 'Monitoring v reálném čase aktivní' : 'Real-time monitoring active'}
+             <Activity size={12} color="#10b981" /> {t('realTimeMonitoringActive')}
           </div>
         </div>
 
@@ -221,15 +231,15 @@ const SafetyGuardView = () => {
           <div style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--card-border)', borderRadius: '24px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '1rem', borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Zap size={16} color="#3b82f6" />
-              <span style={{ fontWeight: 800, fontSize: '0.8rem', color: 'white' }}>{isCz ? 'TAKTICKÝ PŘEHLED' : 'TACTICAL OVERVIEW'}</span>
+              <span style={{ fontWeight: 800, fontSize: '0.8rem', color: 'white' }}>{t('tacticalOverview')}</span>
             </div>
             <div style={{ flex: 1, position: 'relative', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                {/* Simplified World Grid Simulation */}
                <div style={{ position: 'absolute', inset: 0, opacity: 0.1, backgroundImage: 'radial-gradient(#3b82f6 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
                <div style={{ textAlign: 'center', zIndex: 1 }}>
                   <MapPin size={40} color="#3b82f6" className="pulse-subtle" />
-                  <div style={{ marginTop: '1rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 600 }}>{isCz ? 'ROZHRANÍ MAPY' : 'LIVE MAP INTERFACE'}</div>
-                  <div style={{ fontSize: '0.65rem', opacity: 0.5 }}>{isCz ? `Sledujeme ${stats.active} jednotek...` : `${stats.active} units tracking...`}</div>
+                  <div style={{ marginTop: '1rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 600 }}>{t('liveMapInterface')}</div>
+                  <div style={{ fontSize: '0.65rem', opacity: 0.5 }}>{t('unitsTracking').replace('{count}', stats.active)}</div>
                </div>
 
                {/* Random Radar Dots */}
@@ -247,7 +257,7 @@ const SafetyGuardView = () => {
             <div style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.02)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
                 <Clock size={14} color="#64748b" />
-                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)' }}>{isCz ? 'POSLEDNÍ SYNCHRONIZACE' : 'LAST GLOBAL SYNC'}</span>
+                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)' }}>{t('lastGlobalSync')}</span>
               </div>
               <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'white' }}>{new Date().toLocaleTimeString()}</div>
             </div>

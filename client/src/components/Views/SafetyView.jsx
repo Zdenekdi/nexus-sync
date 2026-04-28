@@ -6,8 +6,16 @@ import SOSPanel from '../Safety/SOSPanel';
 import SafetyControlCard from '../Safety/SafetyControlCard';
 
 const SafetyView = () => {
-  const nexus = useNexus();
-  const { t, lang, activeRole, isMobile, voiceGuardianActive,  _audioSentinelActive, sosActive } = nexus;
+  const nexus = useNexus() || {};
+  const { 
+    t = (k) => k, 
+    lang = 'en', 
+    activeRole = 'Operator', 
+    isMobile = false, 
+    voiceGuardianActive = false, 
+    sosActive = false 
+  } = nexus;
+  
   const [subTab, setSubTab] = useState('blacklist');
 
   const isCz = lang === 'cz' || lang === 'cs';
@@ -27,11 +35,11 @@ const SafetyView = () => {
               <Shield size={20} color="white" />
             </div>
             <h2 style={{ margin: 0, fontWeight: 950, fontSize: '1.5rem', color: 'white', letterSpacing: '-0.02em' }}>
-              GUARDIAN <span style={{ color: 'var(--accent-color)' }}>SUITE</span>
+              {t('guardianSuite').split(' ')[0]} <span style={{ color: 'var(--accent-color)' }}>{t('guardianSuite').split(' ')[1]}</span>
             </h2>
           </div>
           <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
-            {isCz ? 'Prémiová ochrana a dohled v reálném čase' : 'Premium real-time protection and monitoring'}
+            {t('premiumSafetyDesc')}
           </p>
         </div>
 
@@ -39,12 +47,12 @@ const SafetyView = () => {
           <div style={{ display: 'flex', gap: '0.75rem' }}>
             <div style={{ padding: '0.5rem 1rem', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Lock size={14} color={sosActive ? '#ef4444' : '#22c55e'} />
-              <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'white' }}>{sosActive ? 'SOS ACTIVE' : 'SECURED'}</span>
+              <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'white' }}>{sosActive ? 'SOS ACTIVE' : t('secured')}</span>
             </div>
             {voiceGuardianActive && (
               <div style={{ padding: '0.5rem 1rem', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Mic size={14} color="#3b82f6" className="pulse-subtle" />
-                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#3b82f6' }}>VOICE ACTIVE</span>
+                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#3b82f6' }}>{t('voiceActive')}</span>
               </div>
             )}
           </div>
@@ -68,16 +76,16 @@ const SafetyView = () => {
             <div style={{ marginTop: '1.5rem', padding: '1.25rem', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--card-border)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
                 <Eye size={16} color="var(--accent-color)" />
-                <span style={{ fontWeight: 800, fontSize: '0.8rem', color: 'white' }}>{isCz ? 'Bezpečnostní tipy' : 'Safety Tips'}</span>
+                <span style={{ fontWeight: 800, fontSize: '0.8rem', color: 'white' }}>{t('safetyTips')}</span>
               </div>
               <ul style={{ padding: 0, margin: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <li style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'flex', gap: '0.5rem' }}>
                    <div style={{ minWidth: '4px', height: '4px', borderRadius: '50%', background: 'var(--accent-color)', marginTop: '6px' }} />
-                   {isCz ? 'Vždy mějte aktivní Audio Sentinel pro potvrzení dohledu.' : 'Always keep Audio Sentinel active for monitoring confirmation.'}
+                   {t('audioSentinelTip')}
                 </li>
                 <li style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'flex', gap: '0.5rem' }}>
                    <div style={{ minWidth: '4px', height: '4px', borderRadius: '50%', background: 'var(--accent-color)', marginTop: '6px' }} />
-                   {isCz ? 'V případě nouze stačí nahlas říct "POMOC" nebo "SOS".' : 'In case of emergency, simply say "HELP" or "SOS" aloud.'}
+                   {t('sosVoiceTip')}
                 </li>
               </ul>
             </div>

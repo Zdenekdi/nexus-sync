@@ -5,19 +5,19 @@ import { Zap, Cpu, Check } from 'lucide-react';
 import { useNexus } from '../../context/ContextHook';
 
 const GlobalFeaturesView = () => {
-  const nexus = useNexus();
+  const nexus = useNexus() || {};
   const { 
-    t, 
-    lang, 
-    isMobile, 
-    activeOperator,
-    globalFeatures, 
-    globalSettings,
-    handleFeatureToggle: onFeatureToggle, 
-    isTraining, 
-    trainingProgress, 
-    onStartTraining, 
-    onResetTraining 
+    t = (k) => k, 
+    lang = 'en', 
+    isMobile = false, 
+    activeOperator = null,
+    globalFeatures = [], 
+    globalSettings = [],
+    handleFeatureToggle: onFeatureToggle = () => {}, 
+    isTraining = false, 
+    trainingProgress = 0, 
+    onStartTraining = () => {}, 
+    onResetTraining = () => {} 
   } = nexus;
   return (
     <div data-testid="page-global-features-container" style={{ padding: '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">

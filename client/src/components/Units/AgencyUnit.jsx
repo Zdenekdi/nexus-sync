@@ -8,6 +8,7 @@ import CRMView from '../Views/CRMView';
 import InventoryView from '../InventoryView';
 import AuditLogsView from '../Views/AuditLogsView';
 import PayoutsView from '../Views/PayoutsView';
+import SafetyView from '../Views/SafetyView';
 import SafetyGuardView from '../Views/SafetyGuardView';
 
 /**
@@ -33,6 +34,8 @@ const AgencyUnit = () => {
       return <AnalyticsView />;
     case 'activity':
       return <ActivityView />;
+    case 'safety':
+      return <SafetyView />;
     case 'settings':
       return <SettingsView />;
     case 'crm':
