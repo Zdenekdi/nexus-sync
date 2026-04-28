@@ -29,17 +29,36 @@ const InventoryView = () => {
 
   // Add item modal
   const [addItemModal, setAddItemModal] = useState(false);
-  const [newItem, setNewItem] = useState({ name: '', quantity: 0, threshold: 10, locationId: '' });
+  const [newItem, setNewItem] = useState({ name: '', quantity: 0, threshold: 10, locationId: '', unit: 'pieces' });
   const [editingQty, setEditingQty] = useState(null);
   const [fetchError, setFetchError] = useState(false);
 
   // ── API helpers ─────────────────────────────────────────────────────────────
   const headers = useMemo(() => ({ 
     'Content-Type': 'application/json', 
-    Authorization: `Bearer ${token}` 
+    Authorization: `Bearer ${token || ''}` 
   }), [token]);
 
+  const handleUpdateQuantity = async (id, quantity) => {
+    try {
+      const res = await fetch(`${API_BASE}/inventory/items/${id}`, {
+        method: 'PATCH', headers, body: JSON.stringify({ quantity: Number(quantity) })
+      });
+      if (res.ok) { 
+        const updated = await res.json(); 
+        setItems(p => p.map(i => i.id === id ? updated : i)); 
+      }
+    } catch (_err) { console.error('[Inventory] update quantity _err:', _err); }
+    setEditingQty(null);
+  };
+
+  const handleQuickConsume = async (item, amount) => {
+    const newQty = Math.max(0, (item.quantity || 0) - amount);
+    await handleUpdateQuantity(item.id, newQty);
+  };
+
   const fetchAll = useCallback(async () => {
+    if (!token) return;
     try {
       setLoading(true);
       const [locsRes, itemsRes] = await Promise.all([
@@ -47,16 +66,14 @@ const InventoryView = () => {
         fetch(`${API_BASE}/inventory/items`, { headers })
       ]);
       if (locsRes.ok) setLocations(await locsRes.json());
-      else console.error('[Inventory] locations response not ok:', locsRes.status);
       if (itemsRes.ok) setItems(await itemsRes.json());
-      else console.error('[Inventory] items response not ok:', itemsRes.status);
     } catch (_err) {
       console.error('[Inventory] fetch failed:', _err);
       setFetchError(true);
     } finally {
       setLoading(false);
     }
-  }, [headers]);
+  }, [headers, token]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
@@ -88,21 +105,12 @@ const InventoryView = () => {
       const res = await fetch(`${API_BASE}/inventory/items`, {
         method: 'POST', headers, body: JSON.stringify(newItem)
       });
-      if (res.ok) { const item = await res.json(); setItems(p => [...p, item]); setAddItemModal(false); setNewItem({ name: '', quantity: 0, threshold: 10, locationId: '' }); }
+      if (res.ok) { const item = await res.json(); setItems(p => [...p, item]); setAddItemModal(false); setNewItem({ name: '', quantity: 0, threshold: 10, locationId: '', unit: 'pieces' }); }
     } catch (_err) { console.error('[Inventory] add item _err:', _err); }
   };
 
-  const handleUpdateQuantity = async (id, quantity) => {
-    try {
-      const res = await fetch(`${API_BASE}/inventory/items/${id}`, {
-        method: 'PATCH', headers, body: JSON.stringify({ quantity: Number(quantity) })
-      });
-      if (res.ok) { const updated = await res.json(); setItems(p => p.map(i => i.id === id ? updated : i)); }
-    } catch (_err) { console.error('[Inventory] update quantity _err:', _err); }
-    setEditingQty(null);
-  };
-
   const handleDeleteItem = async (id) => {
+    if (!window.confirm(t?.('deleteItemConfirm') || 'Opravdu smazat?')) return;
     try {
       const res = await fetch(`${API_BASE}/inventory/items/${id}`, { method: 'DELETE', headers });
       if (res.ok) setItems(p => p.filter(i => i.id !== id));
@@ -130,6 +138,34 @@ const InventoryView = () => {
   const getLabel = (q, thr) => q === 0 ? (t?.outOfStock || 'Out of Stock') : q <= thr ? (t?.lowStock || 'Low Stock') : (t?.inStock || 'In Stock');
   const locName = (id) => locations.find(l => l.id === id)?.name || id;
 
+  const renderConsumeButtons = (item) => {
+    const unit = item.unit || 'pieces';
+    if (unit === 'pieces') {
+      return (
+        <div style={{ display: 'flex', gap: '0.4rem' }}>
+          <button onClick={() => handleQuickConsume(item, 1)} className="consume-btn" style={{ padding: '4px 8px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer' }}>-1 ks</button>
+        </div>
+      );
+    }
+    if (unit === 'milliliters' || unit === 'ml') {
+      return (
+        <div style={{ display: 'flex', gap: '0.4rem' }}>
+          <button onClick={() => handleQuickConsume(item, 100)} className="consume-btn" style={{ padding: '4px 8px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer' }}>-100ml</button>
+          <button onClick={() => handleQuickConsume(item, 250)} className="consume-btn" style={{ padding: '4px 8px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer' }}>-250ml</button>
+        </div>
+      );
+    }
+    if (unit === 'liters' || unit === 'l') {
+      return (
+        <div style={{ display: 'flex', gap: '0.4rem' }}>
+          <button onClick={() => handleQuickConsume(item, 0.5)} className="consume-btn" style={{ padding: '4px 8px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer' }}>-0.5l</button>
+          <button onClick={() => handleQuickConsume(item, 1)} className="consume-btn" style={{ padding: '4px 8px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer' }}>-1l</button>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div style={{ padding: isMobile ? '1.5rem 1rem' : '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
       {fetchError && (
@@ -155,7 +191,7 @@ const InventoryView = () => {
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
               <div style={{ position: 'relative' }}>
                 <MapPin size={14} color="var(--text-secondary)" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
-                <select value={selectedLocation} onChange={_err => setSelectedLocation(_err.target.value)} style={{ padding: '0.6rem 1.5rem 0.6rem 2rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontSize: '0.85rem', cursor: 'pointer', minWidth: '140px' }}>
+                <select value={selectedLocation} onChange={e => setSelectedLocation(e.target.value)} style={{ padding: '0.6rem 1.5rem 0.6rem 2rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontSize: '0.85rem', cursor: 'pointer', minWidth: '140px' }}>
                   <option value="all">Vše</option>
                   {(locations || []).map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                 </select>
@@ -171,7 +207,7 @@ const InventoryView = () => {
             </div>
           ) : (
             <div className="glass-card" style={{ padding: '0.5rem 0.75rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <input autoFocus value={newLocationName} onChange={_err => setNewLocationName(_err.target.value)} onKeyDown={_err => _err.key === 'Enter' && handleAddLocation()} placeholder="Název lokace..." style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '0.85rem', outline: 'none', width: '140px' }} />
+              <input autoFocus value={newLocationName} onChange={e => setNewLocationName(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAddLocation()} placeholder="Název lokace..." style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '0.85rem', outline: 'none', width: '140px' }} />
               <button onClick={handleAddLocation} style={{ background: 'var(--success-color)', border: 'none', borderRadius: '4px', color: 'white', padding: '3px', cursor: 'pointer' }}><Check size={14} /></button>
               <button onClick={() => setIsAddingLocation(false)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '4px', color: 'white', padding: '3px', cursor: 'pointer' }}><X size={14} /></button>
             </div>
@@ -203,7 +239,7 @@ const InventoryView = () => {
         <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div style={{ position: 'relative', flex: 1, minWidth: '200px', maxWidth: '400px' }}>
             <Search size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-            <input type="text" placeholder="Hledat položku..." value={searchQuery} onChange={_err => setSearchQuery(_err.target.value)} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.75rem 0.75rem 0.75rem 2.5rem', borderRadius: '12px', color: 'white' }} />
+            <input type="text" placeholder="Hledat položku..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.75rem 0.75rem 0.75rem 2.5rem', borderRadius: '12px', color: 'white' }} />
           </div>
           <button onClick={fetchAll} style={{ background: 'none', border: '1px solid var(--card-border)', padding: '0.7rem', borderRadius: '10px', color: 'white', cursor: 'pointer', display: 'flex' }}><RefreshCw size={16} /></button>
         </div>
@@ -225,11 +261,11 @@ const InventoryView = () => {
                 </div>
                 <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                   {editingQty?.id === item.id ? (
-                    <input type="number" value={editingQty.value} onChange={_err => setEditingQty(p => ({ ...p, value: _err.target.value }))} onBlur={() => handleUpdateQuantity(item.id, editingQty.value)} onKeyDown={_err => _err.key === 'Enter' && handleUpdateQuantity(item.id, editingQty.value)} style={{ width: '70px', background: 'rgba(255,255,255,0.1)', border: '1px solid var(--accent-color)', borderRadius: '8px', color: 'white', padding: '0.4rem', fontSize: '0.9rem', fontWeight: '800' }} />
+                    <input type="number" value={editingQty.value} onChange={e => setEditingQty(p => ({ ...p, value: e.target.value }))} onBlur={() => handleUpdateQuantity(item.id, editingQty.value)} onKeyDown={e => e.key === 'Enter' && handleUpdateQuantity(item.id, editingQty.value)} style={{ width: '70px', background: 'rgba(255,255,255,0.1)', border: '1px solid var(--accent-color)', borderRadius: '8px', color: 'white', padding: '0.4rem', fontSize: '0.9rem', fontWeight: '800' }} />
                   ) : (
-                    <button onClick={() => setEditingQty({ id: item.id, value: item.quantity })} style={{ fontWeight: '800', fontSize: '1.1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '8px', color: item.quantity <= item.threshold ? 'var(--warning-color)' : 'white', padding: '0.3rem 0.75rem', cursor: 'pointer' }}>{item.quantity}</button>
+                    <button onClick={() => setEditingQty({ id: item.id, value: item.quantity })} style={{ fontWeight: '800', fontSize: '1.1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '8px', color: item.quantity <= item.threshold ? 'var(--warning-color)' : 'white', padding: '0.3rem 0.75rem', cursor: 'pointer' }}>{item.quantity} <span style={{ fontSize: '0.7rem', opacity: 0.5 }}>{item.unit || 'ks'}</span></button>
                   )}
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>/ limit {item.threshold}</span>
+                  {renderConsumeButtons(item)}
                   <button onClick={() => handleDeleteItem(item.id)} style={{ background: 'none', border: 'none', color: 'var(--_err-color)', cursor: 'pointer', marginLeft: 'auto', display: 'flex' }}><Trash2 size={16} /></button>
                 </div>
               </div>
@@ -240,7 +276,7 @@ const InventoryView = () => {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)' }}>
-                {['Název', 'Lokace', 'Množství', 'Limit', 'Stav', ''].map(h => (
+                {['Název', 'Lokace', 'Množství', 'Rychlá spotřeba', 'Limit', 'Stav', ''].map(h => (
                   <th key={h} style={{ padding: '1rem 1.25rem', color: 'var(--text-secondary)', fontSize: '0.72rem', fontWeight: '800', textTransform: 'uppercase', textAlign: h === 'Množství' || h === 'Limit' ? 'center' : 'left' }}>{h}</th>
                 ))}
               </tr>
@@ -256,11 +292,16 @@ const InventoryView = () => {
                   </td>
                   <td style={{ padding: '1rem 1.25rem' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}><MapPin size={13} />{locName(item.locationId)}</div></td>
                   <td style={{ padding: '1rem 1.25rem', textAlign: 'center' }}>
-                    {editingQty?.id === item.id ? (
-                      <input type="number" value={editingQty.value} onChange={_err => setEditingQty(p => ({ ...p, value: _err.target.value }))} onBlur={() => handleUpdateQuantity(item.id, editingQty.value)} onKeyDown={_err => _err.key === 'Enter' && handleUpdateQuantity(item.id, editingQty.value)} autoFocus style={{ width: '70px', background: 'rgba(255,255,255,0.1)', border: '1px solid var(--accent-color)', borderRadius: '8px', color: 'white', padding: '0.3rem', textAlign: 'center', fontSize: '1rem', fontWeight: '800' }} />
-                    ) : (
-                      <button onClick={() => setEditingQty({ id: item.id, value: item.quantity })} title="Klikni pro úpravu" style={{ fontWeight: '800', fontSize: '1rem', color: item.quantity <= item.threshold ? 'var(--warning-color)' : 'white', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--card-border)', borderRadius: '8px', padding: '0.2rem 0.75rem', cursor: 'pointer' }}>{item.quantity}</button>
-                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      {editingQty?.id === item.id ? (
+                        <input type="number" value={editingQty.value} onChange={e => setEditingQty(p => ({ ...p, value: e.target.value }))} onBlur={() => handleUpdateQuantity(item.id, editingQty.value)} onKeyDown={e => e.key === 'Enter' && handleUpdateQuantity(item.id, editingQty.value)} autoFocus style={{ width: '70px', background: 'rgba(255,255,255,0.1)', border: '1px solid var(--accent-color)', borderRadius: '8px', color: 'white', padding: '0.3rem', textAlign: 'center', fontSize: '1rem', fontWeight: '800' }} />
+                      ) : (
+                        <button onClick={() => setEditingQty({ id: item.id, value: item.quantity })} title="Klikni pro úpravu" style={{ fontWeight: '800', fontSize: '1rem', color: item.quantity <= item.threshold ? 'var(--warning-color)' : 'white', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--card-border)', borderRadius: '8px', padding: '0.2rem 0.75rem', cursor: 'pointer' }}>{item.quantity} <span style={{ fontSize: '0.7rem', opacity: 0.5 }}>{item.unit || 'ks'}</span></button>
+                      )}
+                    </div>
+                  </td>
+                  <td style={{ padding: '1rem 1.25rem' }}>
+                    {renderConsumeButtons(item)}
                   </td>
                   <td style={{ padding: '1rem 1.25rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{item.threshold}</td>
                   <td style={{ padding: '1rem 1.25rem' }}>
@@ -274,7 +315,7 @@ const InventoryView = () => {
                 </tr>
               ))}
               {!filteredItems.length && (
-                <tr><td colSpan="6" style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}><PackageIcon size={40} style={{ opacity: 0.1, marginBottom: '0.75rem' }} /><div>Žádné položky</div></td></tr>
+                <tr><td colSpan="7" style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}><PackageIcon size={40} style={{ opacity: 0.1, marginBottom: '0.75rem' }} /><div>Žádné položky</div></td></tr>
               )}
             </tbody>
           </table>
@@ -290,19 +331,28 @@ const InventoryView = () => {
               <button onClick={() => setAddItemModal(false)} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}><X size={20} /></button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <input placeholder="Název položky *" value={newItem.name} onChange={_err => setNewItem(p => ({ ...p, name: _err.target.value }))} style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontSize: '0.95rem' }} />
-              <select value={newItem.locationId} onChange={_err => setNewItem(p => ({ ...p, locationId: _err.target.value }))} style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontSize: '0.95rem' }}>
-                <option value="">Vyberte lokaci *</option>
-                {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-              </select>
+              <input placeholder="Název položky *" value={newItem.name} onChange={e => setNewItem(p => ({ ...p, name: e.target.value }))} style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontSize: '0.95rem' }} />
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <select value={newItem.locationId} onChange={e => setNewItem(p => ({ ...p, locationId: e.target.value }))} style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontSize: '0.9rem' }}>
+                  <option value="">Lokace *</option>
+                  {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                </select>
+                <select value={newItem.unit} onChange={e => setNewItem(p => ({ ...p, unit: e.target.value }))} style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontSize: '0.9rem' }}>
+                  <option value="pieces">{t?.pieces || 'ks'}</option>
+                  <option value="milliliters">{t?.milliliters || 'ml'}</option>
+                  <option value="liters">{t?.liters || 'l'}</option>
+                </select>
+              </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
                   <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '700' }}>MNOŽSTVÍ</label>
-                  <input type="number" min="0" value={newItem.quantity} onChange={_err => setNewItem(p => ({ ...p, quantity: Number(_err.target.value) }))} style={{ width: '100%', marginTop: '0.4rem', padding: '0.65rem 0.75rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white' }} />
+                  <input type="number" min="0" value={newItem.quantity} onChange={e => setNewItem(p => ({ ...p, quantity: Number(e.target.value) }))} style={{ width: '100%', marginTop: '0.4rem', padding: '0.65rem 0.75rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white' }} />
                 </div>
                 <div>
                   <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '700' }}>MIN. LIMIT</label>
-                  <input type="number" min="0" value={newItem.threshold} onChange={_err => setNewItem(p => ({ ...p, threshold: Number(_err.target.value) }))} style={{ width: '100%', marginTop: '0.4rem', padding: '0.65rem 0.75rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white' }} />
+                  <input type="number" min="0" value={newItem.threshold} onChange={e => setNewItem(p => ({ ...p, threshold: Number(e.target.value) }))} style={{ width: '100%', marginTop: '0.4rem', padding: '0.65rem 0.75rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white' }} />
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
@@ -316,6 +366,7 @@ const InventoryView = () => {
 
       <style>{`
         .table-row-hover:hover { background: rgba(255,255,255,0.03) !important; }
+        .consume-btn:active { transform: scale(0.95); }
       `}</style>
     </div>
   );

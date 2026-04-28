@@ -3,7 +3,15 @@ import { Shield, Plus, X, Phone, Search, Trash2, Filter } from 'lucide-react';
 import { useNexus } from '../../context/ContextHook';
 
 const BlacklistPanel = () => {
-  const { t, lang, API_BASE, token, showToast } = useNexus();
+  const nexus = useNexus() || {};
+  const { 
+    t = (k) => k, 
+    lang = 'en', 
+    API_BASE = '', 
+    token = '', 
+    showToast = () => {} 
+  } = nexus;
+
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [newPhone, setNewPhone] = useState('');
@@ -11,6 +19,7 @@ const BlacklistPanel = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const fetchEntries = useCallback(async () => {
+    if (!token || !API_BASE) return;
     try {
       setLoading(true);
       const res = await fetch(`${API_BASE}/safety/blacklist`, {
@@ -21,7 +30,7 @@ const BlacklistPanel = () => {
         setEntries(data.entries || []);
       }
     } catch {
-      showToast(lang === 'cs' ? 'Chyba při načítání blacklistu' : 'Failed to load blacklist', 'error');
+      showToast(lang === 'cz' ? 'Chyba při načítání blacklistu' : 'Failed to load blacklist', 'error');
     } finally {
       setLoading(false);
     }
@@ -41,10 +50,10 @@ const BlacklistPanel = () => {
         setNewPhone('');
         setNewReason('');
         fetchEntries();
-        showToast(lang === 'cs' ? 'Číslo zablokováno' : 'Number blacklisted', 'success');
+        showToast(lang === 'cz' ? 'Číslo zablokováno' : 'Number blacklisted', 'success');
       }
     } catch {
-      showToast('Error adding to blacklist', 'error');
+      showToast(lang === 'cz' ? 'Chyba při přidávání' : 'Error adding to blacklist', 'error');
     }
   };
 
@@ -56,10 +65,10 @@ const BlacklistPanel = () => {
       });
       if (res.ok) {
         fetchEntries();
-        showToast(lang === 'cs' ? 'Blokování zrušeno' : 'Number unblocked', 'success');
+        showToast(lang === 'cz' ? 'Blokování zrušeno' : 'Number unblocked', 'success');
       }
     } catch {
-      showToast('Error removing from blacklist', 'error');
+      showToast(lang === 'cz' ? 'Chyba při mazání' : 'Error removing from blacklist', 'error');
     }
   };
 

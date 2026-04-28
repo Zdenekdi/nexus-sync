@@ -9,55 +9,9 @@ import { useNexus } from '../../context/ContextHook';
 import PremiumSelector from '../UI/PremiumSelector';
 
 const InboxView = () => {
-  const nexus = useNexus();
+  const nexus = useNexus() || {};
   
-  // 1. All functions must be defined BEFORE useEffects to avoid TDZ in production
-  const loadClientCrm = React.useCallback(async () => {
-    if (!nexus || !selectedChat?.from) return;
-    setIsCrmLoading(true);
-    try {
-      const data = await nexus.fetchClientByPhone(selectedChat.from);
-      setClientCrmData(data);
-    } catch (err) {
-      console.error("CRM Load error:", err);
-    } finally {
-      setIsCrmLoading(false);
-    }
-  }, [nexus?.fetchClientByPhone, selectedChat?.from]);
-
-  const loadAiSuggestions = React.useCallback(async () => {
-    if (!nexus || !selectedChat) return;
-    setIsAiLoading(true);
-    try {
-      const lastInbound = [...chatMessages].reverse().find(m => m.from === selectedChat.from);
-      const text = lastInbound?.text || "";
-
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api'}/ai/suggest-reply`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${nexus.token}`
-        },
-        body: JSON.stringify({ 
-          messageText: text,
-          chatId: selectedChatId,
-          profileId: activeProfileId,
-          lang: nexus.lang
-        })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setAiSuggestions(data.suggestions || []);
-      }
-    } catch (_err) {
-      console.error('AI Suggestion _err:', _err);
-    } finally {
-      setIsAiLoading(false);
-    }
-  }, [selectedChat, chatMessages, selectedChatId, activeProfileId, nexus?.lang, nexus?.token]);
-
-  // 2. Destructure with safety
+  // 1. Destructure with safety AT THE TOP
   const {
     isMobile = false, mobileView = 'list', setMobileView = () => {}, 
     activeProfileId = 'all', setActiveProfileId = () => {},
@@ -70,17 +24,63 @@ const InboxView = () => {
     messageValue = '', setMessageValue = () => {},
     bookingSchedule = [], calViewDate = new Date(), setCalViewDate = () => {}, setIsBookingModalOpen = () => {},
     setNewBookingForm = () => {}, activeContextTab = 'translator', setActiveContextTab = () => {}, 
-    lang = 'en', t = (k) => k,
+    lang = 'en', t = (k) => k, token = '', API_BASE = '',
     activeProfile = null, handleSendMessage = () => {}, handleTranslate = () => {}, handleSaveNote = () => {},
     handleDeleteNote = () => {}, startCall = () => {}, showToast = () => {},
     initData: refreshData = () => {}, isBackgroundLoading = false, fetchClientByPhone = () => {},
     setActiveTab = () => {}
-  } = nexus || {};
+  } = nexus;
 
   const [clientCrmData, setClientCrmData] = React.useState(null);
   const [isCrmLoading, setIsCrmLoading] = React.useState(false);
   const [aiSuggestions, setAiSuggestions] = React.useState([]);
   const [isAiLoading, setIsAiLoading] = React.useState(false);
+
+  // 2. All functions must be defined BEFORE useEffects to avoid TDZ in production
+  const loadClientCrm = React.useCallback(async () => {
+    if (!fetchClientByPhone || !selectedChat?.from) return;
+    setIsCrmLoading(true);
+    try {
+      const data = await fetchClientByPhone(selectedChat.from);
+      setClientCrmData(data);
+    } catch (err) {
+      console.error("CRM Load error:", err);
+    } finally {
+      setIsCrmLoading(false);
+    }
+  }, [fetchClientByPhone, selectedChat?.from]);
+
+  const loadAiSuggestions = React.useCallback(async () => {
+    if (!token || !selectedChat) return;
+    setIsAiLoading(true);
+    try {
+      const lastInbound = [...chatMessages].reverse().find(m => m.from === selectedChat.from);
+      const text = lastInbound?.text || "";
+
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api'}/ai/suggest-reply`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          messageText: text,
+          chatId: selectedChatId,
+          profileId: activeProfileId,
+          lang: lang
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setAiSuggestions(data.suggestions || []);
+      }
+    } catch (_err) {
+      console.error('AI Suggestion _err:', _err);
+    } finally {
+      setIsAiLoading(false);
+    }
+  }, [selectedChat, chatMessages, selectedChatId, activeProfileId, lang, token]);
 
   // 3. UseEffects AFTER definitions
   React.useEffect(() => {
