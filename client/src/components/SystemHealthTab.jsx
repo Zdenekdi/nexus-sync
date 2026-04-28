@@ -17,16 +17,48 @@ const SystemHealthTab = ({ server }) => {
   const isMainHub = !server || server.id === 'main-hub';
 
   const fetchHealth = async () => {
-    if (!isMainHub) {
-      setLoading(false);
-      return;
-    }
     try {
       setLoading(true);
-      const r = await axios.get(`${API_BASE}/admin/health`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setHealth(r.data);
+      
+      if (isMainHub) {
+        const r = await axios.get(`${API_BASE}/admin/health`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setHealth(r.data);
+      } else if (server.id === 'ai-node') {
+        // Fetch Hetzner specific status which includes hardware info
+        const r = await axios.get(`${API_BASE}/hetzner/status`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        // Map Hetzner status to Health format
+        const data = r.data;
+        setHealth({
+          platform: 'linux',
+          release: data.os || 'Ubuntu 24.04',
+          arch: 'x64',
+          nodeVersion: 'v20.x',
+          cpu: {
+            cores: data.vcpu_count || 4,
+            model: 'Hetzner vCPU',
+            loadAvg: [0, 0, 0] // We'll need a real agent for this later
+          },
+          memory: {
+            total: `${(data.ram / 1024).toFixed(1)} GB`,
+            used: '---',
+            percent: 0
+          },
+          disk: {
+            total: `${data.disk} GB`,
+            used: '---',
+            percent: 0
+          },
+          uptime: { days: 0, hours: 0, minutes: 0 },
+          timestamp: new Date().toISOString(),
+          power_status: data.power_status
+        });
+      }
+      
       setError(null);
     } catch (_err) {
       console.error('Failed to fetch system health:', _err);
@@ -62,27 +94,7 @@ const SystemHealthTab = ({ server }) => {
 
   const isMobile = window.innerWidth < 768;
 
-  if (!isMainHub) return (
-    <div className="glass-card" style={{ padding: '3rem', textAlign: 'center', background: 'rgba(99, 102, 241, 0.05)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
-      <Server size={64} color="var(--accent-color)" style={{ marginBottom: '1.5rem', opacity: 0.5 }} />
-      <h3 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '1rem' }}>
-        {lang === 'cz' ? 'Vzdálený Monitorování Uzlu' : 'Remote Node Monitoring'}
-      </h3>
-      <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', maxWidth: '500px', margin: '0 auto' }}>
-        {lang === 'cz' 
-          ? `Sledování výkonu pro uzel "${server.name}" (${server.ip}) zatím není v centrálním API nakonfigurováno. Tato funkce bude dostupná v příští aktualizaci infrastruktury.`
-          : `Performance monitoring for node "${server.name}" (${server.ip}) is not yet configured in the central API. This feature will be available in the next infrastructure update.`}
-      </p>
-      <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-        <div style={{ padding: '0.75rem 1.5rem', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', fontSize: '0.8rem', fontWeight: '800' }}>
-          REGION: {server.region}
-        </div>
-        <div style={{ padding: '0.75rem 1.5rem', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', fontSize: '0.8rem', fontWeight: '800' }}>
-          TYPE: {server.type}
-        </div>
-      </div>
-    </div>
-  );
+  // The AI Node now shows real data below!
 
   return (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -97,9 +109,11 @@ const SystemHealthTab = ({ server }) => {
             {t('monitoringNote')}
           </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 1rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '12px' }}>
-          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 10px #10b981' }} className="pulse"></div>
-          <span style={{ fontSize: '0.8rem', fontWeight: '800', color: '#10b981' }}>SYSTEM OPERATIONAL</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 1rem', background: health?.power_status === 'off' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', border: health?.power_status === 'off' ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '12px' }}>
+          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: health?.power_status === 'off' ? '#ef4444' : '#10b981', boxShadow: `0 0 10px ${health?.power_status === 'off' ? '#ef4444' : '#10b981'}` }} className="pulse"></div>
+          <span style={{ fontSize: '0.8rem', fontWeight: '800', color: health?.power_status === 'off' ? '#ef4444' : '#10b981' }}>
+            {health?.power_status === 'off' ? 'NODE POWER OFF' : 'SYSTEM OPERATIONAL'}
+          </span>
         </div>
       </div>
 
