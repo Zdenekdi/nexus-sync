@@ -34,7 +34,9 @@ class AIService {
 
       return response.data.response;
     } catch (error) {
-      logger.error('AI Service Error:', error.message);
+      const errorMsg = error.response ? JSON.stringify(error.response.data) : error.message;
+      logger.error(`AI Service Error: ${errorMsg}`);
+      
       if (error.code === 'ECONNREFUSED') {
         throw new Error('AI Engine (Ollama) is not reachable. Check SSH tunnel.');
       }
