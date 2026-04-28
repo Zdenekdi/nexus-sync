@@ -1293,6 +1293,13 @@ export const TRANSLATIONS = {
         sendErrorMessage: 'Zprávu se nepodařilo odeslat. Zkontrolujte prosím připojení relay zařízení.',
         systemAdministration: 'Systémová správa',
         infrastructure: 'Infrastruktura',
+        global_features: 'Globální funkce',
+        audit_logs: 'Auditní záznamy',
+        calendar: 'Kalendář',
+        web_profiles: 'Webové profily',
+        device_setup: 'Nastavení zařízení',
+        qa_hub: 'QA Centrum',
+        messaging: 'Zprávy',
         maintenance: 'Údržba serveru',
         plansManagement: 'Správa tarifů'
     }

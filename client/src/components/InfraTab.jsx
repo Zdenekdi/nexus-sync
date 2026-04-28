@@ -24,9 +24,22 @@ import {
 import { useNexus } from '../context/ContextHook';
 
 function InfraTab() {
-  const nexus = useNexus();
-  const { t: _t } = nexus;
+  const { 
+    lang, 
+    showToast, 
+    selectedServerId, 
+    setSelectedServerId, 
+    availableServers 
+  } = useNexus();
   const { status, bandwidth, stats, loading, cmdOutput, clearCmdOutput, _err, serverAction, runCommand, gitPull, apkInfo, uploadApk, uploadProgress } = useVultr();
+  
+  const selectedServer = availableServers.find(s => s.id === selectedServerId) || availableServers[0];
+  const isMainHub = selectedServer.id === 'main-hub';
+
+  const handleServerChange = (id) => {
+    setSelectedServerId(id);
+    showToast(lang === 'cz' ? `Server přepnut na: ${availableServers.find(s => s.id === id)?.name}` : `Server switched to: ${availableServers.find(s => s.id === id)?.name}`, 'info');
+  };
   const [command, setCommand] = useState("");
   const [repoPath, setRepoPath] = useState("~/nexus-backend");
   const [apkError, setApkError] = useState(null);
@@ -76,6 +89,50 @@ function InfraTab() {
       width: '100%'
     }}>
       
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem', marginBottom: '-1rem' }}>
+        <div>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: '900', letterSpacing: '-0.02em' }}>
+            {lang === 'cz' ? 'Správa Infrastruktury' : 'Infrastructure Management'}
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+            {lang === 'cz' ? 'Monitorování a ovládání fyzických a cloudových uzlů.' : 'Monitoring and control of physical and cloud nodes.'}
+          </p>
+        </div>
+
+        {/* Server Selector */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+          <span style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginLeft: '0.5rem' }}>
+            {lang === 'cz' ? 'AKTIVNÍ UZEL' : 'ACTIVE NODE'}
+          </span>
+          <div style={{ position: 'relative' }}>
+            <select 
+              value={selectedServerId}
+              onChange={(e) => handleServerChange(e.target.value)}
+              style={{
+                appearance: 'none',
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid var(--card-border)',
+                borderRadius: '12px',
+                padding: '0.6rem 2.5rem 0.6rem 1rem',
+                color: 'white',
+                fontSize: '0.85rem',
+                fontWeight: '700',
+                cursor: 'pointer',
+                outline: 'none',
+                minWidth: '220px'
+              }}
+            >
+              {availableServers.map(server => (
+                <option key={server.id} value={server.id} style={{ background: '#111', color: 'white' }}>
+                  {server.name} ({server.ip})
+                </option>
+              ))}
+            </select>
+            <Server size={14} color="var(--accent-color)" style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+          </div>
+        </div>
+      </div>
+
       {_err && (
         <div className="glass-card" style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '0.75rem', borderRadius: '12px' }}>
           <AlertCircle size={20} color="var(--_err-color)" />
@@ -83,22 +140,38 @@ function InfraTab() {
         </div>
       )}
 
-      {/* 1. Global Metrics Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
-        {statCards.map((card, i) => (
-          <div key={i} className="glass-card" style={{ padding: '1.25rem', borderRadius: '15px', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: '-10px', right: '-10px', width: '40px', height: '40px', borderRadius: '50%', background: card.color, opacity: 0.1 }}></div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-              <div style={{ color: card.color }}>{card.icon}</div>
-              <span style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{card.label}</span>
-            </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{card.value}</div>
-            <div style={{ fontSize: '0.65rem', color: card.color, fontWeight: '700', marginTop: '0.25rem' }}>{card.sub}</div>
-          </div>
-        ))}
-      </div>
+      {!isMainHub && (
+        <div className="glass-card" style={{ padding: '3rem', textAlign: 'center', background: 'rgba(99, 102, 241, 0.05)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
+          <Server size={48} color="var(--accent-color)" style={{ marginBottom: '1.5rem', opacity: 0.5 }} />
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '0.75rem' }}>
+            {lang === 'cz' ? 'Vzdálená Správa Uzlu' : 'Remote Node Management'}
+          </h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '500px', margin: '0 auto' }}>
+            {lang === 'cz' 
+              ? `Vzdálené ovládání (Vultr API) a SSH terminál pro uzel "${selectedServer.name}" zatím nejsou propojeny s tímto panelem. Správa je zatím možná pouze pro hlavní Hub.`
+              : `Remote control (Vultr API) and SSH terminal for node "${selectedServer.name}" are not yet linked to this panel. Management is currently available for the primary Hub only.`}
+          </p>
+        </div>
+      )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
+      {isMainHub && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+          {statCards.map((card, i) => (
+            <div key={i} className="glass-card" style={{ padding: '1.25rem', borderRadius: '15px', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: '-10px', right: '-10px', width: '40px', height: '40px', borderRadius: '50%', background: card.color, opacity: 0.1 }}></div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                <div style={{ color: card.color }}>{card.icon}</div>
+                <span style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{card.label}</span>
+              </div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{card.value}</div>
+              <div style={{ fontSize: '0.65rem', color: card.color, fontWeight: '700', marginTop: '0.25rem' }}>{card.sub}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {isMainHub && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
         
         {/* 2. Vultr Management Section */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
