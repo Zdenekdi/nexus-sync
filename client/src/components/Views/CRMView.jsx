@@ -9,7 +9,12 @@ import { useNexus } from '../../context/ContextHook';
 const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
 
 const CRMView = () => {
-  const { _t, token } = useNexus();
+  const nexus = useNexus();
+  const { 
+    t = (k) => k, 
+    token = '' 
+  } = nexus || {};
+
   const [clients, setClients] = useState([]);
   const [stats, setStats] = useState({ totalClients: 0, vipClients: 0, totalRevenue: 0 });
   const [loading, setLoading] = useState(true);
@@ -161,10 +166,17 @@ const CRMView = () => {
                     </td>
                     <td style={{ padding: '1.2rem 1.5rem' }}>
                       <div style={{ display: 'flex', gap: '0.4rem' }}>
-                        {(JSON.parse(client.tags || '[]')).map((t, idx) => (
-                          <span key={idx} className="tag" style={{ background: t === 'VIP' ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255,255,255,0.05)', color: t === 'VIP' ? '#fbbf24' : 'var(--text-secondary)' }}>{t}</span>
-                        ))}
-                        {(!client.tags || client.tags === '[]') && <span style={{ color: 'rgba(255,255,255,0.1)', fontSize: '0.7rem' }}>—</span>}
+                        {(() => {
+                          let parsedTags = [];
+                          try { parsedTags = JSON.parse(client.tags || '[]'); } catch { parsedTags = []; }
+                          if (!Array.isArray(parsedTags)) parsedTags = [];
+                          
+                          if (parsedTags.length === 0) return <span style={{ color: 'rgba(255,255,255,0.1)', fontSize: '0.7rem' }}>—</span>;
+                          
+                          return parsedTags.map((t, idx) => (
+                            <span key={idx} className="tag" style={{ background: t === 'VIP' ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255,255,255,0.05)', color: t === 'VIP' ? '#fbbf24' : 'var(--text-secondary)' }}>{t}</span>
+                          ));
+                        })()}
                       </div>
                     </td>
                     <td style={{ padding: '1.2rem 1.5rem' }}>
