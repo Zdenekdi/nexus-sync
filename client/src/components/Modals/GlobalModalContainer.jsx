@@ -68,7 +68,8 @@ const GlobalModalContainer = () => {
             const endpoint = `${API_BASE}/profiles/${editingProfileData.id}`;
             await axios.patch(endpoint, {
               name: editingProfileData.name,
-              phoneNumber: editingProfileData.phoneNumber
+              phoneNumber: editingProfileData.phoneNumber,
+              commission: editingProfileData.commission
             }, { headers: { Authorization: `Bearer ${token}` } });
             
             // Re-fetch or update local UI optimally

@@ -118,7 +118,7 @@ const PayoutsView = () => {
               <th style={{ padding: '1.25rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textAlign: 'left' }}>MODELKA</th>
               <th style={{ padding: '1.25rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textAlign: 'center' }}>POČET ZAKÁZEK</th>
               <th style={{ padding: '1.25rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textAlign: 'right' }}>TRŽBA CELKEM</th>
-              <th style={{ padding: '1.25rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textAlign: 'right' }}>VÝPLATA (50%)</th>
+              <th style={{ padding: '1.25rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textAlign: 'right' }}>VÝPLATA</th>
             </tr>
           </thead>
           <tbody>
@@ -143,7 +143,8 @@ const PayoutsView = () => {
                   {row.totalRevenue.toLocaleString()} CZK
                 </td>
                 <td style={{ padding: '1.25rem', textAlign: 'right', fontWeight: '900', color: '#10b981' }}>
-                  {(row.totalRevenue * 0.5).toLocaleString()} CZK
+                  {((row.totalRevenue * (row.commission || 50)) / 100).toLocaleString()} CZK
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', opacity: 0.7 }}>({row.commission || 50}%)</div>
                 </td>
               </tr>
             ))}

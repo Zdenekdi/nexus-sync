@@ -172,6 +172,7 @@ model Profile {
   assignees   User[]    @relation("ProfileAssignees")
   clientNotes ClientNote[]
   credentials String?   // Encrypted JSON containing platform logins, cookies, and proxy settings
+  commission  Float     @default(50) // Percentage (0-100)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   

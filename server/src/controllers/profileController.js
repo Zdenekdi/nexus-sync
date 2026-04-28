@@ -16,13 +16,29 @@ exports.getProfiles = async (req, res) => {
 
     const profiles = await prisma.profile.findMany({
       where: isAppOwner ? {} : { agencyId },
-      include: { assignees: { select: { id: true, name: true } } },
+      include: { 
+        assignees: { select: { id: true, name: true } },
+        bookings: {
+          where: { status: 'confirmed' },
+          select: { price: true }
+        }
+      },
       orderBy: { name: 'asc' }
     });
 
     const sanitized = profiles.map(profile => {
       const data = parseData(profile.data);
-      return { ...profile, data, quickReplies: data.quickReplies || [] };
+      const totalRevenue = profile.bookings.reduce((sum, b) => sum + (b.price || 0), 0);
+      const totalBookings = profile.bookings.length;
+      
+      return { 
+        ...profile, 
+        data, 
+        quickReplies: data.quickReplies || [],
+        totalRevenue,
+        totalBookings,
+        bookings: undefined // Remove detailed bookings to keep payload small
+      };
     });
 
     res.json(sanitized);
@@ -36,7 +52,7 @@ exports.getProfiles = async (req, res) => {
 exports.patchProfile = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, phone, quickReplies, bio, description, gallery } = req.body;
+    const { name, phone, quickReplies, bio, description, gallery, commission } = req.body;
     const { agencyId } = req.user;
 
     const existing = await prisma.profile.findUnique({ where: { id } });
@@ -57,6 +73,7 @@ exports.patchProfile = async (req, res) => {
         ...(phone !== undefined && { phone }),
         ...(bio !== undefined && { bio }),
         ...(description !== undefined && { description }),
+        ...(commission !== undefined && { commission: Number(commission) }),
         ...(gallery !== undefined && { gallery: typeof gallery === 'string' ? gallery : JSON.stringify(gallery) }),
         data: newData
       },

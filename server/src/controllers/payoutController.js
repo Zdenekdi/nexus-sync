@@ -26,7 +26,7 @@ exports.getPayoutSummary = async (req, res) => {
       where,
       include: {
         profile: {
-          select: { id: true, name: true }
+          select: { id: true, name: true, commission: true }
         }
       }
     });
@@ -39,6 +39,7 @@ exports.getPayoutSummary = async (req, res) => {
         summary[pid] = {
           profileId: pid,
           profileName: b.profile.name,
+          commission: b.profile.commission ?? 50,
           totalBookings: 0,
           totalRevenue: 0,
           currency: 'CZK'
