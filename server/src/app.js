@@ -44,7 +44,6 @@ const webhookRoutes = require('./routes/webhookRoutes');
 const clientRoutes = require('./routes/clientRoutes');
 const payoutRoutes = require('./routes/payoutRoutes');
 const hetznerRoutes = require('./routes/hetznerRoutes');
-const aiRoutes = require('./routes/aiRoutes');
 
 const app = express();
 
