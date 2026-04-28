@@ -58,3 +58,5 @@ export const useAI = () => {
 
   return { askAi, getSuggestion, isAiLoading, aiError };
 };
+
+export default useAI;
