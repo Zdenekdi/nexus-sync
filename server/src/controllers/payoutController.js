@@ -38,8 +38,8 @@ exports.getPayoutSummary = async (req, res) => {
       if (!summary[pid]) {
         summary[pid] = {
           profileId: pid,
-          profileName: b.profile.name,
-          commission: b.profile.commission ?? 50,
+          profileName: b.profile?.name || 'Unknown',
+          commission: b.profile?.commission ?? 50,
           totalBookings: 0,
           totalRevenue: 0,
           currency: 'CZK'
@@ -92,7 +92,7 @@ exports.exportPayouts = async (req, res) => {
     let csv = 'Datum;Modelka;Zakaznik;Castka;Mena;Typ\n';
     bookings.forEach(b => {
       const date = new Date(b.startTime).toLocaleDateString('cs-CZ');
-      csv += `${date};${b.profile.name};${b.clientPhone || 'N/A'};${b.price};CZK;${b.locationType}\n`;
+      csv += `${date};${b.profile?.name || 'N/A'};${b.clientPhone || 'N/A'};${b.price};CZK;${b.locationType}\n`;
     });
 
     res.setHeader('Content-Type', 'text/csv');
