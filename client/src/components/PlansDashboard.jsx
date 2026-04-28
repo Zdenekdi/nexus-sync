@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Users, Check, FileEdit, CheckCheck, Zap, RefreshCw, AlertCircle, Package as PackageIcon } from 'lucide-react';
+import { CreditCard, Users, Check, FileEdit, CheckCheck, Zap, RefreshCw, AlertCircle, Banknote, Package as PackageIcon } from 'lucide-react';
 
 import { useNexus } from '../context/ContextHook';
 
