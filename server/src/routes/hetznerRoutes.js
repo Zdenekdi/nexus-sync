@@ -153,4 +153,38 @@ router.post("/git-pull", validate(gitPull), async (req, res) => {
   }
 });
 
+router.get("/metrics", async (req, res) => {
+  try {
+    const serverId = process.env.HETZNER_SERVER_ID || "128335266";
+    // Fetch metrics for last 30 minutes
+    const end = new Date().toISOString();
+    const start = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+    
+    const { data } = await axios.get(`${HETZNER_API}/servers/${serverId}/metrics`, {
+      params: {
+        type: 'cpu,network',
+        start,
+        end
+      },
+      headers: headers()
+    });
+    
+    // Calculate simple bandwidth average from metrics
+    const netIn = data.metrics?.time_series?.network_0_in?.values || [];
+    const netOut = data.metrics?.time_series?.network_0_out?.values || [];
+    
+    const lastIn = netIn.length > 0 ? parseFloat(netIn[netIn.length - 1][1]) : 0;
+    const lastOut = netOut.length > 0 ? parseFloat(netOut[netOut.length - 1][1]) : 0;
+    
+    res.json({
+      incoming_bytes: lastIn,
+      outgoing_bytes: lastOut,
+      cpu_load: data.metrics?.time_series?.cpu?.values?.slice(-1)[0]?.[1] || 0
+    });
+  } catch (err) {
+    logger.warn("Hetzner Metrics Error:", err.message);
+    res.status(500).json({ message: 'Failed to fetch metrics' });
+  }
+});
+
 module.exports = router;

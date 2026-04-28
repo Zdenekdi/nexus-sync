@@ -20,12 +20,26 @@ export function useHetzner() {
 
   const fetchStatus = useCallback(async () => {
     try {
-      const { data } = await axios.get(`${API_BASE}/hetzner/status`, getHeaders());
-      setStatus(data);
+      const [statusRes, metricsRes] = await Promise.all([
+        axios.get(`${API_BASE}/hetzner/status`, getHeaders()),
+        axios.get(`${API_BASE}/hetzner/metrics`, getHeaders()).catch(() => ({ data: null }))
+      ]);
+      setStatus(statusRes.data);
+      if (metricsRes.data) {
+        setBandwidth({
+          incoming_bytes: metricsRes.data.incoming_bytes,
+          outgoing_bytes: metricsRes.data.outgoing_bytes
+        });
+      }
       setError(null);
     } catch (err) {
       console.error("Failed to fetch Hetzner status:", err);
-      setError(err.response?.data?.details?.message || err.response?.data?.error || err.message);
+      setError(
+        err.response?.data?.details?.error?.message || 
+        err.response?.data?.details?.message || 
+        err.response?.data?.error || 
+        err.message
+      );
     }
   }, [getHeaders]);
 

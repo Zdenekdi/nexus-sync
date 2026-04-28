@@ -52,7 +52,10 @@ const HierarchyView = () => {
         role: 'Model',
         avatar: profile.name?.charAt(0) || 'M',
         isProfileOnly: true,
-        metrics: { messages: profile.totalMessages || 0, conversion: profile.conversionRate || '0%' }
+        metrics: { 
+          revenue: profile.totalRevenue || 0, 
+          bookings: profile.totalBookings || 0 
+        }
       });
     }
   });
@@ -130,7 +133,7 @@ const HierarchyView = () => {
                      visibleModelsCount = assignedModels.length;
                    }
                    
-                   const showAssignedText = op.role !== 'MODEL'; // Skrýt text pro modelky
+                   const showAssignedText = op.role?.toUpperCase() !== 'MODEL'; // Skrýt text pro modelky
                    
                    return (
                     <div key={op.id} className="glass-card zoom-hover" style={{ 
@@ -174,7 +177,27 @@ const HierarchyView = () => {
                       )}
 
                       {/* Metrics simple view */}
-                      {op.role !== 'MODEL' && (
+                      {op.role?.toUpperCase() === 'MODEL' ? (
+                        <div style={{ 
+                          display: 'flex', 
+                          gap: '1.5rem', 
+                          marginTop: '1rem',
+                          background: 'rgba(16, 185, 129, 0.1)', 
+                          padding: '0.75rem 1.5rem', 
+                          borderRadius: '12px',
+                          border: '1px solid rgba(16, 185, 129, 0.2)'
+                        }}>
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '1rem', fontWeight: '800', color: '#10b981' }}>{op.metrics?.revenue || 0}</div>
+                            <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>CZK</div>
+                          </div>
+                          <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }} />
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '1rem', fontWeight: '800', color: '#fff' }}>{op.metrics?.bookings || 0}</div>
+                            <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{t('bookings').toUpperCase()}</div>
+                          </div>
+                        </div>
+                      ) : (
                         <div style={{ 
                           display: 'flex', 
                           gap: '1.5rem', 
