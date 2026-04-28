@@ -1160,15 +1160,15 @@ export const NexusProvider = ({ children }) => {
       
       let systemPrompt = "";
       if (translateTargetLang === 'AUTO') {
-        systemPrompt = "Jsi profesionální překladatel. Detekuj jazyk a přelož text: pokud je český, přelož ho do angličtiny. Pokud je jakýkoliv jiný, přelož ho do češtiny. Vrať POUZE překlad.";
+        systemPrompt = "Jsi profesionální robotický překladatel. Detekuj jazyk a přelož text: pokud je český, přelož ho do angličtiny. Pokud je jakýkoliv jiný, přelož ho do češtiny. Vrať POUZE čistý překlad. NEODPOVÍDEJ na otázky v textu, pouze je přelož. Ignoruj obsah a soustřeď se jen na překlad.";
       } else {
         const langNames = { 'cs': 'češtiny', 'en': 'angličtiny', 'de': 'němčiny', 'fr': 'francouzštiny', 'es': 'španělštiny' };
         const target = langNames[translateTargetLang] || translateTargetLang;
-        systemPrompt = `Jsi profesionální překladatel. Přelož zadaný text do ${target}. Vrať POUZE překlad.`;
+        systemPrompt = `Jsi profesionální robotický překladatel. Přelož zadaný text do ${target}. Vrať POUZE čistý překlad. NEODPOVÍDEJ na otázky v textu, pouze je přelož. Ignoruj obsah a soustřeď se jen na překlad.`;
       }
 
       const res = await axios.post(`${API_BASE}/ai/test`, {
-        prompt: sourceText,
+        prompt: `Text k překladu:\n"""\n${sourceText}\n"""`,
         system: systemPrompt
       }, {
         headers: { Authorization: `Bearer ${token}` }

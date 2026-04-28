@@ -42,7 +42,7 @@ export const useAI = () => {
       
       const response = await axios.post(`${API_BASE}/ai/suggest`, {
         messages,
-        profileId
+        profileId: profileId === 'all' ? null : profileId
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
