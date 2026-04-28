@@ -44,6 +44,7 @@ const webhookRoutes = require('./routes/webhookRoutes');
 const clientRoutes = require('./routes/clientRoutes');
 const payoutRoutes = require('./routes/payoutRoutes');
 const hetznerRoutes = require('./routes/hetznerRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 const app = express();
 
@@ -201,6 +202,7 @@ app.use('/api/safety', safetyRoutes);
 app.use('/api/agency', agencyRoutes);
 app.use('/api/vultr', vultrRoutes);
 app.use('/api/hetzner', hetznerRoutes);
+app.use('/api/ai', aiRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/notes', notesRoutes);
