@@ -79,7 +79,6 @@ const DashboardHome = () => {
   };
 
   const isCz = lang === 'cz' || lang === 'cs';
-  const isAppOwner = activeRole === 'App Owner';
   const isManager = activeRole === 'Agency Admin' || activeRole === 'Manager';
   const isModel = activeRole === 'Model';
 
