@@ -15,4 +15,7 @@ router.patch('/features/:id', validate(updateGlobalFeature), adminController.upd
 router.get('/settings', adminController.getGlobalSettings);
 router.post('/settings', adminController.updateGlobalSetting); 
 
+// Monitoring systému
+router.get('/health', adminController.getSystemHealth);
+
 module.exports = router;

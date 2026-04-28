@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Building2, Zap, Activity, TrendingUp, Users, Server, ShieldCheck, AlertTriangle, Calendar, Loader2, MessageSquare, Copy, X } from 'lucide-react';
+import { DollarSign, Building2, Zap, Activity, TrendingUp, Users, Server, ShieldCheck, AlertTriangle, Calendar, Loader2, MessageSquare, Copy, X, Clock } from 'lucide-react';
+import axios from 'axios';
 import { RevenueLineChart, ConversionDonutChart, MiniSparkline } from './AnalyticsCharts';
 import { useVultr } from '../hooks/useVultr';
 import { useNexus } from '../context/ContextHook';
@@ -14,10 +15,31 @@ const DashboardHome = () => {
     isMobile, isBackgroundLoading,
     setLinkedSessionId, linkedSessionId,
     pendingNotifications, setPendingNotifications, onDelayBooking,
-    isLoggedIn, showToast: _showToast
+    isLoggedIn, showToast: _showToast, API_BASE, token
   } = nexus;
   
   const { status: vultrStatus } = useVultr();
+  const [systemHealth, setSystemHealth] = useState(null);
+
+  const isAppOwner = activeRole === 'App Owner';
+
+  useEffect(() => {
+    if (isAppOwner && isLoggedIn && API_BASE && token) {
+      const fetchHealth = async () => {
+        try {
+          const r = await axios.get(`${API_BASE}/admin/health`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setSystemHealth(r.data);
+        } catch (_err) {
+          console.error('Failed to fetch health on dashboard:', _err);
+        }
+      };
+      fetchHealth();
+      const interval = setInterval(fetchHealth, 60000); // 1 min refresh
+      return () => clearInterval(interval);
+    }
+  }, [isAppOwner, isLoggedIn, API_BASE, token]);
 
   const currentAgency = (agencies || [])[0] || {};
   const regions = currentAgency.regions || ['uk'];
@@ -244,9 +266,9 @@ const DashboardHome = () => {
         {[
           { label: t('totalRevenue'), value: stats?.revenue || '£0.00', icon: <DollarSign color="#10b981" />, growth: stats?.commissionGrowth || 'STABLE', chart: stats?.sparklineData || stats?.chartData || [0,0,0,0,0,0,0] },
           { label: (t('agencies') || 'Agencies').toUpperCase(), value: stats?.totalAgencies || (agencies || []).length, icon: <Building2 color="#3b82f6" />, growth: 'PROD', chart: [0,0,0,0,0,0,0] },
-          { label: 'SERVER STATUS', value: (vultrStatus?.power_status || 'CHECKING...').toUpperCase(), icon: <Server color={statusColor} />, growth: vultrStatus?.main_ip || 'PENDING', chart: [0,0,0,0,0,0,0], isStatus: true },
-          { label: (t('activeNodes') || 'Active Nodes').toUpperCase(), value: stats?.totalProfiles || '0', icon: <Zap color="#f59e0b" />, growth: 'STABLE', chart: [0,0,0,0,0,0,0] },
-          { label: t('globalTraffic').toUpperCase(), value: stats?.totalMessages || '0', icon: <Activity color="#8b5cf6" />, growth: stats?.uptime || '100% UP', chart: stats?.sparklineData || stats?.chartData || [0,0,0,0,0,0,0] }
+          { label: 'SERVER LOAD', value: systemHealth ? `${systemHealth.cpu.loadAvg[0]}` : (vultrStatus?.power_status || 'CHECKING...').toUpperCase(), icon: <Server color={statusColor} />, growth: systemHealth ? `${systemHealth.memory.percent}% RAM` : (vultrStatus?.main_ip || 'PENDING'), chart: [0,0,0,0,0,0,0], isStatus: true },
+          { label: 'DISK SPACE', value: systemHealth ? `${systemHealth.disk.percent}` : stats?.totalProfiles || '0', icon: systemHealth ? <HardDrive color="#f59e0b" /> : <Zap color="#f59e0b" />, growth: systemHealth ? systemHealth.disk.used : 'STABLE', chart: [0,0,0,0,0,0,0], isStatus: !!systemHealth },
+          { label: 'SYSTEM UPTIME', value: systemHealth ? `${systemHealth.uptime.days}d ${systemHealth.uptime.hours}h` : stats?.totalMessages || '0', icon: systemHealth ? <Clock color="#ec4899" /> : <Activity color="#8b5cf6" />, growth: systemHealth ? `${systemHealth.uptime.minutes}m` : (stats?.uptime || '100% UP'), chart: stats?.sparklineData || stats?.chartData || [0,0,0,0,0,0,0], isStatus: !!systemHealth }
         ].map((stat, i) => (
           <div key={i} data-testid={`stat-card-${stat.label.toLowerCase().replace(/\s+/g, '-')}`} className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', border: stat.isStatus ? `1px solid ${statusColor}40` : '1px solid var(--card-border)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>

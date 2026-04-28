@@ -9,6 +9,7 @@ import axios from 'axios';
 
 import { useNexus } from '../context/ContextHook';
 import ServerMaintenanceTab from './ServerMaintenanceTab';
+import SystemHealthTab from './SystemHealthTab';
 
 const AppOwnerPlansDashboard = () => {
   const nexus = useNexus();
@@ -67,6 +68,7 @@ const AppOwnerPlansDashboard = () => {
 
   const tabs = [
     { id: 'billing', label: lang === 'cz' ? 'Správa Plateb' : 'Billing Management', icon: <CreditCard size={18} /> },
+    { id: 'health', label: lang === 'cz' ? 'Stav Systému' : 'System Health', icon: <Activity size={18} /> },
     { id: 'maintenance', label: lang === 'cz' ? 'Údržba Serveru' : 'Server Maintenance', icon: <Settings size={18} /> }
   ];
 
@@ -99,10 +101,10 @@ const AppOwnerPlansDashboard = () => {
               transition: 'all 0.2s',
               whiteSpace: 'nowrap'
             }}
-            onMouseEnter={(_err) => _err.currentTarget.style.color = 'var(--accent-color)'}
-            onMouseLeave={(_err) => {
+            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent-color)'}
+            onMouseLeave={(e) => {
               if (activeTab !== tab.id) {
-                _err.currentTarget.style.color = 'var(--text-secondary)';
+                e.currentTarget.style.color = 'var(--text-secondary)';
               }
             }}
           >
@@ -124,6 +126,8 @@ const AppOwnerPlansDashboard = () => {
           getApiCurrency={getApiCurrency}
           currentMRR={currentMRR}
         />
+      ) : activeTab === 'health' ? (
+        <SystemHealthTab nexus={nexus} />
       ) : (
         <ServerMaintenanceTab lang={lang} />
       )}

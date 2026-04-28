@@ -1,5 +1,7 @@
 const prisma = require('../services/db');
 const logger = require('../services/logger');
+const os = require('os');
+const { execSync } = require('child_process');
 
 // Výchozí konfigurace funkcí (pokud nejsou v DB ještě uloženy)
 const defaultFeatures = [
@@ -117,5 +119,72 @@ exports.updateGlobalSetting = async (req, res) => {
   } catch (err) {
     logger.error(`Error updating setting ${req.body.key}:`, err.message);
     res.status(500).json({ error: 'Failed to update global setting' });
+  }
+};
+
+// GET /api/admin/health — system monitoring (App Owner only)
+exports.getSystemHealth = async (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    if (!userRole || !userRole.isAppOwner) {
+      return res.status(403).json({ error: 'Access denied: Requires App Owner role.' });
+    }
+
+    const freeMem = os.freemem();
+    const totalMem = os.totalmem();
+    const usedMem = totalMem - freeMem;
+    const memUsage = (usedMem / totalMem) * 100;
+
+    const cpus = os.cpus();
+    const loadAvg = os.loadavg(); 
+
+    const uptimeSeconds = os.uptime();
+    const uptimeDays = Math.floor(uptimeSeconds / (24 * 3600));
+    const uptimeHours = Math.floor((uptimeSeconds % (24 * 3600)) / 3600);
+    const uptimeMinutes = Math.floor((uptimeSeconds % 3600) / 60);
+
+    let diskUsage = { total: 'N/A', used: 'N/A', available: 'N/A', percent: '0%' };
+    try {
+        const df = execSync('df -h / | tail -1').toString().trim().split(/\s+/);
+        if (df.length >= 5) {
+            diskUsage = {
+                total: df[1],
+                used: df[2],
+                available: df[3],
+                percent: df[4]
+            };
+        }
+    } catch (e) {
+        logger.warn('Could not fetch disk usage:', e.message);
+    }
+
+    res.json({
+        platform: os.platform(),
+        release: os.release(),
+        arch: os.arch(),
+        uptime: {
+            days: uptimeDays,
+            hours: uptimeHours,
+            minutes: uptimeMinutes,
+            totalSeconds: uptimeSeconds
+        },
+        cpu: {
+            model: cpus[0].model,
+            cores: cpus.length,
+            loadAvg: loadAvg.map(l => l.toFixed(2))
+        },
+        memory: {
+            total: (totalMem / (1024 ** 3)).toFixed(2) + ' GB',
+            free: (freeMem / (1024 ** 3)).toFixed(2) + ' GB',
+            used: (usedMem / (1024 ** 3)).toFixed(2) + ' GB',
+            percent: memUsage.toFixed(1)
+        },
+        disk: diskUsage,
+        nodeVersion: process.version,
+        timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    logger.error('Error fetching system health:', err.message);
+    res.status(500).json({ error: 'Failed to fetch system health' });
   }
 };
