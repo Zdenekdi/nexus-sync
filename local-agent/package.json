@@ -1,17 +1,35 @@
 {
   "name": "nexus-local-agent",
-  "version": "1.0.0",
-  "description": "Stealth automation bridge for Nexus Hub",
+  "version": "2.0.0",
+  "description": "Nexus Local Agent - Bridge for Web Automation",
   "main": "index.js",
+  "bin": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "build": "pkg . --out-path ./dist"
+  },
+  "pkg": {
+    "assets": [
+      "solver.js",
+      ".env.example"
+    ],
+    "targets": [
+      "node18-win-x64",
+      "node18-macos-x64",
+      "node18-macos-arm64",
+      "node18-linux-x64"
+    ],
+    "outputPath": "dist"
   },
   "dependencies": {
-    "axios": "^1.7.9",
-    "dotenv": "^16.4.5",
-    "ghost-cursor": "^1.1.10",
+    "axios": "^1.6.2",
+    "dotenv": "^16.3.1",
+    "ghost-cursor": "^1.1.18",
     "playwright-extra": "^3.0.3",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
-    "socket.io-client": "^4.8.1"
+    "socket.io-client": "^4.7.2"
+  },
+  "devDependencies": {
+    "pkg": "^5.8.1"
   }
 }

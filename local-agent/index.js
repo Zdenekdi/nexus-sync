@@ -8,27 +8,52 @@ const CaptchaSolver = require('./solver');
 
 chromium.use(StealthPlugin());
 
+const { checkAdsPower } = require('./setup');
+
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:5000";
 const ADS_POWER_PORT = process.env.ADS_POWER_PORT || "50325";
 const ADS_POWER_URL = `http://local.adspower.com:${ADS_POWER_PORT}`;
 const solver = new CaptchaSolver(process.env.CAPSOLVER_KEY);
 
-if (!process.env.RELAY_TOKEN) {
-    console.error("❌ CHYBA: Chybí RELAY_TOKEN v .env souboru!");
-    process.exit(1);
+async function startAgent() {
+    if (!process.env.RELAY_TOKEN || process.env.RELAY_TOKEN === 'VAŠ_TOKEN_Z_DASHBOARDU') {
+        console.error("❌ CHYBA: Chybí RELAY_TOKEN v .env souboru!");
+        console.log("👉 Prosím, vložte svůj token z webového dashboardu (Správa webů -> Relay Token).");
+        process.exit(1);
+    }
+
+    const isAdsPowerReady = await checkAdsPower();
+    if (!isAdsPowerReady) {
+        console.warn("⚠️  VAROVÁNÍ: AdsPower není spuštěn.");
+        console.log("👉 Ujistěte se, že máte AdsPower nainstalovaný a spuštěný na portu " + ADS_POWER_PORT);
+        // Neukončujeme, třeba ho uživatel spustí hned po startu agenta
+    }
+
+    console.log("🚀 Nexus Local Agent (v2) - Multi-Platform Automation Ready");
+
+    const socket = io(BACKEND_URL, {
+        auth: { token: process.env.RELAY_TOKEN, type: 'local-bridge' }
+    });
+
+    socket.on("relay_command", async (data) => {
+        if (data.type === 'SYNC_WEB_PROFILE') {
+            console.log(`📥 Úkol: Sync pro modelku ${data.payload.name}`);
+            await runMasterSync(data.payload);
+        }
+    });
+
+    socket.on("connect", () => {
+        console.log("✅ Připojeno k serveru Nexus.");
+    });
+
+    socket.on("disconnect", () => {
+        console.warn("⚠️  Odpojeno od serveru. Pokouším se o znovupřipojení...");
+    });
 }
 
-console.log("🚀 Nexus Local Agent (v2) - Multi-Platform Automation Ready");
-
-const socket = io(BACKEND_URL, {
-    auth: { token: process.env.RELAY_TOKEN, type: 'local-bridge' }
-});
-
-socket.on("relay_command", async (data) => {
-    if (data.type === 'SYNC_WEB_PROFILE') {
-        console.log(`📥 Úkol: Sync pro modelku ${data.payload.name}`);
-        await runMasterSync(data.payload);
-    }
+// Spuštění agenta
+startAgent().catch(err => {
+    console.error("💥 Kritická chyba při startu agenta:", err);
 });
 
 // Pomocná funkce pro lidské psaní
