@@ -516,7 +516,7 @@ const DashboardHome = () => {
         </div>
       ) : (
       <>
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 2fr) minmax(300px, 1fr)', gap: isMobile ? '1rem' : '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 2fr) 380px', gap: isMobile ? '1rem' : '2rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '1rem' : '1.5rem', minWidth: 0 }}>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))', gap: isMobile ? '1rem' : '1.5rem' }}>
             <div className="glass-card" id="dashboard-stats-messages" style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center' }}>
@@ -542,6 +542,73 @@ const DashboardHome = () => {
             </div>
             <div style={{ height: '200px' }}>
               <RevenueLineChart data={stats?.revenueData || stats?.chartData || [0, 0, 0, 0, 0, 0, 0]} height={200} />
+            </div>
+          </div>
+
+          {/* Quick Blacklist Section */}
+          <div className="glass-card" style={{ padding: '1.5rem', border: '1px solid rgba(239, 68, 68, 0.2)', background: 'rgba(239, 68, 68, 0.02)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <ShieldCheck size={20} color="#ef4444" />
+              </div>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: '800' }}>{isCz ? 'RYCHLÝ BLACKLIST' : 'QUICK BLACKLIST'}</h3>
+            </div>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
+              {isCz ? 'Okamžitě přidejte podezřelé číslo do sdíleného blacklistu.' : 'Instantly add a suspicious number to the shared blacklist.'}
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <input 
+                type="text" 
+                placeholder="+420..." 
+                style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.75rem 1rem', borderRadius: '10px', color: 'white' }}
+              />
+              <button style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0 1.25rem', borderRadius: '10px', fontWeight: '800', fontSize: '0.8rem' }}>
+                {isCz ? 'ZABLOKOVAT' : 'BLACKLIST'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Agenda Column with Day Navigation */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', height: '100%', minHeight: '500px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: '800' }}>{t('todaysBookings')}</h3>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <button onClick={() => { const d = new Date(calViewDate || new Date()); d.setDate(d.getDate()-1); setCalViewDate(d); }} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', padding: '0.35rem', borderRadius: '6px', cursor: 'pointer' }}><ChevronLeft size={16} /></button>
+                <div style={{ textAlign: 'center', minWidth: '100px' }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: '900' }}>{(calViewDate || new Date()).toLocaleDateString(isCz ? 'cs-CZ' : 'en-GB', { day: 'numeric', month: 'short' })}</div>
+                </div>
+                <button onClick={() => { const d = new Date(calViewDate || new Date()); d.setDate(d.getDate()+1); setCalViewDate(d); }} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', padding: '0.35rem', borderRadius: '6px', cursor: 'pointer' }}><ChevronRight size={16} /></button>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', overflowY: 'auto', flex: 1 }}>
+              {(calendar || []).filter(e => {
+                const d = calViewDate || new Date();
+                const dStr = d.toISOString().split('T')[0];
+                return e.startTime?.startsWith(dStr) || e.date?.startsWith(dStr) || (!e.startTime && !e.date); // Fallback for testing
+              }).length > 0 ? (calendar || []).filter(e => {
+                const d = calViewDate || new Date();
+                const dStr = d.toISOString().split('T')[0];
+                return e.startTime?.startsWith(dStr) || e.date?.startsWith(dStr) || (!e.startTime && !e.date);
+              }).map((event, i) => (
+                <div key={i} style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', borderLeft: `4px solid ${event.status === 'confirmed' ? 'var(--success-color)' : 'var(--accent-color)'}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: '800', fontSize: '0.9rem' }}>{event.time}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(event.title || '').replace('Meeting w/ ', '')}</div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontSize: '0.65rem', fontWeight: '900', color: 'var(--text-secondary)' }}>{event.duration}</div>
+                    {event.profileName && <div style={{ fontSize: '0.6rem', color: 'var(--accent-color)', marginTop: '0.2rem' }}>{event.profileName}</div>}
+                  </div>
+                </div>
+              )) : (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '1rem', opacity: 0.5 }}>
+                  <Calendar size={48} />
+                  <div style={{ fontSize: '0.85rem' }}>{t('noBookingsToday')}</div>
+                </div>
+              )}
             </div>
           </div>
         </div>

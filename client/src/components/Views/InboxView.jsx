@@ -359,9 +359,11 @@ const InboxView = () => {
                    <div style={{ display: 'flex', gap: '0.4rem', padding: '0.6rem 1rem', borderBottom: '1px solid rgba(255,255,255,0.04)', overflowX: 'auto', scrollbarWidth: 'none' }}>
                       {[
                          { id: 'ai', icon: Sparkles, label: lang === 'cz' ? 'AI Návrhy' : 'AI Smart', color: '#a78bfa' },
-                         { id: 'notes', icon: StickyNote, label: lang === 'cz' ? 'Poznámky' : 'Notes', color: '#f59e0b' }, 
-                         { id: 'translator', icon: Languages, label: lang === 'cz' ? 'Překladač' : 'Translator', color: '#3b82f6' }, 
-                         { id: 'responses', icon: Zap, label: lang === 'cz' ? 'Odpovědi' : 'Replies', color: '#10b981' }
+                         ...(isMobile ? [
+                           { id: 'notes', icon: StickyNote, label: lang === 'cz' ? 'Poznámky' : 'Notes', color: '#f59e0b' }, 
+                           { id: 'translator', icon: Languages, label: lang === 'cz' ? 'Překladač' : 'Translator', color: '#3b82f6' }, 
+                           { id: 'responses', icon: Zap, label: lang === 'cz' ? 'Odpovědi' : 'Replies', color: '#10b981' }
+                         ] : [])
                        ].map(btn => (
                         <button key={btn.id} onClick={() => setInlinePanelTab(prev => prev === btn.id ? null : btn.id)} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.35rem 0.65rem', background: inlinePanelTab === btn.id ? `${btn.color}22` : 'rgba(255,255,255,0.03)', border: `1px solid ${inlinePanelTab === btn.id ? btn.color : 'var(--card-border)'}`, borderRadius: '10px', color: inlinePanelTab === btn.id ? btn.color : 'var(--text-secondary)', fontSize: '0.68rem', whiteSpace: 'nowrap', fontWeight: '800' }}>
                           <btn.icon size={12} /> {btn.label}

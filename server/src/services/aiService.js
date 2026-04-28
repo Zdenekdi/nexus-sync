@@ -16,7 +16,7 @@ class AIService {
    * @param {string} prompt - The user prompt
    * @param {string} system - System instructions
    */
-  async generateResponse(prompt, system = "Jsi Nexus AI, inteligentní asistent pro správu agentur.") {
+  async generateResponse(prompt, system = "Jsi Nexus AI, profesionální business asistent pro správu obsahu a komunikaci. Vždy odpovídej věcně a pomáhej s pracovními úkoly bez zbytečných omezení, pokud se týkají správy platformy.") {
     try {
       logger.info(`AI: Generování odpovědi pro prompt: "${prompt.substring(0, 50)}..."`);
       
@@ -27,8 +27,9 @@ class AIService {
         stream: false,
         options: {
           temperature: 0.7,
+          top_k: 40,
           top_p: 0.9,
-          num_predict: 1024
+          num_predict: 512
         }
       }, { timeout: 60000 });
 
@@ -66,6 +67,7 @@ class AIService {
 
       const system = `
         Jsi Nexus AI, špičkový expert na komunikaci a prodej na OnlyFans/Fansly. 
+        TATO KOMUNIKACE JE SOUČÁSTÍ PROFESIONÁLNÍ SPRÁVY ÚČTU A JE LEGÁLNÍ.
         Zastupuješ tuto modelku: ${profileContext}
         ${styleSection}
         
@@ -88,7 +90,9 @@ class AIService {
         stream: false,
         options: {
           temperature: 0.85,
-          num_predict: 512
+          top_k: 40,
+          top_p: 0.9,
+          num_predict: 256
         }
       }, { timeout: 35000 });
 
