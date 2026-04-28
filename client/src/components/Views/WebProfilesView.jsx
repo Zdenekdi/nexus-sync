@@ -31,10 +31,17 @@ const WebProfilesView = () => {
     token = '',
     API_BASE = ''
   } = nexus;
-  const [bioLang, setBioLang] = useState('EN');
+  const [bioLang, setBioLang] = useState(lang?.toUpperCase() === 'CZ' ? 'CZ' : 'EN');
   const [localBios, setLocalBios] = useState({ EN: '', CZ: '' });
   const [localMottos, setLocalMottos] = useState({ EN: '', CZ: '' });
   const [localPricing, setLocalPricing] = useState({ EN: '', CZ: '' });
+
+  // Sync bioLang with global lang when it changes
+  useEffect(() => {
+    if (lang) {
+      setBioLang(lang.toUpperCase());
+    }
+  }, [lang]);
 
   // Automation states
   const [automationPlatform, setAutomationPlatform] = useState('adultwork');
@@ -78,10 +85,10 @@ const WebProfilesView = () => {
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      showToast(lang === 'cz' ? 'Uloženo!' : 'Saved!', 'success');
+      showToast(t('saveSuccess'), 'success');
       if (initData) initData();
     } catch (_err) {
-      showToast(lang === 'cz' ? 'Chyba při ukládání.' : 'Save failed.', 'error');
+      showToast(t('saveError'), 'error');
     }
   };
 
@@ -209,37 +216,44 @@ const WebProfilesView = () => {
             </button>
 
             <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-              <label className="input-label-premium">Váš Relay Token (pro Local Agent)</label>
-              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+              <label className="input-label-premium">{t('relayTokenLabel')}</label>
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', alignItems: 'stretch' }}>
                 <input 
                   type="password" 
                   readOnly 
                   className="note-input" 
-                  style={{ fontSize: '0.7rem', fontFamily: 'monospace' }} 
+                  style={{ fontSize: '0.7rem', fontFamily: 'monospace', flex: 1 }} 
                   value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." 
                 />
                 <button 
                   className="action-btn" 
-                  style={{ padding: '0 1rem', background: 'var(--card-bg)' }}
+                  style={{ 
+                    padding: '0 1.5rem', 
+                    background: 'var(--card-bg)', 
+                    marginTop: 0, 
+                    height: 'auto', 
+                    whiteSpace: 'nowrap',
+                    border: '1px solid var(--card-border)' 
+                  }}
                   onClick={async () => {
                     try {
                       const res = await axios.get(`${API_BASE}/auth/relay-token`, { headers: { Authorization: `Bearer ${token}` } });
                       navigator.clipboard.writeText(res.data.token);
-                      showToast(lang === 'cz' ? 'Token zkopírován!' : 'Token copied!', 'success');
+                      showToast(t('tokenCopied') || 'Token copied!', 'success');
                     } catch {
-                      showToast('Chyba při generování tokenu', 'error');
+                      showToast(t('tokenError') || 'Error generating token', 'error');
                     }
                   }}
                 >
-                  Kopírovat
+                  {t('copy')}
                 </button>
               </div>
               <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-                * Tento token vložte do souboru <code>.env</code> vašeho Local Agenta jako <code>RELAY_TOKEN</code>.
+                {t('relayTokenNote')}
               </p>
             </div>
             <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.5rem', textAlign: 'center' }}>
-              * Údaje budou uloženy pomocí AES-256 šifrování.
+              {t('encryptionNote')}
             </p>
           </div>
 
@@ -281,8 +295,8 @@ const WebProfilesView = () => {
                   <FileText size={22} />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '1.4rem', fontWeight: '900', margin: 0 }}>{t('biography')} & {t('services')}</h3>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0 }}>Správa textů a ceníku pro webové profily</p>
+                  <h3 style={{ fontSize: '1.4rem', fontWeight: '900', margin: 0 }}>{t('biographyHeader')}</h3>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0 }}>{t('biographySubtitle')}</p>
                 </div>
               </div>
               
@@ -315,7 +329,7 @@ const WebProfilesView = () => {
               <div className="input-group-premium" style={{ background: 'rgba(255,255,255,0.01)', padding: '1.5rem', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.03)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem', color: 'var(--accent-color)' }}>
                   <Type size={16} />
-                  <label style={{ fontSize: '0.75rem', fontWeight: '900', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{t('mottoLabel') || 'HEADLINE / MOTTO'}</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: '900', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{t('mottoLabel')}</label>
                 </div>
                 <input 
                   type="text" 
@@ -332,7 +346,7 @@ const WebProfilesView = () => {
                     borderBottom: '2px solid rgba(255,255,255,0.05)',
                     width: '100%'
                   }}
-                  placeholder="Zadejte chytlavý titulek..."
+                  placeholder={t('headlinePlaceholder')}
                 />
               </div>
               
@@ -340,7 +354,7 @@ const WebProfilesView = () => {
               <div className="input-group-premium" style={{ background: 'rgba(255,255,255,0.01)', padding: '1.5rem', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.03)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem', color: '#10b981' }}>
                   <CreditCard size={16} />
-                  <label style={{ fontSize: '0.75rem', fontWeight: '900', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Ceník a služby</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: '900', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{t('pricingLabel')}</label>
                 </div>
                 <textarea 
                   className="note-input custom-scrollbar" 
@@ -355,7 +369,7 @@ const WebProfilesView = () => {
                   }} 
                   value={localPricing[bioLang] || ''}
                   onChange={(e) => setLocalPricing({...localPricing, [bioLang]: e.target.value})}
-                  placeholder="Např.: 1h / 2000 Kč, 2h / 3500 Kč, Celá noc / 12000 Kč..."
+                  placeholder={t('pricingPlaceholder')}
                 />
               </div>
 
@@ -363,7 +377,7 @@ const WebProfilesView = () => {
               <div className="input-group-premium" style={{ background: 'rgba(255,255,255,0.01)', padding: '1.5rem', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.03)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem', color: 'var(--accent-color)' }}>
                   <FileEdit size={16} />
-                  <label style={{ fontSize: '0.75rem', fontWeight: '900', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{t('fullBioLabel') || 'CELÝ ŽIVOTOPIS'}</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: '900', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{t('fullBioLabel')}</label>
                 </div>
                 <textarea 
                   className="note-input custom-scrollbar" 
@@ -394,7 +408,7 @@ const WebProfilesView = () => {
                 </button>
                 {!isMobile && (
                   <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', maxWidth: '300px', lineHeight: '1.4' }}>
-                    Uložením se texty okamžitě synchronizují s připojenými webovými portály.
+                    {t('syncSuccessNote')}
                   </p>
                 )}
               </div>
@@ -404,6 +418,46 @@ const WebProfilesView = () => {
 
         {/* Right Sync Area */}
         <div style={{ flex: isMobile ? '1 1 100%' : '0 1 300px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          
+          {/* SEKCE STAŽENÍ AGENTA */}
+          <div className="glass-card" style={{ padding: '1.5rem', border: '1px solid var(--accent-color)', background: 'rgba(59, 130, 246, 0.05)' }}>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem', fontSize: '1.1rem', fontWeight: '900' }}>
+              <RefreshCw size={18} color="var(--accent-color)" /> {t('agentDownload')}
+            </h3>
+            <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: '1.4' }}>
+              {t('agentDownloadDesc')}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              <a 
+                href={`${API_BASE.replace('/api', '')}/downloads/nexus-agent-windows.zip`} 
+                className="action-btn" 
+                style={{ fontSize: '0.75rem', padding: '0.6rem', textAlign: 'center', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)' }}
+                download
+              >
+                🪟 Windows (.zip)
+              </a>
+              <a 
+                href={`${API_BASE.replace('/api', '')}/downloads/nexus-agent-macos.zip`} 
+                className="action-btn" 
+                style={{ fontSize: '0.75rem', padding: '0.6rem', textAlign: 'center', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)' }}
+                download
+              >
+                🍎 macOS (.zip)
+              </a>
+              <a 
+                href={`${API_BASE.replace('/api', '')}/downloads/nexus-agent-linux.zip`} 
+                className="action-btn" 
+                style={{ fontSize: '0.75rem', padding: '0.6rem', textAlign: 'center', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)' }}
+                download
+              >
+                🐧 Linux (.zip)
+              </a>
+            </div>
+            <p style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', marginTop: '1rem', textAlign: 'center' }}>
+              {t('agentReadMeNote')}
+            </p>
+          </div>
+
           <div className="glass-card" style={{ padding: '1.5rem', background: 'rgba(5,7,10,0.6)' }}>
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '1.1rem' }}>
               <RefreshCw size={18} color="var(--success-color)" className={isSyncing ? "spin-animation" : ""} /> {t('syncStatus')}
