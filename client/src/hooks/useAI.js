@@ -35,5 +35,26 @@ export const useAI = () => {
     }
   };
 
-  return { askAi, isAiLoading, aiError };
+  const getSuggestion = async (messages, profileId) => {
+    try {
+      setIsAiLoading(true);
+      setAiError(null);
+      
+      const response = await axios.post(`${API_BASE}/ai/suggest`, {
+        messages,
+        profileId
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      return response.data.response;
+    } catch (err) {
+      console.error('AI Suggestion Error:', err);
+      return null;
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  return { askAi, getSuggestion, isAiLoading, aiError };
 };
