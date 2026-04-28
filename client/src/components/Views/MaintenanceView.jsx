@@ -146,6 +146,7 @@ const MaintenanceView = () => {
             <Terminal size={14} style={{ marginRight: '0.5rem' }} /> {lang === 'cz' ? 'Příkazy' : 'Commands'}
           </button>
         </div>
+        </div>
       </div>
 
       {activeTab === 'live' ? (
