@@ -7,6 +7,7 @@ import {
 
 import { useNexus } from '../../context/ContextHook';
 import PremiumSelector from '../UI/PremiumSelector';
+import useAI from '../../hooks/useAI';
 
 const InboxView = () => {
   const nexus = useNexus() || {};
@@ -34,7 +35,7 @@ const InboxView = () => {
   const [clientCrmData, setClientCrmData] = React.useState(null);
   const [isCrmLoading, setIsCrmLoading] = React.useState(false);
   const [aiSuggestions, setAiSuggestions] = React.useState([]);
-  const [isAiLoading, setIsAiLoading] = React.useState(false);
+  const { getSuggestion, isAiLoading } = useAI();
 
   // 2. All functions must be defined BEFORE useEffects to avoid TDZ in production
   const loadClientCrm = React.useCallback(async () => {
@@ -51,36 +52,21 @@ const InboxView = () => {
   }, [fetchClientByPhone, selectedChat?.from]);
 
   const loadAiSuggestions = React.useCallback(async () => {
-    if (!token || !selectedChat) return;
-    setIsAiLoading(true);
-    try {
-      const lastInbound = [...chatMessages].reverse().find(m => m.from === selectedChat.from);
-      const text = lastInbound?.text || "";
+    if (!selectedChat || !chatMessages.length) return;
+    
+    // Prepare last 10 messages for context
+    const history = chatMessages.slice(-10).map(m => ({
+      role: m.direction === 'OUTBOUND' ? 'assistant' : 'user',
+      content: m.text
+    }));
 
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api'}/ai/suggest-reply`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ 
-          messageText: text,
-          chatId: selectedChatId,
-          profileId: activeProfileId,
-          lang: lang
-        })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setAiSuggestions(data.suggestions || []);
-      }
-    } catch (_err) {
-      console.error('AI Suggestion _err:', _err);
-    } finally {
-      setIsAiLoading(false);
+    const suggestion = await getSuggestion(history, activeProfileId);
+    if (suggestion) {
+      setAiSuggestions([suggestion]);
+    } else {
+      setAiSuggestions([]);
     }
-  }, [selectedChat, chatMessages, selectedChatId, activeProfileId, lang, token]);
+  }, [selectedChat, chatMessages, activeProfileId, getSuggestion]);
 
   // 3. UseEffects AFTER definitions
   React.useEffect(() => {

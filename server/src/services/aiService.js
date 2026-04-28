@@ -43,7 +43,43 @@ class AIService {
   }
 
   /**
-   * Analyze agency performance data (Placeholder for actual feature)
+   * Suggest a reply based on chat history
+   * @param {Array} messages - Array of { role, content } messages
+   * @param {string} profileContext - Context about the persona/profile
+   */
+  async suggestReply(messages, profileContext = "") {
+    try {
+      logger.info(`AI: Generování návrhu odpovědi pro chat (${messages.length} zpráv)`);
+      
+      const system = `
+        Jsi Nexus AI. Navrhuješ odpovědi pro chaty na OnlyFans. 
+        Tvé odpovědi jsou flirtující, přirozené, stručné a zaměřené na budování vztahu a prodej obsahu.
+        Kontext profilu: ${profileContext}
+        Odpovídej POUZE samotným textem zprávy.
+      `;
+
+      const response = await axios.post(`${this.baseUrl}/chat`, {
+        model: this.model,
+        messages: [
+          { role: 'system', content: system },
+          ...messages
+        ],
+        stream: false,
+        options: {
+          temperature: 0.8,
+          num_predict: 256
+        }
+      }, { timeout: 30000 });
+
+      return response.data.message.content;
+    } catch (error) {
+      logger.error('AI Suggest Error:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Analyze agency performance data
    */
   async analyzeData(dataJson) {
     const prompt = `Analyzuj následující data a navrhni 3 vylepšení pro ziskovost: ${JSON.stringify(dataJson)}`;
