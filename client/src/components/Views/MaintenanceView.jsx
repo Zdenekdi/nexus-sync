@@ -18,11 +18,24 @@ import { useNexus } from '../../context/ContextHook';
 import SystemHealthTab from '../SystemHealthTab';
 
 const MaintenanceView = () => {
-  const nexus = useNexus();
-  const { t, lang } = nexus;
+  const { 
+    lang, 
+    showToast, 
+    selectedServerId, 
+    setSelectedServerId, 
+    availableServers 
+  } = useNexus();
   const [activeTab, setActiveTab] = useState('live');
 
+  const selectedServer = availableServers.find(s => s.id === selectedServerId) || availableServers[0];
+
+  const handleServerChange = (id) => {
+    setSelectedServerId(id);
+    showToast(lang === 'cz' ? `Server přepnut na: ${availableServers.find(s => s.id === id)?.name}` : `Server switched to: ${availableServers.find(s => s.id === id)?.name}`, 'info');
+  };
+
   const sections = [
+    // ... same as before
     {
       id: 'backend',
       title: 'Backend (Node.js & PM2)',
@@ -73,8 +86,42 @@ const MaintenanceView = () => {
               : 'Complete overview of server health and tools for managing the Nexus Hub production environment.'}
           </p>
         </div>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {/* Server Selector */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+            <span style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginLeft: '0.5rem' }}>
+              {lang === 'cz' ? 'VYBRANÝ SERVER' : 'SELECTED SERVER'}
+            </span>
+            <div style={{ position: 'relative' }}>
+              <select 
+                value={selectedServerId}
+                onChange={(e) => handleServerChange(e.target.value)}
+                style={{
+                  appearance: 'none',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid var(--card-border)',
+                  borderRadius: '12px',
+                  padding: '0.6rem 2.5rem 0.6rem 1rem',
+                  color: 'white',
+                  fontSize: '0.85rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  minWidth: '200px'
+                }}
+              >
+                {availableServers.map(server => (
+                  <option key={server.id} value={server.id} style={{ background: '#111', color: 'white' }}>
+                    {server.name} ({server.ip})
+                  </option>
+                ))}
+              </select>
+              <Server size={14} color="var(--accent-color)" style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+            </div>
+          </div>
 
-        {/* View Toggle */}
+          {/* View Toggle */}
         <div style={{ display: 'flex', gap: '0.5rem', background: 'rgba(255,255,255,0.03)', padding: '0.4rem', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
           <button 
             onClick={() => setActiveTab('live')}
@@ -102,7 +149,7 @@ const MaintenanceView = () => {
       </div>
 
       {activeTab === 'live' ? (
-        <SystemHealthTab nexus={nexus} />
+        <SystemHealthTab server={selectedServer} />
       ) : (
         <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>

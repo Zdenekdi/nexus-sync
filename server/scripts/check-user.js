@@ -1,0 +1,28 @@
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+async function check() {
+  const email = 'dias.zd@gmail.com';
+  const user = await prisma.user.findUnique({
+    where: { email },
+    include: { role: true }
+  });
+
+  if (user) {
+    console.log('USER_FOUND:');
+    console.log(`ID: ${user.id}`);
+    console.log(`Email: ${user.email}`);
+    console.log(`Name: ${user.name}`);
+    console.log(`Role: ${user.role.name}`);
+    console.log(`IsAppOwner: ${user.role.isAppOwner}`);
+    console.log(`AgencyId: ${user.agencyId}`);
+  } else {
+    console.log('USER_NOT_FOUND');
+  }
+  process.exit(0);
+}
+
+check().catch(err => {
+  console.error(err);
+  process.exit(1);
+});

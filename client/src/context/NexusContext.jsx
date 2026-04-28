@@ -152,6 +152,12 @@ export const NexusProvider = ({ children }) => {
   });
   const [activeMarket, setActiveMarket] = useState(localStorage.getItem('nexus_active_market') || 'cz');
   const [activeProfileId, setActiveProfileId] = useState(localStorage.getItem('nexus_active_profile_id') || 'all');
+  const [availableServers, setAvailableServers] = useState([
+    { id: 'main-hub', name: 'Main Hub', ip: '78.141.202.139', region: 'Frankfurt', type: 'Primary' },
+    { id: 'relay-uk', name: 'Relay Node UK', ip: '45.76.130.11', region: 'London', type: 'Relay' },
+    { id: 'relay-cz', name: 'Relay Node CZ', ip: '1.2.3.4', region: 'Prague', type: 'Relay' }
+  ]);
+  const [selectedServerId, setSelectedServerId] = useState('main-hub');
   const [showLanding, setShowLanding] = useState(() => {
     if (typeof window !== 'undefined') {
       // If we are in a mobile app, we usually skip landing unless explicitly asked
@@ -1293,7 +1299,8 @@ export const NexusProvider = ({ children }) => {
         return { success: true, data: res.data };
       } catch { return { success: false }; }
     },
-    handleRelayCommand
+    handleRelayCommand,
+    selectedServerId, setSelectedServerId, availableServers
   }), [
     t, lang, setLang, activeTab, setActiveTab, activeMarket, setActiveMarket,
     nexusData, activeOperator, activeRole, isAllowed,
@@ -1328,7 +1335,8 @@ export const NexusProvider = ({ children }) => {
     heartRate, setHeartRate, hrThreshold, setHrThreshold, isBluetoothConnected, setIsBluetoothConnected,
     isTvMode, tvToken, activeBioWarning, setActiveBioWarning, playBeep, triggerSilentSOS,
     audioSentinelActive, setAudioSentinelActive, isPinModalOpen, setIsPinModalOpen, pinModalPromise, setPinModalPromise,
-    handleRelayCommand
+    handleRelayCommand,
+    selectedServerId, setSelectedServerId, availableServers
   ]);
   useEffect(() => {
     if (isLoggedIn && (authUser?.isAppOwner || authUser?.isManager)) {

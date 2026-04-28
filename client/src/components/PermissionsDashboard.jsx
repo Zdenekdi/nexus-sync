@@ -178,7 +178,14 @@ const PermissionsDashboard = ({ agencyId = null, onUpdate = null }) => {
                             <div key={permKey} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.2rem 0' }}>
                               <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <span style={{ fontSize: '0.95rem', color: isEnabled ? 'white' : 'var(--text-secondary)', fontWeight: '700' }}>
-                                  {t(permKey) || permKey.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                                  {(() => {
+                                    const translated = t(permKey);
+                                    if (translated === permKey) {
+                                      // Fallback to Human Readable if translation is missing
+                                      return permKey.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                                    }
+                                    return translated;
+                                  })()}
                                 </span>
                               </div>
                               <div 
