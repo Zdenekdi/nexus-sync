@@ -81,10 +81,10 @@ function InfraTab() {
   const statCards = [
     { 
       label: isMainHub ? 'Náklady (Vultr)' : 'Náklady (Hetzner)', 
-      value: isMainHub ? ('$' + (status?.pending_charges ?? '0.00')) : '€0.00', 
+      value: isMainHub ? ('$' + (status?.pending_charges ?? '0.00')) : (isAiNode ? '€19.90' : '€0.00'), 
       icon: <CreditCard size={18} />, 
       color: '#10b981', 
-      sub: 'Aktuální měsíc' 
+      sub: 'Měsíční paušál' 
     },
     { label: 'Dostupnost systému', value: stats?.uptime || '99.9%', icon: <Zap size={18} />, color: '#f59e0b', sub: 'Všechny uzly OK' },
     { label: 'Přenos dat', value: bandwidth ? formatBytes(bandwidth.outgoing_bytes) : '---', icon: <Activity size={18} />, color: '#6366f1', sub: 'Odchozí provoz' }
@@ -289,7 +289,7 @@ function InfraTab() {
                 onChange={_err => setCommand(_err.target.value)}
                 onKeyDown={_err => _err.key === "Enter" && runCommand(command)}
                 style={{ flex: 1, background: 'rgba(0,0,0,0.3)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '0.7rem 1rem', color: '#10b981', fontSize: '0.8rem', fontFamily: 'monospace' }}
-                placeholder="root@vultr:~# command"
+                placeholder={`${isMainHub ? 'root@vultr' : (isAiNode ? 'root@hetzner' : 'root@vps')}:~# command`}
               />
               <button 
                 onClick={() => runCommand(command)}

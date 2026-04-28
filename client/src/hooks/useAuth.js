@@ -96,39 +96,63 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, setSelectedChatId, setAc
     handleLogoutInternal();
   }, [API_BASE, handleLogoutInternal]);
 
-  const scheduleTokenRefresh = useCallback((expiresInSec) => {
-    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
-    // Refresh 5 minutes before expiry
-    const refreshMs = Math.max((expiresInSec - 300) * 1000, 30000);
-    refreshTimerRef.current = setTimeout(async () => {
-      const storedRefreshToken = localStorage.getItem('nexus_refreshToken');
-      if (!storedRefreshToken) return;
+  const refreshPromiseRef = useRef(null);
+
+  const performRefresh = useCallback(async () => {
+    if (refreshPromiseRef.current) return refreshPromiseRef.current;
+    
+    const storedRefreshToken = localStorage.getItem('nexus_refreshToken');
+    if (!storedRefreshToken) {
+      handleLogoutInternal();
+      return null;
+    }
+
+    refreshPromiseRef.current = (async () => {
       try {
         const res = await fetch(`${API_BASE}/auth/refresh`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ refreshToken: storedRefreshToken }),
         });
-        if (res.ok) {
-          const data = await res.json();
+        
+        const data = await res.json();
+        if (res.ok && data.token) {
           localStorage.setItem('nexus_token', data.token);
           localStorage.setItem('nexus_refreshToken', data.refreshToken);
-          localStorage.setItem('nexus_isLoggedIn', 'true'); // Ensure it's set
+          localStorage.setItem('nexus_isLoggedIn', 'true');
           setToken(data.token);
           if (setShowLanding) setShowLanding(false);
           scheduleTokenRefresh(data.expiresIn || 3600);
           console.log('[Auth] Token refreshed');
-        } else if (res.status === 401 || res.status === 403 || res.status === 400) {
-          console.warn('[Auth] Session expired, logging out');
-          handleLogoutInternal();
+          return data.token;
         } else {
-          console.warn(`[Auth] Refresh failed with status ${res.status}, keeping session for retry`);
+          console.warn('[Auth] Refresh failed, logging out');
+          handleLogoutInternal();
+          return null;
         }
       } catch (_err) {
         console.error('[Auth] Refresh _err:', _err);
+        return null;
+      } finally {
+        refreshPromiseRef.current = null;
       }
-    }, refreshMs);
+    })();
+
+    return refreshPromiseRef.current;
   }, [API_BASE, handleLogoutInternal, setShowLanding]);
+
+  const scheduleTokenRefresh = useCallback((expiresInSec) => {
+    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+    
+    if (expiresInSec <= 0) {
+      return performRefresh();
+    }
+
+    const refreshMs = Math.max((expiresInSec - 300) * 1000, 0);
+    refreshTimerRef.current = setTimeout(() => {
+      performRefresh();
+    }, refreshMs);
+  }, [performRefresh]);
 
   useEffect(() => {
     if (isLoggedIn && token) {
@@ -375,13 +399,15 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, setSelectedChatId, setAc
     handleResetComplete,
     verifyNativeDeviceBinding,
     maybePromptRcsAccessOnFirstLogin,
-    shouldAutoRelay
+    shouldAutoRelay,
+    scheduleTokenRefresh
   }), [
     isLoggedIn, token, activeOperator, activeClient, appVariant, 
     showResetPassword, tempUser, originalOperator, isLoginLoading, 
     isNativeApp, handleLogin, handleLogout, handleRegisterAgency, 
     handleRegisterUser, handleResetRequest, handleResetRequired, 
     handleResetComplete, verifyNativeDeviceBinding, 
-    maybePromptRcsAccessOnFirstLogin, shouldAutoRelay
+    maybePromptRcsAccessOnFirstLogin, shouldAutoRelay,
+    scheduleTokenRefresh
   ]);
 }

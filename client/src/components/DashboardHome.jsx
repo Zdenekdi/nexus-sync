@@ -3,6 +3,7 @@ import { DollarSign, Building2, Zap, Activity, TrendingUp, Users, Server, Shield
 import axios from 'axios';
 import { RevenueLineChart, ConversionDonutChart, MiniSparkline } from './AnalyticsCharts';
 import { useVultr } from '../hooks/useVultr';
+import { useHetzner } from '../hooks/useHetzner';
 import { useNexus } from '../context/ContextHook';
 import Skeleton from './UI/Skeleton';
 import SafetyControlCard from './Safety/SafetyControlCard';
@@ -20,7 +21,13 @@ const DashboardHome = () => {
     isLoggedIn, showToast: _showToast, API_BASE, token
   } = nexus;
   
-  const { status: vultrStatus } = useVultr();
+  const vultr = useVultr();
+  const hetzner = useHetzner();
+  const isMainHub = nexus.selectedServerId === 'main-hub';
+  const isAiNode = nexus.selectedServerId === 'ai-node';
+  const server = isMainHub ? vultr : (isAiNode ? hetzner : vultr);
+  const { status: currentServerStatus } = server;
+
   const [systemHealth, setSystemHealth] = useState(null);
 
   const isAppOwner = activeRole === 'App Owner';
@@ -227,7 +234,7 @@ const DashboardHome = () => {
       active: "var(--success-color)",
       stopped: "var(--_err-color)",
       off: "var(--_err-color)",
-    }[vultrStatus?.power_status?.toLowerCase()] ?? "var(--text-secondary)";
+    }[currentServerStatus?.power_status?.toLowerCase()] ?? "var(--text-secondary)";
 
     return (
     <div className="fade-in">
@@ -294,18 +301,6 @@ const DashboardHome = () => {
             <div className="premium-loading-text" style={{ fontSize: '0.6rem', letterSpacing: '0.2em', opacity: 0.5 }}>HYDRATING_GLOBAL_METRICS...</div>
           </div>
         </div>
-      ) : nexus.selectedServerId !== 'main-hub' ? (
-        <div className="glass-card fade-in" style={{ padding: '3rem', textAlign: 'center', borderRadius: '24px', background: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.01) 100%)' }}>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <Activity size={48} color="var(--accent-color)" style={{ opacity: 0.5 }} />
-          </div>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.5rem' }}>{lang === 'cz' ? 'Monitoring Relay Uzlu' : 'Relay Node Monitoring'}</h3>
-          <p style={{ color: 'var(--text-secondary)', maxWidth: '500px', margin: '0 auto', fontSize: '0.9rem', lineHeight: '1.6' }}>
-            {lang === 'cz' 
-              ? 'Tento uzel funguje jako zabezpečená brána. Detailní telemetrie v reálném čase pro tento region bude brzy dostupná.'
-              : 'This node operates as a secure relay gateway. Detailed real-time telemetry for this region will be available soon.'}
-          </p>
-        </div>
       ) : (
       <>
 
@@ -313,7 +308,7 @@ const DashboardHome = () => {
         {[
           { label: t('totalRevenue'), value: stats?.revenue || '£0.00', icon: <Banknote color="#10b981" />, growth: stats?.commissionGrowth || 'STABLE', chart: stats?.sparklineData || stats?.chartData || [0,0,0,0,0,0,0] },
           { label: (t('agencies') || 'Agencies').toUpperCase(), value: stats?.totalAgencies || (agencies || []).length, icon: <Building2 color="#3b82f6" />, growth: 'PROD', chart: [0,0,0,0,0,0,0] },
-          { label: 'SERVER LOAD', value: systemHealth ? `${systemHealth.cpu.loadAvg[0]}` : (vultrStatus?.power_status || 'CHECKING...').toUpperCase(), icon: <Server color={statusColor} />, growth: systemHealth ? `${systemHealth.memory.percent}% RAM` : (vultrStatus?.main_ip || 'PENDING'), chart: [0,0,0,0,0,0,0], isStatus: true },
+          { label: 'SERVER LOAD', value: systemHealth ? `${systemHealth.cpu.loadAvg[0]}` : (currentServerStatus?.power_status || 'CHECKING...').toUpperCase(), icon: <Server color={statusColor} />, growth: systemHealth ? `${systemHealth.memory.percent}% RAM` : (currentServerStatus?.main_ip || 'PENDING'), chart: [0,0,0,0,0,0,0], isStatus: true },
           { label: 'DISK SPACE', value: systemHealth ? `${systemHealth.disk.percent}` : stats?.totalProfiles || '0', icon: systemHealth ? <HardDrive color="#f59e0b" /> : <Zap color="#f59e0b" />, growth: systemHealth ? systemHealth.disk.used : 'STABLE', chart: [0,0,0,0,0,0,0], isStatus: !!systemHealth },
           { label: 'SYSTEM UPTIME', value: systemHealth ? `${systemHealth.uptime.days}d ${systemHealth.uptime.hours}h` : stats?.totalMessages || '0', icon: systemHealth ? <Clock color="#ec4899" /> : <Activity color="#8b5cf6" />, growth: systemHealth ? `${systemHealth.uptime.minutes}m` : (stats?.uptime || '100% UP'), chart: stats?.sparklineData || stats?.chartData || [0,0,0,0,0,0,0], isStatus: !!systemHealth }
         ].map((stat, i) => (
@@ -329,9 +324,9 @@ const DashboardHome = () => {
                     <MiniSparkline data={stat.chart} color={stat.icon.props.color} />
                   </div>
                 )}
-                {stat.isStatus && vultrStatus && (
+                {stat.isStatus && currentServerStatus && (
                    <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '700', marginTop: '0.25rem' }}>
-                     {vultrStatus.region}
+                     {currentServerStatus.region}
                    </div>
                 )}
               </div>
