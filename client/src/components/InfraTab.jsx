@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { useVultr } from "../hooks/useVultr";
+import { useHetzner } from "../hooks/useHetzner";
 import { 
   Server, 
   Play, 
@@ -31,10 +32,16 @@ function InfraTab() {
     setSelectedServerId, 
     availableServers 
   } = useNexus();
-  const { status, bandwidth, stats, loading, cmdOutput, clearCmdOutput, _err, serverAction, runCommand, gitPull, apkInfo, uploadApk, uploadProgress } = useVultr();
+  const vultr = useVultr();
+  const hetzner = useHetzner();
   
   const selectedServer = availableServers.find(s => s.id === selectedServerId) || availableServers[0];
   const isMainHub = selectedServer.id === 'main-hub';
+  const isAiNode = selectedServer.id === 'ai-node';
+
+  // Choose which hook to use based on selected server
+  const server = isMainHub ? vultr : (isAiNode ? hetzner : vultr);
+  const { status, bandwidth, stats, loading, cmdOutput, clearCmdOutput, _err, serverAction, runCommand, gitPull, apkInfo, uploadApk, uploadProgress } = server;
 
   const handleServerChange = (id) => {
     setSelectedServerId(id);
@@ -72,9 +79,15 @@ function InfraTab() {
   };
 
   const statCards = [
-    { label: 'Náklady (Vultr)', value: '$' + (status?.pending_charges ?? '0.00'), icon: <CreditCard size={18} />, color: '#10b981', sub: 'Aktuální měsíc' },
+    { 
+      label: isMainHub ? 'Náklady (Vultr)' : 'Náklady (Hetzner)', 
+      value: isMainHub ? ('$' + (status?.pending_charges ?? '0.00')) : '€0.00', 
+      icon: <CreditCard size={18} />, 
+      color: '#10b981', 
+      sub: 'Aktuální měsíc' 
+    },
     { label: 'Dostupnost systému', value: stats?.uptime || '99.9%', icon: <Zap size={18} />, color: '#f59e0b', sub: 'Všechny uzly OK' },
-    { label: 'Přenos dat', value: bandwidth ? formatBytes(bandwidth.outgoing_bytes) : '0 GB', icon: <Activity size={18} />, color: '#6366f1', sub: 'Odchozí provoz' }
+    { label: 'Přenos dat', value: bandwidth ? formatBytes(bandwidth.outgoing_bytes) : '---', icon: <Activity size={18} />, color: '#6366f1', sub: 'Odchozí provoz' }
   ];
 
   return (
@@ -140,38 +153,23 @@ function InfraTab() {
         </div>
       )}
 
-      {!isMainHub && (
-        <div className="glass-card" style={{ padding: '3rem', textAlign: 'center', background: 'rgba(99, 102, 241, 0.05)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
-          <Server size={48} color="var(--accent-color)" style={{ marginBottom: '1.5rem', opacity: 0.5 }} />
-          <h3 style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '0.75rem' }}>
-            {lang === 'cz' ? 'Vzdálená Správa Uzlu' : 'Remote Node Management'}
-          </h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '500px', margin: '0 auto' }}>
-            {lang === 'cz' 
-              ? `Vzdálené ovládání (Vultr API) a SSH terminál pro uzel "${selectedServer.name}" zatím nejsou propojeny s tímto panelem. Správa je zatím možná pouze pro hlavní Hub.`
-              : `Remote control (Vultr API) and SSH terminal for node "${selectedServer.name}" are not yet linked to this panel. Management is currently available for the primary Hub only.`}
-          </p>
-        </div>
-      )}
+      {/* We now support both servers! */}
 
-      {isMainHub && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
-          {statCards.map((card, i) => (
-            <div key={i} className="glass-card" style={{ padding: '1.25rem', borderRadius: '15px', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', top: '-10px', right: '-10px', width: '40px', height: '40px', borderRadius: '50%', background: card.color, opacity: 0.1 }}></div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                <div style={{ color: card.color }}>{card.icon}</div>
-                <span style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{card.label}</span>
-              </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{card.value}</div>
-              <div style={{ fontSize: '0.65rem', color: card.color, fontWeight: '700', marginTop: '0.25rem' }}>{card.sub}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+        {statCards.map((card, i) => (
+          <div key={i} className="glass-card" style={{ padding: '1.25rem', borderRadius: '15px', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: '-10px', right: '-10px', width: '40px', height: '40px', borderRadius: '50%', background: card.color, opacity: 0.1 }}></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+              <div style={{ color: card.color }}>{card.icon}</div>
+              <span style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{card.label}</span>
             </div>
-          ))}
-        </div>
-      )}
+            <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{card.value}</div>
+            <div style={{ fontSize: '0.65rem', color: card.color, fontWeight: '700', marginTop: '0.25rem' }}>{card.sub}</div>
+          </div>
+        ))}
+      </div>
 
-      {isMainHub && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
         
         {/* 2. Vultr Management Section */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
