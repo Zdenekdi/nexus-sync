@@ -182,7 +182,11 @@ const LanguageSwitcher = ({ current, onSelect, isMobile }) => {
 const LandingPage = () => {
   const { setShowLanding, lang, setLang, isMobile } = useNexus();
 
-  const onLoginClick = () => setShowLanding(false);
+  const onLoginClick = () => {
+    sessionStorage.setItem('nexus_landing_dismissed', 'true');
+    setShowLanding(false);
+  };
+
 
   const content = {
     cz: {

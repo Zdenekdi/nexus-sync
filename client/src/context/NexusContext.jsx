@@ -160,11 +160,14 @@ export const NexusProvider = ({ children }) => {
         return localStorage.getItem('nexus_isLoggedIn') !== 'true';
       }
       
-      // On WEB, we ALWAYS want to show the landing page first to present the product
-      // unless the user is already logged in or explicitly navigating deep
+      // On WEB, skip landing if already logged in
       if (localStorage.getItem('nexus_isLoggedIn') === 'true') return false;
+
+      // If user already dismissed the landing page this session (e.g. they refreshed
+      // while on the login screen), keep them on the login screen
+      if (sessionStorage.getItem('nexus_landing_dismissed') === 'true') return false;
       
-      // If we are on web and not logged in, show landing by default
+      // Otherwise show the landing page first
       return true;
     }
     return true;
