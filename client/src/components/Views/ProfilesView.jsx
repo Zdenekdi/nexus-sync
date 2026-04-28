@@ -7,28 +7,33 @@ import axios from 'axios';
 import { useNexus } from '../../context/ContextHook';
 
 const ProfilesView = () => {
-  const nexus = useNexus();
+  const nexus = useNexus() || {};
   const {
-    isMobile,
-    t,
-    lang,
-    token,
-    activeRole,
-    activeOperator,
-    profiles: allAgencyProfiles,
-    setProfiles,
-    myProfiles,
-    operators,
+    isMobile = false,
+    t = (k) => k,
+    lang = 'en',
+    token = '',
+    activeRole = '',
+    activeOperator = null,
+    profiles: allAgencyProfiles = [],
+    setProfiles = () => {},
+    myProfiles = [],
+    operators = [],
     assigningProfile,
-    setAssigningProfile,
-    setActiveProfileId,
-    setActiveTab,
-    toggleOperatorStatus,
-    handleEditProfile,
-    handleSaveAssignees,
-    showToast,
-    API_BASE
+    setAssigningProfile = () => {},
+    setActiveProfileId = () => {},
+    setActiveTab = () => {},
+    toggleOperatorStatus = () => {},
+    handleEditProfile = () => {},
+    handleSaveAssignees = () => {},
+    showToast = () => {},
+    API_BASE = ''
   } = nexus;
+  const [localAssigningProfile, setLocalAssigningProfile] = React.useState(null);
+  
+  // Use local state if context state is missing
+  const currentAssigningProfile = assigningProfile || localAssigningProfile;
+  const setCurrentAssigningProfile = setAssigningProfile || setLocalAssigningProfile;
   return (
     <div data-testid="page-profiles-container" style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
       {!isMobile && (
@@ -131,7 +136,7 @@ const ProfilesView = () => {
                     );
                   })}
                   <div 
-                    onClick={() => setAssigningProfile(profile)}
+                    onClick={() => setCurrentAssigningProfile(profile)}
                     style={{ padding: '1rem', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '15px', border: '1px dashed var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--accent-color)' }}
                   >
                      <UserPlus size={16} /> <span style={{ fontSize: '0.8rem', fontWeight: '700' }}>{t('manageTeam') || 'Manage Team'}</span>
@@ -155,12 +160,12 @@ const ProfilesView = () => {
               )}
 
               {/* Simple Inline User Selection Modal */}
-              {assigningProfile?.id === profile.id && (
+              {currentAssigningProfile?.id === profile.id && (
                   <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
                       <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '500px', padding: '2rem' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
                               <h3 style={{ fontSize: '1.2rem', fontWeight: '800' }}>Assign Operators to {profile.name}</h3>
-                              <button onClick={() => setAssigningProfile(null)} style={{ background: 'transparent', border: 'none', color: 'white' }}><X size={24} /></button>
+                              <button onClick={() => setCurrentAssigningProfile(null)} style={{ background: 'transparent', border: 'none', color: 'white' }}><X size={24} /></button>
                           </div>
                           <div style={{ maxHeight: '400px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem' }}>
                               {(operators || []).filter(op => !op.isAppOwner && op.role !== 'Model').map(op => {
@@ -196,7 +201,7 @@ const ProfilesView = () => {
                               })}
                           </div>
                           <button 
-                              onClick={() => setAssigningProfile(null)}
+                              onClick={() => setCurrentAssigningProfile(null)}
                               className="action-btn" 
                               style={{ background: 'var(--accent-color)', color: 'white', width: '100%', margin: 0 }}
                           >

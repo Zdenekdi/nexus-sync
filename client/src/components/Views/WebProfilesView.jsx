@@ -8,27 +8,27 @@ import { useNexus } from '../../context/ContextHook';
 import PremiumSelector from '../UI/PremiumSelector';
 
 const WebProfilesView = () => {
-  const nexus = useNexus();
+  const nexus = useNexus() || {};
   const {
-    isMobile,
-    t,
-    lang,
-    activeProfile,
-    activeProfileId,
-    setActiveProfileId,
-    assignedProfiles,
-    bioText,
-    setBioText,
-    handleSaveBio,
-    handleSaveCredentials,
-    isSyncing,
-    syncStatus,
-    syncProgress,
-    relayOnline,
-    handleSyncAll,
-    showToast,
-    token,
-    API_BASE
+    isMobile = false,
+    t = (k) => k,
+    lang = 'en',
+    activeProfile = null,
+    activeProfileId = 'all',
+    setActiveProfileId = () => {},
+    assignedProfiles = [],
+    bioText = '',
+    setBioText = () => {},
+    handleSaveBio = () => {},
+    handleSaveCredentials = () => {},
+    isSyncing = false,
+    syncStatus = { aw: 'synced', ege: 'synced', tpb: 'synced' },
+    syncProgress = 0,
+    relayOnline = false,
+    handleSyncAll = () => {},
+    showToast = () => {},
+    token = '',
+    API_BASE = ''
   } = nexus;
   const [bioLang, setBioLang] = useState('EN');
 
