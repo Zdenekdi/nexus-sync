@@ -1,6 +1,6 @@
 /* src/components/Modals/EditProfileModal.jsx */
 import React from 'react';
-import { X } from 'lucide-react';
+import { X, Upload } from 'lucide-react';
 
 const EditProfileModal = ({ isOpen, onClose, data, onDataChange, onSave, t, lang: _lang, isMobile: _isMobile }) => {
   if (!isOpen || !data) return null;
@@ -24,6 +24,35 @@ const EditProfileModal = ({ isOpen, onClose, data, onDataChange, onSave, t, lang
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Provize modelky (%)</label>
             <input type="number" min="0" max="100" value={data.commission ?? 50} onChange={_err => onDataChange({...data, commission: _err.target.value})} placeholder="Provize v %" style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white' }} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label style={{ fontSize: '0.7rem', fontWeight: '800', color: '#a78bfa', textTransform: 'uppercase' }}>AI Tréninková historie (Vložit vzorové zprávy)</label>
+              <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.65rem', color: '#a78bfa', background: 'rgba(167, 139, 250, 0.1)', padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(167, 139, 250, 0.3)' }}>
+                <Upload size={12} /> {t('uploadFile') || 'Nahrát soubor'}
+                <input 
+                  type="file" 
+                  accept=".txt,.csv,.json" 
+                  style={{ display: 'none' }} 
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                      onDataChange({...data, sampleMessages: ev.target.result});
+                    };
+                    reader.readAsText(file);
+                  }}
+                />
+              </label>
+            </div>
+            <textarea 
+              value={data.sampleMessages || ''} 
+              onChange={_err => onDataChange({...data, sampleMessages: _err.target.value})} 
+              placeholder="Vložte sem ukázky zpráv od modelky, nebo nahrajte soubor s exportem chatu..." 
+              style={{ width: '100%', minHeight: '120px', background: 'rgba(167, 139, 250, 0.05)', border: '1px solid rgba(167, 139, 250, 0.2)', padding: '0.85rem', borderRadius: '12px', color: 'white', fontSize: '0.85rem', resize: 'vertical' }} 
+            />
+            <p style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>Podporované formáty: .txt, .csv, .json. Tip: Vložte aspoň 10-20 zpráv.</p>
           </div>
         </div>
         <div style={{ display: 'flex', gap: '1rem', marginTop: '2.5rem' }}>

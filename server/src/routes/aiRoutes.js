@@ -35,17 +35,35 @@ router.post('/suggest', authenticateToken, async (req, res) => {
     }
 
     let profileContext = "";
+    let styleExamples = [];
+
     if (profileId) {
       const profile = await prisma.profile.findUnique({
         where: { id: profileId },
-        select: { bio: true, description: true, name: true }
+        select: { bio: true, description: true, name: true, sampleMessages: true }
       });
       if (profile) {
         profileContext = `Slečna se jmenuje ${profile.name}. Bio: ${profile.bio || ""}. Popis: ${profile.description || ""}`;
+        
+        if (profile.sampleMessages) {
+          profileContext += `\nManuálně vložené ukázky stylu (velmi důležité):\n${profile.sampleMessages}`;
+        }
+        
+        // Fetch last 5 outbound messages to learn style
+        const recentMessages = await prisma.message.findMany({
+          where: {
+            direction: 'OUTBOUND',
+            chat: { profileId: profileId }
+          },
+          take: 5,
+          orderBy: { createdAt: 'desc' },
+          select: { text: true }
+        });
+        styleExamples = recentMessages.map(m => m.text);
       }
     }
 
-    const response = await aiService.suggestReply(messages, profileContext);
+    const response = await aiService.suggestReply(messages, profileContext, styleExamples);
     res.json({ response });
   } catch (error) {
     logger.error(`AI Suggest Error: ${error.message}`);
