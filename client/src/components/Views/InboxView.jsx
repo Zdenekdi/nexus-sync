@@ -36,7 +36,7 @@ const InboxView = () => {
   const [clientCrmData, setClientCrmData] = React.useState(null);
   const [isCrmLoading, setIsCrmLoading] = React.useState(false);
   const [aiSuggestions, setAiSuggestions] = React.useState([]);
-  const { getSuggestion, isAiLoading } = useAI();
+  const { getSuggestion, isAiLoading, aiError } = useAI();
 
   // 2. All functions must be defined BEFORE useEffects to avoid TDZ in production
   const loadClientCrm = React.useCallback(async () => {
@@ -57,12 +57,8 @@ const InboxView = () => {
   const loadAiSuggestions = React.useCallback(async () => {
     if (!selectedChat || !chatMessages.length) return;
     
-    // Check if the last message is from user before generating
-    const lastMsg = chatMessages[chatMessages.length - 1];
-    if (lastMsg.direction !== 'INBOUND') return;
-
+    setIsAiLoading(true);
     try {
-      setIsAiLoading(true);
       const history = chatMessages.slice(-10).map(m => ({
         role: m.direction === 'OUTBOUND' ? 'assistant' : 'user',
         content: m.text
@@ -90,10 +86,7 @@ const InboxView = () => {
 
   React.useEffect(() => {
     if (selectedChatId && inlinePanelTab === 'ai' && chatMessages.length > 0) {
-      const lastMsg = chatMessages[chatMessages.length - 1];
-      if (lastMsg.direction === 'INBOUND') {
-        loadAiSuggestions();
-      }
+      loadAiSuggestions();
     }
   }, [selectedChatId, inlinePanelTab, lastMsgId]);
 
@@ -405,7 +398,11 @@ const InboxView = () => {
                                  ))
                                ) : (
                                  <div style={{ padding: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
-                                   {lang === 'cz' ? 'Žádné návrhy k dispozici.' : 'No suggestions available.'}
+                                   {aiError ? (
+                                     <span style={{ color: 'var(--error-color)' }}>{aiError}</span>
+                                   ) : (
+                                     lang === 'cz' ? 'Žádné návrhy k dispozici.' : 'No suggestions available.'
+                                   )}
                                  </div>
                                )}
                              </div>
