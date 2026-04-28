@@ -1026,9 +1026,9 @@ export const NexusProvider = ({ children }) => {
         return myProfileIds.has(msgProfileId);
       });
       
-      // DIAGNOSTIC (Internal): If we hav_err.messages in system but filter result is 0, 
+      // DIAGNOSTIC (Internal): If we have messages in system but filter result is 0, 
       // check if activeOperator.profileId exists as a fallback.
-      if (baseMessages.length === 0 && rawMessages.length > 0 && activeOperator.profileId) {
+      if (baseMessages.length === 0 && rawMessages.length > 0 && activeOperator?.profileId) {
         baseMessages = rawMessages.filter(m => String(m.profileId || m.profile_id) === String(activeOperator.profileId));
       }
     }

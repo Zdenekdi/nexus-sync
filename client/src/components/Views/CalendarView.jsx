@@ -9,16 +9,38 @@ import PremiumSelector from '../UI/PremiumSelector';
 const CalendarView = () => {
   const nexus = useNexus();
   const {
-    isMobile, t, lang, activeProfileId, setActiveProfileId,
-    profiles: allAgencyProfiles, myProfiles, activeRole, 
-    setIsBookingModalOpen, handleExportICS, isCalendarSyncOpen, setIsCalendarSyncOpen,
-    calendarSyncUrl, setCalendarSyncUrl, handleSaveCalendarSync,
-    calendar: bookingSchedule, activeTimerEvent, isTimerActive,
-    openBookingMenuId, setOpenBookingMenuId, handleCheckIn, handleCheckOut,
-    handleEditBooking, handleDeleteBooking, timeLeft, formatSafetyTime,
-    isSafetyLoading, handleSafetyImOk, SAFETY_SUGGESTIONS,
-    setSelectedScheduleEvent, activeOperator: _activeOperator
-  } = nexus;
+    isMobile = false, 
+    t = (k) => k, 
+    lang = 'cz', 
+    activeProfileId = '', 
+    setActiveProfileId = () => {},
+    profiles: allAgencyProfiles = [], 
+    myProfiles = [], 
+    activeRole = '', 
+    setIsBookingModalOpen = () => {}, 
+    handleExportICS = () => {}, 
+    isCalendarSyncOpen = false, 
+    setIsCalendarSyncOpen = () => {},
+    calendarSyncUrl = '', 
+    setCalendarSyncUrl = () => {}, 
+    handleSaveCalendarSync = () => {},
+    calendar: bookingSchedule = [], 
+    activeTimerEvent = null, 
+    isTimerActive = false,
+    openBookingMenuId = null, 
+    setOpenBookingMenuId = () => {}, 
+    handleCheckIn = () => {}, 
+    handleCheckOut = () => {},
+    handleEditBooking = () => {}, 
+    handleDeleteBooking = () => {}, 
+    timeLeft = 0, 
+    formatSafetyTime = (s) => s,
+    isSafetyLoading = false, 
+    handleSafetyImOk = () => {}, 
+    SAFETY_SUGGESTIONS = [],
+    setSelectedScheduleEvent = () => {}, 
+    activeOperator: _activeOperator = null
+  } = nexus || {};
 
   // Final Safety Check for Mapping
   const safeSchedule = Array.isArray(bookingSchedule) ? bookingSchedule : [];
