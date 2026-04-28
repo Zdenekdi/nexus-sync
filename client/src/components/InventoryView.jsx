@@ -9,8 +9,14 @@ import {
 const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
 
 const InventoryView = () => {
-  const { t, token } = useNexus();
-  const isMobile = window.innerWidth < 768;
+  const nexus = useNexus();
+  const { 
+    t = (k) => k, 
+    token = '',
+    lang = 'cz'
+  } = nexus || {};
+
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [locations, setLocations] = useState([]);

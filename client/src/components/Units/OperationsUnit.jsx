@@ -16,7 +16,17 @@ import { useNexus } from '../../context/ContextHook';
  * Operations Unit: Primary hub for communication and scheduling.
  */
 const OperationsUnit = () => {
-  const { activeTab, activeRole } = useNexus();
+  const nexus = useNexus();
+  
+  if (!nexus) {
+    return (
+      <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <div className="loader-dots"><span></span><span></span><span></span></div>
+      </div>
+    );
+  }
+
+  const { activeTab, activeRole } = nexus;
 
   switch (activeTab) {
     case 'inbox':

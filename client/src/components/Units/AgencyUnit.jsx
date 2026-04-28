@@ -14,7 +14,17 @@ import SafetyGuardView from '../Views/SafetyGuardView';
  * Agency Unit: Management hub for agencies and global activity.
  */
 const AgencyUnit = () => {
-  const { activeTab } = useNexus();
+  const nexus = useNexus();
+
+  if (!nexus) {
+    return (
+      <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <div className="loader-dots"><span></span><span></span><span></span></div>
+      </div>
+    );
+  }
+
+  const { activeTab } = nexus;
 
   switch (activeTab) {
     case 'hierarchy':
