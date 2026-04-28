@@ -24,7 +24,10 @@ const SafetyGuardView = () => {
       setSessions(res.data || []);
     } catch (_err) {
       console.error('Failed to fetch safety sessions:', _err);
-      showToast(isCz ? 'Nepodařilo se načíst data' : 'Failed to load safety data', 'error');
+      // Only show error if it's not a 404/empty state
+      if (_err.response?.status !== 404) {
+        showToast(isCz ? 'Nepodařilo se načíst data' : 'Failed to load safety data', 'error');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -80,8 +83,8 @@ const SafetyGuardView = () => {
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           {[
             { label: isCz ? 'Vše' : 'Total', value: stats.total, color: 'white' },
-            { label: 'Active', value: stats.active, color: '#10b981' },
-            { label: 'Grace', value: stats.warning, color: '#f59e0b' },
+            { label: isCz ? 'Aktivní' : 'Active', value: stats.active, color: '#10b981' },
+            { label: isCz ? 'V limitu' : 'Grace', value: stats.warning, color: '#f59e0b' },
             { label: 'SOS', value: stats.sos, color: '#ef4444' }
           ].map(stat => (
             <div key={stat.label} style={{ 
@@ -129,7 +132,7 @@ const SafetyGuardView = () => {
                 border: 'none', transition: 'all 0.2s'
               }}
             >
-              {f === 'all' ? (isCz ? 'VŠE' : 'ALL') : f.replace('_', ' ')}
+              {f === 'all' ? (isCz ? 'VŠE' : 'ALL') : (f === 'CHECKED_IN' ? (isCz ? 'AKTIVNÍ' : 'CHECKED IN') : f.replace('_', ' '))}
             </button>
           ))}
         </div>
@@ -166,7 +169,7 @@ const SafetyGuardView = () => {
                       </div>
                     </div>
                     <div style={{ padding: '4px 8px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-secondary)' }}>
-                       {session.locationType === 'incall' ? '🏠 INCALL' : '🚗 OUTCALL'}
+                       {session.locationType === 'incall' ? (isCz ? '🏠 NA ADRESE' : '🏠 INCALL') : (isCz ? '🚗 VÝJEZD' : '🚗 OUTCALL')}
                     </div>
                   </div>
 
@@ -175,14 +178,14 @@ const SafetyGuardView = () => {
                     <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                        <Activity size={14} color="#ef4444" />
                        <div>
-                          <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Heart Rate</div>
+                          <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Tep</div>
                           <div style={{ fontSize: '0.85rem', fontWeight: 900, color: 'white' }}>78 BPM</div>
                        </div>
                     </div>
                     <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                        <Battery size={14} color="#10b981" />
                        <div>
-                          <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Device</div>
+                          <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Baterie</div>
                           <div style={{ fontSize: '0.85rem', fontWeight: 900, color: 'white' }}>92%</div>
                        </div>
                     </div>
@@ -218,15 +221,15 @@ const SafetyGuardView = () => {
           <div style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--card-border)', borderRadius: '24px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '1rem', borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Zap size={16} color="#3b82f6" />
-              <span style={{ fontWeight: 800, fontSize: '0.8rem', color: 'white' }}>TACTICAL OVERVIEW</span>
+              <span style={{ fontWeight: 800, fontSize: '0.8rem', color: 'white' }}>{isCz ? 'TAKTICKÝ PŘEHLED' : 'TACTICAL OVERVIEW'}</span>
             </div>
             <div style={{ flex: 1, position: 'relative', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                {/* Simplified World Grid Simulation */}
                <div style={{ position: 'absolute', inset: 0, opacity: 0.1, backgroundImage: 'radial-gradient(#3b82f6 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
                <div style={{ textAlign: 'center', zIndex: 1 }}>
                   <MapPin size={40} color="#3b82f6" className="pulse-subtle" />
-                  <div style={{ marginTop: '1rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 600 }}>LIVE MAP INTERFACE</div>
-                  <div style={{ fontSize: '0.65rem', opacity: 0.5 }}>{stats.active} units tracking...</div>
+                  <div style={{ marginTop: '1rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 600 }}>{isCz ? 'ROZHRANÍ MAPY' : 'LIVE MAP INTERFACE'}</div>
+                  <div style={{ fontSize: '0.65rem', opacity: 0.5 }}>{isCz ? `Sledujeme ${stats.active} jednotek...` : `${stats.active} units tracking...`}</div>
                </div>
 
                {/* Random Radar Dots */}
@@ -244,7 +247,7 @@ const SafetyGuardView = () => {
             <div style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.02)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
                 <Clock size={14} color="#64748b" />
-                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)' }}>LAST GLOBAL SYNC</span>
+                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)' }}>{isCz ? 'POSLEDNÍ SYNCHRONIZACE' : 'LAST GLOBAL SYNC'}</span>
               </div>
               <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'white' }}>{new Date().toLocaleTimeString()}</div>
             </div>
