@@ -700,6 +700,8 @@ const InboxView = () => {
       </div>
     )}
   </div>
+)}
+</div>
 );
 };
 
