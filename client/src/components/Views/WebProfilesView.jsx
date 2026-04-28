@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
-  ChevronDown, Image, FileEdit, RefreshCw, Check, X, AlertTriangle 
+  ChevronDown, Image, FileEdit, RefreshCw, Check, X, AlertTriangle,
+  Type, CreditCard, FileText
 } from 'lucide-react';
 
 import { useNexus } from '../../context/ContextHook';
@@ -31,6 +32,9 @@ const WebProfilesView = () => {
     API_BASE = ''
   } = nexus;
   const [bioLang, setBioLang] = useState('EN');
+  const [localBios, setLocalBios] = useState({ EN: '', CZ: '' });
+  const [localMottos, setLocalMottos] = useState({ EN: '', CZ: '' });
+  const [localPricing, setLocalPricing] = useState({ EN: '', CZ: '' });
 
   // Automation states
   const [automationPlatform, setAutomationPlatform] = useState('adultwork');
@@ -42,14 +46,44 @@ const WebProfilesView = () => {
   // Update fields when activeProfile changes
   useEffect(() => {
     if (activeProfile) {
-      Promise.resolve().then(() => {
-        setAdsPowerId(''); 
-        setPlatformUser('');
-        setPlatformPass('');
-        setProxyConfig('');
+      setLocalBios({
+        EN: activeProfile.description_en || activeProfile.description || '',
+        CZ: activeProfile.description_cz || ''
       });
+      setLocalMottos({
+        EN: activeProfile.bio_en || activeProfile.bio || '',
+        CZ: activeProfile.bio_cz || ''
+      });
+      setLocalPricing({
+        EN: activeProfile.pricing_en || '',
+        CZ: activeProfile.pricing_cz || ''
+      });
+      
+      setAdsPowerId(activeProfile.adsPowerId || ''); 
+      setPlatformUser('');
+      setPlatformPass('');
+      setProxyConfig('');
     }
   }, [activeProfileId, activeProfile]);
+
+  const onSaveBioData = async () => {
+    if (!activeProfileId) return;
+    try {
+      await axios.patch(`${API_BASE}/profiles/${activeProfileId}`, { 
+        [`description_${bioLang.toLowerCase()}`]: localBios[bioLang],
+        [`bio_${bioLang.toLowerCase()}`]: localMottos[bioLang],
+        [`pricing_${bioLang.toLowerCase()}`]: localPricing[bioLang],
+        description: localBios[bioLang],
+        bio: localMottos[bioLang]
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      showToast(lang === 'cz' ? 'Uloženo!' : 'Saved!', 'success');
+      if (initData) initData();
+    } catch (_err) {
+      showToast(lang === 'cz' ? 'Chyba při ukládání.' : 'Save failed.', 'error');
+    }
+  };
 
   const onSaveAutomation = async () => {
     if (!platformUser || !platformPass) {
@@ -240,58 +274,130 @@ const WebProfilesView = () => {
             </div>
           </div>
 
-          <div className="glass-card" style={{ padding: '2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '0.6rem', background: 'linear-gradient(to right, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                <FileEdit size={20} color="var(--accent-color)" /> {t('biography')} & {t('services')}
-              </h3>
-              <div style={{ display: 'flex', gap: '0.4rem', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '10px', border: '1px solid var(--card-border)' }}>
-                <button onClick={() => setBioLang('EN')} style={{ padding: '6px 12px', border: 'none', background: bioLang === 'EN' ? 'var(--accent-color)' : 'transparent', color: bioLang === 'EN' ? 'white' : 'var(--text-secondary)', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}>EN</button>
-                <button onClick={() => setBioLang('CZ')} style={{ padding: '6px 12px', border: 'none', background: bioLang === 'CZ' ? 'var(--accent-color)' : 'transparent', color: bioLang === 'CZ' ? 'white' : 'var(--text-secondary)', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}>CZ</button>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              <div className="input-group-premium">
-                <label className="input-label-premium">{t('mottoLabel')}</label>
-                <input 
-                  type="text" 
-                  defaultValue={activeProfile?.bio || ''} 
-                  className="note-input" 
-                  style={{ 
-                    fontSize: '1.25rem', 
-                    fontWeight: '700', 
-                    letterSpacing: '-0.01em',
-                    borderBottom: '2px solid rgba(255, 255, 255, 0.1)'
-                  }}
-                  placeholder="Enter a catchy headline..."
-                />
-              </div>
-              
-              <div className="input-group-premium">
-                <label className="input-label-premium">{t('fullBioLabel')}</label>
-                <textarea 
-                  className="note-input custom-scrollbar" 
-                  style={{ 
-                    height: '220px', 
-                    lineHeight: '1.6', 
-                    fontSize: '1rem',
-                    borderBottom: '2px solid rgba(59, 130, 246, 0.3)',
-                    paddingBottom: '1rem'
-                  }} 
-                  value={bioText || activeProfile?.description || ''}
-                  onChange={_err => setBioText(_err.target.value)}
-                  placeholder={t('bioPlaceholder')}
-                ></textarea>
-                <div style={{ marginTop: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', fontWeight: '600' }}>
-                  <span>{t('bioFormattingNote')}</span>
-                  <span style={{ color: 'var(--accent-color)' }}>{bioText?.length || 0} / 2000</span>
+          <div className="glass-card" style={{ padding: '2rem', border: '1px solid rgba(255,255,255,0.03)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ width: '40px', height: '40px', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-color)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <FileText size={22} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.4rem', fontWeight: '900', margin: 0 }}>{t('biography')} & {t('services')}</h3>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0 }}>Správa textů a ceníku pro webové profily</p>
                 </div>
               </div>
               
-              <button onClick={handleSaveBio} className="action-btn" style={{ width: 'fit-content', padding: '1rem 2.5rem', fontSize: '1rem', marginTop: '1rem', boxShadow: '0 10px 20px rgba(59, 130, 246, 0.2)' }}>
-                {t('saveChanges')}
-              </button>
+              <div style={{ display: 'flex', gap: '0.4rem', background: 'rgba(255,255,255,0.03)', padding: '5px', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
+                {['EN', 'CZ'].map(l => (
+                  <button 
+                    key={l}
+                    onClick={() => setBioLang(l)} 
+                    style={{ 
+                      padding: '8px 16px', 
+                      border: 'none', 
+                      background: bioLang === l ? 'var(--accent-color)' : 'transparent', 
+                      color: bioLang === l ? 'white' : 'var(--text-secondary)', 
+                      borderRadius: '8px', 
+                      fontSize: '0.8rem', 
+                      fontWeight: '900', 
+                      cursor: 'pointer', 
+                      transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                      boxShadow: bioLang === l ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none'
+                    }}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+              {/* Section 1: Headline */}
+              <div className="input-group-premium" style={{ background: 'rgba(255,255,255,0.01)', padding: '1.5rem', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem', color: 'var(--accent-color)' }}>
+                  <Type size={16} />
+                  <label style={{ fontSize: '0.75rem', fontWeight: '900', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{t('mottoLabel') || 'HEADLINE / MOTTO'}</label>
+                </div>
+                <input 
+                  type="text" 
+                  value={localMottos[bioLang] || ''} 
+                  onChange={(e) => setLocalMottos({...localMottos, [bioLang]: e.target.value})}
+                  className="note-input" 
+                  style={{ 
+                    fontSize: '1.4rem', 
+                    fontWeight: '800', 
+                    letterSpacing: '-0.02em',
+                    background: 'transparent',
+                    border: 'none',
+                    padding: 0,
+                    borderBottom: '2px solid rgba(255,255,255,0.05)',
+                    width: '100%'
+                  }}
+                  placeholder="Zadejte chytlavý titulek..."
+                />
+              </div>
+              
+              {/* Section 2: Pricing */}
+              <div className="input-group-premium" style={{ background: 'rgba(255,255,255,0.01)', padding: '1.5rem', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem', color: '#10b981' }}>
+                  <CreditCard size={16} />
+                  <label style={{ fontSize: '0.75rem', fontWeight: '900', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Ceník a služby</label>
+                </div>
+                <textarea 
+                  className="note-input custom-scrollbar" 
+                  style={{ 
+                    height: '100px', 
+                    fontSize: '0.95rem',
+                    background: 'transparent',
+                    border: 'none',
+                    padding: 0,
+                    lineHeight: '1.6',
+                    width: '100%'
+                  }} 
+                  value={localPricing[bioLang] || ''}
+                  onChange={(e) => setLocalPricing({...localPricing, [bioLang]: e.target.value})}
+                  placeholder="Např.: 1h / 2000 Kč, 2h / 3500 Kč, Celá noc / 12000 Kč..."
+                />
+              </div>
+
+              {/* Section 3: Full Bio */}
+              <div className="input-group-premium" style={{ background: 'rgba(255,255,255,0.01)', padding: '1.5rem', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem', color: 'var(--accent-color)' }}>
+                  <FileEdit size={16} />
+                  <label style={{ fontSize: '0.75rem', fontWeight: '900', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{t('fullBioLabel') || 'CELÝ ŽIVOTOPIS'}</label>
+                </div>
+                <textarea 
+                  className="note-input custom-scrollbar" 
+                  style={{ 
+                    height: '250px', 
+                    lineHeight: '1.7', 
+                    fontSize: '1rem',
+                    background: 'transparent',
+                    border: 'none',
+                    padding: 0,
+                    width: '100%'
+                  }} 
+                  value={localBios[bioLang] || ''}
+                  onChange={(e) => setLocalBios({...localBios, [bioLang]: e.target.value})}
+                  placeholder={t('bioPlaceholder')}
+                ></textarea>
+                <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', fontWeight: '700' }}>
+                  <span style={{ opacity: 0.6 }}>{t('bioFormattingNote')}</span>
+                  <span style={{ color: (localBios[bioLang]?.length || 0) > 1800 ? 'var(--_err-color)' : 'var(--accent-color)' }}>
+                    {localBios[bioLang]?.length || 0} / 2000
+                  </span>
+                </div>
+              </div>
+              
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <button onClick={onSaveBioData} className="action-btn" style={{ padding: '1.2rem 3rem', fontSize: '1rem', borderRadius: '15px', display: 'flex', alignItems: 'center', gap: '0.8rem', width: 'fit-content', marginTop: 0 }}>
+                  <Check size={20} /> {t('saveChanges')}
+                </button>
+                {!isMobile && (
+                  <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', maxWidth: '300px', lineHeight: '1.4' }}>
+                    Uložením se texty okamžitě synchronizují s připojenými webovými portály.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
