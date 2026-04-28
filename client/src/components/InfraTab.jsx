@@ -414,7 +414,6 @@ function InfraTab() {
           </div>
         </div>
       </div>
-      )}
     </div>
   );
 }
