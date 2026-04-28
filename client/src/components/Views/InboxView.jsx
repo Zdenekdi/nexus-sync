@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   Search, MessageSquare, Phone, Clock, Link, Globe, Shield, Check, 
   Zap, Calendar, ChevronDown, ChevronLeft, ChevronRight, PlusCircle, 
-  Signal, MoreVertical, StickyNote, Languages, Sparkles, Loader2, RefreshCw, UserCheck
+  Signal, MoreVertical, StickyNote, Languages, Sparkles, Loader2, RefreshCw, UserCheck, X
 } from 'lucide-react';
 
 import { useNexus } from '../../context/ContextHook';
@@ -64,9 +64,11 @@ const InboxView = () => {
         content: m.text
       }));
 
-      const suggestion = await getSuggestion(history, activeProfileId);
-      if (suggestion) {
-        setAiSuggestions([suggestion]);
+      const suggestions = await getSuggestion(history, activeProfileId);
+      if (suggestions && Array.isArray(suggestions)) {
+        setAiSuggestions(suggestions);
+      } else if (suggestions) {
+        setAiSuggestions([suggestions]);
       } else {
         setAiSuggestions([]);
       }
@@ -379,33 +381,65 @@ const InboxView = () => {
                                  <RefreshCw size={12} className={isAiLoading ? 'animate-spin' : ''} />
                                </button>
                              </div>
-                             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                               {isAiLoading ? (
-                                 <div style={{ padding: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontStyle: 'italic' }}>
-                                   {lang === 'cz' ? 'Generuji odpovědi...' : 'Generating suggestions...'}
-                                 </div>
-                               ) : aiSuggestions.length > 0 ? (
-                                 aiSuggestions.map((s, i) => (
-                                   <button 
-                                     key={i} 
-                                     onClick={() => setMessageValue(s)}
-                                     style={{ background: 'rgba(167, 139, 250, 0.08)', border: '1px solid rgba(167, 139, 250, 0.2)', padding: '0.5rem 0.75rem', borderRadius: '10px', color: 'white', fontSize: '0.75rem', textAlign: 'left', cursor: 'pointer', maxWidth: '100%', transition: 'all 0.2s' }}
-                                     onMouseEnter={_err => _err.currentTarget.style.background = 'rgba(167, 139, 250, 0.15)'}
-                                     onMouseLeave={_err => _err.currentTarget.style.background = 'rgba(167, 139, 250, 0.08)'}
-                                   >
-                                     {s}
-                                   </button>
-                                 ))
-                               ) : (
-                                 <div style={{ padding: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
-                                   {aiError ? (
-                                     <span style={{ color: 'var(--error-color)' }}>{aiError}</span>
-                                   ) : (
-                                     lang === 'cz' ? 'Žádné návrhy k dispozici.' : 'No suggestions available.'
-                                   )}
-                                 </div>
-                               )}
-                             </div>
+                             
+                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                                {isAiLoading ? (
+                                  <div style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                                    <RefreshCw size={14} className="animate-spin" />
+                                    {lang === 'cz' ? 'Nexus AI připravuje návrhy...' : 'Nexus AI is preparing suggestions...'}
+                                  </div>
+                                ) : aiSuggestions.length > 0 ? (
+                                  aiSuggestions.map((s, i) => (
+                                    <div 
+                                      key={i} 
+                                      className="fade-in"
+                                      style={{ 
+                                        display: 'flex', 
+                                        flexDirection: 'column',
+                                        background: 'rgba(167, 139, 250, 0.04)', 
+                                        border: '1px solid rgba(167, 139, 250, 0.1)', 
+                                        borderRadius: '12px', 
+                                        overflow: 'hidden',
+                                        transition: 'all 0.2s ease',
+                                        marginBottom: '0.2rem'
+                                      }}
+                                    >
+                                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem' }}>
+                                        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                                          <div style={{ marginTop: '0.15rem' }}>
+                                            <Sparkles size={14} color="#a78bfa" />
+                                          </div>
+                                          <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.9)', lineHeight: '1.5' }}>
+                                            {s}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div style={{ display: 'flex', borderTop: '1px solid rgba(167, 139, 250, 0.08)' }}>
+                                        <button 
+                                          onClick={() => setMessageValue(s)}
+                                          style={{ flex: 1, padding: '0.5rem', background: 'none', border: 'none', borderRight: '1px solid rgba(167, 139, 250, 0.08)', color: 'var(--text-secondary)', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}
+                                        >
+                                          {lang === 'cz' ? 'UPRAVIT' : 'EDIT'}
+                                        </button>
+                                        <button 
+                                          onClick={() => { handleSendMessage(s); setMessageValue(''); }}
+                                          style={{ flex: 1, padding: '0.5rem', background: 'none', border: 'none', color: '#a78bfa', fontSize: '0.65rem', fontWeight: '900', cursor: 'pointer', transition: 'all 0.2s' }}
+                                        >
+                                          {lang === 'cz' ? 'POSLAT' : 'SEND'}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.1)', textAlign: 'center' }}>
+                                    {aiError ? (
+                                      <span style={{ color: 'var(--error-color)' }}>{aiError}</span>
+                                    ) : (
+                                      lang === 'cz' ? 'Žádné návrhy k dispozici. Zkuste obnovit.' : 'No suggestions available. Try refreshing.'
+                                    )}
+                                  </div>
+                                )}
+                              </div>
                            </div>
                          )}
                          {inlinePanelTab === 'notes' && (
@@ -669,10 +703,6 @@ const InboxView = () => {
         </div>
       )}
     </div>
-  )}
-</div>
-    )}
-</div>
   );
 };
 

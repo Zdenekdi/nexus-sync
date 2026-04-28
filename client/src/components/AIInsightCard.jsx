@@ -14,6 +14,71 @@ const AIInsightCard = ({ stats, agencies, systemHealth }) => {
   const [detailedReport, setDetailedReport] = useState(null);
   const [isReportLoading, setIsReportLoading] = useState(false);
 
+  // Helper to render basic markdown-like syntax
+  const renderFormattedContent = (text) => {
+    if (!text) return null;
+    
+    return text.split('\n').map((line, idx) => {
+      const trimmed = line.trim();
+      if (!trimmed) return <div key={idx} style={{ height: '0.75rem' }} />;
+
+      // Header detection (starts and ends with **)
+      if (trimmed.startsWith('**') && trimmed.endsWith('**') && !trimmed.includes(':')) {
+        return (
+          <h4 key={idx} style={{ 
+            fontSize: '0.85rem', 
+            fontWeight: '900', 
+            color: 'var(--accent-color)', 
+            marginTop: '1.5rem', 
+            marginBottom: '0.75rem',
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase'
+          }}>
+            {trimmed.replace(/\*\*/g, '')}
+          </h4>
+        );
+      }
+
+      // Bullet detection
+      if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
+        const content = trimmed.substring(2);
+        const parts = content.split('**');
+        
+        return (
+          <div key={idx} style={{ 
+            display: 'flex', 
+            gap: '0.75rem', 
+            marginBottom: '0.85rem', 
+            padding: '0.75rem 1rem',
+            background: 'rgba(255,255,255,0.02)',
+            borderRadius: '10px',
+            borderLeft: '2px solid var(--accent-color)',
+            alignItems: 'flex-start'
+          }}>
+            <div style={{ marginTop: '0.2rem' }}>
+              <Zap size={14} color="var(--accent-color)" />
+            </div>
+            <div style={{ fontSize: '0.85rem', lineHeight: '1.5', color: 'rgba(255,255,255,0.9)' }}>
+              {parts.map((part, i) => (
+                i % 2 === 1 ? <strong key={i} style={{ color: 'white', fontWeight: '800' }}>{part}</strong> : part
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      // Regular line with inline bold
+      const parts = trimmed.split('**');
+      return (
+        <p key={idx} style={{ marginBottom: '0.75rem', fontSize: '0.9rem', lineHeight: '1.6' }}>
+          {parts.map((part, i) => (
+            i % 2 === 1 ? <strong key={i} style={{ color: 'white', fontWeight: '800' }}>{part}</strong> : part
+          ))}
+        </p>
+      );
+    });
+  };
+
   const generateInsight = async () => {
     const isCz = lang === 'cz' || lang === 'cs';
     const isAppOwner = activeRole === 'App Owner';
@@ -34,12 +99,12 @@ const AIInsightCard = ({ stats, agencies, systemHealth }) => {
       `;
 
       systemPrompt = isCz
-        ? "Jsi Nexus AI, technologický ředitel (CTO) a systémový architekt. Tvým úkolem je monitorovat zdraví platformy a upozorňovat na technické anomálie nebo úzká hrdla. Buď velmi stručný, technický a věcný. Používej odrážky."
-        : "You are Nexus AI, a CTO and System Architect. Your job is to monitor platform health and flag technical anomalies or bottlenecks. Be very concise, technical, and factual. Use bullet points.";
+        ? "Jsi Nexus AI, technologický ředitel (CTO) a systémový architekt. Tvým úkolem je monitorovat zdraví platformy a upozorňovat na technické anomálie nebo úzká hrdla. Používej odrážky ve formátu '* **Nadpis**: Popis'. Na začátek dej krátký úvod."
+        : "You are Nexus AI, a CTO and System Architect. Your job is to monitor platform health and flag technical anomalies or bottlenecks. Use bullets in format '* **Title**: Description'. Start with a short intro.";
 
       userPrompt = isCz
-        ? `Analyzuj tento stav infrastruktury a napiš 3 krátké technické postřehy o stabilitě a výkonu systému. Zde jsou data: ${context}`
-        : `Analyze this infrastructure state and write 3 short technical insights about system stability and performance. Here is the data: ${context}`;
+        ? `Analyzuj tento stav infrastruktury a napiš 3 technické postřehy o stabilitě a výkonu systému. Zde jsou data: ${context}`
+        : `Analyze this infrastructure state and write 3 technical insights about system stability and performance. Here is the data: ${context}`;
     } else {
       // Business Perspective for Managers/Operators
       context = `
@@ -51,12 +116,12 @@ const AIInsightCard = ({ stats, agencies, systemHealth }) => {
       `;
 
       systemPrompt = isCz 
-        ? "Jsi Nexus AI, elitní business analytik pro digitální mediální agentury. Zaměřuješ se VÝHRADNĚ na ekonomický růst, efektivitu a statistiky. Tvé odpovědi jsou stručné, profesionální a motivační. Používej odrážky. Pokud jsou data nízká, buď povzbudivý."
-        : "You are Nexus AI, an elite business analyst for digital media agencies. You focus EXCLUSIVELY on economic growth, efficiency, and statistics. Your answers are concise, professional, and motivational. Use bullet points. If data is low, be encouraging.";
+        ? "Jsi Nexus AI, elitní business analytik pro digitální mediální agentury. Zaměřuješ se VÝHRADNĚ na ekonomický růst, efektivitu a statistiky. Tvé odpovědi jsou stručné, profesionální a motivační. Používej odrážky ve formátu '* **Bod**: Popis'."
+        : "You are Nexus AI, an elite business analyst for digital media agencies. You focus EXCLUSIVELY on economic growth, efficiency, and statistics. Your answers are concise, professional, and motivational. Use bullets in format '* **Point**: Description'.";
 
       userPrompt = isCz
-        ? `Analyzuj tato ekonomická data a napiš 3 krátké body (každý max 10 slov), co je dnes klíčové pro růst firmy. Zde jsou data: ${context}`
-        : `Analyze these economic metrics and write 3 short bullet points (max 10 words each) on what is key for business growth today. Here is the data: ${context}`;
+        ? `Analyzuj tato ekonomická data a napiš 3 body, co je dnes klíčové pro růst firmy. Zde jsou data: ${context}`
+        : `Analyze these economic metrics and write 3 bullet points on what is key for business growth today. Here is the data: ${context}`;
     }
 
     const response = await askAi(userPrompt, systemPrompt);
@@ -84,8 +149,8 @@ const AIInsightCard = ({ stats, agencies, systemHealth }) => {
         `;
         
         const systemPrompt = isCz
-          ? "Jsi Nexus Core AI, hloubkový systémový auditor. Tvým úkolem je vypracovat detailní technický report o stavu platformy. Zaměř se na využití prostředků, predikci stability a doporučení pro údržbu. Používej profesionální, technický tón."
-          : "You are Nexus Core AI, a deep system auditor. Your task is to generate a detailed technical report about the platform's health. Focus on resource utilization, stability prediction, and maintenance recommendations. Use a professional, technical tone.";
+          ? "Jsi Nexus Core AI, hloubkový systémový auditor. Tvým úkolem je vypracovat detailní technický report o stavu platformy. Používej markdown formátování: nadpisy pomocí '**Nadpis**' a odrážky pomocí '* **Bod**: Popis'."
+          : "You are Nexus Core AI, a deep system auditor. Your task is to generate a detailed technical report. Use markdown formatting: headers with '**Header**' and bullets with '* **Point**: Description'.";
         
         const userPrompt = isCz
           ? `Vypracuj hloubkový technický audit na základě těchto dat: ${context}. Report by měl mít cca 150 slov.`
@@ -112,7 +177,7 @@ const AIInsightCard = ({ stats, agencies, systemHealth }) => {
     <>
       <div className="glass-card fade-in" style={{ 
         padding: '2rem', 
-        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%)',
+        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%)',
         border: '1px solid rgba(99, 102, 241, 0.2)',
         position: 'relative',
         overflow: 'hidden'
@@ -133,8 +198,8 @@ const AIInsightCard = ({ stats, agencies, systemHealth }) => {
               <Sparkles size={20} color="white" />
             </div>
             <div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: '900', letterSpacing: '0.02em' }}>NEXUS AI INSIGHT</h3>
-              <div style={{ fontSize: '0.65rem', color: 'var(--accent-color)', fontWeight: '800', letterSpacing: '0.1em' }}>POWERED BY LLAMA 3.1</div>
+              <h3 style={{ fontSize: '1rem', fontWeight: '900', letterSpacing: '0.02em' }}>NEXUS AI INSIGHT</h3>
+              <div style={{ fontSize: '0.6rem', color: 'var(--accent-color)', fontWeight: '800', letterSpacing: '0.1em' }}>POWERED BY LLAMA 3.1</div>
             </div>
           </div>
           
@@ -145,31 +210,29 @@ const AIInsightCard = ({ stats, agencies, systemHealth }) => {
               background: 'rgba(255,255,255,0.05)', border: 'none', 
               color: 'var(--text-secondary)', cursor: 'pointer',
               padding: '0.5rem', borderRadius: '10px',
-              transition: 'all 0.2s'
+              transition: 'all 0.2s',
+              opacity: isAiLoading ? 0.5 : 1
             }}
           >
             <RefreshCw size={16} className={isAiLoading ? 'spin-animation' : ''} />
           </button>
         </div>
 
-        <div style={{ minHeight: '80px' }}>
+        <div style={{ minHeight: '100px' }}>
           {isAiLoading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <div className="skeleton-text" style={{ width: '90%', height: '14px', borderRadius: '4px' }}></div>
-              <div className="skeleton-text" style={{ width: '70%', height: '14px', borderRadius: '4px' }}></div>
-              <div className="skeleton-text" style={{ width: '85%', height: '14px', borderRadius: '4px' }}></div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              <div className="skeleton-text" style={{ width: '90%', height: '12px', borderRadius: '4px' }}></div>
+              <div className="skeleton-text" style={{ width: '70%', height: '12px', borderRadius: '4px' }}></div>
+              <div className="skeleton-text" style={{ width: '85%', height: '12px', borderRadius: '4px' }}></div>
             </div>
           ) : aiError ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--_err-color)', fontSize: '0.85rem', fontWeight: '600' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--_err-color)', fontSize: '0.85rem', fontWeight: '600', padding: '1rem', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '10px' }}>
               <AlertCircle size={18} /> {aiError}
             </div>
           ) : insight ? (
             <div style={{ position: 'relative' }}>
-              <div style={{ 
-                fontSize: '0.95rem', color: 'white', lineHeight: '1.6', 
-                fontWeight: '600', whiteSpace: 'pre-line' 
-              }}>
-                {insight}
+              <div style={{ color: 'white' }}>
+                {renderFormattedContent(insight)}
               </div>
               <div 
                 onClick={handleDetailedAction}
@@ -178,21 +241,31 @@ const AIInsightCard = ({ stats, agencies, systemHealth }) => {
                   display: 'inline-flex', 
                   alignItems: 'center', 
                   gap: '0.5rem', 
-                  fontSize: '0.75rem', 
+                  fontSize: '0.7rem', 
                   color: 'var(--accent-color)', 
-                  fontWeight: '800',
+                  fontWeight: '900',
                   cursor: 'pointer',
-                  transition: 'opacity 0.2s'
+                  transition: 'all 0.2s',
+                  padding: '0.5rem 1rem',
+                  background: 'rgba(99, 102, 241, 0.1)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(99, 102, 241, 0.2)'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
-                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(99, 102, 241, 0.2)';
+                  e.currentTarget.style.transform = 'translateX(4px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(99, 102, 241, 0.1)';
+                  e.currentTarget.style.transform = 'translateX(0)';
+                }}
               >
                 {isCz ? 'ZOBRAZIT DETAILNÍ ANALÝZU' : 'VIEW DETAILED ANALYSIS'} <ArrowRight size={14} />
               </div>
             </div>
           ) : (
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontStyle: 'italic' }}>
-              {isCz ? 'Čekám na data pro analýzu...' : 'Waiting for data to analyze...'}
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+               <RefreshCw size={14} className="spin-animation" /> {isCz ? 'Čekám na data pro analýzu...' : 'Waiting for data to analyze...'}
             </div>
           )}
         </div>
@@ -201,7 +274,7 @@ const AIInsightCard = ({ stats, agencies, systemHealth }) => {
         <div style={{ 
           position: 'absolute', bottom: '-30px', left: '-30px', 
           width: '100px', height: '100px', 
-          background: 'var(--accent-color)', filter: 'blur(60px)', opacity: 0.2 
+          background: 'var(--accent-color)', filter: 'blur(60px)', opacity: 0.1 
         }}></div>
       </div>
 
@@ -210,67 +283,94 @@ const AIInsightCard = ({ stats, agencies, systemHealth }) => {
         <div style={{ 
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
           zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', 
-          padding: isMobile ? '1rem' : '2rem', backdropFilter: 'blur(10px)', background: 'rgba(0,0,0,0.8)' 
+          padding: isMobile ? '1rem' : '2rem', backdropFilter: 'blur(15px)', background: 'rgba(0,0,0,0.85)' 
         }}>
           <div className="glass-card fade-in" style={{ 
             maxWidth: '900px', width: '100%', maxHeight: '90vh', overflowY: 'auto',
-            background: '#0a0c10', border: '1px solid var(--card-border)', padding: '2.5rem',
-            position: 'relative', display: 'flex', flexDirection: 'column', gap: '2rem'
+            background: '#080a0f', border: '1px solid var(--card-border)', padding: isMobile ? '1.5rem' : '3rem',
+            position: 'relative', display: 'flex', flexDirection: 'column', gap: '2rem',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
           }}>
             <button 
               onClick={() => setShowDetailedAudit(false)}
-              style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
+              style={{ position: 'absolute', top: '2rem', right: '2rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer', width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
-              <ArrowRight size={24} style={{ transform: 'rotate(-45deg)' }} />
+              <X size={20} />
             </button>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <div style={{ width: '50px', height: '50px', borderRadius: '15px', background: 'rgba(99, 102, 241, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--accent-color)' }}>
-                <Activity size={24} color="var(--accent-color)" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+              <div style={{ width: '60px', height: '60px', borderRadius: '18px', background: 'rgba(99, 102, 241, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--accent-color)', boxShadow: '0 0 20px rgba(99, 102, 241, 0.2)' }}>
+                <Activity size={28} color="var(--accent-color)" />
               </div>
               <div>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: '900' }}>{isCz ? 'Technický Audit Systému' : 'System Technical Audit'}</h2>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '700' }}>{isCz ? 'ZALOŽENO NA REÁLNÉ TELEMETRII' : 'BASED ON REAL-TIME TELEMETRY'}</div>
+                <h2 style={{ fontSize: '1.75rem', fontWeight: '900', letterSpacing: '-0.01em' }}>{isCz ? 'Technický Audit Systému' : 'System Technical Audit'}</h2>
+                <div style={{ fontSize: '0.7rem', color: 'var(--accent-color)', fontWeight: '900', letterSpacing: '0.1em' }}>{isCz ? 'ZALOŽENO NA REÁLNÉ TELEMETRII' : 'BASED ON REAL-TIME TELEMETRY'}</div>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '1rem' }}>
               {[
-                { label: 'CPU LOAD', value: systemHealth?.cpu?.loadAvg[0], icon: <Activity size={16} /> },
-                { label: 'MEMORY', value: `${systemHealth?.memory?.percent}%`, icon: <Brain size={16} /> },
-                { label: 'DISK', value: systemHealth?.disk?.percent, icon: <HardDrive size={16} /> },
-                { label: 'UPTIME', value: `${systemHealth?.uptime?.days}d`, icon: <RefreshCw size={16} /> }
+                { label: 'CPU LOAD', value: systemHealth?.cpu?.loadAvg[0], icon: <Activity size={14} />, color: '#60a5fa' },
+                { label: 'MEMORY', value: `${systemHealth?.memory?.percent}%`, icon: <Brain size={14} />, color: '#a855f7' },
+                { label: 'DISK USAGE', value: systemHealth?.disk?.percent, icon: <HardDrive size={14} />, color: '#f59e0b' },
+                { label: 'UPTIME', value: `${systemHealth?.uptime?.days}d`, icon: <RefreshCw size={14} />, color: '#10b981' }
               ].map((m, i) => (
-                <div key={i} style={{ background: 'rgba(255,255,255,0.02)', padding: '1.25rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>{m.icon} {m.label}</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: '900', color: 'var(--accent-color)' }}>{m.value}</div>
+                <div key={i} style={{ background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div style={{ fontSize: '0.6rem', fontWeight: '900', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem', letterSpacing: '0.05em' }}>
+                    <span style={{ color: m.color }}>{m.icon}</span> {m.label}
+                  </div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: '900', color: 'white' }}>{m.value}</div>
                 </div>
               ))}
             </div>
 
-            <div style={{ background: 'rgba(99, 102, 241, 0.05)', borderRadius: '16px', padding: '1.5rem', border: '1px solid rgba(99, 102, 241, 0.1)' }}>
-              <h4 style={{ fontSize: '0.85rem', fontWeight: '900', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--accent-color)' }}>
-                <Brain size={18} /> {isCz ? 'AI ANALÝZA A DOPORUČENÍ' : 'AI ANALYSIS & RECOMMENDATIONS'}
+            <div style={{ background: 'rgba(99, 102, 241, 0.03)', borderRadius: '20px', padding: isMobile ? '1.5rem' : '2.5rem', border: '1px solid rgba(99, 102, 241, 0.1)', position: 'relative' }}>
+              <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', opacity: 0.1 }}>
+                <Brain size={40} color="var(--accent-color)" />
+              </div>
+              <h4 style={{ fontSize: '0.9rem', fontWeight: '900', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--accent-color)', letterSpacing: '0.05em' }}>
+                <Sparkles size={18} /> {isCz ? 'AI ANALÝZA A DOPORUČENÍ' : 'AI ANALYSIS & RECOMMENDATIONS'}
               </h4>
-              <div style={{ fontSize: '1rem', lineHeight: '1.7', color: '#e2e8f0', fontFamily: 'monospace', whiteSpace: 'pre-line' }}>
+              <div style={{ fontSize: '1rem', color: '#e2e8f0' }}>
                 {isReportLoading ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <div className="skeleton-text" style={{ width: '100%', height: '14px' }}></div>
-                    <div className="skeleton-text" style={{ width: '90%', height: '14px' }}></div>
-                    <div className="skeleton-text" style={{ width: '95%', height: '14px' }}></div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    <div className="skeleton-text" style={{ width: '100%', height: '14px', borderRadius: '4px' }}></div>
+                    <div className="skeleton-text" style={{ width: '90%', height: '14px', borderRadius: '4px' }}></div>
+                    <div className="skeleton-text" style={{ width: '95%', height: '14px', borderRadius: '4px' }}></div>
                   </div>
                 ) : (
-                  detailedReport
+                  <div style={{ fontFamily: 'var(--font-main)' }}>
+                    {renderFormattedContent(detailedReport)}
+                  </div>
                 )}
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
               <button 
                 onClick={() => setShowDetailedAudit(false)}
-                style={{ padding: '0.75rem 2rem', borderRadius: '12px', background: 'var(--accent-color)', color: 'white', border: 'none', fontWeight: '800', cursor: 'pointer' }}
+                style={{ 
+                  padding: '1rem 3rem', 
+                  borderRadius: '14px', 
+                  background: 'var(--accent-color)', 
+                  color: 'white', 
+                  border: 'none', 
+                  fontWeight: '900', 
+                  fontSize: '0.9rem',
+                  cursor: 'pointer',
+                  boxShadow: '0 10px 20px rgba(99, 102, 241, 0.3)',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 15px 25px rgba(99, 102, 241, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 10px 20px rgba(99, 102, 241, 0.3)';
+                }}
               >
-                {isCz ? 'ROZUMÍM' : 'ACKNOWLEDGED'}
+                {isCz ? 'POTVRDIT PŘEČTENÍ' : 'ACKNOWLEDGE AUDIT'}
               </button>
             </div>
           </div>

@@ -45,48 +45,66 @@ class AIService {
   }
 
   /**
-   * Suggest a reply based on chat history
+   * Suggest 3 distinct replies based on chat history
    * @param {Array} messages - Array of { role, content } messages
    * @param {string} profileContext - Context about the persona/profile
+   * @param {Array} styleExamples - Real examples of how the model writes
    */
   async suggestReply(messages, profileContext = "", styleExamples = []) {
     try {
-      logger.info(`AI: Generování návrhu odpovědi pro chat (${messages.length} zpráv)`);
+      logger.info(`AI: Generování 3 návrhů odpovědí pro chat (${messages.length} zpráv)`);
       
       let styleSection = "";
       if (styleExamples.length > 0) {
         styleSection = `
-          Tady jsou příklady stylu, jakým tato modelka píše:
+          TADY JSOU REÁLNÉ UKÁZKY STYLU MODELKY (POUŽIJ JE JAKO VZOR):
           ${styleExamples.map(s => `- ${s}`).join('\n')}
           
-          PIŠ PŘESNĚ TÍMTO STYLEM (používej stejné smajlíky, tón, délku zpráv).
+          ZAMĚŘ SE NA: Stejnou délku zpráv, stejnou frekvenci smajlíků, stejnou míru flirtování.
         `;
       }
 
       const system = `
-        Jsi Nexus AI, špičkový asistent pro OnlyFans chatting. 
-        Tvým úkolem je zastupovat modelku a psát PŘESNĚ jejím jménem a stylem. 
-        I když za klávesnicí sedí operátor, tvé návrhy musí znít, jako by je psala sama modelka.
-        Kontext profilu: ${profileContext}
+        Jsi Nexus AI, špičkový expert na komunikaci a prodej na OnlyFans/Fansly. 
+        Zastupuješ tuto modelku: ${profileContext}
         ${styleSection}
-        Tvé odpovědi jsou flirtující, přirozené, stručné a zaměřené na budování vztahu a prodej obsahu.
-        Odpovídej POUZE samotným textem zprávy, který může operátor ihned odeslat.
+        
+        TVŮJ ÚKOL:
+        Navrhni 3 RŮZNÉ varianty odpovědi na poslední zprávu uživatele.
+        1. VARIANTA: Krátká, úderná, flirtující.
+        2. VARIANTA: Delší, budující vztah, pokládající otázku.
+        3. VARIANTA: Zaměřená na prodej obsahu nebo "zamknutých" zpráv.
+
+        PODMÍNKY:
+        - Odpovídáš v jazyce, kterým mluví uživatel (pokud on píše česky, ty taky).
+        - Piš PŘIROZENĚ, jako člověk, ne jako robot. Používej moderní slang a emoji.
+        - TVOJE ODPOVĚĎ MUSÍ BÝT ČISTÝ JSON POLE STRINGŮ (např. ["návrh 1", "návrh 2", "návrh 3"]).
+        - NEPIŠ ŽÁDNÝ JINÝ TEXT, POUZE JSON.
       `;
 
-      const response = await axios.post(`${this.baseUrl}/chat`, {
+      const response = await axios.post(`${this.baseUrl}/generate`, {
         model: this.model,
-        messages: [
-          { role: 'system', content: system },
-          ...messages
-        ],
+        prompt: `Chat history:\n${messages.map(m => `${m.role}: ${m.content}`).join('\n')}\n\nSystem instructions: ${system}\n\nGenerate the 3 suggestions as a JSON array:`,
         stream: false,
         options: {
-          temperature: 0.8,
-          num_predict: 256
+          temperature: 0.85,
+          num_predict: 512
         }
-      }, { timeout: 30000 });
+      }, { timeout: 35000 });
 
-      return response.data.message.content;
+      const rawContent = response.data.response.trim();
+      try {
+        // Try to parse as JSON
+        const match = rawContent.match(/\[.*\]/s);
+        if (match) {
+          const suggestions = JSON.parse(match[0]);
+          if (Array.isArray(suggestions)) return suggestions;
+        }
+        // Fallback if not JSON
+        return rawContent.split('\n').filter(l => l.trim().length > 5).slice(0, 3);
+      } catch (e) {
+        return [rawContent];
+      }
     } catch (error) {
       logger.error('AI Suggest Error:', error.message);
       throw error;
