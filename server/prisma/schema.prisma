@@ -158,6 +158,7 @@ model Profile {
   status      String    @default("offline")
   bio         String?
   description String?
+  sampleMessages String?  // Field for manual training (pasted history)
   gallery     String?   // JSON array of image URLs
   agencyId    String
   agency      Agency    @relation(fields: [agencyId], references: [id])

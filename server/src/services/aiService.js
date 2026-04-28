@@ -49,15 +49,28 @@ class AIService {
    * @param {Array} messages - Array of { role, content } messages
    * @param {string} profileContext - Context about the persona/profile
    */
-  async suggestReply(messages, profileContext = "") {
+  async suggestReply(messages, profileContext = "", styleExamples = []) {
     try {
       logger.info(`AI: Generování návrhu odpovědi pro chat (${messages.length} zpráv)`);
       
+      let styleSection = "";
+      if (styleExamples.length > 0) {
+        styleSection = `
+          Tady jsou příklady stylu, jakým tato modelka píše:
+          ${styleExamples.map(s => `- ${s}`).join('\n')}
+          
+          PIŠ PŘESNĚ TÍMTO STYLEM (používej stejné smajlíky, tón, délku zpráv).
+        `;
+      }
+
       const system = `
-        Jsi Nexus AI. Navrhuješ odpovědi pro chaty na OnlyFans. 
-        Tvé odpovědi jsou flirtující, přirozené, stručné a zaměřené na budování vztahu a prodej obsahu.
+        Jsi Nexus AI, špičkový asistent pro OnlyFans chatting. 
+        Tvým úkolem je zastupovat modelku a psát PŘESNĚ jejím jménem a stylem. 
+        I když za klávesnicí sedí operátor, tvé návrhy musí znít, jako by je psala sama modelka.
         Kontext profilu: ${profileContext}
-        Odpovídej POUZE samotným textem zprávy.
+        ${styleSection}
+        Tvé odpovědi jsou flirtující, přirozené, stručné a zaměřené na budování vztahu a prodej obsahu.
+        Odpovídej POUZE samotným textem zprávy, který může operátor ihned odeslat.
       `;
 
       const response = await axios.post(`${this.baseUrl}/chat`, {
