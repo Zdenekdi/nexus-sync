@@ -28,8 +28,9 @@ exports.getProfiles = async (req, res) => {
 
     const sanitized = profiles.map(profile => {
       const data = parseData(profile.data);
-      const totalRevenue = profile.bookings.reduce((sum, b) => sum + (b.price || 0), 0);
-      const totalBookings = profile.bookings.length;
+      const bookings = profile.bookings || [];
+      const totalRevenue = bookings.reduce((sum, b) => sum + (b.price || 0), 0);
+      const totalBookings = bookings.length;
       
       return { 
         ...profile, 
