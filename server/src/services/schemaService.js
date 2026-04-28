@@ -45,10 +45,19 @@ async function ensureSchemaIntegrity() {
 
     // 5. Ensure Agency.referralCode column exists
     try {
-      await prisma.$executeRawUnsafe(`ALTER TABLE "Agency" ADD COLUMN "referralCode" TEXT;`);
-      console.log('[DB] Added missing referralCode column to Agency.');
-    } catch { 
-      // Column likely already exists
+      // Check if column exists first to avoid Prisma error noise
+      const columnExists = await prisma.$queryRawUnsafe(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name='Agency' AND column_name='referralCode';
+      `);
+
+      if (columnExists.length === 0) {
+        await prisma.$executeRawUnsafe(`ALTER TABLE "Agency" ADD COLUMN "referralCode" TEXT;`);
+        console.log('[DB] Added missing referralCode column to Agency.');
+      }
+    } catch (err) { 
+      console.warn('[DB] ReferralCode check/add skipped:', err.message);
     }
     
     // 6. Ensure unique index on referralCode
