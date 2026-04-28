@@ -696,14 +696,11 @@ const InboxView = () => {
               </div>
             )}
           </div>
-        </div>
-      ) : (
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t('selectConversationDesc')}</div>
-        </div>
-      )}
-    </div>
-  );
+        )}
+      </div>
+    )}
+  </div>
+);
 };
 
 export default InboxView;
