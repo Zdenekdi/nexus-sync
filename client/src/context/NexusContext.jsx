@@ -330,7 +330,7 @@ export const NexusProvider = ({ children }) => {
     setActiveProfileId: memoizedSetActiveProfileId, 
     setShowLanding: memoizedSetShowLanding 
   });
-  const { activeOperator: authUser, token, handleLogout: logout, isLoggedIn } = auth;
+  const { activeOperator: authUser, token, handleLogout: logout, isLoggedIn, scheduleTokenRefresh } = auth;
 
 
   useEffect(() => {
@@ -380,21 +380,18 @@ export const NexusProvider = ({ children }) => {
       (response) => response,
       async (_err) => {
         const originalRequest = _err.config;
+        
         if (_err.response?.status === 401 && !originalRequest._retry) {
           originalRequest._retry = true;
-          const storedRefreshToken = localStorage.getItem('nexus_refreshToken');
-          if (storedRefreshToken) {
-            try {
-              const res = await axios.post(`${API_BASE}/auth/refresh`, { refreshToken: storedRefreshToken });
-              if (res.data?.token) {
-                localStorage.setItem('nexus_token', res.data.token);
-                originalRequest.headers['Authorization'] = `Bearer ${res.data.token}`;
-                return axios(originalRequest);
-              }
-            } catch {
-              logout();
+
+          try {
+            const newToken = await scheduleTokenRefresh(0);
+            if (newToken) {
+              originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+              return axios(originalRequest);
             }
-          } else {
+          } catch (refreshErr) {
+            console.error('[Interceptor] Refresh failed', refreshErr);
             logout();
           }
         }
@@ -402,7 +399,7 @@ export const NexusProvider = ({ children }) => {
       }
     );
     return () => axios.interceptors.response.eject(interceptor);
-  }, [logout]); 
+  }, [logout, scheduleTokenRefresh]); 
 
   const memoizedSetActiveOperator = useCallback((op) => setActiveOperatorState(op), []);
   const memoizedSetMessages = useCallback((msgs) => setMessages(msgs), []);
