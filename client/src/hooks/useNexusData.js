@@ -379,6 +379,32 @@ export function useNexusData({
       if (showToast) showToast(lang === 'cz' ? 'Nepodařilo se uložit údaje.' : 'Failed to save credentials.', 'error');
     }
   }, [activeProfileId, token, API_BASE, initData, showToast, lang]);
+
+  const toggleOperatorStatus = useCallback(async (profileId, operatorId) => {
+    if (!profileId || !operatorId) return;
+    try {
+      await axios.post(`${API_BASE}/profiles/${profileId}/toggle-operator`, { operatorId }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      initData();
+    } catch (_err) {
+      console.error('Toggle operator status failed:', _err);
+      if (showToast) showToast(lang === 'cz' ? 'Změna stavu selhala.' : 'Failed to toggle status.', 'error');
+    }
+  }, [token, API_BASE, initData, showToast, lang]);
+
+  const handleSaveAssignees = useCallback(async (profileId, operatorIds) => {
+    if (!profileId) return;
+    try {
+      await axios.put(`${API_BASE}/profiles/${profileId}/assignees`, { operatorIds }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      initData();
+    } catch (_err) {
+      console.error('Save assignees failed:', _err);
+      if (showToast) showToast(lang === 'cz' ? 'Uložení týmu selhalo.' : 'Failed to save team.', 'error');
+    }
+  }, [token, API_BASE, initData, showToast, lang]);
   
   const handleExportICS = useCallback(() => {
     if (!calendar || calendar.length === 0) {
@@ -576,6 +602,7 @@ export function useNexusData({
     isBookingModalOpen, setIsBookingModalOpen, selectedScheduleEvent, setSelectedScheduleEvent,
     newBookingForm, setNewBookingForm, bioText, setBioText, isSyncing, syncStatus: _syncStatus, syncProgress: _syncProgress,
     relayOnline, handleSaveBio, handleSyncAll, handleSaveCredentials, handleQuickSaveMeeting, handleDelayBooking, initData,
-    handleExportICS, handleSaveCalendarSync, handleSaveBooking, fetchClientByPhone
+    handleExportICS, handleSaveCalendarSync, handleSaveBooking, fetchClientByPhone,
+    setProfiles, toggleOperatorStatus, handleSaveAssignees
   };
 }
