@@ -737,11 +737,14 @@ const InboxView = () => {
               </div>
             )}
           </div>
-        )}
-      </div>
-    )}
-  </div>
-  );
+        </div>
+      )}
+    </div>
+  )}
+</div>
+)}
+</div>
+);
 };
 
 export default InboxView;
