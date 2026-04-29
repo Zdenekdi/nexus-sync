@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "cap:sync": "node scripts/sync-android-assets.js && node scripts/post-cap-sync.js",
     "cap:open": "npx cap open android",
-    "cap:build": "npm run build && npm run cap:sync && npx cap open android"
+    "cap:build": "npm run build && npm run cap:sync && npx cap open android",
+    "deploy:ota": "node scripts/deploy-ota.js"
   },
   "dependencies": {
     "@capacitor/android": "^8.2.0",
@@ -21,7 +22,10 @@
     "@capacitor/geolocation": "^8.0.2",
     "@capacitor/local-notifications": "^8.0.2",
     "@capacitor/push-notifications": "^8.0.3",
+    "@sentry/capacitor": "^3.2.1",
+    "@sentry/react": "^10.43.0",
     "axios": "^1.13.6",
+    "capacitor-updater": "^3.3.12",
     "jssip": "^3.13.6",
     "lucide-react": "^0.577.0",
     "react": "^19.2.0",

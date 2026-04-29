@@ -162,20 +162,85 @@ router.post("/git-pull", validate(gitPull), async (req, res) => {
 });
 
 // ── APK Management ────────────────────────────────────────────────────────────
-router.post("/upload-apk", apkUpload.single("apk"), (req, res) => {
+const ApkReader = require("adbkit-apkreader");
+
+router.post("/upload-apk", apkUpload.single("apk"), async (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No APK file provided' });
-  const stat = fs.statSync(req.file.path);
+  
+  try {
+    const stat = fs.statSync(req.file.path);
+    let version = "1.0";
+    let versionCode = 0;
+    let packageName = "";
+
+    try {
+      const reader = await ApkReader.open(req.file.path);
+      const manifest = await reader.readManifest();
+      version = manifest.versionName || "1.0";
+      versionCode = manifest.versionCode || 0;
+      packageName = manifest.package || "";
+      logger.info(`[APK] Parsed metadata: ${packageName} v${version} (${versionCode})`);
+    } catch (parseErr) {
+      logger.warn("[APK] Failed to parse APK metadata, using defaults:", parseErr.message);
+    }
+
+    const meta = {
+      version,
+      versionCode,
+      packageName,
+      filename: "nexus-relay.apk",
+      size: stat.size,
+      uploadedAt: new Date().toISOString(),
+      downloadUrl: `${process.env.API_BASE_URL || "https://nexus-api.myvnc.com"}/downloads/nexus-relay.apk`
+    };
+
+    fs.writeFileSync(path.join(DOWNLOADS_DIR, "nexus-relay.meta.json"), JSON.stringify(meta, null, 2));
+    logger.info(`[APK] New relay APK v${version} uploaded: ${stat.size} bytes`);
+    res.json({ ok: true, ...meta });
+  } catch (err) {
+    logger.error("[APK] Upload processing error:", err.message);
+    res.status(500).json({ message: "Failed to process APK upload" });
+  }
+});
+
+router.get("/latest-version", (req, res) => {
+  const metaPath = path.join(DOWNLOADS_DIR, "nexus-relay.meta.json");
+  if (!fs.existsSync(metaPath)) {
+    return res.status(404).json({ message: "No version info available" });
+  }
+  try {
+    const meta = JSON.parse(fs.readFileSync(metaPath, "utf8"));
+    res.json(meta);
+  } catch (err) {
+    res.status(500).json({ message: "Error reading version info" });
+  }
+});
+
+const otaUpload = multer({ 
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, DOWNLOADS_DIR),
+    filename: (req, file, cb) => cb(null, "nexus-relay.zip")
+  }),
+  limits: { fileSize: 100 * 1024 * 1024 }
+});
+
+router.post("/upload-ota", otaUpload.single("ota"), (req, res) => {
+  if (!req.file) return res.status(400).json({ message: 'No OTA file provided' });
   const version = req.body.version || "1.0";
-  const meta = {
-    version,
-    filename: "nexus-relay.apk",
-    size: stat.size,
-    uploadedAt: new Date().toISOString(),
-    downloadUrl: `${process.env.API_BASE_URL || "https://nexus-api.myvnc.com"}/downloads/nexus-relay.apk`
-  };
-  fs.writeFileSync(path.join(DOWNLOADS_DIR, "nexus-relay.meta.json"), JSON.stringify(meta, null, 2));
-  logger.info(`[APK] New relay APK v${version} uploaded: ${stat.size} bytes`);
-  res.json({ ok: true, ...meta });
+  const metaPath = path.join(DOWNLOADS_DIR, "nexus-relay.meta.json");
+  
+  let meta = {};
+  if (fs.existsSync(metaPath)) {
+    try { meta = JSON.parse(fs.readFileSync(metaPath, "utf8")); } catch {}
+  }
+
+  meta.version = version;
+  meta.uploadedAt = new Date().toISOString();
+  meta.otaUrl = `${process.env.API_BASE_URL || "https://nexus-api.myvnc.com"}/downloads/nexus-relay.zip`;
+
+  fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
+  logger.info(`[OTA] New web bundle v${version} uploaded`);
+  res.json({ ok: true, version });
 });
 
 router.get("/apk-info", (req, res) => {

@@ -324,11 +324,10 @@ function InfraTab() {
             {apkInfo?.available ? (
               <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '12px', padding: '0.75rem 1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--success-color)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><CheckCircle2 size={13} /> APK na serveru</div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--success-color)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><CheckCircle2 size={13} /> APK: v{apkInfo.version}</div>
                   <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
                     {(apkInfo.size / 1024 / 1024).toFixed(1)} MB · Nahráno {new Date(apkInfo.uploadedAt).toLocaleDateString('cs-CZ')}
                   </div>
-                  <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', marginTop: '0.15rem', wordBreak: 'break-all' }}>{apkInfo.downloadUrl}</div>
                 </div>
                 <a href={apkInfo.downloadUrl} target="_blank" rel="noreferrer"
                   style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.45rem 0.8rem', borderRadius: '8px', background: 'rgba(16,185,129,0.15)', color: 'var(--success-color)', fontSize: '0.72rem', fontWeight: '800', textDecoration: 'none', whiteSpace: 'nowrap', marginLeft: '0.75rem' }}>
@@ -338,13 +337,9 @@ function InfraTab() {
             ) : (
               <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '12px', padding: '0.75rem 1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#a5b4fc', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Smartphone size={13} /> Aktuální stažení</div>
-                  <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>nexus-sync-8d50b.web.app/device-setup</div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#a5b4fc', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Smartphone size={13} /> Žádné APK</div>
+                  <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>Nahrajte první verzi relay aplikace</div>
                 </div>
-                <a href="https://nexus-sync-8d50b.web.app/device-setup" target="_blank" rel="noreferrer"
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.45rem 0.8rem', borderRadius: '8px', background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', fontSize: '0.72rem', fontWeight: '800', textDecoration: 'none', whiteSpace: 'nowrap', marginLeft: '0.75rem' }}>
-                  <Download size={13} /> Stránka
-                </a>
               </div>
             )}
 
@@ -354,16 +349,6 @@ function InfraTab() {
                 _err.target.value = '';
               }}
             />
-
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.75rem' }}>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Verze:</span>
-              <input
-                value={apkVersion}
-                onChange={_err => setApkVersion(_err.target.value)}
-                placeholder="1.0"
-                style={{ flex: 1, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--card-border)', borderRadius: '8px', padding: '0.35rem 0.6rem', color: 'white', fontSize: '0.78rem' }}
-              />
-            </div>
 
             {/* Drag-and-drop zone */}
             <div
@@ -379,7 +364,7 @@ function InfraTab() {
               style={{
                 border: `2px dashed ${isDragging ? '#6366f1' : uploadProgress !== null ? 'rgba(99,102,241,0.2)' : 'rgba(99,102,241,0.35)'}`,
                 borderRadius: '14px',
-                padding: '1.25rem 1rem',
+                padding: '2rem 1rem',
                 textAlign: 'center',
                 cursor: uploadProgress !== null ? 'not-allowed' : 'pointer',
                 background: isDragging ? 'rgba(99,102,241,0.12)' : 'rgba(99,102,241,0.04)',
@@ -403,14 +388,14 @@ function InfraTab() {
               ) : (
                 <>
                   <Upload size={22} style={{ color: '#a5b4fc', marginBottom: '0.4rem', opacity: 0.7 }} />
-                  <div style={{ fontSize: '0.78rem', color: '#a5b4fc', fontWeight: '800', marginBottom: '0.2rem' }}>Přetáhni APK sem</div>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>nebo klikni pro výběr souboru</div>
+                  <div style={{ fontSize: '0.78rem', color: '#a5b4fc', fontWeight: '800', marginBottom: '0.2rem' }}>Nahrajte nové APK</div>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Verze bude detekována automaticky</div>
                 </>
               )}
             </div>
 
             {apkError && <div style={{ fontSize: '0.72rem', color: 'var(--_err-color)', marginTop: '0.5rem' }}>{apkError}</div>}
-            {apkSuccess && <div style={{ fontSize: '0.72rem', color: 'var(--success-color)', marginTop: '0.5rem' }}>✓ APK nahráno úspěšně</div>}
+            {apkSuccess && <div style={{ fontSize: '0.72rem', color: 'var(--success-color)', marginTop: '0.5rem' }}>✓ APK nahráno a metadata uložena</div>}
           </div>
         </div>
       </div>

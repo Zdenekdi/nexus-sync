@@ -106,16 +106,15 @@ export function useVultr() {
 
   const clearCmdOutput = () => setCmdOutput("");
 
-  const uploadApk = async (file, version = "1.0") => {
+  const uploadApk = async (file) => {
     const formData = new FormData();
     formData.append("apk", file);
-    formData.append("version", version);
     setUploadProgress(0);
     try {
       const token = localStorage.getItem("nexus_token");
       const { data } = await axios.post(`${API_BASE}/vultr/upload-apk`, formData, {
         headers: { Authorization: `Bearer ${token}` },
-        onUploadProgress: (_err) => setUploadProgress(Math.round((_err.loaded / _err.total) * 100))
+        onUploadProgress: (_err) => setUploadProgress(Math.round((_err.loaded * 100) / _err.total))
       });
       setApkInfo({ available: true, ...data });
       setUploadProgress(null);
