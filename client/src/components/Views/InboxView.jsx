@@ -55,9 +55,12 @@ const InboxView = () => {
   const lastMsgId = chatMessages.length > 0 ? chatMessages[chatMessages.length - 1].id : null;
 
   const loadAiSuggestions = React.useCallback(async () => {
-    if (!selectedChat || !chatMessages.length) return;
+    if (!selectedChat || !chatMessages.length) {
+      console.warn("[AI] Cannot load suggestions: missing chat or messages", { selectedChat, count: chatMessages.length });
+      return;
+    }
     
-    
+    console.log("[AI] Requesting suggestions for chat:", selectedChatId);
     try {
       const history = chatMessages.slice(-10).map(m => ({
         role: m.direction === 'OUTBOUND' ? 'assistant' : 'user',
@@ -65,19 +68,21 @@ const InboxView = () => {
       }));
 
       const suggestions = await getSuggestion(history, activeProfileId);
+      console.log("[AI] Suggestions received:", suggestions);
+      
       if (suggestions && Array.isArray(suggestions)) {
         setAiSuggestions(suggestions);
       } else if (suggestions) {
         setAiSuggestions([suggestions]);
       } else {
         setAiSuggestions([]);
+        showToast(lang === 'cz' ? 'AI nevrátilo žádné návrhy.' : 'AI returned no suggestions.', 'info');
       }
     } catch (_err) {
       console.error("AI load error:", _err);
-    } finally {
-    
+      showToast(lang === 'cz' ? 'Chyba AI modulu.' : 'AI Module Error.', 'error');
     }
-  }, [selectedChat, chatMessages, activeProfileId, getSuggestion]);
+  }, [selectedChat, chatMessages, activeProfileId, getSuggestion, selectedChatId, showToast, lang]);
 
   // 3. UseEffects AFTER definitions
   React.useEffect(() => {
