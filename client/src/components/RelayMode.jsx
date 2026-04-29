@@ -77,7 +77,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   const [_noProfileWarning] = useState(false);
   const latestHealthCheckRef = useRef(0);
   const consecutiveHealthFailuresRef = useRef(0);
-  const POLL_FAILURES_FOR_DISCONNECT = 3;
+  const POLL_FAILURES_FOR_DISCONNECT = 5;
 
   // ── SIP VoIP integration ────────────────────────────────────────────────────
 
@@ -434,7 +434,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
 
     const interval = setInterval(() => {
       void checkServerConnection({ showConnectingState: false, source: 'poll' });
-    }, 15000);
+    }, 30000);
 
     return () => clearInterval(interval);
   }, [isActive, checkServerConnection]);

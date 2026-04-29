@@ -339,6 +339,10 @@ const DashboardHome = () => {
         ))}
       </div>
 
+      <div style={{ marginBottom: '3rem' }}>
+        <QuickBlacklistSection isCz={isCz} API_BASE={API_BASE} token={token} showToast={showToast} />
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '2rem', marginBottom: '3rem' }}>
         <div className="glass-card" style={{ padding: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
@@ -492,6 +496,9 @@ const DashboardHome = () => {
           </div>
         </div>
       </div>
+      <div style={{ marginBottom: '3rem' }}>
+        <QuickBlacklistSection isCz={isCz} API_BASE={API_BASE} token={token} showToast={showToast} />
+      </div>
       </>
       )}
     </div>
@@ -519,76 +526,43 @@ const DashboardHome = () => {
       <>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 2fr) 380px', gap: isMobile ? '1rem' : '2rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '1rem' : '1.5rem', minWidth: 0 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))', gap: isMobile ? '1rem' : '1.5rem' }}>
-            <div className="glass-card" id="dashboard-stats-messages" style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center' }}>
-               <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('messages')}</div>
-               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-                 <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>{stats?.totalMessages || 0}</div>
-                 <MiniSparkline data={stats?.sparklineData || stats?.chartData || [0, 0, 0, 0, 0, 0, 0]} color="var(--text-secondary)" width={40} />
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '1rem' : '1.5rem' }}>
+            <div className="glass-card" id="dashboard-stats-messages" style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center', background: 'rgba(255,255,255,0.02)' }}>
+               <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>{t('messages').toUpperCase()}</div>
+               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
+                 <div style={{ fontSize: isMobile ? '1.5rem' : '2.2rem', fontWeight: '900' }}>{stats?.totalMessages || 0}</div>
+                 <MessageSquare size={18} color="var(--text-secondary)" style={{ opacity: 0.3 }} />
                </div>
             </div>
-            <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center', border: '1px solid var(--accent-color)', gridColumn: 'auto' }}>
-               <div style={{ color: 'var(--accent-color)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem' }}>{(t('bookings') || 'Bookings').toUpperCase()}</div>
-               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-                 <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>{stats?.totalBookings || 0}</div>
-                 <MiniSparkline data={stats?.sparklineData || stats?.chartData || [0, 0, 0, 0, 0, 0, 0]} color="var(--accent-color)" width={40} />
+            <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center', border: '1px solid rgba(59, 130, 246, 0.2)', background: 'rgba(59, 130, 246, 0.03)' }}>
+               <div style={{ color: 'var(--accent-color)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>{(t('totalBookings') || 'Total Bookings').toUpperCase()}</div>
+               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
+                 <div style={{ fontSize: isMobile ? '1.5rem' : '2.2rem', fontWeight: '900', color: 'var(--accent-color)' }}>{stats?.totalBookings || 0}</div>
+                 <Calendar size={18} color="var(--accent-color)" style={{ opacity: 0.4 }} />
+               </div>
+            </div>
+            <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center', background: 'rgba(255,255,255,0.02)' }}>
+               <div style={{ color: 'var(--success-color)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>{t('commissionGrowth').toUpperCase()}</div>
+               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
+                 <div style={{ fontSize: isMobile ? '1.5rem' : '2.2rem', fontWeight: '900', color: 'var(--success-color)' }}>{stats?.commissionGrowth || '0%'}</div>
+                 <TrendingUp size={18} color="var(--success-color)" style={{ opacity: 0.3 }} />
                </div>
             </div>
           </div>
 
-          <div className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2.5rem' }}>
+          <div className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2rem', height: '280px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-               <h3 style={{ fontSize: '1.1rem', fontWeight: '800' }}>{t('commissionGrowth')}</h3>
-               <span style={{ fontSize: '0.8rem', color: 'var(--success-color)', fontWeight: '700' }}>{stats?.commissionGrowth || 'STABLE'}</span>
+               <h3 style={{ fontSize: '1.1rem', fontWeight: '800', letterSpacing: '0.02em' }}>{isCz ? 'VÝVOJ PROVIZÍ' : 'COMMISSION TREND'}</h3>
+               <Activity size={18} color="var(--accent-color)" style={{ opacity: 0.5 }} />
             </div>
-            <div style={{ height: '200px' }}>
-              <RevenueLineChart data={stats?.revenueData || stats?.chartData || [0, 0, 0, 0, 0, 0, 0]} height={200} />
+            <div style={{ height: '180px' }}>
+              <RevenueLineChart data={stats?.revenueData || stats?.chartData || [0, 0, 0, 0, 0, 0, 0]} height={180} />
             </div>
           </div>
 
           {/* Quick Blacklist Section */}
-          <div className="glass-card" style={{ padding: '1.5rem', border: '1px solid rgba(239, 68, 68, 0.2)', background: 'rgba(239, 68, 68, 0.02)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <ShieldCheck size={20} color="#ef4444" />
-              </div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: '800' }}>{isCz ? 'RYCHLÝ BLACKLIST' : 'QUICK BLACKLIST'}</h3>
-            </div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
-              {isCz ? 'Okamžitě přidejte podezřelé číslo do sdíleného blacklistu.' : 'Instantly add a suspicious number to the shared blacklist.'}
-            </p>
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
-              <input 
-                type="text" 
-                placeholder="+420..." 
-                value={quickBlacklistPhone}
-                onChange={e => setQuickBlacklistPhone(e.target.value)}
-                style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.75rem 1rem', borderRadius: '10px', color: 'white' }}
-              />
-              <button 
-                onClick={async () => {
-                  if (!quickBlacklistPhone.trim()) return;
-                  try {
-                    const res = await fetch(`${API_BASE}/safety/blacklist`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                      body: JSON.stringify({ phone: quickBlacklistPhone, reason: 'Quick block from Dashboard' })
-                    });
-                    if (res.ok) {
-                      setQuickBlacklistPhone('');
-                      showToast(isCz ? 'Číslo zablokováno' : 'Number blacklisted', 'success');
-                    } else {
-                      showToast(isCz ? 'Chyba při blokování' : 'Error blacklisting', 'error');
-                    }
-                  } catch (err) {
-                    showToast(isCz ? 'Chyba sítě' : 'Network error', 'error');
-                  }
-                }}
-                style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0 1.25rem', borderRadius: '10px', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer' }}
-              >
-                {isCz ? 'ZABLOKOVAT' : 'BLACKLIST'}
-              </button>
-            </div>
+          <div style={{ marginTop: '1.5rem' }}>
+            <QuickBlacklistSection isCz={isCz} API_BASE={API_BASE} token={token} showToast={showToast} />
           </div>
         </div>
 
@@ -596,42 +570,73 @@ const DashboardHome = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', height: '100%', minHeight: '500px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: '800' }}>{t('todaysBookings')}</h3>
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                <button onClick={() => { const d = new Date(calViewDate || new Date()); d.setDate(d.getDate()-1); setCalViewDate(d); }} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', padding: '0.35rem', borderRadius: '6px', cursor: 'pointer' }}><ChevronLeft size={16} /></button>
-                <div style={{ textAlign: 'center', minWidth: '100px' }}>
-                  <div style={{ fontSize: '0.8rem', fontWeight: '900' }}>{(calViewDate || new Date()).toLocaleDateString(isCz ? 'cs-CZ' : 'en-GB', { day: 'numeric', month: 'short' })}</div>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: '800' }}>
+                {(() => {
+                  const d = calViewDate || new Date();
+                  const isToday = d.toDateString() === new Date().toDateString();
+                  return isToday ? (t('todaysBookings') || 'Today\'s Bookings') : (isCz ? `Rezervace na ${d.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric' })}` : `Bookings for ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`);
+                })()}
+              </h3>
+              <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                <button 
+                  onClick={() => { const d = new Date(calViewDate || new Date()); d.setDate(d.getDate()-1); setCalViewDate(d); }} 
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', padding: '0.45rem', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '10px', padding: '0.4rem 0.75rem', textAlign: 'center', minWidth: '85px' }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: '900', color: 'var(--accent-color)' }}>
+                    {(calViewDate || new Date()).toLocaleDateString(isCz ? 'cs-CZ' : 'en-GB', { day: 'numeric', month: 'short' })}
+                  </div>
                 </div>
-                <button onClick={() => { const d = new Date(calViewDate || new Date()); d.setDate(d.getDate()+1); setCalViewDate(d); }} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', padding: '0.35rem', borderRadius: '6px', cursor: 'pointer' }}><ChevronRight size={16} /></button>
+                <button 
+                  onClick={() => { const d = new Date(calViewDate || new Date()); d.setDate(d.getDate()+1); setCalViewDate(d); }} 
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', padding: '0.45rem', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                >
+                  <ChevronRight size={16} />
+                </button>
               </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', overflowY: 'auto', flex: 1 }}>
-              {(calendar || []).filter(e => {
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', overflowY: 'auto', flex: 1, paddingRight: '0.25rem' }}>
+              {(() => {
                 const d = calViewDate || new Date();
-                const dStr = d.toISOString().split('T')[0];
-                return e.startTime?.startsWith(dStr) || e.date?.startsWith(dStr) || (!e.startTime && !e.date); // Fallback for testing
-              }).length > 0 ? (calendar || []).filter(e => {
-                const d = calViewDate || new Date();
-                const dStr = d.toISOString().split('T')[0];
-                return e.startTime?.startsWith(dStr) || e.date?.startsWith(dStr) || (!e.startTime && !e.date);
-              }).map((event, i) => (
-                <div key={i} style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', borderLeft: `4px solid ${event.status === 'confirmed' ? 'var(--success-color)' : 'var(--accent-color)'}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: '800', fontSize: '0.9rem' }}>{event.time}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(event.title || '').replace('Meeting w/ ', '')}</div>
+                const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                const filtered = (calendar || []).filter(e => {
+                  return (e.startTime && e.startTime.startsWith(dStr)) || (e.date && e.date.startsWith(dStr));
+                });
+
+                if (filtered.length > 0) {
+                  return filtered.map((event, i) => (
+                    <div key={i} className="fade-in" style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', borderLeft: `4px solid ${event.status === 'confirmed' ? 'var(--success-color)' : 'var(--accent-color)'}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: '900', fontSize: '1rem', color: 'white', marginBottom: '0.2rem' }}>{event.time}</div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '600' }}>{(event.title || '').replace('Meeting w/ ', '')}</div>
+                      </div>
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ fontSize: '0.7rem', fontWeight: '900', color: 'var(--text-secondary)', opacity: 0.8 }}>{event.duration}</div>
+                        {event.profileName && <div style={{ fontSize: '0.65rem', color: 'var(--accent-color)', marginTop: '0.3rem', fontWeight: '800', background: 'rgba(59, 130, 246, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>{event.profileName}</div>}
+                      </div>
+                    </div>
+                  ));
+                }
+                
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '1.5rem', opacity: 0.3, padding: '2rem 0' }}>
+                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Calendar size={40} />
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '0.25rem' }}>{t('noBookingsToday')}</div>
+                      <div style={{ fontSize: '0.8rem' }}>{isCz ? 'Zkuste jiný den' : 'Try another day'}</div>
+                    </div>
                   </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontSize: '0.65rem', fontWeight: '900', color: 'var(--text-secondary)' }}>{event.duration}</div>
-                    {event.profileName && <div style={{ fontSize: '0.6rem', color: 'var(--accent-color)', marginTop: '0.2rem' }}>{event.profileName}</div>}
-                  </div>
-                </div>
-              )) : (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '1rem', opacity: 0.5 }}>
-                  <Calendar size={48} />
-                  <div style={{ fontSize: '0.85rem' }}>{t('noBookingsToday')}</div>
-                </div>
-              )}
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -699,6 +704,62 @@ const DashboardHome = () => {
       flexDirection: 'column'
     }}>
       {isAppOwner ? renderSuperAdmin() : (isManager ? renderManager() : (isModel ? renderModel() : renderOperator()))}
+    </div>
+  );
+};
+
+const QuickBlacklistSection = ({ isCz, API_BASE, token, showToast }) => {
+  const [phone, setPhone] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  return (
+    <div className="glass-card" style={{ padding: '1.5rem', border: '1px solid rgba(239, 68, 68, 0.2)', background: 'rgba(239, 68, 68, 0.02)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+        <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <ShieldCheck size={20} color="#ef4444" />
+        </div>
+        <h3 style={{ fontSize: '1.1rem', fontWeight: '800' }}>{isCz ? 'RYCHLÝ BLACKLIST' : 'QUICK BLACKLIST'}</h3>
+      </div>
+      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
+        {isCz ? 'Okamžitě přidejte podezřelé číslo do sdíleného blacklistu.' : 'Instantly add a suspicious number to the shared blacklist.'}
+      </p>
+      <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <input 
+          type="text" 
+          placeholder="+420..." 
+          value={phone}
+          onChange={e => setPhone(e.target.value)}
+          disabled={isLoading}
+          style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.75rem 1rem', borderRadius: '10px', color: 'white' }}
+        />
+        <button 
+          onClick={async () => {
+            if (!phone.trim()) return;
+            setIsLoading(true);
+            try {
+              const res = await fetch(`${API_BASE}/safety/blacklist`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ phone: phone, reason: 'Quick block from Dashboard' })
+              });
+              if (res.ok) {
+                setPhone('');
+                showToast(isCz ? 'Číslo zablokováno' : 'Number blacklisted', 'success');
+              } else {
+                showToast(isCz ? 'Chyba při blokování' : 'Error blacklisting', 'error');
+              }
+            } catch (err) {
+              showToast(isCz ? 'Chyba sítě' : 'Network error', 'error');
+            } finally {
+              setIsLoading(false);
+            }
+          }}
+          disabled={isLoading}
+          style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0 1.25rem', borderRadius: '10px', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer', opacity: isLoading ? 0.6 : 1 }}
+        >
+          {isLoading ? '...' : (isCz ? 'ZABLOKOVAT' : 'BLACKLIST')}
+        </button>
+      </div>
     </div>
   );
 };
