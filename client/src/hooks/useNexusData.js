@@ -153,7 +153,7 @@ export function useNexusData({
 
     try {
       // PHASE 1: CRITICAL DATA (Required for Sidebar & Core UI)
-      const [selfRes, profileRes, userRes, safetyRes] = await Promise.all([
+      const [selfRes, profileRes, userRes, safetyRes, permissionsRes] = await Promise.all([
         axiosWithTiming(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/profiles`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/agency/users`, { headers: { Authorization: `Bearer ${token}` } }),
