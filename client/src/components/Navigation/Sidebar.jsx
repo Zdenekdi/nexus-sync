@@ -151,7 +151,6 @@ const Sidebar = () => {
                     { id: 'agencies', icon: Building2, label: t('agencies') },
                     { id: 'infra', icon: Activity, label: t('infrastructure') },
                     { id: 'maintenance', icon: HardDrive, label: t('maintenance') },
-                    { id: 'docs', icon: FileSearch, label: 'Dokumentace' },
                     { id: 'permissions', icon: Shield, label: t('permissions') },
                     { id: 'plans', icon: CreditCard, label: t('plansManagement') },
                     { id: 'features', icon: Zap, label: t('features') },
