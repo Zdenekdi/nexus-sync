@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNexus } from '../../context/ContextHook';
+import UpdateBanner from '../UpdateBanner';
 
 /**
  * Component to handle global UI banners such as Maintenance Mode and Global Announcements.
@@ -10,6 +11,7 @@ const SystemBanners = () => {
 
   return (
     <>
+      <UpdateBanner />
       {/* Maintenance Banner */}
       {isMaintenanceMode && (
         <div style={{

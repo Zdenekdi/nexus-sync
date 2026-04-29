@@ -80,6 +80,7 @@ const ViewRouter = () => {
       case 'plans-owner':
       case 'permissions':
       case 'maintenance':
+      case 'docs':
         return <InfrastructureUnit />;
 
       default: 
