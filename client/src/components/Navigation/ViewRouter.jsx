@@ -2,22 +2,22 @@ import React, { lazy, Suspense } from 'react';
 import { useNexus } from '../../context/ContextHook';
 
 /**
- * Helper to handle dynamic import failures (_err.g. after a new deployment)
+ * Helper to handle dynamic import failures (e.g. after a new deployment)
  */
 const lazyWithRetry = (componentImport) => 
   lazy(async () => {
     const pageHasAlreadyBeenReloaded = JSON.parse(window.sessionStorage.getItem('page-has-been-reloaded') || 'false');
     try {
       return await componentImport();
-    } catch (_err) {
-      if (_err instanceof TypeError || _err.name === 'ChunkLoadError' || _err.message.includes('fetch')) {
+    } catch (err) {
+      if (err instanceof TypeError || err.name === 'ChunkLoadError' || err.message.includes('fetch')) {
         if (!pageHasAlreadyBeenReloaded) {
           window.sessionStorage.setItem('page-has-been-reloaded', 'true');
-          console.error('Chunk load failed, reloading local window...', _err);
+          console.error('Chunk load failed, reloading local window...', err);
           window.location.reload();
         }
       }
-      throw _err;
+      throw err;
     }
   });
 
@@ -27,7 +27,6 @@ const OperationsUnit = lazyWithRetry(() => import('../Units/OperationsUnit'));
 const AgencyUnit = lazyWithRetry(() => import('../Units/AgencyUnit'));
 const InfrastructureUnit = lazyWithRetry(() => import('../Units/InfrastructureUnit'));
 const TvDashboard = lazyWithRetry(() => import('../Units/TvDashboard'));
-const DocsView = lazy(() => import('../Views/DocsView'));
 
 const LoadingFallback = () => (
   <div style={{ 
@@ -82,9 +81,6 @@ const ViewRouter = () => {
       case 'permissions':
       case 'maintenance':
         return <InfrastructureUnit />;
-
-      case 'docs':
-        return <DocsView />;
 
       default: 
         return <DashboardHome />;
