@@ -130,6 +130,7 @@ function AppContent() {
       </div>}>
         <SystemBanners />
         <GlobalModalContainer />
+        <UpdateBanner />
         <ErrorBoundary name="Sidebar">
           <Sidebar />
         </ErrorBoundary>
