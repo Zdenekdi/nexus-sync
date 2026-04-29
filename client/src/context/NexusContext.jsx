@@ -1430,7 +1430,7 @@ export const NexusProvider = ({ children }) => {
       {_toasts.length > 0 && (
         <div style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 99999, display: 'flex', flexDirection: 'column', gap: '0.5rem', pointerEvents: 'none' }}>
           {_toasts.map(toast => (
-            <div key={toast.id} style={{ pointerEvents: 'auto', padding: '0.75rem 1.25rem', borderRadius: '12px', color: 'white', background: toast.type === '_err' ? '#ef4444' : '#3b82f6' }}>{toast.message}</div>
+            <div key={toast.id} style={{ pointerEvents: 'auto', padding: '0.75rem 1.25rem', borderRadius: '12px', color: 'white', background: (toast.type === 'error' || toast.type === 'sos') ? '#ef4444' : '#3b82f6' }}>{toast.message}</div>
           ))}
         </div>
       )}
