@@ -510,7 +510,6 @@ const InboxView = () => {
                        </button>
                     </div>
                 </div>
-              </div>
             ) : (
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
                 <div>
@@ -741,11 +740,7 @@ const InboxView = () => {
         </div>
       )}
     </div>
-  )}
-</div>
-)}
-</div>
-);
+  );
 };
 
 export default InboxView;
