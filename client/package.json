@@ -31,7 +31,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "@sentry/react": "10.43.0",
-    "@sentry/capacitor": "^10.43.0",
+    "@sentry/capacitor": "3.2.1",
     "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
