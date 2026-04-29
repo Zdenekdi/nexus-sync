@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Building2, Zap, Activity, TrendingUp, Users, Server, ShieldCheck, AlertTriangle, Calendar, Loader2, MessageSquare, Copy, X, Clock, HardDrive } from 'lucide-react';
+import { DollarSign, Building2, Zap, Activity, TrendingUp, Users, Server, ShieldCheck, AlertTriangle, Calendar, Loader2, MessageSquare, Copy, X, Clock, HardDrive, Banknote } from 'lucide-react';
 import axios from 'axios';
 import { RevenueLineChart, ConversionDonutChart, MiniSparkline } from './AnalyticsCharts';
 import { useVultr } from '../hooks/useVultr';
@@ -8,7 +8,6 @@ import { useNexus } from '../context/ContextHook';
 import Skeleton from './UI/Skeleton';
 import SafetyControlCard from './Safety/SafetyControlCard';
 import AIInsightCard from './AIInsightCard';
-import { Banknote } from 'lucide-react';
 
 const DashboardHome = () => {
   const nexus = useNexus();
