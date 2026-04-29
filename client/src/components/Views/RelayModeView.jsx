@@ -8,7 +8,15 @@ const RelayMode = lazy(() => import('../RelayMode'));
  * Provides all required props from NexusContext.
  */
 const RelayModeView = () => {
-  const { activeOperator, token, t, setActiveTab, isNativeApp } = useNexus();
+  const { activeOperator, token, t, setActiveTab, isNativeApp, loading } = useNexus();
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+        <div className="spinning" style={{ width: 30, height: 30, border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--accent-primary)', borderRadius: '50%' }} />
+      </div>
+    );
+  }
 
   const operator = activeOperator ? {
     ...activeOperator,
@@ -43,7 +51,7 @@ const RelayModeView = () => {
   if (!operator) {
     return (
       <div data-testid="page-relay-container" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-        {t('loginRequired') || 'Please log in first'}
+        {t('login_required')}
       </div>
     );
   }
@@ -52,9 +60,9 @@ const RelayModeView = () => {
     return (
       <div style={{ padding: '2rem', textAlign: 'center' }}>
         <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📱</div>
-        <h3 style={{ marginBottom: '0.5rem' }}>{t('relay') || 'Relay'}</h3>
+        <h3 style={{ marginBottom: '0.5rem' }}>{t('relay')}</h3>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          {t('relayNativeOnly') || 'Relay mode is available only in the native mobile app. SMS and call forwarding requires Android permissions.'}
+          {t('relay_native_only')}
         </p>
       </div>
     );

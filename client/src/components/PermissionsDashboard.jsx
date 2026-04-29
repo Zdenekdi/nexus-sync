@@ -22,11 +22,11 @@ const PermissionsDashboard = ({ agencyId = null, onUpdate = null }) => {
       setError(null);
     } catch (_err) {
       console.error('Failed to fetch roles:', _err);
-      setError(lang === 'cz' ? 'Nepodařilo se načíst oprávnění.' : 'Failed to load permissions.');
+      setError(t('failed_to_load_permissions') || 'Failed to load permissions.');
     } finally {
       setLoading(false);
     }
-  }, [API_BASE, agencyId, token, lang]);
+  }, [API_BASE, agencyId, token, t]);
 
   useEffect(() => {
     fetchRoles();
@@ -59,15 +59,15 @@ const PermissionsDashboard = ({ agencyId = null, onUpdate = null }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (result.success) {
-        showToast(lang === 'cz' ? 'Oprávnění uložena.' : 'Permissions saved.', 'success');
+        showToast(t('permissions_saved'), 'success');
         if (onUpdate) onUpdate();
       } else {
-        showToast(lang === 'cz' ? 'Nepodařilo se uložit oprávnění.' : 'Failed to save permissions.', 'error');
+        showToast(t('failed_to_save_permissions'), 'error');
       }
       setSavingId(null);
     } catch (_err) {
       console.error('Save failed:', _err);
-      showToast(lang === 'cz' ? 'Nepodařilo se uložit oprávnění.' : 'Failed to save permissions.', 'error');
+      showToast(t('failed_to_save_permissions'), 'error');
       setSavingId(null);
     }
   };
@@ -75,28 +75,28 @@ const PermissionsDashboard = ({ agencyId = null, onUpdate = null }) => {
   const CATEGORIES = [
     {
       id: 'global',
-      label: t('infraTitle') || 'Globální správa',
+      label: t('infraUnit') || 'Globální správa',
       icon: Globe,
       color: '#3b82f6',
       perms: ['agencies', 'infrastructure', 'permissions', 'plans', 'global_features']
     },
     {
       id: 'agency',
-      label: t('agencyMgmtTitle') || 'Správa agentury',
+      label: t('agencyUnit') || 'Správa agentury',
       icon: Building2,
       color: '#10b981',
       perms: ['hierarchy', 'analytics', 'audit_logs', 'settings']
     },
     {
       id: 'operativa',
-      label: 'Provozní sekce - Operativa',
+      label: `${t('operationsUnit')} - ${t('messaging')}`,
       icon: MessageSquare,
       color: '#8b5cf6',
       perms: ['messaging', 'calendar', 'profiles', 'web_profiles', 'device_setup', 'qa_hub', 'referrals']
     },
     {
       id: 'logistika',
-      label: 'Provozní sekce - Logistika',
+      label: `${t('operationsUnit')} - ${t('inventory')}`,
       icon: PackageIcon,
       color: '#f59e0b',
       perms: ['inventory']
@@ -106,7 +106,7 @@ const PermissionsDashboard = ({ agencyId = null, onUpdate = null }) => {
   if (loading) return (
     <div style={{ padding: '4rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem', color: 'var(--text-secondary)' }}>
       <RefreshCw size={32} className="spin" />
-      <div style={{ fontWeight: '700' }}>Načítám oprávnění z databáze...</div>
+      <div style={{ fontWeight: '700' }}>{t('loading')}</div>
     </div>
   );
 
@@ -115,13 +115,13 @@ const PermissionsDashboard = ({ agencyId = null, onUpdate = null }) => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
           <h2 style={{ fontSize: isMobile ? '1.75rem' : '2.5rem', fontWeight: '900', marginBottom: '0.5rem', background: 'linear-gradient(to right, #3b82f6, #10b981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            {agencyId ? `Oprávnění: Agentura ID ${agencyId.slice(0, 8)}` : t('rolePermissions')}
+            {agencyId ? `${t('rolePermissions')}: Agency ID ${agencyId.slice(0, 8)}` : t('rolePermissions')}
           </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1.1rem', margin: 0 }}>{t('rolePermissionsDesc')}</p>
         </div>
         {!agencyId && (
           <button onClick={fetchRoles} className="status-badge" style={{ padding: '0.6rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-            <RefreshCw size={14} /> OBNOVIT
+            <RefreshCw size={14} /> {t('refresh').toUpperCase()}
           </button>
         )}
       </div>
@@ -133,7 +133,7 @@ const PermissionsDashboard = ({ agencyId = null, onUpdate = null }) => {
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(420px, 1fr))', gap: isMobile ? '1rem' : '2.5rem' }}>
-        {roles.map((roleData) => {
+        {(roles || []).map((roleData) => {
           const role = roleData.name;
           const perms = roleData.permissions || {};
           const isAppOwner = role === 'App Owner';
@@ -149,7 +149,7 @@ const PermissionsDashboard = ({ agencyId = null, onUpdate = null }) => {
                   <div>
                     <h3 style={{ fontSize: '1.5rem', fontWeight: '900', color: 'white' }}>{role}</h3>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', letterSpacing: '0.05em' }}>
-                      {agencyId ? 'AGENCY SPECIFIC ROLE' : 'SYSTEM ROLE TEMPLATE'}
+                      {agencyId ? t('agencyInsight').toUpperCase() : t('systemAdministration').toUpperCase()}
                     </div>
                   </div>
                 </div>
@@ -224,7 +224,7 @@ const PermissionsDashboard = ({ agencyId = null, onUpdate = null }) => {
                     }}
                   >
                     {isSaving ? <RefreshCw size={18} className="spin" /> : <Save size={18} />}
-                    {isSaving ? 'Ukládám...' : 'ULOŽIT OPRÁVNĚNÍ'}
+                    {isSaving ? t('loading') : t('save_permissions').toUpperCase()}
                   </button>
                 )}
               </div>

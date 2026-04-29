@@ -554,7 +554,7 @@ export const NexusProvider = ({ children }) => {
       avatar: combined.avatar || (name ? name.charAt(0) : 'U'),
       isAdmin: ['AGENCY ADMIN', 'OWNER'].includes(rawRole),
       isManager: ['MANAGER', 'SENIOR MANAGER', 'SENIOR OPERATOR'].includes(rawRole),
-      isAppOwner: ['APP OWNER', 'SUPER_ADMIN'].includes(rawRole),
+      isAppOwner: ['APP OWNER', 'SUPER_ADMIN', 'SYSTEM ADMIN', 'ROOT'].includes(rawRole),
       isModel: ['MODEL', 'MODELKA'].includes(rawRole)
     };
   }, [activeOperatorState, authUser]);

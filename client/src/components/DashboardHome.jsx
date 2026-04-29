@@ -29,7 +29,7 @@ const DashboardHome = () => {
 
   const [systemHealth, setSystemHealth] = useState(null);
 
-  const isAppOwner = activeRole === 'App Owner';
+  const isAppOwner = nexus.isAppOwner;
 
   useEffect(() => {
     if (isAppOwner && isLoggedIn && API_BASE && token) {
@@ -106,11 +106,11 @@ const DashboardHome = () => {
         gap: '2rem'
       }}>
         <div className="fade-in">
-          <WelcomeSection isCz={isCz} user={user} />
-          <AlertsSection isCz={isCz} activeSubscription={activeSubscription} agencies={agencies} stats={stats} profiles={_profiles} activeRole={activeRole} />
+          <WelcomeSection user={user} t={t} lang={lang} />
+          <AlertsSection activeSubscription={activeSubscription} agencies={agencies} stats={stats} profiles={_profiles} activeRole={activeRole} t={t} />
 
           <div style={{ marginBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.75rem', fontWeight: '900', letterSpacing: '0.05em' }}>{(t('dailyAgenda') || 'Daily Agenda').toUpperCase()}</h2>
+            <h2 style={{ fontSize: '1.75rem', fontWeight: '900', letterSpacing: '0.05em' }}>{t('dailyAgenda').toUpperCase()}</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t('dailyAgendaDesc')}</p>
           </div>
 
@@ -155,9 +155,9 @@ const DashboardHome = () => {
                 </div>
               )) : <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem 1rem', gap: '0.75rem', border: '1px dashed var(--card-border)', borderRadius: '12px' }}>
                   <Calendar size={48} color="#374151" />
-                  <div style={{ fontSize: '1rem', fontWeight: '700', color: '#64748b' }}>{t('noBookingsToday') || (lang === 'cz' ? 'Dnes žádné rezervace' : 'No bookings for today')}</div>
+                  <div style={{ fontSize: '1rem', fontWeight: '700', color: '#64748b' }}>{t('noBookingsToday')}</div>
                   <div style={{ fontSize: '0.8rem', color: '#475569' }}>
-                    {lang === 'cz' ? 'Nové rezervace se zobrazí, jakmile budou vytvořeny' : 'New bookings will appear once they are scheduled'}
+                    {t('newBookingsAppear')}
                   </div>
                 </div>}
             </div>
@@ -210,7 +210,7 @@ const DashboardHome = () => {
           <ShieldCheck size={20} color={statusColor} />
           <div>
             <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)' }}>
-              {lang === 'cz' ? 'PŘEDPLATNÉ' : 'SUBSCRIPTION'}
+              {t('subscription').toUpperCase()}
             </div>
             <div style={{ fontWeight: '800', fontSize: '1.1rem' }}>
               {activeSubscription.plan}
@@ -219,7 +219,7 @@ const DashboardHome = () => {
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: '0.75rem', fontWeight: '800', color: daysLeft <= 7 ? '#ef4444' : 'var(--text-secondary)' }}>
-            {lang === 'cz' ? 'Vyprší za' : 'Expires in'} {daysLeft} {lang === 'cz' ? 'dní' : 'days'}
+            {t('trialExpiresIn').replace('{days}', daysLeft)}
           </div>
           <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
             {expiresAt.toLocaleDateString(lang === 'cz' ? 'cs-CZ' : 'en-GB')}
@@ -239,15 +239,15 @@ const DashboardHome = () => {
 
     return (
     <div className="fade-in">
-      <WelcomeSection isCz={isCz} user={user} />
+      <WelcomeSection user={user} t={t} lang={lang} />
       <div style={{ marginBottom: '2rem' }}>
         <AIInsightCard stats={stats} agencies={agencies} systemHealth={systemHealth} />
       </div>
-      <AlertsSection isCz={isCz} activeSubscription={activeSubscription} agencies={agencies} stats={stats} profiles={_profiles} activeRole={activeRole} />
+      <AlertsSection activeSubscription={activeSubscription} agencies={agencies} stats={stats} profiles={_profiles} activeRole={activeRole} t={t} />
 
       <div style={{ marginBottom: isMobile ? '1.5rem' : '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'flex-end', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : 0 }}>
         <div>
-          <h2 style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '900', letterSpacing: '0.05em' }}>{(t('globalOverview') || 'Global Overview').toUpperCase()}</h2>
+          <h2 style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: '900', letterSpacing: '0.05em' }}>{t('globalOverview').toUpperCase()}</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1rem' }}>{t('globalHealthDesc')}</p>
         </div>
         
@@ -308,7 +308,7 @@ const DashboardHome = () => {
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(240px, 1fr))', gap: isMobile ? '1rem' : '1.5rem', marginBottom: isMobile ? '1.5rem' : '3rem' }}>
         {[
           { label: t('totalRevenue'), value: stats?.revenue || '£0.00', icon: <Banknote color="#10b981" />, growth: stats?.commissionGrowth || 'STABLE', chart: stats?.sparklineData || stats?.chartData || [0,0,0,0,0,0,0] },
-          { label: (t('agencies') || 'Agencies').toUpperCase(), value: stats?.totalAgencies || (agencies || []).length, icon: <Building2 color="#3b82f6" />, growth: 'PROD', chart: [0,0,0,0,0,0,0] },
+          { label: t('agencies').toUpperCase(), value: stats?.totalAgencies || (agencies || []).length, icon: <Building2 color="#3b82f6" />, growth: 'PROD', chart: [0,0,0,0,0,0,0] },
           { label: 'SERVER LOAD', value: systemHealth ? `${systemHealth.cpu.loadAvg[0]}` : (currentServerStatus?.power_status || 'CHECKING...').toUpperCase(), icon: <Server color={statusColor} />, growth: systemHealth ? `${systemHealth.memory.percent}% RAM` : (currentServerStatus?.main_ip || 'PENDING'), chart: [0,0,0,0,0,0,0], isStatus: true },
           { label: 'DISK SPACE', value: systemHealth ? `${systemHealth.disk.percent}` : stats?.totalProfiles || '0', icon: systemHealth ? <HardDrive color="#f59e0b" /> : <Zap color="#f59e0b" />, growth: systemHealth ? systemHealth.disk.used : 'STABLE', chart: [0,0,0,0,0,0,0], isStatus: !!systemHealth },
           { label: 'SYSTEM UPTIME', value: systemHealth ? `${systemHealth.uptime.days}d ${systemHealth.uptime.hours}h` : stats?.totalMessages || '0', icon: systemHealth ? <Clock color="#ec4899" /> : <Activity color="#8b5cf6" />, growth: systemHealth ? `${systemHealth.uptime.minutes}m` : (stats?.uptime || '100% UP'), chart: stats?.sparklineData || stats?.chartData || [0,0,0,0,0,0,0], isStatus: !!systemHealth }
@@ -346,7 +346,7 @@ const DashboardHome = () => {
         <div className="glass-card" style={{ padding: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
             <h3 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <TrendingUp size={20} color="var(--accent-color)" /> {t('revenueGrowth') || 'REVENUE GROWTH'}
+              <TrendingUp size={20} color="var(--accent-color)" /> {t('revenueTrend')}
             </h3>
           </div>
           <div style={{ height: '300px' }}>
@@ -356,7 +356,7 @@ const DashboardHome = () => {
 
         <div className="glass-card" style={{ padding: '2rem' }}>
           <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <Activity size={20} color="#a855f7" /> {t('systemLoad') || 'SYSTEM LOAD OVERVIEW'}
+            <Activity size={20} color="#a855f7" /> {t('systemLoad')}
           </h3>
           <div style={{ display: 'flex', justifyContent: 'center', height: '100%', alignItems: 'center' }}>
             <ConversionDonutChart data={[
@@ -374,13 +374,13 @@ const DashboardHome = () => {
 
   const renderManager = () => (
     <div className="fade-in">
-      <WelcomeSection isCz={isCz} user={user} />
-      <AlertsSection isCz={isCz} activeSubscription={activeSubscription} agencies={agencies} stats={stats} profiles={_profiles} activeRole={activeRole} />
+      <WelcomeSection user={user} t={t} lang={lang} />
+      <AlertsSection activeSubscription={activeSubscription} agencies={agencies} stats={stats} profiles={_profiles} activeRole={activeRole} t={t} />
 
       {!isMobile && (
         <div style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
           <div>
-            <h2 style={{ fontSize: '2rem', fontWeight: '900' }}>{(t('agencyOverview') || 'Agency Overview').toUpperCase()}</h2>
+            <h2 style={{ fontSize: '2rem', fontWeight: '900' }}>{t('agencyOverview').toUpperCase()}</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>{t('agencyOverviewDesc')}</p>
           </div>
           {isMultiregion && (
@@ -475,7 +475,7 @@ const DashboardHome = () => {
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '2rem', marginBottom: '3rem' }}>
         <div className="glass-card" style={{ padding: '2rem' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem' }}>{t('revenueTrend') || 'REVENUE TREND'}</h3>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem' }}>{t('revenueTrend')}</h3>
           <div style={{ height: '250px' }}>
             <RevenueLineChart data={stats?.revenueData || stats?.chartData || [0,0,0,0,0,0,0]} height={250} />
           </div>
@@ -491,12 +491,12 @@ const DashboardHome = () => {
                 </div>
                 <div style={{ fontSize: '0.75rem', fontWeight: '900', color: 'var(--text-secondary)' }}>{event.duration}</div>
               </div>
-            )) : <div style={{ color: 'var(--text-secondary)' }}>{t('noBookingsToday') || 'No bookings for today.'}</div>}
+            )) : <div style={{ color: 'var(--text-secondary)' }}>{t('noBookingsToday')}</div>}
           </div>
         </div>
       </div>
       <div style={{ marginBottom: '3rem' }}>
-        <QuickBlacklistSection isCz={isCz} API_BASE={API_BASE} token={token} showToast={showToast} />
+        <QuickBlacklistSection API_BASE={API_BASE} token={token} showToast={showToast} t={t} />
       </div>
       </>
       )}
@@ -505,12 +505,12 @@ const DashboardHome = () => {
 
   const renderOperator = () => (
     <div className="fade-in">
-      <WelcomeSection isCz={isCz} user={user} />
-      <AlertsSection isCz={isCz} activeSubscription={activeSubscription} agencies={agencies} stats={stats} profiles={_profiles} activeRole={activeRole} />
+      <WelcomeSection user={user} t={t} lang={lang} />
+      <AlertsSection activeSubscription={activeSubscription} agencies={agencies} stats={stats} profiles={_profiles} activeRole={activeRole} t={t} />
 
       <div style={{ marginBottom: isMobile ? '1.5rem' : '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'center' : 'flex-end', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : 0 }}>
         <div style={{ textAlign: isMobile ? 'center' : 'left' }}>
-          <h2 style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>{(t('personalWorkspace') || 'Workspace')}</h2>
+          <h2 style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>{t('personalWorkspace')}</h2>
         </div>
       </div>
 
@@ -534,7 +534,7 @@ const DashboardHome = () => {
                </div>
             </div>
             <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center', border: '1px solid rgba(59, 130, 246, 0.2)', background: 'rgba(59, 130, 246, 0.03)' }}>
-               <div style={{ color: 'var(--accent-color)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>{(t('totalBookings') || 'Total Bookings').toUpperCase()}</div>
+               <div style={{ color: 'var(--accent-color)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>{t('totalBookings').toUpperCase()}</div>
                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
                  <div style={{ fontSize: isMobile ? '1.5rem' : '2.2rem', fontWeight: '900', color: 'var(--accent-color)' }}>{stats?.totalBookings || 0}</div>
                  <Calendar size={18} color="var(--accent-color)" style={{ opacity: 0.4 }} />
@@ -551,7 +551,7 @@ const DashboardHome = () => {
 
           <div className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2rem', height: '280px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-               <h3 style={{ fontSize: '1.1rem', fontWeight: '800', letterSpacing: '0.02em' }}>{isCz ? 'VÝVOJ PROVIZÍ' : 'COMMISSION TREND'}</h3>
+               <h3 style={{ fontSize: '1.1rem', fontWeight: '800', letterSpacing: '0.02em' }}>{t('revenueTrend')}</h3>
                <Activity size={18} color="var(--accent-color)" style={{ opacity: 0.5 }} />
             </div>
             <div style={{ height: '180px' }}>
@@ -561,7 +561,7 @@ const DashboardHome = () => {
 
           {/* Quick Blacklist Section */}
           <div style={{ marginTop: '1.5rem' }}>
-            <QuickBlacklistSection isCz={isCz} API_BASE={API_BASE} token={token} showToast={showToast} />
+            <QuickBlacklistSection API_BASE={API_BASE} token={token} showToast={showToast} t={t} />
           </div>
         </div>
 
@@ -573,7 +573,7 @@ const DashboardHome = () => {
                 {(() => {
                   const d = calViewDate || new Date();
                   const isToday = d.toDateString() === new Date().toDateString();
-                  return isToday ? (t('todaysBookings') || 'Today\'s Bookings') : (isCz ? `Rezervace na ${d.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric' })}` : `Bookings for ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`);
+                  return isToday ? (t('todaysBookings')) : (t('bookingsForDate').replace('{date}', d.toLocaleDateString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { day: 'numeric', month: 'numeric' })));
                 })()}
               </h3>
               <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
@@ -587,7 +587,7 @@ const DashboardHome = () => {
                 </button>
                 <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '10px', padding: '0.4rem 0.75rem', textAlign: 'center', minWidth: '85px' }}>
                   <div style={{ fontSize: '0.85rem', fontWeight: '900', color: 'var(--accent-color)' }}>
-                    {(calViewDate || new Date()).toLocaleDateString(isCz ? 'cs-CZ' : 'en-GB', { day: 'numeric', month: 'short' })}
+                    {(calViewDate || new Date()).toLocaleDateString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { day: 'numeric', month: 'short' })}
                   </div>
                 </div>
                 <button 
@@ -631,7 +631,7 @@ const DashboardHome = () => {
                     </div>
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '0.25rem' }}>{t('noBookingsToday')}</div>
-                      <div style={{ fontSize: '0.8rem' }}>{isCz ? 'Zkuste jiný den' : 'Try another day'}</div>
+                      <div style={{ fontSize: '0.8rem' }}>{t('tryAnotherDay')}</div>
                     </div>
                   </div>
                 );
@@ -649,14 +649,14 @@ const DashboardHome = () => {
 
     return (
       <div className="fade-in">
-        <WelcomeSection isCz={isCz} user={user} />
-        <AlertsSection isCz={isCz} activeSubscription={activeSubscription} agencies={agencies} stats={stats} profiles={_profiles} activeRole={activeRole} />
+        <WelcomeSection user={user} t={t} lang={lang} />
+        <AlertsSection activeSubscription={activeSubscription} agencies={agencies} stats={stats} profiles={_profiles} activeRole={activeRole} t={t} />
 
         <div style={{ marginBottom: isMobile ? '1.5rem' : '2rem' }}>
           <SafetyControlCard />
         </div>
 
-        <PendingNotificationsSection isCz={isCz} pendingNotifications={pendingNotifications} setPendingNotifications={setPendingNotifications} showToast={showToast} />
+        <PendingNotificationsSection pendingNotifications={pendingNotifications} setPendingNotifications={setPendingNotifications} showToast={showToast} t={t} />
 
         <div style={{ marginBottom: isMobile ? '1.1rem' : '2.5rem' }}>
           <h2 style={{ fontSize: isMobile ? '1.35rem' : '2rem', fontWeight: '900', lineHeight: 1.15 }}>{t('dailyAgenda')}</h2>
@@ -683,7 +683,7 @@ const DashboardHome = () => {
                 </div>
                 <div style={{ fontSize: '0.75rem', fontWeight: '900', color: 'var(--text-secondary)' }}>{event.duration}</div>
               </div>
-            )) : <div style={{ color: 'var(--text-secondary)' }}>{t('noBookingsToday') || 'No bookings for today.'}</div>}
+            )) : <div style={{ color: 'var(--text-secondary)' }}>{t('noBookingsToday')}</div>}
           </div>
         </div>
       </div>
@@ -707,7 +707,7 @@ const DashboardHome = () => {
   );
 };
 
-const QuickBlacklistSection = ({ isCz, API_BASE, token, showToast }) => {
+const QuickBlacklistSection = ({ API_BASE, token, showToast, t }) => {
   const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -717,10 +717,10 @@ const QuickBlacklistSection = ({ isCz, API_BASE, token, showToast }) => {
         <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <ShieldCheck size={20} color="#ef4444" />
         </div>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: '800' }}>{(t('quickBlacklist') || 'Quick Blacklist').toUpperCase()}</h3>
+        <h3 style={{ fontSize: '1.1rem', fontWeight: '800' }}>{t('quickBlacklist').toUpperCase()}</h3>
       </div>
       <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
-        {isCz ? 'Okamžitě přidejte podezřelé číslo do sdíleného blacklistu.' : 'Instantly add a suspicious number to the shared blacklist.'}
+        {t('blacklistDesc')}
       </p>
       <div style={{ display: 'flex', gap: '0.75rem' }}>
         <input 
@@ -743,12 +743,12 @@ const QuickBlacklistSection = ({ isCz, API_BASE, token, showToast }) => {
               });
               if (res.ok) {
                 setPhone('');
-                showToast(isCz ? 'Číslo zablokováno' : 'Number blacklisted', 'success');
+                showToast(t('blacklistedSuccess'), 'success');
               } else {
-                showToast(isCz ? 'Chyba při blokování' : 'Error blacklisting', 'error');
+                showToast(t('blacklistedError'), 'error');
               }
             } catch (err) {
-              showToast(isCz ? 'Chyba sítě' : 'Network error', 'error');
+              showToast(t('networkError'), 'error');
             } finally {
               setIsLoading(false);
             }
@@ -765,14 +765,14 @@ const QuickBlacklistSection = ({ isCz, API_BASE, token, showToast }) => {
 
 export default DashboardHome;
 
-const WelcomeSection = ({ isCz, user }) => (
+const WelcomeSection = ({ user, t, lang }) => (
   <div style={{ marginBottom: '1.5rem' }}>
-    <h2 id="dashboard-welcome-title" style={{ fontSize: '1.5rem', fontWeight: '900', margin: 0 }}>👋 {isCz ? 'Vítejte zpět' : 'Welcome back'}, {user?.name || 'User'}!</h2>
-    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0.25rem 0 0' }}>{new Date().toLocaleDateString(isCz ? 'cs-CZ' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+    <h2 id="dashboard-welcome-title" style={{ fontSize: '1.5rem', fontWeight: '900', margin: 0 }}>👋 {t('welcomeBack')}, {user?.name || 'User'}!</h2>
+    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0.25rem 0 0' }}>{new Date().toLocaleDateString(lang === 'cz' ? 'cs-CZ' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
   </div>
 );
 
-const AlertsSection = ({ isCz, activeSubscription, agencies, stats, profiles, activeRole }) => {
+const AlertsSection = ({ activeSubscription, agencies, stats, profiles, activeRole, t }) => {
   const alerts = [];
   if (activeSubscription) {
     const now = new Date();
@@ -780,16 +780,16 @@ const AlertsSection = ({ isCz, activeSubscription, agencies, stats, profiles, ac
     const daysLeft = Math.max(0, Math.ceil((expiresAt - now) / 86400000));
     const status = activeSubscription?.status;
     if (status === 'EXPIRED') {
-      alerts.push({ message: isCz ? 'Vaše předplatné vypršelo! Obnovte ho pro pokračování.' : 'Your subscription has expired! Renew to continue.', color: '#ef4444' });
+      alerts.push({ message: t('subscriptionExpired'), color: '#ef4444' });
     } else if (status === 'TRIAL' && daysLeft < 7) {
-      alerts.push({ message: isCz ? `Zkušební doba končí za ${daysLeft} dní` : `Trial expires in ${daysLeft} days`, color: '#f59e0b' });
+      alerts.push({ message: t('trialExpiresIn').replace('{days}', daysLeft), color: '#f59e0b' });
     }
   }
   const myAgency = (agencies || [])?.[0];
   const hasProfilesInAgency = (stats?.totalProfiles || 0) > 0 || (stats?.activeProfiles || 0) > 0 || (myAgency?.totalProfiles || 0) > 0;
   
   if (!hasProfilesInAgency && (profiles || []).length === 0 && (activeRole === 'App Owner' || activeRole === 'Agency Admin' || activeRole === 'Manager')) {
-    alerts.push({ message: isCz ? 'Vytvořte svůj první profil a začněte' : 'Create your first profile to get started', color: '#3b82f6' });
+    alerts.push({ message: t('createFirstProfile'), color: '#3b82f6' });
   }
   if (alerts.length === 0) return null;
   return (
@@ -817,13 +817,13 @@ const SkeletonStatsGrid = ({ columns = 3, isMobile }) => (
   </div>
 );
 
-const PendingNotificationsSection = ({ isCz, pendingNotifications, setPendingNotifications, showToast }) => {
+const PendingNotificationsSection = ({ pendingNotifications, setPendingNotifications, showToast, t }) => {
   if (!pendingNotifications || pendingNotifications.length === 0) return null;
   return (
     <div style={{ marginBottom: '1.5rem' }}>
       <h3 style={{ fontSize: '0.8rem', fontWeight: '800', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b', letterSpacing: '0.05em' }}>
         <MessageSquare size={16} />
-        {(isCz ? 'NÁVRHY SMS PRO KLIENTY' : 'PENDING CLIENT SMS').toUpperCase()}
+        {t('pendingClientSms').toUpperCase()}
       </h3>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         {pendingNotifications.map((notif, i) => (
@@ -843,12 +843,12 @@ const PendingNotificationsSection = ({ isCz, pendingNotifications, setPendingNot
             <button 
               onClick={() => {
                 navigator.clipboard.writeText(notif.message);
-                showToast(isCz ? 'Zkopírováno do schránky' : 'Copied to clipboard', 'success');
+                showToast(t('copySuccess'), 'success');
               }}
               style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', fontWeight: '800', color: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '6px', cursor: 'pointer' }}
             >
               <Copy size={14} />
-              {isCz ? 'KOPÍROVAT TEXT' : 'COPY TEXT'}
+              {t('copyText')}
             </button>
           </div>
         ))}

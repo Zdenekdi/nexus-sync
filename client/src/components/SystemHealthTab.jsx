@@ -9,7 +9,7 @@ import { useNexus } from '../context/ContextHook';
 
 const SystemHealthTab = ({ server }) => {
   const nexus = useNexus();
-  const { lang, token, API_BASE, t } = nexus;
+  const { token, API_BASE, t } = nexus;
   const [health, setHealth] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -26,12 +26,10 @@ const SystemHealthTab = ({ server }) => {
         });
         setHealth(r.data);
       } else if (server.id === 'ai-node') {
-        // Fetch Hetzner specific status which includes hardware info
         const r = await axios.get(`${API_BASE}/hetzner/status`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        // Map Hetzner status to Health format
         const data = r.data;
         setHealth({
           platform: 'linux',
@@ -41,7 +39,7 @@ const SystemHealthTab = ({ server }) => {
           cpu: {
             cores: data.vcpu_count || 4,
             model: 'Hetzner vCPU',
-            loadAvg: [0, 0, 0] // We'll need a real agent for this later
+            loadAvg: [0, 0, 0]
           },
           memory: {
             total: `${(data.ram / 1024).toFixed(1)} GB`,
@@ -60,9 +58,9 @@ const SystemHealthTab = ({ server }) => {
       }
       
       setError(null);
-    } catch (_err) {
-      console.error('Failed to fetch system health:', _err);
-      setError(lang === 'cz' ? 'Nepodařilo se načíst data ze serveru.' : 'Failed to fetch server data.');
+    } catch (err) {
+      console.error('Failed to fetch system health:', err);
+      setError(t('failed_to_fetch_server_data'));
     } finally {
       setLoading(false);
     }
@@ -89,19 +87,16 @@ const SystemHealthTab = ({ server }) => {
       <AlertTriangle size={48} color="var(--_err-color)" style={{ marginBottom: '1rem' }} />
       <p style={{ color: 'var(--_err-color)', fontWeight: '700' }}>{error}</p>
       <button onClick={fetchHealth} className="action-btn" style={{ marginTop: '1rem', background: 'var(--accent-color)' }}>
-        <RefreshCw size={14} style={{ marginRight: '0.5rem' }} /> {t('retry') || 'Zkusit znovu'}
+        <RefreshCw size={14} style={{ marginRight: '0.5rem' }} /> {t('retry')}
       </button>
     </div>
   );
 
   const isMobile = window.innerWidth < 768;
 
-  // The AI Node now shows real data below!
-
   return (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       
-      {/* Real-time Status Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h2 style={{ fontSize: '1.75rem', fontWeight: '900', background: 'linear-gradient(to right, #10b981, #6366f1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '0.5rem' }}>
@@ -114,12 +109,11 @@ const SystemHealthTab = ({ server }) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 1rem', background: health?.power_status === 'off' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', border: health?.power_status === 'off' ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '12px' }}>
           <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: health?.power_status === 'off' ? '#ef4444' : '#10b981', boxShadow: `0 0 10px ${health?.power_status === 'off' ? '#ef4444' : '#10b981'}` }} className="pulse"></div>
           <span style={{ fontSize: '0.8rem', fontWeight: '800', color: health?.power_status === 'off' ? '#ef4444' : '#10b981' }}>
-            {health?.power_status === 'off' ? 'NODE POWER OFF' : 'SYSTEM OPERATIONAL'}
+            {health?.power_status === 'off' ? t('node_power_off') : t('system_operational')}
           </span>
         </div>
       </div>
 
-      {/* Metrics Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '1rem' }}>
         <HealthStatCard 
           icon={<Cpu color="#6366f1" />}
@@ -151,10 +145,8 @@ const SystemHealthTab = ({ server }) => {
         />
       </div>
 
-      {/* System Details & Info */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1.2fr', gap: '2rem' }}>
         
-        {/* Resource Usage Visualization */}
         <div className="glass-card" style={{ padding: '2rem' }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <Zap size={20} color="var(--accent-color)" /> {t('serverMetrics')}
@@ -182,7 +174,6 @@ const SystemHealthTab = ({ server }) => {
           </div>
         </div>
 
-        {/* System Information */}
         <div className="glass-card" style={{ padding: '2rem', background: 'rgba(0,0,0,0.2)' }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.5rem' }}>
             {t('platformInfo')}
@@ -196,7 +187,7 @@ const SystemHealthTab = ({ server }) => {
             <div style={{ marginTop: '1rem', paddingTop: '1.5rem', borderTop: '1px solid var(--card-border)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
                 <RefreshCw size={12} className={loading ? "spin-animation" : ""} />
-                Last updated: {new Date(health?.timestamp).toLocaleTimeString()}
+                {t('last_updated')}: {new Date(health?.timestamp).toLocaleTimeString()}
               </div>
             </div>
           </div>

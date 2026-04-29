@@ -10,6 +10,7 @@ export const TRANSLATIONS = {
         auditLog: 'Audit Log',
         settings: 'Settings',
         inbox: 'Inbox',
+        app_owner_only: 'This section is only accessible to App Owners.',
         managedProfiles: 'Managed Profiles',
         auditTrail: 'Internal Audit Trail',
         auditSubtitle: 'Immutable node-to-node relay history.',
@@ -98,6 +99,42 @@ export const TRANSLATIONS = {
         modelOptimizationComplete: 'Model Optimization Complete',
         uploadTrainingSet: 'Upload Training Set',
         trainingInProgress: 'TRAINING',
+        trainingReset: 'Reset Engine',
+        quickBlacklist: 'Quick Blacklist',
+        blacklistDesc: 'Instantly add a suspicious number to the shared blacklist.',
+        copyText: 'Copy Text',
+        blacklistedSuccess: 'Number blacklisted',
+        blacklistedError: 'Error blacklisting',
+        networkError: 'Network error',
+        subscriptionExpired: 'Your subscription has expired! Renew to continue.',
+        trialExpiresIn: 'Trial expires in {days} days',
+        createFirstProfile: 'Create your first profile to get started',
+        welcomeBack: 'Welcome back',
+        personalWorkspace: 'Personal Workspace',
+        totalBookings: 'Total Bookings',
+        revenueTrend: 'REVENUE TREND',
+        systemLoad: 'SYSTEM LOAD OVERVIEW',
+        globalOverview: 'GLOBAL OVERVIEW',
+        globalHealthDesc: 'Real-time status of all active relay nodes and infrastructure.',
+        agencyOverview: 'AGENCY OVERVIEW',
+        agencyOverviewDesc: 'Performance metrics and operational status for your agency.',
+        pendingClientSms: 'PENDING CLIENT SMS',
+        copySuccess: 'Copied to clipboard',
+        noBookingsToday: 'No bookings for today.',
+        tryAnotherDay: 'Try another day',
+        total: 'Total',
+        dailyAgenda: 'Daily Agenda',
+        dailyAgendaDesc: 'Your scheduled tasks and bookings for the next 24 hours.',
+        todaysBookings: "Today's Bookings",
+        quickStats: 'Quick Stats',
+        revenueMtd: 'REVENUE (MTD)',
+        activeOps: 'ACTIVE OPS',
+        avgConversion: 'AVG CONVERSION',
+        messages: 'Messages',
+        calls: 'Calls',
+        referrer: 'Referrer',
+        referred: 'Referred',
+        reward_action: 'Reward & Action',
         trainingReset: 'RESET',
         feat_ai_trans_label: 'AI Voice Relay (Beta)',
         feat_ai_trans_desc: 'Enable neural speech-to-speech routing',
@@ -578,7 +615,134 @@ export const TRANSLATIONS = {
         maintenance: 'Maintenance',
         plansManagement: 'Plans Management',
         documentation: 'Documentation',
-        quickBlacklist: 'Quick Blacklist'
+        quickBlacklist: 'Quick Blacklist',
+        server_switched_to: 'Server switched to',
+        only_apk_allowed: 'Only .apk files are allowed',
+        gb: 'GB',
+        costs: 'Costs',
+        monthly_flat_rate: 'Monthly flat rate',
+        system_availability: 'System Availability',
+        all_nodes_ok: 'All nodes OK',
+        data_transfer: 'Data Transfer',
+        outgoing_traffic: 'Outgoing Traffic',
+        active_node: 'Active Node',
+        server_details: 'Server Details',
+        inactive: 'Inactive',
+        ip_address: 'IP Address',
+        system_region: 'System / Region',
+        performance_resources: 'Performance / Resources',
+        power_and_restart: 'Power & Restart',
+        start: 'Start',
+        stop: 'Stop',
+        restart: 'Restart',
+        continuous_deployment_git: 'Continuous Deployment (Git)',
+        pull: 'Pull',
+        remote_ssh_terminal: 'Remote SSH Terminal',
+        run: 'Run',
+        android_relay_apk: 'Android Relay (APK)',
+        uploaded_at: 'Uploaded at',
+        download: 'Download',
+        no_apk: 'No APK',
+        no_apk_desc: 'Upload the first version of the relay app',
+        uploading: 'Uploading',
+        drop_to_upload_apk: 'Drop to upload APK',
+        upload_new_apk: 'Upload new APK',
+        version_auto_detected: 'Version will be auto-detected',
+        apk_uploaded_success: '✓ APK uploaded and metadata saved',
+        monthly: 'Monthly',
+        semiAnnual: 'Semi-Annual',
+        annual: 'Annual',
+        expires_in: 'Expires in',
+        no_active_subscription: 'No active subscription',
+        subscribe: 'Subscribe',
+        running: 'Running',
+        stopped: 'Stopped',
+        off: 'Off',
+        starting: 'Starting',
+        stopping: 'Stopping',
+        failed_to_fetch_server_data: 'Failed to fetch server data.',
+        retry: 'Retry',
+        node_power_off: 'NODE POWER OFF',
+        system_operational: 'SYSTEM OPERATIONAL',
+        platformInfo: 'Platform Information',
+        last_updated: 'Last updated',
+        caution: 'CAUTION',
+        sensitive_data_warning: 'This data contains sensitive information for production server access. Keep it secure and do not share!',
+        service: 'Service',
+        user: 'User',
+        password_key: 'Password / Key',
+        note: 'Note',
+        manual: {
+            title: 'Server Operations Manual',
+            subtitle: 'Main reference guide for managing and updating the production environment',
+            quickDeploy: {
+                title: '🚀 Quick Deploy',
+                description: 'To deploy new changes from the repository on the server:',
+                command: 'cd /root/nexus-backend && git pull origin main && npm install --production && npx prisma generate && pm2 restart nexus-backend-final'
+            },
+            credentials: {
+                title: '🔐 Access Credentials',
+                items: [
+                    {
+                        service: 'SSH (Server)',
+                        user: 'root',
+                        password: 'a3P!?Usa#v2e6Vf,',
+                        note: 'Host: 78.141.202.139 (with comma at end)'
+                    },
+                    {
+                        service: 'PostgreSQL',
+                        user: 'nexus',
+                        password: 'nexus_prod_2024!',
+                        note: 'DB: nexus_prod'
+                    },
+                    {
+                        service: 'PM2 Process',
+                        user: '—',
+                        password: 'nexus-backend-final',
+                        note: 'PM2 process name'
+                    }
+                ]
+            },
+            backup: {
+                title: '💾 Database Management - Backup',
+                description: 'Backups are stored in /var/backups/. Manual backup command:',
+                command: 'PGPASSWORD="nexus_prod_2024!" pg_dump -h localhost -U nexus -d nexus_prod > /var/backups/backup_$(date +%Y%m%d_%H%M%S).sql'
+            },
+            migration: {
+                title: '⚙️ Database Management - Schema Migration',
+                description: 'If schema.prisma changes, run:',
+                command: 'export DATABASE_URL="postgresql://nexus:nexus_prod_2024%21@localhost:5432/nexus_prod"\nnpx prisma migrate deploy'
+            },
+            diagnostics: {
+                title: '🛠️ Diagnostics and Logs',
+                items: [
+                    {
+                        name: 'Display running processes',
+                        command: 'pm2 list'
+                    },
+                    {
+                        name: 'Monitor logs in real-time',
+                        command: 'pm2 logs nexus-backend-final'
+                    },
+                    {
+                        name: 'Check RAM/CPU usage',
+                        command: 'pm2 monit'
+                    },
+                    {
+                        name: 'Restart PM2',
+                        command: 'systemctl restart pm2-root'
+                    }
+                ]
+            },
+            directory: {
+                title: '📂 Directory Structure',
+                items: [
+                    { path: '/root/nexus-backend', desc: 'Backend source code (Node.js/Express)' },
+                    { path: '/var/backups', desc: 'SQL backup storage' },
+                    { path: '/root/.pm2/logs', desc: 'PM2 system logs' }
+                ]
+            }
+        }
     },
     cz: {
         comingSoon: 'Brzy k dispozici',
@@ -594,7 +758,6 @@ export const TRANSLATIONS = {
         tacticalOverview: 'TAKTICKÝ PŘEHLED',
         liveMapInterface: 'ROZHRANÍ MAPY',
         unitsTracking: 'Sledujeme {count} jednotek...',
-        profiles: 'Profily',
         auditLog: 'Auditní stopa',
         settings: 'Nastavení',
         inbox: 'Doručené',
@@ -629,8 +792,10 @@ export const TRANSLATIONS = {
         passwordLabel: 'Přístupový klíč (Heslo)',
         loginButton: 'Autentizovat a synchronizovat',
         loginError: 'Neplatné údaje. Přístup zamítnut.',
+        app_owner_only: 'Tato sekce je přístupná pouze pro majitele sítě (App Owner).',
         quickLogin: 'Rychlý demo přístup',
-        logout: 'Odhlásit ze systému',
+        logout: 'Odhlásit se',
+        security: 'Bezpečnost',
         backToProduct: 'Zpět k prezentaci',
         registerAgency: 'Registrovat novou agenturu',
         registerUser: 'Přidat se k agentuře',
@@ -679,8 +844,17 @@ export const TRANSLATIONS = {
         hierarchy: 'Hierarchie',
         activity: 'Aktivita',
         managePlans: 'Správa tarifů',
-        safety: 'Bezpečnost',
         blacklist: 'Blacklist',
+        trainingReset: 'Resetovat engine',
+        quickBlacklist: 'Rychlý Blacklist',
+        blacklistDesc: 'Okamžitě přidejte podezřelé číslo do sdíleného blacklistu.',
+        copyText: 'KOPÍROVAT TEXT',
+        blacklistedSuccess: 'Číslo zablokováno',
+        blacklistedError: 'Chyba při blokování',
+        networkError: 'Chyba sítě',
+        subscriptionExpired: 'Vaše předplatné vypršelo! Obnovte ho pro pokračování.',
+        trialExpiresIn: 'Zkušební doba končí za {days} dní',
+        createFirstProfile: 'Vytvořte svůj první profil a začněte',
         sosAlerts: 'SOS Upozornění',
         addEntry: 'Přidat záznam',
         phone: 'Telefon',
@@ -1319,6 +1493,135 @@ export const TRANSLATIONS = {
         hours: 'hodin',
         minutes: 'minut',
         documentation: 'Dokumentace',
-        quickBlacklist: 'Rychlý Blacklist'
+        quickBlacklist: 'Rychlý Blacklist',
+        server_switched_to: 'Server přepnut na',
+        only_apk_allowed: 'Pouze soubory .apk jsou povoleny',
+        gb: 'GB',
+        costs: 'Náklady',
+        monthly_flat_rate: 'Měsíční paušál',
+        system_availability: 'Dostupnost systému',
+        all_nodes_ok: 'Všechny uzly OK',
+        data_transfer: 'Přenos dat',
+        outgoing_traffic: 'Odchozí provoz',
+        active_node: 'Aktivní uzel',
+        server_details: 'Detaily serveru',
+        inactive: 'Neaktivní',
+        ip_address: 'IP adresa',
+        system_region: 'Systém / Region',
+        performance_resources: 'Výkon / Zdroje',
+        power_and_restart: 'Napájení a restart',
+        start: 'Start',
+        stop: 'Stop',
+        restart: 'Restart',
+        continuous_deployment_git: 'Kontinuální nasazení (Git)',
+        pull: 'Pull',
+        remote_ssh_terminal: 'Vzdálený SSH terminál',
+        run: 'Spustit',
+        android_relay_apk: 'Android Relay (APK)',
+        uploaded_at: 'Nahráno',
+        download: 'Stáhnout',
+        no_apk: 'Žádné APK',
+        no_apk_desc: 'Nahrajte první verzi relay aplikace',
+        uploading: 'Nahrávám',
+        drop_to_upload_apk: 'Pusť pro nahrání APK',
+        upload_new_apk: 'Nahrajte nové APK',
+        version_auto_detected: 'Verze bude detekována automaticky',
+        apk_uploaded_success: '✓ APK nahráno a metadata uložena',
+        monthly: 'Měsíční',
+        semiAnnual: 'Půlroční',
+        annual: 'Roční',
+        expires_in: 'Vyprší za',
+        no_active_subscription: 'Žádné aktivní předplatné',
+        cancel: 'Zrušit',
+        subscribe: 'Předplatit',
+        running: 'Běží',
+        stopped: 'Zastaveno',
+        off: 'Vypnuto',
+        starting: 'Spouštění',
+        stopping: 'Zastavování',
+        failed_to_fetch_server_data: 'Nepodařilo se načíst data ze serveru.',
+        retry: 'Zkusit znovu',
+        node_power_off: 'NAPÁJENÍ UZLU VYPNUTO',
+        system_operational: 'SYSTÉM V PROVOZU',
+        platformInfo: 'Informace o platformě',
+        last_updated: 'Poslední aktualizace',
+        caution: 'POZOR',
+        sensitive_data_warning: 'Tato data obsahují citlivé údaje pro přístup k produkčnímu serveru. Udržujte je v bezpečí a nesdílujte!',
+        service: 'Služba',
+        user: 'Uživatel',
+        password_key: 'Heslo / Klíč',
+        note: 'Poznámka',
+        copy: 'Kopírovat',
+        manual: {
+            title: 'Provozní Manuál - Správa Serveru',
+            subtitle: 'Představuje hlavní referenci pro správu a aktualizaci produkčního prostředí',
+            quickDeploy: {
+                title: '🚀 Rychlá Aktualizace (Deploy)',
+                description: 'Pro nasazení nových změn z repozitáře spusťte na serveru:',
+                command: 'cd /root/nexus-backend && git pull origin main && npm install --production && npx prisma generate && pm2 restart nexus-backend-final'
+            },
+            credentials: {
+                title: '🔐 Přístupové Údaje',
+                items: [
+                    {
+                        service: 'SSH (Server)',
+                        user: 'root',
+                        password: 'a3P!?Usa#v2e6Vf,',
+                        note: 'Host: 78.141.202.139 (s čárkou na konci)'
+                    },
+                    {
+                        service: 'PostgreSQL',
+                        user: 'nexus',
+                        password: 'nexus_prod_2024!',
+                        note: 'DB: nexus_prod'
+                    },
+                    {
+                        service: 'PM2 Process',
+                        user: '—',
+                        password: 'nexus-backend-final',
+                        note: 'Název procesu v PM2'
+                    }
+                ]
+            },
+            backup: {
+                title: '💾 Správa Databáze - Zálohování',
+                description: 'Zálohy se ukládají do /var/backups/. Ruční záloha se provede příkazem:',
+                command: 'PGPASSWORD="nexus_prod_2024!" pg_dump -h localhost -U nexus -d nexus_prod > /var/backups/backup_$(date +%Y%m%d_%H%M%S).sql'
+            },
+            migration: {
+                title: '⚙️ Správa Databáze - Migrace Schématu',
+                description: 'Pokud dojde ke změně v schema.prisma, spusťte:',
+                command: 'export DATABASE_URL="postgresql://nexus:nexus_prod_2024%21@localhost:5432/nexus_prod"\nnpx prisma migrate deploy'
+            },
+            diagnostics: {
+                title: '🛠️ Diagnostika a Logy',
+                items: [
+                    {
+                        name: 'Zobrazení běžících procesů',
+                        command: 'pm2 list'
+                    },
+                    {
+                        name: 'Sledování logů v reálném čase',
+                        command: 'pm2 logs nexus-backend-final'
+                    },
+                    {
+                        name: 'Kontrola obsazení RAM/CPU',
+                        command: 'pm2 monit'
+                    },
+                    {
+                        name: 'Restartování celého PM2',
+                        command: 'systemctl restart pm2-root'
+                    }
+                ]
+            },
+            directory: {
+                title: '📂 Struktura Adresářů',
+                items: [
+                    { path: '/root/nexus-backend', desc: 'Zdrojový kód backendu (Node.js/Express)' },
+                    { path: '/var/backups', desc: 'Úložiště SQL záloh' },
+                    { path: '/root/.pm2/logs', desc: 'Systémové logy PM2' }
+                ]
+            }
+        }
     }
 };
