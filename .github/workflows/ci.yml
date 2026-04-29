@@ -48,7 +48,7 @@ jobs:
           cache-dependency-path: client/package-lock.json
 
       - name: Install client dependencies
-        run: cd client && npm install --save-exact @sentry/react@10.43.0 --update-sentry-capacitor --legacy-peer-deps
+        run: cd client && npm install --legacy-peer-deps
 
       - name: Build client
         run: cd client && npx vite build
@@ -76,7 +76,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm install --legacy-peer-deps --prefer-offline --no-audit
-          cd client && npm install --save-exact @sentry/react@10.43.0 --update-sentry-capacitor --legacy-peer-deps --prefer-offline --no-audit
+          cd client && npm install --legacy-peer-deps --prefer-offline --no-audit
 
       - name: Install Playwright Browsers
         if: steps.cache-playwright.outputs.cache-hit != 'true'
@@ -145,7 +145,7 @@ jobs:
       - name: Install & Build
         run: |
           cd client
-          npm install --save-exact @sentry/react@10.43.0 --update-sentry-capacitor --legacy-peer-deps
+          npm install --legacy-peer-deps
           npm run build
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
