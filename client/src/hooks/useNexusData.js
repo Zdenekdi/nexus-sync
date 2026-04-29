@@ -49,6 +49,7 @@ export function useNexusData({
   const [isDataLoading, setIsDataLoading] = useState(false);
   const [isBackgroundLoading, setIsBackgroundLoading] = useState(false);
   const [hasHydrated, setHasHydrated] = useState(() => localStorage.getItem('nexus_hydrated') === 'true');
+  const [rolePermissions, setRolePermissions] = useState(null);
   const [clientNames] = useState({});
 
   // Global Features & Training Actions
@@ -156,7 +157,8 @@ export function useNexusData({
         axiosWithTiming(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/profiles`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/agency/users`, { headers: { Authorization: `Bearer ${token}` } }),
-        axiosWithTiming(`${API_BASE}/safety/sessions/active`, { headers: { Authorization: `Bearer ${token}` } })
+        axiosWithTiming(`${API_BASE}/safety/sessions/active`, { headers: { Authorization: `Bearer ${token}` } }),
+        axiosWithTiming(`${API_BASE}/admin/permissions`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: null }))
       ]);
 
       // Process Priority 1 Data immediately to unlock UI
@@ -173,6 +175,9 @@ export function useNexusData({
           const endAt = new Date(safetyRes.data.plannedEndAt).getTime();
           if (!isNaN(endAt)) setTimeLeft(Math.floor((endAt - Date.now()) / 1000));
         } catch { /* ignore date parse _err */ }
+      }
+      if (permissionsRes?.data) {
+        setRolePermissions(permissionsRes.data);
       }
 
       // UNLOCK SIDEBAR AS SOON AS CRITICAL DATA IS READY
@@ -603,6 +608,7 @@ export function useNexusData({
     newBookingForm, setNewBookingForm, bioText, setBioText, isSyncing, syncStatus: _syncStatus, syncProgress: _syncProgress,
     relayOnline, handleSaveBio, handleSyncAll, handleSaveCredentials, handleQuickSaveMeeting, handleDelayBooking, initData,
     handleExportICS, handleSaveCalendarSync, handleSaveBooking, fetchClientByPhone,
-    setProfiles, toggleOperatorStatus, handleSaveAssignees
+    setProfiles, toggleOperatorStatus, handleSaveAssignees,
+    rolePermissions
   };
 }

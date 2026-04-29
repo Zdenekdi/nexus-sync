@@ -576,7 +576,9 @@ export const TRANSLATIONS = {
         sendErrorMessage: 'Message could not be sent. Please check the relay device connection.',
         systemAdministration: 'System Administration',
         maintenance: 'Maintenance',
-        plansManagement: 'Plans Management'
+        plansManagement: 'Plans Management',
+        documentation: 'Documentation',
+        quickBlacklist: 'Quick Blacklist'
     },
     cz: {
         comingSoon: 'Brzy k dispozici',
@@ -1315,6 +1317,8 @@ export const TRANSLATIONS = {
         monitoringNote: 'Přímý monitoring hlavní infrastruktury a cloudových zdrojů.',
         days: 'dní',
         hours: 'hodin',
-        minutes: 'minut'
+        minutes: 'minut',
+        documentation: 'Dokumentace',
+        quickBlacklist: 'Rychlý Blacklist'
     }
 };

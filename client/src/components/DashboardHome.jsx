@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Building2, Zap, Activity, TrendingUp, Users, Server, ShieldCheck, AlertTriangle, Calendar, Loader2, MessageSquare, Copy, X, Clock, HardDrive, Banknote } from 'lucide-react';
+import { DollarSign, Building2, Zap, Activity, TrendingUp, Users, Server, ShieldCheck, AlertTriangle, Calendar, Loader2, MessageSquare, Copy, X, Clock, HardDrive, Banknote, ChevronLeft, ChevronRight } from 'lucide-react';
 import axios from 'axios';
 import { RevenueLineChart, ConversionDonutChart, MiniSparkline } from './AnalyticsCharts';
 import { useVultr } from '../hooks/useVultr';
@@ -656,7 +656,7 @@ const DashboardHome = () => {
           <SafetyControlCard />
         </div>
 
-        <PendingNotificationsSection isCz={isCz} pendingNotifications={pendingNotifications} setPendingNotifications={setPendingNotifications} onDelayBooking={onDelayBooking} />
+        <PendingNotificationsSection isCz={isCz} pendingNotifications={pendingNotifications} setPendingNotifications={setPendingNotifications} showToast={showToast} />
 
         <div style={{ marginBottom: isMobile ? '1.1rem' : '2.5rem' }}>
           <h2 style={{ fontSize: isMobile ? '1.35rem' : '2rem', fontWeight: '900', lineHeight: 1.15 }}>{t('dailyAgenda')}</h2>
@@ -717,7 +717,7 @@ const QuickBlacklistSection = ({ isCz, API_BASE, token, showToast }) => {
         <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <ShieldCheck size={20} color="#ef4444" />
         </div>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: '800' }}>{isCz ? 'RYCHLÝ BLACKLIST' : 'QUICK BLACKLIST'}</h3>
+        <h3 style={{ fontSize: '1.1rem', fontWeight: '800' }}>{(t('quickBlacklist') || 'Quick Blacklist').toUpperCase()}</h3>
       </div>
       <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
         {isCz ? 'Okamžitě přidejte podezřelé číslo do sdíleného blacklistu.' : 'Instantly add a suspicious number to the shared blacklist.'}
