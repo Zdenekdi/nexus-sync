@@ -27,6 +27,7 @@ const OperationsUnit = lazyWithRetry(() => import('../Units/OperationsUnit'));
 const AgencyUnit = lazyWithRetry(() => import('../Units/AgencyUnit'));
 const InfrastructureUnit = lazyWithRetry(() => import('../Units/InfrastructureUnit'));
 const TvDashboard = lazyWithRetry(() => import('../Units/TvDashboard'));
+import DocsView from '../Views/DocsView';
 
 const LoadingFallback = () => (
   <div style={{ 
@@ -81,6 +82,9 @@ const ViewRouter = () => {
       case 'permissions':
       case 'maintenance':
         return <InfrastructureUnit />;
+
+      case 'docs':
+        return <DocsView />;
 
       default: 
         return <DashboardHome />;

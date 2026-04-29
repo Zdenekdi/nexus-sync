@@ -7,6 +7,10 @@
       "style": "DARK",
       "backgroundColor": "#080a0f",
       "overlaysWebView": true
+    },
+    "CapacitorUpdater": {
+      "statsUrl": "https://nexus-api.myvnc.com/api/vultr/ota-stats",
+      "autoUpdate": false
     }
   },
   "android": {
