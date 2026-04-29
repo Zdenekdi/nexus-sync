@@ -12,7 +12,9 @@ import {
   Activity,
   History,
   HardDrive,
-  Info
+  Info,
+  Shield,
+  Loader2
 } from 'lucide-react';
 import { useNexus } from '../../context/ContextHook';
 import SystemHealthTab from '../SystemHealthTab';
@@ -23,15 +25,36 @@ const MaintenanceView = () => {
     showToast, 
     selectedServerId, 
     setSelectedServerId, 
-    availableServers 
+    availableServers,
+    activeOperator,
+    isAppOwner,
+    loading,
+    t
   } = useNexus();
   const [activeTab, setActiveTab] = useState('live');
+
+  if (loading) {
+    return (
+      <div style={{ padding: '4rem', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <Loader2 className="animate-spin" size={32} color="var(--accent-color)" />
+      </div>
+    );
+  }
+
+  if (!isAppOwner) {
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-dim)' }}>
+        <Shield size={48} style={{ marginBottom: '1rem', opacity: 0.2 }} />
+        <p>{t('app_owner_only')}</p>
+      </div>
+    );
+  }
 
   const selectedServer = availableServers.find(s => s.id === selectedServerId) || availableServers[0];
 
   const handleServerChange = (id) => {
     setSelectedServerId(id);
-    showToast(lang === 'cz' ? `Server přepnut na: ${availableServers.find(s => s.id === id)?.name}` : `Server switched to: ${availableServers.find(s => s.id === id)?.name}`, 'info');
+    showToast(t('server_switched', { name: availableServers.find(s => s.id === id)?.name }), 'info');
   };
 
   const sections = [

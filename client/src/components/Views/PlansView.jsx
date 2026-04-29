@@ -17,10 +17,11 @@ const PlansView = () => {
     onCancelSubscription,
     daysLeft 
   } = nexus;
+  
   const PLANS = [
-    { id: 'MONTHLY',     label: lang === 'cz' ? 'Měsíční'  : 'Monthly',     priceFmt: '990 Kč',    days: 30 },
-    { id: 'SEMI_ANNUAL', label: lang === 'cz' ? 'Půlroční' : 'Semi-Annual', priceFmt: '5 490 Kč',  days: 182 },
-    { id: 'ANNUAL',      label: lang === 'cz' ? 'Roční'    : 'Annual',      priceFmt: '9 990 Kč',  days: 365 },
+    { id: 'MONTHLY',     label: t('monthly'),     priceFmt: '990 Kč',    days: 30 },
+    { id: 'SEMI_ANNUAL', label: t('semiAnnual'), priceFmt: '5 490 Kč',  days: 182 },
+    { id: 'ANNUAL',      label: t('annual'),      priceFmt: '9 990 Kč',  days: 365 },
   ];
 
   const statusColor = !activeSubscription ? '#6b7280' : activeSubscription.status === 'ACTIVE' ? '#10b981' : '#f59e0b';
@@ -33,18 +34,18 @@ const PlansView = () => {
         <div className="glass-card" style={{ padding: '2rem', borderTop: `3px solid ${statusColor}` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>CURRENT PLAN</div>
+              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('currentPlan').toUpperCase()}</div>
               {activeSubscription ? (
                 <>
                   <div style={{ fontSize: '1.6rem', fontWeight: '900' }}>{activeSubscription.plan}</div>
                   <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-                    {lang === 'cz' ? 'Vyprší za' : 'Expires in'} {daysLeft} {lang === 'cz' ? 'dní' : 'days'}
+                    {t('expires_in')} {daysLeft} {t('days')}
                   </div>
                 </>
-              ) : <div style={{ color: 'var(--text-secondary)' }}>No active subscription</div>}
+              ) : <div style={{ color: 'var(--text-secondary)' }}>{t('no_active_subscription')}</div>}
             </div>
             {activeSubscription && (
-              <button onClick={onCancelSubscription} className="status-badge" style={{ color: '#ef4444', borderColor: '#ef4444' }}>CANCEL</button>
+              <button onClick={onCancelSubscription} className="status-badge" style={{ color: '#ef4444', borderColor: '#ef4444' }}>{t('cancel').toUpperCase()}</button>
             )}
           </div>
         </div>
