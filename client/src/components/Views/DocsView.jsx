@@ -158,5 +158,23 @@ const DocsView = () => {
           </a>
         </div>
       </section>
+    </div>
+  );
+};
+
+const toolCardStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.75rem',
+  padding: '1rem 1.25rem',
+  background: 'rgba(255,255,255,0.03)',
+  border: '1px solid rgba(255,255,255,0.05)',
+  borderRadius: '12px',
+  color: 'white',
+  textDecoration: 'none',
+  fontSize: '0.9rem',
+  fontWeight: '700',
+  transition: 'all 0.2s'
+};
 
 export default DocsView;

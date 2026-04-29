@@ -756,7 +756,7 @@ const QuickBlacklistSection = ({ API_BASE, token, showToast, t }) => {
           disabled={isLoading}
           style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0 1.25rem', borderRadius: '10px', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer', opacity: isLoading ? 0.6 : 1 }}
         >
-          {isLoading ? '...' : (isCz ? 'ZABLOKOVAT' : 'BLACKLIST')}
+          {isLoading ? '...' : t('blacklist').toUpperCase()}
         </button>
       </div>
     </div>
