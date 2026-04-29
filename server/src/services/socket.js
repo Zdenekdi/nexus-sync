@@ -37,8 +37,8 @@ const init = (server) => {
       methods: ['GET', 'POST'],
       credentials: true
     },
-    pingTimeout: 60000,
-    pingInterval: 25000,
+    pingTimeout: 300000,
+    pingInterval: 20000,
     connectTimeout: 45000
   });
 

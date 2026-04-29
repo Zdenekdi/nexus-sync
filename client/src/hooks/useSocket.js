@@ -31,8 +31,10 @@ export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall,
         reconnection: true,
         reconnectionAttempts: Infinity,
         reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-        timeout: 20000,
+        reconnectionDelayMax: 10000,
+        timeout: 30000,
+        upgrade: true,
+        autoConnect: true,
       });
 
       // Global reference for legacy components/bridge

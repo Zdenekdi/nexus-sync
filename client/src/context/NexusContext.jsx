@@ -112,6 +112,31 @@ export const NexusProvider = ({ children }) => {
   const [globalSettings, setGlobalSettings] = useState([]);
   const [pendingNotifications, setPendingNotifications] = useState([]);
   const [incomingRelayCall, setIncomingRelayCall] = useState(null);
+
+  // ── Health & Relay Status ─────────────────────────────────────────────────
+  const checkRelayStatus = useCallback(async () => {
+    // 1. Check native plugin status if available
+    if (Capacitor.isNativePlatform() && window.Capacitor?.Plugins?.NexusRelay) {
+      try {
+        const status = await window.Capacitor.Plugins.NexusRelay.checkStatus();
+        if (status) return { connected: !!window._nexusSocket?.connected, bridgeActive: !!status.isActive };
+      } catch { /* ignore */ }
+    }
+    // 2. Fallback to socket status
+    return { 
+      connected: !!window._nexusSocket?.connected, 
+      bridgeActive: isRelayActive 
+    };
+  }, [isRelayActive]);
+
+  const checkProfileHealth = useCallback(async (profileId) => {
+    // Simplified health check based on socket and local state
+    return {
+      isHealthy: !!window._nexusSocket?.connected,
+      profileId: profileId,
+      lastSeen: new Date().toISOString()
+    };
+  }, []);
   
   // Translation helper - needed for useAuth
   // -------------------------------------------------------------------------
@@ -1290,6 +1315,10 @@ export const NexusProvider = ({ children }) => {
     relayOnline: nexusData.relayOnline, handleSyncAll: nexusData.handleSyncAll, 
     handleSaveBio: nexusData.handleSaveBio, handleSaveCredentials: nexusData.handleSaveCredentials,
     bioText: nexusData.bioText, setBioText: nexusData.setBioText,
+    calendar: nexusData.calendar, bookingSchedule: nexusData.calendar,
+    isBookingModalOpen: nexusData.isBookingModalOpen, setIsBookingModalOpen: nexusData.setIsBookingModalOpen,
+    newBookingForm: nexusData.newBookingForm, setNewBookingForm: nexusData.setNewBookingForm,
+    handleSaveBooking: nexusData.handleSaveBooking,
     isSidebarOpen, setIsSidebarOpen,
     totalUnread, messages, filteredMessages, selectedChatId, setSelectedChatId,
     selectedChat, chatMessages, chatHistory, fetchChatMessages, isHistoryLoading, setIsHistoryLoading,
@@ -1324,6 +1353,7 @@ export const NexusProvider = ({ children }) => {
       } catch { return { success: false }; }
     },
     handleRelayCommand,
+    checkRelayStatus, checkProfileHealth,
     selectedServerId, setSelectedServerId, availableServers
   }), [
     t, lang, setLang, activeTab, setActiveTab, activeMarket, setActiveMarket,
@@ -1356,12 +1386,13 @@ export const NexusProvider = ({ children }) => {
     isRelayActive, setIsRelayActive, relaySimSlot, setRelaySimSlot, relayLogs, setRelayLogs, addRelayLog, updateRelayLogStatus,
     linkedTrackerId, setLinkedTrackerId, trackerStatus, setTrackerStatus,
     messageValue, setMessageValue, calViewDate, setCalViewDate, globalSettings, fetchGlobalSettings,
-     _gpsHistory, lastTrackerUpdate, voiceGuardianActive, handleToggleVoiceGuardian,
+    _gpsHistory, lastTrackerUpdate, voiceGuardianActive, handleToggleVoiceGuardian,
     batteryLevel, incomingGhostCall, setIncomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity,
     heartRate, setHeartRate, hrThreshold, setHrThreshold, isBluetoothConnected, setIsBluetoothConnected,
     isTvMode, tvToken, activeBioWarning, setActiveBioWarning, playBeep, triggerSilentSOS,
     audioSentinelActive, setAudioSentinelActive, isPinModalOpen, setIsPinModalOpen, pinModalPromise, setPinModalPromise,
     handleRelayCommand,
+    checkRelayStatus, checkProfileHealth,
     selectedServerId, setSelectedServerId, availableServers
   ]);
   useEffect(() => {
