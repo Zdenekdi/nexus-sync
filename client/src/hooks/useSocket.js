@@ -27,8 +27,12 @@ export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall,
       socketRef.current = io(SOCKET_URL, {
         auth: { token },
         withCredentials: true,
-        reconnectionAttempts: 5,
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: Infinity,
         reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 20000,
       });
 
       // Global reference for legacy components/bridge

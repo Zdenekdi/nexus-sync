@@ -36,7 +36,10 @@ const init = (server) => {
       },
       methods: ['GET', 'POST'],
       credentials: true
-    }
+    },
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    connectTimeout: 45000
   });
 
   // Authentication Middleware for Socket.io

@@ -50,6 +50,10 @@ export const useAI = () => {
       return response.data.response;
     } catch (err) {
       console.error('AI Suggestion Error:', err);
+      const msg = lang === 'cz' 
+        ? 'Nepodařilo se načíst AI návrhy.' 
+        : 'Failed to load AI suggestions.';
+      setAiError(msg);
       return null;
     } finally {
       setIsAiLoading(false);

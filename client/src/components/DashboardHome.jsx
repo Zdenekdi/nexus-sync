@@ -18,7 +18,7 @@ const DashboardHome = () => {
     isMobile, isBackgroundLoading,
     setLinkedSessionId, linkedSessionId,
     pendingNotifications, setPendingNotifications, onDelayBooking,
-    isLoggedIn, showToast: _showToast, API_BASE, token
+    isLoggedIn, showToast, API_BASE, token
   } = nexus;
   
   const vultr = useVultr();
@@ -55,6 +55,8 @@ const DashboardHome = () => {
   const isMultiregion = currentAgency.isInternational || regions.length > 1;
   const defaultCurrency = isMultiregion ? 'EUR' : (regions[0] === 'cz' ? 'CZK' : (regions[0] === 'us' ? 'USD' : 'GBP'));
   const [dashboardCurrency, setDashboardCurrency] = useState(defaultCurrency);
+  const [quickBlacklistPhone, setQuickBlacklistPhone] = useState('');
+  const [calViewDate, setCalViewDate] = useState(new Date());
   
   // Auto-detect active booking and link it to safety session (for Models)
   useEffect(() => {
@@ -503,7 +505,6 @@ const DashboardHome = () => {
       <div style={{ marginBottom: isMobile ? '1.5rem' : '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'center' : 'flex-end', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : 0 }}>
         <div style={{ textAlign: isMobile ? 'center' : 'left' }}>
           <h2 style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900' }}>{(t('personalWorkspace') || 'Workspace')}</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.85rem' : '1rem' }}>{t('welcomeBack')}, {user?.name || 'User'}.</p>
         </div>
       </div>
 
@@ -560,9 +561,31 @@ const DashboardHome = () => {
               <input 
                 type="text" 
                 placeholder="+420..." 
+                value={quickBlacklistPhone}
+                onChange={e => setQuickBlacklistPhone(e.target.value)}
                 style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.75rem 1rem', borderRadius: '10px', color: 'white' }}
               />
-              <button style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0 1.25rem', borderRadius: '10px', fontWeight: '800', fontSize: '0.8rem' }}>
+              <button 
+                onClick={async () => {
+                  if (!quickBlacklistPhone.trim()) return;
+                  try {
+                    const res = await fetch(`${API_BASE}/safety/blacklist`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                      body: JSON.stringify({ phone: quickBlacklistPhone, reason: 'Quick block from Dashboard' })
+                    });
+                    if (res.ok) {
+                      setQuickBlacklistPhone('');
+                      showToast(isCz ? 'Číslo zablokováno' : 'Number blacklisted', 'success');
+                    } else {
+                      showToast(isCz ? 'Chyba při blokování' : 'Error blacklisting', 'error');
+                    }
+                  } catch (err) {
+                    showToast(isCz ? 'Chyba sítě' : 'Network error', 'error');
+                  }
+                }}
+                style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0 1.25rem', borderRadius: '10px', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer' }}
+              >
                 {isCz ? 'ZABLOKOVAT' : 'BLACKLIST'}
               </button>
             </div>

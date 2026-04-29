@@ -80,13 +80,15 @@ exports.verifyDeviceBinding = async (req, res) => {
       create: { installationId, userId: String(userId), agencyId: String(agencyId), profileId: String(resolvedProfileId), platform: String(platform || 'android'), active: true, model, deviceName, lastSeenAt: new Date() },
     });
 
-    // Cleanup redundant bindings for this profile
+    // Deactivate redundant bindings for this profile instead of deleting them
     if (resolvedProfileId) {
-      await prisma.deviceBinding.deleteMany({
+      await prisma.deviceBinding.updateMany({
         where: {
           profileId: String(resolvedProfileId),
-          NOT: { installationId }
-        }
+          NOT: { installationId },
+          active: true
+        },
+        data: { active: false }
       });
     }
 
