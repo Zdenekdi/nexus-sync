@@ -27,6 +27,7 @@ const OperationsUnit = lazyWithRetry(() => import('../Units/OperationsUnit'));
 const AgencyUnit = lazyWithRetry(() => import('../Units/AgencyUnit'));
 const InfrastructureUnit = lazyWithRetry(() => import('../Units/InfrastructureUnit'));
 const TvDashboard = lazyWithRetry(() => import('../Units/TvDashboard'));
+const DocsView = lazy(() => import('../Views/DocsView'));
 
 const LoadingFallback = () => (
   <div style={{ 
@@ -38,7 +39,7 @@ const LoadingFallback = () => (
 );
 
 const ViewRouter = () => {
-  const { activeTab, isTvMode } = useNexus();
+  const { activeTab, isTvMode, activeOperator } = useNexus();
 
   const renderContent = () => {
     if (isTvMode) return <TvDashboard />;
@@ -81,6 +82,9 @@ const ViewRouter = () => {
       case 'permissions':
       case 'maintenance':
         return <InfrastructureUnit />;
+
+      case 'docs':
+        return <DocsView activeOperator={activeOperator} />;
 
       default: 
         return <DashboardHome />;

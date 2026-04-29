@@ -1,139 +1,180 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
-  Book, 
-  Terminal, 
-  Zap, 
-  Smartphone, 
-  ArrowRight, 
-  Download, 
-  Copy, 
-  Check,
-  AlertCircle
+  FileText, Copy, Check, Download, ExternalLink, 
+  Terminal, Shield, Smartphone, Zap, FileCode
 } from 'lucide-react';
-import { useNexus } from '../../context/ContextHook';
 
-const CommandBlock = ({ cmd, id, copiedCmd, copyToClipboard }) => (
-  <div style={{ 
-    background: 'rgba(0,0,0,0.3)', 
-    borderRadius: '12px', 
-    padding: '1rem', 
-    fontFamily: 'monospace', 
-    fontSize: '0.85rem', 
-    color: '#10b981',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    border: '1px solid rgba(16, 185, 129, 0.1)',
-    marginBottom: '1rem'
-  }}>
-    <span>{cmd}</span>
-    <button 
-      onClick={() => copyToClipboard(cmd, id)}
-      style={{ background: 'none', border: 'none', color: 'rgba(16, 185, 129, 0.5)', cursor: 'pointer' }}
-    >
-      {copiedCmd === id ? <Check size={16} color="var(--success-color)" /> : <Copy size={16} />}
-    </button>
-  </div>
-);
+const CommandBlock = ({ title, command, description }) => {
+  const [copied, setCopied] = useState(false);
 
-const DocsView = () => {
-  const { lang, showToast } = useNexus();
-  const [copiedCmd, setCopiedCmd] = React.useState(null);
-
-  const copyToClipboard = (text, id) => {
-    navigator.clipboard.writeText(text);
-    setCopiedCmd(id);
-    showToast(lang === 'cz' ? 'Zkopírováno!' : 'Copied!', 'success');
-    setTimeout(() => setCopiedCmd(null), 2000);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(command);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div className="docs-view fade-in" style={{ padding: '2.5rem', maxWidth: '1000px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '3rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--accent-color)', marginBottom: '0.5rem' }}>
-          <Book size={24} />
-          <span style={{ fontSize: '0.85rem', fontWeight: '800', letterSpacing: '0.2em' }}>KNIHOVNA ZNALOSTÍ</span>
-        </div>
-        <h1 style={{ fontSize: '2.5rem', fontWeight: '900', margin: 0, letterSpacing: '-0.03em' }}>
-          Návod na nasazení aplikací
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', marginTop: '0.5rem' }}>
-          Vše, co potřebuješ k vytvoření a aktualizaci Nexus Relay systému.
-        </p>
+    <div style={{
+      background: 'rgba(255,255,255,0.02)',
+      border: '1px solid rgba(255,255,255,0.05)',
+      borderRadius: '16px',
+      padding: '1.25rem',
+      marginBottom: '1rem'
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+        <h4 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--accent-color)', fontWeight: '800' }}>{title}</h4>
+        <button 
+          onClick={handleCopy}
+          style={{
+            background: copied ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255,255,255,0.05)',
+            border: 'none',
+            color: copied ? '#22c55e' : 'white',
+            padding: '6px 12px',
+            borderRadius: '8px',
+            fontSize: '0.75rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            transition: 'all 0.2s'
+          }}
+        >
+          {copied ? <Check size={14} /> : <Copy size={14} />}
+          {copied ? 'KOPÍROVÁNO' : 'KOPÍROVAT'}
+        </button>
       </div>
-
-      <div style={{ display: 'grid', gap: '2.5rem' }}>
-        
-        {/* Section 1: OTA Update */}
-        <section className="glass-card" style={{ padding: '2rem', borderRadius: '24px', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(99, 102, 241, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-color)' }}>
-              <Zap size={24} fill="currentColor" />
-            </div>
-            <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: '800', margin: 0 }}>Bleskový Update (OTA)</h2>
-              <span style={{ fontSize: '0.75rem', color: 'var(--success-color)', fontWeight: '700' }}>NEJRYCHLEJŠÍ CESTA</span>
-            </div>
-          </div>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-            Tento proces aktualizuje pouze webovou část aplikace (UI/UX). Uživatelům se v mobilu ukáže banner s možností okamžité aktualizace bez přeinstalace.
-          </p>
-          <div style={{ fontSize: '0.8rem', color: 'white', marginBottom: '0.5rem', fontWeight: '700' }}>SPUSTIT V ADRESÁŘI CLIENT:</div>
-          <CommandBlock id="ota-cmd" cmd="npm run deploy:ota" copiedCmd={copiedCmd} copyToClipboard={copyToClipboard} />
-        </section>
-
-        {/* Section 2: Full APK Build */}
-        <section className="glass-card" style={{ padding: '2rem', borderRadius: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-              <Smartphone size={24} />
-            </div>
-            <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: '800', margin: 0 }}>Nativní Android Build (APK)</h2>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '700' }}>KOMPLETNÍ RE-INSTALACE</span>
-            </div>
-          </div>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-            Použij tento postup, pokud měníš Java kód, AndroidManifest nebo přidáváš nové Capacitor pluginy.
-          </p>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div>
-              <div style={{ fontSize: '0.75rem', color: 'white', marginBottom: '0.5rem', fontWeight: '700' }}>1. SYNCHRONIZACE:</div>
-              <CommandBlock id="apk-sync" cmd="npm run build && npx cap sync android" copiedCmd={copiedCmd} copyToClipboard={copyToClipboard} />
-            </div>
-            <div>
-              <div style={{ fontSize: '0.75rem', color: 'white', marginBottom: '0.5rem', fontWeight: '700' }}>2. KOMPILACE APK:</div>
-              <CommandBlock id="apk-build" cmd="cd android && ./gradlew assembleNexusRelayDebug" copiedCmd={copiedCmd} copyToClipboard={copyToClipboard} />
-            </div>
-          </div>
-          
-          <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-            <AlertCircle size={18} color="var(--accent-color)" />
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-              Cesta k APK: <code style={{ color: 'white' }}>client/android/app/build/outputs/apk/nexusrelay/debug/</code>
-            </div>
-          </div>
-        </section>
-
-        {/* Section 3: Manual Upload */}
-        <section className="glass-card" style={{ padding: '2rem', borderRadius: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-              <Download size={24} />
-            </div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: '800', margin: 0 }}>Distribuce uživatelům</h2>
-          </div>
-          <ol style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', paddingLeft: '1.2rem', lineHeight: '1.6' }}>
-            <li>Vygenerované APK nahraj v adminu v sekci <b>Infrastruktura</b>.</li>
-            <li>Server automaticky detekuje verzi a vytáhne metadata.</li>
-            <li>Ostatním uživatelům se v mobilu nabídne odkaz ke stažení.</li>
-          </ol>
-        </section>
-
+      <div style={{
+        background: '#040507',
+        padding: '1rem',
+        borderRadius: '10px',
+        fontFamily: 'monospace',
+        fontSize: '0.85rem',
+        color: '#a5b4fc',
+        overflowX: 'auto',
+        marginBottom: '0.5rem',
+        border: '1px solid rgba(255,255,255,0.03)'
+      }}>
+        {command}
       </div>
+      {description && <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-dim)' }}>{description}</p>}
     </div>
   );
+};
+
+const DocsView = ({ activeOperator }) => {
+  // Check permission via prop instead of context to avoid circular dependency
+  if (!activeOperator?.isAppOwner) {
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-dim)' }}>
+        <Shield size={48} style={{ marginBottom: '1rem', opacity: 0.2 }} />
+        <p>Tato sekce je přístupná pouze pro App Ownera.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto', animation: 'fadeIn 0.4s ease-out' }}>
+      <header style={{ marginBottom: '2.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+          <div style={{ 
+            width: '48px', height: '48px', borderRadius: '14px', 
+            background: 'rgba(99, 102, 241, 0.1)', display: 'flex', 
+            alignItems: 'center', justifyContent: 'center', color: 'var(--accent-color)' 
+          }}>
+            <FileText size={28} />
+          </div>
+          <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: '900' }}>Technická Dokumentace</h1>
+        </div>
+        <p style={{ color: 'var(--text-dim)', fontSize: '0.95rem' }}>
+          Rychlé příkazy a postupy pro správu a nasazování systému Nexus Hub.
+        </p>
+      </header>
+
+      <section style={{ marginBottom: '3rem' }}>
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.2rem', marginBottom: '1.5rem' }}>
+          <Zap size={20} color="#fbbf24" /> NASAZOVÁNÍ (WEB / OTA)
+        </h3>
+        
+        <CommandBlock 
+          title="1. Blesková aktualizace (OTA)"
+          command="cd client && npm run deploy:ota"
+          description="Nahraje nejnovější verzi webu na Nexus API server. Mobilní aplikace si tuto verzi stáhnou okamžitě po kliku na 'Bleskový update' bez nutnosti stahovat nové APK."
+        />
+
+        <CommandBlock 
+          title="2. Plné nasazení na Firebase"
+          command="cd client && npm run build && firebase deploy --only hosting"
+          description="Nasazení produkční verze webového rozhraní na Firebase Hosting."
+        />
+      </section>
+
+      <section style={{ marginBottom: '3rem' }}>
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.2rem', marginBottom: '1.5rem' }}>
+          <Smartphone size={20} color="#60a5fa" /> MOBILNÍ VERZE (ANDROID)
+        </h3>
+
+        <div style={{ 
+          background: 'rgba(59, 130, 246, 0.05)', 
+          borderLeft: '4px solid #3b82f6',
+          padding: '1.25rem',
+          borderRadius: '0 12px 12px 0',
+          marginBottom: '1.5rem',
+          fontSize: '0.9rem'
+        }}>
+          <strong>Před vytvořením APK:</strong> Nezapomeňte zvýšit verzi v <code>client/package.json</code> (např. z 3.21.0 na 3.22.0) a spusťte <code>npm run build</code>.
+        </div>
+        
+        <CommandBlock 
+          title="1. Synchronizace Capacitoru"
+          command="npx cap sync android"
+          description="Zkopíruje zkompilovaný web do Android projektu."
+        />
+
+        <CommandBlock 
+          title="2. Spuštění v Android Studio"
+          command="npx cap open android"
+          description="Otevře Android Studio pro finální vygenerování podepsaného APK / AAB."
+        />
+      </section>
+
+      <section style={{ marginBottom: '2rem' }}>
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.2rem', marginBottom: '1.5rem' }}>
+          <Terminal size={20} color="#10b981" /> UŽITEČNÉ NÁSTROJE
+        </h3>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
+          <a href="https://console.firebase.google.com/" target="_blank" rel="noreferrer" style={toolCardStyle}>
+            <ExternalLink size={18} /> Firebase Console
+          </a>
+          <a href="https://nexus-api.myvnc.com/api/docs" target="_blank" rel="noreferrer" style={toolCardStyle}>
+            <FileCode size={18} /> API Dokumentace
+          </a>
+        </div>
+      </section>
+
+      <footer style={{ marginTop: '4rem', padding: '2rem 0', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+        <p style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>
+          Nexus Hub Infrastructure • Built with React 19 & Capacitor 8
+        </p>
+      </footer>
+    </div>
+  );
+};
+
+const toolCardStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '0.75rem',
+  padding: '1rem',
+  background: 'rgba(255,255,255,0.03)',
+  border: '1px solid rgba(255,255,255,0.05)',
+  borderRadius: '12px',
+  color: 'white',
+  textDecoration: 'none',
+  fontSize: '0.9rem',
+  fontWeight: '600',
+  transition: 'all 0.2s'
 };
 
 export default DocsView;
