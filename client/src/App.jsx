@@ -18,7 +18,7 @@ const Onboarding = lazy(() => import('./components/Onboarding'));
 const LoginScreen = lazy(() => import('./components/LoginScreen'));
 const SystemBanners = lazy(() => import('./components/UI/SystemBanners'));
 const GlobalModalContainer = lazy(() => import('./components/Modals/GlobalModalContainer'));
-import UpdateBanner from './components/UpdateBanner';
+const UpdateBanner = lazy(() => import('./components/UpdateBanner'));
 
 function AppContent() {
   const { 
@@ -131,7 +131,7 @@ function AppContent() {
       </div>}>
         <SystemBanners />
         <GlobalModalContainer />
-        <UpdateBanner />
+        {/* <UpdateBanner /> */}
         <ErrorBoundary name="Sidebar">
           <Sidebar />
         </ErrorBoundary>
