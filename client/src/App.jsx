@@ -19,12 +19,15 @@ const LoginScreen = lazy(() => import('./components/LoginScreen'));
 const SystemBanners = lazy(() => import('./components/UI/SystemBanners'));
 const GlobalModalContainer = lazy(() => import('./components/Modals/GlobalModalContainer'));
 
+import UpdateBanner from './components/UpdateBanner';
+
 function AppContent() {
+  const nexus = useNexus();
   const { 
     isLoggedIn, activeTab, setIsSidebarOpen, isSidebarOpen, t, isMobile, showOnboarding, 
     showLanding, isDataLoading, hasHydrated, myProfiles: assignedProfiles, 
     activeProfileId, setActiveProfileId, isNativeApp, activeOperator, setShowPanicConfirm
-  } = useNexus();
+  } = nexus;
   const mainRef = React.useRef(null);
 
   // Scroll to top on tab change
