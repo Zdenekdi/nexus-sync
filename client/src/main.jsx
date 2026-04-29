@@ -4,25 +4,6 @@ import { NexusProvider } from './context/NexusContext.jsx'
 import App from './App'
 import ErrorBoundary from './ErrorBoundary'
 import './index.css'
-import * as Sentry from "@sentry/react";
-import { init as sentryCapacitorInit } from "@sentry/capacitor";
-
-// 0. ERROR TRACKING (Sentry)
-sentryCapacitorInit(
-  {
-    dsn: "https://7247858f9678e7f10b7593c68383e25b@o4508269784104960.ingest.us.sentry.io/4508269788692480", // PLACEHOLDER DSN
-    integrations: [
-      Sentry.browserTracingIntegration(),
-      Sentry.replayIntegration(),
-    ],
-    // Performance Monitoring
-    tracesSampleRate: 1.0, 
-    // Session Replay
-    replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1.0,
-  },
-  Sentry.init
-);
 
 // 0. ENVIRONMENT HARDENING (Polyfills for Android Webview)
 if (typeof window !== 'undefined') {
@@ -42,7 +23,6 @@ if (typeof window !== 'undefined') {
 window.onerror = function (msg, url, line, col, _err) {
   const stack = _err && _err.stack ? _err.stack : 'No stacktrace';
   console.error(`FATAL ERROR: ${msg}\nAt: ${line}:${col}\nURL: ${url}\n\nStack:\n${stack}`);
-  // In production, we keep errors in console to avoid annoying users unless critical
   return false;
 };
 
