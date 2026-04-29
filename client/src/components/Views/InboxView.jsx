@@ -737,9 +737,10 @@ const InboxView = () => {
               </div>
             )}
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    )}
+  </div>
   );
 };
 
