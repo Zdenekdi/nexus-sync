@@ -27,7 +27,7 @@ const OperationsUnit = lazyWithRetry(() => import('../Units/OperationsUnit'));
 const AgencyUnit = lazyWithRetry(() => import('../Units/AgencyUnit'));
 const InfrastructureUnit = lazyWithRetry(() => import('../Units/InfrastructureUnit'));
 const TvDashboard = lazyWithRetry(() => import('../Units/TvDashboard'));
-import DocsView from '../Views/DocsView';
+const DocsView = lazy(() => import('../Views/DocsView'));
 
 const LoadingFallback = () => (
   <div style={{ 
