@@ -154,7 +154,7 @@ const Sidebar = () => {
                     { id: 'permissions', icon: Shield, label: t('permissions') },
                     { id: 'plans', icon: CreditCard, label: t('plansManagement') },
                     { id: 'features', icon: Zap, label: t('features') },
-                    { id: 'docs', icon: FileSearch, label: 'Documentation' },
+                    { id: 'docs', icon: FileSearch, label: t('documentation') },
                   ].map(item => (
                     <TooltipItem key={item.id} label={capitalize(item.label)} isMobile={isMobile} isSidebarCollapsed={isSidebarCollapsed}>
                       <button data-testid={`nav-link-${item.id}`} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
@@ -170,20 +170,20 @@ const Sidebar = () => {
                       { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: totalUnread, perm: 'messaging' },
                       { id: 'calendar', icon: Calendar, label: t('schedule'), perm: 'calendar' },
                       { id: 'safety', icon: Shield, label: t('safety'), perm: 'safety' },
-                      { id: 'safety-guard', icon: Shield, label: t('safetyGuard') || 'Safety Guard', perm: 'safety' },
+                      { id: 'safety-guard', icon: Shield, label: t('safetyGuard'), perm: 'safety' },
                       { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
-                      { id: 'inventory', icon: PackageIcon, label: t('inventory') || 'Sklad', perm: 'inventory' },
+                      { id: 'inventory', icon: PackageIcon, label: t('inventory'), perm: 'inventory' },
                       { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles' },
                       { id: 'device-setup', icon: Smartphone, label: t('deviceSetup'), perm: 'device_setup' },
                       { id: 'relay', icon: Radio, label: t('relay'), perm: 'relay' },
                       { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub' },
                       { id: 'hierarchy', icon: Users, label: t('hierarchy'), perm: 'hierarchy' },
                       { id: 'analytics', icon: BarChart3, label: t('analytics'), perm: 'analytics' },
-                      { id: 'crm', icon: UserCheck, label: t('crm') || 'CRM', perm: 'analytics' },
+                      { id: 'crm', icon: UserCheck, label: t('crm'), perm: 'analytics' },
                       { id: 'activity', icon: Activity, label: t('activity'), perm: 'analytics' },
-                      { id: 'referrals', icon: Gift, label: t('referrals') || 'Partner Program', perm: 'messaging' },
-                      { id: 'audit-logs', icon: FileSearch, label: t('auditLogs') || 'Auditní Logy', perm: 'audit_logs' },
-                      { id: 'payouts', icon: Wallet, label: t('payouts') || 'Výplaty', perm: 'analytics' },
+                      { id: 'referrals', icon: Gift, label: t('referrals'), perm: 'messaging' },
+                      { id: 'audit-logs', icon: FileSearch, label: t('auditLogs'), perm: 'audit_logs' },
+                      { id: 'payouts', icon: Wallet, label: t('payouts'), perm: 'analytics' },
                       { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
                     ].filter(item => !item.perm || isAllowed(item.perm)).map(item => (
                       <TooltipItem key={item.id} label={capitalize(item.label)} isMobile={isMobile} isSidebarCollapsed={isSidebarCollapsed}>
