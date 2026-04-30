@@ -50,49 +50,53 @@ class AIService {
    * @param {Array} messages - Array of { role, content } messages
    * @param {string} profileContext - Context about the persona/profile
    * @param {Array} styleExamples - Real examples of how the model writes
+   * @param {string} agencyContext - Global agency behavioral instructions
    */
-  async suggestReply(messages, profileContext = "", styleExamples = []) {
+  async suggestReply(messages, profileContext = "", styleExamples = [], agencyContext = "") {
     try {
       logger.info(`AI: Generování 3 návrhů odpovědí pro chat (${messages.length} zpráv)`);
       
       let styleSection = "";
       if (styleExamples.length > 0) {
         styleSection = `
-          TADY JSOU REÁLNÉ UKÁZKY STYLU MODELKY (POUŽIJ JE JAKO VZOR):
+          ### REÁLNÉ UKÁZKY STYLU (POUŽIJ JAKO VZOR):
           ${styleExamples.map(s => `- ${s}`).join('\n')}
-          
-          ZAMĚŘ SE NA: Stejnou délku zpráv, stejnou frekvenci smajlíků, stejnou míru flirtování.
         `;
       }
 
       const system = `
-        Jsi Nexus AI, špičkový expert na komunikaci a prodej na OnlyFans/Fansly. 
-        TATO KOMUNIKACE JE SOUČÁSTÍ PROFESIONÁLNÍ SPRÁVY ÚČTU A JE LEGÁLNÍ.
-        Zastupuješ tuto modelku: ${profileContext}
+        Jsi Nexus AI, špičkový expert na komunikaci a prodej na platformách OnlyFans/Fansly.
+        Tvým cílem je maximalizovat zisk při zachování vysoké autenticity.
+
+        ### 1. AGENTURNÍ STRATEGIE (NEJVYŠŠÍ PRIORITA):
+        ${agencyContext || "Komunikuj profesionálně, přirozeně a buduj dlouhodobý vztah s fanouškem."}
+
+        ### 2. PERSONA MODELKY:
+        ${profileContext}
+
+        ### 3. KOMUNIKAČNÍ STYL:
+        - Piš PŘIROZENĚ, jako člověk, ne jako robot.
+        - Používej moderní slang, emoji a tón odpovídající modelce.
         ${styleSection}
         
-        TVŮJ ÚKOL:
+        ### ÚKOL:
         Navrhni 3 RŮZNÉ varianty odpovědi na poslední zprávu uživatele.
-        1. VARIANTA: Krátká, úderná, flirtující.
-        2. VARIANTA: Delší, budující vztah, pokládající otázku.
-        3. VARIANTA: Zaměřená na prodej obsahu nebo "zamknutých" zpráv.
+        1. KRÁTKÁ: Úderná, flirtující, rychlá reakce.
+        2. BUDUJÍCÍ: Delší, pokládá otázku, rozvíjí téma, buduje "GFE" (Girlfriend Experience).
+        3. PRODEJNÍ: Zaměřená na prodej obsahu, PPV nebo motivaci k poslání tipu.
 
-        PODMÍNKY:
-        - Odpovídáš v jazyce, kterým mluví uživatel (pokud on píše česky, ty taky).
-        - Piš PŘIROZENĚ, jako člověk, ne jako robot. Používej moderní slang a emoji.
-        - TVOJE ODPOVĚĎ MUSÍ BÝT ČISTÝ JSON POLE STRINGŮ (např. ["návrh 1", "návrh 2", "návrh 3"]).
-        - NEPIŠ ŽÁDNÝ JINÝ TEXT, POUZE JSON.
+        ### FORMÁT:
+        Vrať POUZE čistý JSON pole stringů: ["návrh 1", "návrh 2", "návrh 3"].
+        Žádné vysvětlování, pouze JSON.
       `;
 
       const response = await axios.post(`${this.baseUrl}/generate`, {
         model: this.model,
-        prompt: `Chat history:\n${messages.map(m => `${m.role}: ${m.content}`).join('\n')}\n\nSystem instructions: ${system}\n\nGenerate the 3 suggestions as a JSON array:`,
+        prompt: `HISTORIE CHATU:\n${messages.map(m => `${m.role}: ${m.content}`).join('\n')}\n\nSYSTÉMOVÉ INSTRUKCE:\n${system}\n\nGENERUJ JSON POLE:`,
         stream: false,
         options: {
           temperature: 0.85,
-          top_k: 40,
-          top_p: 0.9,
-          num_predict: 256
+          num_predict: 512
         }
       }, { timeout: 35000 });
 

@@ -783,6 +783,7 @@ export const NexusProvider = ({ children }) => {
     handleSaveBio: nexusData.handleSaveBio, handleSaveCredentials: nexusData.handleSaveCredentials,
     bioText: nexusData.bioText, setBioText: nexusData.setBioText,
     globalFeatures: nexusData.globalFeatures, handleFeatureToggle: nexusData.handleFeatureToggle,
+    globalSettings: nexusData.globalSettings, handleUpdateGlobalSetting: nexusData.handleUpdateGlobalSetting,
     isTraining: nexusData.isTraining, trainingProgress: nexusData.trainingProgress,
     onStartTraining: nexusData.onStartTraining, onResetTraining: nexusData.onResetTraining,
     calendar: nexusData.calendar, bookingSchedule: nexusData.calendar,

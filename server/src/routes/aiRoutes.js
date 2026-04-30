@@ -35,6 +35,7 @@ router.post('/suggest', authenticateToken, async (req, res) => {
     }
 
     let profileContext = "";
+    let agencyContext = "";
     let styleExamples = [];
 
     if (profileId) {
@@ -44,17 +45,17 @@ router.post('/suggest', authenticateToken, async (req, res) => {
       });
       
       if (profile) {
-        profileContext = `Slečna se jmenuje ${profile.name}. Bio: ${profile.bio || ""}. Popis: ${profile.description || ""}`;
+        profileContext = `Jméno: ${profile.name}\nBio: ${profile.bio || "Není uvedeno"}\nOsobnost/Popis: ${profile.description || "Přirozená a milá"}`;
         
         if (profile.agency?.aiInstructions) {
-          profileContext += `\nSTRATEGIE AGENTURY:\n${profile.agency.aiInstructions}`;
+          agencyContext = profile.agency.aiInstructions;
         }
         
         if (profile.sampleMessages) {
-          profileContext += `\nMANUÁLNĚ VLOŽENÉ UKÁZKY STYLU (VELMI DŮLEŽITÉ):\n${profile.sampleMessages}`;
+          styleExamples.push(...profile.sampleMessages.split('\n').filter(s => s.trim()));
         }
         
-        // Fetch last 10 outbound messages for better style learning (increased from 5)
+        // Fetch last 10 outbound messages for dynamic style learning
         const recentMessages = await prisma.message.findMany({
           where: {
             direction: 'OUTBOUND',
@@ -64,11 +65,12 @@ router.post('/suggest', authenticateToken, async (req, res) => {
           orderBy: { createdAt: 'desc' },
           select: { text: true }
         });
-        styleExamples = recentMessages.map(m => m.text);
+        const dynamicStyle = recentMessages.map(m => m.text);
+        styleExamples = [...new Set([...styleExamples, ...dynamicStyle])];
       }
     }
 
-    const response = await aiService.suggestReply(messages, profileContext, styleExamples);
+    const response = await aiService.suggestReply(messages, profileContext, styleExamples, agencyContext);
     res.json({ response });
   } catch (error) {
     logger.error(`AI Suggest Error: ${error.message}`);

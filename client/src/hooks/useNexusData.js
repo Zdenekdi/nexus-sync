@@ -39,25 +39,62 @@ export function useNexusData({
   });
   const [_activeSubscription, _setActiveSubscription] = useState(null);
   const [_subscriptionHistory, _setSubscriptionHistory] = useState([]);
-  const [_globalFeatures, _setGlobalFeatures] = useState([
+  const [globalSettings, setGlobalSettings] = useState([]);
+  const [globalFeatures, setGlobalFeatures] = useState([
     { id: 'master_sync', label: 'Master Sync', desc: 'Sledování databází a notifikací pro agentury napříč sítí v reálném čase', active: true },
     { id: 'ai_optimizer', label: 'AI Optimizer', desc: 'Trénovací moduly a automatické návrhy chatů a optimalizační nástroje', active: false },
     { id: 'audit_vault', label: 'Audit Vault', desc: 'Zabezpečené cloudové zálohování a kompletní audit operátorů pro případné kontroly', active: true },
     { id: 'cloud_bridge', label: 'Cloud Bridge', desc: 'Přímé propojení Nexus subsystémů s mezinárodním API plateb a bran', active: false }
   ]);
-  const [_auditLogs, _setAuditLogs] = useState([]);
+
+  // Global Features & Training Actions
+  const handleFeatureToggle = useCallback(async (feature, i) => {
+    if (!token) return;
+    const newStatus = !feature.active;
+    
+    // Optimistic update
+    const updated = [...globalFeatures];
+    updated[i].active = newStatus;
+    setGlobalFeatures(updated);
+
+    try {
+      await axios.patch(`${API_BASE}/admin/features/${feature.id}`, { active: newStatus }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (showToast) showToast(lang === 'cz' ? 'Funkce aktualizována.' : 'Feature updated.', 'success');
+    } catch (_err) {
+      console.error('Feature toggle failed:', _err);
+      // Rollback
+      const rolledBack = [...globalFeatures];
+      rolledBack[i].active = !newStatus;
+      setGlobalFeatures(rolledBack);
+      if (showToast) showToast(lang === 'cz' ? 'Aktualizace selhala.' : 'Update failed.', 'error');
+    }
+  }, [globalFeatures, token, API_BASE, showToast, lang]);
+
+  const handleUpdateGlobalSetting = useCallback(async (key, value) => {
+    if (!token) return;
+    try {
+      await axios.post(`${API_BASE}/admin/settings`, { key, value }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (showToast) showToast(lang === 'cz' ? 'Nastavení uloženo.' : 'Setting saved.', 'success');
+      
+      // Refresh settings
+      const res = await axios.get(`${API_BASE}/admin/settings`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data) setGlobalSettings(res.data);
+    } catch (_err) {
+      console.error('Update setting failed:', _err);
+      if (showToast) showToast(lang === 'cz' ? 'Uložení selhalo.' : 'Save failed.', 'error');
+    }
+  }, [token, API_BASE, showToast, lang]);
+
   const [isDataLoading, setIsDataLoading] = useState(false);
   const [isBackgroundLoading, setIsBackgroundLoading] = useState(false);
   const [hasHydrated, setHasHydrated] = useState(() => localStorage.getItem('nexus_hydrated') === 'true');
   const [rolePermissions, setRolePermissions] = useState(null);
-  const [clientNames] = useState({});
-
-  // Global Features & Training Actions
-  const handleFeatureToggle = useCallback((feature, i) => {
-    const updated = [..._globalFeatures];
-    updated[i].active = !updated[i].active;
-    _setGlobalFeatures(updated);
-  }, [_globalFeatures]);
 
   const [isTraining, setIsTraining] = useState(false);
   const [trainingProgress, setTrainingProgress] = useState(0);
@@ -82,6 +119,7 @@ export function useNexusData({
     setIsTraining(false);
   }, []);
 
+  const [clientNames] = useState({});
   const [_clientNames, _setClientNames] = useState(() => {
     const saved = localStorage.getItem('nexus_client_names');
     return saved ? JSON.parse(saved) : {};
@@ -190,14 +228,19 @@ export function useNexusData({
       setIsBackgroundLoading(true);
 
       // PHASE 2: HEAVY DATA (Background hydration)
-      const [chatRes, bindingRes, statsRes, agencyRes, analyticsRes, bookingRes] = await Promise.all([
+      const [chatRes, bindingRes, statsRes, agencyRes, analyticsRes, bookingRes, featuresRes, globalSettingsRes] = await Promise.all([
         axiosWithTiming(`${API_BASE}/chats`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/device/bindings`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/agency/stats`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/agency/all`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
         axiosWithTiming(`${API_BASE}/analytics/summary?days=7`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
-        axiosWithTiming(`${API_BASE}/bookings`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null)
+        axiosWithTiming(`${API_BASE}/bookings`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
+        axiosWithTiming(`${API_BASE}/admin/features`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] })),
+        axiosWithTiming(`${API_BASE}/admin/settings`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] }))
       ]);
+
+      if (Array.isArray(featuresRes?.data)) setGlobalFeatures(featuresRes.data);
+      if (Array.isArray(globalSettingsRes?.data)) setGlobalSettings(globalSettingsRes.data);
 
       // ------------------------------------------------------------
       // SECONDARY DATA PROCESSING
@@ -613,9 +656,10 @@ export function useNexusData({
 
   return {
     profiles, agencies, agencySettings: _agencySettings, operators, sessions, stats, activeSubscription: _activeSubscription,
-    subscriptionHistory: _subscriptionHistory, globalFeatures: _globalFeatures, handleFeatureToggle,
+    subscriptionHistory: _subscriptionHistory, globalFeatures, handleFeatureToggle,
+    globalSettings, handleUpdateGlobalSetting,
     isTraining, trainingProgress, onStartTraining, onResetTraining,
-    auditLogs: _auditLogs, isDataLoading, isBackgroundLoading, hasHydrated, clientNames,
+    auditLogs: [], isDataLoading, isBackgroundLoading, hasHydrated, clientNames,
     calendar, isCalendarSyncOpen, setIsCalendarSyncOpen, calendarSyncUrl, setCalendarSyncUrl,
     isBookingModalOpen, setIsBookingModalOpen, selectedScheduleEvent, setSelectedScheduleEvent,
     newBookingForm, setNewBookingForm, bioText, setBioText, isSyncing, syncStatus: _syncStatus, syncProgress: _syncProgress,
