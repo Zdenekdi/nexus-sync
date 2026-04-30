@@ -220,7 +220,7 @@ const PermissionsDashboard = ({ agencyId: agencyIdProp = null, onUpdate = null }
                     <div>
                       <h3 style={{ fontSize: '1.2rem', fontWeight: '900', color: 'white', margin: 0 }}>{roleName}</h3>
                       <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600', letterSpacing: '0.05em', marginTop: '2px' }}>
-                        {roleData.isAppOwner ? 'GLOBÁLNÍ · NEOMEZENÝ PŘÍSTUP' : roleData.isManager ? 'MANAŽERSKÁ ÚROVEŇ' : 'OPERÁTORSKÁ ÚROVEŇ'}
+                        {roleData.isAppOwner ? 'GLOBÁLNÍ · NEOMEZENÝ PŘÍSTUP' : roleData.isManager ? 'MANAŽERSKÁ ÚROVEŇ' : (roleName === 'Model' ? 'MODELKOVSKÁ ÚROVEŇ' : 'OPERÁTORSKÁ ÚROVEŇ')}
                       </div>
                     </div>
                   </div>
