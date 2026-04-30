@@ -98,7 +98,6 @@ exports.getRoles = async (req, res) => {
                     orderBy: { createdAt: 'asc' }
                 });
             }
-        }
 
         // DEFINITIVE SAFETY: Ensure no duplicate names are EVER returned to the client
         const seen = new Set();
