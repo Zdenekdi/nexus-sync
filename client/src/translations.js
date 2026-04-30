@@ -739,7 +739,17 @@ export const TRANSLATIONS = {
                     { path: '/root/.pm2/logs', desc: 'PM2 system logs' }
                 ]
             }
-        }
+        },
+        systemParameters: 'System Parameters',
+        baseReferralReward: 'Base Referral Reward',
+        referralCurrency: 'Referral Currency',
+        save: 'SAVE',
+        masterFeatureProvisioning: 'Master Feature Provisioning',
+        aiTrainingEngine: 'AI Training Engine',
+        trainingReset: 'Reset Training',
+        modelOptimizationComplete: 'Model Optimization Complete',
+        trainingInProgress: 'Training in Progress',
+        uploadTrainingSet: 'Upload Training Set'
     },
     cz: {
         comingSoon: 'Brzy k dispozici',
@@ -1499,6 +1509,16 @@ export const TRANSLATIONS = {
                     { path: '/root/.pm2/logs', desc: 'Systémové logy PM2' }
                 ]
             }
-        }
+        },
+        systemParameters: 'Systémové parametry',
+        baseReferralReward: 'Základní odměna za doporučení',
+        referralCurrency: 'Měna doporučení',
+        save: 'ULOŽIT',
+        masterFeatureProvisioning: 'Hlavní správa funkcí',
+        aiTrainingEngine: 'AI trénovací jádro',
+        trainingReset: 'Resetovat trénink',
+        modelOptimizationComplete: 'Optimalizace modelu dokončena',
+        trainingInProgress: 'Trénování probíhá',
+        uploadTrainingSet: 'Nahrát trénovací data'
     }
 };
