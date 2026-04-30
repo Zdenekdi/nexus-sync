@@ -354,19 +354,6 @@ const PermissionsDashboard = ({ agencyId: agencyIdProp = null, onUpdate = null }
                     {isSaving ? t('loading') : (t('save_permissions') || 'ULOŽIT OPRÁVNĚNÍ')}
                   </button>
                 )}
-                {/* Diagnostics: Role ID */}
-                {isAppOwner && (
-                  <div style={{ 
-                    fontSize: '0.65rem', 
-                    color: 'rgba(255,255,255,0.15)', 
-                    textAlign: 'right', 
-                    marginTop: '2rem',
-                    fontFamily: 'monospace',
-                    letterSpacing: '0.05em'
-                  }}>
-                    ROLE_ID: {roleData.id}
-                  </div>
-                )}
               </div>
             );
           })}
