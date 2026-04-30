@@ -127,17 +127,19 @@ exports.getRoles = async (req, res) => {
                 roles = await prisma.role.findMany({
                     where: { agencyId: null },
                     orderBy: { createdAt: 'asc' }
+                });
             }
-
-            // FINAL SAFETY: Ensure no duplicates are returned in the global view list
-            const seen = new Set();
-            roles = roles.filter(r => {
-                const norm = r.name.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                if (seen.has(norm)) return false;
-                seen.add(norm);
-                return true;
-            });
         }
+
+        // DEFINITIVE SAFETY: Ensure no duplicate names are EVER returned to the client
+        const seen = new Set();
+        roles = roles.filter(r => {
+            if (!r || !r.name) return false;
+            const norm = r.name.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            if (seen.has(norm)) return false;
+            seen.add(norm);
+            return true;
+        });
 
         const parsedRoles = roles.map(r => {
             let perms = {};
