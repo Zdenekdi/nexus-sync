@@ -10,13 +10,7 @@ const RelayMode = lazy(() => import('../RelayMode'));
 const RelayModeView = () => {
   const { activeOperator, token, t, setActiveTab, isNativeApp, loading } = useNexus();
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-        <div className="spinning" style={{ width: 30, height: 30, border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--accent-primary)', borderRadius: '50%' }} />
-      </div>
-    );
-  }
+
 
   const operator = activeOperator ? {
     ...activeOperator,
@@ -47,6 +41,14 @@ const RelayModeView = () => {
     if (!plugin) return;
     try { await plugin.syncHistory(); } catch { /* ignore */ }
   }, []);
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+        <div className="spinning" style={{ width: 30, height: 30, border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--accent-primary)', borderRadius: '50%' }} />
+      </div>
+    );
+  }
 
   if (!operator) {
     return (
