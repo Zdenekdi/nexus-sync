@@ -60,6 +60,8 @@ exports.getRoles = async (req, res) => {
                 { name: 'Model', isAppOwner: false, isManager: false, permissions: JSON.stringify({ messaging: true, calendar: true, device_setup: true, settings: true, referrals: true, inventory: false }) }
             ];
 
+            let wasCleaned = false;
+
             // NUCLEAR CLEANUP: Delete ANY global role that is not a standard system template
             const systemIds = ['global-app-owner', 'global-agency-admin', 'global-manager', 'global-senior-operator', 'global-operator', 'global-model'];
             
@@ -92,12 +94,12 @@ exports.getRoles = async (req, res) => {
                     create: { ...t, id: slug }
                 }).catch(e => console.error('Upsert warn:', e));
             }
-
-                roles = await prisma.role.findMany({
-                    where: { agencyId: null },
-                    orderBy: { createdAt: 'asc' }
-                });
-            }
+            // Refresh roles list after cleanup/seeding
+            roles = await prisma.role.findMany({
+                where: { agencyId: null },
+                orderBy: { createdAt: 'asc' }
+            });
+        }
 
         // DEFINITIVE SAFETY: Ensure no duplicate names are EVER returned to the client
         const seen = new Set();
