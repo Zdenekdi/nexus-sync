@@ -793,7 +793,7 @@ export const NexusProvider = ({ children }) => {
     checkinTimerEnd, checkinRemaining, pendingNotifications, agencyDetailModalData, isAddAgencyOpen,
     isBugReportOpen, isAddUserOpen, addUserModalAgencyId, isEditProfileOpen, editingProfileData,
     activeProfile, activeProfileId, profiles, myProfiles, onlineOnly, selectedChatId, selectedChat, chatMessages, chatHistory, isHistoryLoading,
-    isRelayActive, setRelayActiveStable, relaySimSlot, relayLogs, linkedTrackerId, trackerStatus, messageValue, calViewDate, globalSettings,
+    isRelayActive, setRelayActiveStable, relaySimSlot, relayLogs, linkedTrackerId, trackerStatus, messageValue, calViewDate, 
     _gpsHistory, lastTrackerUpdate, voiceGuardianActive, batteryLevel, incomingGhostCall, ghostCallScheduledAt,
     heartRate, hrThreshold, isBluetoothConnected, isTvMode, tvToken, activeBioWarning, audioSentinelActive,
     isPinModalOpen, pinModalPromise, availableServers, selectedServerId, API_BASE, handleSendMessage, handleTranslate, handleSaveNote, handleDeleteNote, handleQuickSaveMeeting, handleConfirmDeparture, onDelayBooking, handleToggleVoiceGuardian, triggerGhostCall, verifyIdentity, playBeep, triggerSilentSOS, handleRelayCommand, checkRelayStatus, checkProfileHealth, fetchChatMessages, fetchPlans

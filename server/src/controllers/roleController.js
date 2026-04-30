@@ -6,6 +6,31 @@ const { logAction } = require('./auditController');
  * Role Controller - Handles dynamic permissions and add-ons
  */
 
+/**
+ * Helper used by agencyController & auditController.
+ * Returns true if the user effectively has Agency Admin privileges:
+ *   - role name is 'Agency Admin', OR
+ *   - role name is 'Manager' AND the agency-specific role has merged_with_admin: true
+ * Does a single DB lookup, only called on the 3 sensitive operations.
+ */
+exports.isEffectiveAdmin = async (userRole, userAgencyId) => {
+    if (userRole?.isAppOwner) return true;
+    if (userRole?.name === 'Agency Admin') return true;
+    if (userRole?.name === 'Manager' && userAgencyId) {
+        try {
+            const role = await prisma.role.findFirst({
+                where: { name: 'Manager', agencyId: userAgencyId }
+            });
+            if (!role) return false;
+            const perms = typeof role.permissions === 'string'
+                ? JSON.parse(role.permissions)
+                : (role.permissions || {});
+            return perms.merged_with_admin === true;
+        } catch { return false; }
+    }
+    return false;
+};
+
 exports.getRoles = async (req, res) => {
     try {
         const { agencyId } = req.query;
@@ -16,17 +41,20 @@ exports.getRoles = async (req, res) => {
             return res.status(403).json({ message: 'Access denied' });
         }
 
+        // App Owner can view any, managers restricted to their agency
+        const whereClause = !userRole.isAppOwner && agencyId ? { agencyId } : (agencyId ? { agencyId } : { agencyId: null });
+
         let roles = await prisma.role.findMany({
-            where: agencyId ? { agencyId } : { agencyId: null },
+            where: whereClause,
             orderBy: { createdAt: 'asc' }
         });
 
-        // Auto-seed global templates if they are missing
+        // Auto-seed global templates if they are missing (only for global view)
         if (!agencyId) {
             const expectedTemplates = [
                 { name: 'App Owner', isAppOwner: true, isManager: true, permissions: JSON.stringify({ all: true }) },
                 { name: 'Agency Admin', isAppOwner: false, isManager: true, permissions: JSON.stringify({ permissions: true, hierarchy: true, analytics: true, messaging: true, calendar: true, profiles: true, web_profiles: true, device_setup: true, audit_logs: true, qa_hub: true, settings: true, referrals: true, inventory: true, plans: true }) },
-                { name: 'Manager', isAppOwner: false, isManager: true, permissions: JSON.stringify({ hierarchy: true, analytics: true, messaging: true, calendar: true, profiles: true, web_profiles: true, device_setup: true, settings: true, qa_hub: true, referrals: true, inventory: true }) },
+                { name: 'Manager', isAppOwner: false, isManager: true, permissions: JSON.stringify({ hierarchy: true, analytics: true, messaging: true, calendar: true, profiles: true, web_profiles: true, device_setup: true, audit_logs: true, settings: true, qa_hub: true, referrals: true, inventory: true }) },
                 { name: 'Senior Operator', isAppOwner: false, isManager: true, permissions: JSON.stringify({ hierarchy: true, analytics: true, messaging: true, calendar: true, profiles: true, web_profiles: true, device_setup: false, settings: true, qa_hub: true, referrals: true, inventory: true }) },
                 { name: 'Operator', isAppOwner: false, isManager: false, permissions: JSON.stringify({ messaging: true, calendar: true, profiles: true, web_profiles: true, device_setup: true, settings: true, referrals: false, inventory: false }) },
                 { name: 'Model', isAppOwner: false, isManager: false, permissions: JSON.stringify({ messaging: true, calendar: true, device_setup: true, settings: true, referrals: true, inventory: false }) }
@@ -36,15 +64,16 @@ exports.getRoles = async (req, res) => {
             const toCreate = expectedTemplates.filter(t => !existingNames.includes(t.name));
 
             if (toCreate.length > 0) {
-                // Bulk create missing templates
                 for (const t of toCreate) {
+                    // IMPORTANT: where and create must use the same slug — spaces → dashes
+                    const slug = `global-${t.name.toLowerCase().replace(/\s+/g, '-')}`;
                     await prisma.role.upsert({
-                        where: { id: `global-${t.name}` },
+                        where: { id: slug },
                         update: {},
-                        create: { ...t, id: `global-${t.name.toLowerCase().replace(' ', '-')}` }
+                        create: { ...t, id: slug }
                     }).catch(e => console.error('Upsert warn:', e));
                 }
-                
+
                 roles = await prisma.role.findMany({
                     where: { agencyId: null },
                     orderBy: { createdAt: 'asc' }
@@ -158,5 +187,57 @@ exports.purchaseAddon = async (req, res) => {
     } catch (error) {
         logger.error('Error purchasing addon:', error);
         res.status(500).json({ message: 'Failed to purchase addon' });
+    }
+};
+
+/**
+ * Toggle merged_with_admin flag on an agency-specific Manager role.
+ * App Owner only. Allows smaller agencies to merge Manager + Agency Admin privileges.
+ */
+exports.toggleAdminMerge = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { role: userRole } = req.user;
+
+        if (!userRole?.isAppOwner) {
+            return res.status(403).json({ message: 'Only App Owner can merge roles' });
+        }
+
+        const existing = await prisma.role.findUnique({ where: { id } });
+        if (!existing) return res.status(404).json({ message: 'Role not found' });
+        if (existing.name !== 'Manager') {
+            return res.status(400).json({ message: 'Only Manager role can be merged with Agency Admin' });
+        }
+        if (!existing.agencyId) {
+            return res.status(400).json({ message: 'Cannot merge global role templates' });
+        }
+
+        let perms = {};
+        try {
+            perms = typeof existing.permissions === 'string'
+                ? JSON.parse(existing.permissions)
+                : (existing.permissions || {});
+        } catch { perms = {}; }
+
+        const wasMerged = perms.merged_with_admin === true;
+        const newMerged = !wasMerged;
+
+        if (newMerged) {
+            perms = { ...perms, merged_with_admin: true, settings: true, audit_logs: true, can_add_users: true, plans: true };
+        } else {
+            const { merged_with_admin, can_add_users, ...rest } = perms;
+            perms = { ...rest, settings: false, audit_logs: false, plans: false };
+        }
+
+        await prisma.role.update({ where: { id }, data: { permissions: JSON.stringify(perms) } });
+
+        logger.info(`Manager role (${id}) admin-merge → ${newMerged}`);
+        logAction(existing.agencyId, req.user.userId, 'ROLE_MERGE_TOGGLED',
+            `Manager role merged_with_admin set to ${newMerged}`);
+
+        res.json({ success: true, merged: newMerged, permissions: perms });
+    } catch (error) {
+        logger.error('Error toggling admin merge:', error);
+        res.status(500).json({ message: 'Failed to toggle role merge' });
     }
 };

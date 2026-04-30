@@ -3,6 +3,7 @@ const logger = require('../services/logger');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { getRoomSize } = require('../services/socket');
+const { isEffectiveAdmin } = require('./roleController');
 
 /**
  * Agency Controller
@@ -12,9 +13,11 @@ exports.updateSettings = async (req, res) => {
         const { role, agencyId: userAgencyId } = req.user;
         const { safetyAlertMode, agencyId: bodyAgencyId, name, email, region, defaultGraceMinutes, currency, timezone, aiInstructions } = req.body;
         const isAppOwner = role?.isAppOwner;
+        const effectiveAdmin = await isEffectiveAdmin(role, userAgencyId);
 
-        if (!role?.isManager && !isAppOwner) {
-            return res.status(403).json({ message: 'Only managers can update agency settings' });
+        // Only Agency Admin (or merged Manager) or App Owner can change agency settings
+        if (!isAppOwner && !effectiveAdmin) {
+            return res.status(403).json({ message: 'Only Agency Admin can update agency settings' });
         }
 
         const agencyId = isAppOwner ? bodyAgencyId : userAgencyId;
@@ -320,9 +323,10 @@ exports.addUser = async (req, res) => {
   try {
     const { role, agencyId: userAgencyId } = req.user;
     const isAppOwner = role?.isAppOwner;
-    const isManager = role?.isManager;
-    
-    if (!isAppOwner && !isManager) return res.status(403).json({ message: 'Access denied' });
+    const effectiveAdmin = await isEffectiveAdmin(role, userAgencyId);
+
+    // Only Agency Admin (or merged Manager) or App Owner can add users
+    if (!isAppOwner && !effectiveAdmin) return res.status(403).json({ message: 'Only Agency Admin can add users' });
 
     const { name, email, password, roleName: bodyRoleName, role: bodyRole, agencyId: bodyAgencyId } = req.body;
     const roleName = bodyRole || bodyRoleName || 'Operator';
