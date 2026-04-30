@@ -49,7 +49,7 @@ exports.getRoles = async (req, res) => {
             orderBy: { createdAt: 'asc' }
         });
 
-        // Auto-seed global templates if they are missing (only for global view)
+        // Auto-seed and cleanup global templates if they are missing (only for global view)
         if (!agencyId) {
             const expectedTemplates = [
                 { name: 'App Owner', isAppOwner: true, isManager: true, permissions: JSON.stringify({ all: true }) },
@@ -60,12 +60,43 @@ exports.getRoles = async (req, res) => {
                 { name: 'Model', isAppOwner: false, isManager: false, permissions: JSON.stringify({ messaging: true, calendar: true, device_setup: true, settings: true, referrals: true, inventory: false }) }
             ];
 
-            const existingNames = roles.map(r => r.name);
+            // 1. DEDUPLICATION: Fix for "2x Operator" or similar issues
+            const allGlobal = await prisma.role.findMany({ where: { agencyId: null } });
+            const byName = {};
+            for (const r of allGlobal) {
+                const normalizedName = r.name.trim();
+                if (!byName[normalizedName]) byName[normalizedName] = [];
+                byName[normalizedName].push(r);
+            }
+
+            let wasCleaned = false;
+            for (const name in byName) {
+                if (byName[name].length > 1) {
+                    const standardSlug = `global-${name.toLowerCase().replace(/\s+/g, '-')}`;
+                    // Sort: Standard slug first, then by creation date
+                    const sorted = byName[name].sort((a, b) => {
+                        if (a.id === standardSlug) return -1;
+                        if (b.id === standardSlug) return 1;
+                        return new Date(a.createdAt) - new Date(b.createdAt);
+                    });
+                    
+                    const keep = sorted[0];
+                    const toDelete = sorted.slice(1);
+                    
+                    for (const d of toDelete) {
+                        await prisma.user.updateMany({ where: { roleId: d.id }, data: { roleId: keep.id } });
+                        await prisma.role.delete({ where: { id: d.id } }).catch(() => {});
+                        wasCleaned = true;
+                    }
+                }
+            }
+
+            // 2. SEEDING: Ensure all expected templates exist
+            const existingNames = allGlobal.map(r => r.name.trim());
             const toCreate = expectedTemplates.filter(t => !existingNames.includes(t.name));
 
-            if (toCreate.length > 0) {
+            if (toCreate.length > 0 || wasCleaned) {
                 for (const t of toCreate) {
-                    // IMPORTANT: where and create must use the same slug — spaces → dashes
                     const slug = `global-${t.name.toLowerCase().replace(/\s+/g, '-')}`;
                     await prisma.role.upsert({
                         where: { id: slug },

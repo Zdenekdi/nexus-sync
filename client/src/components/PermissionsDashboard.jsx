@@ -125,8 +125,26 @@ const PermissionsDashboard = ({ agencyId: agencyIdProp = null, onUpdate = null }
               : (t('rolePermissionsDesc') || 'Globální šablony oprávnění.')}
           </p>
         </div>
-        <button onClick={fetchRoles} className="status-badge" style={{ padding: '0.6rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-          <RefreshCw size={14} /> {t('refresh') || 'Obnovit'}
+        <button 
+          onClick={fetchRoles} 
+          className="status-badge" 
+          style={{ 
+            padding: '0.6rem 1.25rem', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '0.6rem', 
+            cursor: 'pointer', 
+            whiteSpace: 'nowrap',
+            background: 'rgba(255, 255, 255, 0.1)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            color: 'white',
+            fontWeight: '700',
+            transition: 'all 0.2s'
+          }}
+          onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'}
+          onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+        >
+          <RefreshCw size={14} className={loading ? 'spin' : ''} /> {t('refresh') || 'Obnovit'}
         </button>
       </div>
 
