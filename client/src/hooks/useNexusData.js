@@ -41,10 +41,10 @@ export function useNexusData({
   const [_subscriptionHistory, _setSubscriptionHistory] = useState([]);
   const [globalSettings, setGlobalSettings] = useState([]);
   const [globalFeatures, setGlobalFeatures] = useState([
-    { id: 'master_sync', label: 'Master Sync', desc: 'Sledování databází a notifikací pro agentury napříč sítí v reálném čase', active: true },
-    { id: 'ai_optimizer', label: 'AI Optimizer', desc: 'Trénovací moduly a automatické návrhy chatů a optimalizační nástroje', active: false },
-    { id: 'audit_vault', label: 'Audit Vault', desc: 'Zabezpečené cloudové zálohování a kompletní audit operátorů pro případné kontroly', active: true },
-    { id: 'cloud_bridge', label: 'Cloud Bridge', desc: 'Přímé propojení Nexus subsystémů s mezinárodním API plateb a bran', active: false }
+    { id: 'ai_trans', label: 'AI Voice Relay', desc: 'Enable neural speech-to-speech routing', active: true },
+    { id: 'vc_hub', label: 'Cross-Agency Analytics', desc: 'Enable view of aggregated data', active: true },
+    { id: 'crm_adv', label: 'Proxy Pooling', desc: 'Allow sharing device nodes', active: true },
+    { id: 'stats_bi', label: 'Payout Processing', desc: 'Automate weekly commission transfers', active: false }
   ]);
 
   // Global Features & Training Actions

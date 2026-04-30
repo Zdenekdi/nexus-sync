@@ -796,10 +796,9 @@ export const NexusProvider = ({ children }) => {
     isRelayActive, setRelayActiveStable, relaySimSlot, relayLogs, linkedTrackerId, trackerStatus, messageValue, calViewDate, globalSettings,
     _gpsHistory, lastTrackerUpdate, voiceGuardianActive, batteryLevel, incomingGhostCall, ghostCallScheduledAt,
     heartRate, hrThreshold, isBluetoothConnected, isTvMode, tvToken, activeBioWarning, audioSentinelActive,
-    isPinModalOpen, pinModalPromise, availableServers, selectedServerId, API_BASE, handleSendMessage, handleTranslate, handleSaveNote, handleDeleteNote, handleQuickSaveMeeting, handleConfirmDeparture, onDelayBooking, handleToggleVoiceGuardian, triggerGhostCall, verifyIdentity, playBeep, triggerSilentSOS, handleRelayCommand, checkRelayStatus, checkProfileHealth, handleUpdateGlobalSettingStable, fetchGlobalSettings, fetchChatMessages, fetchPlans
+    isPinModalOpen, pinModalPromise, availableServers, selectedServerId, API_BASE, handleSendMessage, handleTranslate, handleSaveNote, handleDeleteNote, handleQuickSaveMeeting, handleConfirmDeparture, onDelayBooking, handleToggleVoiceGuardian, triggerGhostCall, verifyIdentity, playBeep, triggerSilentSOS, handleRelayCommand, checkRelayStatus, checkProfileHealth, fetchChatMessages, fetchPlans
   ]);
 
-  useEffect(() => { if (isLoggedIn && (activeOperator?.isAppOwner || activeOperator?.isManager)) fetchGlobalSettings(); }, [isLoggedIn, activeOperator?.isAppOwner, activeOperator?.isManager, fetchGlobalSettings]);
 
   useEffect(() => {
     localStorage.setItem('nexus_lang', lang);
