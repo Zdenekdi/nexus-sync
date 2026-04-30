@@ -16,7 +16,9 @@ export const DEVICE_SECRET = process.env.NEXUS_DEVICE_SECRET || '0321f04b30c9fd5
 export const TEST_USERS = {
   appOwner:    { email: process.env.TEST_OWNER_EMAIL || 'owner@nexus.sync',  password: process.env.TEST_OWNER_PASSWORD || 'Nexus2024!',   roleName: 'App Owner'       },
   agencyAdmin: { email: 'mark@nexus.sync',    password: 'password123',  roleName: 'Agency Admin'    },
-  manager:     { email: 'alice@nexus.sync',   password: 'password123',  roleName: 'Senior Operator' },
+  manager:     { email: 'jan@nexus.sync',     password: 'password123',  roleName: 'Manager'         },
+  seniorOp:    { email: 'alice@nexus.sync',   password: 'password123',  roleName: 'Senior Operator' },
+  operator:    { email: 'sarah@nexus.sync',   password: 'password123',  roleName: 'Operator'        },
   model:       { email: 'diana@nexus.sync',   password: 'password123',  roleName: 'Model'           },
 };
 

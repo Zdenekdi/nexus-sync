@@ -33,11 +33,11 @@ async function main() {
   // 2. Roles
   const roles = [
     { name: 'App Owner', isAppOwner: true, isManager: true, permissions: JSON.stringify({ all: true }), agencyId: null },
-    { name: 'Agency Admin', isAppOwner: false, isManager: true, permissions: JSON.stringify({ manage: true }), agencyId: 'agency-01' },
-    { name: 'Manager', isAppOwner: false, isManager: true, permissions: JSON.stringify({ supervise: true }), agencyId: 'agency-01' },
-    { name: 'Senior Operator', isAppOwner: false, isManager: true, permissions: JSON.stringify({ operate: true }), agencyId: 'agency-01' },
-    { name: 'Operator', isAppOwner: false, isManager: false, permissions: JSON.stringify({ basic: true }), agencyId: 'agency-01' },
-    { name: 'Model', isAppOwner: false, isManager: false, permissions: JSON.stringify({ view: true }), agencyId: 'agency-01' },
+    { name: 'Agency Admin', isAppOwner: false, isManager: true, permissions: JSON.stringify({ permissions: true, hierarchy: true, analytics: true, messaging: true, calendar: true, profiles: true, web_profiles: true, device_setup: true, audit_logs: true, qa_hub: true, settings: true, referrals: true, inventory: true, plans: true }), agencyId: 'agency-01' },
+    { name: 'Manager', isAppOwner: false, isManager: true, permissions: JSON.stringify({ hierarchy: true, analytics: true, messaging: true, calendar: true, profiles: true, web_profiles: true, device_setup: true, audit_logs: true, settings: true, qa_hub: true, referrals: true, inventory: true }), agencyId: 'agency-01' },
+    { name: 'Senior Operator', isAppOwner: false, isManager: true, permissions: JSON.stringify({ hierarchy: true, analytics: true, messaging: true, calendar: true, profiles: true, web_profiles: true, device_setup: false, settings: true, qa_hub: true, referrals: true, inventory: true }), agencyId: 'agency-01' },
+    { name: 'Operator', isAppOwner: false, isManager: false, permissions: JSON.stringify({ messaging: true, calendar: true, profiles: true, web_profiles: true, device_setup: true, settings: true }), agencyId: 'agency-01' },
+    { name: 'Model', isAppOwner: false, isManager: false, permissions: JSON.stringify({ messaging: true, calendar: true, device_setup: true, settings: true, referrals: true }), agencyId: 'agency-01' },
     { name: 'Senior Operator', isAppOwner: false, isManager: true, permissions: JSON.stringify({ operate: true }), agencyId: 'agency-02' },
   ];
 
@@ -63,12 +63,13 @@ async function main() {
 
   // 3. Users (Operators)
   const users = [
-    { id: 'op-01', email: 'alice@nexus.sync', name: 'Alice M.', password: 'password123', roleName: 'Senior Operator', agencyId: 'agency-01' },
-    { id: 'op-02', email: 'mark@nexus.sync', name: 'Mark T.', password: 'password123', roleName: 'Agency Admin', agencyId: 'agency-01' },
-    { id: 'op-03', email: 'sarah@nexus.sync', name: 'Sarah K.', password: 'password123', roleName: 'Operator', agencyId: 'agency-01' },
-    { id: 'op-04', email: 'diana@nexus.sync', name: 'Diana B.', password: 'password123', roleName: 'Model', agencyId: 'agency-01' },
-    { id: 'op-05', email: 'dias.zd@gmail.com', name: 'Zdenek D.', password: 'password123', roleName: 'App Owner', agencyId: null },
-    { id: 'op-06', email: 'owner@nexus.sync', name: 'App Owner', password: 'Nexus2024!', roleName: 'App Owner', agencyId: null },
+    { id: 'op-01', email: 'alice@nexus.sync',   name: 'Alice M.',    password: 'password123', roleName: 'Senior Operator', agencyId: 'agency-01' },
+    { id: 'op-02', email: 'mark@nexus.sync',    name: 'Mark T.',     password: 'password123', roleName: 'Agency Admin',    agencyId: 'agency-01' },
+    { id: 'op-03', email: 'sarah@nexus.sync',   name: 'Sarah K.',    password: 'password123', roleName: 'Operator',        agencyId: 'agency-01' },
+    { id: 'op-04', email: 'diana@nexus.sync',   name: 'Diana B.',    password: 'password123', roleName: 'Model',           agencyId: 'agency-01' },
+    { id: 'op-05', email: 'dias.zd@gmail.com',  name: 'Zdenek D.',   password: 'password123', roleName: 'App Owner',       agencyId: null },
+    { id: 'op-06', email: 'owner@nexus.sync',   name: 'App Owner',   password: 'Nexus2024!',  roleName: 'App Owner',       agencyId: null },
+    { id: 'op-07', email: 'jan@nexus.sync',     name: 'Jan K.',      password: 'password123', roleName: 'Manager',         agencyId: 'agency-01' },
   ];
 
   for (const user of users) {

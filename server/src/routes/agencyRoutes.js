@@ -19,6 +19,7 @@ router.get('/relay-status', agencyController.getRelayStatus);
 // Role & Permission Management
 router.get('/roles', roleController.getRoles);
 router.patch('/roles/:id/permissions', validate(updateRolePermissions), roleController.updateRolePermissions);
+router.patch('/roles/:id/toggle-admin-merge', roleController.toggleAdminMerge);
 router.post('/purchase-addon', validate(purchaseAddon), roleController.purchaseAddon);
 
 // Global Agency Management (App Owner Only)

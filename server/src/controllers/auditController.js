@@ -1,4 +1,5 @@
 const prisma = require('../services/db');
+const { isEffectiveAdmin } = require('./roleController');
 
 // Utility: log an audit event (call from other controllers)
 exports.logAction = async (agencyId, userId, action, details = null) => {
@@ -15,8 +16,11 @@ exports.logAction = async (agencyId, userId, action, details = null) => {
 exports.getAuditLogs = async (req, res) => {
   try {
     const { agencyId, role } = req.user;
-    if (!role?.isManager && !role?.isAppOwner) {
-      return res.status(403).json({ message: 'Access denied' });
+    const effectiveAdmin = await isEffectiveAdmin(role, agencyId);
+
+    // Only Agency Admin (or merged Manager) or App Owner can access audit logs
+    if (!effectiveAdmin && !role?.isAppOwner) {
+      return res.status(403).json({ message: 'Only Agency Admin can access audit logs' });
     }
 
     const { page = 1, limit = 50, action, userId } = req.query;
