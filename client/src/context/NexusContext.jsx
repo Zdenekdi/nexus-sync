@@ -93,7 +93,6 @@ export const NexusProvider = ({ children }) => {
   const [sosAlertId, setSosAlertId] = useState(null);
   const [activeOperatorState, setActiveOperatorState] = useState(null);
   const [isPlansLoading, setIsPlansLoading] = useState(false);
-  const [globalSettings, setGlobalSettings] = useState([]);
   const [pendingNotifications, setPendingNotifications] = useState([]);
   const [incomingRelayCall, setIncomingRelayCall] = useState(null);
   const [activeTab, setActiveTab] = useState(() => {
@@ -396,23 +395,7 @@ export const NexusProvider = ({ children }) => {
   const handleIncomingCall = useCallback((data) => setIncomingRelayCall(data), []);
   const handleEmergencyAlert = useCallback(() => showToast(lang === 'cz' ? '🚨 Nouzový poplach!' : '🚨 Emergency alert!', 'error'), [showToast, lang]);
 
-  const updateGlobalSetting = useCallback(async (key, value) => {
-    try {
-      await axios.patch(`${API_BASE}/admin/settings/${key}`, { value }, { headers: { Authorization: `Bearer ${token}` } });
-      setGlobalSettings(prev => {
-        const updated = [...prev]; const idx = updated.findIndex(s => s.key === key);
-        if (idx > -1) updated[idx].value = value; else updated.push({ key, value }); return updated;
-      });
-      showToast(lang === 'cz' ? 'Nastavení uloženo ✓' : 'Setting saved ✓', 'success'); return { success: true };
-    } catch { return { success: false }; }
-  }, [token, lang, showToast, API_BASE]);
-
-  const fetchGlobalSettings = useCallback(async () => {
-    try {
-      const res = await axios.get(`${API_BASE}/admin/settings`, { headers: { Authorization: `Bearer ${token}` } });
-      if (Array.isArray(res.data)) setGlobalSettings(res.data);
-    } catch { /* ignore */ }
-  }, [token, API_BASE]);
+  // Global settings now handled by useNexusData hook
 
   const handleRelayCommand = useCallback(async (data) => {
     if (!data) return;
@@ -729,9 +712,7 @@ export const NexusProvider = ({ children }) => {
     setShowLanding(true);
   }, [logout]);
 
-  const handleUpdateGlobalSettingStable = useCallback(async (key, value) => {
-    return updateGlobalSetting(key, value);
-  }, [updateGlobalSetting]);
+  // Stable handlers now provided by nexusData hook
 
   // --- 11. ANDROID BACK BUTTON HANDLING ---
   useEffect(() => {
@@ -795,13 +776,12 @@ export const NexusProvider = ({ children }) => {
     isRelayActive, setIsRelayActive: setRelayActiveStable, 
     relaySimSlot, setRelaySimSlot, relayLogs, setRelayLogs, addRelayLog, updateRelayLogStatus,
     linkedTrackerId, setLinkedTrackerId, trackerStatus, setTrackerStatus,
-    messageValue, setMessageValue, calViewDate, setCalViewDate, globalSettings, fetchGlobalSettings,
+    messageValue, setMessageValue, calViewDate, setCalViewDate, 
     _gpsHistory, lastTrackerUpdate, voiceGuardianActive, handleToggleVoiceGuardian,
     batteryLevel, incomingGhostCall, setIncomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity,
     heartRate, setHeartRate, hrThreshold, setHrThreshold, isBluetoothConnected, setIsBluetoothConnected,
     isTvMode, tvToken, activeBioWarning, setActiveBioWarning, playBeep, triggerSilentSOS,
     audioSentinelActive, setAudioSentinelActive, isPinModalOpen, setIsPinModalOpen, pinModalPromise, setPinModalPromise,
-    handleUpdateGlobalSetting: handleUpdateGlobalSettingStable,
     handleRelayCommand, checkRelayStatus, checkProfileHealth, selectedServerId, setSelectedServerId, availableServers
   }), [
     t, lang, setLang, activeTab, setActiveTab, activeMarket, setActiveMarket,

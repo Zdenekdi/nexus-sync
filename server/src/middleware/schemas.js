@@ -288,7 +288,12 @@ const setSipConfig = z.object({
 
 // ── Admin ────────────────────────────────────────────────────────────────────
 const updateGlobalFeature = z.object({
-  value: z.string().max(10000)
+  active: z.boolean()
+});
+
+const updateGlobalSetting = z.object({
+  key: z.string().min(1).max(100),
+  value: z.any()
 });
 
 // ── Device Relay ─────────────────────────────────────────────────────────────
@@ -369,6 +374,7 @@ module.exports = {
   revokeDeviceBinding,
   setSipConfig,
   updateGlobalFeature,
+  updateGlobalSetting,
   relayMessage,
   mobileMessage,
   mobileCall
