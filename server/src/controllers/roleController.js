@@ -60,69 +60,38 @@ exports.getRoles = async (req, res) => {
                 { name: 'Model', isAppOwner: false, isManager: false, permissions: JSON.stringify({ messaging: true, calendar: true, device_setup: true, settings: true, referrals: true, inventory: false }) }
             ];
 
-            // 1. DEDUPLICATION: Aggressive fix for "2x Operator" or similar issues
-            // We search for both NULL and empty string agencyId to catch all global-scope roles
-            const allGlobal = await prisma.role.findMany({ 
-                where: { 
-                    OR: [
-                        { agencyId: null },
-                        { agencyId: '' }
-                    ]
-                } 
-            });
-            const byName = {};
-            for (const r of allGlobal) {
-                // Aggressive normalization: lowercase, trim, remove accents
-                const norm = r.name.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                if (!byName[norm]) byName[norm] = [];
-                byName[norm].push(r);
-            }
-
-            let wasCleaned = false;
-            for (const norm in byName) {
-                if (byName[norm].length > 1 || byName[norm].some(r => r.agencyId === '')) {
-                    const primaryName = byName[norm][0].name.trim();
-                    const standardSlug = `global-${primaryName.toLowerCase().replace(/\s+/g, '-')}`;
-                    
-                    // Sort: Standard slug first, then by creation date
-                    const sorted = byName[norm].sort((a, b) => {
-                        if (a.id === standardSlug) return -1;
-                        if (b.id === standardSlug) return 1;
-                        return new Date(a.createdAt) - new Date(b.createdAt);
-                    });
-                    
-                    const keep = sorted[0];
-                    const toDelete = sorted.slice(1);
-                    
-                    for (const d of toDelete) {
-                        // Critical: Reassign users to the kept role before deleting
-                        await prisma.user.updateMany({ where: { roleId: d.id }, data: { roleId: keep.id } });
-                        // Also handle references in other tables if they exist (though schema suggests only User)
-                        await prisma.role.delete({ where: { id: d.id } }).catch(err => {
-                            console.error(`Failed to delete ghost role ${d.id}:`, err);
-                        });
-                        wasCleaned = true;
-                    }
+            // NUCLEAR CLEANUP: Delete ANY global role that is not a standard system template
+            const systemIds = ['global-app-owner', 'global-agency-admin', 'global-manager', 'global-senior-operator', 'global-operator', 'global-model'];
+            
+            const ghosts = await prisma.role.findMany({
+                where: {
+                    OR: [{ agencyId: null }, { agencyId: '' }],
+                    id: { notIn: systemIds }
                 }
+            });
+
+            if (ghosts.length > 0) {
+                for (const g of ghosts) {
+                    const norm = g.name.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    const targetId = systemIds.find(id => id.includes(norm)) || 'global-operator';
+                    
+                    // Reassign users to the correct system role
+                    await prisma.user.updateMany({ where: { roleId: g.id }, data: { roleId: targetId } });
+                    // Delete the ghost role
+                    await prisma.role.delete({ where: { id: g.id } }).catch(() => {});
+                }
+                wasCleaned = true;
             }
 
             // 2. SEEDING: Ensure all expected templates exist
-            const finalGlobal = wasCleaned ? await prisma.role.findMany({ where: { agencyId: null } }) : allGlobal.filter(r => r.agencyId === null);
-            const existingNormNames = finalGlobal.map(r => r.name.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
-            const toCreate = expectedTemplates.filter(t => {
-                const tNorm = t.name.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                return !existingNormNames.includes(tNorm);
-            });
-
-            if (toCreate.length > 0 || wasCleaned) {
-                for (const t of toCreate) {
-                    const slug = `global-${t.name.toLowerCase().replace(/\s+/g, '-')}`;
-                    await prisma.role.upsert({
-                        where: { id: slug },
-                        update: {},
-                        create: { ...t, id: slug }
-                    }).catch(e => console.error('Upsert warn:', e));
-                }
+            for (const t of expectedTemplates) {
+                const slug = `global-${t.name.toLowerCase().replace(/\s+/g, '-')}`;
+                await prisma.role.upsert({
+                    where: { id: slug },
+                    update: {},
+                    create: { ...t, id: slug }
+                }).catch(e => console.error('Upsert warn:', e));
+            }
 
                 roles = await prisma.role.findMany({
                     where: { agencyId: null },
