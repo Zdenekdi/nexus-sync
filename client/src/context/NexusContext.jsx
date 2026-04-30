@@ -515,11 +515,11 @@ export const NexusProvider = ({ children }) => {
     };
     recognition.onend = () => {
       if (voiceGuardianActive && !sosActive) {
-        setTimeout(() => { try { if (voiceGuardianActive && !sosActive) recognition.start(); } catch { } }, 2000);
+        setTimeout(() => { try { if (voiceGuardianActive && !sosActive) recognition.start(); } catch (err) { console.warn('Speech recognition restart failed:', err); } }, 2000);
       }
     };
     recognitionRef.current = recognition;
-    try { recognition.start(); } catch { }
+    try { recognition.start(); } catch (err) { console.warn('Speech recognition start failed:', err); }
     return () => { if (recognitionRef.current) { recognitionRef.current.onend = null; recognitionRef.current.stop(); } };
   }, [voiceGuardianActive, sosActive, lang, triggerSOS, showToast]);
 
@@ -651,7 +651,7 @@ export const NexusProvider = ({ children }) => {
       setIsPlansLoading(true);
       const res = await axios.get(`${API_BASE}/subscriptions/plans`, { headers: { Authorization: `Bearer ${token}` } });
       setSubscriptionPlans(res.data);
-    } catch { } finally { setIsPlansLoading(false); }
+    } catch (err) { console.warn('Failed to fetch plans', err); } finally { setIsPlansLoading(false); }
   }, [API_BASE, token]);
 
   const activeProfile = useMemo(() => (profiles || []).find(p => p.id === activeProfileId) || myProfiles[0] || null, [profiles, activeProfileId, myProfiles]);
@@ -678,7 +678,7 @@ export const NexusProvider = ({ children }) => {
       setIsHistoryLoading(true);
       const res = await axios.get(`${API_BASE}/messages/${chatId}`, { headers: { Authorization: `Bearer ${token}` } });
       setChatHistory((res.data || []).map(m => ({ ...m, time: new Date(m.createdAt || m.timestamp || Date.now()).toLocaleTimeString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' }) })));
-    } catch { } finally { setIsHistoryLoading(false); }
+    } catch (err) { console.warn('Failed to fetch chat history', err); } finally { setIsHistoryLoading(false); }
   }, [API_BASE, token, lang]);
 
   useEffect(() => {

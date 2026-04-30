@@ -167,8 +167,10 @@ const AIInsightCard = ({ stats, agencies, systemHealth }) => {
 
   useEffect(() => {
     if (stats && !insight && !isAiLoading) {
-      generateInsight();
+      const timer = setTimeout(() => generateInsight(), 0);
+      return () => clearTimeout(timer);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stats]);
 
   const isCz = lang === 'cz' || lang === 'cs';

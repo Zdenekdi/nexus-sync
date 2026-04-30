@@ -18,9 +18,6 @@ const WebProfilesView = () => {
     activeProfileId = 'all',
     setActiveProfileId = () => {},
     assignedProfiles = [],
-    bioText = '',
-    setBioText = () => {},
-    handleSaveBio = () => {},
     handleSaveCredentials = () => {},
     isSyncing = false,
     syncStatus = { aw: 'synced', ege: 'synced', tpb: 'synced' },
@@ -86,8 +83,7 @@ const WebProfilesView = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       showToast(t('saveSuccess'), 'success');
-      if (initData) initData();
-    } catch (_err) {
+    } catch {
       showToast(t('saveError'), 'error');
     }
   };
