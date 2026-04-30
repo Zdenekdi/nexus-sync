@@ -751,7 +751,16 @@ export const TRANSLATIONS = {
         trainingInProgress: 'Training in Progress',
         uploadTrainingSet: 'Upload Training Set',
         agencyAiStrategy: 'AGENCY AI STRATEGY',
-        syncHistory: 'Sync History'
+        syncHistory: 'Sync History',
+        featuresTitle: 'Global Feature Management',
+        feat_master_sync: 'Master Sync',
+        feat_master_sync_desc: 'Real-time database and notification tracking across agencies',
+        feat_ai_optimizer: 'AI Optimizer',
+        feat_ai_optimizer_desc: 'Training modules and automated chat suggestion tools',
+        feat_audit_vault: 'Audit Vault',
+        feat_audit_vault_desc: 'Secure cloud backup and complete operator auditing',
+        feat_cloud_bridge: 'Cloud Bridge',
+        feat_cloud_bridge_desc: 'Direct connection of Nexus subsystems with international APIs'
     },
     cz: {
         comingSoon: 'Brzy k dispozici',
@@ -1523,6 +1532,15 @@ export const TRANSLATIONS = {
         trainingInProgress: 'Trénování probíhá',
         uploadTrainingSet: 'Nahrát trénovací data',
         agencyAiStrategy: 'STRATEGIE AGENTURNÍ AI',
-        syncHistory: 'Synchronizovat historii'
+        syncHistory: 'Synchronizovat historii',
+        featuresTitle: 'Globální správa funkcí',
+        feat_master_sync: 'Master Sync',
+        feat_master_sync_desc: 'Sledování databází a notifikací pro agentury napříč sítí v reálném čase',
+        feat_ai_optimizer: 'AI Optimizer',
+        feat_ai_optimizer_desc: 'Trénovací moduly a automatické návrhy chatů a optimalizační nástroje',
+        feat_audit_vault: 'Audit Vault',
+        feat_audit_vault_desc: 'Zabezpečené cloudové zálohování a kompletní audit operátorů pro případné kontroly',
+        feat_cloud_bridge: 'Cloud Bridge',
+        feat_cloud_bridge_desc: 'Přímé propojení Nexus subsystémů s mezinárodním API plateb a bran'
     }
 };
