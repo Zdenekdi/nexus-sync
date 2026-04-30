@@ -1,6 +1,6 @@
 /* src/components/Modals/AgencyDetailModal.jsx */
 import React, { useState } from 'react';
-import { X, Shield, ShieldCheck, Copy, Edit2, Check } from 'lucide-react';
+import { X, Shield, ShieldCheck, Copy, Edit2, Check, Zap } from 'lucide-react';
 import axios from 'axios';
 import { useNexus } from '../../context/ContextHook';
 
@@ -27,8 +27,9 @@ const AgencyDetailModal = ({
   const [editEmail, setEditEmail] = useState(agency?.email || '');
   
   const initialRegionParts = agency?.region ? agency.region.split(' - ').map(s => s.trim()) : ['Europe', 'United Kingdom'];
-  const [editContinent, setEditContinent] = useState(CONTINENTS[initialRegionParts[0]] ? initialRegionParts[0] : (agency?.region === 'Global Scope' ? 'International / Global' : 'Europe'));
+  const [editContinent, setEditContinent] = useState(initialRegionParts[0] || 'Europe');
   const [editCountry, setEditCountry] = useState(initialRegionParts[1] || 'United Kingdom');
+  const [editAiInstructions, setEditAiInstructions] = useState(agency?.aiInstructions || '');
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -44,12 +45,13 @@ const AgencyDetailModal = ({
       await axios.patch(`${API_BASE}/agency/settings`, {
         agencyId: agency.id,
         email: editEmail,
-        region: formattedRegion
+        region: formattedRegion,
+        aiInstructions: editAiInstructions
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       showToast('Agency info updated', 'success');
-      setAgencyDetailModalData({ ...agency, email: editEmail, region: formattedRegion });
+      setAgencyDetailModalData({ ...agency, email: editEmail, region: formattedRegion, aiInstructions: editAiInstructions });
       setIsEditing(false);
       if (initData) initData();
     } catch (_err) {
@@ -188,6 +190,25 @@ const AgencyDetailModal = ({
           >
             <Shield size={18} color="var(--accent-color)" /> MANAGE ROLE PERMISSIONS
           </button>
+
+          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '16px', padding: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
+              <Zap size={14} color="var(--accent-color)" />
+              <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--accent-color)', letterSpacing: '0.1em' }}>{t('agencyAiStrategy') || 'AGENCY AI STRATEGY'}</div>
+            </div>
+            {isEditing ? (
+              <textarea 
+                value={editAiInstructions}
+                onChange={e => setEditAiInstructions(e.target.value)}
+                placeholder="Global instructions for AI behavior (e.g., Tone of voice, Upselling rules, prohibited topics...)"
+                style={{ width: '100%', minHeight: '120px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--card-border)', borderRadius: '8px', color: 'white', padding: '0.75rem', fontSize: '0.85rem', resize: 'vertical', fontFamily: 'inherit' }}
+              />
+            ) : (
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontStyle: editAiInstructions ? 'normal' : 'italic', whiteSpace: 'pre-wrap', maxHeight: '150px', overflowY: 'auto' }}>
+                {editAiInstructions || 'No agency-wide instructions set. AI will use profile-level bio and global hub rules.'}
+              </div>
+            )}
+          </div>
 
           <div style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.1), rgba(37,99,235,0.05))', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '16px', padding: '1.5rem', marginTop: '0.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>

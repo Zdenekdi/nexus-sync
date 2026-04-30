@@ -311,6 +311,50 @@ const sendRelaySmsPush = async ({ agencyId, profileId, to, text, messageId }) =>
   return sendMulticast(tokenList, payload);
 };
 
+const sendRelaySyncPush = async ({ agencyId, profileId, externalId }) => {
+  // 1. Find the bound device for this profile
+  const binding = await prisma.deviceBinding.findFirst({
+    where: { 
+      profileId, 
+      active: true,
+      ...(agencyId ? { agencyId } : {})
+    },
+    select: { userId: true }
+  });
+
+  if (!binding) {
+    return { ok: false, message: 'No active device binding found' };
+  }
+
+  // 2. Get tokens for the user associated with this relay device
+  const tokens = await prisma.pushDevice.findMany({
+    where: { userId: binding.userId, active: true, platform: 'android' },
+    select: { token: true }
+  });
+
+  const tokenList = tokens.map(t => t.token).filter(Boolean);
+  if (!tokenList.length) {
+    return { ok: false, message: 'No push tokens found' };
+  }
+
+  // 3. Build the sync command payload
+  const payload = {
+    data: {
+      type: 'sync_chat',
+      targetType: 'relay_command',
+      externalId: ensureString(externalId),
+      profileId: ensureString(profileId),
+      notificationId: `sync-${externalId}-${Date.now()}`,
+      timestamp: new Date().toISOString()
+    },
+    android: {
+      priority: 'high'
+    }
+  };
+
+  return sendMulticast(tokenList, payload);
+};
+
 module.exports = {
   registerPushToken,
   buildChatPushPayload,
@@ -319,6 +363,7 @@ module.exports = {
   sendChatPush,
   sendCallPush,
   sendSafetyPush,
-  sendRelaySmsPush
+  sendRelaySmsPush,
+  sendRelaySyncPush
 };
 

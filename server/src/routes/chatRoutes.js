@@ -6,5 +6,6 @@ const authMiddleware = require('../middleware/authMiddleware');
 router.use(authMiddleware);
 router.get('/', chatController.getChats);
 router.get('/profile/:profileId', chatController.getProfileChats);
+router.post('/:chatId/sync', chatController.syncChatHistory);
 
 module.exports = router;

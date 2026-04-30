@@ -598,6 +598,19 @@ export function useNexusData({
     }
   }, [API_BASE, token]);
 
+  const handleSyncChatHistory = useCallback(async (chatId) => {
+    if (!chatId || !token) return;
+    try {
+      if (showToast) showToast(lang === 'cz' ? 'Příkaz k synchronizaci odeslán...' : 'Sync command dispatched...', 'info');
+      await axios.post(`${API_BASE}/chats/${chatId}/sync`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    } catch (_err) {
+      console.error('Chat sync failed:', _err);
+      if (showToast) showToast(lang === 'cz' ? 'Synchronizace selhala.' : 'Sync failed.', 'error');
+    }
+  }, [token, API_BASE, showToast, lang]);
+
   return {
     profiles, agencies, agencySettings: _agencySettings, operators, sessions, stats, activeSubscription: _activeSubscription,
     subscriptionHistory: _subscriptionHistory, globalFeatures: _globalFeatures, handleFeatureToggle,
@@ -606,7 +619,7 @@ export function useNexusData({
     calendar, isCalendarSyncOpen, setIsCalendarSyncOpen, calendarSyncUrl, setCalendarSyncUrl,
     isBookingModalOpen, setIsBookingModalOpen, selectedScheduleEvent, setSelectedScheduleEvent,
     newBookingForm, setNewBookingForm, bioText, setBioText, isSyncing, syncStatus: _syncStatus, syncProgress: _syncProgress,
-    relayOnline, handleSaveBio, handleSyncAll, handleSaveCredentials, handleQuickSaveMeeting, handleDelayBooking, initData,
+    relayOnline, handleSaveBio, handleSyncAll, handleSyncChatHistory, handleSaveCredentials, handleQuickSaveMeeting, handleDelayBooking, initData,
     handleExportICS, handleSaveCalendarSync, handleSaveBooking, fetchClientByPhone,
     setProfiles, toggleOperatorStatus, handleSaveAssignees,
     rolePermissions

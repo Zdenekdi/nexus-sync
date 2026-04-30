@@ -65,7 +65,7 @@ exports.getProfiles = async (req, res) => {
 exports.patchProfile = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, phone, quickReplies, bio, description, gallery, commission } = req.body;
+    const { name, phone, quickReplies, bio, description, gallery, commission, sampleMessages } = req.body;
     const { agencyId } = req.user;
 
     const existing = await prisma.profile.findUnique({ where: { id } });
@@ -86,6 +86,7 @@ exports.patchProfile = async (req, res) => {
         ...(phone !== undefined && { phone }),
         ...(bio !== undefined && { bio }),
         ...(description !== undefined && { description }),
+        ...(sampleMessages !== undefined && { sampleMessages }),
         ...(commission !== undefined && { commission: Number(commission) }),
         ...(gallery !== undefined && { gallery: typeof gallery === 'string' ? gallery : JSON.stringify(gallery) }),
         data: newData

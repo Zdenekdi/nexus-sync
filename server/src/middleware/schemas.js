@@ -110,6 +110,10 @@ const createProfile = z.object({
 const patchProfile = z.object({
   name: z.string().min(1).max(200).optional(),
   phone: phone,
+  bio: z.string().max(5000).optional().nullable(),
+  description: z.string().max(10000).optional().nullable(),
+  sampleMessages: z.string().max(20000).optional().nullable(),
+  commission: z.number().min(0).max(100).optional(),
   quickReplies: z.array(z.string().max(500)).max(50).optional()
 });
 
@@ -201,6 +205,7 @@ const updateAgencySettings = z.object({
   name: z.string().min(1).max(200).optional(),
   email: z.string().email().max(320).optional().nullable(),
   region: z.string().min(1).max(100).optional(),
+  aiInstructions: z.string().max(10000).optional().nullable(),
   safetyAlertMode: z.enum(['MANAGERS_AND_ASSIGNED', 'ASSIGNED_ONLY']).optional(),
   defaultGraceMinutes: z.number().int().min(1).max(1440).optional(),
   currency: z.string().max(3).optional(),

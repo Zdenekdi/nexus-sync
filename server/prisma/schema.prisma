@@ -19,6 +19,7 @@ model Agency {
   extraFeatures String?  // JSON string for purchased add-ons or bonuses
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  aiInstructions String? // Global AI strategy/behavior instructions for this agency
   
   referralCode String? @unique
   referrals   Referral[] @relation("AgencyReferrer")

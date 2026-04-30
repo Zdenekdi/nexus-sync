@@ -749,7 +749,9 @@ export const TRANSLATIONS = {
         trainingReset: 'Reset Training',
         modelOptimizationComplete: 'Model Optimization Complete',
         trainingInProgress: 'Training in Progress',
-        uploadTrainingSet: 'Upload Training Set'
+        uploadTrainingSet: 'Upload Training Set',
+        agencyAiStrategy: 'AGENCY AI STRATEGY',
+        syncHistory: 'Sync History'
     },
     cz: {
         comingSoon: 'Brzy k dispozici',
@@ -1519,6 +1521,8 @@ export const TRANSLATIONS = {
         trainingReset: 'Resetovat trénink',
         modelOptimizationComplete: 'Optimalizace modelu dokončena',
         trainingInProgress: 'Trénování probíhá',
-        uploadTrainingSet: 'Nahrát trénovací data'
+        uploadTrainingSet: 'Nahrát trénovací data',
+        agencyAiStrategy: 'STRATEGIE AGENTURNÍ AI',
+        syncHistory: 'Synchronizovat historii'
     }
 };
