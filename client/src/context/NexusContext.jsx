@@ -779,7 +779,7 @@ export const NexusProvider = ({ children }) => {
     agencies: nexusData.agencies, stats: nexusData.stats, operators: nexusData.operators, setProfiles: nexusData.setProfiles,
     toggleOperatorStatus: nexusData.toggleOperatorStatus, handleSaveAssignees: nexusData.handleSaveAssignees,
     isSyncing: nexusData.isSyncing, syncStatus: nexusData.syncStatus, syncProgress: nexusData.syncProgress,
-    relayOnline: nexusData.relayOnline, handleSyncAll: nexusData.handleSyncAll, 
+    relayOnline: nexusData.relayOnline, handleSyncAll: nexusData.handleSyncAll, handleSyncChatHistory: nexusData.handleSyncChatHistory,
     handleSaveBio: nexusData.handleSaveBio, handleSaveCredentials: nexusData.handleSaveCredentials,
     bioText: nexusData.bioText, setBioText: nexusData.setBioText,
     globalFeatures: nexusData.globalFeatures, handleFeatureToggle: nexusData.handleFeatureToggle,

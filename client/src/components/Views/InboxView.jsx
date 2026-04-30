@@ -28,7 +28,7 @@ const InboxView = () => {
     translateTargetLang = 'AUTO', setTranslateTargetLang = () => {},
     lang = 'en', t = (k) => k, token = '', API_BASE = '',
     activeProfile = null, handleSendMessage = () => {}, handleTranslate = () => {}, handleSaveNote = () => {},
-    handleDeleteNote = () => {}, startCall = () => {}, showToast = () => {},
+    handleDeleteNote = () => {}, startCall = () => {}, showToast = () => {}, handleSyncChatHistory = () => {},
     initData: refreshData = () => {}, isBackgroundLoading = false, fetchClientByPhone = () => {},
     setActiveTab = () => {}
   } = nexus;
@@ -299,6 +299,24 @@ const InboxView = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '1rem' }}>
                     <button onClick={startCall} className="status-badge" style={{ color: 'var(--accent-color)', cursor: 'pointer', background: 'rgba(59, 130, 246, 0.1)', border: 'none', padding: '0.5rem 0.75rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', fontWeight: '800' }}>
                       <Signal size={14} /> CALL
+                    </button>
+                    <button 
+                      onClick={() => handleSyncChatHistory(selectedChatId)} 
+                      title={t('syncHistory')}
+                      style={{ 
+                        background: 'rgba(167, 139, 250, 0.1)', 
+                        border: '1px solid rgba(167, 139, 250, 0.2)', 
+                        color: '#a78bfa', 
+                        width: '36px', 
+                        height: '36px', 
+                        borderRadius: '8px', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <RefreshCw size={18} />
                     </button>
                     {(activeOperator?.isModel || (isMobile && activeOperator && !activeOperator?.isAppOwner && !activeOperator?.isAdmin && !activeOperator?.isManager)) && (
                       <button 

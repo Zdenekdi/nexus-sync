@@ -10,7 +10,7 @@ const { getRoomSize } = require('../services/socket');
 exports.updateSettings = async (req, res) => {
     try {
         const { role, agencyId: userAgencyId } = req.user;
-        const { safetyAlertMode, agencyId: bodyAgencyId, name, email, region, defaultGraceMinutes, currency, timezone } = req.body;
+        const { safetyAlertMode, agencyId: bodyAgencyId, name, email, region, defaultGraceMinutes, currency, timezone, aiInstructions } = req.body;
         const isAppOwner = role?.isAppOwner;
 
         if (!role?.isManager && !isAppOwner) {
@@ -28,6 +28,7 @@ exports.updateSettings = async (req, res) => {
         if (defaultGraceMinutes !== undefined) updateData.defaultGraceMinutes = defaultGraceMinutes;
         if (currency !== undefined) updateData.currency = currency;
         if (timezone !== undefined) updateData.timezone = timezone;
+        if (aiInstructions !== undefined) updateData.aiInstructions = aiInstructions;
 
         const agency = await prisma.agency.update({
             where: { id: agencyId },

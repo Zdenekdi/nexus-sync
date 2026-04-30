@@ -58,3 +58,45 @@ exports.getProfileChats = async (req, res) => {
     res.status(500).json({ message: 'Error fetching profile chats' });
   }
 };
+
+exports.syncChatHistory = async (req, res) => {
+  try {
+    const { chatId } = req.params;
+    const { agencyId } = req.user;
+    
+    const chat = await prisma.chat.findUnique({ 
+      where: { id: chatId },
+      include: { profile: true }
+    });
+
+    if (!chat) return res.status(404).json({ message: 'Chat not found' });
+    if (chat.agencyId !== agencyId) return res.status(403).json({ message: 'Access denied' });
+
+    // Send command via Socket for speed
+    try {
+      const io = require('../services/socket').getIO();
+      io.to(`agency_${agencyId}`).emit('relay_command', {
+        targetType: 'relay_command',
+        type: 'sync_chat',
+        externalId: chat.externalId,
+        profileId: chat.profileId,
+        chatId: chat.id
+      });
+    } catch (e) {
+      console.warn('[Socket] Relay sync emission failed:', e.message);
+    }
+
+    // Also send via Push for reliability
+    const { sendRelaySyncPush } = require('../services/pushService');
+    await sendRelaySyncPush({
+      agencyId,
+      profileId: chat.profileId,
+      externalId: chat.externalId
+    });
+
+    res.json({ ok: true, message: 'Sync command dispatched' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error dispatching sync command' });
+  }
+};

@@ -40,22 +40,27 @@ router.post('/suggest', authenticateToken, async (req, res) => {
     if (profileId) {
       const profile = await prisma.profile.findUnique({
         where: { id: profileId },
-        select: { bio: true, description: true, name: true, sampleMessages: true }
+        include: { agency: true }
       });
+      
       if (profile) {
         profileContext = `Slečna se jmenuje ${profile.name}. Bio: ${profile.bio || ""}. Popis: ${profile.description || ""}`;
         
-        if (profile.sampleMessages) {
-          profileContext += `\nManuálně vložené ukázky stylu (velmi důležité):\n${profile.sampleMessages}`;
+        if (profile.agency?.aiInstructions) {
+          profileContext += `\nSTRATEGIE AGENTURY:\n${profile.agency.aiInstructions}`;
         }
         
-        // Fetch last 5 outbound messages to learn style
+        if (profile.sampleMessages) {
+          profileContext += `\nMANUÁLNĚ VLOŽENÉ UKÁZKY STYLU (VELMI DŮLEŽITÉ):\n${profile.sampleMessages}`;
+        }
+        
+        // Fetch last 10 outbound messages for better style learning (increased from 5)
         const recentMessages = await prisma.message.findMany({
           where: {
             direction: 'OUTBOUND',
             chat: { profileId: profileId }
           },
-          take: 5,
+          take: 10,
           orderBy: { createdAt: 'desc' },
           select: { text: true }
         });
