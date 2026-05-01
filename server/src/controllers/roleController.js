@@ -36,105 +36,42 @@ exports.getRoles = async (req, res) => {
         const { agencyId } = req.query;
         const { role: userRole } = req.user;
 
-        // Only App Owner or Agency Manager can view roles
         if (!userRole?.isAppOwner && !userRole?.isManager) {
             return res.status(403).json({ message: 'Access denied' });
         }
 
-        // App Owner can view any, managers restricted to their agency
-        const whereClause = !userRole.isAppOwner && agencyId ? { agencyId } : (agencyId ? { agencyId } : { agencyId: null });
-
-        let roles = await prisma.role.findMany({
-            where: whereClause,
-            orderBy: { createdAt: 'asc' }
-        });
-
-        // Auto-seed and cleanup global templates if they are missing (only for global view)
-        if (!agencyId) {
-            const expectedTemplates = [
-                { name: 'App Owner', isAppOwner: true, isManager: true, permissions: JSON.stringify({ all: true }) },
-                { name: 'Agency Admin', isAppOwner: false, isManager: true, permissions: JSON.stringify({ permissions: true, hierarchy: true, analytics: true, messaging: true, calendar: true, profiles: true, web_profiles: true, device_setup: true, audit_logs: true, qa_hub: true, settings: true, referrals: true, inventory: true, plans: true }) },
-                { name: 'Manager', isAppOwner: false, isManager: true, permissions: JSON.stringify({ hierarchy: true, analytics: true, messaging: true, calendar: true, profiles: true, web_profiles: true, device_setup: true, audit_logs: true, settings: true, qa_hub: true, referrals: true, inventory: true }) },
-                { name: 'Senior Operator', isAppOwner: false, isManager: true, permissions: JSON.stringify({ hierarchy: true, analytics: true, messaging: true, calendar: true, profiles: true, web_profiles: true, device_setup: false, settings: true, qa_hub: true, referrals: true, inventory: true }) },
-                { name: 'Operator', isAppOwner: false, isManager: false, permissions: JSON.stringify({ messaging: true, calendar: true, profiles: true, web_profiles: true, device_setup: true, settings: true, referrals: false, inventory: false }) },
-                { name: 'Model', isAppOwner: false, isManager: false, permissions: JSON.stringify({ messaging: true, calendar: true, device_setup: true, settings: true, referrals: true, inventory: false }) }
-            ];
-
-            let wasCleaned = false;
-
-            // NUCLEAR CLEANUP: Delete ANY global role that is not a standard system template
-            const systemIds = ['global-app-owner', 'global-agency-admin', 'global-manager', 'global-senior-operator', 'global-operator', 'global-model'];
-            
-            const ghosts = await prisma.role.findMany({
-                where: {
-                    OR: [{ agencyId: null }, { agencyId: '' }],
-                    id: { notIn: systemIds }
-                }
-            });
-
-            if (ghosts.length > 0) {
-                const ghostIds = ghosts.map(g => g.id);
-
-                // Reassign ALL users with any ghost roleId in one query
-                await prisma.user.updateMany({
-                    where: { roleId: { in: ghostIds } },
-                    data: { roleId: 'global-operator' }
-                });
-
-                // Now delete them all
-                for (const g of ghosts) {
-                    await prisma.role.delete({ where: { id: g.id } }).catch(err => {
-                        logger.error(`Failed to delete ghost role "${g.name}" (${g.id}): ${err.message}`);
-                    });
-                }
-                wasCleaned = true;
-            }
-
-            // 2. SEEDING: Ensure all expected templates exist
-            for (const t of expectedTemplates) {
-                const slug = `global-${t.name.toLowerCase().replace(/\s+/g, '-')}`;
-                await prisma.role.upsert({
-                    where: { id: slug },
-                    update: {},
-                    create: { ...t, id: slug }
-                }).catch(e => console.error('Upsert warn:', e));
-            }
-            // Refresh roles list after cleanup/seeding
-            roles = await prisma.role.findMany({
-                where: { agencyId: null },
-                orderBy: { createdAt: 'asc' }
-            });
+        // Build where clause
+        let where;
+        if (agencyId) {
+            where = { agencyId };
+        } else {
+            // Global view: fetch agencyId null AND empty string to catch all global-scoped roles
+            where = { OR: [{ agencyId: null }, { agencyId: '' }] };
         }
 
-        // DEFINITIVE SAFETY: Ensure no duplicate names are EVER returned to the client
+        const raw = await prisma.role.findMany({ where, orderBy: { createdAt: 'asc' } });
+
+        // Deduplicate by name (case-insensitive) — first occurrence wins
         const seen = new Set();
-        roles = roles.filter(r => {
-            if (!r || !r.name) return false;
-            const norm = r.name.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            if (seen.has(norm)) return false;
-            seen.add(norm);
+        const roles = raw.filter(r => {
+            if (!r?.name) return false;
+            const key = r.name.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            if (seen.has(key)) return false;
+            seen.add(key);
             return true;
         });
 
+        // Parse permissions
         const parsedRoles = roles.map(r => {
             let perms = {};
-            if (typeof r.permissions === 'string') {
-                try {
+            try {
+                if (typeof r.permissions === 'string') {
                     perms = JSON.parse(r.permissions);
-                } catch (e) {
-                    // Fallback for older non-JSON roles like '*' or 'messaging,profiles'
-                    if (r.name === 'Agency Admin') {
-                        perms = { permissions: true, hierarchy: true, analytics: true, messaging: true, calendar: true, profiles: true, web_profiles: true, device_setup: true, audit_logs: true, qa_hub: true, settings: true, referrals: true, inventory: true, plans: true };
-                    } else if (r.name === 'Model') {
-                        perms = { messaging: true, calendar: true, device_setup: true, settings: true, referrals: true };
-                    } else if (r.name === 'Senior Operator') {
-                        perms = { hierarchy: true, analytics: true, messaging: true, calendar: true, profiles: true, web_profiles: true, settings: true, qa_hub: true, referrals: true, inventory: true };
-                    } else if (r.name === 'Operator') {
-                        perms = { messaging: true, calendar: true, profiles: true, web_profiles: true, device_setup: true, settings: true };
-                    }
+                } else if (r.permissions && typeof r.permissions === 'object') {
+                    perms = r.permissions;
                 }
-            } else {
-                perms = r.permissions;
+            } catch (_e) {
+                perms = {};
             }
             return { ...r, permissions: perms };
         });
