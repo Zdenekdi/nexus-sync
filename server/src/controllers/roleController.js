@@ -73,14 +73,19 @@ exports.getRoles = async (req, res) => {
             });
 
             if (ghosts.length > 0) {
+                const ghostIds = ghosts.map(g => g.id);
+
+                // Reassign ALL users with any ghost roleId in one query
+                await prisma.user.updateMany({
+                    where: { roleId: { in: ghostIds } },
+                    data: { roleId: 'global-operator' }
+                });
+
+                // Now delete them all
                 for (const g of ghosts) {
-                    const norm = g.name.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                    const targetId = systemIds.find(id => id.includes(norm)) || 'global-operator';
-                    
-                    // Reassign users to the correct system role
-                    await prisma.user.updateMany({ where: { roleId: g.id }, data: { roleId: targetId } });
-                    // Delete the ghost role
-                    await prisma.role.delete({ where: { id: g.id } }).catch(() => {});
+                    await prisma.role.delete({ where: { id: g.id } }).catch(err => {
+                        logger.error(`Failed to delete ghost role "${g.name}" (${g.id}): ${err.message}`);
+                    });
                 }
                 wasCleaned = true;
             }
