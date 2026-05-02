@@ -20,9 +20,10 @@ const AgencyDetailModal = ({
   onManageRoles, 
   operators, 
   showToast, 
+  t,
   lang: _lang 
 }) => {
-  const { API_BASE, token, setAgencyDetailModalData, setIsAddUserOpen, setAddUserModalAgencyId, initData } = useNexus();
+  const { API_BASE, token, setAgencyDetailModalData, setIsAddUserOpen, setAddUserModalAgencyId, initData, lang, t: nexusT } = useNexus();
   const [isEditing, setIsEditing] = useState(false);
   const [editEmail, setEditEmail] = useState(agency?.email || '');
   

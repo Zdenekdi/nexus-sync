@@ -712,9 +712,47 @@ export const NexusProvider = ({ children }) => {
     setShowLanding(true);
   }, [logout]);
 
-  // Stable handlers now provided by nexusData hook
+  // --- 11. AGENCY & REFERRAL HANDLERS (App Owner / Admin) ---
+  const handleDeleteAgency = useCallback(async (id) => {
+    if (!token) return;
+    try {
+      await axios.delete(`${API_BASE}/agency/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      showToast(lang === 'cz' ? 'Agentura byla odstraněna.' : 'Agency deleted.', 'success');
+      nexusData.initData(); // Refresh list
+    } catch (_err) {
+      showToast(lang === 'cz' ? 'Odstranění selhalo.' : 'Delete failed.', 'error');
+    }
+  }, [token, lang, showToast, nexusData.initData, API_BASE]);
 
-  // --- 11. ANDROID BACK BUTTON HANDLING ---
+  const handleImpersonateAgency = useCallback(async (id) => {
+    // Placeholder for impersonation logic (requires backend endpoint)
+    showToast(lang === 'cz' ? 'Impersonifikace zatím není dostupná.' : 'Impersonation not yet available.', 'info');
+    return null;
+  }, [lang, showToast]);
+
+  const fetchAllReferrals = useCallback(async () => {
+    if (!token) return [];
+    try {
+      const res = await axios.get(`${API_BASE}/referrals/admin/all`, { headers: { Authorization: `Bearer ${token}` } });
+      return res.data || [];
+    } catch {
+      return [];
+    }
+  }, [token, API_BASE]);
+
+  const handleConfirmReferral = useCallback(async (id, rewardAmount) => {
+    if (!token) return;
+    try {
+      const res = await axios.post(`${API_BASE}/referrals/${id}/confirm`, { rewardAmount }, { headers: { Authorization: `Bearer ${token}` } });
+      showToast(lang === 'cz' ? 'Odměna potvrzena.' : 'Reward confirmed.', 'success');
+      return res.data;
+    } catch {
+      showToast(lang === 'cz' ? 'Potvrzení selhalo.' : 'Confirmation failed.', 'error');
+      return null;
+    }
+  }, [token, lang, showToast, API_BASE]);
+
+  // --- 12. ANDROID BACK BUTTON HANDLING ---
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     const back = CapacitorApp.addListener('backButton', () => {
@@ -759,6 +797,7 @@ export const NexusProvider = ({ children }) => {
     activeProfile, activeProfileId, setActiveProfileId, profiles, myProfiles, onlineOnly, setOnlineOnly, 
     agencies: nexusData.agencies, stats: nexusData.stats, operators: nexusData.operators, setProfiles: nexusData.setProfiles,
     toggleOperatorStatus: nexusData.toggleOperatorStatus, handleSaveAssignees: nexusData.handleSaveAssignees,
+    handleDeleteAgency, handleImpersonateAgency, fetchAllReferrals, handleConfirmReferral,
     isSyncing: nexusData.isSyncing, syncStatus: nexusData.syncStatus, syncProgress: nexusData.syncProgress,
     relayOnline: nexusData.relayOnline, handleSyncAll: nexusData.handleSyncAll, handleSyncChatHistory: nexusData.handleSyncChatHistory,
     handleSaveBio: nexusData.handleSaveBio, handleSaveCredentials: nexusData.handleSaveCredentials,
@@ -796,7 +835,8 @@ export const NexusProvider = ({ children }) => {
     isRelayActive, setRelayActiveStable, relaySimSlot, relayLogs, linkedTrackerId, trackerStatus, messageValue, calViewDate, 
     _gpsHistory, lastTrackerUpdate, voiceGuardianActive, batteryLevel, incomingGhostCall, ghostCallScheduledAt,
     heartRate, hrThreshold, isBluetoothConnected, isTvMode, tvToken, activeBioWarning, audioSentinelActive,
-    isPinModalOpen, pinModalPromise, availableServers, selectedServerId, API_BASE, handleSendMessage, handleTranslate, handleSaveNote, handleDeleteNote, handleQuickSaveMeeting, handleConfirmDeparture, onDelayBooking, handleToggleVoiceGuardian, triggerGhostCall, verifyIdentity, playBeep, triggerSilentSOS, handleRelayCommand, checkRelayStatus, checkProfileHealth, fetchChatMessages, fetchPlans
+    isPinModalOpen, pinModalPromise, availableServers, selectedServerId, API_BASE, handleSendMessage, handleTranslate, handleSaveNote, handleDeleteNote, handleQuickSaveMeeting, handleConfirmDeparture, onDelayBooking, handleToggleVoiceGuardian, triggerGhostCall, verifyIdentity, playBeep, triggerSilentSOS, handleRelayCommand, checkRelayStatus, checkProfileHealth, fetchChatMessages, fetchPlans,
+    handleDeleteAgency, handleImpersonateAgency, fetchAllReferrals, handleConfirmReferral
   ]);
 
 

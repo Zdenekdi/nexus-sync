@@ -23,6 +23,7 @@ const GlobalModalContainer = () => {
   const { 
     isBugReportOpen, setIsBugReportOpen,
     agencyDetailModalData, setAgencyDetailModalData,
+    setActiveTab,
     isAddAgencyOpen, setIsAddAgencyOpen,
     isAddUserOpen, setIsAddUserOpen,
     operators, showToast, lang, t, isMobile, activeRole, activeOperator,
@@ -129,6 +130,10 @@ const GlobalModalContainer = () => {
         <AgencyDetailModal 
           agency={agencyDetailModalData}
           onClose={() => setAgencyDetailModalData(null)}
+          onManageRoles={() => {
+            setAgencyDetailModalData(null);
+            setActiveTab('permissions');
+          }}
           operators={operators || []}
           showToast={showToast}
           lang={lang}
