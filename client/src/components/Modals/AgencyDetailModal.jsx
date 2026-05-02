@@ -33,6 +33,7 @@ const AgencyDetailModal = ({
   const [editAiInstructions, setEditAiInstructions] = useState(agency?.aiInstructions || '');
 
   const [isSaving, setIsSaving] = useState(false);
+  const [showSaved, setShowSaved] = useState(false);
 
   if (!agency) return null;
 
@@ -51,9 +52,11 @@ const AgencyDetailModal = ({
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      showToast('Agency info updated', 'success');
+      showToast(lang === 'cz' ? 'Informace o agentuře uloženy' : 'Agency info updated', 'success');
       setAgencyDetailModalData({ ...agency, email: editEmail, region: formattedRegion, aiInstructions: editAiInstructions });
       setIsEditing(false);
+      setShowSaved(true);
+      setTimeout(() => setShowSaved(false), 3000);
       if (initData) initData();
     } catch (_err) {
       console.error('Failed to update agency:', _err);
@@ -196,6 +199,11 @@ const AgencyDetailModal = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
               <Zap size={14} color="var(--accent-color)" />
               <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--accent-color)', letterSpacing: '0.1em' }}>{t('agencyAiStrategy') || 'AGENCY AI STRATEGY'}</div>
+              {showSaved && (
+                <div className="fade-in" style={{ fontSize: '0.65rem', background: 'var(--success-color)', color: 'white', padding: '2px 8px', borderRadius: '4px', fontWeight: '900', marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Check size={10} /> {lang === 'cz' ? 'ULOŽENO' : 'SAVED'}
+                </div>
+              )}
             </div>
             {isEditing ? (
               <textarea 
