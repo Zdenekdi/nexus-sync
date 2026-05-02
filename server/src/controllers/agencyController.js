@@ -55,7 +55,7 @@ exports.getSettings = async (req, res) => {
     if (!agencyId) return res.status(404).json({ message: 'Agency not found' });
     const agency = await prisma.agency.findUnique({
       where: { id: agencyId },
-      select: { id: true, name: true, tier: true, plan: true, safetyAlertMode: true, inviteCode: true, referralCode: true }
+      select: { id: true, name: true, tier: true, plan: true, safetyAlertMode: true, inviteCode: true, referralCode: true, aiInstructions: true, email: true, region: true }
     });
     if (!agency) return res.status(404).json({ message: 'Agency not found' });
     res.json(agency);
