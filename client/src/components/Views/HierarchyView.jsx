@@ -42,7 +42,7 @@ const HierarchyView = () => {
     const opId = String(activeOperator?.id || activeOperator?._id || '');
     const isAssigned = (profile.assignees || []).some(a => String(a?.id || a?._id || a) === opId) || 
                        (profile.operators || []).some(o => String(o?.id || o?._id || o) === opId) ||
-                       activeRole === 'APP OWNER' || activeRole === 'AGENCY ADMIN' || activeRole === 'MANAGER';
+                       activeRole === 'APP OWNER' || activeRole === 'AGENCY ADMIN' || activeRole === 'MANAGER' || activeRole === 'SENIOR OPERATOR';
 
     if (isAssigned && !existingModelOperatorProfileIds.has(profile.id)) {
       // Create a virtual operator node for the profile
