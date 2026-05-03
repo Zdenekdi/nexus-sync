@@ -170,15 +170,19 @@ export const NexusProvider = ({ children }) => {
       if (!key || typeof key !== 'string') return key || '';
       const safeTranslations = (typeof TRANSLATIONS !== 'undefined' && TRANSLATIONS) || {};
       const langSet = safeTranslations[lang] || safeTranslations['en'] || {};
-      let text = langSet[key] || key;
+      
+      // Support nested keys (e.g. 'roleLabels.senior_operator')
+      let text = key.split('.').reduce((obj, k) => (obj && obj[k]) ? obj[k] : null, langSet) || key;
+
       if (params && typeof params === 'object') {
         Object.entries(params).forEach(([k, v]) => {
-          if (text.includes(`{{${k}}}`)) {
+          if (typeof text === 'string' && text.includes(`{{${k}}}`)) {
             text = text.replace(new RegExp(`{{${k}}}`, 'g'), String(v));
           }
         });
       }
       return text;
+    } catch (_err) {
     } catch (_err) {
       console.error('[NexusContext] Translation fallback triggered for:', key, _err);
       return String(key || '');
@@ -616,7 +620,8 @@ export const NexusProvider = ({ children }) => {
     if (!activeOperator) return [];
     
     const opId = String(activeOperator.id || '').toLowerCase();
-    const roleNameClean = normalizeRole(activeRole || activeOperator?.role?.name || activeOperator?.role);
+    const rawRole = activeRole || activeOperator?.role?.name || activeOperator?.role;
+    const roleNameClean = normalizeRole(rawRole);
     
     // Roles that should see ALL profiles in their agency
     const isAgencyLevel = [
@@ -628,6 +633,15 @@ export const NexusProvider = ({ children }) => {
                         (Array.isArray(p.assignees) && p.assignees.some(a => String(a?.id || a).toLowerCase() === opId)) ||
                         (Array.isArray(p.operators) && p.operators.some(o => String(o?.id || o).toLowerCase() === opId));
       return isAssigned;
+    });
+
+    console.log('[NexusContext] Profile Filtering Debug:', {
+      opId,
+      rawRole,
+      roleNameClean,
+      profilesCount: (profiles || []).length,
+      isAgencyLevel,
+      filteredCount: (filtered || []).length
     });
 
     return filtered;
@@ -783,6 +797,7 @@ export const NexusProvider = ({ children }) => {
     logout: logoutStable, onLogin: handleLogin, onRegisterAgency: auth.handleRegisterAgency, onRegisterUser: auth.handleRegisterUser,
     isAppOwner: activeOperator?.isAppOwner || false, isManager: activeOperator?.isManager || false, isAdmin: activeOperator?.isAdmin || false,
     API_BASE, showLanding: showLanding ?? !isLoggedIn, setShowLanding, hasSeenOnboarding, setHasSeenOnboarding, showOnboarding, setShowOnboarding,
+    t, lang: activeMarket, setLang: setActiveMarket,
     updatePlans: async (p) => { try { setIsPlansLoading(true); await axios.post(`${API_BASE}/subscriptions/config`, { plans: p }, { headers: { Authorization: `Bearer ${token}` } }); setSubscriptionPlans(p); return { success: true }; } catch (e) { return { success: false, error: e.message }; } finally { setIsPlansLoading(false); } },
     fetchPlans, subscriptionPlans, isPlansLoading, showToast, contextToasts: _toasts,
     isMobile, isNativeApp, isSidebarCollapsed, setIsSidebarCollapsed, mobileView, setMobileView,

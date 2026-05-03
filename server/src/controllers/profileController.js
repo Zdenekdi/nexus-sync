@@ -22,7 +22,8 @@ exports.getProfiles = async (req, res) => {
     // Senior operators see all agency profiles, just like managers
     const isAgencyLevel = isAppOwner || isManager;
     
-    logger.info(`[Profiles] Fetching for User: ${userId}, Role: ${role?.name}, Agency: ${agencyId}`);
+    logger.info(`[Profiles] Fetching for User: ${userId}, Role: ${role?.name || role}, Agency: ${agencyId}`);
+    logger.info(`[Profiles] roleNameClean: ${roleNameClean}, isAppOwner: ${isAppOwner}, isManager: ${isManager}`);
 
     if (!agencyId && !isAppOwner) {
       logger.warn(`[Profiles] No agencyId for user ${userId}`);
