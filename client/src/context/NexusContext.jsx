@@ -622,7 +622,7 @@ export const NexusProvider = ({ children }) => {
                     (Array.isArray(p.assignees) && p.assignees.some(a => String(a?.id || a).toLowerCase() === opId));
       return match;
     });
-    return onlineOnly ? filtered.filter(p => p?.status === 'online') : filtered;
+    return filtered;
   }, [profiles, activeOperator, activeRole, onlineOnly]);
 
   useEffect(() => {

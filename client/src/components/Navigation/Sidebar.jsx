@@ -25,7 +25,7 @@ const Sidebar = () => {
     activeTab, setActiveTab, t, 
     activeOperator, logout, isMobile, 
     totalUnread,
-    activeProfile, setActiveProfileId, activeRole,
+    activeProfile, setActiveProfileId, activeRole, profiles,
     isSidebarCollapsed, isAllowed,
     onlineOnly, setOnlineOnly,
     isSidebarOpen, setIsSidebarOpen
@@ -212,7 +212,7 @@ const Sidebar = () => {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 0.65rem', marginBottom: '0.75rem' }}>
               <div style={{ fontSize: '0.65rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{capitalize(t('myAssignedGirls'))}</div>
-              <div style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.1)' }}>{activeRole} ({profiles?.length || 0})</div>
+              <div style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.1)' }}>{activeRole || 'NO ROLE'} (P:{profiles?.length || 0} / M:{myProfiles?.length || 0})</div>
             </div>
             <div style={{ 
               display: 'flex', 
