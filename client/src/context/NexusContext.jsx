@@ -183,7 +183,6 @@ export const NexusProvider = ({ children }) => {
       }
       return text;
     } catch (_err) {
-    } catch (_err) {
       console.error('[NexusContext] Translation fallback triggered for:', key, _err);
       return String(key || '');
     }
