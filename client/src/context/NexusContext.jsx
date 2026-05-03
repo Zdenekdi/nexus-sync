@@ -614,8 +614,8 @@ export const NexusProvider = ({ children }) => {
   const myProfiles = useMemo(() => {
     if (!activeOperator) return [];
     const opId = String(activeOperator.id || '').toLowerCase();
-    const rawRoleStr = String(activeRole || '').toLowerCase();
-    const isAgencyLevel = ['agency admin', 'manager', 'senior operator', 'senior manager', 'owner'].includes(rawRoleStr.trim());
+    const rawRoleStr = String(activeRole || activeOperator?.role || '').toUpperCase().trim();
+    const isAgencyLevel = ['AGENCY ADMIN', 'MANAGER', 'SENIOR MANAGER', 'SENIOR OPERATOR', 'OWNER'].includes(rawRoleStr);
     let filtered = (activeOperator.isAppOwner || isAgencyLevel) ? [...profiles] : profiles.filter(p => {
       const match = String(p.userId || p.ownerId || p.owner_id || '').toLowerCase() === opId || 
                     (Array.isArray(p.operators) && p.operators.some(o => String(o?.id || o).toLowerCase() === opId)) ||

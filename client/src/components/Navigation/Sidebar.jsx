@@ -196,43 +196,51 @@ const Sidebar = () => {
                 </div>
             )}
 
-            {/* My Girls Section */}
-            {['Operator', 'Senior Operator'].includes(activeRole) && !isSidebarCollapsed && (
-              <div data-testid="my-girls-section" style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.15rem', marginBottom: '0.75rem' }}>
-                  <div style={{ fontSize: '0.65rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{capitalize(t('myAssignedGirls'))}</div>
-                  <div onClick={() => setOnlineOnly(!onlineOnly)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', padding: '4px 8px', borderRadius: '8px', background: onlineOnly ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255,255,255,0.03)', border: `1px solid ${onlineOnly ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255,255,255,0.05)'}` }}>
-                    <span style={{ fontSize: '0.65rem', fontWeight: '800', color: onlineOnly ? 'var(--success-color)' : 'rgba(255,255,255,0.4)' }}>{t('onlineOnly')}</span>
-                    <div style={{ width: '28px', height: '16px', borderRadius: '12px', background: onlineOnly ? 'var(--success-color)' : 'rgba(255,255,255,0.15)', position: 'relative', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
-                      <div style={{ width: '12px', height: '12px', background: 'white', borderRadius: '50%', position: 'absolute', top: '2px', left: onlineOnly ? '14px' : '2px', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }} />
-                    </div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', maxHeight: isMobile ? 'none' : '40vh', overflowY: isMobile ? 'visible' : 'auto' }} className="sidebar-scroll-container">
-                  {(!myProfiles || myProfiles.length === 0) ? (
-                    <div style={{ padding: '0.5rem 1.15rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.2)' }}>{t('noAssignedGirls')}</div>
-                  ) : (
-                    <>
-                      {myProfiles.map(p => {
-                        const isActive = activeProfile?.id === p.id;
-                        return (
-                          <button key={p.id} onClick={() => { setActiveProfileId(p.id); setActiveTab('inbox'); if(isMobile) setIsSidebarOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.6rem 1.15rem', borderRadius: '12px', cursor: 'pointer', textAlign: 'left', background: isActive ? 'rgba(59, 130, 246, 0.08)' : 'transparent', border: 'none' }}>
-                            <div style={{ width: '6px', height: '6px', background: p.status === 'online' ? 'var(--success-color)' : 'rgba(255,255,255,0.1)', borderRadius: '50%' }} />
-                            <div style={{ flex: 1, minWidth: 0, fontSize: '0.85rem', fontWeight: isActive ? '800' : '600', color: isActive ? 'white' : 'rgba(255,255,255,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-                          </button>
-                        );
-                      })}
-                      {isMobile && <div key="scroll-spacer" style={{ height: '120px', flexShrink: 0 }} aria-hidden="true" />}
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
+            {/* Section removed from here */}
           </div>
         </div>
         
+        {/* My Girls Section (Independent scroll, above footer) */}
+        {['Operator', 'Senior Operator'].includes(activeRole) && !isSidebarCollapsed && (
+          <div data-testid="my-girls-section" style={{ 
+            padding: '0 0.5rem', 
+            marginBottom: '1rem', 
+            display: 'flex', 
+            flexDirection: 'column',
+            borderTop: '1px solid rgba(255,255,255,0.03)',
+            paddingTop: '1rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 0.65rem', marginBottom: '0.75rem' }}>
+              <div style={{ fontSize: '0.65rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{capitalize(t('myAssignedGirls'))}</div>
+            </div>
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '0.2rem',
+              maxHeight: '30vh',
+              overflowY: 'auto'
+            }} className="custom-scrollbar">
+              {(!myProfiles || myProfiles.length === 0) ? (
+                <div style={{ padding: '0.5rem 0.65rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.2)' }}>{t('noAssignedGirls')}</div>
+              ) : (
+                <>
+                  {myProfiles.map(p => {
+                    const isActive = activeProfile?.id === p.id;
+                    return (
+                      <button key={p.id} onClick={() => { setActiveProfileId(p.id); setActiveTab('inbox'); if(isMobile) setIsSidebarOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.6rem 0.65rem', borderRadius: '12px', cursor: 'pointer', textAlign: 'left', background: isActive ? 'rgba(59, 130, 246, 0.08)' : 'transparent', border: 'none' }}>
+                        <div style={{ width: '6px', height: '6px', background: p.status === 'online' ? 'var(--success-color)' : 'rgba(255,255,255,0.1)', borderRadius: '50%' }} />
+                        <div style={{ flex: 1, minWidth: 0, fontSize: '0.85rem', fontWeight: isActive ? '800' : '600', color: isActive ? 'white' : 'rgba(255,255,255,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                      </button>
+                    );
+                  })}
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* User Profile Footer (Zero Skeletons) */}
-        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.85rem', borderTop: '1px solid var(--card-border)', paddingTop: '1rem' }}>
+        <div style={{ marginTop: '0', display: 'flex', flexDirection: 'column', gap: '0.85rem', borderTop: '1px solid var(--card-border)', paddingTop: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: (isSidebarCollapsed && !isMobile) ? '0' : '0 0.5rem', justifyContent: (isSidebarCollapsed && !isMobile) ? 'center' : 'flex-start' }}>
             <div style={{ width: '36px', height: '36px', background: 'linear-gradient(135deg, var(--accent-color) 0%, #1d4ed8 100%)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'white', fontSize: '0.8rem', flexShrink: 0 }}>{displayAvatar}</div>
             {(!isSidebarCollapsed || isMobile) && (
