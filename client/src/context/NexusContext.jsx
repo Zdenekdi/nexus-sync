@@ -613,17 +613,28 @@ export const NexusProvider = ({ children }) => {
   const profiles = useMemo(() => nexusData.profiles || [], [nexusData.profiles]);
   const myProfiles = useMemo(() => {
     if (!activeOperator) return [];
+    
     const opId = String(activeOperator.id || '').toLowerCase();
-    const rawRoleStr = String(activeRole || activeOperator?.role || '').toUpperCase().trim();
-    const isAgencyLevel = ['AGENCY ADMIN', 'MANAGER', 'SENIOR MANAGER', 'SENIOR OPERATOR', 'OWNER'].includes(rawRoleStr);
+    const rawRoleStr = String(activeRole || activeOperator?.role?.name || activeOperator?.role || '').toUpperCase().trim();
+    
+    // Roles that should see ALL profiles in their agency
+    const isAgencyLevel = [
+      'AGENCY ADMIN', 'ADMINISTRÁTOR', 
+      'MANAGER', 'MANAŽER', 
+      'SENIOR MANAGER', 'SENIOR MANAŽER',
+      'SENIOR OPERATOR', 'SENIOR OPERÁTOR',
+      'OWNER', 'MAJITEL AGENTURY'
+    ].includes(rawRoleStr);
+
     let filtered = (activeOperator.isAppOwner || isAgencyLevel) ? [...profiles] : profiles.filter(p => {
-      const match = String(p.userId || p.ownerId || p.owner_id || '').toLowerCase() === opId || 
-                    (Array.isArray(p.operators) && p.operators.some(o => String(o?.id || o).toLowerCase() === opId)) ||
-                    (Array.isArray(p.assignees) && p.assignees.some(a => String(a?.id || a).toLowerCase() === opId));
-      return match;
+      const isAssigned = String(p.userId || p.ownerId || p.owner_id || '').toLowerCase() === opId || 
+                        (Array.isArray(p.assignees) && p.assignees.some(a => String(a?.id || a).toLowerCase() === opId)) ||
+                        (Array.isArray(p.operators) && p.operators.some(o => String(o?.id || o).toLowerCase() === opId));
+      return isAssigned;
     });
+
     return filtered;
-  }, [profiles, activeOperator, activeRole, onlineOnly]);
+  }, [profiles, activeOperator, activeRole]);
 
   useEffect(() => {
     if (activeOperator?.isModel && activeProfileId === 'all' && myProfiles.length > 0) setActiveProfileId(String(myProfiles[0].id));
