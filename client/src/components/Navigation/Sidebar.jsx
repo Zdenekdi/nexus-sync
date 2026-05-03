@@ -6,6 +6,7 @@ import {
   LogOut, Menu, X, Circle, Package as PackageIcon, Gift, Wallet
 } from 'lucide-react';
 import { useNexus } from '../../context/ContextHook';
+import { normalizeRole } from '../../utils/roleUtils';
 
 const TooltipItem = ({ label, children, isMobile, isSidebarCollapsed }) => {
   if (isMobile) return <>{children}</>;

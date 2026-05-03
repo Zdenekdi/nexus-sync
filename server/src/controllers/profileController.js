@@ -13,10 +13,15 @@ const logger = require('../services/logger');
 exports.getProfiles = async (req, res) => {
   try {
     const { role, agencyId, userId } = req.user;
-    const roleName = String(role?.name || role || '').toUpperCase().trim();
-    const isAppOwner = !!role?.isAppOwner || roleName === 'APP OWNER';
+    const { normalizeRole } = require('../utils/roleUtils');
+    const roleNameClean = normalizeRole(role?.name || role);
+    const isAppOwner = !!role?.isAppOwner || roleNameClean === 'app_owner';
+    const isManager = !!role?.isManager || ['manager', 'agency_admin', 'senior_operator'].includes(roleNameClean);
+
+    // Senior operators see all agency profiles, just like managers
+    const isAgencyLevel = isAppOwner || isManager;
     
-    logger.info(`[Profiles] Fetching for User: ${userId}, Role: ${roleName}, Agency: ${agencyId}`);
+    logger.info(`[Profiles] Fetching for User: ${userId}, Role: ${role?.name}, Agency: ${agencyId}`);
 
     if (!agencyId && !isAppOwner) {
       logger.warn(`[Profiles] No agencyId for user ${userId}`);

@@ -11,6 +11,7 @@ import { useSocket } from '../hooks/useSocket';
 import { initPushNotifications, removePushListeners } from '../services/pushService';
 import { TRANSLATIONS } from '../translations';
 import { API_BASE } from '../constants/config';
+import { normalizeRole } from '../utils/roleUtils';
 
 // Shared AudioContext to prevent exhaustion on mobile devices
 let sharedAudioCtx = null;
@@ -615,16 +616,12 @@ export const NexusProvider = ({ children }) => {
     if (!activeOperator) return [];
     
     const opId = String(activeOperator.id || '').toLowerCase();
-    const rawRoleStr = String(activeRole || activeOperator?.role?.name || activeOperator?.role || '').toUpperCase().trim();
+    const roleNameClean = normalizeRole(activeRole || activeOperator?.role?.name || activeOperator?.role);
     
     // Roles that should see ALL profiles in their agency
     const isAgencyLevel = [
-      'AGENCY ADMIN', 'ADMINISTRÁTOR', 
-      'MANAGER', 'MANAŽER', 
-      'SENIOR MANAGER', 'SENIOR MANAŽER',
-      'SENIOR OPERATOR', 'SENIOR OPERÁTOR',
-      'OWNER', 'MAJITEL AGENTURY'
-    ].includes(rawRoleStr);
+      'agency admin', 'manager', 'senior manager', 'senior operator', 'owner'
+    ].includes(roleNameClean);
 
     let filtered = (activeOperator.isAppOwner || isAgencyLevel) ? [...profiles] : profiles.filter(p => {
       const isAssigned = String(p.userId || p.ownerId || p.owner_id || '').toLowerCase() === opId || 

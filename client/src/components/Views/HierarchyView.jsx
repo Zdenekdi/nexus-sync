@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNexus } from '../../context/ContextHook';
+import { normalizeRole } from '../../utils/roleUtils';
 
 const HierarchyView = () => {
   const nexus = useNexus() || {};
@@ -13,11 +14,11 @@ const HierarchyView = () => {
   } = nexus;
 
   // Role v hierarchii (Normalized to Uppercase)
-  const roleHierarchy = ['AGENCY ADMIN', 'MANAGER', 'SENIOR OPERATOR', 'OPERATOR', 'MODEL'];
+  const roleHierarchy = ['Agency Admin', 'Manager', 'Senior Operator', 'Operator', 'Model'];
 
   // Filtrace operátorů
   const visibleOperators = (operators || []).filter(op => {
-    const r = String(op.role || '').toUpperCase().trim();
+    const r = String(op.role || op.roleName || '').toUpperCase().trim();
     if (r === 'APP OWNER' || r === 'OWNER') return false; 
     return true; 
   });
@@ -27,22 +28,23 @@ const HierarchyView = () => {
   roleHierarchy.forEach(role => groupedUsers[role] = []);
   
   visibleOperators.forEach(op => {
-    const roleKey = String(op.role || '').toUpperCase().trim();
-    const tier = roleHierarchy.includes(roleKey) ? roleKey : 'OPERATOR';
-    groupedUsers[tier].push(op);
+    const roleName = op.role || op.roleName || '';
+    // Simple matching or default to Operator
+    const matchedTier = roleHierarchy.find(h => h.toUpperCase() === roleName.toUpperCase()) || 'Operator';
+    groupedUsers[matchedTier].push(op);
   });
 
   // Přidání profilů do sekce Model
   const existingModelOperatorProfileIds = new Set(
-    groupedUsers['MODEL']?.map(op => op.profileId).filter(Boolean) || []
+    groupedUsers['Model']?.map(op => op.profileId).filter(Boolean) || []
   );
 
   (profiles || []).forEach(profile => {
     if (!existingModelOperatorProfileIds.has(profile.id)) {
-      groupedUsers['MODEL'].push({
+      groupedUsers['Model'].push({
         id: `profile-${profile.id}`,
         name: profile.name,
-        role: 'MODEL',
+        role: 'Model',
         avatar: profile.name?.charAt(0) || 'M',
         isProfileOnly: true,
         metrics: { 
@@ -54,15 +56,6 @@ const HierarchyView = () => {
   });
 
   const activeTiers = roleHierarchy.filter(role => groupedUsers[role].length > 0);
-
-  // Překlad rolí pro zobrazení
-  const roleTranslations = {
-    'AGENCY ADMIN': 'Administrátor',
-    'MANAGER': 'Manažer',
-    'SENIOR OPERATOR': 'Senior Operátor',
-    'OPERATOR': 'Operátor',
-    'MODEL': 'Modelka'
-  };
 
   return (
     <div data-testid="page-hierarchy-container" style={{ padding: isMobile ? '1.5rem 1rem' : '3rem', flex: 1, overflowY: 'auto', maxHeight: '100%', position: 'relative' }} className="fade-in custom-scrollbar">
@@ -101,7 +94,7 @@ const HierarchyView = () => {
                 border: '1px solid rgba(255,255,255,0.08)',
                 boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
               }}>
-                {roleTranslations[tierName] || tierName}
+                {t(`roleLabels.${normalizeRole(tierName)}`) || tierName}
               </div>
 
               <div style={{ 
