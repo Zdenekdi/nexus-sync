@@ -10,9 +10,9 @@ exports.getUsers = async (req, res) => {
     const { agencyId, role, userId } = req.user;
     const { normalizeRole } = require('../utils/roleUtils');
     const roleNameClean = normalizeRole(role?.name || role);
-    const isAppOwner = !!role?.isAppOwner || roleNameClean === 'app_owner';
+    const isAppOwner = !!role?.isAppOwner || ['app_owner', 'owner'].includes(roleNameClean);
     const isManager = !!role?.isManager || isAppOwner || 
-                     ['senior_operator', 'manager', 'agency_admin'].includes(roleNameClean);
+                     ['senior_operator', 'manager', 'agency_admin', 'senior_manager'].includes(roleNameClean);
 
     logger.info(`[Agency] Fetching Users for: ${userId}, Agency: ${agencyId}, Role: ${role?.name}, IsManager: ${isManager}`);
 
@@ -55,9 +55,9 @@ exports.getStats = async (req, res) => {
     const { agencyId, role, userId } = req.user;
     const { normalizeRole } = require('../utils/roleUtils');
     const roleNameClean = normalizeRole(role?.name || role);
-    const isAppOwner = !!role?.isAppOwner || roleNameClean === 'app_owner';
+    const isAppOwner = !!role?.isAppOwner || ['app_owner', 'owner'].includes(roleNameClean);
     const isManager = !!role?.isManager || isAppOwner || 
-                     ['senior_operator', 'manager', 'agency_admin'].includes(roleNameClean);
+                     ['senior_operator', 'manager', 'agency_admin', 'senior_manager'].includes(roleNameClean);
 
     logger.info(`[Agency] Fetching Stats for: ${userId}, Agency: ${agencyId}, Role: ${role?.name}`);
 
