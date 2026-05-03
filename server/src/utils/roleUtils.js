@@ -1,7 +1,7 @@
 /**
  * Normalizes role name for language-agnostic comparison.
- * Removes diacritics, whitespace, and converts to lowercase.
- * Example: 'SENIOR OPERÁTOR' -> 'senior operator'
+ * Removes diacritics, lowercase, and replaces spaces with underscores.
+ * Example: 'SENIOR OPERÁTOR' -> 'senior_operator'
  */
 const normalizeRole = (roleName) => {
     if (!roleName) return '';

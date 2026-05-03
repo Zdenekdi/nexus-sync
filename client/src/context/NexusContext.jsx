@@ -620,7 +620,7 @@ export const NexusProvider = ({ children }) => {
     
     // Roles that should see ALL profiles in their agency
     const isAgencyLevel = [
-      'agency admin', 'manager', 'senior manager', 'senior operator', 'owner'
+      'agency_admin', 'manager', 'senior_manager', 'senior_operator', 'owner'
     ].includes(roleNameClean);
 
     let filtered = (activeOperator.isAppOwner || isAgencyLevel) ? [...profiles] : profiles.filter(p => {

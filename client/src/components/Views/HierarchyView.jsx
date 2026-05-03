@@ -28,9 +28,9 @@ const HierarchyView = () => {
   roleHierarchy.forEach(role => groupedUsers[role] = []);
   
   visibleOperators.forEach(op => {
-    const roleName = op.role || op.roleName || '';
-    // Simple matching or default to Operator
-    const matchedTier = roleHierarchy.find(h => h.toUpperCase() === roleName.toUpperCase()) || 'Operator';
+    const normalizedRoleName = normalizeRole(op.role || op.roleName || '');
+    // Match tier by normalized name
+    const matchedTier = roleHierarchy.find(h => normalizeRole(h) === normalizedRoleName) || 'Operator';
     groupedUsers[matchedTier].push(op);
   });
 

@@ -15,8 +15,9 @@ exports.getProfiles = async (req, res) => {
     const { role, agencyId, userId } = req.user;
     const { normalizeRole } = require('../utils/roleUtils');
     const roleNameClean = normalizeRole(role?.name || role);
-    const isAppOwner = !!role?.isAppOwner || roleNameClean === 'app_owner';
-    const isManager = !!role?.isManager || ['manager', 'agency_admin', 'senior_operator'].includes(roleNameClean);
+    const isAppOwner = !!role?.isAppOwner || ['app_owner', 'owner'].includes(roleNameClean);
+    const isManager = !!role?.isManager || isAppOwner || 
+                     ['manager', 'agency_admin', 'senior_operator', 'senior_manager'].includes(roleNameClean);
 
     // Senior operators see all agency profiles, just like managers
     const isAgencyLevel = isAppOwner || isManager;

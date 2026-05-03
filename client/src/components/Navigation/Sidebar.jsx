@@ -163,6 +163,23 @@ const Sidebar = () => {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 0.65rem', marginBottom: '0.75rem' }}>
               <div style={{ fontSize: '0.65rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{capitalize(t('myAssignedGirls'))}</div>
+              <div 
+                  onClick={() => setOnlineOnly(!onlineOnly)}
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '0.4rem', 
+                    cursor: 'pointer',
+                    background: onlineOnly ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255,255,255,0.03)',
+                    padding: '0.2rem 0.5rem',
+                    borderRadius: '8px',
+                    border: onlineOnly ? '1px solid rgba(34, 197, 94, 0.2)' : '1px solid rgba(255,255,255,0.05)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <div style={{ width: '6px', height: '6px', background: onlineOnly ? 'var(--success-color)' : 'rgba(255,255,255,0.3)', borderRadius: '50%' }} />
+                  <span style={{ fontSize: '0.6rem', fontWeight: '800', color: onlineOnly ? 'var(--success-color)' : 'rgba(255,255,255,0.4)' }}>ONLINE</span>
+                </div>
             </div>
             <div style={{ 
               display: 'flex', 
@@ -179,7 +196,7 @@ const Sidebar = () => {
                 <div style={{ padding: '0.5rem 0.65rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.2)' }}>{t('noAssignedGirls')}</div>
               ) : (
                 <>
-                  {myProfiles.map(p => {
+                  {myProfiles.filter(p => !onlineOnly || p.status === 'online').map(p => {
                     const isActive = activeProfile?.id === p.id;
                     return (
                       <button key={p.id} onClick={() => { setActiveProfileId(p.id); setActiveTab('inbox'); if(isMobile) setIsSidebarOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.6rem 0.65rem', borderRadius: '12px', cursor: 'pointer', textAlign: 'left', background: isActive ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none' }}>
