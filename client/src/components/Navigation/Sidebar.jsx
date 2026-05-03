@@ -54,6 +54,7 @@ const Sidebar = () => {
     'MANAGER': 'Manažer',
     'Senior Operator': 'Senior Operátor',
     'SENIOR OPERATOR': 'Senior Operátor',
+    'SENIOR OPERÁTOR': 'Senior Operátor',
     'Operator': 'Operátor',
     'OPERATOR': 'Operátor',
     'Model': 'Modelka',
@@ -69,6 +70,8 @@ const Sidebar = () => {
     return null;
   }
 
+  const roleNameUpper = String(activeRole || '').toUpperCase().trim();
+  const showMyGirls = ['OPERATOR', 'SENIOR OPERATOR', 'SENIOR OPERÁTOR'].includes(roleNameUpper);
 
   return (
     <>
@@ -150,7 +153,7 @@ const Sidebar = () => {
         </div>
 
         {/* My Girls Section (Independent scroll, at the top) */}
-        {['OPERATOR', 'SENIOR OPERATOR'].includes(String(activeRole || '').toUpperCase()) && !isSidebarCollapsed && (
+        {showMyGirls && !isSidebarCollapsed && (
           <div data-testid="my-girls-section" style={{ 
             padding: '0 0.5rem', 
             marginBottom: '1rem', 
