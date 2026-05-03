@@ -8,18 +8,17 @@ const { isEffectiveAdmin } = require('./roleController');
 exports.getUsers = async (req, res) => {
   try {
     const { agencyId, role, userId } = req.user;
-    const isAppOwner = !!role?.isAppOwner;
-    
-    // Normalize role name to uppercase for comparison
-    const roleName = String(role?.name || role || '').toUpperCase().trim();
-    const isManager = !!role?.isManager || 
-                     ['SENIOR OPERATOR', 'MANAGER', 'AGENCY ADMIN', 'OWNER', 'APP OWNER'].includes(roleName);
+    const { normalizeRole } = require('../utils/roleUtils');
+    const roleNameClean = normalizeRole(role?.name || role);
+    const isAppOwner = !!role?.isAppOwner || roleNameClean === 'app_owner';
+    const isManager = !!role?.isManager || isAppOwner || 
+                     ['senior_operator', 'manager', 'agency_admin'].includes(roleNameClean);
 
-    logger.info(`[Agency] Fetching Users for: ${userId}, Agency: ${agencyId}, Role: ${roleName}, IsManager: ${isManager}`);
+    logger.info(`[Agency] Fetching Users for: ${userId}, Agency: ${agencyId}, Role: ${role?.name}, IsManager: ${isManager}`);
 
-    if (!isAppOwner && !isManager) {
-      logger.warn(`[Agency] Access denied for user ${userId} with role ${roleName}`);
-      return res.status(403).json({ message: `Access denied: ${roleName} is not a manager role` });
+    if (!isManager) {
+      logger.warn(`[Agency] Access denied for user ${userId} with role ${role?.name}`);
+      return res.status(403).json({ message: `Access denied: ${role?.name || 'User'} is not a manager role` });
     }
 
     const users = await prisma.user.findMany({
@@ -54,14 +53,15 @@ exports.getUsers = async (req, res) => {
 exports.getStats = async (req, res) => {
   try {
     const { agencyId, role, userId } = req.user;
-    const isAppOwner = !!role?.isAppOwner;
-    const roleName = String(role?.name || role || '').toUpperCase().trim();
-    const isManager = !!role?.isManager || 
-                     ['SENIOR OPERATOR', 'MANAGER', 'AGENCY ADMIN', 'OWNER', 'APP OWNER'].includes(roleName);
+    const { normalizeRole } = require('../utils/roleUtils');
+    const roleNameClean = normalizeRole(role?.name || role);
+    const isAppOwner = !!role?.isAppOwner || roleNameClean === 'app_owner';
+    const isManager = !!role?.isManager || isAppOwner || 
+                     ['senior_operator', 'manager', 'agency_admin'].includes(roleNameClean);
 
-    logger.info(`[Agency] Fetching Stats for: ${userId}, Agency: ${agencyId}, Role: ${roleName}`);
+    logger.info(`[Agency] Fetching Stats for: ${userId}, Agency: ${agencyId}, Role: ${role?.name}`);
 
-    if (!isAppOwner && !isManager) {
+    if (!isManager) {
       return res.status(403).json({ message: 'Denied' });
     }
 

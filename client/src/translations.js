@@ -8,6 +8,14 @@ export const TRANSLATIONS = {
         schedule: 'Schedule',
         profiles: 'Profiles',
         auditLog: 'Audit Log',
+        roleLabels: {
+            'app_owner': 'App Owner',
+            'agency_admin': 'Agency Admin',
+            'manager': 'Manager',
+            'senior_operator': 'Senior Operator',
+            'operator': 'Operator',
+            'model': 'Model'
+        },
         settings: 'Settings',
         inbox: 'Inbox',
         app_owner_only: 'This section is only accessible to App Owners.',
@@ -778,6 +786,14 @@ export const TRANSLATIONS = {
         liveMapInterface: 'ROZHRANÍ MAPY',
         unitsTracking: 'Sledujeme {count} jednotek...',
         auditLog: 'Auditní stopa',
+        roleLabels: {
+            'app_owner': 'Majitel aplikace',
+            'agency_admin': 'Administrátor',
+            'manager': 'Manažer',
+            'senior_operator': 'Senior Operátor',
+            'operator': 'Operátor',
+            'model': 'Modelka'
+        },
         settings: 'Nastavení',
         inbox: 'Doručené',
         app_owner_only: 'Tato sekce je přístupná pouze majitelům aplikace.',
