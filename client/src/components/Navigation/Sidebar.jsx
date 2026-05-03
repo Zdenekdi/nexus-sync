@@ -49,11 +49,17 @@ const Sidebar = () => {
   const displayName = activeOperator?.name || '';
   const roleTranslations = {
     'Agency Admin': 'Administrátor',
+    'AGENCY ADMIN': 'Administrátor',
     'Manager': 'Manažer',
+    'MANAGER': 'Manažer',
     'Senior Operator': 'Senior Operátor',
+    'SENIOR OPERATOR': 'Senior Operátor',
     'Operator': 'Operátor',
+    'OPERATOR': 'Operátor',
     'Model': 'Modelka',
-    'App Owner': 'Vlastník Aplikace'
+    'MODEL': 'Modelka',
+    'App Owner': 'Vlastník Aplikace',
+    'APP OWNER': 'Vlastník Aplikace'
   };
 
   const displayRoleString = roleTranslations[activeOperator?.originalRole || activeRole] || (activeOperator?.originalRole || activeRole || '');
@@ -143,6 +149,47 @@ const Sidebar = () => {
           </div>
         </div>
 
+        {/* My Girls Section (Independent scroll, at the top) */}
+        {['OPERATOR', 'SENIOR OPERATOR'].includes(String(activeRole || '').toUpperCase()) && !isSidebarCollapsed && (
+          <div data-testid="my-girls-section" style={{ 
+            padding: '0 0.5rem', 
+            marginBottom: '1rem', 
+            display: 'flex', 
+            flexDirection: 'column'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 0.65rem', marginBottom: '0.75rem' }}>
+              <div style={{ fontSize: '0.65rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{capitalize(t('myAssignedGirls'))}</div>
+            </div>
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '0.2rem',
+              maxHeight: '30vh',
+              overflowY: 'auto',
+              background: 'rgba(255,255,255,0.02)',
+              borderRadius: '16px',
+              padding: '0.5rem',
+              border: '1px solid rgba(255,255,255,0.05)'
+            }} className="custom-scrollbar">
+              {(!myProfiles || myProfiles.length === 0) ? (
+                <div style={{ padding: '0.5rem 0.65rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.2)' }}>{t('noAssignedGirls')}</div>
+              ) : (
+                <>
+                  {myProfiles.map(p => {
+                    const isActive = activeProfile?.id === p.id;
+                    return (
+                      <button key={p.id} onClick={() => { setActiveProfileId(p.id); setActiveTab('inbox'); if(isMobile) setIsSidebarOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.6rem 0.65rem', borderRadius: '12px', cursor: 'pointer', textAlign: 'left', background: isActive ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none' }}>
+                        <div style={{ width: '6px', height: '6px', background: p.status === 'online' ? 'var(--success-color)' : 'rgba(255,255,255,0.1)', borderRadius: '50%' }} />
+                        <div style={{ flex: 1, minWidth: 0, fontSize: '0.85rem', fontWeight: isActive ? '800' : '600', color: isActive ? 'white' : 'rgba(255,255,255,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                      </button>
+                    );
+                  })}
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Navigation */}
         <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1.5rem' }} className="custom-scrollbar">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -209,45 +256,6 @@ const Sidebar = () => {
           </div>
         </div>
         
-        {/* My Girls Section (Independent scroll, above footer) */}
-        {['OPERATOR', 'SENIOR OPERATOR'].includes(String(activeRole || '').toUpperCase()) && !isSidebarCollapsed && (
-          <div data-testid="my-girls-section" style={{ 
-            padding: '0 0.5rem', 
-            marginBottom: '1rem', 
-            display: 'flex', 
-            flexDirection: 'column',
-            borderTop: '1px solid rgba(255,255,255,0.03)',
-            paddingTop: '1rem'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 0.65rem', marginBottom: '0.75rem' }}>
-              <div style={{ fontSize: '0.65rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{capitalize(t('myAssignedGirls'))}</div>
-            </div>
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: '0.2rem',
-              maxHeight: '30vh',
-              overflowY: 'auto'
-            }} className="custom-scrollbar">
-              {(!myProfiles || myProfiles.length === 0) ? (
-                <div style={{ padding: '0.5rem 0.65rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.2)' }}>{t('noAssignedGirls')}</div>
-              ) : (
-                <>
-                  {myProfiles.map(p => {
-                    const isActive = activeProfile?.id === p.id;
-                    return (
-                      <button key={p.id} onClick={() => { setActiveProfileId(p.id); setActiveTab('inbox'); if(isMobile) setIsSidebarOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.6rem 0.65rem', borderRadius: '12px', cursor: 'pointer', textAlign: 'left', background: isActive ? 'rgba(59, 130, 246, 0.08)' : 'transparent', border: 'none' }}>
-                        <div style={{ width: '6px', height: '6px', background: p.status === 'online' ? 'var(--success-color)' : 'rgba(255,255,255,0.1)', borderRadius: '50%' }} />
-                        <div style={{ flex: 1, minWidth: 0, fontSize: '0.85rem', fontWeight: isActive ? '800' : '600', color: isActive ? 'white' : 'rgba(255,255,255,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-                      </button>
-                    );
-                  })}
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* User Profile Footer (Zero Skeletons) */}
         <div style={{ marginTop: '0', display: 'flex', flexDirection: 'column', gap: '0.85rem', borderTop: '1px solid var(--card-border)', paddingTop: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: (isSidebarCollapsed && !isMobile) ? '0' : '0 0.5rem', justifyContent: (isSidebarCollapsed && !isMobile) ? 'center' : 'flex-start' }}>

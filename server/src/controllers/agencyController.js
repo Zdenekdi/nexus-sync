@@ -11,9 +11,9 @@ exports.getUsers = async (req, res) => {
     const isAppOwner = !!role?.isAppOwner;
     
     // Normalize role name to uppercase for comparison
-    const roleName = String(role?.name || '').toUpperCase();
+    const roleName = String(role?.name || '').toUpperCase().trim();
     const isManager = !!role?.isManager || 
-                     ['SENIOR OPERATOR', 'MANAGER', 'AGENCY ADMIN', 'OWNER'].includes(roleName);
+                     ['SENIOR OPERATOR', 'MANAGER', 'AGENCY ADMIN', 'OWNER', 'APP OWNER'].includes(roleName);
 
     console.log(`[Backend getUsers] User: ${req.user.userId}, Agency: ${agencyId}, Role: ${roleName}, IsManager: ${isManager}`);
 

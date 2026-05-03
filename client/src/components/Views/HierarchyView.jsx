@@ -12,12 +12,13 @@ const HierarchyView = () => {
     profiles = []
   } = nexus;
 
-  // Role v hierarchii (App Owner schováváme z diagramu agentury)
-  const roleHierarchy = ['Agency Admin', 'Manager', 'Senior Operator', 'Operator', 'Model'];
+  // Role v hierarchii (Normalized to Uppercase)
+  const roleHierarchy = ['AGENCY ADMIN', 'MANAGER', 'SENIOR OPERATOR', 'OPERATOR', 'MODEL'];
 
-  // Filtrace operátorů (pro debug zobrazujeme všechny, později vrátíme filtr na agencyId)
+  // Filtrace operátorů
   const visibleOperators = (operators || []).filter(op => {
-    if (op.role === 'App Owner') return false; 
+    const r = String(op.role || '').toUpperCase().trim();
+    if (r === 'APP OWNER' || r === 'OWNER') return false; 
     return true; 
   });
 
@@ -26,21 +27,22 @@ const HierarchyView = () => {
   roleHierarchy.forEach(role => groupedUsers[role] = []);
   
   visibleOperators.forEach(op => {
-    const tier = roleHierarchy.includes(op.role) ? op.role : 'Operator';
+    const roleKey = String(op.role || '').toUpperCase().trim();
+    const tier = roleHierarchy.includes(roleKey) ? roleKey : 'OPERATOR';
     groupedUsers[tier].push(op);
   });
 
-  // Přidání profilů do sekce Model (pokud tam už nejsou jako uživatelé)
+  // Přidání profilů do sekce Model
   const existingModelOperatorProfileIds = new Set(
-    groupedUsers['Model']?.map(op => op.profileId).filter(Boolean) || []
+    groupedUsers['MODEL']?.map(op => op.profileId).filter(Boolean) || []
   );
 
   (profiles || []).forEach(profile => {
     if (!existingModelOperatorProfileIds.has(profile.id)) {
-      groupedUsers['Model'].push({
+      groupedUsers['MODEL'].push({
         id: `profile-${profile.id}`,
         name: profile.name,
-        role: 'Model',
+        role: 'MODEL',
         avatar: profile.name?.charAt(0) || 'M',
         isProfileOnly: true,
         metrics: { 
@@ -55,11 +57,11 @@ const HierarchyView = () => {
 
   // Překlad rolí pro zobrazení
   const roleTranslations = {
-    'Agency Admin': 'Administrátor',
-    'Manager': 'Manažer',
-    'Senior Operator': 'Senior Operátor',
-    'Operator': 'Operátor',
-    'Model': 'Modelka'
+    'AGENCY ADMIN': 'Administrátor',
+    'MANAGER': 'Manažer',
+    'SENIOR OPERATOR': 'Senior Operátor',
+    'OPERATOR': 'Operátor',
+    'MODEL': 'Modelka'
   };
 
   return (
@@ -82,7 +84,7 @@ const HierarchyView = () => {
       }}>
         {activeTiers.map((tierName, index) => {
           const usersInTier = groupedUsers[tierName];
-          const isModelTier = tierName === 'Model';
+          const isModelTier = tierName === 'MODEL';
 
           return (
             <div key={tierName} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', width: '100%' }}>
