@@ -129,7 +129,7 @@ function AppContent() {
       <GlobalAppStyles />
       <Suspense fallback={<div style={{ flex: 1, height: '100%', background: '#080a0f', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
         <Loader2 className="animate-spin" size={32} color="var(--accent-color)" />
-        <div className="premium-loading-text" style={{ fontSize: '0.6rem', letterSpacing: '0.3em', opacity: 0.5 }}>SYNCHRONIZING_INTERFACE...</div>
+        <div className="premium-loading-text" style={{ fontSize: '0.6rem', letterSpacing: '0.3em', opacity: 0.5 }}>SYNCHRONIZACE_ROZHRANÍ...</div>
       </div>}>
         <SystemBanners />
         <GlobalModalContainer />

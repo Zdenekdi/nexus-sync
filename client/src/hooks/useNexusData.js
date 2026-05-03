@@ -334,9 +334,9 @@ export function useNexusData({
         });
       }
 
-    } catch (_err) {
-      console.error('[Data] Init _err:', _err);
-      setIsDataLoading(false);
+    } catch (err) {
+      console.error('[NexusData] Sync failed:', err.response?.status, err.response?.data || err.message);
+      setError(err.message);
     } finally {
       clearTimeout(safetyTimer);
       setIsBackgroundLoading(false);
