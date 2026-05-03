@@ -22,7 +22,7 @@ exports.getProfiles = async (req, res) => {
     }
 
     const profiles = await prisma.profile.findMany({
-      where: isAppOwner ? {} : { agencyId: String(agencyId) },
+      where: isAppOwner ? {} : { agencyId: agencyId },
       include: { 
         assignees: { select: { id: true, name: true, email: true } },
         deviceBindings: {
