@@ -19,7 +19,7 @@ exports.getProfiles = async (req, res) => {
     const profiles = await prisma.profile.findMany({
       where: isAppOwner ? {} : { agencyId },
       include: { 
-        assignees: { select: { id: true, name: true } },
+        assignees: { select: { id: true, name: true, email: true } },
         deviceBindings: {
           select: { lastSeenAt: true },
           orderBy: { lastSeenAt: 'desc' },
@@ -31,6 +31,11 @@ exports.getProfiles = async (req, res) => {
         }
       },
       orderBy: { name: 'asc' }
+    });
+
+    console.log(`[Backend Profile Fetch] Found ${profiles.length} profiles for agency ${agencyId}`);
+    profiles.forEach(p => {
+      console.log(` - Profile: ${p.name}, Assignees: ${p.assignees?.map(a => a.email).join(', ') || 'NONE'}`);
     });
 
     const sanitized = profiles.map(profile => {

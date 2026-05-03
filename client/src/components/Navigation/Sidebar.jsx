@@ -201,7 +201,7 @@ const Sidebar = () => {
         </div>
         
         {/* My Girls Section (Independent scroll, above footer) */}
-        {['Operator', 'Senior Operator'].includes(activeRole) && !isSidebarCollapsed && (
+        {['OPERATOR', 'SENIOR OPERATOR'].includes(String(activeRole || '').toUpperCase()) && !isSidebarCollapsed && (
           <div data-testid="my-girls-section" style={{ 
             padding: '0 0.5rem', 
             marginBottom: '1rem', 
@@ -212,6 +212,7 @@ const Sidebar = () => {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 0.65rem', marginBottom: '0.75rem' }}>
               <div style={{ fontSize: '0.65rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{capitalize(t('myAssignedGirls'))}</div>
+              <div style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.1)' }}>{activeRole} ({profiles?.length || 0})</div>
             </div>
             <div style={{ 
               display: 'flex', 
