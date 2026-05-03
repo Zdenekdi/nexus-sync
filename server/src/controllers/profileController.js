@@ -8,21 +8,24 @@ function parseData(raw) {
   try { return JSON.parse(raw); } catch { return {}; }
 }
 
+const logger = require('../services/logger');
+
 exports.getProfiles = async (req, res) => {
   try {
     const { role, agencyId, userId } = req.user;
-    const isAppOwner = !!role?.isAppOwner;
+    const roleName = String(role?.name || role || '').toUpperCase().trim();
+    const isAppOwner = !!role?.isAppOwner || roleName === 'APP OWNER';
     
-    console.log(`[Backend Profile Fetch] UserID: ${userId}, AgencyID: ${agencyId}, IsOwner: ${isAppOwner}`);
+    logger.info(`[Profiles] Fetching for User: ${userId}, Role: ${roleName}, Agency: ${agencyId}`);
 
-    // If no agencyId and not app owner, we can't fetch anything safely
     if (!agencyId && !isAppOwner) {
-      console.warn('[Backend Profile Fetch] Warning: No agencyId found for non-owner user');
+      logger.warn(`[Profiles] No agencyId for user ${userId}`);
       return res.json([]);
     }
 
+    const where = isAppOwner ? {} : { agencyId: String(agencyId) };
     const profiles = await prisma.profile.findMany({
-      where: isAppOwner ? {} : { agencyId: agencyId },
+      where,
       include: { 
         assignees: { select: { id: true, name: true, email: true } },
         deviceBindings: {
@@ -38,7 +41,7 @@ exports.getProfiles = async (req, res) => {
       orderBy: { name: 'asc' }
     });
 
-    console.log(`[Backend Profile Fetch] DB returned ${profiles.length} profiles for agency ${agencyId}`);
+    logger.info(`[Profiles] DB returned ${profiles.length} profiles for agency ${agencyId}`);
 
     const sanitized = profiles.map(profile => {
       const data = parseData(profile.data);
@@ -61,7 +64,7 @@ exports.getProfiles = async (req, res) => {
 
     res.json(sanitized);
   } catch (error) {
-    console.error('[Backend Profile Fetch] CRITICAL ERROR:', error);
+    logger.error('[Profiles] CRITICAL ERROR:', error);
     res.status(500).json({ message: 'Server error while fetching profiles' });
   }
 };

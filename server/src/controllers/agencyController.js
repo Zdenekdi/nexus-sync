@@ -7,22 +7,23 @@ const { isEffectiveAdmin } = require('./roleController');
 
 exports.getUsers = async (req, res) => {
   try {
-    const { agencyId, role } = req.user;
+    const { agencyId, role, userId } = req.user;
     const isAppOwner = !!role?.isAppOwner;
     
     // Normalize role name to uppercase for comparison
-    const roleName = String(role?.name || '').toUpperCase().trim();
+    const roleName = String(role?.name || role || '').toUpperCase().trim();
     const isManager = !!role?.isManager || 
                      ['SENIOR OPERATOR', 'MANAGER', 'AGENCY ADMIN', 'OWNER', 'APP OWNER'].includes(roleName);
 
-    console.log(`[Backend getUsers] User: ${req.user.userId}, Agency: ${agencyId}, Role: ${roleName}, IsManager: ${isManager}`);
+    logger.info(`[Agency] Fetching Users for: ${userId}, Agency: ${agencyId}, Role: ${roleName}, IsManager: ${isManager}`);
 
     if (!isAppOwner && !isManager) {
+      logger.warn(`[Agency] Access denied for user ${userId} with role ${roleName}`);
       return res.status(403).json({ message: `Access denied: ${roleName} is not a manager role` });
     }
 
     const users = await prisma.user.findMany({
-      where: isAppOwner ? {} : { agencyId },
+      where: isAppOwner ? {} : { agencyId: String(agencyId) },
       select: { 
         id: true, 
         email: true, 
@@ -32,51 +33,57 @@ exports.getUsers = async (req, res) => {
       }
     });
     
-    console.log(`[Backend getUsers] Found ${users.length} users for agency ${agencyId}`);
+    logger.info(`[Agency] Found ${users.length} users for agency ${agencyId}`);
 
     const mappedUsers = users.map(u => ({
       id: u.id,
       name: u.name,
       email: u.email,
-      role: u.role.name,
+      role: u.role?.name || 'User',
       agencyId: u.agencyId,
-      avatar: u.name.charAt(0).toUpperCase()
+      avatar: u.name?.charAt(0).toUpperCase() || 'U'
     }));
     
     res.json(mappedUsers);
   } catch (error) {
-    console.error('[Backend getUsers] ERROR:', error);
+    logger.error('[Agency] getUsers ERROR:', error);
     res.status(500).json({ message: 'Failed to fetch users' });
   }
 };
 
 exports.getStats = async (req, res) => {
   try {
-    const { agencyId, role } = req.user;
+    const { agencyId, role, userId } = req.user;
     const isAppOwner = !!role?.isAppOwner;
-    const roleName = String(role?.name || '').toUpperCase();
-    const isManager = !!role?.isManager || ['SENIOR OPERATOR', 'MANAGER', 'AGENCY ADMIN', 'OWNER'].includes(roleName);
+    const roleName = String(role?.name || role || '').toUpperCase().trim();
+    const isManager = !!role?.isManager || 
+                     ['SENIOR OPERATOR', 'MANAGER', 'AGENCY ADMIN', 'OWNER', 'APP OWNER'].includes(roleName);
 
-    if (!isAppOwner && !isManager) return res.status(403).json({ message: 'Denied' });
+    logger.info(`[Agency] Fetching Stats for: ${userId}, Agency: ${agencyId}, Role: ${roleName}`);
 
-    const agencyFilter = isAppOwner ? {} : { agencyId };
+    if (!isAppOwner && !isManager) {
+      return res.status(403).json({ message: 'Denied' });
+    }
+
+    const agencyFilter = isAppOwner ? {} : { agencyId: String(agencyId) };
 
     const [totalMessages, totalBookings, totalCalls] = await Promise.all([
-      prisma.message.count({ where: isAppOwner ? {} : { chat: { agencyId } } }),
+      prisma.message.count({ where: isAppOwner ? {} : { chat: { agencyId: String(agencyId) } } }),
       prisma.safetySession.count({ where: agencyFilter }),
-      prisma.callLog.count({ where: isAppOwner ? {} : { profile: { agencyId } } })
+      prisma.callLog.count({ where: isAppOwner ? {} : { profile: { agencyId: String(agencyId) } } })
     ]);
 
     res.json({
       totalMessages,
       totalBookings,
       totalCalls,
-      revenue: '£0.00',
-      uptime: '100% UP',
-      chartData: [0,0,0,0,0,0,0]
+      revenue: '0.00', // Simplified for now
+      uptime: '100%',
+      chartData: [0, 0, 0, 0, 0, 0, 0]
     });
   } catch (error) {
-    res.status(500).json({ message: 'Failed' });
+    logger.error('[Agency] getStats ERROR:', error);
+    res.status(500).json({ message: 'Failed to fetch stats' });
   }
 };
 
