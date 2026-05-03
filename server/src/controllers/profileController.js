@@ -11,11 +11,18 @@ function parseData(raw) {
 exports.getProfiles = async (req, res) => {
   try {
     const { role, agencyId, userId } = req.user;
+    const isAppOwner = !!role?.isAppOwner;
     
-    console.log(`[Backend Profile Fetch] UserID: ${userId}, AgencyID: ${agencyId}`);
+    console.log(`[Backend Profile Fetch] UserID: ${userId}, AgencyID: ${agencyId}, IsOwner: ${isAppOwner}`);
 
-    // DEBUG: Fetch ALL profiles without any filter
-    const allProfiles = await prisma.profile.findMany({
+    // If no agencyId and not app owner, we can't fetch anything safely
+    if (!agencyId && !isAppOwner) {
+      console.warn('[Backend Profile Fetch] Warning: No agencyId found for non-owner user');
+      return res.json([]);
+    }
+
+    const profiles = await prisma.profile.findMany({
+      where: isAppOwner ? {} : { agencyId: String(agencyId) },
       include: { 
         assignees: { select: { id: true, name: true, email: true } },
         deviceBindings: {
@@ -31,9 +38,9 @@ exports.getProfiles = async (req, res) => {
       orderBy: { name: 'asc' }
     });
 
-    console.log(`[Backend Profile Fetch] Returning ${allProfiles.length} profiles to frontend`);
+    console.log(`[Backend Profile Fetch] DB returned ${profiles.length} profiles for agency ${agencyId}`);
 
-    const sanitized = allProfiles.map(profile => {
+    const sanitized = profiles.map(profile => {
       const data = parseData(profile.data);
       const bookings = profile.bookings || [];
       const totalRevenue = bookings.reduce((sum, b) => sum + (b.price || 0), 0);
@@ -65,7 +72,7 @@ exports.patchProfile = async (req, res) => {
     const { name, phone, quickReplies, bio, description, gallery, commission, sampleMessages } = req.body;
     const { agencyId } = req.user;
     const existing = await prisma.profile.findUnique({ where: { id } });
-    if (!existing) return res.status(404).json({ message: 'Not found' });
+    if (!existing || (existing.agencyId !== agencyId && !req.user.role?.isAppOwner)) return res.status(404).json({ message: 'Not found' });
     const currentData = parseData(existing.data);
     const newData = { ...currentData, ...(quickReplies !== undefined && { quickReplies }) };
     const updated = await prisma.profile.update({
@@ -131,7 +138,6 @@ exports.syncProfile = async (req, res) => {
     io.to(`agency_${agencyId}`).emit('relay_command', { type: 'SYNC_WEB_PROFILE', profileId: id, payload: { name: name || profile.name, bio: bio || profile.bio, credentials: decryptedCredentials, platforms: ['adultwork', 'amateri', 'onlyfans'] } });
     res.json({ ok: true });
   } catch (error) {
-    console.error('Error syncing profile:', error);
     res.status(500).json({ message: 'Failed' });
   }
 };

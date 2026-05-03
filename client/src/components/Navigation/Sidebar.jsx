@@ -47,7 +47,16 @@ const Sidebar = () => {
   const myProfiles = nexus.myProfiles || [];
 
   const displayName = activeOperator?.name || '';
-  const displayRoleString = activeOperator?.originalRole || activeRole || '';
+  const roleTranslations = {
+    'Agency Admin': 'Administrátor',
+    'Manager': 'Manažer',
+    'Senior Operator': 'Senior Operátor',
+    'Operator': 'Operátor',
+    'Model': 'Modelka',
+    'App Owner': 'Vlastník Aplikace'
+  };
+
+  const displayRoleString = roleTranslations[activeOperator?.originalRole || activeRole] || (activeOperator?.originalRole || activeRole || '');
   const displayAvatar = activeOperator?.avatar || (displayName ? displayName.charAt(0) : '');
 
   if (isMobile && !isSidebarOpen) {
@@ -212,7 +221,6 @@ const Sidebar = () => {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 0.65rem', marginBottom: '0.75rem' }}>
               <div style={{ fontSize: '0.65rem', fontWeight: '950', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>{capitalize(t('myAssignedGirls'))}</div>
-              <div style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.1)' }}>{activeRole || 'NO ROLE'} (P:{profiles?.length || 0} / M:{myProfiles?.length || 0})</div>
             </div>
             <div style={{ 
               display: 'flex', 

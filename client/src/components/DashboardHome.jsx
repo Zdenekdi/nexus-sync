@@ -118,7 +118,7 @@ const DashboardHome = () => {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px', width: '100%', background: 'rgba(255,255,255,0.01)', borderRadius: '24px', border: '1px solid var(--card-border)' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
                 <Loader2 className="animate-spin" size={32} color="var(--accent-color)" />
-                <div className="premium-loading-text" style={{ fontSize: '0.6rem', letterSpacing: '0.2em', opacity: 0.5 }}>SYNCHRONIZING_CORE...</div>
+                <div className="premium-loading-text" style={{ fontSize: '0.6rem', letterSpacing: '0.2em', opacity: 0.5 }}>SYNCHRONIZACE_JÁDRA...</div>
               </div>
             </div>
           ) : (
@@ -299,7 +299,7 @@ const DashboardHome = () => {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px', width: '100%', background: 'rgba(255,255,255,0.01)', borderRadius: '24px', border: '1px solid var(--card-border)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
             <Loader2 className="animate-spin" size={40} color="var(--accent-color)" />
-            <div className="premium-loading-text" style={{ fontSize: '0.6rem', letterSpacing: '0.2em', opacity: 0.5 }}>HYDRATING_GLOBAL_METRICS...</div>
+            <div className="premium-loading-text" style={{ fontSize: '0.6rem', letterSpacing: '0.2em', opacity: 0.5 }}>NAČÍTÁNÍ_GLOBÁLNÍCH_DAT...</div>
           </div>
         </div>
       ) : (
@@ -440,7 +440,7 @@ const DashboardHome = () => {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '350px', width: '100%', background: 'rgba(255,255,255,0.01)', borderRadius: '24px', border: '1px solid var(--card-border)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
             <Loader2 className="animate-spin" size={32} color="var(--accent-color)" />
-            <div className="premium-loading-text" style={{ fontSize: '0.6rem', letterSpacing: '0.2em', opacity: 0.5 }}>FETCHING_AGENCY_INTEL...</div>
+            <div className="premium-loading-text" style={{ fontSize: '0.6rem', letterSpacing: '0.2em', opacity: 0.5 }}>ZÍSKÁVÁNÍ_AGENTURNÍCH_DAT...</div>
           </div>
         </div>
       ) : (
@@ -518,7 +518,7 @@ const DashboardHome = () => {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px', width: '100%', background: 'rgba(255,255,255,0.01)', borderRadius: '24px', border: '1px solid var(--card-border)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
             <Loader2 className="animate-spin" size={32} color="var(--accent-color)" />
-            <div className="premium-loading-text" style={{ fontSize: '0.6rem', letterSpacing: '0.2em', opacity: 0.5 }}>PREPARING_WORKSPACE...</div>
+            <div className="premium-loading-text" style={{ fontSize: '0.6rem', letterSpacing: '0.2em', opacity: 0.5 }}>PŘÍPRAVA_PRACOVNÍHO_PROSTORU...</div>
           </div>
         </div>
       ) : (
@@ -667,7 +667,7 @@ const DashboardHome = () => {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '200px', width: '100%', background: 'rgba(255,255,255,0.02)', borderRadius: '24px', border: '1px solid var(--card-border)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
             <Loader2 className="animate-spin" size={24} color="var(--accent-color)" />
-            <div className="premium-loading-text" style={{ fontSize: '0.6rem', letterSpacing: '0.15em', opacity: 0.5 }}>LOADING_AGENDA...</div>
+            <div className="premium-loading-text" style={{ fontSize: '0.6rem', letterSpacing: '0.15em', opacity: 0.5 }}>NAČÍTÁNÍ_AGENDY...</div>
           </div>
         </div>
       ) : (
@@ -767,7 +767,7 @@ export default DashboardHome;
 
 const WelcomeSection = ({ user, t, lang }) => (
   <div style={{ marginBottom: '1.5rem' }}>
-    <h2 id="dashboard-welcome-title" style={{ fontSize: '1.5rem', fontWeight: '900', margin: 0 }}>👋 {t('welcomeBack')}, {user?.name || 'User'}!</h2>
+    <h2 id="dashboard-welcome-title" style={{ fontSize: '1.5rem', fontWeight: '900', margin: 0 }}>👋 {t('welcomeBack')}, {user?.name || 'Uživateli'}!</h2>
     <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0.25rem 0 0' }}>{new Date().toLocaleDateString(lang === 'cz' ? 'cs-CZ' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
   </div>
 );
