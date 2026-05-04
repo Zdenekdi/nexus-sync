@@ -17,10 +17,13 @@ import {
   MapPin,
   Star,
   HelpCircle,
-  ChevronUp
+  ChevronUp,
+  ArrowLeft,
+  BookOpen
 } from 'lucide-react';
 
 import { useNexus } from '../context/ContextHook';
+import ManualView from './Views/ManualView';
 
 // Scroll-reveal hook
 const useScrollReveal = () => {
@@ -181,6 +184,47 @@ const LanguageSwitcher = ({ current, onSelect, isMobile }) => {
 
 const LandingPage = () => {
   const { setShowLanding, lang, setLang, isMobile } = useNexus();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeFaq, setActiveFaq] = useState(null);
+  const [viewingManual, setViewingManual] = useState(false);
+
+  // Auto-scroll to top when switching to manual
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [viewingManual]);
+
+  if (viewingManual) {
+    return (
+      <div style={{ background: '#040507', minHeight: '100vh', color: 'white', fontFamily: 'Inter, sans-serif' }}>
+        <nav style={{ 
+          padding: '1.5rem 2rem', borderBottom: '1px solid rgba(255,255,255,0.05)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          position: 'sticky', top: 0, background: 'rgba(4,5,7,0.8)', backdropFilter: 'blur(10px)', zIndex: 100
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+             <button 
+              onClick={() => setViewingManual(false)}
+              style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', padding: '8px 15px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              <ArrowLeft size={18} /> {lang === 'cz' ? 'Zpět' : 'Back'}
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <img src="/nexus_icon.png" alt="Logo" style={{ width: '32px', height: '32px', borderRadius: '8px' }} />
+              <span style={{ fontWeight: '900', letterSpacing: '0.05em' }}>NEXUS HUB</span>
+            </div>
+          </div>
+          <button 
+            onClick={() => { setViewingManual(false); setShowLanding(false); }}
+            style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: '800', cursor: 'pointer' }}
+          >
+            {lang === 'cz' ? 'Vstoupit do aplikace' : 'Enter App'}
+          </button>
+        </nav>
+        <ManualView />
+      </div>
+    );
+  }
 
   const onLoginClick = () => {
     sessionStorage.setItem('nexus_landing_dismissed', 'true');
@@ -269,8 +313,8 @@ const LandingPage = () => {
       gettingStartedTitle: "Jak začít?",
       gettingStartedDesc: "Začněte používat Nexus Hub ve třech jednoduchých krocích.",
       steps: [
-        { num: "1", title: "Zaregistrujte agenturu", desc: "Klikněte na \"Vstoupit do aplikace\" a zvolte záložku \"Nová agentura\". Vyplňte název agentury, vaše jméno, _err-mail a heslo. Po registraci obdržíte unikátní zvací kód." },
-        { num: "2", title: "Pozvěte svůj tým", desc: "Sdílejte zvací kód (např. NEXUS-A1B2C3) se svými operátorkami a modelkami. Každý člen se zaregistruje přes záložku \"Připojit se\" na přihlašovací stránce a vybere svou roli." },
+        { num: "1", title: "Zaregistrujte agenturu", desc: "Klikněte na \"Vstoupit do aplikace\" a zvolte záložku \"Nová agentura\". Vyplňte název agentury, vaše jméno, e-mail a heslo. Po registraci obdržíte unikátní zvací kód." },
+        { num: "2", title: "Pozvěte svůj tým", desc: "Sdílejte zvací kód (např. NEXUS-A1B2C3) se svými operátorkami a modelkami. Každý člen se zaregistruje přes záložku \"Připojit se\" na přihlašovací stránce, vloží kód a vybere svou roli." },
         { num: "3", title: "Spravujte vše z jednoho místa", desc: "Po přihlášení máte přístup k dashboardu s kompletním přehledem. Nastavte profily, oprávnění a začněte pracovat." }
       ]
     },
@@ -527,23 +571,47 @@ const LandingPage = () => {
           ))}
         </div>
         <ScrollReveal delay={0.3}>
-          <div style={{ textAlign: 'center', marginTop: '2.5rem' }}>
-            <button
-              onClick={onLoginClick}
-              className="premium-button"
-              data-testid="landing-enter-button"
-              id="landing-enter-button-2"
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1rem', marginTop: '3rem' }}>
+            <button 
+              onClick={() => { setViewingManual(false); setShowLanding(false); }}
+              className="primary-button"
               style={{
-                padding: isMobile ? '0.85rem 1.8rem' : '1rem 2.5rem',
-                borderRadius: '12px', border: 'none',
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                color: 'white', fontWeight: '900',
-                fontSize: isMobile ? '0.9rem' : '1rem',
-                cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.75rem',
-                boxShadow: '0 8px 25px rgba(16, 185, 129, 0.35)'
+                background: 'var(--success-color)',
+                color: 'white',
+                border: 'none',
+                padding: '1.2rem 2.5rem',
+                borderRadius: '16px',
+                fontSize: '1.1rem',
+                fontWeight: '900',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                boxShadow: '0 10px 40px rgba(16, 185, 129, 0.3)',
+                transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
               }}
             >
               {lang === 'cz' ? 'Zaregistrovat agenturu' : 'Register Your Agency'} <ArrowRight size={18} />
+            </button>
+
+            <button 
+              onClick={() => setViewingManual(true)}
+              style={{
+                background: 'rgba(255,255,255,0.05)',
+                color: 'white',
+                border: '1px solid rgba(255,255,255,0.1)',
+                padding: '1.2rem 2.5rem',
+                borderRadius: '16px',
+                fontSize: '1.1rem',
+                fontWeight: '900',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              <BookOpen size={20} /> {lang === 'cz' ? 'Detailní manuál' : 'Detailed Manual'}
             </button>
           </div>
         </ScrollReveal>
