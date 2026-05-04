@@ -128,8 +128,6 @@ export const NexusProvider = ({ children }) => {
   const [_toasts, _setToasts] = useState([]);
   const [subscriptionPlans, setSubscriptionPlans] = useState([]);
   const [isPlansLoading, setIsPlansLoading] = useState(false);
-  const [pinModalPromise, setPinModalPromise] = useState(null);
-  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [clientNotes, setClientNotes] = useState({});
   const [incomingRelayCall, setIncomingRelayCall] = useState(null);
   const [incomingGhostCall, setIncomingGhostCall] = useState(false);
@@ -172,8 +170,10 @@ export const NexusProvider = ({ children }) => {
 
       if (params && typeof params === 'object') {
         Object.entries(params).forEach(([k, v]) => {
-          if (typeof text === 'string' && text.includes(`{{${k}}}`)) {
-            text = text.replace(new RegExp(`{{${k}}}`, 'g'), String(v));
+          if (typeof text === 'string') {
+            // Support both {key} and {{key}} formats
+            text = text.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(v));
+            text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
           }
         });
       }
@@ -389,7 +389,7 @@ export const NexusProvider = ({ children }) => {
 
       setSosActive(true);
       setSosAlertId(res.data?.id);
-      showToast(lang === 'cz' ? '🆘 SOS AKTIVOVÁNO' : '🆘 SOS ACTIVATED', 'error');
+      showToast(t('sosActivated'), 'error');
     } catch (_err) {
       console.warn('[SOS] Failed to trigger:', _err.message);
     }
@@ -401,7 +401,7 @@ export const NexusProvider = ({ children }) => {
       await axios.post(`${API_BASE}/sos/${sosAlertId}/resolve`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      showToast(lang === 'cz' ? '✅ SOS zrušeno' : '✅ SOS resolved', 'success');
+      showToast(t('sosResolved'), 'success');
     } catch { /* ignore */ }
     setSosActive(false);
     setSosAlertId(null);
@@ -414,7 +414,7 @@ export const NexusProvider = ({ children }) => {
       await axios.post(`${API_BASE}/safety/sessions/${linkedSessionId}/departure`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      showToast(lang === 'cz' ? 'Klient odešel, odjezd potvrzen.' : 'Client left, departure confirmed.', 'success');
+      showToast(t('departureConfirmed'), 'success');
     } catch (_err) { console.error(_err); }
   }, [linkedSessionId, token, showToast, lang, API_BASE]);
 
@@ -477,20 +477,20 @@ export const NexusProvider = ({ children }) => {
   const handleToggleVoiceGuardian = useCallback(() => {
     setVoiceGuardianActive(prev => !prev);
     showToast(!voiceGuardianActive 
-      ? (lang === 'cz' ? 'Hlasový strážce aktivován' : 'Voice Guardian activated') 
-      : (lang === 'cz' ? 'Hlasový strážce vypnut' : 'Voice Guardian deactivated'), 'info');
+      ? t('voiceGuardianActivated') 
+      : t('voiceGuardianDeactivated'), 'info');
   }, [voiceGuardianActive, lang, showToast]);
 
   const startCheckinTimer = useCallback((mins) => {
     setCheckinMinutes(mins);
     setCheckinTimerEnd(Date.now() + mins * 60000);
-    showToast(lang === 'cz' ? `Časovač nastaven na ${mins} min.` : `Check-in timer set to ${mins} min.`, 'info');
+    showToast(t('checkInTimerSet', { mins }), 'info');
   }, [lang, showToast]);
 
   const resetCheckinTimer = useCallback(() => {
     if (!checkinTimerEnd) return;
     setCheckinTimerEnd(Date.now() + checkinMinutes * 60000);
-    showToast(lang === 'cz' ? 'Časovač restartován.' : 'Check-in timer reset.', 'success');
+    showToast(t('checkInTimerReset'), 'success');
   }, [checkinMinutes, checkinTimerEnd, lang, showToast]);
 
   const triggerGhostCall = useCallback(() => {
@@ -499,7 +499,7 @@ export const NexusProvider = ({ children }) => {
   }, []);
 
   const verifyIdentity = useCallback(() => {
-    showToast(lang === 'cz' ? 'Identita ověřena (Simulace)' : 'Identity verified (Simulated)', 'success');
+    showToast(t('identityVerified'), 'success');
   }, [lang, showToast]);
 
   const handleDeleteAgency = useCallback(async (agencyId) => {
@@ -508,13 +508,13 @@ export const NexusProvider = ({ children }) => {
       await axios.delete(`${API_BASE}/admin/agencies/${agencyId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      showToast(lang === 'cz' ? 'Agentura smazána.' : 'Agency deleted.', 'success');
+      showToast(t('agencyDeleted'), 'success');
       nexusData.initData();
     } catch (_err) { console.error(_err); }
   }, [token, lang, showToast, nexusData, API_BASE]);
 
   const handleImpersonateAgency = useCallback(async (agency) => {
-    showToast(lang === 'cz' ? `Impersonace ${agency.name} (Simulace)` : `Impersonating ${agency.name} (Simulated)`, 'info');
+    showToast(t('impersonatingAgency', { name: agency.name }), 'info');
   }, [lang, showToast]);
 
   const fetchAllReferrals = useCallback(async () => {
@@ -533,7 +533,7 @@ export const NexusProvider = ({ children }) => {
       await axios.post(`${API_BASE}/admin/referrals/${refId}/confirm`, { amount }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      showToast(lang === 'cz' ? 'Reward potvrzen.' : 'Reward confirmed.', 'success');
+      showToast(t('rewardConfirmed'), 'success');
       return { success: true };
     } catch { return { success: false }; }
   }, [token, lang, showToast, API_BASE]);
@@ -542,9 +542,9 @@ export const NexusProvider = ({ children }) => {
     if (!data) return;
     const isCommand = data.type === 'send_sms' || data.targetType === 'relay_command' || !!data.messageId;
     if (!isCommand) return;
-    showToast(lang === 'cz' ? '📥 Přijat příkaz k odeslání SMS' : '📥 SMS relay command received', 'info');
+    showToast(t('smsRelayCommandReceived'), 'info');
     if (!isRelayActive) {
-      showToast(lang === 'cz' ? '⚠️ Relay je neaktivní' : '⚠️ Relay is inactive', 'warning');
+      showToast(t('relayInactive'), 'warning');
       return;
     }
     const messageId = data.messageId || data.id;
@@ -558,15 +558,15 @@ export const NexusProvider = ({ children }) => {
       if (plugin) {
         const result = await plugin.sendSms({ to, text, simSlot: relaySimSlot === 'auto' ? null : parseInt(relaySimSlot) });
         updateRelayLogStatus(logId, 'sent');
-        showToast(lang === 'cz' ? `SMS pro ${to} odeslána.` : `SMS for ${to} sent.`, 'success');
+        showToast(t('smsSentTo', { to }), 'success');
         if (messageId) {
           await axios.patch(`${API_BASE}/messages/${messageId}/status`, { status: 'sent', result: JSON.stringify(result) }, { headers: { Authorization: `Bearer ${token}` } });
           updateRelayLogStatus(logId, 'forwarded');
         }
-      } else showToast(lang === 'cz' ? 'Relay plugin nedostupný' : 'Relay plugin unavailable', 'error');
+      } else showToast(t('relayPluginUnavailable'), 'error');
     } catch (_err) {
       updateRelayLogStatus(logId, 'failed');
-      showToast(lang === 'cz' ? `SMS selhala: ${_err.message}` : `SMS failed: ${_err.message}`, 'error');
+      showToast(t('smsFailed', { error: _err.message }), 'error');
       if (messageId) axios.patch(`${API_BASE}/messages/${messageId}/status`, { status: 'failed', _err: _err.message }, { headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
     }
   }, [token, isRelayActive, relaySimSlot, lang, showToast, addRelayLog, updateRelayLogStatus, API_BASE]);
@@ -635,7 +635,7 @@ export const NexusProvider = ({ children }) => {
     }
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      showToast(lang === 'cz' ? 'Váš prohlížeč nepodporuje hlasové rozpoznávání.' : 'Your browser does not support voice recognition.', 'error');
+      showToast(t('browserNoVoiceSupport'), 'error');
       setVoiceGuardianActive(false);
       return;
     }
@@ -653,7 +653,7 @@ export const NexusProvider = ({ children }) => {
     };
     recognition.onerror = (e) => {
       if (e.error === 'not-allowed') {
-        showToast(lang === 'cz' ? 'Přístup k mikrofonu zamítnut.' : 'Microphone access denied.', 'error');
+        showToast(t('micAccessDenied'), 'error');
         setVoiceGuardianActive(false);
       }
     };
@@ -677,10 +677,10 @@ export const NexusProvider = ({ children }) => {
     (d) => d?.message && setMessages(p => [...p.slice(-199), d.message]), 
     (d) => d?.message && setMessages(p => p.map(m => m.id === d.message.id ? { ...m, ...d.message } : m)), 
     (d) => setIncomingRelayCall(d), 
-    () => showToast(lang === 'cz' ? '🚨 Nouzový poplach!' : '🚨 Emergency alert!', 'error'), 
+    () => showToast(t('emergencyAlert'), 'error'), 
     () => {}, 
     handleRelayCommand, 
-    (d) => d?.type === 'SYNC_COMPLETED' && showToast(lang === 'cz' ? '✅ Synchronizace dokončena' : '✅ Sync completed', 'success')
+    (d) => d?.type === 'SYNC_COMPLETED' && showToast(t('syncCompleted'), 'success')
   );
 
   useEffect(() => {
@@ -688,7 +688,7 @@ export const NexusProvider = ({ children }) => {
     initPushNotifications(API_BASE, token, async (n, tapped) => {
       const d = n?.data;
       if (tapped && d?.chatId) { setSelectedChatId(d.chatId); setActiveTab('inbox'); }
-      if (d?.type === 'safety_alert') showToast(lang === 'cz' ? '🚨 Nouzový poplach!' : '🚨 Emergency alert!', 'error');
+      if (d?.type === 'safety_alert') showToast(t('emergencyAlert'), 'error');
       if (d) handleRelayCommand(d);
     });
     return () => { removePushListeners(); };
@@ -749,8 +749,8 @@ export const NexusProvider = ({ children }) => {
     handleAgencyDetail: (agency) => setAgencyDetailModalData(agency),
     handleEditProfile: (profile) => { setEditingProfileData(profile); setIsEditProfileOpen(true); },
     isEditProfileOpen, setIsEditProfileOpen, editingProfileData, setEditingProfileData,
-    handleSendMessage, handleTranslate, handleSaveNote, handleDeleteNote: (client, id) => {}, 
-    startCall: () => showToast(lang === 'cz' ? 'Inicializace VoIP...' : 'Initializing VoIP...', 'info'), 
+    handleSendMessage, handleTranslate, handleSaveNote, handleDeleteNote: (_client, _id) => {}, 
+    startCall: () => showToast(t('voipInitializing'), 'info'), 
     handleQuickSaveMeeting: nexusData.handleQuickSaveMeeting,
     activeProfile, activeProfileId, setActiveProfileId, profiles, myProfiles, onlineOnly, setOnlineOnly, 
     agencies: nexusData.agencies, stats: nexusData.stats, operators: nexusData.operators, setProfiles: nexusData.setProfiles,
@@ -779,7 +779,8 @@ export const NexusProvider = ({ children }) => {
     isTvMode, setIsTvMode,
     heartRate, setHeartRate, hrThreshold, setHrThreshold, isBluetoothConnected, setIsBluetoothConnected, activeBioWarning
   }), [
-    t, lang, activeTab, activeMarket, nexusData, activeOperator, activeRole, isAllowed, isLoggedIn, token, logoutStable, auth, showLanding, hasSeenOnboarding, showOnboarding, isMobile, isNativeApp, isSidebarCollapsed, mobileView, inlinePanelTab, sourceText, translatedText, isTranslating, internalNote, clientNotes, detectedMeeting, typingProfiles, activeContextTab, translateTargetLang, showPanicConfirm, activeSafetySession, sosActive, linkedSessionId, checkinMinutes, checkinTimerEnd, checkinRemaining, triggerSOS, cancelSOS, startCheckinTimer, resetCheckinTimer, handleConfirmDeparture, pendingNotifications, agencyDetailModalData, isAddAgencyOpen, isBugReportOpen, isAddUserOpen, addUserModalAgencyId, isEditProfileOpen, editingProfileData, profiles, myProfiles, activeProfile, activeProfileId, onlineOnly, messages, filteredMessages, selectedChatId, selectedChat, chatMessages, chatHistory, fetchChatMessages, isHistoryLoading, isRelayActive, setRelayActiveStable, relaySimSlot, relayLogs, addRelayLog, updateRelayLogStatus, linkedTrackerId, trackerStatus, calViewDate, _gpsHistory, lastTrackerUpdate, voiceGuardianActive, handleToggleVoiceGuardian, batteryLevel, incomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity, _toasts, subscriptionPlans, isPlansLoading, isSidebarOpen, isTvMode, heartRate, hrThreshold, isBluetoothConnected, activeBioWarning, handleSendMessage, handleTranslate, handleSaveNote, handleDeleteAgency, handleImpersonateAgency, fetchAllReferrals, handleConfirmReferral, messageValue
+    t, lang, activeTab, activeMarket, nexusData, activeOperator, activeRole, isAllowed, isLoggedIn, token, logoutStable, auth, showLanding, hasSeenOnboarding, showOnboarding, isMobile, isNativeApp, isSidebarCollapsed, mobileView, inlinePanelTab, sourceText, translatedText, isTranslating, internalNote, clientNotes, detectedMeeting, typingProfiles, activeContextTab, translateTargetLang, showPanicConfirm, activeSafetySession, sosActive, linkedSessionId, checkinMinutes, checkinTimerEnd, checkinRemaining, triggerSOS, cancelSOS, startCheckinTimer, resetCheckinTimer, handleConfirmDeparture, pendingNotifications, agencyDetailModalData, isAddAgencyOpen, isBugReportOpen, isAddUserOpen, addUserModalAgencyId, isEditProfileOpen, editingProfileData, profiles, myProfiles, activeProfile, activeProfileId, onlineOnly, messages, filteredMessages, selectedChatId, selectedChat, chatMessages, chatHistory, fetchChatMessages, isHistoryLoading, isRelayActive, setRelayActiveStable, relaySimSlot, relayLogs, addRelayLog, updateRelayLogStatus, linkedTrackerId, trackerStatus, calViewDate, _gpsHistory, lastTrackerUpdate, voiceGuardianActive, handleToggleVoiceGuardian, batteryLevel, incomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity, _toasts, subscriptionPlans, isPlansLoading, isSidebarOpen, isTvMode, heartRate, hrThreshold, isBluetoothConnected, activeBioWarning, handleSendMessage, handleTranslate, handleSaveNote, handleDeleteAgency, handleImpersonateAgency, fetchAllReferrals, handleConfirmReferral, messageValue,
+    handleLogin, incomingRelayCall, showToast
   ]);
 
   return (

@@ -54,7 +54,6 @@ const DashboardHome = () => {
   const isMultiregion = currentAgency.isInternational || regions.length > 1;
   const defaultCurrency = isMultiregion ? 'EUR' : (regions[0] === 'cz' ? 'CZK' : (regions[0] === 'us' ? 'USD' : 'GBP'));
   const [dashboardCurrency, setDashboardCurrency] = useState(defaultCurrency);
-  const [quickBlacklistPhone, setQuickBlacklistPhone] = useState('');
   const [calViewDate, setCalViewDate] = useState(new Date());
   
   // Auto-detect active booking and link it to safety session (for Models)
@@ -747,7 +746,7 @@ const QuickBlacklistSection = ({ API_BASE, token, showToast, t }) => {
               } else {
                 showToast(t('blacklistedError'), 'error');
               }
-            } catch (err) {
+            } catch (_err) {
               showToast(t('networkError'), 'error');
             } finally {
               setIsLoading(false);

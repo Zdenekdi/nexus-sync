@@ -118,15 +118,6 @@ const Sidebar = () => {
     return defaults;
   });
 
-  // Re-load state when operator changes (e.g. on relogin)
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        setSectionsOpen(prev => ({ ...prev, ...JSON.parse(saved) }));
-      }
-    } catch (_err) {}
-  }, [storageKey]);
 
   const toggleSection = (id) => {
     setSectionsOpen(prev => {

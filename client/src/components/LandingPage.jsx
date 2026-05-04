@@ -183,10 +183,7 @@ const LanguageSwitcher = ({ current, onSelect, isMobile }) => {
 };
 
 const LandingPage = () => {
-  const { setShowLanding, lang, setLang, isMobile, activeTab, setActiveTab } = useNexus();
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeFaq, setActiveFaq] = useState(null);
+  const { setActiveTab, setShowLanding, lang, setLang, isMobile, activeTab } = useNexus();
 
   const viewingManual = activeTab === 'guide';
 
