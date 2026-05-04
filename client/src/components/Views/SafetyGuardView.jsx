@@ -142,7 +142,7 @@ const SafetyGuardView = () => {
                 border: 'none', transition: 'all 0.2s'
               }}
             >
-              {f === 'all' ? (isCz ? 'VŠE' : 'ALL') : (f === 'CHECKED_IN' ? (isCz ? 'AKTIVNÍ' : 'CHECKED IN') : f.replace('_', ' '))}
+              {f === 'all' ? (isCz ? 'VŠE' : 'ALL') : (f === 'CHECKED_IN' ? (isCz ? 'AKTIVNÍ' : 'CHECKED IN') : (f === 'GRACE' ? t('grace') : (f === 'ESCALATED' ? t('escalated') : f.replace('_', ' '))))}
             </button>
           ))}
         </div>
@@ -175,7 +175,9 @@ const SafetyGuardView = () => {
                       </div>
                       <div>
                         <div style={{ fontWeight: 850, fontSize: '1rem', color: 'white' }}>{session.profile?.name}</div>
-                        <div style={{ fontSize: '0.65rem', fontWeight: 700, color: getStatusColor(session.state), textTransform: 'uppercase' }}>{session.state}</div>
+                        <div style={{ fontSize: '0.65rem', fontWeight: 700, color: getStatusColor(session.state), textTransform: 'uppercase' }}>
+                          {session.state === 'CHECKED_IN' ? (isCz ? 'AKTIVNÍ' : 'CHECKED IN') : (session.state === 'GRACE' ? t('grace') : (session.state === 'ESCALATED' ? t('escalated') : session.state))}
+                        </div>
                       </div>
                     </div>
                     <div style={{ padding: '4px 8px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-secondary)' }}>
@@ -211,7 +213,7 @@ const SafetyGuardView = () => {
                       flex: 1, padding: '0.6rem', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', 
                       color: '#60a5fa', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem'
                     }}>
-                       <Phone size={14} /> GHOST CALL
+                       <Phone size={14} /> {t('ghostCall')}
                     </button>
                     <button style={{ 
                       padding: '0.6rem', width: '40px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', 
