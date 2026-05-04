@@ -154,7 +154,7 @@ const DashboardHome = () => {
                   </div>
                 </div>
               )) : <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem 1rem', gap: '0.75rem', border: '1px dashed var(--card-border)', borderRadius: '12px' }}>
-                  <Calendar size={48} color="#374151" />
+                  <Calendar size={32} color="#374151" />
                   <div style={{ fontSize: '1rem', fontWeight: '700', color: '#64748b' }}>{t('noBookingsToday')}</div>
                   <div style={{ fontSize: '0.8rem', color: '#475569' }}>
                     {t('newBookingsAppear')}
@@ -298,7 +298,7 @@ const DashboardHome = () => {
       {isBackgroundLoading ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px', width: '100%', background: 'rgba(255,255,255,0.01)', borderRadius: '24px', border: '1px solid var(--card-border)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-            <Loader2 className="animate-spin" size={40} color="var(--accent-color)" />
+            <Loader2 className="animate-spin" size={32} color="var(--accent-color)" />
             <div className="premium-loading-text" style={{ fontSize: '0.6rem', letterSpacing: '0.2em', opacity: 0.5 }}>NAČÍTÁNÍ_GLOBÁLNÍCH_DAT...</div>
           </div>
         </div>
@@ -626,8 +626,8 @@ const DashboardHome = () => {
                 
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '1.5rem', opacity: 0.3, padding: '2rem 0' }}>
-                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Calendar size={40} />
+                    <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Calendar size={32} />
                     </div>
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '0.25rem' }}>{t('noBookingsToday')}</div>
