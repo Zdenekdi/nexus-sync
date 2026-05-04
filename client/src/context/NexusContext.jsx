@@ -255,9 +255,10 @@ export const NexusProvider = ({ children }) => {
   );
 
   const filteredMessages = useMemo(() => {
-    if (!selectedChatId || !messages) return [];
-    return messages.filter(m => m.chatId === selectedChatId);
-  }, [messages, selectedChatId]);
+    if (!messages) return [];
+    if (activeProfileId === 'all') return messages;
+    return messages.filter(m => m.profileId === activeProfileId);
+  }, [messages, activeProfileId]);
 
   const selectedChat = useMemo(() => 
     (messages || []).find(m => m.id === selectedChatId) || null, 
@@ -278,14 +279,27 @@ export const NexusProvider = ({ children }) => {
   const fetchChatMessages = useCallback(async (chatId) => {
     if (!chatId || !token) return;
     setIsHistoryLoading(true);
+    setChatHistory([]); // Clear old history while loading new one
     try {
       const res = await axios.get(`${API_BASE}/chats/${chatId}/messages`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data) setChatHistory(res.data);
-    } catch { /* ignore */ }
-    finally { setIsHistoryLoading(false); }
+    } catch (err) {
+      console.error('[NexusContext] Failed to fetch chat history:', err);
+    } finally {
+      setIsHistoryLoading(false);
+    }
   }, [token, API_BASE]);
+
+  // Automatically fetch history when a chat is selected
+  useEffect(() => {
+    if (selectedChatId) {
+      fetchChatMessages(selectedChatId);
+    } else {
+      setChatHistory([]);
+    }
+  }, [selectedChatId, fetchChatMessages]);
 
   const getGPSPosition = useCallback(async () => {
     try {
