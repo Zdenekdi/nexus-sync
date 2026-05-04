@@ -9,6 +9,7 @@ import GlobalAppStyles from './styles/GlobalAppStyles';
 import PremiumSelector from './components/UI/PremiumSelector';
 import ErrorBoundary from './ErrorBoundary';
 import { lazyWithRetry } from './utils/lazyWithRetry';
+import UpdateBanner from './components/UpdateBanner';
 
 // Lazy load heavy components
 const Sidebar = lazyWithRetry(() => import('./components/Navigation/Sidebar'));
@@ -19,8 +20,6 @@ const Onboarding = lazyWithRetry(() => import('./components/Onboarding'));
 const LoginScreen = lazyWithRetry(() => import('./components/LoginScreen'));
 const SystemBanners = lazyWithRetry(() => import('./components/UI/SystemBanners'));
 const GlobalModalContainer = lazyWithRetry(() => import('./components/Modals/GlobalModalContainer'));
-
-import UpdateBanner from './components/UpdateBanner';
 
 function AppContent() {
   const nexus = useNexus();
