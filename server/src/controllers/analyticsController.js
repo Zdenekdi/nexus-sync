@@ -100,10 +100,10 @@ class AnalyticsController {
 
       // Sum revenue from completed bookings
       const bookings = await prisma.booking.findMany({
-        where: { agencyId, createdAt: { gte: targetDate, lt: nextDay }, status: 'completed' },
-        select: { totalPrice: true }
+        where: { agencyId, createdAt: { gte: targetDate, lt: nextDay } },
+        select: { price: true }
       });
-      const revenue = bookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+      const revenue = bookings.reduce((sum, b) => sum + (b.price || 0), 0);
 
       const stat = await prisma.dailyStat.upsert({
         where: { agencyId_date: { agencyId, date: targetDate } },

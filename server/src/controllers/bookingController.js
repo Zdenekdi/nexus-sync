@@ -98,8 +98,7 @@ exports.createBooking = async (req, res) => {
         price: Number(price || 0),
         startTime: new Date(startTime),
         endTime: new Date(endTime),
-        locationType: locationType || 'incall',
-        status: 'confirmed'
+        locationType: locationType || 'incall'
       },
       include: { 
         profile: { select: { id: true, name: true } },
@@ -143,8 +142,7 @@ exports.updateBooking = async (req, res) => {
         ...(req.body.title && { title: req.body.title }),
         ...(req.body.startTime && { startTime: new Date(req.body.startTime) }),
         ...(req.body.endTime && { endTime: new Date(req.body.endTime) }),
-        ...(req.body.locationType && { locationType: req.body.locationType }),
-        ...(req.body.status && { status: req.body.status })
+        ...(req.body.locationType && { locationType: req.body.locationType })
       }
     });
     res.json(updated);

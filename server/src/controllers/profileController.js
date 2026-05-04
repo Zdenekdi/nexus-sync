@@ -41,7 +41,6 @@ exports.getProfiles = async (req, res) => {
           take: 1
         },
         bookings: {
-          where: { status: 'confirmed' },
           select: { price: true }
         }
       },
