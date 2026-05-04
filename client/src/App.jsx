@@ -65,16 +65,30 @@ function AppContent() {
   // 2. Auth Gate / Global Loading (Prevents Flashing)
   const isSyncing = isLoggedIn && isDataLoading && !hasHydrated;
 
-  // Handle Unauthenticated State
-  if (!isLoggedIn) {
-    const shouldShowLanding = showLanding && !isNativeApp;
+  // 2. Navigation Logic
+  const shouldShowLanding = showLanding && !isNativeApp;
+
+  if (shouldShowLanding) {
     return (
       <Suspense fallback={
         <div style={{ height: '100dvh', background: '#040507', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div className="nexus-loading-pulse" style={{ width: '64px', height: '64px', background: 'var(--accent-color)', borderRadius: '14px' }} />
         </div>
       }>
-        {shouldShowLanding ? <LandingPage /> : <LoginScreen />}
+        <LandingPage />
+      </Suspense>
+    );
+  }
+
+  // Handle Unauthenticated State (not showing landing)
+  if (!isLoggedIn) {
+    return (
+      <Suspense fallback={
+        <div style={{ height: '100dvh', background: '#040507', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="nexus-loading-pulse" style={{ width: '64px', height: '64px', background: 'var(--accent-color)', borderRadius: '14px' }} />
+        </div>
+      }>
+        <LoginScreen />
       </Suspense>
     );
   }
