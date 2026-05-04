@@ -183,11 +183,12 @@ const LanguageSwitcher = ({ current, onSelect, isMobile }) => {
 };
 
 const LandingPage = () => {
-  const { setShowLanding, lang, setLang, isMobile } = useNexus();
+  const { setShowLanding, lang, setLang, isMobile, activeTab, setActiveTab } = useNexus();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeFaq, setActiveFaq] = useState(null);
-  const [viewingManual, setViewingManual] = useState(false);
+
+  const viewingManual = activeTab === 'guide';
 
   // Auto-scroll to top when switching to manual
   useEffect(() => {
@@ -204,7 +205,7 @@ const LandingPage = () => {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
              <button 
-              onClick={() => setViewingManual(false)}
+              onClick={() => setActiveTab('')}
               style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', padding: '8px 15px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
             >
               <ArrowLeft size={18} /> {lang === 'cz' ? 'Zpět' : 'Back'}
@@ -215,7 +216,7 @@ const LandingPage = () => {
             </div>
           </div>
           <button 
-            onClick={() => { setViewingManual(false); setShowLanding(false); }}
+            onClick={() => { setActiveTab('dashboard'); setShowLanding(false); }}
             style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: '800', cursor: 'pointer' }}
           >
             {lang === 'cz' ? 'Vstoupit do aplikace' : 'Enter App'}
@@ -468,7 +469,7 @@ const LandingPage = () => {
           </button>
 
           <button 
-            onClick={() => setViewingManual(true)}
+            onClick={() => setActiveTab('guide')}
             style={{ 
               padding: isMobile ? '1rem 2rem' : '1.25rem 3rem', 
               borderRadius: '16px', 
@@ -485,7 +486,7 @@ const LandingPage = () => {
               backdropFilter: 'blur(10px)'
             }}
           >
-            <BookOpen size={20} /> {lang === 'cz' ? 'Průvodce registrací' : 'Registration Guide'}
+            <BookOpen size={20} /> {lang === 'cz' ? 'Manuál registrace' : 'Registration Manual'}
           </button>
         </div>
       </section>
@@ -618,7 +619,7 @@ const LandingPage = () => {
             </button>
 
             <button 
-              onClick={() => setViewingManual(true)}
+              onClick={() => setActiveTab('guide')}
               style={{
                 background: 'rgba(255,255,255,0.05)',
                 color: 'white',
