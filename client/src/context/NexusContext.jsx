@@ -267,10 +267,31 @@ export const NexusProvider = ({ children }) => {
 
   const chatMessages = useMemo(() => {
     if (!selectedChat) return [];
-    return [
+    
+    // Combine messages from both sources
+    const allMsgs = [
       ...(selectedChat.messages || []),
-      ...chatHistory
-    ].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      ...(Array.isArray(chatHistory) ? chatHistory : [])
+    ];
+
+    // Deduplicate by ID and sort
+    const seenIds = new Set();
+    const uniqueMsgs = [];
+
+    for (const m of allMsgs) {
+      if (!m) continue;
+      const id = m.id || `${m.timestamp}-${m.text}`;
+      if (!seenIds.has(id)) {
+        seenIds.add(id);
+        uniqueMsgs.push(m);
+      }
+    }
+
+    return uniqueMsgs.sort((a, b) => {
+      const timeA = new Date(a.createdAt || a.timestamp || a.time);
+      const timeB = new Date(b.createdAt || b.timestamp || b.time);
+      return timeA - timeB;
+    });
   }, [selectedChat, chatHistory]);
 
   // --- 11. SHARED CALLBACKS & ACTIONS ---
@@ -279,14 +300,19 @@ export const NexusProvider = ({ children }) => {
   const fetchChatMessages = useCallback(async (chatId) => {
     if (!chatId || !token) return;
     setIsHistoryLoading(true);
-    setChatHistory([]); // Clear old history while loading new one
+    // Note: We don't clear chatHistory immediately to avoid flicker 
+    // since we now have deduplication in useMemo
     try {
       const res = await axios.get(`${API_BASE}/chats/${chatId}/messages`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      if (res.data) setChatHistory(res.data);
+      if (res.data) {
+        const data = Array.isArray(res.data) ? res.data : (res.data.messages || []);
+        setChatHistory(data);
+      }
     } catch (err) {
       console.error('[NexusContext] Failed to fetch chat history:', err);
+      // Optional: showToast('Failed to load history', 'error');
     } finally {
       setIsHistoryLoading(false);
     }

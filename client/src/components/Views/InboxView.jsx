@@ -29,6 +29,7 @@ const InboxView = () => {
     lang = 'en', t = (k) => k, token = '', API_BASE = '',
     activeProfile = null, handleSendMessage = () => {}, handleTranslate = () => {}, handleSaveNote = () => {},
     handleDeleteNote = () => {}, startCall = () => {}, showToast = () => {}, handleSyncChatHistory = () => {},
+    loading: isInitialLoading = false,
     initData: refreshData = () => {}, isBackgroundLoading = false, fetchClientByPhone = () => {},
     setActiveTab = () => {}
   } = nexus;
@@ -266,20 +267,32 @@ const InboxView = () => {
                   }}>{msg.text}</div>
                 </div>
               );
-            }) : <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 1rem', gap: '0.75rem' }}>
-              <MessageSquare size={48} color="#374151" />
-              <div style={{ fontSize: '1rem', fontWeight: '700', color: '#64748b' }}>{t('noMessages')}</div>
-              <div style={{ fontSize: '0.8rem', color: '#475569' }}>
-                {lang === 'cz' ? 'Zprávy se zobrazí po přijetí první konverzace' : 'Messages will appear once you receive your first conversation'}
-              </div>
-            </div>}
+            }) : (
+              isInitialLoading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '5rem 1rem', gap: '1rem' }}>
+                  <Loader2 className="animate-spin" size={32} color="var(--accent-color)" />
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{lang === 'cz' ? 'Načítám zprávy...' : 'Loading messages...'}</div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 1rem', gap: '0.75rem' }}>
+                  <MessageSquare size={48} color="#374151" />
+                  <div style={{ fontSize: '1rem', fontWeight: '700', color: '#64748b' }}>{t('noMessages')}</div>
+                  <div style={{ fontSize: '0.8rem', color: '#475569' }}>
+                    {lang === 'cz' ? 'Zprávy se zobrazí po přijetí první konverzace' : 'Messages will appear once you receive your first conversation'}
+                  </div>
+                </div>
+              )
+            )}
             <div style={{ height: isMobile ? '80px' : '0' }}></div>
           </div>
         </div>
       )}
 
+      {/* Column 2 & 3 Container */}
       {(!isMobile || mobileView !== 'list') && (
         <div className={`inbox-panel ${selectedChatId ? 'active' : ''} ${isMobile && !selectedChatId ? 'hidden-mobile' : ''}`} style={{ flex: 1, display: 'flex', flexDirection: isMobile ? 'column' : 'row', minWidth: 0, overflow: 'hidden' }}>
+          
+          {/* Column 2: Chat Detail */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.1)', minWidth: 0, overflow: 'hidden', minHeight: 0 }}>
             {selectedChat ? (
               <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', minHeight: 0 }}>
@@ -504,7 +517,7 @@ const InboxView = () => {
                          )}
                          {inlinePanelTab === 'notes' && (
                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                             <textarea value={internalNote} onChange={_err => setInternalNote(_err.target.value)} placeholder={lang === 'cz' ? 'Napište poznámku...' : 'Write note...'} style={{ flex: 1, minHeight: '60px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '10px', padding: '0.5rem', color: '#f59e0b', fontSize: '0.8rem', resize: 'none' }} />
+                             <textarea value={internalNote} onChange={(_err) => setInternalNote(_err.target.value)} placeholder={lang === 'cz' ? 'Napište poznámku...' : 'Write note...'} style={{ flex: 1, minHeight: '60px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '10px', padding: '0.5rem', color: '#f59e0b', fontSize: '0.8rem', resize: 'none' }} />
                              <button onClick={handleSaveNote} style={{ background: '#f59e0b', color: 'black', border: 'none', borderRadius: '8px', padding: '0 0.75rem', fontWeight: '900', fontSize: '0.7rem' }}>ULOŽIT</button>
                            </div>
                          )}
@@ -537,7 +550,8 @@ const InboxView = () => {
               </div>
             )}
           </div>
-          {/* Column 3: Notes / Details */}
+
+          {/* Column 3: Notes / Details (Right Sidebar) */}
           {(!isMobile || mobileView === 'details') && (
             <div className="notes-panel-container" style={{ 
               width: isMobile ? '100%' : '400px', 
@@ -550,6 +564,7 @@ const InboxView = () => {
               position: isMobile ? 'absolute' : 'static',
               top: 0, right: 0, bottom: 0, zIndex: 1100
             }}>
+              
               {isMobile && (
                 <div style={{ padding: '1rem', borderBottom: '1px solid var(--card-border)' }}>
                   <button onClick={() => setMobileView('chat')} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -557,212 +572,205 @@ const InboxView = () => {
                   </button>
                 </div>
               )}
+
               {selectedChat && (
                 <div style={{ display: 'flex', flex: 1, flexDirection: 'column', overflow: 'hidden' }}>
-                   {/* Tab bar */}
-                   <div style={{ display: 'flex', borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)' }}>
-                     <button onClick={() => setActiveContextTab('translator')} style={{ flex: 1, padding: '0.6rem 0.25rem', border: 'none', background: 'transparent', color: activeContextTab === 'translator' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.7rem' }}>
-                       <Languages size={13} /> {lang === 'cz' ? 'Překladač' : 'Translator'}
-                     </button>
-                     <button onClick={() => setActiveContextTab('note')} style={{ flex: 1, padding: '0.6rem 0.25rem', border: 'none', background: 'transparent', color: activeContextTab === 'note' ? '#f59e0b' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.7rem' }}>
-                       <StickyNote size={13} /> {lang === 'cz' ? 'Poznámky' : 'Notes'}
-                     </button>
-                     <button onClick={() => setActiveContextTab('quickReplies')} style={{ flex: 1, padding: '0.6rem 0.25rem', border: 'none', background: 'transparent', color: activeContextTab === 'quickReplies' ? '#10b981' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.7rem' }}>
-                       <Zap size={13} /> {lang === 'cz' ? 'Odpovědi' : 'Replies'}
-                     </button>
-                     <button onClick={() => setActiveContextTab('crm')} style={{ flex: 1, padding: '0.6rem 0.25rem', border: 'none', background: 'transparent', color: activeContextTab === 'crm' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.7rem' }}>
-                       <UserCheck size={13} /> CRM
-                     </button>
+                   
+                   {/* TABS SECTION (Top Half) */}
+                   <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, borderBottom: '1px solid var(--card-border)' }}>
+                     {/* Tab bar */}
+                     <div style={{ display: 'flex', borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)', flexShrink: 0 }}>
+                       <button onClick={() => setActiveContextTab('translator')} style={{ flex: 1, padding: '0.6rem 0.25rem', border: 'none', background: 'transparent', color: activeContextTab === 'translator' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.7rem' }}>
+                         <Languages size={13} /> {lang === 'cz' ? 'Překladač' : 'Translator'}
+                       </button>
+                       <button onClick={() => setActiveContextTab('note')} style={{ flex: 1, padding: '0.6rem 0.25rem', border: 'none', background: 'transparent', color: activeContextTab === 'note' ? '#f59e0b' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.7rem' }}>
+                         <StickyNote size={13} /> {lang === 'cz' ? 'Poznámky' : 'Notes'}
+                       </button>
+                       <button onClick={() => setActiveContextTab('quickReplies')} style={{ flex: 1, padding: '0.6rem 0.25rem', border: 'none', background: 'transparent', color: activeContextTab === 'quickReplies' ? '#10b981' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.7rem' }}>
+                         <Zap size={13} /> {lang === 'cz' ? 'Odpovědi' : 'Replies'}
+                       </button>
+                       <button onClick={() => setActiveContextTab('crm')} style={{ flex: 1, padding: '0.6rem 0.25rem', border: 'none', background: 'transparent', color: activeContextTab === 'crm' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.7rem' }}>
+                         <UserCheck size={13} /> CRM
+                       </button>
+                     </div>
+
+                     {/* Tab content */}
+                     <div style={{ padding: '1.25rem', flex: 1, minHeight: 0, overflowY: 'auto' }}>
+                        {activeContextTab === 'translator' ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                              <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                {lang === 'cz' ? 'Cílový jazyk' : 'Target Language'}
+                              </div>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                                {['AUTO', 'en', 'cs', 'de', 'fr', 'es'].map(l => (
+                                  <button key={l} onClick={() => setTranslateTargetLang(l)} style={{ padding: '0.3rem 0.6rem', borderRadius: '8px', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer', border: '1px solid', transition: 'all 0.2s ease', background: translateTargetLang === l ? 'var(--accent-color)' : 'rgba(255,255,255,0.05)', borderColor: translateTargetLang === l ? 'var(--accent-color)' : 'var(--card-border)', color: translateTargetLang === l ? 'white' : 'var(--text-secondary)' }}>
+                                    {l.toUpperCase()}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <textarea value={sourceText} onChange={(_err) => setSourceText(_err.target.value)} placeholder={t('typeResponse')} style={{ width: '100%', height: '100px', background: 'rgba(0, 0, 0, 0.2)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem', color: 'white', resize: 'none' }} />
+                            <button onClick={handleTranslate} disabled={isTranslating} style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0.75rem 1rem', borderRadius: '12px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                              {isTranslating ? (<><div className="loader-dots" style={{ display: 'flex', gap: '4px' }}><span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span><span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span><span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span></div>{t('translating')}</>) : (<><Sparkles size={16} /> {lang === 'cz' ? 'PŘELOŽIT PŘES AI' : 'TRANSLATE VIA AI'}</>)}
+                            </button>
+                            {translatedText && (
+                              <div className="fade-in" style={{ padding: '1rem', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '12px', position: 'relative' }}>
+                                <div style={{ position: 'absolute', top: '-8px', right: '12px', background: 'var(--accent-color)', color: 'white', fontSize: '0.6rem', fontWeight: '900', padding: '2px 8px', borderRadius: '4px' }}>{t('poweredByAi')}</div>
+                                <div style={{ fontSize: '0.9rem', color: 'white', lineHeight: '1.5' }}>{translatedText}</div>
+                                <button onClick={() => { setMessageValue(translatedText); setActiveContextTab('note'); }} style={{ marginTop: '0.75rem', width: '100%', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', padding: '0.4rem', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer' }}>
+                                  {lang === 'cz' ? 'POUŽÍT PŘEKLAD' : 'USE TRANSLATION'}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ) : activeContextTab === 'note' ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <textarea value={internalNote} onChange={(_err) => setInternalNote(_err.target.value)} placeholder="Add internal note..." style={{ width: '100%', minHeight: '100px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '12px', padding: '1rem', color: '#f59e0b' }} />
+                            <button onClick={handleSaveNote} disabled={!internalNote.trim()} style={{ alignSelf: 'flex-end', background: 'rgba(245,158,11,0.2)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.4)', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: '700' }}>Save Note</button>
+                            {(clientNotes[selectedChat?.from] || []).length > 0 && (
+                              <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>SAVED NOTES</div>
+                                {(clientNotes[selectedChat.from] || []).slice().reverse().map(note => (
+                                  <div key={note.id} style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: '10px', padding: '0.75rem', position: 'relative' }}>
+                                    <button onClick={() => handleDeleteNote(selectedChat.from, note.id)} style={{ position: 'absolute', top: '6px', right: '8px', background: 'none', border: 'none', color: 'rgba(245,158,11,0.5)', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, padding: '2px 4px' }}>×</button>
+                                    <div style={{ fontSize: '0.85rem', color: '#f59e0b', lineHeight: '1.5', paddingRight: '1.5rem' }}>{note.text}</div>
+                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>{note.author} · {note.timestamp}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ) : activeContextTab === 'quickReplies' ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {(activeProfile?.quickReplies || []).length === 0 ? (
+                              <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                                <Zap size={32} style={{ opacity: 0.2, marginBottom: '0.75rem', display: 'block', margin: '0 auto 0.75rem' }} />
+                                {lang === 'cz' ? 'Žádné rychlé odpovědi. Přidej je v nastavení profilu.' : 'No quick replies yet. Add them in Profile Settings.'}
+                              </div>
+                            ) : (
+                              (activeProfile.quickReplies || []).map(reply => (
+                                <button key={reply.id} onClick={() => setMessageValue(reply.text)} style={{ textAlign: 'left', background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '10px', padding: '0.75rem 1rem', cursor: 'pointer' }}>
+                                  <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#10b981', marginBottom: '0.2rem' }}>{reply.label}</div>
+                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{reply.text}</div>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        ) : activeContextTab === 'crm' ? (
+                          <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {isCrmLoading ? (
+                              <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                                <Loader2 className="animate-spin" size={24} color="var(--accent-color)" />
+                              </div>
+                            ) : clientCrmData ? (
+                              <>
+                                <div style={{ background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.1)', borderRadius: '14px', padding: '1rem' }}>
+                                  <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Financial Worth</div>
+                                  <div style={{ fontSize: '1.5rem', fontWeight: '900', color: 'white' }}>{Number(clientCrmData.totalSpent).toLocaleString()} CZK</div>
+                                  <div style={{ fontSize: '0.75rem', color: 'var(--success-color)', marginTop: '0.2rem', fontWeight: '700' }}>{clientCrmData._count?.bookings || 0} Successful meetings</div>
+                                </div>
+                                
+                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                  {(JSON.parse(clientCrmData.tags || '[]')).map((tag, i) => (
+                                    <span key={i} style={{ background: tag === 'VIP' ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255,255,255,0.05)', color: tag === 'VIP' ? '#fbbf24' : 'var(--text-secondary)', fontSize: '0.65rem', fontWeight: '900', padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                      {tag}
+                                    </span>
+                                  ))}
+                                  {(JSON.parse(clientCrmData.tags || '[]')).length === 0 && (
+                                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontStyle: 'italic' }}>No tags assigned</span>
+                                  )}
+                                </div>
+
+                                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem' }}>
+                                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>LAST VISIT</div>
+                                  <div style={{ color: 'white', fontWeight: '700' }}>{clientCrmData.lastVisit ? new Date(clientCrmData.lastVisit).toLocaleDateString() : 'Never'}</div>
+                                </div>
+
+                                <button onClick={() => setActiveTab('crm')} style={{ marginTop: '0.5rem', background: 'transparent', border: '1px solid var(--card-border)', color: 'white', padding: '0.75rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: '750', cursor: 'pointer' }}>
+                                  OPEN FULL CLIENT CARD
+                                </button>
+                              </>
+                            ) : (
+                              <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>
+                                 No CRM record found for this number yet.
+                              </div>
+                            )}
+                          </div>
+                        ) : null}
+                     </div>
                    </div>
-                  {/* Tab content */}
-                  <div style={{ padding: '1.25rem', flex: '1', minHeight: 0, overflowY: 'auto' }}>
-                    {activeContextTab === 'translator' ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {/* Language Selection */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                          <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            {lang === 'cz' ? 'Cílový jazyk' : 'Target Language'}
-                          </div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                            {['AUTO', 'en', 'cs', 'de', 'fr', 'es'].map(l => (
-                              <button 
-                                key={l}
-                                onClick={() => setTranslateTargetLang(l)}
-                                style={{ 
-                                  padding: '0.3rem 0.6rem', 
-                                  borderRadius: '8px', 
-                                  fontSize: '0.65rem', 
-                                  fontWeight: '800', 
-                                  cursor: 'pointer',
-                                  border: '1px solid',
-                                  transition: 'all 0.2s ease',
-                                  background: translateTargetLang === l ? 'var(--accent-color)' : 'rgba(255,255,255,0.05)',
-                                  borderColor: translateTargetLang === l ? 'var(--accent-color)' : 'var(--card-border)',
-                                  color: translateTargetLang === l ? 'white' : 'var(--text-secondary)'
-                                }}
-                              >
-                                {l.toUpperCase()}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <textarea value={sourceText} onChange={(_err) => setSourceText(_err.target.value)} placeholder={t('typeResponse')} style={{ width: '100%', height: '100px', background: 'rgba(0, 0, 0, 0.2)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem', color: 'white', resize: 'none' }} />
-                        <button onClick={handleTranslate} disabled={isTranslating} style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0.75rem 1rem', borderRadius: '12px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                          {isTranslating ? (<><div className="loader-dots" style={{ display: 'flex', gap: '4px' }}><span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span><span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span><span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span></div>{t('translating')}</>) : (<><Sparkles size={16} /> {lang === 'cz' ? 'PŘELOŽIT PŘES AI' : 'TRANSLATE VIA AI'}</>)}
-                        </button>
-                        {translatedText && (
-                          <div className="fade-in" style={{ padding: '1rem', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '12px', position: 'relative' }}>
-                            <div style={{ position: 'absolute', top: '-8px', right: '12px', background: 'var(--accent-color)', color: 'white', fontSize: '0.6rem', fontWeight: '900', padding: '2px 8px', borderRadius: '4px' }}>{t('poweredByAi')}</div>
-                            <div style={{ fontSize: '0.9rem', color: 'white', lineHeight: '1.5' }}>{translatedText}</div>
-                            <button onClick={() => { setMessageValue(translatedText); setActiveContextTab('note'); }} style={{ marginTop: '0.75rem', width: '100%', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', padding: '0.4rem', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer' }}>
-                              {lang === 'cz' ? 'POUŽÍT PŘEKLAD' : 'USE TRANSLATION'}
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ) : activeContextTab === 'note' ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <textarea value={internalNote} onChange={(_err) => setInternalNote(_err.target.value)} placeholder="Add internal note..." style={{ width: '100%', minHeight: '100px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '12px', padding: '1rem', color: '#f59e0b' }} />
-                        <button onClick={handleSaveNote} disabled={!internalNote.trim()} style={{ alignSelf: 'flex-end', background: 'rgba(245,158,11,0.2)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.4)', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: '700' }}>Save Note</button>
-                        {(clientNotes[selectedChat?.from] || []).length > 0 && (
-                          <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>SAVED NOTES</div>
-                            {(clientNotes[selectedChat.from] || []).slice().reverse().map(note => (
-                              <div key={note.id} style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: '10px', padding: '0.75rem', position: 'relative' }}>
-                                <button onClick={() => handleDeleteNote(selectedChat.from, note.id)} style={{ position: 'absolute', top: '6px', right: '8px', background: 'none', border: 'none', color: 'rgba(245,158,11,0.5)', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, padding: '2px 4px' }}>×</button>
-                                <div style={{ fontSize: '0.85rem', color: '#f59e0b', lineHeight: '1.5', paddingRight: '1.5rem' }}>{note.text}</div>
-                                <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>{note.author} · {note.timestamp}</div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ) : activeContextTab === 'quickReplies' ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        {(activeProfile?.quickReplies || []).length === 0 ? (
-                          <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                            <Zap size={32} style={{ opacity: 0.2, marginBottom: '0.75rem', display: 'block', margin: '0 auto 0.75rem' }} />
-                            {lang === 'cz' ? 'Žádné rychlé odpovědi. Přidej je v nastavení profilu.' : 'No quick replies yet. Add them in Profile Settings.'}
-                          </div>
-                        ) : (
-                          (activeProfile.quickReplies || []).map(reply => (
-                            <button key={reply.id} onClick={() => setMessageValue(reply.text)} style={{ textAlign: 'left', background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '10px', padding: '0.75rem 1rem', cursor: 'pointer' }}>
-                              <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#10b981', marginBottom: '0.2rem' }}>{reply.label}</div>
-                              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{reply.text}</div>
-                            </button>
-                          ))
-                        )}
-                      </div>
-                    ) : activeContextTab === 'crm' ? (
-                      <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {isCrmLoading ? (
-                          <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-                            <Loader2 className="animate-spin" size={24} color="var(--accent-color)" />
-                          </div>
-                        ) : clientCrmData ? (
-                          <>
-                            <div style={{ background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.1)', borderRadius: '14px', padding: '1rem' }}>
-                              <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Financial Worth</div>
-                              <div style={{ fontSize: '1.5rem', fontWeight: '900', color: 'white' }}>{Number(clientCrmData.totalSpent).toLocaleString()} CZK</div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--success-color)', marginTop: '0.2rem', fontWeight: '700' }}>{clientCrmData._count?.bookings || 0} Successful meetings</div>
-                            </div>
-                            
-                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                              {(JSON.parse(clientCrmData.tags || '[]')).map((tag, i) => (
-                                <span key={i} style={{ background: tag === 'VIP' ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255,255,255,0.05)', color: tag === 'VIP' ? '#fbbf24' : 'var(--text-secondary)', fontSize: '0.65rem', fontWeight: '900', padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                  {tag}
-                                </span>
-                              ))}
-                              {(JSON.parse(clientCrmData.tags || '[]')).length === 0 && (
-                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontStyle: 'italic' }}>No tags assigned</span>
-                              )}
-                            </div>
 
-                            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem' }}>
-                              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>LAST VISIT</div>
-                              <div style={{ color: 'white', fontWeight: '700' }}>{clientCrmData.lastVisit ? new Date(clientCrmData.lastVisit).toLocaleDateString() : 'Never'}</div>
+                   {/* CALENDAR SECTION (Bottom Half) - FIXED POSITION */}
+                   <div style={{ height: '380px', display: 'flex', flexDirection: 'column', flexShrink: 0, background: 'rgba(0,0,0,0.05)' }}>
+                     <div style={{ padding: '0.6rem 1rem', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Calendar size={14} color="var(--accent-color)" />
+                        <span style={{ fontSize: '0.7rem', fontWeight: '900', color: 'white', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                          {t('schedule')}
+                        </span>
+                     </div>
+                    {(() => {
+                      const calDateStr = calViewDate.toISOString().split('T')[0];
+                      const bookingsForDate = (bookingSchedule || []).filter(b => b.startTime?.startsWith(calDateStr));
+                      const isToday = calDateStr === new Date().toISOString().split('T')[0];
+                      const dayName = calViewDate.toLocaleDateString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { weekday: 'long' });
+                      const dayDate = calViewDate.toLocaleDateString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { day: 'numeric', month: 'long' });
+                      return (
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.75rem', background: 'rgba(99,102,241,0.05)', borderTop: '1px solid var(--card-border)', borderBottom: '1px solid var(--card-border)', flexShrink: 0 }}>
+                            <button onClick={() => { const d = new Date(calViewDate); d.setDate(d.getDate()-1); setCalViewDate(d); }} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--card-border)', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.25rem 0.5rem', borderRadius: '6px', display: 'flex', alignItems: 'center' }}><ChevronLeft size={13} /></button>
+                            <div style={{ textAlign: 'center' }}>
+                              <div style={{ fontSize: '0.62rem', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{isToday ? (lang === 'cz' ? 'DNES' : 'TODAY') : dayName}</div>
+                              <div style={{ fontSize: '0.8rem', fontWeight: '900', color: isToday ? 'var(--accent-color)' : 'white', lineHeight: 1.2 }}>{dayDate}</div>
                             </div>
-
-                            <button 
-                              onClick={() => setActiveTab('crm')}
-                              style={{ marginTop: '0.5rem', background: 'transparent', border: '1px solid var(--card-border)', color: 'white', padding: '0.75rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: '750', cursor: 'pointer' }}
-                            >
-                              OPEN FULL CLIENT CARD
-                            </button>
-                          </>
-                        ) : (
-                          <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>
-                             No CRM record found for this number yet.
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {/* Calendar mini-panel */}
-                {(() => {
-                  const calDateStr = calViewDate.toISOString().split('T')[0];
-                  const bookingsForDate = (bookingSchedule || []).filter(b => b.startTime?.startsWith(calDateStr));
-                  const isToday = calDateStr === new Date().toISOString().split('T')[0];
-                  const dayName = calViewDate.toLocaleDateString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { weekday: 'long' });
-                  const dayDate = calViewDate.toLocaleDateString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { day: 'numeric', month: 'long' });
-                  return (
-                    <div style={{ borderTop: '1px solid var(--card-border)', flex: '0 0 auto', display: 'flex', flexDirection: 'column', height: '340px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.75rem', background: 'rgba(99,102,241,0.05)', borderBottom: '1px solid var(--card-border)', flexShrink: 0 }}>
-                        <button onClick={() => { const d = new Date(calViewDate); d.setDate(d.getDate()-1); setCalViewDate(d); }} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--card-border)', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.25rem 0.5rem', borderRadius: '6px', display: 'flex', alignItems: 'center' }}><ChevronLeft size={13} /></button>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '0.62rem', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{isToday ? (lang === 'cz' ? 'DNES' : 'TODAY') : dayName}</div>
-                          <div style={{ fontSize: '0.8rem', fontWeight: '900', color: isToday ? 'var(--accent-color)' : 'white', lineHeight: 1.2 }}>{dayDate}</div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center' }}>
-                          {!isToday && <button onClick={() => setCalViewDate(new Date())} style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '5px', color: '#a5b4fc', fontSize: '0.58rem', fontWeight: '800', cursor: 'pointer', padding: '0.2rem 0.45rem' }}>Dnes</button>}
-                          <button onClick={() => { const d = new Date(calViewDate); d.setDate(d.getDate()+1); setCalViewDate(d); }} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--card-border)', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.25rem 0.5rem', borderRadius: '6px', display: 'flex', alignItems: 'center' }}><ChevronRight size={13} /></button>
-                        </div>
-                      </div>
-                      <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                        {bookingsForDate.length === 0 ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '0.5rem', color: 'var(--text-secondary)' }}>
-                            <Calendar size={24} style={{ opacity: 0.25 }} />
-                            <span style={{ fontSize: '0.72rem', fontStyle: 'italic' }}>{lang === 'cz' ? 'Žádné schůzky' : 'No bookings'}</span>
-                          </div>
-                        ) : bookingsForDate.map(b => {
-                          const timeStr = b.startTime ? new Date(b.startTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' }) : (b.time || '');
-                          const endStr = b.endTime ? new Date(b.endTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' }) : '';
-                          return (
-                            <div key={b.id} style={{ display: 'flex', gap: '0.6rem', padding: '0.5rem 0.65rem', background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '8px', borderLeft: '3px solid var(--accent-color)', alignItems: 'flex-start' }}>
-                              <div style={{ flexShrink: 0, textAlign: 'right', minWidth: '42px' }}>
-                                <div style={{ fontSize: '0.67rem', fontWeight: '900', color: 'var(--accent-color)', lineHeight: 1.3 }}>{timeStr}</div>
-                                {endStr && <div style={{ fontSize: '0.57rem', color: 'var(--text-secondary)', lineHeight: 1 }}>{endStr}</div>}
-                              </div>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.title}</div>
-                                {b.profileName && <div style={{ fontSize: '0.62rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>{b.profileName}</div>}
-                              </div>
+                            <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center' }}>
+                              {!isToday && <button onClick={() => setCalViewDate(new Date())} style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '5px', color: '#a5b4fc', fontSize: '0.58rem', fontWeight: '800', cursor: 'pointer', padding: '0.2rem 0.45rem' }}>{lang === 'cz' ? 'Dnes' : 'Today'}</button>}
+                              <button onClick={() => { const d = new Date(calViewDate); d.setDate(d.getDate()+1); setCalViewDate(d); }} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--card-border)', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.25rem 0.5rem', borderRadius: '6px', display: 'flex', alignItems: 'center' }}><ChevronRight size={13} /></button>
                             </div>
-                          );
-                        })}
-                      </div>
+                          </div>
+                          <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                            {bookingsForDate.length === 0 ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '0.5rem', color: 'var(--text-secondary)' }}>
+                                <Calendar size={24} style={{ opacity: 0.25 }} />
+                                <span style={{ fontSize: '0.72rem', fontStyle: 'italic' }}>{lang === 'cz' ? 'Žádné schůzky' : 'No bookings'}</span>
+                              </div>
+                            ) : bookingsForDate.map(b => {
+                              const timeStr = b.startTime ? new Date(b.startTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' }) : (b.time || '');
+                              const endStr = b.endTime ? new Date(b.endTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' }) : '';
+                              return (
+                                <div key={b.id} style={{ display: 'flex', gap: '0.6rem', padding: '0.5rem 0.65rem', background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '8px', borderLeft: '3px solid var(--accent-color)', alignItems: 'flex-start' }}>
+                                  <div style={{ flexShrink: 0, textAlign: 'right', minWidth: '42px' }}>
+                                    <div style={{ fontSize: '0.67rem', fontWeight: '900', color: 'var(--accent-color)', lineHeight: 1.3 }}>{timeStr}</div>
+                                    {endStr && <div style={{ fontSize: '0.57rem', color: 'var(--text-secondary)', lineHeight: 1 }}>{endStr}</div>}
+                                  </div>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.title}</div>
+                                    {b.profileName && <div style={{ fontSize: '0.62rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>{b.profileName}</div>}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                    <div style={{ padding: '0.75rem', borderTop: '1px solid var(--card-border)', background: 'var(--bg-secondary, #0f1117)', flexShrink: 0 }}>
+                      <button
+                        onClick={() => { const d = calViewDate.toISOString().split('T')[0]; setNewBookingForm(f => ({ ...f, date: d })); setIsBookingModalOpen(true); }}
+                        style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', background: 'var(--accent-color)', border: 'none', color: 'white', fontSize: '0.85rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                      >
+                        <PlusCircle size={16} /> {lang === 'cz' ? 'Přidat schůzku' : 'Add booking'}
+                      </button>
                     </div>
-                  );
-                })()}
-                <div style={{ padding: '0.75rem', borderTop: '1px solid var(--card-border)', background: 'var(--bg-secondary, #0f1117)', flexShrink: 0 }}>
-                  <button
-                    onClick={() => { const d = calViewDate.toISOString().split('T')[0]; setNewBookingForm(f => ({ ...f, date: d })); setIsBookingModalOpen(true); }}
-                    style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', background: 'var(--accent-color)', border: 'none', color: 'white', fontSize: '0.85rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                  >
-                    <PlusCircle size={16} /> {lang === 'cz' ? 'Přidat schůzku' : 'Add booking'}
-                  </button>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
-  )}
-</div>
-)}
-</div>
-);
+  );
 };
 
 export default InboxView;

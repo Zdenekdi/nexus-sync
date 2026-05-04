@@ -256,6 +256,7 @@ export function useNexusData({
             text: (chat.messages?.[0]?.text || 'No messages'),
             senderName: chat.messages?.[0]?.sender?.name || null,
             timestamp: chat.lastMessageAt || new Date().toISOString(),
+            messages: chat.messages || [],
             status: 'read', direction: 'inbound', transport: 'sms',
             client: chat.client || null
           };
