@@ -82,6 +82,7 @@ export const NexusProvider = ({ children }) => {
   // --- 3. DATA & MESSAGING STATES ---
   const [messages, setMessages] = useState([]);
   const [selectedChatId, setSelectedChatId] = useState(null);
+  const [messageValue, setMessageValue] = useState('');
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState([]);
   const [onlineOnly, setOnlineOnly] = useState(false);
@@ -271,7 +272,7 @@ export const NexusProvider = ({ children }) => {
     ].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
   }, [selectedChat, chatHistory]);
 
-  // --- 11. REFS & SHARED CALLBACKS ---
+  // --- 11. SHARED CALLBACKS & ACTIONS ---
   const logoutStable = useCallback(() => logout(), [logout]);
 
   const fetchChatMessages = useCallback(async (chatId) => {
@@ -366,6 +367,102 @@ export const NexusProvider = ({ children }) => {
       return updated;
     });
   }, []);
+
+  const handleSendMessage = useCallback(async (content, overrides = {}) => {
+    if (!selectedChatId || !token) return;
+    try {
+      const res = await axios.post(`${API_BASE}/messages`, {
+        chatId: selectedChatId,
+        content,
+        ...overrides
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.data) setMessages(prev => [...prev, res.data]);
+    } catch (_err) { console.error(_err); }
+  }, [selectedChatId, token]);
+
+  const handleTranslate = useCallback(async (text, target) => {
+    if (!text || !token) return;
+    setIsTranslating(true);
+    try {
+      const res = await axios.post(`${API_BASE}/translate`, { text, target }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setTranslatedText(res.data.translated);
+    } catch (_err) { console.error(_err); }
+    finally { setIsTranslating(false); }
+  }, [token]);
+
+  const handleSaveNote = useCallback(async (clientId, note) => {
+    if (!clientId || !token) return;
+    try {
+      await axios.post(`${API_BASE}/clients/${clientId}/notes`, { note }, { headers: { Authorization: `Bearer ${token}` } });
+      setClientNotes(prev => ({ ...prev, [clientId]: note }));
+    } catch (_err) { console.error(_err); }
+  }, [token]);
+
+  const handleToggleVoiceGuardian = useCallback(() => {
+    setVoiceGuardianActive(prev => !prev);
+    showToast(!voiceGuardianActive 
+      ? (lang === 'cz' ? 'Hlasový strážce aktivován' : 'Voice Guardian activated') 
+      : (lang === 'cz' ? 'Hlasový strážce vypnut' : 'Voice Guardian deactivated'), 'info');
+  }, [voiceGuardianActive, lang, showToast]);
+
+  const startCheckinTimer = useCallback((mins) => {
+    setCheckinMinutes(mins);
+    setCheckinTimerEnd(Date.now() + mins * 60000);
+    showToast(lang === 'cz' ? `Časovač nastaven na ${mins} min.` : `Check-in timer set to ${mins} min.`, 'info');
+  }, [lang, showToast]);
+
+  const resetCheckinTimer = useCallback(() => {
+    if (!checkinTimerEnd) return;
+    setCheckinTimerEnd(Date.now() + checkinMinutes * 60000);
+    showToast(lang === 'cz' ? 'Časovač restartován.' : 'Check-in timer reset.', 'success');
+  }, [checkinMinutes, checkinTimerEnd, lang, showToast]);
+
+  const triggerGhostCall = useCallback(() => {
+    setIncomingGhostCall(true);
+    setGhostCallScheduledAt(null);
+  }, []);
+
+  const verifyIdentity = useCallback(() => {
+    showToast(lang === 'cz' ? 'Identita ověřena (Simulace)' : 'Identity verified (Simulated)', 'success');
+  }, [lang, showToast]);
+
+  const handleDeleteAgency = useCallback(async (agencyId) => {
+    if (!token) return;
+    try {
+      await axios.delete(`${API_BASE}/admin/agencies/${agencyId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      showToast(lang === 'cz' ? 'Agentura smazána.' : 'Agency deleted.', 'success');
+      nexusData.initData();
+    } catch (_err) { console.error(_err); }
+  }, [token, lang, showToast, nexusData, API_BASE]);
+
+  const handleImpersonateAgency = useCallback(async (agency) => {
+    showToast(lang === 'cz' ? `Impersonace ${agency.name} (Simulace)` : `Impersonating ${agency.name} (Simulated)`, 'info');
+  }, [lang, showToast]);
+
+  const fetchAllReferrals = useCallback(async () => {
+    if (!token) return [];
+    try {
+      const res = await axios.get(`${API_BASE}/admin/referrals`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return res.data;
+    } catch { return []; }
+  }, [token, API_BASE]);
+
+  const handleConfirmReferral = useCallback(async (refId, amount) => {
+    if (!token) return { success: false };
+    try {
+      await axios.post(`${API_BASE}/admin/referrals/${refId}/confirm`, { amount }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      showToast(lang === 'cz' ? 'Reward potvrzen.' : 'Reward confirmed.', 'success');
+      return { success: true };
+    } catch { return { success: false }; }
+  }, [token, lang, showToast, API_BASE]);
 
   const handleRelayCommand = useCallback(async (data) => {
     if (!data) return;
@@ -557,13 +654,13 @@ export const NexusProvider = ({ children }) => {
     handleAgencyDetail: (agency) => setAgencyDetailModalData(agency),
     handleEditProfile: (profile) => { setEditingProfileData(profile); setIsEditProfileOpen(true); },
     isEditProfileOpen, setIsEditProfileOpen, editingProfileData, setEditingProfileData,
-    handleSendMessage: () => {}, handleTranslate: () => {}, handleSaveNote: () => {}, handleDeleteNote: (client, id) => {}, 
+    handleSendMessage, handleTranslate, handleSaveNote, handleDeleteNote: (client, id) => {}, 
     startCall: () => showToast(lang === 'cz' ? 'Inicializace VoIP...' : 'Initializing VoIP...', 'info'), 
     handleQuickSaveMeeting: nexusData.handleQuickSaveMeeting,
     activeProfile, activeProfileId, setActiveProfileId, profiles, myProfiles, onlineOnly, setOnlineOnly, 
     agencies: nexusData.agencies, stats: nexusData.stats, operators: nexusData.operators, setProfiles: nexusData.setProfiles,
     toggleOperatorStatus: nexusData.toggleOperatorStatus, handleSaveAssignees: nexusData.handleSaveAssignees,
-    handleDeleteAgency: () => {}, handleImpersonateAgency: () => {}, fetchAllReferrals: () => {}, handleConfirmReferral: () => {},
+    handleDeleteAgency, handleImpersonateAgency, fetchAllReferrals, handleConfirmReferral,
     isSyncing: nexusData.isSyncing, syncStatus: nexusData.syncStatus, syncProgress: nexusData.syncProgress,
     relayOnline: nexusData.relayOnline, handleSyncAll: nexusData.handleSyncAll, handleSyncChatHistory: nexusData.handleSyncChatHistory,
     handleSaveBio: nexusData.handleSaveBio, handleSaveCredentials: nexusData.handleSaveCredentials,
@@ -581,13 +678,13 @@ export const NexusProvider = ({ children }) => {
     isRelayActive, setIsRelayActive: setRelayActiveStable, 
     relaySimSlot, setRelaySimSlot, relayLogs, setRelayLogs, addRelayLog, updateRelayLogStatus,
     linkedTrackerId, setLinkedTrackerId, trackerStatus, setTrackerStatus,
-    messageValue: '', setMessageValue: () => {}, calViewDate, setCalViewDate, 
+    messageValue, setMessageValue, calViewDate, setCalViewDate, 
     _gpsHistory, lastTrackerUpdate, voiceGuardianActive, handleToggleVoiceGuardian,
     batteryLevel, incomingGhostCall, setIncomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity,
     isTvMode, setIsTvMode,
     heartRate, setHeartRate, hrThreshold, setHrThreshold, isBluetoothConnected, setIsBluetoothConnected, activeBioWarning
   }), [
-    t, lang, activeTab, activeMarket, nexusData, activeOperator, activeRole, isAllowed, isLoggedIn, token, logoutStable, auth, showLanding, hasSeenOnboarding, showOnboarding, isMobile, isNativeApp, isSidebarCollapsed, mobileView, inlinePanelTab, sourceText, translatedText, isTranslating, internalNote, clientNotes, detectedMeeting, typingProfiles, activeContextTab, translateTargetLang, showPanicConfirm, activeSafetySession, sosActive, linkedSessionId, checkinMinutes, checkinTimerEnd, checkinRemaining, triggerSOS, cancelSOS, handleConfirmDeparture, pendingNotifications, agencyDetailModalData, isAddAgencyOpen, isBugReportOpen, isAddUserOpen, addUserModalAgencyId, isEditProfileOpen, editingProfileData, profiles, myProfiles, activeProfile, activeProfileId, onlineOnly, messages, filteredMessages, selectedChatId, selectedChat, chatMessages, chatHistory, fetchChatMessages, isHistoryLoading, isRelayActive, setRelayActiveStable, relaySimSlot, relayLogs, addRelayLog, updateRelayLogStatus, linkedTrackerId, trackerStatus, calViewDate, _gpsHistory, lastTrackerUpdate, voiceGuardianActive, handleToggleVoiceGuardian, batteryLevel, incomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity, _toasts, subscriptionPlans, isPlansLoading, isSidebarOpen, isTvMode, heartRate, hrThreshold, isBluetoothConnected, activeBioWarning
+    t, lang, activeTab, activeMarket, nexusData, activeOperator, activeRole, isAllowed, isLoggedIn, token, logoutStable, auth, showLanding, hasSeenOnboarding, showOnboarding, isMobile, isNativeApp, isSidebarCollapsed, mobileView, inlinePanelTab, sourceText, translatedText, isTranslating, internalNote, clientNotes, detectedMeeting, typingProfiles, activeContextTab, translateTargetLang, showPanicConfirm, activeSafetySession, sosActive, linkedSessionId, checkinMinutes, checkinTimerEnd, checkinRemaining, triggerSOS, cancelSOS, startCheckinTimer, resetCheckinTimer, handleConfirmDeparture, pendingNotifications, agencyDetailModalData, isAddAgencyOpen, isBugReportOpen, isAddUserOpen, addUserModalAgencyId, isEditProfileOpen, editingProfileData, profiles, myProfiles, activeProfile, activeProfileId, onlineOnly, messages, filteredMessages, selectedChatId, selectedChat, chatMessages, chatHistory, fetchChatMessages, isHistoryLoading, isRelayActive, setRelayActiveStable, relaySimSlot, relayLogs, addRelayLog, updateRelayLogStatus, linkedTrackerId, trackerStatus, calViewDate, _gpsHistory, lastTrackerUpdate, voiceGuardianActive, handleToggleVoiceGuardian, batteryLevel, incomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity, _toasts, subscriptionPlans, isPlansLoading, isSidebarOpen, isTvMode, heartRate, hrThreshold, isBluetoothConnected, activeBioWarning, handleSendMessage, handleTranslate, handleSaveNote, handleDeleteAgency, handleImpersonateAgency, fetchAllReferrals, handleConfirmReferral, messageValue
   ]);
 
   return (

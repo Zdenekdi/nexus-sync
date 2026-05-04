@@ -36,7 +36,7 @@ const SafetyGuardView = () => {
       console.error('Failed to fetch safety sessions:', _err);
       // Only show error if it's not a 404/empty state
       if (_err.response?.status !== 404) {
-        showToast(isCz ? 'Nepodařilo se načíst data' : 'Failed to load safety data', 'error');
+        showToast(t('dataLoadError'), 'error');
       }
     } finally {
       setLoading(false);
@@ -92,9 +92,9 @@ const SafetyGuardView = () => {
 
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           {[
-            { label: isCz ? 'Vše' : 'Total', value: stats.total, color: 'white' },
-            { label: isCz ? 'Aktivní' : 'Active', value: stats.active, color: '#10b981' },
-            { label: isCz ? 'V limitu' : 'Grace', value: stats.warning, color: '#f59e0b' },
+            { label: t('total'), value: stats.total, color: 'white' },
+            { label: t('active'), value: stats.active, color: '#10b981' },
+            { label: t('grace'), value: stats.warning, color: '#f59e0b' },
             { label: 'SOS', value: stats.sos, color: '#ef4444' }
           ].map(stat => (
             <div key={stat.label} style={{ 
@@ -120,7 +120,7 @@ const SafetyGuardView = () => {
           <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.3 }} size={18} />
           <input 
             type="text" 
-            placeholder={isCz ? "Hledat modelku..." : "Search model..."}
+            placeholder={t('searchModel')}
             value={search}
             onChange={(_err) => setSearch(_err.target.value)}
             style={{ 
@@ -142,7 +142,7 @@ const SafetyGuardView = () => {
                 border: 'none', transition: 'all 0.2s'
               }}
             >
-              {f === 'all' ? (isCz ? 'VŠE' : 'ALL') : (f === 'CHECKED_IN' ? (isCz ? 'AKTIVNÍ' : 'CHECKED IN') : (f === 'GRACE' ? t('grace') : (f === 'ESCALATED' ? t('escalated') : f.replace('_', ' '))))}
+              {f === 'all' ? t('all').toUpperCase() : (f === 'CHECKED_IN' ? t('active').toUpperCase() : (f === 'GRACE' ? t('grace').toUpperCase() : (f === 'ESCALATED' ? t('escalated').toUpperCase() : f.replace('_', ' ').toUpperCase())))}
             </button>
           ))}
         </div>
@@ -158,7 +158,7 @@ const SafetyGuardView = () => {
              </div>
           ) : filteredSessions.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '24px', border: '1px dashed var(--card-border)' }}>
-              <div style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{isCz ? 'Žádné aktivní relace' : 'No active sessions found'}</div>
+              <div style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{t('noActiveSessions')}</div>
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.25rem' }}>
@@ -176,12 +176,12 @@ const SafetyGuardView = () => {
                       <div>
                         <div style={{ fontWeight: 850, fontSize: '1rem', color: 'white' }}>{session.profile?.name}</div>
                         <div style={{ fontSize: '0.65rem', fontWeight: 700, color: getStatusColor(session.state), textTransform: 'uppercase' }}>
-                          {session.state === 'CHECKED_IN' ? (isCz ? 'AKTIVNÍ' : 'CHECKED IN') : (session.state === 'GRACE' ? t('grace') : (session.state === 'ESCALATED' ? t('escalated') : session.state))}
+                          {session.state === 'CHECKED_IN' ? t('active') : (session.state === 'GRACE' ? t('grace') : (session.state === 'ESCALATED' ? t('escalated') : session.state))}
                         </div>
                       </div>
                     </div>
                     <div style={{ padding: '4px 8px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-secondary)' }}>
-                       {session.locationType === 'incall' ? (isCz ? '🏠 NA ADRESE' : '🏠 INCALL') : (isCz ? '🚗 VÝJEZD' : '🚗 OUTCALL')}
+                       {session.locationType === 'incall' ? `🏠 ${t('incall').toUpperCase()}` : `🚗 ${t('outcall').toUpperCase()}`}
                     </div>
                   </div>
 
@@ -190,14 +190,14 @@ const SafetyGuardView = () => {
                     <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                        <Activity size={14} color="#ef4444" />
                        <div>
-                          <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Tep</div>
+                          <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('heartRate')}</div>
                           <div style={{ fontSize: '0.85rem', fontWeight: 900, color: 'white' }}>78 BPM</div>
                        </div>
                     </div>
                     <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                        <Battery size={14} color="#10b981" />
                        <div>
-                          <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Baterie</div>
+                          <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('battery')}</div>
                           <div style={{ fontSize: '0.85rem', fontWeight: 900, color: 'white' }}>92%</div>
                        </div>
                     </div>
@@ -205,7 +205,7 @@ const SafetyGuardView = () => {
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
                     <MapPin size={12} />
-                    {session.locationPoints?.[0] ? `${session.locationPoints[0].lat.toFixed(5)}, ${session.locationPoints[0].lng.toFixed(5)}` : (isCz ? 'Poloha neznámá' : 'Unknown location')}
+                    {session.locationPoints?.[0] ? `${session.locationPoints[0].lat.toFixed(5)}, ${session.locationPoints[0].lng.toFixed(5)}` : t('unknownLocation')}
                   </div>
 
                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: 'auto' }}>
