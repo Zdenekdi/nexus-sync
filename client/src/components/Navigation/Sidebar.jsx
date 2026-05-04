@@ -4,7 +4,7 @@ import {
   Settings, Activity, Radio, Globe, Smartphone, FileSearch, 
   Shield, ShieldCheck, Building2, HardDrive, CreditCard, Zap, UserCheck,
   LogOut, Menu, X, Circle, Package as PackageIcon, Gift, Wallet,
-  ChevronDown, ChevronRight
+  ChevronDown, ChevronRight, BookOpen
 } from 'lucide-react';
 import { useNexus } from '../../context/ContextHook';
 import { normalizeRole } from '../../utils/roleUtils';
@@ -397,6 +397,7 @@ const Sidebar = () => {
                     <SidebarSection id="overview" label={t('navSections.overview')} isOpen={sectionsOpen.overview} onToggle={toggleSection} isSidebarCollapsed={isSidebarCollapsed}>
                       {[
                         { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard') },
+                        { id: 'guide', icon: BookOpen, label: t('guide') },
                         { id: 'analytics', icon: BarChart3, label: t('analytics'), perm: 'analytics' },
                         { id: 'activity', icon: Activity, label: t('activity'), perm: 'analytics' },
                         { id: 'audit-logs', icon: FileSearch, label: t('auditLogs'), perm: 'audit_logs' },
