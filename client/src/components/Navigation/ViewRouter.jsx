@@ -1,25 +1,6 @@
-import React, { lazy, Suspense } from 'react';
+import React, { Suspense } from 'react';
 import { useNexus } from '../../context/ContextHook';
-
-/**
- * Helper to handle dynamic import failures (e.g. after a new deployment)
- */
-const lazyWithRetry = (componentImport) => 
-  lazy(async () => {
-    const pageHasAlreadyBeenReloaded = JSON.parse(window.sessionStorage.getItem('page-has-been-reloaded') || 'false');
-    try {
-      return await componentImport();
-    } catch (err) {
-      if (err instanceof TypeError || err.name === 'ChunkLoadError' || err.message.includes('fetch')) {
-        if (!pageHasAlreadyBeenReloaded) {
-          window.sessionStorage.setItem('page-has-been-reloaded', 'true');
-          console.error('Chunk load failed, reloading local window...', err);
-          window.location.reload();
-        }
-      }
-      throw err;
-    }
-  });
+import { lazyWithRetry } from '../../utils/lazyWithRetry';
 
 // Views
 import DashboardHome from '../DashboardHome';
