@@ -205,7 +205,7 @@ const LandingPage = () => {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
              <button 
-              onClick={() => setActiveTab('')}
+              onClick={() => setActiveTab('dashboard')}
               style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', padding: '8px 15px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
             >
               <ArrowLeft size={18} /> {lang === 'cz' ? 'Zpět' : 'Back'}
@@ -597,7 +597,7 @@ const LandingPage = () => {
         <ScrollReveal delay={0.3}>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1rem', marginTop: '3rem' }}>
             <button 
-              onClick={() => { setViewingManual(false); setShowLanding(false); }}
+              onClick={onLoginClick}
               className="primary-button"
               style={{
                 background: 'var(--success-color)',
