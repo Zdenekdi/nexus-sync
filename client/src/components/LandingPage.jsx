@@ -442,29 +442,52 @@ const LandingPage = () => {
         <p className="fade-in-up" style={{ fontSize: isMobile ? '1rem' : 'clamp(1.1rem, 2vw, 1.4rem)', color: 'var(--text-secondary)', maxWidth: '800px', margin: '0 auto 3rem', lineHeight: 1.6 }}>
           {t.heroDesc}
         </p>
-        <button 
-          onClick={onLoginClick}
-          className="premium-button-lg fade-in-up"
-          data-testid="landing-enter-button"
-          id="landing-enter-button"
-          style={{ 
-            padding: isMobile ? '1rem 2rem' : '1.25rem 3rem', 
-            borderRadius: '16px', 
-            border: 'none', 
-            background: 'var(--accent-color)', 
-            color: 'white', 
-            fontWeight: '900', 
-            fontSize: isMobile ? '1rem' : '1.1rem', 
-            cursor: 'pointer', 
-            display: 'inline-flex', 
-            alignItems: 'center', 
-            gap: '0.75rem',
-            boxShadow: '0 10px 30px rgba(59, 130, 246, 0.4)',
-            transition: 'transform 0.2s'
-          }}
-        >
-          {t.enterBtn} <ArrowRight size={20} />
-        </button>
+        <div className="fade-in-up" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1.25rem' }}>
+          <button 
+            onClick={onLoginClick}
+            className="premium-button-lg"
+            data-testid="landing-enter-button"
+            id="landing-enter-button"
+            style={{ 
+              padding: isMobile ? '1rem 2rem' : '1.25rem 3rem', 
+              borderRadius: '16px', 
+              border: 'none', 
+              background: 'var(--accent-color)', 
+              color: 'white', 
+              fontWeight: '900', 
+              fontSize: isMobile ? '1rem' : '1.1rem', 
+              cursor: 'pointer', 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '0.75rem',
+              boxShadow: '0 10px 30px rgba(59, 130, 246, 0.4)',
+              transition: 'transform 0.2s'
+            }}
+          >
+            {t.enterBtn} <ArrowRight size={20} />
+          </button>
+
+          <button 
+            onClick={() => setViewingManual(true)}
+            style={{ 
+              padding: isMobile ? '1rem 2rem' : '1.25rem 3rem', 
+              borderRadius: '16px', 
+              border: '1px solid rgba(255,255,255,0.1)', 
+              background: 'rgba(255,255,255,0.05)', 
+              color: 'white', 
+              fontWeight: '800', 
+              fontSize: isMobile ? '1rem' : '1.1rem', 
+              cursor: 'pointer', 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '0.75rem',
+              transition: 'all 0.2s ease',
+              backdropFilter: 'blur(10px)'
+            }}
+          >
+            <BookOpen size={20} /> {lang === 'cz' ? 'Průvodce registrací' : 'Registration Guide'}
+          </button>
+        </div>
       </section>
 
       {/* Pillars Section */}
