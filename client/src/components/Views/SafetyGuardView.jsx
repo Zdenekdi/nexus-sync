@@ -79,10 +79,10 @@ const SafetyGuardView = () => {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
             <div style={{ background: '#3b82f6', padding: '6px', borderRadius: '8px' }}>
-              <Shield size={20} color="white" />
+              <Activity size={20} color="white" />
             </div>
-            <h2 style={{ margin: 0, fontWeight: 950, fontSize: '1.5rem', color: 'white', letterSpacing: '-0.02em' }}>
-              SAFETY <span style={{ color: '#3b82f6' }}>GUARD</span>
+            <h2 style={{ margin: 0, fontWeight: 950, fontSize: '1.5rem', color: 'white', letterSpacing: '-0.02em', textTransform: 'uppercase' }}>
+              {t('safetyGuard').split(' ')[0]} <span style={{ color: '#3b82f6' }}>{t('safetyGuard').split(' ')[1]}</span>
             </h2>
           </div>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

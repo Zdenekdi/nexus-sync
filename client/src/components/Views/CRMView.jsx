@@ -82,20 +82,20 @@ const CRMView = () => {
       {/* Header & Stats */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
-          <h1 style={{ fontSize: '2rem', fontWeight: '900', color: 'white', margin: 0 }}>CRM & Client Retention</h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.4rem' }}>Track your best customers and prevent churn.</p>
+          <h1 style={{ fontSize: '2rem', fontWeight: '900', color: 'white', margin: 0 }}>{t('crmTitle')}</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.4rem' }}>{t('crmSubtitle')}</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
           <button onClick={fetchData} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', padding: '0.75rem 1.25rem', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}>
-            REFRESH
+            {t('refresh')}
           </button>
         </div>
       </div>
 
       <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-        <StatCard icon={UserCheck} label="Total Clients" value={stats.totalClients} color="var(--accent-color)" />
-        <StatCard icon={Star} label="VIP Clients" value={stats.vipClients} color="#fbbf24" />
-        <StatCard icon={TrendingUp} label="Total Revenue" value={`${Number(stats.totalRevenue).toLocaleString()} CZK`} color="var(--success-color)" />
+        <StatCard icon={UserCheck} label={t('totalClients')} value={stats.totalClients} color="var(--accent-color)" />
+        <StatCard icon={Star} label={t('vipClients')} value={stats.vipClients} color="#fbbf24" />
+        <StatCard icon={TrendingUp} label={t('totalRevenue')} value={`${Number(stats.totalRevenue).toLocaleString()} CZK`} color="var(--success-color)" />
       </div>
 
       {/* Main Content */}
@@ -105,7 +105,7 @@ const CRMView = () => {
             <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
             <input 
               type="text" 
-              placeholder="Search by phone or name..."
+              placeholder={t('searchClients')}
               value={searchTerm}
               onChange={_err => setSearchTerm(_err.target.value)}
               style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '0.8rem 1rem 0.8rem 2.8rem', color: 'white', fontSize: '0.9rem' }}
@@ -124,7 +124,7 @@ const CRMView = () => {
                   padding: '0.5rem 1rem', borderRadius: '10px', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer'
                 }}
               >
-                {f.toUpperCase()}
+                {f === 'all' ? t('all') : (f === 'vip' ? t('vip') : t('inactive'))}
               </button>
             ))}
           </div>
@@ -134,19 +134,19 @@ const CRMView = () => {
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
               <tr style={{ background: 'rgba(255,255,255,0.02)', color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                <th style={{ padding: '1rem 1.5rem' }}>Client</th>
-                <th style={{ padding: '1rem 1.5rem' }}>Tags</th>
-                <th style={{ padding: '1rem 1.5rem' }}>Total Spent</th>
-                <th style={{ padding: '1rem 1.5rem' }}>Last Visit</th>
-                <th style={{ padding: '1rem 1.5rem' }}>Status</th>
+                <th style={{ padding: '1rem 1.5rem' }}>{t('client')}</th>
+                <th style={{ padding: '1rem 1.5rem' }}>{t('tags')}</th>
+                <th style={{ padding: '1rem 1.5rem' }}>{t('totalSpent')}</th>
+                <th style={{ padding: '1rem 1.5rem' }}>{t('lastVisit')}</th>
+                <th style={{ padding: '1rem 1.5rem' }}>{t('status')}</th>
                 <th style={{ padding: '1rem 1.5rem' }}></th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="6" style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading CRM data...</td></tr>
+                <tr><td colSpan="6" style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}>{t('loadingCrm')}</td></tr>
               ) : filteredClients.length === 0 ? (
-                <tr><td colSpan="6" style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No clients found.</td></tr>
+                <tr><td colSpan="6" style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}>{t('noClientsFound')}</td></tr>
               ) : filteredClients.map(client => {
                 const lastDate = client.lastVisit ? new Date(client.lastVisit) : null;
                 const isInactive = lastDate && (new Date() - lastDate > 30 * 24 * 60 * 60 * 1000);
@@ -188,17 +188,17 @@ const CRMView = () => {
                     <td style={{ padding: '1.2rem 1.5rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
                         <Calendar size={14} />
-                        {client.lastVisit ? lastDate.toLocaleDateString() : 'Never'}
+                        {client.lastVisit ? lastDate.toLocaleDateString() : t('never')}
                       </div>
                     </td>
                     <td style={{ padding: '1.2rem 1.5rem' }}>
                       {isInactive ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#f87171', fontSize: '0.75rem', fontWeight: '700' }}>
-                          <AlertTriangle size={14} /> INACTIVE
+                          <AlertTriangle size={14} /> {t('inactive')}
                         </div>
                       ) : (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#34d399', fontSize: '0.75rem', fontWeight: '700' }}>
-                          <Clock size={14} /> ACTIVE
+                          <Clock size={14} /> {t('active')}
                         </div>
                       )}
                     </td>
