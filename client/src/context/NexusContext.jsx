@@ -227,12 +227,12 @@ export const NexusProvider = ({ children }) => {
     return {
       ...user,
       normalizedRole: roleName,
-      isAppOwner: roleName === 'App Owner',
-      isAdmin: roleName === 'Agency Admin',
-      isManager: roleName === 'Manager',
-      isSeniorOperator: roleName === 'Senior Operator',
-      isOperator: roleName === 'Operator',
-      isModel: roleName === 'Model'
+      isAppOwner: roleName === 'app_owner',
+      isAdmin: roleName === 'agency_admin',
+      isManager: roleName === 'manager',
+      isSeniorOperator: roleName === 'senior_operator',
+      isOperator: roleName === 'operator',
+      isModel: roleName === 'model'
     };
   }, [activeOperatorState, authUser]);
 
@@ -241,7 +241,7 @@ export const NexusProvider = ({ children }) => {
   const profiles = nexusData.profiles || [];
   const myProfiles = useMemo(() => {
     if (!activeOperator) return [];
-    if (activeOperator.isAppOwner || activeOperator.isAdmin) return profiles;
+    if (activeOperator.isAppOwner || activeOperator.isAdmin || activeOperator.isManager || activeOperator.isSeniorOperator) return profiles;
     return profiles.filter(p => {
       if (p.id === activeOperator.profileId) return true;
       if (Array.isArray(activeOperator.assignedProfileIds) && activeOperator.assignedProfileIds.includes(p.id)) return true;
