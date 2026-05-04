@@ -55,8 +55,8 @@ const SidebarSection = ({ id, label, isOpen, onToggle, children, isSidebarCollap
         }}
       >
         <span style={{ flex: 1, textAlign: 'left' }}>{label}</span>
-        <div style={{ transition: 'transform 0.3s ease', transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)', opacity: 0.8, color: 'var(--accent-color)' }}>
-          <ChevronDown size={14} />
+        <div style={{ transition: 'transform 0.3s ease', transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)', opacity: 1, color: 'var(--accent-color)' }}>
+          <ChevronDown size={16} />
         </div>
       </button>
       
@@ -88,19 +88,49 @@ const Sidebar = () => {
     isSidebarOpen, setIsSidebarOpen
   } = nexus;
 
-  const [sectionsOpen, setSectionsOpen] = useState({
-    myGirls: true,
-    overview: true,
-    operations: true,
-    safety: true,
-    management: true,
-    system: true,
-    global: true,
-    config: true
+  // Use activeOperator.id for personalized persistence
+  const storageKey = activeOperator?.id ? `nexus_sidebar_sections_${activeOperator.id}` : 'nexus_sidebar_sections_guest';
+
+  const [sectionsOpen, setSectionsOpen] = useState(() => {
+    const defaults = {
+      myGirls: true,
+      overview: true,
+      operations: true,
+      safety: true,
+      management: true,
+      system: true,
+      global: true,
+      config: true
+    };
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        return { ...defaults, ...JSON.parse(saved) };
+      }
+    } catch (_err) {
+      console.warn('Failed to load sidebar sections state');
+    }
+    return defaults;
   });
 
+  // Re-load state when operator changes (e.g. on relogin)
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        setSectionsOpen(prev => ({ ...prev, ...JSON.parse(saved) }));
+      }
+    } catch (_err) {}
+  }, [storageKey]);
+
   const toggleSection = (id) => {
-    setSectionsOpen(prev => ({ ...prev, [id]: !prev[id] }));
+    setSectionsOpen(prev => {
+      const newState = { ...prev, [id]: !prev[id] };
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(newState));
+      } catch (_err) {}
+      return newState;
+    });
   };
 
   // Group definitions
@@ -119,11 +149,18 @@ const Sidebar = () => {
     if (!activeTab) return;
     for (const [sectionId, tabs] of Object.entries(groups)) {
       if (tabs.includes(activeTab)) {
-        setSectionsOpen(prev => ({ ...prev, [sectionId]: true }));
+        setSectionsOpen(prev => {
+          if (prev[sectionId]) return prev;
+          const newState = { ...prev, [sectionId]: true };
+          try {
+            localStorage.setItem(storageKey, JSON.stringify(newState));
+          } catch (_err) {}
+          return newState;
+        });
         break;
       }
     }
-  }, [activeTab]);
+  }, [activeTab, storageKey]);
 
   const handleNavigation = (tabId) => {
     setActiveTab(tabId);

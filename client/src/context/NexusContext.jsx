@@ -110,7 +110,10 @@ export const NexusProvider = ({ children }) => {
     { id: 'ai-node', name: 'AI Infrastructure Node', ip: '178.105.39.179', region: 'Nuremberg', type: 'AI' }
   ]);
   const [selectedServerId, setSelectedServerId] = useState('main-hub');
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    const key = activeOperator?.id ? `nexus_sidebar_collapsed_${activeOperator.id}` : 'nexus_sidebar_collapsed_guest';
+    return localStorage.getItem(key) === 'true';
+  });
   const [onlineOnly, setOnlineOnly] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [mobileView, setMobileView] = useState('list'); 
@@ -147,6 +150,11 @@ export const NexusProvider = ({ children }) => {
     }
     return true;
   });
+  useEffect(() => {
+    const key = activeOperator?.id ? `nexus_sidebar_collapsed_${activeOperator.id}` : 'nexus_sidebar_collapsed_guest';
+    localStorage.setItem(key, isSidebarCollapsed);
+  }, [isSidebarCollapsed, activeOperator?.id]);
+
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(() => {
     if (typeof window !== 'undefined') return localStorage.getItem('nexus_onboarding_seen') === 'true';
     return false;
