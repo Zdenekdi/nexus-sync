@@ -1,9 +1,9 @@
 {
-  "version": "v3.22.0",
-  "versionCode": 45,
-  "packageName": "com.nexus.relay",
-  "filename": "nexus-relay.apk",
-  "size": 1024000,
-  "uploadedAt": "2026-04-29T10:00:00.000Z",
+  "version": "v3.26.0",
+  "versionCode": 30026,
+  "packageName": "com.nexushub.app",
+  "filename": "Nexus-Relay-v3.26-relay.apk",
+  "size": 10577549,
+  "uploadedAt": "2026-05-04T16:31:00.000Z",
   "downloadUrl": "https://nexus-api.myvnc.com/downloads/nexus-relay.apk"
 }

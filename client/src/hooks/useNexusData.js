@@ -337,7 +337,7 @@ export function useNexusData({
 
     } catch (err) {
       console.error('[NexusData] Sync failed:', err.response?.status, err.response?.data || err.message);
-      setError(err.message);
+      if (showToast) showToast(err.message, 'error');
     } finally {
       clearTimeout(safetyTimer);
       setIsBackgroundLoading(false);
