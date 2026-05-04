@@ -180,6 +180,8 @@ model Profile {
   
   // Talent assignment
   assignedOperators TalentAssignment[] @relation("AssignedTalent")
+
+  @@index([agencyId])
 }
 
 model ClientNote {
@@ -222,6 +224,8 @@ model Booking {
 
   @@index([clientId])
   @@index([clientPhone])
+  @@index([agencyId])
+  @@index([profileId])
 }
 
 model SafetySession {
@@ -294,6 +298,8 @@ model Chat {
 
   @@unique([externalId, profileId])
   @@index([clientId])
+  @@index([agencyId])
+  @@index([profileId])
 }
 
 model Message {
@@ -322,6 +328,8 @@ model CallLog {
   status    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([profileId])
 }
 
 model InventoryLocation {
