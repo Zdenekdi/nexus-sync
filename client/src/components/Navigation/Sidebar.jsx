@@ -207,7 +207,10 @@ const Sidebar = () => {
   }
 
   const roleNameUpper = String(activeRole || '').toUpperCase().trim();
-  const showMyGirls = ['OPERATOR', 'SENIOR OPERATOR', 'SENIOR OPERÁTOR'].includes(roleNameUpper);
+  const showMyGirls = 
+    activeOperator?.isSeniorOperator || 
+    activeOperator?.isOperator || 
+    ['OPERATOR', 'SENIOR OPERATOR', 'SENIOR_OPERATOR', 'SENIOR OPERÁTOR', 'SENIOR_OPERÁTOR'].includes(roleNameUpper);
 
   return (
     <>

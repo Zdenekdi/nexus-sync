@@ -1,23 +1,11 @@
 import { useMemo, useCallback } from 'react';
 import { DEFAULT_ROLE_PERMISSIONS } from '../constants/permissions';
+import { normalizeRole } from '../utils/roleUtils';
 
 export const usePermissions = (activeOperator, dbPermissions) => {
-  const normalizeRole = useCallback((role) => {
-    if (!role) return 'Operator';
-    const roleName = typeof role === 'object' ? role.name : role;
-    const r = roleName ? roleName.toUpperCase() : '';
-
-    if (r === 'APP OWNER' || r === 'SUPER_ADMIN' || r === 'SYSTEM ADMIN' || r === 'ROOT') return 'App Owner';
-    if (r === 'AGENCY ADMIN' || r === 'AGENCY OWNER' || r === 'OWNER' || r === 'ADMIN') return 'Agency Admin';
-    if (r === 'MANAGER' || r === 'SENIOR MANAGER' || r === 'MANAGERKA') return 'Manager';
-    if (r === 'SENIOR OPERATOR' || r === 'SO') return 'Senior Operator';
-    if (r === 'OPERATOR' || r === 'OP') return 'Operator';
-    if (r === 'MODELKA' || r === 'MODEL' || r === 'MODELA') return 'Model';
-    
-    return roleName;
-  }, []);
-
-  const activeRole = useMemo(() => normalizeRole(activeOperator?.role), [activeOperator?.role, normalizeRole]);
+  const activeRole = useMemo(() => {
+    return normalizeRole(activeOperator?.role || activeOperator?.roleName || '');
+  }, [activeOperator]);
 
   const rolePermissions = useMemo(() => {
     const permissionsMap = { ...DEFAULT_ROLE_PERMISSIONS };
@@ -45,8 +33,12 @@ export const usePermissions = (activeOperator, dbPermissions) => {
   }, [activeRole, dbPermissions]);
 
   const isAllowed = useCallback((permission) => {
-    const currentPerms = rolePermissions[activeRole] || rolePermissions['Operator'] || {};
-    // Ensure strict boolean evaluation
+    const roleKey = activeRole || 'operator';
+    // Find matching key in permissions map (case-insensitive and normalized)
+    const availableRoles = Object.keys(rolePermissions);
+    const matchedRole = availableRoles.find(r => normalizeRole(r) === normalizeRole(roleKey)) || 'Operator';
+    
+    const currentPerms = rolePermissions[matchedRole] || {};
     return currentPerms[permission] === true;
   }, [rolePermissions, activeRole]);
 
