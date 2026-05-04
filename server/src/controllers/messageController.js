@@ -6,8 +6,6 @@ exports.getMessages = async (req, res) => {
   try {
     const { chatId } = req.params;
     const { role, agencyId } = req.user;
-    const isAppOwner = role?.isAppOwner;
-    if (isAppOwner) return res.status(403).json({ message: 'App Owner cannot access messages' });
     const chat = await prisma.chat.findUnique({ where: { id: chatId } });
     if (!chat) return res.status(404).json({ message: 'Chat not found' });
     if (chat.agencyId !== agencyId) return res.status(403).json({ message: 'Access denied' });
@@ -183,7 +181,6 @@ exports.markAsRead = async (req, res) => {
   try {
     const { messageId } = req.params;
     const { role, agencyId } = req.user;
-
     const isAppOwner = role?.isAppOwner;
     if (isAppOwner) return res.status(403).json({ message: 'App Owner cannot access messages' });
 
