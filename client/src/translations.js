@@ -819,6 +819,7 @@ export const TRANSLATIONS = {
         safety: 'Ochrana',
         safetyGuard: 'Bezpečnostní dohled',
         messages: 'Zprávy',
+        schedule: 'Kalendář',
         conversion: 'Konverze',
         lastGlobalSync: 'POSLEDNÍ SYNCHRONIZACE',
         realTimeMonitoringActive: 'Monitoring v reálném čase aktivní',
