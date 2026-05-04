@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, MessageSquare, Calendar, Users, BarChart3, 
   Settings, Activity, Radio, Globe, Smartphone, FileSearch, 
   Shield, Building2, HardDrive, CreditCard, Zap, UserCheck,
-  LogOut, Menu, X, Circle, Package as PackageIcon, Gift, Wallet
+  LogOut, Menu, X, Circle, Package as PackageIcon, Gift, Wallet,
+  ChevronDown, ChevronRight
 } from 'lucide-react';
 import { useNexus } from '../../context/ContextHook';
 import { normalizeRole } from '../../utils/roleUtils';
@@ -20,6 +21,61 @@ const TooltipItem = ({ label, children, isMobile, isSidebarCollapsed }) => {
   );
 };
 
+const SidebarSection = ({ id, label, isOpen, onToggle, children, isSidebarCollapsed }) => {
+  if (isSidebarCollapsed) {
+    return (
+      <div style={{ marginBottom: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+        <div style={{ width: '20px', height: '1px', background: 'rgba(255,255,255,0.1)', margin: '0.5rem 0' }} />
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ marginBottom: '0.75rem' }}>
+      <button 
+        onClick={() => onToggle(id)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.85rem',
+          padding: '0.5rem 1.15rem',
+          width: '100%',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          color: 'rgba(255,255,255,0.3)',
+          fontSize: '0.65rem',
+          fontWeight: '950',
+          letterSpacing: '0.15em',
+          textTransform: 'uppercase',
+          justifyContent: 'space-between',
+          transition: 'all 0.2s ease',
+          outline: 'none'
+        }}
+      >
+        <span style={{ flex: 1, textAlign: 'left' }}>{label}</span>
+        <div style={{ transition: 'transform 0.3s ease', transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)', opacity: 0.5 }}>
+          <ChevronDown size={12} />
+        </div>
+      </button>
+      
+      <div style={{ 
+        maxHeight: isOpen ? '1000px' : '0',
+        overflow: 'hidden',
+        transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+        opacity: isOpen ? 1 : 0,
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: '0.2rem',
+        marginTop: '0.2rem'
+      }}>
+        {children}
+      </div>
+    </div>
+  );
+};
+
 const Sidebar = () => {
   const nexus = useNexus();
   const { 
@@ -31,6 +87,42 @@ const Sidebar = () => {
     onlineOnly, setOnlineOnly,
     isSidebarOpen, setIsSidebarOpen
   } = nexus;
+
+  const [sectionsOpen, setSectionsOpen] = useState({
+    overview: true,
+    operations: true,
+    safety: true,
+    management: true,
+    system: true,
+    global: true,
+    config: true
+  });
+
+  const toggleSection = (id) => {
+    setSectionsOpen(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  // Group definitions
+  const groups = {
+    overview: ['dashboard', 'analytics', 'activity', 'audit-logs'],
+    operations: ['inbox', 'calendar', 'profiles', 'hierarchy', 'qa', 'web-profiles'],
+    safety: ['safety', 'safety-guard'],
+    management: ['inventory', 'referrals', 'payouts', 'crm'],
+    system: ['device-setup', 'relay', 'settings'],
+    global: ['agencies', 'infra', 'maintenance'],
+    config: ['permissions', 'plans', 'features', 'docs']
+  };
+
+  // Auto-expand section when tab changes
+  useEffect(() => {
+    if (!activeTab) return;
+    for (const [sectionId, tabs] of Object.entries(groups)) {
+      if (tabs.includes(activeTab)) {
+        setSectionsOpen(prev => ({ ...prev, [sectionId]: true }));
+        break;
+      }
+    }
+  }, [activeTab]);
 
   const handleNavigation = (tabId) => {
     setActiveTab(tabId);
@@ -214,62 +306,119 @@ const Sidebar = () => {
         {/* Navigation */}
         <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1.5rem' }} className="custom-scrollbar">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <TooltipItem label={capitalize(t('dashboard'))} isMobile={isMobile} isSidebarCollapsed={isSidebarCollapsed}>
-              <button data-testid="nav-link-dashboard" onClick={() => handleNavigation('dashboard')} className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === 'dashboard' ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
-                <LayoutDashboard size={20} color={activeTab === 'dashboard' ? 'var(--accent-color)' : 'var(--text-secondary)'} />
-                {!isSidebarCollapsed && <span style={{ color: activeTab === 'dashboard' ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === 'dashboard' ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(t('dashboard'))}</span>}
-              </button>
-            </TooltipItem>
-
-            {/* Role-based Links */}
             {activeOperator?.isAppOwner ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.5rem' }}>
-                  {[
-                    { id: 'agencies', icon: Building2, label: t('agencies') },
-                    { id: 'infra', icon: Activity, label: t('infrastructure') },
-                    { id: 'maintenance', icon: HardDrive, label: t('maintenance') },
-                    { id: 'permissions', icon: Shield, label: t('permissions') },
-                    { id: 'plans', icon: CreditCard, label: t('plansManagement') },
-                    { id: 'features', icon: Zap, label: t('features') },
-                    { id: 'docs', icon: FileSearch, label: t('documentation') },
-                  ].map(item => (
-                    <TooltipItem key={item.id} label={capitalize(item.label)} isMobile={isMobile} isSidebarCollapsed={isSidebarCollapsed}>
-                      <button data-testid={`nav-link-${item.id}`} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
-                        <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
-                        {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(item.label)}</span>}
-                      </button>
-                    </TooltipItem>
-                  ))}
-                </div>
-            ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0rem' }}>
+                  <SidebarSection id="global" label={t('navSections.globalManagement')} isOpen={sectionsOpen.global} onToggle={toggleSection} isSidebarCollapsed={isSidebarCollapsed}>
                     {[
-                      { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: totalUnread, perm: 'messaging' },
-                      { id: 'calendar', icon: Calendar, label: t('schedule'), perm: 'calendar' },
-                      { id: 'safety', icon: Shield, label: t('safety'), perm: 'safety' },
-                      { id: 'safety-guard', icon: Shield, label: t('safetyGuard'), perm: 'safety' },
-                      { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
-                      { id: 'inventory', icon: PackageIcon, label: t('inventory'), perm: 'inventory' },
-                      { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles' },
-                      { id: 'device-setup', icon: Smartphone, label: t('deviceSetup'), perm: 'device_setup' },
-                      { id: 'relay', icon: Radio, label: t('relay'), perm: 'relay' },
-                      { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub' },
-                      { id: 'hierarchy', icon: Users, label: t('hierarchy'), perm: 'hierarchy' },
-                      { id: 'analytics', icon: BarChart3, label: t('analytics'), perm: 'analytics' },
-                      { id: 'crm', icon: UserCheck, label: t('crm'), perm: 'analytics' },
-                      { id: 'activity', icon: Activity, label: t('activity'), perm: 'analytics' },
-                      { id: 'referrals', icon: Gift, label: t('referrals'), perm: 'messaging' },
-                      { id: 'audit-logs', icon: FileSearch, label: t('auditLogs'), perm: 'audit_logs' },
-                      { id: 'payouts', icon: Wallet, label: t('payouts'), perm: 'analytics' },
-                      { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
-                    ].filter(item => !item.perm || isAllowed(item.perm)).map(item => (
+                      { id: 'agencies', icon: Building2, label: t('agencies') },
+                      { id: 'infra', icon: Activity, label: t('infra') },
+                      { id: 'maintenance', icon: HardDrive, label: t('maintenance') },
+                    ].map(item => (
                       <TooltipItem key={item.id} label={capitalize(item.label)} isMobile={isMobile} isSidebarCollapsed={isSidebarCollapsed}>
-                        <button onClick={() => handleNavigation(item.id)} data-testid={`nav-link-${item.id}`} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
+                        <button data-testid={`nav-link-${item.id}`} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
                           <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
                           {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(item.label)}</span>}
                         </button>
                       </TooltipItem>
                     ))}
+                  </SidebarSection>
+
+                  <SidebarSection id="config" label={t('navSections.systemConfiguration')} isOpen={sectionsOpen.config} onToggle={toggleSection} isSidebarCollapsed={isSidebarCollapsed}>
+                    {[
+                      { id: 'permissions', icon: Shield, label: t('permissions') },
+                      { id: 'plans', icon: CreditCard, label: t('plansManagement') },
+                      { id: 'features', icon: Zap, label: t('features') },
+                      { id: 'docs', icon: FileSearch, label: t('documentation') },
+                    ].map(item => (
+                      <TooltipItem key={item.id} label={capitalize(item.label)} isMobile={isMobile} isSidebarCollapsed={isSidebarCollapsed}>
+                        <button data-testid={`nav-link-${item.id}`} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
+                          <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
+                          {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(item.label)}</span>}
+                        </button>
+                      </TooltipItem>
+                    ))}
+                  </SidebarSection>
+                </div>
+            ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0rem' }}>
+                    <SidebarSection id="overview" label={t('navSections.overview')} isOpen={sectionsOpen.overview} onToggle={toggleSection} isSidebarCollapsed={isSidebarCollapsed}>
+                      {[
+                        { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard') },
+                        { id: 'analytics', icon: BarChart3, label: t('analytics'), perm: 'analytics' },
+                        { id: 'activity', icon: Activity, label: t('activity'), perm: 'analytics' },
+                        { id: 'audit-logs', icon: FileSearch, label: t('auditLogs'), perm: 'audit_logs' },
+                      ].filter(item => !item.perm || isAllowed(item.perm)).map(item => (
+                        <TooltipItem key={item.id} label={capitalize(item.label)} isMobile={isMobile} isSidebarCollapsed={isSidebarCollapsed}>
+                          <button onClick={() => handleNavigation(item.id)} data-testid={`nav-link-${item.id}`} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
+                            <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
+                            {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(item.label)}</span>}
+                          </button>
+                        </TooltipItem>
+                      ))}
+                    </SidebarSection>
+
+                    <SidebarSection id="operations" label={t('navSections.operations')} isOpen={sectionsOpen.operations} onToggle={toggleSection} isSidebarCollapsed={isSidebarCollapsed}>
+                      {[
+                        { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: totalUnread, perm: 'messaging' },
+                        { id: 'calendar', icon: Calendar, label: t('schedule'), perm: 'calendar' },
+                        { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
+                        { id: 'hierarchy', icon: Users, label: t('hierarchy'), perm: 'hierarchy' },
+                        { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub' },
+                        { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles' },
+                      ].filter(item => !item.perm || isAllowed(item.perm)).map(item => (
+                        <TooltipItem key={item.id} label={capitalize(item.label)} isMobile={isMobile} isSidebarCollapsed={isSidebarCollapsed}>
+                          <button onClick={() => handleNavigation(item.id)} data-testid={`nav-link-${item.id}`} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
+                            <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
+                            {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(item.label)}</span>}
+                          </button>
+                        </TooltipItem>
+                      ))}
+                    </SidebarSection>
+
+                    <SidebarSection id="safety" label={t('navSections.safety')} isOpen={sectionsOpen.safety} onToggle={toggleSection} isSidebarCollapsed={isSidebarCollapsed}>
+                      {[
+                        { id: 'safety', icon: Shield, label: t('safety'), perm: 'safety' },
+                        { id: 'safety-guard', icon: Shield, label: t('safetyGuard'), perm: 'safety' },
+                      ].filter(item => !item.perm || isAllowed(item.perm)).map(item => (
+                        <TooltipItem key={item.id} label={capitalize(item.label)} isMobile={isMobile} isSidebarCollapsed={isSidebarCollapsed}>
+                          <button onClick={() => handleNavigation(item.id)} data-testid={`nav-link-${item.id}`} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
+                            <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
+                            {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(item.label)}</span>}
+                          </button>
+                        </TooltipItem>
+                      ))}
+                    </SidebarSection>
+
+                    <SidebarSection id="management" label={t('navSections.management')} isOpen={sectionsOpen.management} onToggle={toggleSection} isSidebarCollapsed={isSidebarCollapsed}>
+                      {[
+                        { id: 'inventory', icon: PackageIcon, label: t('inventory'), perm: 'inventory' },
+                        { id: 'referrals', icon: Gift, label: t('referrals'), perm: 'messaging' },
+                        { id: 'payouts', icon: Wallet, label: t('payouts'), perm: 'analytics' },
+                        { id: 'crm', icon: UserCheck, label: t('crm'), perm: 'analytics' },
+                      ].filter(item => !item.perm || isAllowed(item.perm)).map(item => (
+                        <TooltipItem key={item.id} label={capitalize(item.label)} isMobile={isMobile} isSidebarCollapsed={isSidebarCollapsed}>
+                          <button onClick={() => handleNavigation(item.id)} data-testid={`nav-link-${item.id}`} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
+                            <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
+                            {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(item.label)}</span>}
+                          </button>
+                        </TooltipItem>
+                      ))}
+                    </SidebarSection>
+
+                    <SidebarSection id="system" label={t('navSections.system')} isOpen={sectionsOpen.system} onToggle={toggleSection} isSidebarCollapsed={isSidebarCollapsed}>
+                      {[
+                        { id: 'device-setup', icon: Smartphone, label: t('deviceSetup'), perm: 'device_setup' },
+                        { id: 'relay', icon: Radio, label: t('relay'), perm: 'relay' },
+                        { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
+                      ].filter(item => !item.perm || isAllowed(item.perm)).map(item => (
+                        <TooltipItem key={item.id} label={capitalize(item.label)} isMobile={isMobile} isSidebarCollapsed={isSidebarCollapsed}>
+                          <button onClick={() => handleNavigation(item.id)} data-testid={`nav-link-${item.id}`} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
+                            <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
+                            {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(item.label)}</span>}
+                          </button>
+                        </TooltipItem>
+                      ))}
+                    </SidebarSection>
                 </div>
             )}
 
