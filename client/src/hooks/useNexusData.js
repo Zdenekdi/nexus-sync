@@ -655,7 +655,7 @@ export function useNexusData({
     }
   }, [token, API_BASE, showToast, lang]);
 
-  return {
+  return useMemo(() => ({
     profiles, agencies, agencySettings: _agencySettings, operators, sessions, stats, activeSubscription: _activeSubscription,
     subscriptionHistory: _subscriptionHistory, globalFeatures, handleFeatureToggle,
     globalSettings, handleUpdateGlobalSetting,
@@ -668,5 +668,14 @@ export function useNexusData({
     handleExportICS, handleSaveCalendarSync, handleSaveBooking, fetchClientByPhone,
     setProfiles, toggleOperatorStatus, handleSaveAssignees,
     rolePermissions
-  };
+  }), [
+    profiles, agencies, _agencySettings, operators, sessions, stats, _activeSubscription, _subscriptionHistory, 
+    globalFeatures, handleFeatureToggle, globalSettings, handleUpdateGlobalSetting, isTraining, trainingProgress, 
+    onStartTraining, onResetTraining, isDataLoading, isBackgroundLoading, hasHydrated, clientNames, calendar, 
+    isCalendarSyncOpen, calendarSyncUrl, isBookingModalOpen, selectedScheduleEvent, newBookingForm, bioText, 
+    isSyncing, _syncStatus, _syncProgress, relayOnline, handleSaveBio, handleSyncAll, handleSyncChatHistory, 
+    handleSaveCredentials, handleQuickSaveMeeting, handleDelayBooking, initData, handleExportICS, 
+    handleSaveCalendarSync, handleSaveBooking, fetchClientByPhone, toggleOperatorStatus, handleSaveAssignees, 
+    rolePermissions
+  ]);
 }
