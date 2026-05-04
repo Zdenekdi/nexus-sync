@@ -334,11 +334,31 @@ export const NexusProvider = ({ children }) => {
   // Automatically fetch history when a chat is selected
   useEffect(() => {
     if (selectedChatId) {
+      isUserScrolled.current = false; // Reset scroll state for new chat
       fetchChatMessages(selectedChatId);
     } else {
       setChatHistory([]);
     }
   }, [selectedChatId, fetchChatMessages]);
+
+  // Handle automatic scrolling to bottom
+  useEffect(() => {
+    if (!chatScrollRef.current || chatMessages.length === 0) return;
+
+    const scrollToBottom = () => {
+      if (chatScrollRef.current) {
+        chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+      }
+    };
+
+    // If history just finished loading, always scroll to bottom
+    // OR if user is already at the bottom and a new message arrives
+    if (!isHistoryLoading && !isUserScrolled.current) {
+      // Small timeout to ensure DOM has updated with new messages
+      const timer = setTimeout(scrollToBottom, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [chatMessages, isHistoryLoading]);
 
   const getGPSPosition = useCallback(async () => {
     try {
