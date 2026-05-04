@@ -13,7 +13,7 @@ const BlacklistPanel = () => {
   } = nexus;
 
   const [entries, setEntries] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [newPhone, setNewPhone] = useState('');
   const [newReason, setNewReason] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
