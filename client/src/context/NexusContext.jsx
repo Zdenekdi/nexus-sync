@@ -58,6 +58,19 @@ export const NexusProvider = ({ children }) => {
       return localStorage.getItem('nexus_sidebar_collapsed_guest') === 'true';
     }
   });
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
+  const [isTvMode, setIsTvMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get('tv') === 'true';
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // --- 2. AUTHENTICATION & IDENTITY ---
   const [activeOperatorState, setActiveOperatorState] = useState(null);
@@ -570,9 +583,11 @@ export const NexusProvider = ({ children }) => {
     linkedTrackerId, setLinkedTrackerId, trackerStatus, setTrackerStatus,
     messageValue: '', setMessageValue: () => {}, calViewDate, setCalViewDate, 
     _gpsHistory, lastTrackerUpdate, voiceGuardianActive, handleToggleVoiceGuardian,
-    batteryLevel, incomingGhostCall, setIncomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity
+    batteryLevel, incomingGhostCall, setIncomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity,
+    isTvMode, setIsTvMode,
+    heartRate, setHeartRate, hrThreshold, setHrThreshold, isBluetoothConnected, setIsBluetoothConnected, activeBioWarning
   }), [
-    t, lang, activeTab, activeMarket, nexusData, activeOperator, activeRole, isAllowed, isLoggedIn, token, logoutStable, auth, showLanding, hasSeenOnboarding, showOnboarding, isMobile, isNativeApp, isSidebarCollapsed, mobileView, inlinePanelTab, sourceText, translatedText, isTranslating, internalNote, clientNotes, detectedMeeting, typingProfiles, activeContextTab, translateTargetLang, showPanicConfirm, activeSafetySession, sosActive, linkedSessionId, checkinMinutes, checkinTimerEnd, checkinRemaining, triggerSOS, cancelSOS, handleConfirmDeparture, pendingNotifications, agencyDetailModalData, isAddAgencyOpen, isBugReportOpen, isAddUserOpen, addUserModalAgencyId, isEditProfileOpen, editingProfileData, profiles, myProfiles, activeProfile, activeProfileId, onlineOnly, messages, filteredMessages, selectedChatId, selectedChat, chatMessages, chatHistory, fetchChatMessages, isHistoryLoading, isRelayActive, setRelayActiveStable, relaySimSlot, relayLogs, addRelayLog, updateRelayLogStatus, linkedTrackerId, trackerStatus, calViewDate, _gpsHistory, lastTrackerUpdate, voiceGuardianActive, handleToggleVoiceGuardian, batteryLevel, incomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity, _toasts, subscriptionPlans, isPlansLoading, isSidebarOpen
+    t, lang, activeTab, activeMarket, nexusData, activeOperator, activeRole, isAllowed, isLoggedIn, token, logoutStable, auth, showLanding, hasSeenOnboarding, showOnboarding, isMobile, isNativeApp, isSidebarCollapsed, mobileView, inlinePanelTab, sourceText, translatedText, isTranslating, internalNote, clientNotes, detectedMeeting, typingProfiles, activeContextTab, translateTargetLang, showPanicConfirm, activeSafetySession, sosActive, linkedSessionId, checkinMinutes, checkinTimerEnd, checkinRemaining, triggerSOS, cancelSOS, handleConfirmDeparture, pendingNotifications, agencyDetailModalData, isAddAgencyOpen, isBugReportOpen, isAddUserOpen, addUserModalAgencyId, isEditProfileOpen, editingProfileData, profiles, myProfiles, activeProfile, activeProfileId, onlineOnly, messages, filteredMessages, selectedChatId, selectedChat, chatMessages, chatHistory, fetchChatMessages, isHistoryLoading, isRelayActive, setRelayActiveStable, relaySimSlot, relayLogs, addRelayLog, updateRelayLogStatus, linkedTrackerId, trackerStatus, calViewDate, _gpsHistory, lastTrackerUpdate, voiceGuardianActive, handleToggleVoiceGuardian, batteryLevel, incomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity, _toasts, subscriptionPlans, isPlansLoading, isSidebarOpen, isTvMode, heartRate, hrThreshold, isBluetoothConnected, activeBioWarning
   ]);
 
   return (
