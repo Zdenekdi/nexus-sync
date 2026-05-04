@@ -803,7 +803,7 @@ export const TRANSLATIONS = {
         profiles_2_4: 'Profily',
         profiles_5_plus: 'Profilů',
         safety: 'Ochrana',
-        safetyGuard: 'Dozor',
+        safetyGuard: 'Bezpečnostní dohled',
         messages: 'Zprávy',
         conversion: 'Konverze',
         lastGlobalSync: 'POSLEDNÍ SYNCHRONIZACE',
