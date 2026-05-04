@@ -11,8 +11,7 @@ exports.getPayoutSummary = async (req, res) => {
     const { startDate, endDate } = req.query;
     
     const where = {
-      agencyId,
-      status: 'confirmed'
+      agencyId
     };
 
     if (startDate && endDate) {
@@ -67,8 +66,7 @@ exports.exportPayouts = async (req, res) => {
     const { startDate, endDate } = req.query;
     
     const where = {
-      agencyId,
-      status: 'confirmed'
+      agencyId
     };
 
     if (startDate && endDate) {

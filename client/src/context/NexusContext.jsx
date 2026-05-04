@@ -624,7 +624,7 @@ export const NexusProvider = ({ children }) => {
     
     // Roles that should see ALL profiles in their agency
     const isAgencyLevel = [
-      'agency_admin', 'manager', 'senior_manager', 'senior_operator', 'owner'
+      'agency_admin', 'manager', 'senior_manager', 'senior_operator', 'owner', 'app_owner'
     ].includes(roleNameClean);
 
     let filtered = (activeOperator.isAppOwner || isAgencyLevel) ? [...profiles] : profiles.filter(p => {
@@ -632,15 +632,6 @@ export const NexusProvider = ({ children }) => {
                         (Array.isArray(p.assignees) && p.assignees.some(a => String(a?.id || a).toLowerCase() === opId)) ||
                         (Array.isArray(p.operators) && p.operators.some(o => String(o?.id || o).toLowerCase() === opId));
       return isAssigned;
-    });
-
-    console.log('[NexusContext] Profile Filtering Debug:', {
-      opId,
-      rawRole,
-      roleNameClean,
-      profilesCount: (profiles || []).length,
-      isAgencyLevel,
-      filteredCount: (filtered || []).length
     });
 
     return filtered;
