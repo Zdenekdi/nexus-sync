@@ -354,12 +354,16 @@ const InboxView = () => {
                     const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
                     isUserScrolled.current = distFromBottom > 100;
                   }}
-                  style={{ flex: 1, padding: isMobile ? '0.5rem 0.75rem' : '2rem', overflowY: 'auto', WebkitOverflowScrolling: 'touch', background: 'rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', gap: isMobile ? '0' : '0.25rem', minHeight: 0, justifyContent: 'flex-end' }}>
-                   {isHistoryLoading && chatMessages.length === 0 ? (
-                     <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-                       <Loader2 className="animate-spin" size={24} color="var(--accent-color)" />
+                  style={{ flex: 1, padding: isMobile ? '0.5rem 0.75rem' : '2rem', overflowY: 'auto', WebkitOverflowScrolling: 'touch', background: 'rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', gap: isMobile ? '0' : '0.25rem', minHeight: 0, justifyContent: chatMessages.length > 0 ? 'flex-start' : 'flex-end' }}>
+                   {isHistoryLoading && (
+                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', flexShrink: 0 }}>
+                       <Loader2 className="animate-spin" size={20} color="var(--accent-color)" />
+                       <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>
+                         {lang === 'cz' ? 'Načítám historii...' : 'Loading history...'}
+                       </span>
                      </div>
-                   ) : chatMessages.length > 0 ? (
+                   )}
+                   {chatMessages.length > 0 ? (
                      chatMessages.map((msg, i) => {
                        const rawDate = msg.createdAt || msg.timestamp || msg.time || new Date();
                        const msgDate = new Date(rawDate);

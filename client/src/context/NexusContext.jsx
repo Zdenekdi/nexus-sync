@@ -307,7 +307,15 @@ export const NexusProvider = ({ children }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data) {
-        const data = Array.isArray(res.data) ? res.data : (res.data.messages || []);
+        // Handle various common API response formats
+        let data = [];
+        if (Array.isArray(res.data)) {
+          data = res.data;
+        } else if (Array.isArray(res.data.data)) {
+          data = res.data.data;
+        } else if (Array.isArray(res.data.messages)) {
+          data = res.data.messages;
+        }
         setChatHistory(data);
       }
     } catch (err) {
