@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from "react";
+import React, { Suspense } from "react";
 import { 
   Loader2, Menu, LayoutDashboard, MessageSquare, Calendar, 
   Shield, Users, Globe, Smartphone, FileSearch, BarChart3, 
@@ -8,16 +8,17 @@ import { useNexus } from './context/ContextHook';
 import GlobalAppStyles from './styles/GlobalAppStyles';
 import PremiumSelector from './components/UI/PremiumSelector';
 import ErrorBoundary from './ErrorBoundary';
+import { lazyWithRetry } from './utils/lazyWithRetry';
 
 // Lazy load heavy components
-const Sidebar = lazy(() => import('./components/Navigation/Sidebar'));
-const MobileBottomNav = lazy(() => import('./components/Navigation/MobileBottomNav'));
-const ViewRouter = lazy(() => import('./components/Navigation/ViewRouter'));
-const LandingPage = lazy(() => import('./components/LandingPage'));
-const Onboarding = lazy(() => import('./components/Onboarding'));
-const LoginScreen = lazy(() => import('./components/LoginScreen'));
-const SystemBanners = lazy(() => import('./components/UI/SystemBanners'));
-const GlobalModalContainer = lazy(() => import('./components/Modals/GlobalModalContainer'));
+const Sidebar = lazyWithRetry(() => import('./components/Navigation/Sidebar'));
+const MobileBottomNav = lazyWithRetry(() => import('./components/Navigation/MobileBottomNav'));
+const ViewRouter = lazyWithRetry(() => import('./components/Navigation/ViewRouter'));
+const LandingPage = lazyWithRetry(() => import('./components/LandingPage'));
+const Onboarding = lazyWithRetry(() => import('./components/Onboarding'));
+const LoginScreen = lazyWithRetry(() => import('./components/LoginScreen'));
+const SystemBanners = lazyWithRetry(() => import('./components/UI/SystemBanners'));
+const GlobalModalContainer = lazyWithRetry(() => import('./components/Modals/GlobalModalContainer'));
 
 import UpdateBanner from './components/UpdateBanner';
 
