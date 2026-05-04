@@ -22,6 +22,8 @@ const AgenciesView = () => {
     loading
   } = nexus;
 
+  if (!isAppOwner) return null;
+
   // Admin Referrals section
   const [allReferrals, setAllReferrals] = React.useState([]);
   const [isAdminRefLoading, setIsAdminRefLoading] = React.useState(false);
