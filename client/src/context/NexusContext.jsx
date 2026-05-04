@@ -111,8 +111,15 @@ export const NexusProvider = ({ children }) => {
   ]);
   const [selectedServerId, setSelectedServerId] = useState('main-hub');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-    const key = activeOperator?.id ? `nexus_sidebar_collapsed_${activeOperator.id}` : 'nexus_sidebar_collapsed_guest';
-    return localStorage.getItem(key) === 'true';
+    try {
+      const savedUser = localStorage.getItem('nexus_activeOperator');
+      const user = savedUser ? JSON.parse(savedUser) : null;
+      const userId = user?.id || user?._id || user?.userId;
+      const key = userId ? `nexus_sidebar_collapsed_${userId}` : 'nexus_sidebar_collapsed_guest';
+      return localStorage.getItem(key) === 'true';
+    } catch (_err) {
+      return localStorage.getItem('nexus_sidebar_collapsed_guest') === 'true';
+    }
   });
   const [onlineOnly, setOnlineOnly] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);

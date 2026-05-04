@@ -89,7 +89,9 @@ const Sidebar = () => {
   } = nexus;
 
   // Use activeOperator.id for personalized persistence
-  const storageKey = activeOperator?.id ? `nexus_sidebar_sections_${activeOperator.id}` : 'nexus_sidebar_sections_guest';
+  const storageKey = activeOperator?.id 
+    ? `nexus_sidebar_sections_${activeOperator.id}` 
+    : 'nexus_sidebar_sections_guest';
 
   const [sectionsOpen, setSectionsOpen] = useState(() => {
     const defaults = {
@@ -103,7 +105,10 @@ const Sidebar = () => {
       config: true
     };
     try {
-      const saved = localStorage.getItem(storageKey);
+      // Direct access to localStorage for immediate non-flashing initialization
+      const userId = activeOperator?.id;
+      const key = userId ? `nexus_sidebar_sections_${userId}` : 'nexus_sidebar_sections_guest';
+      const saved = localStorage.getItem(key);
       if (saved) {
         return { ...defaults, ...JSON.parse(saved) };
       }
