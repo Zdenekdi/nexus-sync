@@ -19,7 +19,7 @@ export const usePermissions = (activeOperator, dbPermissions) => {
     }
     
     // ENSURE HARDENING: Administrative roles should NEVER see operational tabs in this platform.
-    if (activeRole === 'App Owner' || activeRole === 'Agency Admin') {
+    if (activeRole === 'app_owner' || activeRole === 'agency_admin') {
       permissionsMap[activeRole] = {
         ...permissionsMap[activeRole],
         calendar: false,

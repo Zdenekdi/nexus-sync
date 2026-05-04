@@ -673,12 +673,31 @@ export const NexusProvider = ({ children }) => {
     localStorage.setItem('nexus_active_tab', activeTab);
     localStorage.setItem('nexus_active_market', activeMarket);
     if (activeProfileId) localStorage.setItem('nexus_active_profile_id', activeProfileId);
+    
+    // Sync activeTab with URL for better refresh persistence
+    if (typeof window !== 'undefined' && activeTab) {
+      const currentPath = window.location.pathname.substring(1);
+      if (currentPath !== activeTab) {
+        window.history.replaceState(null, '', `/${activeTab}`);
+      }
+    }
   }, [lang, activeTab, activeMarket, activeProfileId]);
 
   useEffect(() => {
     const key = activeOperator?.id ? `nexus_sidebar_collapsed_${activeOperator.id}` : 'nexus_sidebar_collapsed_guest';
     localStorage.setItem(key, String(isSidebarCollapsed));
   }, [isSidebarCollapsed, activeOperator?.id]);
+
+  // --- 13. ROUTING GUARD & PERMISSION ENFORCEMENT ---
+  useEffect(() => {
+    if (nexusData.isDataLoading) return; // Wait for initial hydration
+    
+    const infraTabs = ['agencies', 'infra', 'infrastructure', 'features', 'plans', 'plans-owner', 'permissions', 'maintenance', 'docs'];
+    if (!activeOperator?.isAppOwner && infraTabs.includes(activeTab)) {
+      console.warn(`[Nexus-Guard] Unauthorized access to ${activeTab} prevented for role: ${activeOperator?.role}`);
+      setActiveTab('dashboard');
+    }
+  }, [activeTab, activeOperator, nexusData.isDataLoading]);
 
   // --- 13. CONTEXT VALUE ---
   const value = useMemo(() => ({

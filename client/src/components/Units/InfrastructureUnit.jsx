@@ -12,7 +12,9 @@ import DocsView from '../Views/DocsView';
  * Infrastructure Unit: Control hub for system-wide configuration and administration.
  */
 const InfrastructureUnit = () => {
-  const { activeTab } = useNexus();
+  const { activeTab, isAppOwner } = useNexus();
+
+  if (!isAppOwner) return null;
 
   switch (activeTab) {
     case 'agencies':
