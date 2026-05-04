@@ -8,10 +8,11 @@ const SOSPanel = () => {
   const [history, setHistory] = useState([]);
   const [historyPage] = useState(1);
   const [subView, setSubView] = useState('active');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchActive = useCallback(async () => {
     try {
+      setLoading(true);
       const res = await fetch(`${API_BASE}/safety/active`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -20,6 +21,9 @@ const SOSPanel = () => {
         setActiveAlerts(data.alerts || []);
       }
     } catch { /* ignore */ }
+    finally {
+      setLoading(false);
+    }
   }, [API_BASE, token]);
 
   const fetchHistory = useCallback(async () => {
@@ -105,7 +109,12 @@ const SOSPanel = () => {
       <div style={{ flex: 1, overflowY: 'auto' }} className="custom-scrollbar">
         {subView === 'active' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {activeAlerts.length === 0 ? (
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+                <div className="spinning" style={{ width: '32px', height: '32px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--accent-color)', borderRadius: '50%', margin: '0 auto 1rem' }} />
+                <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{t('loading')}...</div>
+              </div>
+            ) : activeAlerts.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '4rem 2rem', background: 'rgba(255,255,255,0.02)', borderRadius: '24px', border: '1px dashed var(--card-border)' }}>
                 <BellOff size={48} color="rgba(255,255,255,0.1)" style={{ marginBottom: '1rem' }} />
                 <div style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>{t('noActiveAlerts')}</div>
