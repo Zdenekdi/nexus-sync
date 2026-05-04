@@ -249,7 +249,7 @@ const Sidebar = () => {
         {/* Header */}
         <div style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: isSidebarCollapsed ? 'center' : 'stretch' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: (isMobile || !isSidebarCollapsed) ? 'space-between' : 'center', width: '100%' }}>
-            <div onClick={() => { nexus.setShowLanding(true); if(isMobile) setIsSidebarOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', cursor: 'pointer' }}>
+            <div onClick={() => { nexus.setActiveTab('dashboard'); nexus.setShowLanding(true); if(isMobile) setIsSidebarOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', cursor: 'pointer' }}>
               <div style={{ width: isSidebarCollapsed ? '42px' : '48px', height: isSidebarCollapsed ? '42px' : '48px', transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)', position: 'relative' }}>
                 <img src="/nexus_icon.png" alt="Nexus Hub" style={{ width: '100%', height: '100%', borderRadius: '12px', boxShadow: '0 8px 25px rgba(59, 130, 246, 0.25)' }} />
                 <div style={{
