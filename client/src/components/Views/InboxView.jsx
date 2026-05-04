@@ -40,18 +40,24 @@ const InboxView = () => {
   const { getSuggestion, isAiLoading, aiError } = useAI();
 
   // 2. All functions must be defined BEFORE useEffects to avoid TDZ in production
-  const loadClientCrm = React.useCallback(async () => {
-    if (!fetchClientByPhone || !selectedChat?.from) return;
+  const loadClientCrm = React.useCallback(async (phone) => {
+    if (!fetchClientByPhone || !phone) return;
+    
+    // Prevent redundant loading if we already have the data for this phone
+    if (clientCrmData && (clientCrmData.phone === phone || clientCrmData.externalId === phone)) {
+      return;
+    }
+
     setIsCrmLoading(true);
     try {
-      const data = await fetchClientByPhone(selectedChat.from);
+      const data = await fetchClientByPhone(phone);
       setClientCrmData(data);
     } catch (err) {
       console.error("CRM Load error:", err);
     } finally {
       setIsCrmLoading(false);
     }
-  }, [fetchClientByPhone, selectedChat?.from]);
+  }, [fetchClientByPhone, clientCrmData]);
 
   const lastMsgId = chatMessages.length > 0 ? chatMessages[chatMessages.length - 1].id : null;
 
@@ -88,9 +94,14 @@ const InboxView = () => {
   // 3. UseEffects AFTER definitions
   React.useEffect(() => {
     if (selectedChat?.from && activeContextTab === 'crm') {
-      loadClientCrm();
+      loadClientCrm(selectedChat.from);
     }
   }, [selectedChat?.from, activeContextTab, loadClientCrm]);
+
+  // Reset CRM data when switching chats to avoid showing old data
+  React.useEffect(() => {
+    setClientCrmData(null);
+  }, [selectedChat?.from]);
 
   React.useEffect(() => {
     if (selectedChatId && inlinePanelTab === 'ai' && chatMessages.length > 0) {
