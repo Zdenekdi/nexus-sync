@@ -80,7 +80,7 @@ const ManualView = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
           <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--card-border)', borderRadius: '24px', padding: '2.5rem' }}>
             <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '0 0 2rem 0', fontSize: '1.5rem', fontWeight: '900' }}>
-              <Rocket size={24} color="#10b981" /> {isCz ? 'Průvodce registrací' : 'Registration Guide'}
+              <Rocket size={24} color="#10b981" /> {isCz ? 'Manuál registrace' : 'Registration Manual'}
             </h2>
             
             <StepItem 

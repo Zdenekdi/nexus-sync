@@ -77,7 +77,8 @@ export const NexusProvider = ({ children }) => {
   const [activeProfileId, setActiveProfileId] = useState(() => localStorage.getItem('nexus_active_profile_id') || 'all');
   const [showLanding, setShowLanding] = useState(() => {
     if (typeof window !== 'undefined') {
-      return window.location.pathname === '/';
+      const path = window.location.pathname;
+      return path === '/' || path === '/guide';
     }
     return true;
   });
@@ -700,10 +701,12 @@ export const NexusProvider = ({ children }) => {
     if (activeProfileId) localStorage.setItem('nexus_active_profile_id', activeProfileId);
     
     // Sync activeTab with URL for better refresh persistence
-    if (typeof window !== 'undefined' && activeTab) {
+    if (typeof window !== 'undefined') {
       const currentPath = window.location.pathname.substring(1);
-      if (currentPath !== activeTab) {
-        window.history.replaceState(null, '', `/${activeTab}`);
+      const targetPath = activeTab === 'dashboard' && showLanding ? '' : activeTab;
+      
+      if (currentPath !== targetPath) {
+        window.history.replaceState(null, '', `/${targetPath}`);
       }
     }
   }, [lang, activeTab, activeMarket, activeProfileId]);

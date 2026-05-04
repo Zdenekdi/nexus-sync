@@ -831,7 +831,7 @@ export const TRANSLATIONS = {
         auditLogs: 'Auditní Logy',
         payouts: 'Výplaty',
         crm: 'CRM',
-        guide: 'Průvodce',
+        guide: 'Manuál',
         permissions: 'Oprávnění',
         all: 'Vše',
         total: 'Celkem',
