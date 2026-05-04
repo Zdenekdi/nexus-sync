@@ -75,7 +75,12 @@ export const NexusProvider = ({ children }) => {
   // --- 2. AUTHENTICATION & IDENTITY ---
   const [activeOperatorState, setActiveOperatorState] = useState(null);
   const [activeProfileId, setActiveProfileId] = useState(() => localStorage.getItem('nexus_active_profile_id') || 'all');
-  const [showLanding, setShowLanding] = useState(true);
+  const [showLanding, setShowLanding] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.location.pathname === '/';
+    }
+    return true;
+  });
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(() => localStorage.getItem('nexus_hasSeenOnboarding') === 'true');
   const [showOnboarding, setShowOnboarding] = useState(false);
 
