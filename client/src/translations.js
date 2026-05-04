@@ -769,7 +769,16 @@ export const TRANSLATIONS = {
         feat_audit_vault: 'Audit Vault',
         feat_audit_vault_desc: 'Secure cloud backup and complete operator auditing',
         feat_cloud_bridge: 'Cloud Bridge',
-        feat_cloud_bridge_desc: 'Direct connection of Nexus subsystems with international APIs'
+        feat_cloud_bridge_desc: 'Direct connection of Nexus subsystems with international APIs',
+        navSections: {
+            overview: 'Overview',
+            operations: 'Operations',
+            safety: 'Safety',
+            management: 'Management',
+            system: 'System',
+            globalManagement: 'Global Management',
+            systemConfiguration: 'System Configuration'
+        }
     },
     cz: {
         comingSoon: 'Brzy k dispozici',
@@ -1560,6 +1569,15 @@ export const TRANSLATIONS = {
         feat_audit_vault: 'Audit Vault',
         feat_audit_vault_desc: 'Zabezpečené cloudové zálohování a kompletní audit operátorů pro případné kontroly',
         feat_cloud_bridge: 'Cloud Bridge',
-        feat_cloud_bridge_desc: 'Přímé propojení Nexus subsystémů s mezinárodním API plateb a bran'
+        feat_cloud_bridge_desc: 'Přímé propojení Nexus subsystémů s mezinárodním API plateb a bran',
+        navSections: {
+            overview: 'Přehled',
+            operations: 'Operace',
+            safety: 'Bezpečnost',
+            management: 'Správa',
+            system: 'Systém',
+            globalManagement: 'Globální správa',
+            systemConfiguration: 'Konfigurace systému'
+        }
     }
 };
