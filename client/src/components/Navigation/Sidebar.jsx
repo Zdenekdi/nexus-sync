@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, MessageSquare, Calendar, Users, BarChart3, 
   Settings, Activity, Radio, Globe, Smartphone, FileSearch, 
-  Shield, Building2, HardDrive, CreditCard, Zap, UserCheck,
+  Shield, ShieldCheck, Building2, HardDrive, CreditCard, Zap, UserCheck,
   LogOut, Menu, X, Circle, Package as PackageIcon, Gift, Wallet,
   ChevronDown, ChevronRight
 } from 'lucide-react';
@@ -385,8 +385,8 @@ const Sidebar = () => {
 
                     <SidebarSection id="safety" label={t('navSections.safety')} isOpen={sectionsOpen.safety} onToggle={toggleSection} isSidebarCollapsed={isSidebarCollapsed}>
                       {[
-                        { id: 'safety', icon: Shield, label: t('safety'), perm: 'safety' },
-                        { id: 'safety-guard', icon: Shield, label: t('safetyGuard'), perm: 'safety' },
+                        { id: 'safety', icon: ShieldCheck, label: t('safety'), perm: 'safety' },
+                        { id: 'safety-guard', icon: Activity, label: t('safetyGuard'), perm: 'safety' },
                       ].filter(item => !item.perm || isAllowed(item.perm)).map(item => (
                         <TooltipItem key={item.id} label={capitalize(item.label)} isMobile={isMobile} isSidebarCollapsed={isSidebarCollapsed}>
                           <button onClick={() => handleNavigation(item.id)} data-testid={`nav-link-${item.id}`} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
