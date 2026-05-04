@@ -72,7 +72,7 @@ const HierarchyView = () => {
         display: 'flex', 
         flexDirection: 'column', 
         alignItems: 'center', 
-        gap: isMobile ? '2rem' : '4.5rem',
+        gap: '0rem',
         position: 'relative'
       }}>
         {activeTiers.map((tierName, index) => {
@@ -80,7 +80,14 @@ const HierarchyView = () => {
           const isModelTier = tierName === 'MODEL';
 
           return (
-            <div key={tierName} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', width: '100%' }}>
+            <div key={tierName} style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center', 
+              position: 'relative', 
+              width: '100%',
+              marginTop: index === 0 ? '0' : '2.5rem'
+            }}>
               <div style={{ 
                 fontSize: '0.75rem', 
                 textTransform: 'uppercase', 
@@ -105,65 +112,105 @@ const HierarchyView = () => {
                 width: '100%'
               }}>
                 {usersInTier.map(user => (
-                  <div key={user.id} style={{
-                    width: isMobile ? '140px' : '220px',
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.05)',
-                    borderRadius: '20px',
-                    padding: '1.5rem',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '1rem',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    cursor: 'default',
-                    position: 'relative',
-                    backdropFilter: 'blur(10px)'
-                  }} className="hierarchy-card">
-                    <div style={{ 
-                      width: '64px', 
-                      height: '64px', 
-                      borderRadius: '50%', 
-                      background: isModelTier ? 'linear-gradient(45deg, #ec4899, #8b5cf6)' : 'linear-gradient(45deg, #3b82f6, #8b5cf6)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '1.6rem',
-                      fontWeight: 'bold',
-                      color: 'white',
-                      boxShadow: '0 8px 16px rgba(0,0,0,0.3)',
-                      border: '2px solid rgba(255,255,255,0.1)'
-                    }}>
-                      {user.avatar || user.name.charAt(0)}
-                    </div>
+                  <div key={user.id} style={{ position: 'relative' }}>
+                    {/* Vertical line from top to card */}
+                    <div style={{
+                      position: 'absolute',
+                      top: '-1.5rem',
+                      left: '50%',
+                      width: '2px',
+                      height: '1.5rem',
+                      background: 'rgba(255,255,255,0.05)',
+                      display: index === 0 ? 'none' : 'block'
+                    }} />
                     
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontWeight: '700', fontSize: '1.05rem', color: 'white', marginBottom: '0.2rem' }}>{user.name}</div>
-                      <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.05em' }}>
-                        {user.agencyId || 'Centrální Hub'}
-                      </div>
-                    </div>
-
-                    {/* Zobrazujeme metriky pouze u modelek */}
-                    {isModelTier && (
+                    <div style={{
+                      width: isMobile ? '140px' : '220px',
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.05)',
+                      borderRadius: '20px',
+                      padding: '1.5rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '1rem',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      cursor: 'default',
+                      position: 'relative',
+                      backdropFilter: 'blur(10px)',
+                      zIndex: 1
+                    }} className="hierarchy-card">
                       <div style={{ 
-                        display: 'flex', 
-                        gap: '0.5rem', 
-                        marginTop: '0.5rem',
-                        paddingTop: '0.8rem',
-                        borderTop: '1px solid rgba(255,255,255,0.08)',
-                        width: '100%',
-                        justifyContent: 'center'
+                        width: '64px', 
+                        height: '64px', 
+                        borderRadius: '50%', 
+                        background: isModelTier ? 'linear-gradient(45deg, #ec4899, #8b5cf6)' : 'linear-gradient(45deg, #3b82f6, #8b5cf6)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '1.6rem',
+                        fontWeight: 'bold',
+                        color: 'white',
+                        boxShadow: '0 8px 16px rgba(0,0,0,0.3)',
+                        border: '2px solid rgba(255,255,255,0.1)'
                       }}>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'white' }}>{user.metrics?.bookings || 0}</div>
-                          <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', textTransform: 'uppercase', opacity: 0.6 }}>Rezervace</div>
+                        {user.avatar || user.name.charAt(0)}
+                      </div>
+                      
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontWeight: '700', fontSize: '1.05rem', color: 'white', marginBottom: '0.2rem' }}>{user.name}</div>
+                        <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.05em' }}>
+                          {user.agencyId || 'Centrální Hub'}
                         </div>
                       </div>
-                    )}
+
+                      {/* Zobrazujeme metriky pouze u modelek */}
+                      {isModelTier && (
+                        <div style={{ 
+                          display: 'flex', 
+                          gap: '0.5rem', 
+                          marginTop: '0.5rem',
+                          paddingTop: '0.8rem',
+                          borderTop: '1px solid rgba(255,255,255,0.08)',
+                          width: '100%',
+                          justifyContent: 'center'
+                        }}>
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'white' }}>{user.metrics?.bookings || 0}</div>
+                            <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', textTransform: 'uppercase', opacity: 0.6 }}>Rezervace</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
+
+              {/* Connector line to next tier */}
+              {index < activeTiers.length - 1 && (
+                <div style={{
+                  marginTop: '1.5rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  width: '100%'
+                }}>
+                  {/* Vertical line from tier to horizontal bar */}
+                  <div style={{
+                    width: '2px',
+                    height: isMobile ? '1.5rem' : '2rem',
+                    background: 'linear-gradient(to bottom, rgba(59, 130, 246, 0.2), rgba(255, 255, 255, 0.05))',
+                  }} />
+                  {/* Horizontal bridge bar */}
+                  <div style={{
+                    width: '80%',
+                    maxWidth: '1200px',
+                    height: '2px',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    borderRadius: '2px'
+                  }} />
+                </div>
+              )}
             </div>
           );
         })}
