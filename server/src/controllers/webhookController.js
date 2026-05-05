@@ -175,6 +175,44 @@ exports.handleGeneric = async (req, res) => {
   }
 };
 
+/**
+ * AdultWork (AW) Webhook
+ * POST /api/webhooks/adultwork
+ * Expects: { sender_id, profile_id, body }
+ */
+exports.handleAdultWork = async (req, res) => {
+  try {
+    const { sender_id, profile_id, body } = req.body;
+    if (!sender_id || !body) return res.sendStatus(200);
+
+    const externalId = `aw:${sender_id}`;
+    // Find chat specifically for this AW profile mapping if needed, 
+    // or use generic findOrCreateChat
+    const chat = await findOrCreateChat(externalId, `AW User ${sender_id}`, 'adultwork');
+    if (!chat) return res.sendStatus(200);
+
+    const message = await prisma.message.create({
+      data: {
+        chatId: chat.id,
+        text: body,
+        direction: 'INBOUND',
+        status: 'delivered',
+        transport: 'adultwork',
+      },
+    });
+
+    getIO().to(`agency_${chat.agencyId}`).emit('new_message', {
+      message: { ...message, chat: { id: chat.id, clientName: chat.clientName } },
+      chatId: chat.id,
+    });
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.error('[Webhook][AdultWork] Error:', err.message);
+    res.sendStatus(200);
+  }
+};
+
 // --- Helper: Find or create a chat for an external contact ---
 async function findOrCreateChat(externalId, clientName, transport) {
   // Look for existing chat with this externalId

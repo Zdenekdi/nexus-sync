@@ -12,4 +12,7 @@ router.post('/whatsapp', webhookController.handleWhatsApp);
 // Generic external webhook (could be authenticated via API key in production)
 router.post('/generic', webhookController.handleGeneric);
 
+// AdultWork (AW) webhook
+router.post('/adultwork', webhookController.handleAdultWork);
+
 module.exports = router;
