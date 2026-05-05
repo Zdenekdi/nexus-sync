@@ -92,11 +92,11 @@ exports.testAI = async (req, res) => {
 // POST /api/ai/translate — Translate text
 exports.translate = async (req, res) => {
   try {
-    const { text, targetLang } = req.body;
+    const { text, target } = req.body;
     if (!text) return res.status(400).json({ message: 'text is required' });
 
-    const response = await aiService.translateText(text, targetLang);
-    res.json({ response });
+    const response = await aiService.translateText(text, target);
+    res.json({ translated: response });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -473,7 +473,7 @@ export const NexusProvider = ({ children }) => {
     if (!text || !token) return;
     setIsTranslating(true);
     try {
-      const res = await axios.post(`${API_BASE}/translate`, { text, target }, {
+      const res = await axios.post(`${API_BASE}/ai/translate`, { text, target }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTranslatedText(res.data.translated);
