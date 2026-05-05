@@ -259,12 +259,27 @@ export const NexusProvider = ({ children }) => {
     (profiles || []).find(p => p.id === activeProfileId) || myProfiles[0] || null, 
     [profiles, activeProfileId, myProfiles]
   );
+  
+  const filteredCalendar = useMemo(() => {
+    const raw = nexusData.calendar || [];
+    if (!activeOperator) return [];
+    if (activeOperator.isAppOwner || activeOperator.isAdmin || activeOperator.isManager || activeOperator.isSeniorOperator) return raw;
+    const myProfileIds = new Set(myProfiles.map(p => p.id));
+    return raw.filter(b => !b.profileId || myProfileIds.has(b.profileId));
+  }, [nexusData.calendar, activeOperator, myProfiles]);
 
   const filteredMessages = useMemo(() => {
     if (!messages) return [];
-    if (activeProfileId === 'all') return messages;
-    return messages.filter(m => m.profileId === activeProfileId);
-  }, [messages, activeProfileId]);
+    
+    // Get IDs of profiles this user is allowed to see
+    const allowedProfileIds = new Set(myProfiles.map(p => p.id));
+    
+    // Filter messages to only those belonging to allowed profiles
+    const allowedMessages = messages.filter(m => allowedProfileIds.has(m.profileId));
+
+    if (activeProfileId === 'all') return allowedMessages;
+    return allowedMessages.filter(m => m.profileId === activeProfileId);
+  }, [messages, activeProfileId, myProfiles]);
 
   const selectedChat = useMemo(() => 
     (messages || []).find(m => m.id === selectedChatId) || null, 
@@ -727,6 +742,24 @@ export const NexusProvider = ({ children }) => {
     }
   }, [activeTab, activeOperator, nexusData.isDataLoading]);
 
+  const filteredStats = useMemo(() => {
+    const raw = nexusData.stats || {};
+    if (!activeOperator) return raw;
+    if (activeOperator.isAppOwner || activeOperator.isAdmin || activeOperator.isManager || activeOperator.isSeniorOperator) return raw;
+    
+    return {
+      ...raw,
+      revenue: (lang === 'cz' || lang === 'cs') ? '0 Kč' : '£0.00',
+      revenueMtd: (lang === 'cz' || lang === 'cs') ? '0 Kč' : '£0.00',
+      totalBookings: filteredCalendar.length,
+      activeBookings: filteredCalendar.length,
+      totalMessages: filteredMessages.length,
+      totalCalls: 0,
+      chartData: Array.isArray(raw.chartData) ? raw.chartData.map(() => 0) : [],
+      sparklineData: Array.isArray(raw.sparklineData) ? raw.sparklineData.map(() => 0) : []
+    };
+  }, [nexusData.stats, activeOperator, filteredCalendar, filteredMessages, lang]);
+
   // --- 13. CONTEXT VALUE ---
   const value = useMemo(() => ({
     t, lang, setLang, activeTab, setActiveTab, activeMarket, setActiveMarket,
@@ -753,7 +786,7 @@ export const NexusProvider = ({ children }) => {
     startCall: () => showToast(t('voipInitializing'), 'info'), 
     handleQuickSaveMeeting: nexusData.handleQuickSaveMeeting,
     activeProfile, activeProfileId, setActiveProfileId, profiles, myProfiles, onlineOnly, setOnlineOnly, 
-    agencies: nexusData.agencies, stats: nexusData.stats, operators: nexusData.operators, setProfiles: nexusData.setProfiles,
+    agencies: nexusData.agencies, stats: filteredStats, operators: nexusData.operators, setProfiles: nexusData.setProfiles,
     toggleOperatorStatus: nexusData.toggleOperatorStatus, handleSaveAssignees: nexusData.handleSaveAssignees,
     handleDeleteAgency, handleImpersonateAgency, fetchAllReferrals, handleConfirmReferral,
     isSyncing: nexusData.isSyncing, syncStatus: nexusData.syncStatus, syncProgress: nexusData.syncProgress,
@@ -764,7 +797,7 @@ export const NexusProvider = ({ children }) => {
     globalSettings: nexusData.globalSettings, handleUpdateGlobalSetting: nexusData.handleUpdateGlobalSetting,
     isTraining: nexusData.isTraining, trainingProgress: nexusData.trainingProgress,
     onStartTraining: nexusData.onStartTraining, onResetTraining: nexusData.onResetTraining,
-    calendar: nexusData.calendar, bookingSchedule: nexusData.calendar,
+    calendar: filteredCalendar, bookingSchedule: filteredCalendar,
     isBookingModalOpen: nexusData.isBookingModalOpen, setIsBookingModalOpen: nexusData.setIsBookingModalOpen,
     newBookingForm: nexusData.newBookingForm, setNewBookingForm: nexusData.setNewBookingForm,
     handleSaveBooking: nexusData.handleSaveBooking,
@@ -780,7 +813,7 @@ export const NexusProvider = ({ children }) => {
     heartRate, setHeartRate, hrThreshold, setHrThreshold, isBluetoothConnected, setIsBluetoothConnected, activeBioWarning
   }), [
     t, lang, activeTab, activeMarket, nexusData, activeOperator, activeRole, isAllowed, isLoggedIn, token, logoutStable, auth, showLanding, hasSeenOnboarding, showOnboarding, isMobile, isNativeApp, isSidebarCollapsed, mobileView, inlinePanelTab, sourceText, translatedText, isTranslating, internalNote, clientNotes, detectedMeeting, typingProfiles, activeContextTab, translateTargetLang, showPanicConfirm, activeSafetySession, sosActive, linkedSessionId, checkinMinutes, checkinTimerEnd, checkinRemaining, triggerSOS, cancelSOS, startCheckinTimer, resetCheckinTimer, handleConfirmDeparture, pendingNotifications, agencyDetailModalData, isAddAgencyOpen, isBugReportOpen, isAddUserOpen, addUserModalAgencyId, isEditProfileOpen, editingProfileData, profiles, myProfiles, activeProfile, activeProfileId, onlineOnly, messages, filteredMessages, selectedChatId, selectedChat, chatMessages, chatHistory, fetchChatMessages, isHistoryLoading, isRelayActive, setRelayActiveStable, relaySimSlot, relayLogs, addRelayLog, updateRelayLogStatus, linkedTrackerId, trackerStatus, calViewDate, _gpsHistory, lastTrackerUpdate, voiceGuardianActive, handleToggleVoiceGuardian, batteryLevel, incomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity, _toasts, subscriptionPlans, isPlansLoading, isSidebarOpen, isTvMode, heartRate, hrThreshold, isBluetoothConnected, activeBioWarning, handleSendMessage, handleTranslate, handleSaveNote, handleDeleteAgency, handleImpersonateAgency, fetchAllReferrals, handleConfirmReferral, messageValue,
-    handleLogin, incomingRelayCall, showToast
+    handleLogin, incomingRelayCall, showToast, filteredCalendar, filteredStats
   ]);
 
   return (

@@ -388,7 +388,6 @@ const Sidebar = () => {
                     <SidebarSection id="overview" label={t('navSections.overview')} isOpen={sectionsOpen.overview} onToggle={toggleSection} isSidebarCollapsed={isSidebarCollapsed}>
                       {[
                         { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard') },
-                        { id: 'guide', icon: BookOpen, label: t('guide') },
                         { id: 'analytics', icon: BarChart3, label: t('analytics'), perm: 'analytics' },
                         { id: 'activity', icon: Activity, label: t('activity'), perm: 'analytics' },
                         { id: 'audit-logs', icon: FileSearch, label: t('auditLogs'), perm: 'audit_logs' },

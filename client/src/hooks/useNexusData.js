@@ -289,7 +289,8 @@ export function useNexusData({
             type: b.locationType === 'outcall' ? 'outcall' : 'work',
             status: b.status || 'confirmed',
             locationType: b.locationType,
-            address: b.address
+            address: b.address,
+            profileId: b.profileId
           };
         });
         setCalendar(mappedBookings);
