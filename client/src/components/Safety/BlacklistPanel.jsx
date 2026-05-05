@@ -22,7 +22,7 @@ const BlacklistPanel = () => {
     if (!token || !API_BASE) return;
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/safety/blacklist`, {
+      const res = await fetch(`${API_BASE}/blacklist`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -41,7 +41,7 @@ const BlacklistPanel = () => {
   const handleAdd = async () => {
     if (!newPhone.trim()) return;
     try {
-      const res = await fetch(`${API_BASE}/safety/blacklist`, {
+      const res = await fetch(`${API_BASE}/blacklist`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ phone: newPhone, reason: newReason })
@@ -57,9 +57,9 @@ const BlacklistPanel = () => {
     }
   };
 
-  const handleRemove = async (phone) => {
+  const handleRemove = async (id) => {
     try {
-      const res = await fetch(`${API_BASE}/safety/blacklist/${phone}`, {
+      const res = await fetch(`${API_BASE}/blacklist/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -126,8 +126,11 @@ const BlacklistPanel = () => {
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', maxHeight: '400px' }} className="custom-scrollbar">
-          {loading ? (
-            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>{t('loading')}...</div>
+          {loading && entries.length === 0 ? (
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+              <div className="loader-dots" style={{ marginBottom: '1rem' }}><span></span><span></span><span></span></div>
+              {t('loading')}...
+            </div>
           ) : filteredEntries.length === 0 ? (
             <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
               <Filter size={32} style={{ opacity: 0.1, marginBottom: '0.5rem' }} />
@@ -135,22 +138,22 @@ const BlacklistPanel = () => {
             </div>
           ) : (
             filteredEntries.map(entry => (
-              <div key={entry.phone} style={{ padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+              <div key={entry.id || entry.phone} style={{ padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <div style={{ width: '36px', height: '36px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Shield size={18} />
                   </div>
                   <div>
-                    <div style={{ fontWeight: '700', color: 'white' }}>{entry.phone}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{entry.reason || t('noReason')}</div>
+                    <div style={{ fontWeight: '700', color: 'white' }}>{entry.phone || entry.name || entry.licensePlate || 'Unknown'}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{entry.description || entry.reason || t('noReason')}</div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                   <div style={{ textAlign: 'right', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                    <div>{new Date(entry.createdAt).toLocaleDateString()}</div>
+                    <div>{entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : '-'}</div>
                   </div>
                   <button 
-                    onClick={() => handleRemove(entry.phone)}
+                    onClick={() => handleRemove(entry.id || entry.phone)}
                     style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer', transition: 'color 0.2s' }}
                     onMouseOver={_err => _err.currentTarget.style.color = '#ef4444'}
                     onMouseOut={_err => _err.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
