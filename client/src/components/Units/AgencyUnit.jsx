@@ -5,7 +5,7 @@ import AnalyticsView from '../Views/AnalyticsView';
 import ActivityView from '../Views/ActivityView';
 import SettingsView from '../Views/SettingsView';
 import CRMView from '../Views/CRMView';
-import InventoryView from '../InventoryView';
+import InventoryView from '../Views/InventoryView';
 import AuditLogsView from '../Views/AuditLogsView';
 import PayoutsView from '../Views/PayoutsView';
 import SafetyView from '../Views/SafetyView';

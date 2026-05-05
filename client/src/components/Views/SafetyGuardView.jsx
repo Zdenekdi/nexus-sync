@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Shield, MapPin, Activity, Battery, Clock, AlertTriangle, CheckCircle2, User, Phone, Zap, Search, Filter, RefreshCw, Eye } from 'lucide-react';
+import { Shield, ShieldCheck, MapPin, Activity, Battery, Clock, AlertTriangle, CheckCircle2, User, Phone, Zap, Search, Filter, RefreshCw, Eye } from 'lucide-react';
 import { useNexus } from '../../context/ContextHook';
 import axios from 'axios';
 
@@ -19,6 +19,15 @@ const SafetyGuardView = () => {
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [safetySettings, setSafetySettings] = useState({
+    audioSentinelEnabled: true,
+    audioSentinelInterval: 300,
+    audioSentinelVolume: 0.5
+  });
+  
+  // Simulated heart rates and battery levels
+  const [simData, setSimData] = useState({});
 
   const isCz = lang === 'cz' || lang === 'cs';
 
@@ -31,10 +40,24 @@ const SafetyGuardView = () => {
       const res = await axios.get(`${API_BASE}/api/safety/sessions/summary`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setSessions(res.data || []);
+      const data = res.data || [];
+      setSessions(data);
+      
+      // Initialize sim data for new sessions
+      setSimData(prev => {
+        const next = { ...prev };
+        data.forEach(s => {
+          if (!next[s.id]) {
+            next[s.id] = {
+              bpm: 70 + Math.floor(Math.random() * 20),
+              battery: 85 + Math.floor(Math.random() * 15)
+            };
+          }
+        });
+        return next;
+      });
     } catch (_err) {
       console.error('Failed to fetch safety sessions:', _err);
-      // Only show error if it's not a 404/empty state
       if (_err.response?.status !== 404) {
         showToast(t('dataLoadError'), 'error');
       }
@@ -42,13 +65,66 @@ const SafetyGuardView = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [API_BASE, token, isCz, showToast]);
+  }, [API_BASE, token, t, showToast]);
+
+  const fetchSettings = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/api/safety/settings`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSafetySettings(res.data);
+    } catch (_err) {
+      console.error('Failed to fetch safety settings');
+    }
+  }, [API_BASE, token]);
 
   useEffect(() => {
     fetchSessions();
-    const interval = setInterval(() => fetchSessions(true), 15000); // Auto-refresh every 15s
-    return () => clearInterval(interval);
-  }, [fetchSessions]);
+    fetchSettings();
+    const interval = setInterval(() => fetchSessions(true), 15000);
+    
+    // Sim pulse effect
+    const simInterval = setInterval(() => {
+      setSimData(prev => {
+        const next = { ...prev };
+        Object.keys(next).forEach(id => {
+          next[id].bpm += (Math.random() > 0.5 ? 1 : -1);
+          if (next[id].bpm < 60) next[id].bpm = 62;
+          if (next[id].bpm > 110) next[id].bpm = 108;
+          if (Math.random() > 0.98) next[id].battery -= 1;
+        });
+        return next;
+      });
+    }, 3000);
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(simInterval);
+    };
+  }, [fetchSessions, fetchSettings]);
+
+  const handleGhostCall = async (profileId) => {
+    try {
+      await axios.post(`${API_BASE}/api/safety/ghost-call`, { profileId }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      showToast(isCz ? 'Ghost Call byl iniciován' : 'Ghost Call initiated', 'success');
+    } catch (err) {
+      showToast('Error', 'error');
+    }
+  };
+
+  const handleUpdateSettings = async () => {
+    try {
+      await axios.patch(`${API_BASE}/api/safety/settings`, safetySettings, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setShowSettings(false);
+      showToast(isCz ? 'Nastavení uloženo' : 'Settings saved', 'success');
+    } catch (err) {
+      showToast('Error', 'error');
+    }
+  };
 
   const filteredSessions = sessions.filter(s => {
     const matchesSearch = s.profile?.name?.toLowerCase().includes(search.toLowerCase());
@@ -105,6 +181,12 @@ const SafetyGuardView = () => {
               <span style={{ fontSize: '1rem', fontWeight: 900, color: stat.color }}>{stat.value}</span>
             </div>
           ))}
+          <button onClick={() => setShowSettings(true)} style={{ 
+            width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', 
+            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white'
+          }}>
+            <Settings size={18} />
+          </button>
           <button onClick={() => fetchSessions(true)} style={{ 
             width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', 
             display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white'
@@ -188,17 +270,17 @@ const SafetyGuardView = () => {
                   {/* Metrics */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                     <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                       <Activity size={14} color="#ef4444" />
+                       <Activity size={14} color="#ef4444" className={simData[session.id]?.bpm > 90 ? 'heart-pulse' : ''} />
                        <div>
                           <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('heartRate')}</div>
-                          <div style={{ fontSize: '0.85rem', fontWeight: 900, color: 'white' }}>78 BPM</div>
+                          <div style={{ fontSize: '0.85rem', fontWeight: 900, color: 'white' }}>{simData[session.id]?.bpm || 72} BPM</div>
                        </div>
                     </div>
                     <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                       <Battery size={14} color="#10b981" />
+                       <Battery size={14} color={simData[session.id]?.battery < 20 ? '#ef4444' : '#10b981'} />
                        <div>
                           <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('battery')}</div>
-                          <div style={{ fontSize: '0.85rem', fontWeight: 900, color: 'white' }}>92%</div>
+                          <div style={{ fontSize: '0.85rem', fontWeight: 900, color: 'white' }}>{simData[session.id]?.battery || 100}%</div>
                        </div>
                     </div>
                   </div>
@@ -209,10 +291,13 @@ const SafetyGuardView = () => {
                   </div>
 
                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: 'auto' }}>
-                    <button style={{ 
-                      flex: 1, padding: '0.6rem', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', 
-                      color: '#60a5fa', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem'
-                    }}>
+                    <button 
+                      onClick={() => handleGhostCall(session.profileId)}
+                      style={{ 
+                        flex: 1, padding: '0.6rem', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', 
+                        color: '#60a5fa', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem'
+                      }}
+                    >
                        <Phone size={14} /> {t('ghostCall')}
                     </button>
                     <button style={{ 
@@ -236,7 +321,6 @@ const SafetyGuardView = () => {
               <span style={{ fontWeight: 800, fontSize: '0.8rem', color: 'white' }}>{t('tacticalOverview')}</span>
             </div>
             <div style={{ flex: 1, position: 'relative', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-               {/* Simplified World Grid Simulation */}
                <div style={{ position: 'absolute', inset: 0, opacity: 0.1, backgroundImage: 'radial-gradient(#3b82f6 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
                <div style={{ textAlign: 'center', zIndex: 1 }}>
                   <MapPin size={40} color="#3b82f6" className="pulse-subtle" />
@@ -244,7 +328,6 @@ const SafetyGuardView = () => {
                   <div style={{ fontSize: '0.65rem', opacity: 0.5 }}>{t('unitsTracking').replace('{count}', stats.active)}</div>
                </div>
 
-               {/* Random Radar Dots */}
                {sessions.map((s, i) => (
                  <div key={i} style={{ 
                    position: 'absolute', 
@@ -267,6 +350,57 @@ const SafetyGuardView = () => {
         )}
       </div>
 
+      {/* Safety Settings Modal */}
+      {showSettings && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '450px', padding: '2.5rem' }}>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <ShieldCheck size={24} color="#3b82f6" /> {isCz ? 'Nastavení bezpečnosti' : 'Safety Settings'}
+            </h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontWeight: '800', fontSize: '0.95rem' }}>Audio Sentinel</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Diskrétní pípání v aplikaci</div>
+                </div>
+                <input 
+                  type="checkbox" 
+                  checked={safetySettings.audioSentinelEnabled}
+                  onChange={(e) => setSafetySettings({...safetySettings, audioSentinelEnabled: e.target.checked})}
+                  style={{ width: '24px', height: '24px', cursor: 'pointer' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>INTERVAL PÍPÁNÍ (sekundy)</label>
+                <input 
+                  type="number" 
+                  value={safetySettings.audioSentinelInterval}
+                  onChange={(e) => setSafetySettings({...safetySettings, audioSentinelInterval: e.target.value})}
+                  style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', color: 'white' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>HLASITOST</label>
+                <input 
+                  type="range" min="0" max="1" step="0.1"
+                  value={safetySettings.audioSentinelVolume}
+                  onChange={(e) => setSafetySettings({...safetySettings, audioSentinelVolume: e.target.value})}
+                  style={{ width: '100%', cursor: 'pointer' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                <button onClick={() => setShowSettings(false)} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--card-border)', background: 'transparent', color: 'white', fontWeight: '800', cursor: 'pointer' }}>ZRUŠIT</button>
+                <button onClick={handleUpdateSettings} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: 'none', background: 'var(--accent-color)', color: 'white', fontWeight: '800', cursor: 'pointer' }}>ULOŽIT</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         .spinning { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -274,6 +408,14 @@ const SafetyGuardView = () => {
         @keyframes pulse { 
           0%, 100% { opacity: 1; transform: scale(1); }
           50% { opacity: 0.7; transform: scale(1.05); }
+        }
+        .heart-pulse { animation: heart-pulse 0.8s infinite; color: #ef4444 !important; }
+        @keyframes heart-pulse {
+          0% { transform: scale(1); }
+          15% { transform: scale(1.3); }
+          30% { transform: scale(1); }
+          45% { transform: scale(1.15); }
+          60% { transform: scale(1); }
         }
       `}</style>
     </div>

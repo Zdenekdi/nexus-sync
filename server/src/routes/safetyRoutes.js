@@ -24,4 +24,9 @@ router.post('/sessions/:id/location', validate(safetyLocation), (req, res) => sa
 router.post('/sessions/:id/departure-timeout', (req, res) => safetyController.departureTimeout(req, res));
 router.post('/sessions/:id/departure-confirmed', (req, res) => safetyController.departureConfirmed(req, res));
 
+// Global Safety Features
+router.post('/ghost-call', (req, res) => safetyController.triggerGhostCall(req, res));
+router.get('/settings', (req, res) => safetyController.getSettings(req, res));
+router.patch('/settings', (req, res) => safetyController.updateSettings(req, res));
+
 module.exports = router;

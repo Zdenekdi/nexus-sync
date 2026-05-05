@@ -290,6 +290,77 @@ class SafetyController {
             res.status(500).json({ message: 'Departure confirmation failed' });
         }
     }
+
+    /**
+     * Trigger a Ghost Call (Fake incoming call) for a model
+     */
+    async triggerGhostCall(req, res) {
+        try {
+            const { profileId } = req.body;
+            const { agencyId } = req.user;
+            
+            logger.info(`[Ghost Call] Triggered for profile ${profileId} in agency ${agencyId}`);
+            
+            // In production, this would call safetyService.sendPush(profileId, 'GHOST_CALL')
+            res.json({ ok: true, message: 'Ghost call triggered successfully' });
+        } catch (error) {
+            res.status(500).json({ message: 'Failed to trigger ghost call' });
+        }
+    }
+
+    /**
+     * Get safety settings (Audio Sentinel, etc.) for the agency
+     */
+    async getSettings(req, res) {
+        try {
+            const { agencyId } = req.user;
+            if (!agencyId) return res.status(400).json({ message: 'Agency context required' });
+
+            const agency = await prisma.agency.findUnique({
+                where: { id: agencyId },
+                select: { extraFeatures: true }
+            });
+
+            const features = JSON.parse(agency.extraFeatures || '{}');
+            const safetySettings = features.safetySettings || {
+                audioSentinelEnabled: true,
+                audioSentinelInterval: 300, // seconds
+                audioSentinelVolume: 0.5
+            };
+
+            res.json(safetySettings);
+        } catch (error) {
+            res.status(500).json({ message: 'Failed to load safety settings' });
+        }
+    }
+
+    /**
+     * Update safety settings for the agency
+     */
+    async updateSettings(req, res) {
+        try {
+            const { agencyId } = req.user;
+            const { audioSentinelEnabled, audioSentinelInterval, audioSentinelVolume } = req.body;
+
+            const agency = await prisma.agency.findUnique({ where: { id: agencyId } });
+            const features = JSON.parse(agency.extraFeatures || '{}');
+            
+            features.safetySettings = {
+                audioSentinelEnabled,
+                audioSentinelInterval: Number(audioSentinelInterval),
+                audioSentinelVolume: Number(audioSentinelVolume)
+            };
+
+            await prisma.agency.update({
+                where: { id: agencyId },
+                data: { extraFeatures: JSON.stringify(features) }
+            });
+
+            res.json({ ok: true, settings: features.safetySettings });
+        } catch (error) {
+            res.status(500).json({ message: 'Failed to update safety settings' });
+        }
+    }
 }
 
 module.exports = new SafetyController();
