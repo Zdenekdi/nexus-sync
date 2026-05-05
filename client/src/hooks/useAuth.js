@@ -66,22 +66,8 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, setSelectedChatId, setAc
 
   const handleLogoutInternal = useCallback(() => {
     if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
-    setIsLoggedIn(false);
-    setShowLanding(true);
-    setActiveProfileId(null);
-    setSelectedChatId(null);
-    setIsRelayMode(false);
-    localStorage.removeItem('nexus_isLoggedIn');
-    localStorage.removeItem('nexus_activeOperator');
-    localStorage.removeItem('nexus_activeClient');
-    localStorage.removeItem('nexus_token');
-    localStorage.removeItem('nexus_refreshToken');
-    localStorage.removeItem('nexus_lastSelectedChatId');
-    localStorage.removeItem('nexus_relay_mode');
-    localStorage.removeItem('nexus_hydrated');
-    setToken(null);
-    setActiveOperator(null);
-    setActiveClient(null);
+    localStorage.clear(); // Nuclear option to ensure no stale data remains
+    window.location.href = '/';
   }, [setIsRelayMode, setSelectedChatId, setActiveProfileId, setShowLanding]);
 
   const handleLogout = useCallback(() => {
@@ -294,7 +280,7 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, setSelectedChatId, setAc
               console.warn('[Relay] Background service start failed:', _err.message);
             }
           }
-          window.history.replaceState(null, '', '/dashboard');
+          window.location.href = '/dashboard';
         }
         return { success: true };
       } else {

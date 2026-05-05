@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Settings, ShieldCheck, UserPlus, X, CheckCircle, PlusCircle 
+  Settings, ShieldCheck, UserPlus, X, CheckCircle, PlusCircle, Key, Copy, Check 
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -29,11 +29,38 @@ const ProfilesView = () => {
     showToast = () => {},
     API_BASE = ''
   } = nexus;
+  
   const [localAssigningProfile, setLocalAssigningProfile] = React.useState(null);
+  const [showCredsModal, setShowCredsModal] = React.useState(null);
+  const [fetchingCreds, setFetchingCreds] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
   
   // Use local state if context state is missing
   const currentAssigningProfile = assigningProfile || localAssigningProfile;
   const setCurrentAssigningProfile = setAssigningProfile || setLocalAssigningProfile;
+
+  const fetchAndShowCreds = async (profileId) => {
+    setFetchingCreds(true);
+    try {
+      const resp = await axios.get(`${API_BASE}/profiles/${profileId}/credentials`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setShowCredsModal({ profileId, data: resp.data.credentials });
+    } catch (e) {
+      showToast('Failed to fetch credentials', 'error');
+    } finally {
+      setFetchingCreds(false);
+    }
+  };
+
+  const handleCopyAll = () => {
+    if (!showCredsModal?.data) return;
+    const text = JSON.stringify(showCredsModal.data, null, 2);
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div data-testid="page-profiles-container" style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
       {!isMobile && (
@@ -99,6 +126,7 @@ const ProfilesView = () => {
         {(allAgencyProfiles || []).map((profile, i) => {
           const isMyProfile = (myProfiles || []).find(p => p.id === profile.id);
           const activeCount = ((profile.operators || []).filter(op => op.active).length || 0) + ((profile.assignees || []).length || 0);
+          const canManage = activeRole === 'App Owner' || activeRole === 'Agency Manager' || activeRole === 'Agency Admin' || activeOperator?.role?.isManager;
 
           return (
             <div key={i} className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2rem', display: 'flex', gap: isMobile ? '1.5rem' : '2.5rem', borderColor: isMyProfile ? 'rgba(59, 130, 246, 0.4)' : 'var(--card-border)', flexDirection: isMobile ? 'column' : 'row' }}>
@@ -114,29 +142,53 @@ const ProfilesView = () => {
                     </div>
                   )}
                 </div>
-                <button
-                  onClick={() => toggleOperatorStatus(profile.id, activeOperator?.id)}
-                  className={`action-btn ${isMyProfile ? 'active' : ''}`}
-                  style={{ background: isMyProfile ? 'rgba(239, 68, 68, 0.2)' : 'var(--accent-color)', color: isMyProfile ? 'var(--_err-color)' : 'white' }}
-                >
-                  {isMyProfile ? t('deactivateMySeat') : t('activateMySeat')}
-                </button>
-                <button
-                  onClick={() => handleEditProfile(profile)}
-                  style={{ width: '100%', marginTop: '0.75rem', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--accent-color)', background: 'rgba(59, 130, 246, 0.1)', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                >
-                  <Settings size={16} /> {t('editProfile')}
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveProfileId(profile.id);
-                    setActiveTab('inbox');
-                  }}
-                  style={{ width: '100%', marginTop: '0.75rem', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--card-border)', background: 'transparent', color: 'white', fontWeight: '700', cursor: 'pointer' }}
-                >
-                  {t('openContext')}
-                </button>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <button
+                    onClick={() => toggleOperatorStatus(profile.id, activeOperator?.id)}
+                    className={`action-btn ${isMyProfile ? 'active' : ''}`}
+                    style={{ 
+                      background: isMyProfile ? 'rgba(239, 68, 68, 0.1)' : 'var(--accent-color)', 
+                      color: isMyProfile ? '#ef4444' : 'white',
+                      border: isMyProfile ? '1px solid #ef4444' : 'none',
+                      width: '100%',
+                      margin: 0,
+                      textTransform: 'none',
+                      fontWeight: '800'
+                    }}
+                  >
+                    {isMyProfile ? t('uvolnitMisto') || 'Uvolnit moje místo' : t('activateMySeat')}
+                  </button>
 
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      onClick={() => handleEditProfile(profile)}
+                      style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.03)', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                    >
+                      <Settings size={16} /> {t('editProfile')}
+                    </button>
+                    {canManage && (
+                      <button
+                        onClick={() => fetchAndShowCreds(profile.id)}
+                        disabled={fetchingCreds}
+                        title={t('viewCredentials')}
+                        style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--card-border)', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <Key size={16} />
+                      </button>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setActiveProfileId(profile.id);
+                      setActiveTab('inbox');
+                    }}
+                    style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--card-border)', background: 'transparent', color: 'white', fontWeight: '700', cursor: 'pointer' }}
+                  >
+                    {t('openContext')}
+                  </button>
+                </div>
               </div>
 
               <div style={{ flex: 1 }}>
@@ -157,12 +209,14 @@ const ProfilesView = () => {
                       </div>
                     );
                   })}
-                  <div 
-                    onClick={() => setCurrentAssigningProfile(profile)}
-                    style={{ padding: '1rem', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '15px', border: '1px dashed var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--accent-color)' }}
-                  >
-                     <UserPlus size={16} /> <span style={{ fontSize: '0.8rem', fontWeight: '700' }}>{t('manageTeam') || 'Manage Team'}</span>
-                   </div>
+                  {canManage && (
+                    <div 
+                      onClick={() => setCurrentAssigningProfile(profile)}
+                      style={{ padding: '1rem', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '15px', border: '1px solid var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--accent-color)', borderStyle: 'solid' }}
+                    >
+                       <UserPlus size={16} /> <span style={{ fontSize: '0.8rem', fontWeight: '800' }}>{t('manageTeam')}</span>
+                     </div>
+                  )}
                 </div>
               </div>
 
@@ -181,7 +235,59 @@ const ProfilesView = () => {
                 </div>
               )}
 
-              {/* Simple Inline User Selection Modal */}
+              {/* Credentials Modal */}
+              {showCredsModal?.profileId === profile.id && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(15px)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+                  <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '500px', padding: '2rem', border: '1px solid var(--accent-color)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div style={{ width: '40px', height: '40px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Key size={20} color="var(--accent-color)" />
+                        </div>
+                        <div>
+                          <h3 style={{ fontSize: '1.2rem', fontWeight: '900' }}>{t('credentialsTitle')}</h3>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{profile.name}</div>
+                        </div>
+                      </div>
+                      <button onClick={() => setShowCredsModal(null)} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+                      {showCredsModal.data ? (
+                        Object.entries(showCredsModal.data).map(([platform, creds], idx) => (
+                          <div key={idx} style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
+                            <div style={{ fontSize: '0.7rem', fontWeight: '900', color: 'var(--accent-color)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>{platform}</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                              <div style={{ fontSize: '0.9rem', fontWeight: '700' }}>{creds.username || creds.email || 'N/A'}</div>
+                              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{creds.password || '••••••••'}</div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>{t('credentialsNotFound')}</div>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <button 
+                        onClick={handleCopyAll}
+                        style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: 'none', background: copied ? '#22c55e' : 'rgba(255,255,255,0.1)', color: 'white', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                      >
+                        {copied ? <Check size={18} /> : <Copy size={18} />}
+                        {copied ? t('credentialsCopied') : t('credentialsCopy')}
+                      </button>
+                      <button 
+                        onClick={() => setShowCredsModal(null)}
+                        style={{ padding: '0.85rem 1.5rem', borderRadius: '12px', border: '1px solid var(--card-border)', background: 'transparent', color: 'white', fontWeight: '800', cursor: 'pointer' }}
+                      >
+                        {t('close')}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Simple Inline User Selection Modal (Assignees) */}
               {currentAssigningProfile?.id === profile.id && (
                   <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
                       <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '500px', padding: '2rem' }}>
