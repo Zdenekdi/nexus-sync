@@ -150,3 +150,38 @@ exports.syncProfile = async (req, res) => {
     res.status(500).json({ message: 'Failed' });
   }
 };
+
+exports.getCredentials = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { agencyId, role } = req.user;
+    const { normalizeRole } = require('../utils/roleUtils');
+    const roleNameClean = normalizeRole(role?.name || role);
+    const isAppOwner = !!role?.isAppOwner || ['app_owner', 'owner'].includes(roleNameClean);
+    const isManager = !!role?.isManager || isAppOwner || 
+                     ['manager', 'agency_admin', 'senior_operator', 'senior_manager'].includes(roleNameClean);
+
+    if (!isManager) return res.status(403).json({ message: 'Forbidden' });
+
+    const profile = await prisma.profile.findUnique({ where: { id } });
+    if (!profile || (profile.agencyId !== String(agencyId) && !isAppOwner)) {
+      return res.status(404).json({ message: 'Profile not found' });
+    }
+
+    let decrypted = null;
+    if (profile.credentials) {
+      const decryptedString = decrypt(profile.credentials);
+      if (decryptedString) {
+        try {
+          decrypted = JSON.parse(decryptedString);
+        } catch (e) {
+          decrypted = { raw: decryptedString }; // Fallback
+        }
+      }
+    }
+
+    res.json({ credentials: decrypted });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
