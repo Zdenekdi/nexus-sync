@@ -104,7 +104,7 @@ export const TRANSLATIONS = {
         credentialsCopy: 'Copy All',
         credentialsCopied: 'Credentials copied!',
         credentialsNotFound: 'No credentials found.',
-        uvolnitMisto: 'Release my seat'
+        uvolnitMisto: 'Release my seat',
         registerButton: 'Create Account',
         resetRequestButton: 'Send Reset Link',
         resetSent: 'Reset link sent to your email.',
@@ -1411,7 +1411,7 @@ export const TRANSLATIONS = {
         credentialsCopy: 'Kopírovat vše',
         credentialsCopied: 'Údaje zkopírovány!',
         credentialsNotFound: 'Žádné uložené údaje.',
-        uvolnitMisto: 'Uvolnit moje místo'
+        uvolnitMisto: 'Uvolnit moje místo',
         relayStep1: 'Nainstalujte Nexus Hub APK do svého Android telefonu.',
         relayStep2: 'Udělte všechna požadovaná oprávnění (SMS, Hovory, Poloha).',
         relayStep3: 'Vypněte optimalizaci baterie pro aplikaci Nexus Hub.',
