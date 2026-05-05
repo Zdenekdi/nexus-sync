@@ -358,14 +358,15 @@ model InventoryItem {
 }
 
 model AuditLog {
-  id        String   @id @default(cuid())
-  agencyId  String?
-  agency    Agency?  @relation(fields: [agencyId], references: [id])
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
-  action    String   
-  details   String?  
-  timestamp DateTime @default(now())
+  id            String   @id @default(cuid())
+  agencyId      String?
+  agency        Agency?  @relation(fields: [agencyId], references: [id])
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id])
+  action        String   
+  details       String?  
+  timestamp     DateTime @default(now())
+  integrityHash String?  // SHA-256 chain signature for security audits
 
   @@index([agencyId])
 }

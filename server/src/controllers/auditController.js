@@ -1,11 +1,34 @@
 const prisma = require('../services/db');
 const { isEffectiveAdmin } = require('./roleController');
+const crypto = require('crypto');
 
 // Utility: log an audit event (call from other controllers)
 exports.logAction = async (agencyId, userId, action, details = null) => {
   try {
+    // 1. Get the last log's hash to build the chain
+    const lastLog = await prisma.auditLog.findFirst({
+      where: { agencyId },
+      orderBy: { timestamp: 'desc' }
+    });
+    const previousHash = lastLog?.integrityHash || 'NEXUS_ROOT_HASH';
+
+    // 2. Prepare data for hashing
+    const timestamp = new Date();
+    const dataToHash = `${agencyId}|${userId}|${action}|${JSON.stringify(details)}|${timestamp.toISOString()}|${previousHash}`;
+    
+    // 3. Calculate SHA-256 hash
+    const hash = crypto.createHash('sha256').update(dataToHash).digest('hex');
+
+    // 4. Create log entry
     await prisma.auditLog.create({
-      data: { agencyId, userId, action, details }
+      data: { 
+        agencyId, 
+        userId, 
+        action, 
+        details, 
+        timestamp,
+        integrityHash: hash // Store the signature
+      }
     });
   } catch (err) {
     console.error('Audit log write error:', err);
@@ -50,7 +73,8 @@ exports.getAuditLogs = async (req, res) => {
         details: l.details,
         userName: l.user?.name || 'System',
         userEmail: l.user?.email || null,
-        timestamp: l.timestamp
+        timestamp: l.timestamp,
+        hash: l.integrityHash // Exposed for UI validation
       })),
       total,
       page: parseInt(page),

@@ -120,6 +120,20 @@ class AIService {
   }
 
   /**
+   * Translate text between languages
+   */
+  async translateText(text, targetLang = "English") {
+    try {
+      logger.info(`AI: Překlad textu do: ${targetLang}`);
+      const prompt = `Přelož následující text do jazyka ${targetLang}. Vrať POUZE přeložený text, nic jiného.\n\nTEXT K PŘEKLADU:\n${text}`;
+      return await this.generateResponse(prompt, "Jsi profesionální překladatel.");
+    } catch (error) {
+      logger.error('AI Translation Error:', error.message);
+      throw error;
+    }
+  }
+
+  /**
    * Analyze agency performance data
    */
   async analyzeData(dataJson) {

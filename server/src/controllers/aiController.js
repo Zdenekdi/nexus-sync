@@ -1,69 +1,103 @@
 const prisma = require('../services/db');
+const aiService = require('../services/aiService');
 
 // POST /api/ai/suggest-reply — AI-powered reply suggestions
-// Stub: returns template-based suggestions until AI model is connected
 exports.suggestReply = async (req, res) => {
   try {
-    const { messageText, chatId, profileId, lang } = req.body;
+    const { messageText, chatId, profileId, lang, history = [] } = req.body;
     if (!messageText) return res.status(400).json({ message: 'messageText is required' });
 
-    // Load profile quick replies as context
-    let quickReplies = [];
+    // Load profile context and style examples
+    let profileContext = "";
+    let styleExamples = [];
+    let agencyContext = "";
+
     if (profileId) {
-      const profile = await prisma.profile.findUnique({ where: { id: profileId }, select: { data: true } });
-      if (profile?.data) {
-        const data = typeof profile.data === 'string' ? JSON.parse(profile.data) : profile.data;
-        quickReplies = data.quickReplies || [];
+      const profile = await prisma.profile.findUnique({ 
+        where: { id: profileId }, 
+        include: { agency: true } 
+      });
+      if (profile) {
+        const data = typeof profile.data === 'string' ? JSON.parse(profile.data) : (profile.data || {});
+        profileContext = data.biography || "";
+        styleExamples = data.styleExamples || [];
+        agencyContext = profile.agency?.extraFeatures || "";
       }
     }
 
-    // TODO: Replace with actual AI model call (OpenAI, Claude, etc.)
-    // For now, return context-aware template suggestions
-    const isCz = lang === 'cz' || lang === 'cs';
-    const lower = messageText.toLowerCase();
-
-    let suggestions = [];
-
-    if (lower.includes('price') || lower.includes('cost') || lower.includes('how much') || lower.includes('cena') || lower.includes('kolik')) {
-      suggestions = isCz
-        ? ['Moje sazby najdete na mém profilu. Mohu vám pomoci s konkrétní službou?', 'Děkuji za váš zájem! Ceny se liší podle služby. Jaký typ schůzky vás zajímá?']
-        : ['You can find my rates on my profile. Can I help with a specific service?', 'Thank you for your interest! Prices vary by service. What type of meeting are you looking for?'];
-    } else if (lower.includes('available') || lower.includes('free') || lower.includes('when') || lower.includes('volná') || lower.includes('kdy')) {
-      suggestions = isCz
-        ? ['Jsem k dispozici dnes odpoledne a zítra dopoledne. Vyhovuje vám nějaký čas?', 'Podívám se do kalendáře a dám vám vědět co nejdříve.']
-        : ['I\'m available this afternoon and tomorrow morning. Does any time work for you?', 'Let me check my calendar and get back to you shortly.'];
-    } else if (lower.includes('location') || lower.includes('where') || lower.includes('address') || lower.includes('kde') || lower.includes('adresa')) {
-      suggestions = isCz
-        ? ['Nabízím incall i outcall. Jakou variantu preferujete?', 'Detaily lokace sdílím po potvrzení schůzky.']
-        : ['I offer both incall and outcall. Which would you prefer?', 'I share location details once the booking is confirmed.'];
-    } else if (lower.includes('book') || lower.includes('appointment') || lower.includes('rezerv') || lower.includes('schůz')) {
-      suggestions = isCz
-        ? ['Ráda vám zarezervuji termín. Jaký den a čas vám vyhovuje?', 'Skvěle! Upřesněte prosím datum, čas a typ schůzky (incall/outcall).']
-        : ['I\'d be happy to book you in. What day and time works best?', 'Great! Please specify the date, time, and meeting type (incall/outcall).'];
-    } else {
-      suggestions = isCz
-        ? ['Děkuji za vaši zprávu! Jak vám mohu pomoci?', 'Díky za kontakt. Máte nějaký konkrétní dotaz?']
-        : ['Thank you for your message! How can I help you?', 'Thanks for reaching out. Do you have any specific questions?'];
+    // Prepare messages for AI (ensure role/content format)
+    const formattedHistory = history.map(h => ({
+      role: h.direction === 'INBOUND' ? 'user' : 'assistant',
+      content: h.text
+    }));
+    
+    // Add the latest message if not in history
+    if (formattedHistory.length === 0 || formattedHistory[formattedHistory.length - 1].content !== messageText) {
+      formattedHistory.push({ role: 'user', content: messageText });
     }
 
-    // Add matching quick replies if any
-    if (quickReplies.length > 0) {
-      const relevant = quickReplies.filter(qr => {
-        const qrLower = (typeof qr === 'string' ? qr : qr.text || '').toLowerCase();
-        return lower.split(' ').some(word => word.length > 3 && qrLower.includes(word));
-      }).slice(0, 2);
-      if (relevant.length > 0) {
-        suggestions = [...relevant.map(qr => typeof qr === 'string' ? qr : qr.text), ...suggestions];
+    try {
+      // 1. ATTEMPT REAL AI CALL (Ollama)
+      const suggestions = await aiService.suggestReply(
+        formattedHistory,
+        profileContext,
+        styleExamples,
+        agencyContext
+      );
+
+      return res.json({
+        suggestions: suggestions.slice(0, 3),
+        source: 'ai',
+        model: aiService.model
+      });
+    } catch (aiError) {
+      console.warn('[AI Controller] Falling back to templates due to service error:', aiError.message);
+      
+      // 2. FALLBACK TO TEMPLATES
+      const isCz = lang === 'cz' || lang === 'cs';
+      const lower = messageText.toLowerCase();
+      let suggestions = [];
+
+      if (lower.includes('price') || lower.includes('cost') || lower.includes('cena') || lower.includes('kolik')) {
+        suggestions = isCz ? ['Moje sazby najdete na mém profilu.', 'Ceny se liší podle služby. Co vás zajímá?'] : ['Check my rates on my profile.', 'Prices vary by service. What are you looking for?'];
+      } else {
+        suggestions = isCz ? ['Děkuji za zprávu! Jak mohu pomoci?', 'Díky za kontakt.'] : ['Thank you for your message!', 'Thanks for reaching out.'];
       }
-    }
 
-    res.json({
-      suggestions: suggestions.slice(0, 3),
-      source: 'template', // Will be 'ai' once model is connected
-      model: null
-    });
+      return res.json({
+        suggestions: suggestions.slice(0, 3),
+        source: 'template_fallback',
+        model: null
+      });
+    }
   } catch (error) {
     console.error('AI suggest error:', error);
     res.status(500).json({ message: 'Failed to generate suggestions' });
+  }
+};
+
+// POST /api/ai/test — Test AI connectivity
+exports.testAI = async (req, res) => {
+  try {
+    const { prompt, system } = req.body;
+    if (!prompt) return res.status(400).json({ message: 'Prompt is required' });
+
+    const response = await aiService.generateResponse(prompt, system);
+    res.json({ response });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// POST /api/ai/translate — Translate text
+exports.translate = async (req, res) => {
+  try {
+    const { text, targetLang } = req.body;
+    if (!text) return res.status(400).json({ message: 'text is required' });
+
+    const response = await aiService.translateText(text, targetLang);
+    res.json({ response });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };
