@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  Shield, Search, Filter, Calendar, User, 
+  Shield, ShieldCheck, Search, Filter, Calendar, User, 
   Activity, AlertTriangle, RefreshCw, ChevronLeft, 
   ChevronRight, Info, Eye
 } from 'lucide-react';
@@ -138,7 +138,14 @@ const AuditLogsView = () => {
                   {log.details || '-'}
                 </td>
                 <td style={{ padding: '1.25rem', textAlign: 'right' }}>
-                  <button onClick={() => setSelectedLog(log)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.5rem' }}><Eye size={16} /></button>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                    {log.hash && (
+                      <div className="verified-badge" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.2rem 0.5rem', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', color: '#10b981', fontSize: '0.6rem', fontWeight: '950' }}>
+                        <Shield size={10} /> VERIFIED
+                      </div>
+                    )}
+                    <button onClick={() => setSelectedLog(log)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.5rem' }}><Eye size={16} /></button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -190,7 +197,21 @@ const AuditLogsView = () => {
                 
                 <div style={{ color: 'var(--text-secondary)', fontWeight: '700' }}>ČAS:</div>
                 <div>{formatDate(selectedLog.timestamp)}</div>
+
+                <div style={{ color: 'var(--text-secondary)', fontWeight: '700' }}>INTEGRITA:</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#10b981', fontWeight: '800', fontSize: '0.75rem' }}>
+                  <ShieldCheck size={14} /> KRYPTOGRAFICKY PODEPSÁNO
+                </div>
               </div>
+              
+              {selectedLog.hash && (
+                <div style={{ marginTop: '0.5rem' }}>
+                  <div style={{ color: 'var(--text-secondary)', fontWeight: '700', fontSize: '0.65rem', marginBottom: '0.4rem', letterSpacing: '0.1em' }}>SHA-256 INTEGRITY HASH</div>
+                  <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.2)', fontSize: '0.7rem', color: '#10b981', wordBreak: 'break-all', fontFamily: 'monospace' }}>
+                    {selectedLog.hash}
+                  </div>
+                </div>
+              )}
               
               <div style={{ marginTop: '1rem' }}>
                 <div style={{ color: 'var(--text-secondary)', fontWeight: '700', fontSize: '0.75rem', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>DATA / DETAILY</div>
