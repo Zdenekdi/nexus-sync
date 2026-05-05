@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Shield, ShieldCheck, MapPin, Activity, Battery, Clock, AlertTriangle, CheckCircle2, User, Phone, Zap, Search, Filter, RefreshCw, Eye } from 'lucide-react';
+import { Shield, ShieldCheck, MapPin, Activity, Battery, Clock, AlertTriangle, CheckCircle2, User, Phone, Zap, Search, Filter, RefreshCw, Eye, Settings } from 'lucide-react';
 import { useNexus } from '../../context/ContextHook';
 import axios from 'axios';
 
@@ -37,7 +37,7 @@ const SafetyGuardView = () => {
     else setLoading(true);
     
     try {
-      const res = await axios.get(`${API_BASE}/api/safety/sessions/summary`, {
+      const res = await axios.get(`${API_BASE}/safety/sessions/summary`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = res.data || [];
@@ -69,7 +69,7 @@ const SafetyGuardView = () => {
 
   const fetchSettings = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_BASE}/api/safety/settings`, {
+      const res = await axios.get(`${API_BASE}/safety/settings`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSafetySettings(res.data);
@@ -105,7 +105,7 @@ const SafetyGuardView = () => {
 
   const handleGhostCall = async (profileId) => {
     try {
-      await axios.post(`${API_BASE}/api/safety/ghost-call`, { profileId }, {
+      await axios.post(`${API_BASE}/safety/ghost-call`, { profileId }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       showToast(isCz ? 'Ghost Call byl iniciován' : 'Ghost Call initiated', 'success');
@@ -116,7 +116,7 @@ const SafetyGuardView = () => {
 
   const handleUpdateSettings = async () => {
     try {
-      await axios.patch(`${API_BASE}/api/safety/settings`, safetySettings, {
+      await axios.patch(`${API_BASE}/safety/settings`, safetySettings, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setShowSettings(false);

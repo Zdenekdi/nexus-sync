@@ -735,7 +735,7 @@ const QuickBlacklistSection = ({ API_BASE, token, showToast, t }) => {
             if (!phone.trim()) return;
             setIsLoading(true);
             try {
-              const res = await fetch(`${API_BASE}/safety/blacklist`, {
+              const res = await fetch(`${API_BASE}/blacklist`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({ phone: phone, reason: 'Quick block from Dashboard' })

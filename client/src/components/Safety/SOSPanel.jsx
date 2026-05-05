@@ -13,7 +13,7 @@ const SOSPanel = () => {
   const fetchActive = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/safety/active`, {
+      const res = await fetch(`${API_BASE}/sos/active`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -29,7 +29,7 @@ const SOSPanel = () => {
   const fetchHistory = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/safety/history?page=${historyPage}`, {
+      const res = await fetch(`${API_BASE}/sos/history?page=${historyPage}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error();
@@ -63,7 +63,7 @@ const SOSPanel = () => {
 
   const handleResolve = async (alertId) => {
     try {
-      const res = await fetch(`${API_BASE}/safety/resolve/${alertId}`, {
+      const res = await fetch(`${API_BASE}/sos/${alertId}/resolve`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       });
