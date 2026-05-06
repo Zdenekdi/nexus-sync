@@ -1,6 +1,6 @@
 /**
  * useOmnichannel - React hook for omnichannel communication
- * Provides unified interface to manag_err.messages across channels
+ * Provides unified interface to manage messages across channels
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
@@ -9,7 +9,7 @@ import {
   WhatsAppAdapter,
   SMSAdapter,
   WebChatAdapter
-} from '../services/communication';
+} from '../../services/communication';
 
 export const useOmnichannel = (config = {}) => {
   const [channels, setChannels] = useState({});

@@ -8,7 +8,7 @@ const PlansView = () => {
   const nexus = useNexus();
   const { 
     t, 
-    lang, 
+    _lang, 
     isMobile, 
     activeSubscription, 
     subscriptionHistory: _subscriptionHistory, 

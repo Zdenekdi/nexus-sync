@@ -53,7 +53,7 @@ function InfraTab() {
   const [repoPath, setRepoPath] = useState("~/nexus-backend");
   const [apkError, setApkError] = useState(null);
   const [apkSuccess, setApkSuccess] = useState(false);
-  const [apkVersion, setApkVersion] = useState("1.0");
+  const [apkVersion, _setApkVersion] = useState("1.0");
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 
 import { useNexus } from '../../context/ContextHook';
+import { useOmnichannel } from '../../hooks/useOmnichannel';
 import PremiumSelector from '../UI/PremiumSelector';
 import useAI from '../../hooks/useAI';
 
@@ -33,6 +34,64 @@ const InboxView = () => {
     initData: refreshData = () => {}, isBackgroundLoading = false, fetchClientByPhone = () => {},
     setActiveTab = () => {}
   } = nexus;
+
+  const omnichannel = useOmnichannel({
+    token,
+    API_BASE,
+    whatsapp: { enabled: true },
+    sms: { enabled: true },
+    webchat: { enabled: true }
+  });
+
+  const { 
+    messages: omnichannelMessages, 
+    sendMessage: sendOmnichannelMessage,
+    isLoading: _isOmniLoading 
+  } = omnichannel;
+
+  const sendMessage = React.useCallback(async (content) => {
+    if (!content || !content.trim() || !selectedChat) return;
+
+    const channel = selectedChat.channel || selectedChat.transport || 'sms';
+    
+    if (channel !== 'sms' && channel !== 'relay') {
+      try {
+        await sendOmnichannelMessage(channel, {
+          content,
+          recipient: selectedChat.from,
+          conversationId: selectedChatId
+        });
+        setMessageValue('');
+        return;
+      } catch (err) {
+        console.error("Omnichannel send failed:", err);
+        showToast(lang === 'cz' ? `Chyba při odesílání přes ${channel}` : `Failed to send via ${channel}`, "error");
+      }
+    }
+
+    // Fallback to legacy
+    handleSendMessage(content);
+    setMessageValue('');
+  }, [selectedChat, selectedChatId, sendOmnichannelMessage, handleSendMessage, showToast, lang, setMessageValue]);
+
+  // Combine legacy and omnichannel messages
+  const allMessages = React.useMemo(() => {
+    if (!selectedChatId) return [];
+    
+    // Filter omnichannel messages for this conversation
+    const omniMatch = omnichannelMessages.filter(m => 
+      m.conversationId === selectedChatId || 
+      m.chatId === selectedChatId
+    );
+
+    // Merge and sort
+    const combined = [...chatMessages, ...omniMatch];
+    return combined.sort((a, b) => {
+      const dateA = new Date(a.createdAt || a.timestamp || 0);
+      const dateB = new Date(b.createdAt || b.timestamp || 0);
+      return dateA - dateB;
+    });
+  }, [chatMessages, omnichannelMessages, selectedChatId]);
 
   const [clientCrmData, setClientCrmData] = React.useState(null);
   const [isCrmLoading, setIsCrmLoading] = React.useState(false);
@@ -374,8 +433,8 @@ const InboxView = () => {
                        </span>
                      </div>
                    )}
-                   {chatMessages.length > 0 ? (
-                     chatMessages.map((msg, i) => {
+                   {allMessages.length > 0 ? (
+                     allMessages.map((msg, i) => {
                        const rawDate = msg.createdAt || msg.timestamp || msg.time || new Date();
                        const msgDate = new Date(rawDate);
                        const validDate = isNaN(msgDate.getTime()) ? new Date() : msgDate;
@@ -475,7 +534,7 @@ const InboxView = () => {
                                           {lang === 'cz' ? 'UPRAVIT' : 'EDIT'}
                                         </button>
                                         <button 
-                                          onClick={() => { handleSendMessage(s); setMessageValue(''); }}
+                                          onClick={() => { sendMessage(s); }}
                                           style={{ flex: 1, padding: '0.5rem', background: 'none', border: 'none', color: '#a78bfa', fontSize: '0.65rem', fontWeight: '900', cursor: 'pointer', transition: 'all 0.2s' }}
                                         >
                                           {lang === 'cz' ? 'POSLAT' : 'SEND'}
@@ -544,12 +603,12 @@ const InboxView = () => {
                          type="text" 
                          value={messageValue}
                          onChange={(_err) => setMessageValue(_err.target.value)}
-                         onKeyDown={(_err) => { if (_err.key === 'Enter' && messageValue.trim()) handleSendMessage(messageValue); }}
+                         onKeyDown={(_err) => { if (_err.key === 'Enter' && messageValue.trim()) sendMessage(messageValue); }}
                          placeholder={lang === 'cz' ? 'Napište zprávu...' : 'Type a message...'} 
                          style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.85rem 1rem', borderRadius: '12px', color: 'white', fontSize: '0.9rem' }} 
                        />
                        <button 
-                         onClick={() => { if (messageValue.trim()) handleSendMessage(messageValue); }}
+                         onClick={() => { if (messageValue.trim()) sendMessage(messageValue); }}
                          style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0 1.2rem', borderRadius: '12px', fontWeight: '900', fontSize: '0.8rem' }}
                        >
                          POSLAT

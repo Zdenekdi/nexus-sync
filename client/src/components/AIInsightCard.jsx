@@ -6,8 +6,8 @@ import { useNexus } from '../context/ContextHook';
 /**
  * AI Insight Card - Displays smart analysis from Llama 3.1
  */
-const AIInsightCard = ({ stats, agencies, systemHealth }) => {
-  const { lang, t, setActiveTab, activeRole, isMobile } = useNexus();
+const AIInsightCard = ({ stats, _agencies, systemHealth }) => {
+  const { lang, _t, setActiveTab, activeRole, isMobile } = useNexus();
   const { askAi, isAiLoading, aiError } = useAI();
   const [insight, setInsight] = useState(null);
   const [showDetailedAudit, setShowDetailedAudit] = useState(false);

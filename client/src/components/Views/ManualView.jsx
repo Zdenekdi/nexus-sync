@@ -50,7 +50,7 @@ const StepItem = ({ num, title, desc }) => (
 );
 
 const ManualView = () => {
-  const { lang, t } = useNexus();
+  const { lang, t: _t } = useNexus();
   const isCz = lang === 'cz';
 
   return (

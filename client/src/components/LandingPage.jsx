@@ -486,6 +486,61 @@ const LandingPage = () => {
             <BookOpen size={20} /> {lang === 'cz' ? 'Manuál registrace' : 'Registration Manual'}
           </button>
         </div>
+
+        {/* Download App CTA */}
+        <ScrollReveal delay={0.5}>
+          <div style={{ marginTop: '4rem', display: 'flex', justifyContent: 'center' }}>
+            <a 
+              href="https://firebasestorage.googleapis.com/v0/b/trainer-app-zdenekdi.firebasestorage.app/o/releases%2FTrainerApp-v2.0.7-release.apk?alt=media" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              style={{
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                padding: '1.5rem 2rem',
+                borderRadius: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1.5rem',
+                textDecoration: 'none',
+                color: 'white',
+                maxWidth: '500px',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.borderColor = 'var(--accent-color)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <div style={{ 
+                width: '56px', 
+                height: '56px', 
+                background: 'linear-gradient(135deg, #3DDC84 0%, #073042 100%)', 
+                borderRadius: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 0 20px rgba(61, 220, 132, 0.3)'
+              }}>
+                <Smartphone size={32} color="white" />
+              </div>
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontSize: '1.1rem', fontWeight: '900', color: 'white', marginBottom: '2px' }}>{t.downloadTitle}</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>{t.downloadDesc}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#3DDC84', fontWeight: '800', fontSize: '0.9rem' }}>
+                  <Zap size={16} fill="#3DDC84" /> {t.downloadBtn}
+                </div>
+              </div>
+            </a>
+          </div>
+        </ScrollReveal>
       </section>
 
       {/* Pillars Section */}

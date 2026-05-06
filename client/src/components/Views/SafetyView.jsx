@@ -18,7 +18,7 @@ const SafetyView = () => {
   
   const [subTab, setSubTab] = useState('blacklist');
 
-  const isCz = lang === 'cz' || lang === 'cs';
+  const _isCz = lang === 'cz' || lang === 'cs';
   const isModelRole = activeRole === 'Model';
   const tabs = [
     { id: 'blacklist', label: t('blacklist'), icon: AlertTriangle },

@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { NexusContext } from './ContextObject';
-import { useNexus } from './ContextHook';
 import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
@@ -11,11 +10,20 @@ import { useSocket } from '../hooks/useSocket';
 import { initPushNotifications, removePushListeners } from '../services/pushService';
 import { TRANSLATIONS } from '../translations';
 import { API_BASE } from '../constants/config';
+import { 
+  CommunicationService,
+  WhatsAppAdapter,
+  SMSAdapter,
+  WebChatAdapter,
+  AgencyDataGateway,
+  AnalyticsService,
+  ContentSyncService
+} from '../services';
 import { normalizeRole } from '../utils/roleUtils';
 
 // Shared AudioContext to prevent exhaustion on mobile devices
 let sharedAudioCtx = null;
-const getSharedAudioCtx = () => {
+const _getSharedAudioCtx = () => {
   if (!sharedAudioCtx) {
     try {
       sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -109,11 +117,11 @@ export const NexusProvider = ({ children }) => {
   const [checkinRemaining, setCheckinRemaining] = useState(null);
   const [linkedSessionId, setLinkedSessionId] = useState(null);
   const [voiceGuardianActive, setVoiceGuardianActive] = useState(false);
-  const [batteryLevel, setBatteryLevel] = useState(null);
+  const [batteryLevel, _setBatteryLevel] = useState(null);
   const [heartRate, setHeartRate] = useState(null);
   const [hrThreshold, setHrThreshold] = useState(120);
   const [isBluetoothConnected, setIsBluetoothConnected] = useState(false);
-  const [activeBioWarning, setActiveBioWarning] = useState(null);
+  const [activeBioWarning, _setActiveBioWarning] = useState(null);
   const [activeSafetySession, _setActiveSafetySession] = useState(null);
   const [showPanicConfirm, setShowPanicConfirm] = useState(false);
 
@@ -126,8 +134,8 @@ export const NexusProvider = ({ children }) => {
   const [agencyDetailModalData, setAgencyDetailModalData] = useState(null);
   const [addUserModalAgencyId, setAddUserModalAgencyId] = useState(null);
   const [_toasts, _setToasts] = useState([]);
-  const [subscriptionPlans, setSubscriptionPlans] = useState([]);
-  const [isPlansLoading, setIsPlansLoading] = useState(false);
+  const [subscriptionPlans, _setSubscriptionPlans] = useState([]);
+  const [isPlansLoading, _setIsPlansLoading] = useState(false);
   const [clientNotes, setClientNotes] = useState({});
   const [incomingRelayCall, setIncomingRelayCall] = useState(null);
   const [incomingGhostCall, setIncomingGhostCall] = useState(false);
@@ -760,7 +768,33 @@ export const NexusProvider = ({ children }) => {
     };
   }, [nexusData.stats, activeOperator, filteredCalendar, filteredMessages, lang]);
 
-  // --- 13. CONTEXT VALUE ---
+  // --- 13. OMNICHANNEL & ARCHITECTURE SERVICES ---
+  const omnichannelConfig = useMemo(() => ({
+    API_BASE,
+    token,
+    whatsapp: { apiKey: localStorage.getItem('nexus_whatsapp_key') || '' },
+    sms: { gateway: 'relay' },
+    webchat: { endpoint: '/chat' }
+  }), [API_BASE, token]);
+
+  const commService = useMemo(() => {
+    try {
+      const service = new CommunicationService(omnichannelConfig);
+      service.registerAdapter('whatsapp', new WhatsAppAdapter(omnichannelConfig.whatsapp));
+      service.registerAdapter('sms', new SMSAdapter(omnichannelConfig.sms));
+      service.registerAdapter('webchat', new WebChatAdapter(omnichannelConfig.webchat));
+      return service;
+    } catch (err) {
+      console.error('[NexusContext] Failed to init CommunicationService:', err);
+      return null;
+    }
+  }, [omnichannelConfig]);
+
+  const agencyGateway = useMemo(() => new AgencyDataGateway({ token, API_BASE }), [token, API_BASE]);
+  const analyticsService = useMemo(() => new AnalyticsService({ token, API_BASE }), [token, API_BASE]);
+  const syncService = useMemo(() => new ContentSyncService({ token, API_BASE }), [token, API_BASE]);
+
+  // --- 14. CONTEXT VALUE ---
   const value = useMemo(() => ({
     t, lang, setLang, activeTab, setActiveTab, activeMarket, setActiveMarket,
     loading: nexusData.isDataLoading, activeOperator, activeRole, isAllowed, isLoggedIn, token,
@@ -810,10 +844,32 @@ export const NexusProvider = ({ children }) => {
     _gpsHistory, lastTrackerUpdate, voiceGuardianActive, handleToggleVoiceGuardian,
     batteryLevel, incomingGhostCall, setIncomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity,
     isTvMode, setIsTvMode,
-    heartRate, setHeartRate, hrThreshold, setHrThreshold, isBluetoothConnected, setIsBluetoothConnected, activeBioWarning
+    heartRate, setHeartRate, hrThreshold, setHrThreshold, isBluetoothConnected, setIsBluetoothConnected, activeBioWarning,
+    commService, agencyGateway, analyticsService, syncService
   }), [
-    t, lang, activeTab, activeMarket, nexusData, activeOperator, activeRole, isAllowed, isLoggedIn, token, logoutStable, auth, showLanding, hasSeenOnboarding, showOnboarding, isMobile, isNativeApp, isSidebarCollapsed, mobileView, inlinePanelTab, sourceText, translatedText, isTranslating, internalNote, clientNotes, detectedMeeting, typingProfiles, activeContextTab, translateTargetLang, showPanicConfirm, activeSafetySession, sosActive, linkedSessionId, checkinMinutes, checkinTimerEnd, checkinRemaining, triggerSOS, cancelSOS, startCheckinTimer, resetCheckinTimer, handleConfirmDeparture, pendingNotifications, agencyDetailModalData, isAddAgencyOpen, isBugReportOpen, isAddUserOpen, addUserModalAgencyId, isEditProfileOpen, editingProfileData, profiles, myProfiles, activeProfile, activeProfileId, onlineOnly, messages, filteredMessages, selectedChatId, selectedChat, chatMessages, chatHistory, fetchChatMessages, isHistoryLoading, isRelayActive, setRelayActiveStable, relaySimSlot, relayLogs, addRelayLog, updateRelayLogStatus, linkedTrackerId, trackerStatus, calViewDate, _gpsHistory, lastTrackerUpdate, voiceGuardianActive, handleToggleVoiceGuardian, batteryLevel, incomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity, _toasts, subscriptionPlans, isPlansLoading, isSidebarOpen, isTvMode, heartRate, hrThreshold, isBluetoothConnected, activeBioWarning, handleSendMessage, handleTranslate, handleSaveNote, handleDeleteAgency, handleImpersonateAgency, fetchAllReferrals, handleConfirmReferral, messageValue,
-    handleLogin, incomingRelayCall, showToast, filteredCalendar, filteredStats
+    t, lang, activeTab, activeMarket, nexusData.isDataLoading, activeOperator, activeRole, isAllowed, isLoggedIn, token,
+    logoutStable, handleLogin, auth.handleRegisterAgency, auth.handleRegisterUser,
+    showLanding, hasSeenOnboarding, showOnboarding, isMobile, isNativeApp, isSidebarCollapsed, mobileView,
+    inlinePanelTab, sourceText, translatedText, isTranslating, internalNote, clientNotes, detectedMeeting, typingProfiles,
+    activeContextTab, translateTargetLang, showPanicConfirm, incomingRelayCall,
+    activeSafetySession, sosActive, linkedSessionId, checkinMinutes, checkinTimerEnd, checkinRemaining,
+    pendingNotifications, nexusData.onDelayBooking, agencyDetailModalData, isAddAgencyOpen,
+    isBugReportOpen, isAddUserOpen, addUserModalAgencyId, isEditProfileOpen, editingProfileData,
+    handleSendMessage, handleTranslate, handleSaveNote, nexusData.handleQuickSaveMeeting,
+    activeProfile, activeProfileId, profiles, myProfiles, onlineOnly, 
+    nexusData.agencies, filteredStats, nexusData.operators, nexusData.setProfiles,
+    nexusData.toggleOperatorStatus, nexusData.handleSaveAssignees,
+    handleDeleteAgency, handleImpersonateAgency, fetchAllReferrals, handleConfirmReferral,
+    nexusData.isSyncing, nexusData.syncStatus, nexusData.syncProgress,
+    nexusData.relayOnline, nexusData.handleSyncAll, nexusData.handleSyncChatHistory,
+    nexusData.handleSaveBio, nexusData.handleSaveCredentials,
+    nexusData.bioText, nexusData.globalFeatures, nexusData.handleFeatureToggle,
+    nexusData.globalSettings, nexusData.handleUpdateGlobalSetting,
+    nexusData.isTraining, nexusData.trainingProgress,
+    nexusData.onStartTraining, nexusData.onResetTraining,
+    filteredCalendar,
+    commService, agencyGateway, analyticsService, syncService,
+    messages, selectedChatId, selectedChat, chatMessages, chatHistory, fetchChatMessages, isHistoryLoading, isRelayActive, setRelayActiveStable, relaySimSlot, relayLogs, addRelayLog, updateRelayLogStatus, linkedTrackerId, trackerStatus, calViewDate, _gpsHistory, lastTrackerUpdate, voiceGuardianActive, handleToggleVoiceGuardian, batteryLevel, incomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity, _toasts, subscriptionPlans, isPlansLoading, isSidebarOpen, isTvMode, heartRate, hrThreshold, isBluetoothConnected, activeBioWarning, messageValue, showToast
   ]);
 
   return (

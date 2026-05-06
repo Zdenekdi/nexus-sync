@@ -7,8 +7,8 @@ const HierarchyView = () => {
   const {
     isMobile = false,
     t = (k) => k,
-    activeRole = '',
-    activeOperator = null,
+    activeRole: _activeRole = '',
+    activeOperator: _activeOperator = null,
     operators = [],
     profiles = []
   } = nexus;

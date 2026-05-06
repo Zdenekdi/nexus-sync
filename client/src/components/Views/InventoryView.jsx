@@ -31,8 +31,8 @@ const InventoryView = () => {
       ]);
       setLocations(locsRes.data);
       setItems(itemsRes.data);
-    } catch (err) {
-      console.error('Failed to fetch inventory:', err);
+    } catch (_err) {
+      console.error('Failed to fetch inventory:', _err);
       showToast('Nepodařilo se načíst data skladu', 'error');
     } finally {
       setLoading(false);
@@ -51,7 +51,7 @@ const InventoryView = () => {
       setNewLocName('');
       setShowAddLoc(false);
       showToast('Lokace byla vytvořena', 'success');
-    } catch (err) {
+    } catch (_err) {
       showToast('Chyba při vytváření lokace', 'error');
     }
   };
@@ -67,7 +67,7 @@ const InventoryView = () => {
       setShowAddItem(false);
       setNewItem({ name: '', quantity: 0, threshold: 10, locationId: '' });
       showToast('Položka byla přidána', 'success');
-    } catch (err) {
+    } catch (_err) {
       showToast('Chyba při přidávání položky', 'error');
     }
   };
@@ -78,7 +78,7 @@ const InventoryView = () => {
       await axios.delete(`${API_BASE}/inventory/items/${id}`, { headers: { Authorization: `Bearer ${token}` } });
       setItems(items.filter(i => i.id !== id));
       showToast('Položka smazána', 'info');
-    } catch (err) {
+    } catch (_err) {
       showToast('Chyba při mazání', 'error');
     }
   };

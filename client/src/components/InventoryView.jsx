@@ -13,7 +13,7 @@ const InventoryView = () => {
   const { 
     t = (k) => k, 
     token = '',
-    lang = 'cz'
+    lang: _lang = 'cz'
   } = nexus || {};
 
   const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
