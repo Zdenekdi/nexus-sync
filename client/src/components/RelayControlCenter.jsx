@@ -42,8 +42,8 @@ const RelayControlCenter = () => {
           <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{(sessions || []).filter(s => s.status === 'Active').length} <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>ONLINE</span></div>
         </div>
         <div className="glass-card" style={{ padding: '1.5rem', borderLeft: '4px solid #f59e0b' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>AUTO-PROVISIONING</div>
-          <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#f59e0b' }}>ENABLED</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>VOIP ROUTING</div>
+          <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#f59e0b' }}>BYON ENABLED</div>
         </div>
       </div>
 
