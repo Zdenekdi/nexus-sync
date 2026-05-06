@@ -46,7 +46,7 @@ const ProfilesView = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setShowCredsModal({ profileId, data: resp.data.credentials });
-    } catch (e) {
+    } catch (_e) {
       showToast('Failed to fetch credentials', 'error');
     } finally {
       setFetchingCreds(false);

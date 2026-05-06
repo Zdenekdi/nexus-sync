@@ -26,7 +26,7 @@ const MaintenanceView = () => {
     selectedServerId, 
     setSelectedServerId, 
     availableServers,
-    activeOperator,
+    _activeOperator,
     isAppOwner,
     loading,
     t

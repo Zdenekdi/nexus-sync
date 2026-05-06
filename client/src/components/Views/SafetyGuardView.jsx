@@ -109,7 +109,7 @@ const SafetyGuardView = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       showToast(isCz ? 'Ghost Call byl iniciován' : 'Ghost Call initiated', 'success');
-    } catch (err) {
+    } catch (_err) {
       showToast('Error', 'error');
     }
   };
@@ -121,7 +121,7 @@ const SafetyGuardView = () => {
       });
       setShowSettings(false);
       showToast(isCz ? 'Nastavení uloženo' : 'Settings saved', 'success');
-    } catch (err) {
+    } catch (_err) {
       showToast('Error', 'error');
     }
   };
@@ -204,7 +204,7 @@ const SafetyGuardView = () => {
             type="text" 
             placeholder={t('searchModel')}
             value={search}
-            onChange={(_err) => setSearch(_err.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             style={{ 
               width: '100%', padding: '0.85rem 1rem 0.85rem 3rem', borderRadius: '14px', 
               background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)',

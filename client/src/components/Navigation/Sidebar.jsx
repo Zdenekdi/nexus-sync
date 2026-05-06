@@ -7,7 +7,6 @@ import {
   ChevronDown, ChevronRight, BookOpen
 } from 'lucide-react';
 import { useNexus } from '../../context/ContextHook';
-import { normalizeRole } from '../../utils/roleUtils';
 
 const TooltipItem = ({ label, children, isMobile, isSidebarCollapsed }) => {
   if (isMobile) return <>{children}</>;
@@ -76,13 +75,24 @@ const SidebarSection = ({ id, label, isOpen, onToggle, children, isSidebarCollap
   );
 };
 
+// Group definitions
+const groups = {
+  overview: ['dashboard', 'analytics', 'activity', 'audit-logs'],
+  operations: ['inbox', 'calendar', 'profiles', 'hierarchy', 'qa', 'web-profiles'],
+  safety: ['safety', 'safety-guard'],
+  management: ['inventory', 'referrals', 'payouts', 'crm'],
+  system: ['device-setup', 'relay', 'settings'],
+  global: ['agencies', 'infra', 'maintenance'],
+  config: ['permissions', 'plans', 'features', 'docs']
+};
+
 const Sidebar = () => {
   const nexus = useNexus();
   const { 
     activeTab, setActiveTab, t, 
     activeOperator, logout, isMobile, 
     totalUnread,
-    activeProfile, setActiveProfileId, activeRole, profiles,
+    activeProfile, setActiveProfileId, activeRole, _profiles,
     isSidebarCollapsed, isAllowed,
     onlineOnly, setOnlineOnly,
     isSidebarOpen, setIsSidebarOpen
@@ -124,39 +134,42 @@ const Sidebar = () => {
       const newState = { ...prev, [id]: !prev[id] };
       try {
         localStorage.setItem(storageKey, JSON.stringify(newState));
-      } catch (_err) {}
+      } catch (_err) {
+        // Silently ignore storage errors
+      }
       return newState;
     });
   };
 
-  // Group definitions
-  const groups = {
-    overview: ['dashboard', 'analytics', 'activity', 'audit-logs'],
-    operations: ['inbox', 'calendar', 'profiles', 'hierarchy', 'qa', 'web-profiles'],
-    safety: ['safety', 'safety-guard'],
-    management: ['inventory', 'referrals', 'payouts', 'crm'],
-    system: ['device-setup', 'relay', 'settings'],
-    global: ['agencies', 'infra', 'maintenance'],
-    config: ['permissions', 'plans', 'features', 'docs']
-  };
+
 
   // Auto-expand section when tab changes
   useEffect(() => {
     if (!activeTab) return;
+    
+    let foundSectionId = null;
     for (const [sectionId, tabs] of Object.entries(groups)) {
       if (tabs.includes(activeTab)) {
-        setSectionsOpen(prev => {
-          if (prev[sectionId]) return prev;
-          const newState = { ...prev, [sectionId]: true };
-          try {
-            localStorage.setItem(storageKey, JSON.stringify(newState));
-          } catch (_err) {}
-          return newState;
-        });
+        foundSectionId = sectionId;
         break;
       }
     }
-  }, [activeTab, storageKey]);
+
+    if (foundSectionId) {
+      setTimeout(() => {
+        setSectionsOpen(prev => {
+          if (prev[foundSectionId]) return prev;
+          const newState = { ...prev, [foundSectionId]: true };
+          try {
+            localStorage.setItem(storageKey, JSON.stringify(newState));
+          } catch (_err) {
+            // Ignore
+          }
+          return newState;
+        });
+      }, 0);
+    }
+  }, [activeTab, storageKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleNavigation = (tabId) => {
     setActiveTab(tabId);

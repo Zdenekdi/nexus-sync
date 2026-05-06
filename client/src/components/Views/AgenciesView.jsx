@@ -9,9 +9,9 @@ const AgenciesView = () => {
   const { 
     agencies, 
     t, 
-    lang,
+    _lang,
     isMobile, 
-    activeOperator,
+    _activeOperator,
     handleAddAgency: onAddAgency, 
     handleAgencyDetail: onDetail, 
     handleImpersonateAgency: onImpersonate, 
@@ -19,17 +19,15 @@ const AgenciesView = () => {
     fetchAllReferrals,
     handleConfirmReferral,
     isAppOwner,
-    loading
+    loading: _loading
   } = nexus;
 
-  if (!isAppOwner) return null;
-
-  // Admin Referrals section
+  // Admin Referrals section - MUST BE ABOVE EARLY RETURN
   const [allReferrals, setAllReferrals] = React.useState([]);
   const [isAdminRefLoading, setIsAdminRefLoading] = React.useState(false);
 
   const loadAdminReferrals = React.useCallback(async () => {
-    if (!isAppOwner) return;
+    if (!isAppOwner || !fetchAllReferrals) return;
     setIsAdminRefLoading(true);
     const data = await fetchAllReferrals();
     setAllReferrals(data || []);
@@ -37,8 +35,14 @@ const AgenciesView = () => {
   }, [isAppOwner, fetchAllReferrals]);
 
   React.useEffect(() => {
-    loadAdminReferrals();
-  }, [loadAdminReferrals]);
+    if (isAppOwner) {
+      loadAdminReferrals();
+    }
+  }, [loadAdminReferrals, isAppOwner]);
+
+  if (!isAppOwner) return null;
+
+
 
   return (
     <div style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar" data-testid="page-agencies-container">
