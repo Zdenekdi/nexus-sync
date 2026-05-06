@@ -1063,6 +1063,37 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
         )}
       </div>
 
+      {/* Call Forwarding Setup */}
+      <div className="glass-card" style={{ padding: '1.5rem', borderRadius: '20px', background: 'rgba(168, 85, 247, 0.05)', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+          <Phone size={20} color="#c084fc" />
+          <span style={{ fontWeight: '800', color: '#e9d5ff' }}>{t('callForwardingTitle') || 'Nastavení přesměrování hovorů'}</span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <span style={{ fontWeight: '900', color: '#c084fc' }}>1.</span>
+            <span>{t('callForwardingStep1') || '1. Otevřete Telefon -> Nastavení -> Přesměrování hovorů.'}</span>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <span style={{ fontWeight: '900', color: '#c084fc' }}>2.</span>
+            <span>{t('callForwardingStep2') || '2. Nastavte "Přesměrovat při obsazení/nepřijetí" na vaše virtuální SIP číslo.'}</span>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem', background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '10px', marginTop: '0.5rem', alignItems: 'center' }}>
+             <Server size={16} color="var(--text-secondary)" />
+             <span>{lang === 'cz' ? 'Vaše SIP klapka:' : 'Your SIP extension:'} </span>
+             <code style={{ background: 'rgba(0,0,0,0.3)', padding: '0.2rem 0.5rem', borderRadius: '6px', color: 'white', fontWeight: '900', marginLeft: 'auto' }}>{operator?.sipUser || 'N/A'}</code>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+            <span style={{ fontWeight: '900', color: '#c084fc' }}>3.</span>
+            <span>{t('callForwardingStep3') || '3. Povolte přístup k hovorům pro detekci stavu linky (Permissions).'}</span>
+          </div>
+          <div style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: 'var(--accent-color)', fontWeight: '700', padding: '0.75rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '10px', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <Info size={16} />
+            <span>{t('callForwardingNote') || 'Poznámka: Pro reálné zvednutí hovoru v prohlížeči je vyžadován modul AI Voice Relay (SIP).'}</span>
+          </div>
+        </div>
+      </div>
+
       {/* Forwarding Logs */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

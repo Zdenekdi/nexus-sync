@@ -1,6 +1,6 @@
 /* src/components/Modals/AgencyDetailModal.jsx */
 import React, { useState } from 'react';
-import { X, Shield, ShieldCheck, Copy, Edit2, Check, Zap } from 'lucide-react';
+import { X, Shield, ShieldCheck, Copy, Edit2, Check, Zap, PhoneCall } from 'lucide-react';
 import axios from 'axios';
 import { useNexus } from '../../context/ContextHook';
 
@@ -31,6 +31,12 @@ const AgencyDetailModal = ({
   const [editContinent, setEditContinent] = useState(initialRegionParts[0] || 'Europe');
   const [editCountry, setEditCountry] = useState(initialRegionParts[1] || 'United Kingdom');
   const [editAiInstructions, setEditAiInstructions] = useState(agency?.aiInstructions || '');
+  
+  const [editVirtualNumbers, setEditVirtualNumbers] = useState(agency?.sipConfig?.virtualNumbers || '');
+  const [editSipProvider, setEditSipProvider] = useState(agency?.sipConfig?.provider || '');
+  const [editSipAuthType, setEditSipAuthType] = useState(agency?.sipConfig?.authType || 'ip_auth');
+  const [editSipUsername, setEditSipUsername] = useState(agency?.sipConfig?.username || '');
+  const [editSipPassword, setEditSipPassword] = useState(agency?.sipConfig?.password || '');
 
   const [isSaving, setIsSaving] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
@@ -48,12 +54,31 @@ const AgencyDetailModal = ({
         agencyId: agency.id,
         email: editEmail,
         region: formattedRegion,
-        aiInstructions: editAiInstructions
+        aiInstructions: editAiInstructions,
+        sipConfig: {
+          virtualNumbers: editVirtualNumbers,
+          provider: editSipProvider,
+          authType: editSipAuthType,
+          username: editSipUsername,
+          password: editSipPassword
+        }
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       showToast(lang === 'cz' ? 'Informace o agentuře uloženy' : 'Agency info updated', 'success');
-      setAgencyDetailModalData({ ...agency, email: editEmail, region: formattedRegion, aiInstructions: editAiInstructions });
+      setAgencyDetailModalData({ 
+        ...agency, 
+        email: editEmail, 
+        region: formattedRegion, 
+        aiInstructions: editAiInstructions,
+        sipConfig: {
+          virtualNumbers: editVirtualNumbers,
+          provider: editSipProvider,
+          authType: editSipAuthType,
+          username: editSipUsername,
+          password: editSipPassword
+        }
+      });
       setIsEditing(false);
       setShowSaved(true);
       setTimeout(() => setShowSaved(false), 3000);
@@ -215,6 +240,61 @@ const AgencyDetailModal = ({
             ) : (
               <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontStyle: editAiInstructions ? 'normal' : 'italic', whiteSpace: 'pre-wrap', maxHeight: '150px', overflowY: 'auto' }}>
                 {editAiInstructions || 'No agency-wide instructions set. AI will use profile-level bio and global hub rules.'}
+              </div>
+            )}
+          </div>
+
+          {/* VOIP & SIP TRUNK */}
+          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '16px', padding: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>
+              <PhoneCall size={14} color="var(--accent-color)" />
+              <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--accent-color)', letterSpacing: '0.1em' }}>TELEKOMUNIKACE A VOIP (BYON)</div>
+            </div>
+            {isEditing ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Virtuální čísla (DIDs, oddělená čárkou)</label>
+                  <input type="text" value={editVirtualNumbers} onChange={e => setEditVirtualNumbers(e.target.value)} placeholder="+420123456789, +442071234567" style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--card-border)', borderRadius: '8px', color: 'white', padding: '0.5rem', fontSize: '0.85rem' }} />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>SIP Provider (IP/Domain)</label>
+                    <input type="text" value={editSipProvider} onChange={e => setEditSipProvider(e.target.value)} placeholder="sip.twilio.com" style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--card-border)', borderRadius: '8px', color: 'white', padding: '0.5rem', fontSize: '0.85rem' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Typ autentizace</label>
+                    <select value={editSipAuthType} onChange={e => setEditSipAuthType(e.target.value)} style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--card-border)', borderRadius: '8px', color: 'white', padding: '0.5rem', fontSize: '0.85rem' }}>
+                      <option value="ip_auth">IP Auth (Doporučeno)</option>
+                      <option value="registration">SIP Registration</option>
+                    </select>
+                  </div>
+                </div>
+                {editSipAuthType === 'registration' && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>SIP Username</label>
+                      <input type="text" value={editSipUsername} onChange={e => setEditSipUsername(e.target.value)} style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--card-border)', borderRadius: '8px', color: 'white', padding: '0.5rem', fontSize: '0.85rem' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>SIP Password</label>
+                      <input type="password" value={editSipPassword} onChange={e => setEditSipPassword(e.target.value)} style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--card-border)', borderRadius: '8px', color: 'white', padding: '0.5rem', fontSize: '0.85rem' }} />
+                    </div>
+                  </div>
+                )}
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', background: 'rgba(59,130,246,0.1)', padding: '0.5rem', borderRadius: '6px' }}>
+                  <strong>Tip:</strong> Při IP Auth nasměrujte svůj SIP Trunk na naši IP <code>nexus-api.myvnc.com</code> (port 5060).
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ fontSize: '0.85rem' }}>
+                  <span style={{ color: 'var(--text-secondary)', marginRight: '0.5rem' }}>Virtuální čísla:</span>
+                  <span style={{ fontWeight: '700' }}>{agency?.sipConfig?.virtualNumbers || 'Nenastaveno'}</span>
+                </div>
+                <div style={{ fontSize: '0.85rem' }}>
+                  <span style={{ color: 'var(--text-secondary)', marginRight: '0.5rem' }}>SIP Provider:</span>
+                  <span style={{ fontWeight: '700' }}>{agency?.sipConfig?.provider || 'Nenastaveno'} ({agency?.sipConfig?.authType === 'registration' ? 'SIP Auth' : 'IP Auth'})</span>
+                </div>
               </div>
             )}
           </div>
