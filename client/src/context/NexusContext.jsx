@@ -50,7 +50,7 @@ export const NexusProvider = ({ children }) => {
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname.substring(1);
-      if (path && path !== '' && path !== 'dashboard') return path;
+      if (path && path !== '' && path !== 'dashboard' && path !== 'login') return path;
     }
     return localStorage.getItem('nexus_active_tab') || 'dashboard';
   });
@@ -83,6 +83,24 @@ export const NexusProvider = ({ children }) => {
   // --- 2. AUTHENTICATION & IDENTITY ---
   const [activeOperatorState, setActiveOperatorState] = useState(null);
   const [activeProfileId, setActiveProfileId] = useState(() => localStorage.getItem('nexus_active_profile_id') || 'all');
+  
+  // --- 2.1 ROUTING STATE ---
+  const [pathname, setPathname] = useState(typeof window !== 'undefined' ? window.location.pathname : '/');
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setPathname(window.location.pathname);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const navigate = useCallback((path) => {
+    if (typeof window === 'undefined') return;
+    window.history.pushState(null, '', path);
+    setPathname(path);
+  }, []);
+
   const [showLanding, setShowLanding] = useState(() => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
@@ -90,6 +108,21 @@ export const NexusProvider = ({ children }) => {
     }
     return true;
   });
+
+  // Sync showLanding and activeTab with pathname
+  useEffect(() => {
+    const p = pathname;
+    if (p === '/' || p === '/guide') {
+      setShowLanding(true);
+      if (p === '/guide') setActiveTab('guide');
+    } else {
+      setShowLanding(false);
+      const tab = p.substring(1);
+      if (tab && tab !== 'login' && tab !== 'dashboard') {
+        setActiveTab(tab);
+      }
+    }
+  }, [pathname]);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(() => localStorage.getItem('nexus_hasSeenOnboarding') === 'true');
   const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -725,11 +758,17 @@ export const NexusProvider = ({ children }) => {
     
     // Sync activeTab with URL for better refresh persistence
     if (typeof window !== 'undefined') {
-      const currentPath = window.location.pathname.substring(1);
-      const targetPath = activeTab === 'dashboard' && showLanding ? '' : activeTab;
+      const currentPath = window.location.pathname;
+      let targetPath = '/';
+      
+      if (activeTab === 'guide' && showLanding) {
+        targetPath = '/guide';
+      } else if (!showLanding) {
+        targetPath = isLoggedIn ? `/${activeTab}` : '/login';
+      }
       
       if (currentPath !== targetPath) {
-        window.history.replaceState(null, '', `/${targetPath}`);
+        window.history.replaceState(null, '', targetPath);
       }
     }
   }, [lang, activeTab, activeMarket, activeProfileId]);
@@ -797,6 +836,7 @@ export const NexusProvider = ({ children }) => {
   // --- 14. CONTEXT VALUE ---
   const value = useMemo(() => ({
     t, lang, setLang, activeTab, setActiveTab, activeMarket, setActiveMarket,
+    pathname, navigate,
     loading: nexusData.isDataLoading, activeOperator, activeRole, isAllowed, isLoggedIn, token,
     logout: logoutStable, onLogin: handleLogin, onRegisterAgency: auth.handleRegisterAgency, onRegisterUser: auth.handleRegisterUser,
     isAppOwner: activeOperator?.isAppOwner || false, isManager: activeOperator?.isManager || false, isAdmin: activeOperator?.isAdmin || false,
@@ -847,7 +887,7 @@ export const NexusProvider = ({ children }) => {
     heartRate, setHeartRate, hrThreshold, setHrThreshold, isBluetoothConnected, setIsBluetoothConnected, activeBioWarning,
     commService, agencyGateway, analyticsService, syncService
   }), [
-    t, lang, activeTab, activeMarket, nexusData.isDataLoading, activeOperator, activeRole, isAllowed, isLoggedIn, token,
+    t, lang, activeTab, activeMarket, pathname, navigate, nexusData.isDataLoading, activeOperator, activeRole, isAllowed, isLoggedIn, token,
     logoutStable, handleLogin, auth.handleRegisterAgency, auth.handleRegisterUser,
     showLanding, hasSeenOnboarding, showOnboarding, isMobile, isNativeApp, isSidebarCollapsed, mobileView,
     inlinePanelTab, sourceText, translatedText, isTranslating, internalNote, clientNotes, detectedMeeting, typingProfiles,

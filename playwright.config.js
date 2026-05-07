@@ -21,13 +21,14 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: 1, // Reverted to 1 worker to avoid RBAC race conditions on live production DB
-  timeout: 45_000,        // Reduce timeout to fail faster
-  reporter: process.env.CI ? 'list' : 'html',
+  timeout: 180_000,        // Increase timeout for long video recording
+  reporter: 'list',
 
   use: {
     baseURL: process.env.FRONTEND_URL || 'https://nexus-sync-8d50b.web.app',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    video: 'on',
     viewport: { width: 1280, height: 720 },
     ignoreHTTPSErrors: true,
   },
@@ -35,11 +36,24 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { 
+        ...devices['Desktop Chrome'],
+        launchOptions: {
+          args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        }
+      },
     },
     {
       name: 'mobile',
       use: { ...devices['Pixel 5'] },
+    },
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+    },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
     },
   ],
 
@@ -47,10 +61,10 @@ export default defineConfig({
    * webServer is disabled by default since we test against the LIVE frontend.
    * If you ever want to test locally again, you can uncomment this block.
    */
-  webServer: {
-    command: 'cd client && npx vite --host 127.0.0.1',
-    url: 'http://127.0.0.1:5173',
-    reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
-  },
+  // webServer: {
+  //   command: 'cd client && npx vite --host 127.0.0.1',
+  //   url: 'http://127.0.0.1:5173',
+  //   reuseExistingServer: !process.env.CI,
+  //   timeout: 180_000,
+  // },
 });

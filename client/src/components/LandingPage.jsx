@@ -183,7 +183,7 @@ const LanguageSwitcher = ({ current, onSelect, isMobile }) => {
 };
 
 const LandingPage = () => {
-  const { setActiveTab, setShowLanding, lang, setLang, isMobile, activeTab } = useNexus();
+  const { setActiveTab, setShowLanding, lang, setLang, isMobile, activeTab, navigate } = useNexus();
 
   const viewingManual = activeTab === 'guide';
 
@@ -213,7 +213,7 @@ const LandingPage = () => {
             </div>
           </div>
           <button 
-            onClick={() => { setActiveTab('dashboard'); setShowLanding(false); }}
+            onClick={() => { navigate('/login'); }}
             style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: '800', cursor: 'pointer' }}
           >
             {lang === 'cz' ? 'Vstoupit do aplikace' : 'Enter App'}
@@ -226,7 +226,7 @@ const LandingPage = () => {
 
   const onLoginClick = () => {
     sessionStorage.setItem('nexus_landing_dismissed', 'true');
-    setShowLanding(false);
+    navigate('/login');
   };
 
 
@@ -398,7 +398,7 @@ const LandingPage = () => {
       gettingStartedDesc: "Start using Nexus Hub in three simple steps.",
       steps: [
         { num: "1", title: "Register Your Agency", desc: "Click \"Enter Application\" and select the \"New Agency\" tab. Fill in your agency name, your name, email, and password. After registration you'll receive a unique invite code." },
-        { num: "2", title: "Invite Your Team", desc: "Share the invite code (_err.g. NEXUS-A1B2C3) with your operators and models. Each member registers via the \"Join Agency\" tab on the login page and selects their role." },
+        { num: "2", title: "Invite Your Team", desc: "Share the invite code (e.g. NEXUS-A1B2C3) with your operators and models. Each member registers via the \"Join Agency\" tab on the login page and selects their role." },
         { num: "3", title: "Manage Everything in One Place", desc: "Once logged in, you have access to a full dashboard. Set up profiles, permissions, and start working." }
       ]
     }
@@ -466,7 +466,7 @@ const LandingPage = () => {
           </button>
 
           <button 
-            onClick={() => setActiveTab('guide')}
+            onClick={() => navigate('/guide')}
             style={{ 
               padding: isMobile ? '1rem 2rem' : '1.25rem 3rem', 
               borderRadius: '16px', 
@@ -487,60 +487,7 @@ const LandingPage = () => {
           </button>
         </div>
 
-        {/* Download App CTA */}
-        <ScrollReveal delay={0.5}>
-          <div style={{ marginTop: '4rem', display: 'flex', justifyContent: 'center' }}>
-            <a 
-              href="https://firebasestorage.googleapis.com/v0/b/trainer-app-zdenekdi.firebasestorage.app/o/releases%2FTrainerApp-v2.0.7-release.apk?alt=media" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              style={{
-                background: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                padding: '1.5rem 2rem',
-                borderRadius: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1.5rem',
-                textDecoration: 'none',
-                color: 'white',
-                maxWidth: '500px',
-                transition: 'all 0.3s ease',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                e.currentTarget.style.borderColor = 'var(--accent-color)';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >
-              <div style={{ 
-                width: '56px', 
-                height: '56px', 
-                background: 'linear-gradient(135deg, #3DDC84 0%, #073042 100%)', 
-                borderRadius: '14px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 0 20px rgba(61, 220, 132, 0.3)'
-              }}>
-                <Smartphone size={32} color="white" />
-              </div>
-              <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: '1.1rem', fontWeight: '900', color: 'white', marginBottom: '2px' }}>{t.downloadTitle}</div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>{t.downloadDesc}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#3DDC84', fontWeight: '800', fontSize: '0.9rem' }}>
-                  <Zap size={16} fill="#3DDC84" /> {t.downloadBtn}
-                </div>
-              </div>
-            </a>
-          </div>
-        </ScrollReveal>
+        </div>
       </section>
 
       {/* Pillars Section */}
@@ -649,7 +596,7 @@ const LandingPage = () => {
         <ScrollReveal delay={0.3}>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1rem', marginTop: '3rem' }}>
             <button 
-              onClick={onLoginClick}
+              onClick={() => navigate('/login')}
               className="primary-button"
               style={{
                 background: 'var(--success-color)',
@@ -671,7 +618,7 @@ const LandingPage = () => {
             </button>
 
             <button 
-              onClick={() => setActiveTab('guide')}
+              onClick={() => navigate('/guide')}
               style={{
                 background: 'rgba(255,255,255,0.05)',
                 color: 'white',
