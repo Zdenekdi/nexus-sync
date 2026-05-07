@@ -487,7 +487,6 @@ const LandingPage = () => {
           </button>
         </div>
 
-        </div>
       </section>
 
       {/* Pillars Section */}
