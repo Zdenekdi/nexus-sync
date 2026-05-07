@@ -37,7 +37,7 @@ const StatusBadge = memo(({ isCz }) => (
 const LogoHeader = memo(() => (
   <div style={{ textAlign: 'center' }}>
     <div style={STYLES.logoBox}>
-      <Zap color="white" size={22} fill="white" />
+      <img src="/nexus_icon.png" alt="Nexus" style={{ width: '100%', height: '100%', borderRadius: '12px' }} />
     </div>
     <h1 style={{ fontSize: '1.5rem', fontWeight: '950', color: 'white', letterSpacing: '-0.03em', margin: 0 }}>
       Nexus Hub

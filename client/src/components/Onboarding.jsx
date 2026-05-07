@@ -5,7 +5,7 @@ const STORAGE_KEY = 'nexus_onboarding_seen';
 
 // Neon glow icons defined at module level for shared access
 const Onboarding = () => {
-  const { setShowOnboarding, setShowLanding, lang, setHasSeenOnboarding } = useNexus();
+  const { setShowOnboarding, setShowLanding, lang, setHasSeenOnboarding, navigate } = useNexus();
 
   // Moving definitions INSIDE to ensure they are available only after React/Context are ready
   // and to avoid bundling issues with module-level JSX.
@@ -75,9 +75,9 @@ const Onboarding = () => {
   ];
   const onComplete = useCallback(() => {
     setShowOnboarding(false);
-    setShowLanding(false);
     setHasSeenOnboarding(true);
-  }, [setShowOnboarding, setShowLanding, setHasSeenOnboarding]);
+    navigate('/login');
+  }, [setShowOnboarding, setHasSeenOnboarding, navigate]);
 
   const [current, setCurrent] = useState(0);
   const [animating, setAnimating] = useState(false);
