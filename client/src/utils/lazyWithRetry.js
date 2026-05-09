@@ -11,7 +11,10 @@ export const lazyWithRetry = (componentImport) =>
     );
 
     try {
-      return await componentImport();
+      const component = await componentImport();
+      // On success, clear the flag so future deployments can also trigger a reload
+      window.sessionStorage.removeItem('nexus-page-reload-flag');
+      return component;
     } catch (err) {
       // Check if it's a chunk load failure or MIME type error
       const isChunkError = 
@@ -25,7 +28,8 @@ export const lazyWithRetry = (componentImport) =>
           window.sessionStorage.setItem('nexus-page-reload-flag', 'true');
           console.warn('[Nexus-Bootstrap] Chunk load failed during deployment, retrying via reload...', err);
           window.location.reload();
-          return;
+          // Return a pending promise so React doesn't throw while waiting for reload
+          return new Promise(() => {});
         }
       }
       throw err;
