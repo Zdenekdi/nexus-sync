@@ -217,7 +217,7 @@ const VideoCard = ({ src, title, desc, features, reverse, lang }) => {
           padding: '1.5rem',
           backdropFilter: 'blur(10px)'
         }}>
-          <ul style={{ list-style: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {features.map((f, i) => (
               <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.95rem', fontWeight: '600' }}>
                 <div style={{ width: '6px', height: '6px', background: 'var(--accent-color)', borderRadius: '50%' }} />
