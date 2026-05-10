@@ -122,7 +122,7 @@ const PayoutsView = () => {
             </tr>
           </thead>
           <tbody>
-            {loading ? (
+            {loading && summary.length === 0 ? (
               <tr><td colSpan="4" style={{ padding: '4rem', textAlign: 'center' }}><RefreshCw size={24} className="animate-spin" style={{ opacity: 0.3 }} /></td></tr>
             ) : summary.length === 0 ? (
               <tr><td colSpan="4" style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Žádná data pro vybrané období.</td></tr>

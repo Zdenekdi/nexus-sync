@@ -233,11 +233,11 @@ const SafetyGuardView = () => {
       {/* Main Content Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 380px', gap: '2rem', flex: 1, overflow: 'hidden' }}>
         {/* Sessions Grid */}
-        <div style={{ overflowY: 'auto', paddingRight: '0.5rem' }} className="custom-scrollbar">
-          {loading ? (
-             <div style={{ display: 'flex', justifyContent: 'center', padding: '5rem' }}>
-                <div className="spinning" style={{ width: '40px', height: '40px', border: '4px solid rgba(255,255,255,0.1)', borderTopColor: '#3b82f6', borderRadius: '50%' }} />
-             </div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem', overflowY: 'auto' }} className="custom-scrollbar pr-4">
+          {loading && sessions.length === 0 ? (
+            <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+              <div className="spinner" />
+            </div>
           ) : filteredSessions.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '24px', border: '1px dashed var(--card-border)' }}>
               <div style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{t('noActiveSessions')}</div>
