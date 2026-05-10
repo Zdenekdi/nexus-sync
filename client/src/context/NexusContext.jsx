@@ -209,6 +209,7 @@ export const NexusProvider = ({ children }) => {
   const [_gpsHistory, setGpsHistory] = useState([]);
   const [lastTrackerUpdate, setLastTrackerUpdate] = useState(null);
   const [calViewDate, setCalViewDate] = useState(new Date());
+  const [openBookingMenuId, setOpenBookingMenuId] = useState(null);
 
   // --- 6. REFS ---
   const checkinIntervalRef = useRef(null);
@@ -906,6 +907,7 @@ export const NexusProvider = ({ children }) => {
     relaySimSlot, setRelaySimSlot, relayLogs, setRelayLogs, addRelayLog, updateRelayLogStatus,
     linkedTrackerId, setLinkedTrackerId, trackerStatus, setTrackerStatus,
     messageValue, setMessageValue, calViewDate, setCalViewDate, 
+    openBookingMenuId, setOpenBookingMenuId,
     _gpsHistory, lastTrackerUpdate, voiceGuardianActive, handleToggleVoiceGuardian,
     batteryLevel, incomingGhostCall, setIncomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity,
     isTvMode, setIsTvMode,
@@ -934,7 +936,7 @@ export const NexusProvider = ({ children }) => {
     nexusData.onStartTraining, nexusData.onResetTraining,
     filteredCalendar,
     commService, agencyGateway, analyticsService, syncService,
-    messages, selectedChatId, selectedChat, chatMessages, chatHistory, fetchChatMessages, isHistoryLoading, isRelayActive, setRelayActiveStable, relaySimSlot, relayLogs, addRelayLog, updateRelayLogStatus, linkedTrackerId, trackerStatus, calViewDate, _gpsHistory, lastTrackerUpdate, voiceGuardianActive, handleToggleVoiceGuardian, batteryLevel, incomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity, _toasts, subscriptionPlans, isPlansLoading, isSidebarOpen, isTvMode, heartRate, hrThreshold, isBluetoothConnected, activeBioWarning, messageValue, showToast
+    messages, selectedChatId, selectedChat, chatMessages, chatHistory, fetchChatMessages, isHistoryLoading, isRelayActive, setRelayActiveStable, relaySimSlot, relayLogs, addRelayLog, updateRelayLogStatus, linkedTrackerId, trackerStatus, calViewDate, _gpsHistory, lastTrackerUpdate, voiceGuardianActive, handleToggleVoiceGuardian, batteryLevel, incomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity, _toasts, subscriptionPlans, isPlansLoading, isSidebarOpen, isTvMode, heartRate, hrThreshold, isBluetoothConnected, activeBioWarning, messageValue, showToast, openBookingMenuId
   ]);
 
   return (

@@ -133,8 +133,28 @@ const ProfilesView = () => {
               <div style={{ flex: isMobile ? '1 1 auto' : '0 0 250px' }}>
                 <div style={{ fontSize: '1.75rem', fontWeight: '900', marginBottom: '0.5rem' }}>{profile.name}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.5rem' }}>
-                  <div style={{ padding: '0.2rem 0.6rem', borderRadius: '4px', background: activeCount > 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: activeCount > 0 ? 'var(--success-color)' : 'var(--_err-color)', fontSize: '0.7rem', fontWeight: '900', border: '1px solid currentColor' }}>
-                    {activeCount > 0 ? `${activeCount} ${t('operatorsActive')}` : t('noCoverage')}
+                  <div style={{ 
+                    padding: '0.3rem 0.8rem', 
+                    borderRadius: '8px', 
+                    background: activeCount > 0 ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.05)', 
+                    color: activeCount > 0 ? '#34d399' : 'var(--text-secondary)', 
+                    fontSize: '0.75rem', 
+                    fontWeight: '900', 
+                    border: '1px solid',
+                    borderColor: activeCount > 0 ? 'rgba(34, 197, 94, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    boxShadow: activeCount > 0 ? '0 0 20px rgba(52, 211, 153, 0.15)' : 'none'
+                  }}>
+                    <span style={{ 
+                      width: '8px', 
+                      height: '8px', 
+                      borderRadius: '50%', 
+                      background: activeCount > 0 ? '#34d399' : 'rgba(255,255,255,0.2)',
+                      animation: activeCount > 0 ? 'pulse-green 2s infinite' : 'none'
+                    }} />
+                    {activeCount > 0 ? (lang === 'cz' ? 'ONLINE / AKTIVNÍ' : 'LIVE / ACTIVE') : (lang === 'cz' ? 'OFFLINE / BEZ POKRYTÍ' : 'OFFLINE / NO COVERAGE')}
                   </div>
                   {profile.lastOnline && (
                     <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
@@ -188,6 +208,20 @@ const ProfilesView = () => {
                   >
                     {t('openContext')}
                   </button>
+
+                  <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '14px', border: '1px solid var(--card-border)' }}>
+                    <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{lang === 'cz' ? 'STATISTIKY PROFILU' : 'PROFILE STATS'}</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div>
+                        <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{lang === 'cz' ? 'TRŽBY' : 'REVENUE'}</div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: '800', color: 'white' }}>{profile.stats?.revenue || '0 Kč'}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{lang === 'cz' ? 'ZPRÁVY' : 'MESSAGES'}</div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: '800', color: 'white' }}>{profile.stats?.messages || '0'}</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
