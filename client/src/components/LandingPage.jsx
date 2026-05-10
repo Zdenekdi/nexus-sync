@@ -180,6 +180,7 @@ const LanguageSwitcher = ({ current, onSelect, isMobile }) => {
       ))}
     </div>
   );
+};
 const VideoCard = ({ src, title, desc, features, reverse, lang }) => {
   const [ref, isVisible] = useScrollReveal();
   
