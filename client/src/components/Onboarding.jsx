@@ -200,6 +200,7 @@ const Onboarding = () => {
         </div>
         <button
           onClick={handleSkip}
+          data-testid="onboarding-skip"
           style={{
             background: 'rgba(255,255,255,0.05)',
             border: 'none',

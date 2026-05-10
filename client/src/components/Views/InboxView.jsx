@@ -305,6 +305,7 @@ const InboxView = () => {
                     setInternalNote("");
                   }}
                   className={`conversation-item ${isSelected ? 'active' : ''} ${isUnread ? 'unread' : ''}`}
+                  data-testid={`chat-list-item-${msg.id}`}
                   style={{ 
                     padding: isMobile ? '1.25rem 1.25rem 1.25rem 2.2rem' : '1.5rem 1.5rem 1.5rem 2.5rem', 
                     borderBottom: '1px solid var(--card-border)', 
@@ -380,11 +381,12 @@ const InboxView = () => {
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '1rem' }}>
-                    <button onClick={startCall} className="status-badge" style={{ color: 'var(--accent-color)', cursor: 'pointer', background: 'rgba(59, 130, 246, 0.1)', border: 'none', padding: '0.5rem 0.75rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', fontWeight: '800' }}>
+                    <button onClick={startCall} data-testid="chat-call-button" className="status-badge" style={{ color: 'var(--accent-color)', cursor: 'pointer', background: 'rgba(59, 130, 246, 0.1)', border: 'none', padding: '0.5rem 0.75rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', fontWeight: '800' }}>
                       <Signal size={14} /> CALL
                     </button>
                     <button 
                       onClick={() => handleSyncChatHistory(selectedChatId)} 
+                      data-testid="chat-sync-button"
                       title={t('syncHistory')}
                       style={{ 
                         background: 'rgba(167, 139, 250, 0.1)', 
@@ -404,6 +406,7 @@ const InboxView = () => {
                     {(activeOperator?.isModel || (isMobile && activeOperator && !activeOperator?.isAppOwner && !activeOperator?.isAdmin && !activeOperator?.isManager)) && (
                       <button 
                         onClick={() => setShowPanicConfirm(true)}
+                        data-testid="chat-panic-button"
                         style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                       >
                         <Shield size={20} />
@@ -600,6 +603,7 @@ const InboxView = () => {
 
                     <div style={{ padding: '0.75rem 1rem', display: 'flex', gap: '0.75rem' }}>
                        <input 
+                         data-testid="chat-message-input"
                          type="text" 
                          value={messageValue}
                          onChange={(_err) => setMessageValue(_err.target.value)}
@@ -608,6 +612,7 @@ const InboxView = () => {
                          style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.85rem 1rem', borderRadius: '12px', color: 'white', fontSize: '0.9rem' }} 
                        />
                        <button 
+                         data-testid="chat-send-button"
                          onClick={() => { if (messageValue.trim()) sendMessage(messageValue); }}
                          style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0 1.2rem', borderRadius: '12px', fontWeight: '900', fontSize: '0.8rem' }}
                        >
