@@ -20,7 +20,7 @@ jobs:
     - name: Run Playwright tests
       run: npm run test:all:e2e
       env:
-        FRONTEND_URL: ${{ secrets.FRONTEND_URL || 'https://nexus-sync.com' }}
+        FRONTEND_URL: ${{ secrets.FRONTEND_URL || 'https://nexus-sync-8d50b.web.app' }}
     - uses: actions/upload-artifact@v4
       if: always()
       with:
