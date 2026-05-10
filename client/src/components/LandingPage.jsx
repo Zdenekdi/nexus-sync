@@ -180,7 +180,7 @@ const LanguageSwitcher = ({ current, onSelect, isMobile }) => {
     </div>
   );
 };
-const VideoCard = ({ src, title, desc, features, reverse, lang }) => {
+const VideoCard = ({ src, title, desc, features, reverse, lang, poster }) => {
   const [ref, isVisible] = useScrollReveal();
   
   return (
@@ -237,6 +237,7 @@ const VideoCard = ({ src, title, desc, features, reverse, lang }) => {
           border: '1px solid rgba(255,255,255,0.1)'
         }}>
           <video 
+            poster={poster}
             controls playsInline preload="metadata"
             style={{ width: '100%', borderRadius: '16px', display: 'block', objectFit: 'cover' }}
           >
@@ -300,6 +301,7 @@ const LandingPage = () => {
         {
           id: 'safety',
           src: '/safety.mp4',
+          poster: '/assets/marketing/sos_pin_mockup.png',
           title: 'Bezpečnost na prvním místě',
           desc: 'Unikátní systém Safety Guard™ s taktickým přehledem v reálném čase. Automatické SOS alerty, sledování polohy při výjezdech a inteligentní blacklist.',
           features: ['Sledování polohy v reálném čase', 'Automatická SOS detekce', 'Globální blacklist klientů']
@@ -307,6 +309,7 @@ const LandingPage = () => {
         {
           id: 'analytics',
           src: '/analytics.mp4',
+          poster: '/assets/marketing/dashboard_mockup.png',
           title: 'Business pod kontrolou',
           desc: 'Zapomeňte na tabulky. Nexus Hub vám dává okamžitý přehled o tržbách, konverzích a výkonu jednotlivých modelek. Přesné výpočty provizí v reálném čase.',
           features: ['Detailní tržby a konverze', 'Pokročilé finanční přehledy', 'VIP Client Management (CRM)'],
@@ -315,6 +318,7 @@ const LandingPage = () => {
         {
           id: 'operations',
           src: '/operations.mp4',
+          poster: '/assets/marketing/ai_replies_mockup.png',
           title: 'Efektivní operativa',
           desc: 'Vše na jednom místě – od správy kalendáře a rezervací až po skladové zásoby. Náš integrovaný Inbox umožňuje týmu reagovat bleskově.',
           features: ['Inteligentní rezervační kalendář', 'Skladový systém (Inventory)', 'Centralizovaný Messenger']
@@ -347,6 +351,7 @@ const LandingPage = () => {
         {
           id: 'safety',
           src: '/safety.mp4',
+          poster: '/assets/marketing/sos_pin_mockup.png',
           title: 'Safety First',
           desc: 'Unique Safety Guard™ system with real-time tactical overview. Automated SOS alerts, location tracking for outcalls, and intelligent blacklist.',
           features: ['Real-time location tracking', 'Automatic SOS detection', 'Global client blacklist']
@@ -354,6 +359,7 @@ const LandingPage = () => {
         {
           id: 'analytics',
           src: '/analytics.mp4',
+          poster: '/assets/marketing/dashboard_mockup.png',
           title: 'Business Under Control',
           desc: 'Forget about spreadsheets. Nexus Hub gives you an instant overview of revenue, conversions, and performance. Precise commission calculations in real-time.',
           features: ['Detailed revenue & conversions', 'Advanced financial insights', 'VIP Client Management (CRM)'],
@@ -362,6 +368,7 @@ const LandingPage = () => {
         {
           id: 'operations',
           src: '/operations.mp4',
+          poster: '/assets/marketing/ai_replies_mockup.png',
           title: 'Efficient Operations',
           desc: 'Everything in one place – from calendar management to inventory. Our integrated Inbox allows your team to respond lightning-fast.',
           features: ['Smart booking calendar', 'Inventory management', 'Centralized Messenger']
