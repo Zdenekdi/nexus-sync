@@ -1,25 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { TEST_USERS } from './helpers/api.js';
-
-async function loginToApp(page, email, password) {
-  console.log(`🔑 Logging in as ${email}...`);
-  await page.goto('/');
-  await page.waitForLoadState('networkidle');
-
-  const enterBtn = page.getByRole('button', { name: /vstoupit|enter application/i }).first();
-  if (await enterBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-    await enterBtn.click();
-  }
-
-  await page.getByTestId('login-email').waitFor({ state: 'visible', timeout: 15000 });
-  await page.getByTestId('login-email').fill(email);
-  await page.getByTestId('login-password').fill(password);
-  await page.getByTestId('login-submit').click();
-
-  await expect(page.getByTestId('login-email')).not.toBeVisible({ timeout: 30000 });
-  await page.locator('nav').waitFor({ state: 'visible', timeout: 20000 });
-  console.log(`✅ Logged in: ${email}`);
-}
+import { doLogin as loginToApp } from './helpers/auth.js';
 
 async function verifyAllLinks(page, roleName) {
   console.log(`🔍 Verifying all links for ${roleName}...`);

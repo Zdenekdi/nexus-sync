@@ -29,8 +29,8 @@ test.describe('Safety Guard™ E2E Tests', () => {
     // Senior Operator (Alice) has access to Safety Guard
     await loginToApp(page, TEST_USERS.seniorOp.email, TEST_USERS.seniorOp.password);
     
-    // Navigate to Safety Guard
-    await page.getByTestId('nav-link-safety').click();
+    // Navigate to Safety Guard (Monitoring)
+    await page.getByTestId('nav-link-safety-guard').click();
     await expect(page.getByTestId('page-safety-container')).toBeVisible({ timeout: 15000 });
   });
 
