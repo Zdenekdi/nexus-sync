@@ -195,6 +195,7 @@ const Onboarding = () => {
                 boxShadow: i === current ? `0 0 10px ${slide.glowColor}` : 'none',
                 transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
               }}
+              data-testid={`onboarding-dot-${i}`}
             />
           ))}
         </div>
@@ -221,6 +222,7 @@ const Onboarding = () => {
       {/* Main content - Optimized Spacing */}
       <div
         key={slide.id}
+        data-testid={`onboarding-slide-${slide.id}`}
         style={{
           flex: 1,
           display: 'flex',

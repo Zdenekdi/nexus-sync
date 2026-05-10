@@ -290,14 +290,14 @@ const LoginScreen = () => {
 
                   {tab === 'register-agency' && (
                     <form onSubmit={handleRegisterAgency} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      <MemoInput label={isCz ? 'Název agentury' : 'Agency Name'} icon={Building2} value={regAgencyName} onChange={setRegAgencyName} placeholder="..." />
-                      <MemoInput label={isCz ? 'Vaše jméno' : ' Your Name'} icon={User} value={regFullName} onChange={setRegFullName} placeholder="..." />
-                      <MemoInput label="Email" icon={Mail} type="email" value={regEmail} onChange={setRegEmail} placeholder="..." />
+                      <MemoInput label={isCz ? 'Název agentury' : 'Agency Name'} icon={Building2} value={regAgencyName} onChange={setRegAgencyName} placeholder="..." data-testid="reg-agency-name" />
+                      <MemoInput label={isCz ? 'Vaše jméno' : ' Your Name'} icon={User} value={regFullName} onChange={setRegFullName} placeholder="..." data-testid="reg-full-name" />
+                      <MemoInput label="Email" icon={Mail} type="email" value={regEmail} onChange={setRegEmail} placeholder="..." data-testid="reg-email" />
                       <div>
-                        <MemoInput label={isCz ? 'Heslo' : 'Password'} icon={Lock} value={regPassword} onChange={setRegPassword} placeholder="..." showToggle onToggle={() => setShowRegPassword(!showRegPassword)} isToggled={showRegPassword} />
+                        <MemoInput label={isCz ? 'Heslo' : 'Password'} icon={Lock} value={regPassword} onChange={setRegPassword} placeholder="..." showToggle onToggle={() => setShowRegPassword(!showRegPassword)} isToggled={showRegPassword} data-testid="reg-password" />
                         <PasswordRequirements password={regPassword} isCz={isCz} />
                       </div>
-                      <button type="submit" disabled={loading} style={{ ...STYLES.submitButton, background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}>
+                      <button type="submit" disabled={loading} style={{ ...STYLES.submitButton, background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }} data-testid="reg-submit">
                         {loading ? <Loader2 className="animate-spin" size={16} /> : (isCz ? 'Vytvořit agenturu' : 'Create Agency')}
                         <ArrowRight size={16} />
                       </button>
@@ -344,14 +344,14 @@ const LoginScreen = () => {
                       }} 
                       style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
                     >
-                      <MemoInput label={isCz ? 'Zvací kód' : 'Invite Code'} icon={KeyRound} value={joinInviteCode} onChange={setJoinInviteCode} placeholder="NEXUS-..." />
+                      <MemoInput label={isCz ? 'Zvací kód' : 'Invite Code'} icon={KeyRound} value={joinInviteCode} onChange={setJoinInviteCode} placeholder="NEXUS-..." data-testid="join-invite-code" />
                       
                       {tab === 'join-agency-expanded' && (
                         <>
-                          <MemoInput label={isCz ? 'Vaše jméno' : 'Your Name'} icon={User} value={joinFullName} onChange={setJoinFullName} placeholder="..." />
-                          <MemoInput label="Email" icon={Mail} type="email" value={joinEmail} onChange={setJoinEmail} placeholder="..." />
+                          <MemoInput label={isCz ? 'Vaše jméno' : 'Your Name'} icon={User} value={joinFullName} onChange={setJoinFullName} placeholder="..." data-testid="join-full-name" />
+                          <MemoInput label="Email" icon={Mail} type="email" value={joinEmail} onChange={setJoinEmail} placeholder="..." data-testid="join-email" />
                           <div>
-                            <MemoInput label={isCz ? 'Heslo' : 'Password'} icon={Lock} value={joinPassword} onChange={setJoinPassword} placeholder="..." showToggle onToggle={() => setShowJoinPassword(!setShowJoinPassword)} isToggled={showJoinPassword} />
+                            <MemoInput label={isCz ? 'Heslo' : 'Password'} icon={Lock} value={joinPassword} onChange={setJoinPassword} placeholder="..." showToggle onToggle={() => setShowJoinPassword(!setShowJoinPassword)} isToggled={showJoinPassword} data-testid="join-password" />
                             <PasswordRequirements password={joinPassword} isCz={isCz} />
                           </div>
                         </>
@@ -361,6 +361,7 @@ const LoginScreen = () => {
                         type="submit"
                         disabled={loading} 
                         style={STYLES.submitButton}
+                        data-testid="join-submit"
                       >
                         {loading ? <Loader2 className="animate-spin" size={16} /> : (
                           tab === 'join-agency' ? (isCz ? 'Pokračovat' : 'Continue') : (isCz ? 'Zaregistrovat se' : 'Join Now')
