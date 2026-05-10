@@ -156,7 +156,7 @@ const InventoryView = () => {
 
           {/* Items Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
-            {loading ? (
+            {loading && items.length === 0 ? (
               <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem' }}><RefreshCw className="animate-spin" /></div>
             ) : filteredItems.length === 0 ? (
               <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem', opacity: 0.5 }}>Žádné položky nenalezeny.</div>
