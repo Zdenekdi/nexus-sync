@@ -45,7 +45,14 @@ const getSafeStorage = (key, fallback) => {
 
 export const NexusProvider = ({ children }) => {
   // --- 1. CORE UI & LANGUAGE STATES ---
-  const [lang, setLang] = useState(() => getSafeStorage('nexus_lang', 'en'));
+  const [lang, setLang] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      if (path.startsWith('/en')) return 'en';
+      if (path.startsWith('/cz')) return 'cz';
+    }
+    return getSafeStorage('nexus_lang', 'cz');
+  });
   const [activeMarket, setActiveMarket] = useState(() => getSafeStorage('nexus_active_market', 'UK'));
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -97,21 +104,30 @@ export const NexusProvider = ({ children }) => {
 
   const navigate = useCallback((path) => {
     if (typeof window === 'undefined') return;
-    window.history.pushState(null, '', path);
-    setPathname(path);
-  }, []);
+    
+    // Ensure language prefix is preserved if not already there
+    let targetPath = path;
+    if (lang !== 'cz' && !path.startsWith(`/${lang}`)) {
+      targetPath = `/${lang}${path === '/' ? '' : path}`;
+    }
+    
+    window.history.pushState(null, '', targetPath);
+    setPathname(targetPath);
+  }, [lang]);
 
   const [showLanding, setShowLanding] = useState(() => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
-      return path === '/' || path === '/guide';
+      // Strip language prefix for logic
+      const cleanPath = path.replace(/^\/(en|cz)/, '') || '/';
+      return cleanPath === '/' || cleanPath === '/guide';
     }
     return true;
   });
 
   // Sync showLanding and activeTab with pathname
   useEffect(() => {
-    const p = pathname;
+    const p = pathname.replace(/^\/(en|cz)/, '') || '/';
     if (p === '/' || p === '/guide') {
       setShowLanding(true);
       if (p === '/guide') setActiveTab('guide');
@@ -122,6 +138,10 @@ export const NexusProvider = ({ children }) => {
         setActiveTab(tab);
       }
     }
+    
+    // Also sync lang from pathname if changed via manual URL entry
+    if (pathname.startsWith('/en')) setLang('en');
+    else if (pathname.startsWith('/cz')) setLang('cz');
   }, [pathname]);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(() => localStorage.getItem('nexus_hasSeenOnboarding') === 'true');
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -766,12 +786,17 @@ export const NexusProvider = ({ children }) => {
       } else if (!showLanding) {
         targetPath = isLoggedIn ? `/${activeTab}` : '/login';
       }
+
+      // Add language prefix if not Czech
+      if (lang !== 'cz') {
+        targetPath = `/${lang}${targetPath === '/' ? '' : targetPath}`;
+      }
       
       if (currentPath !== targetPath) {
         window.history.replaceState(null, '', targetPath);
       }
     }
-  }, [lang, activeTab, activeMarket, activeProfileId]);
+  }, [lang, activeTab, activeMarket, activeProfileId, showLanding, isLoggedIn]);
 
   useEffect(() => {
     const key = activeOperator?.id ? `nexus_sidebar_collapsed_${activeOperator.id}` : 'nexus_sidebar_collapsed_guest';
