@@ -295,6 +295,7 @@ const LandingPage = () => {
       tagline: "Absolutní kontrola. Nekonečný růst.",
       heroDesc: "Nexus Hub je inteligentní ekosystém navržený pro moderní agentury. Kombinujeme pokročilou AI, real-time synchronizaci a nekompromisní důraz na bezpečnost.",
       enterBtn: "Vstoupit do aplikace",
+      howToBtn: "Jak se registrovat?",
       videoSections: [
         {
           id: 'safety',
@@ -330,9 +331,9 @@ const LandingPage = () => {
       ],
       registrationTitle: "Jak registrovat agenturu?",
       registrationSteps: [
-        { title: "Kontaktujte nás", desc: "Napište nám na Telegram @nexus_sys pro získání přístupového klíče." },
-        { title: "Vytvořte workspace", desc: "Zadejte údaje o vaší agentuře a nastavte základní parametry." },
-        { title: "Pozvěte svůj tým", desc: "Přidejte operátory a modelky do systému pod vaší kontrolu." }
+        { title: "Vstupte do aplikace", desc: "Klikněte na tlačítko 'Vstoupit do aplikace' a v menu zvolte 'Nová agentura'." },
+        { title: "Registrujte agenturu", desc: "Zadejte údaje o vaší agentuře a okamžitě získejte svůj unikátní zvací kód." },
+        { title: "Pozvěte svůj tým", desc: "Pomocí vygenerovaného kódu přidejte operátory a modelky do svého systému." }
       ],
       footer: "Nexus Systems – Váš nástroj pro efektivní škálování."
     },
@@ -341,6 +342,7 @@ const LandingPage = () => {
       tagline: "Absolute Control. Infinite Growth.",
       heroDesc: "Nexus Hub is an intelligent ecosystem designed for modern agencies. We combine advanced AI, real-time sync, and an uncompromising focus on security.",
       enterBtn: "Enter Application",
+      howToBtn: "How to register?",
       videoSections: [
         {
           id: 'safety',
@@ -376,15 +378,19 @@ const LandingPage = () => {
       ],
       registrationTitle: "How to register an agency?",
       registrationSteps: [
-        { title: "Contact Us", desc: "Message us on Telegram @nexus_sys to obtain your access key." },
-        { title: "Create Workspace", desc: "Enter your agency details and set initial parameters." },
-        { title: "Invite Your Team", desc: "Add operators and models to the system under your control." }
+        { title: "Enter Application", desc: "Click 'Enter Application' and select the 'New Agency' tab." },
+        { title: "Register Agency", desc: "Enter your agency details to instantly generate your unique invite code." },
+        { title: "Invite Your Team", desc: "Use the generated code to add operators and models to your system." }
       ],
       footer: "Nexus Systems – Your tool for efficient scaling."
     }
   };
 
   const t = content[lang] || content.en;
+
+  const scrollToRegistration = () => {
+    document.getElementById('registration')?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   return (
     <div className="landing-container fade-in" style={{ 
@@ -412,17 +418,32 @@ const LandingPage = () => {
         <p style={{ fontSize: isMobile ? '1rem' : '1.3rem', color: 'var(--text-secondary)', maxWidth: '800px', margin: '0 auto 3.5rem', lineHeight: 1.6 }}>
           {t.heroDesc}
         </p>
-        <button 
-          onClick={() => navigate('/login')}
-          style={{ 
-            padding: '1.25rem 3.5rem', borderRadius: '18px', border: 'none', 
-            background: 'var(--accent-color)', color: 'white', fontWeight: '900', 
-            fontSize: '1.1rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', 
-            gap: '0.75rem', boxShadow: '0 15px 40px rgba(59, 130, 246, 0.4)', transition: 'transform 0.2s'
-          }}
-        >
-          {t.enterBtn} <ArrowRight size={22} />
-        </button>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1.5rem', marginTop: '1rem' }}>
+          <button 
+            onClick={() => navigate('/login')}
+            style={{ 
+              padding: '1.25rem 3.5rem', borderRadius: '18px', border: 'none', 
+              background: 'var(--accent-color)', color: 'white', fontWeight: '900', 
+              fontSize: '1.1rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', 
+              gap: '0.75rem', boxShadow: '0 15px 40px rgba(59, 130, 246, 0.4)', transition: 'transform 0.2s'
+            }}
+          >
+            {t.enterBtn} <ArrowRight size={22} />
+          </button>
+          
+          <button 
+            onClick={scrollToRegistration}
+            style={{ 
+              padding: '1.25rem 2.5rem', borderRadius: '18px', 
+              border: '1px solid rgba(255, 255, 255, 0.1)', 
+              background: 'rgba(255, 255, 255, 0.03)', color: 'white', fontWeight: '800', 
+              fontSize: '1.1rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', 
+              gap: '0.75rem', backdropFilter: 'blur(10px)', transition: 'all 0.2s'
+            }}
+          >
+            {t.howToBtn} <ChevronDown size={22} />
+          </button>
+        </div>
       </section>
 
       {/* Video Sections */}
@@ -446,7 +467,7 @@ const LandingPage = () => {
       </section>
 
       {/* Registration Section */}
-      <section className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '6rem 2rem' }}>
+      <section id="registration" className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '6rem 2rem' }}>
         <h2 style={{ fontSize: '2.5rem', fontWeight: '900', textAlign: 'center', marginBottom: '4rem' }}>{t.registrationTitle}</h2>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '3rem' }}>
           {t.registrationSteps.map((step, idx) => (
