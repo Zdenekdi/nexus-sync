@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test';
 import { TEST_USERS } from './helpers/api.js';
+import { setupApiMocks } from './helpers/mocks.js';
 import { doLogin as loginToApp } from './helpers/auth.js';
 
 test.describe('Profile Management E2E', () => {
   test.beforeEach(async ({ page }) => {
+    await setupApiMocks(page);
     // Senior Operator (Alice)
     await loginToApp(page, TEST_USERS.seniorOp.email, TEST_USERS.seniorOp.password);
     

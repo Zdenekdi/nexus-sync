@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { TEST_USERS } from './helpers/api.js';
+import { setupApiMocks } from './helpers/mocks.js';
 
 async function loginToApp(page, email, password) {
   await page.goto('/');
@@ -26,6 +27,7 @@ async function loginToApp(page, email, password) {
 
 test.describe('Safety Guard™ E2E Tests', () => {
   test.beforeEach(async ({ page }) => {
+    await setupApiMocks(page);
     // Senior Operator (Alice) has access to Safety Guard
     await loginToApp(page, TEST_USERS.seniorOp.email, TEST_USERS.seniorOp.password);
     
