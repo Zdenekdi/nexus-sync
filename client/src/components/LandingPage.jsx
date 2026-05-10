@@ -85,37 +85,35 @@ const FAQItem = ({ question, answer }) => {
   );
 };
 
-const StatusBadge = ({ type, lang }) => {
-  let bg = 'rgba(59, 130, 246, 0.15)'; // Default Blue
-  let color = 'var(--accent-color)';
-  let border = 'rgba(59, 130, 246, 0.3)';
-  let label = type.toUpperCase();
+const StatusBadge = ({ status }) => {
+  const s = status?.toUpperCase();
 
-  const isCz = lang === 'cz';
+  let bg = 'rgba(255, 255, 255, 0.05)';
+  let color = 'rgba(255, 255, 255, 0.7)';
+  let border = 'rgba(255, 255, 255, 0.2)';
 
-  if (type === 'coming') {
-    label = isCz ? 'BRZY' : 'SOON';
-  } else if (type === 'beta') {
-    bg = 'rgba(139, 92, 246, 0.15)';
-    color = '#a78bfa';
-    border = 'rgba(139, 92, 246, 0.3)';
-    label = 'BETA';
-  } else if (type === 'aktivní' || type === 'active') {
+  if (s === 'DONE' || s === 'HOTOVO' || s === 'ACTIVE' || s === 'AKTIVNÍ') {
     bg = 'rgba(16, 185, 129, 0.15)';
     color = '#10b981';
     border = 'rgba(16, 185, 129, 0.3)';
-    label = isCz ? 'AKTIVNÍ' : 'ACTIVE';
-  } else if (type === 've vývoji' || type === 'progress') {
+  } else if (s === 'BETA') {
+    bg = 'rgba(139, 92, 246, 0.15)';
+    color = '#a78bfa';
+    border = 'rgba(139, 92, 246, 0.3)';
+  } else if (s === 'PROGRESS' || s === 'VE VÝVOJI' || s === 'IN PROGRESS') {
     bg = 'rgba(245, 158, 11, 0.15)';
     color = '#f59e0b';
     border = 'rgba(245, 158, 11, 0.3)';
-    label = isCz ? 'VE VÝVOJI' : 'IN PROGRESS';
+  } else if (s === 'COMING' || s === 'SOON' || s === 'BRZY') {
+    bg = 'rgba(59, 130, 246, 0.15)';
+    color = '#3b82f6';
+    border = 'rgba(59, 130, 246, 0.3)';
   }
 
   return (
     <span style={{
       fontSize: '0.65rem',
-      fontWeight: '800',
+      fontWeight: '900',
       padding: '3px 10px',
       borderRadius: '8px',
       marginLeft: '0.6rem',
@@ -132,31 +130,11 @@ const StatusBadge = ({ type, lang }) => {
       verticalAlign: 'middle'
     }}>
       <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: color, display: 'inline-block' }} />
-      {label}
-    </span>
-  );
-};
-
-const StatusBadge = ({ status }) => {
-  const getColors = () => {
-    switch (status) {
-      case 'DONE':
-      case 'HOTOVO': return { bg: 'rgba(34, 197, 94, 0.1)', border: '#22c55e', text: '#4ade80' };
-      case 'BETA': return { bg: 'rgba(59, 130, 246, 0.1)', border: '#3b82f6', text: '#60a5fa' };
-      default: return { bg: 'rgba(255, 255, 255, 0.05)', border: 'rgba(255,255,255,0.2)', text: 'rgba(255,255,255,0.7)' };
-    }
-  };
-  const colors = getColors();
-  return (
-    <span style={{ 
-      padding: '2px 8px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: '900', 
-      background: colors.bg, border: `1px solid ${colors.border}`, color: colors.text,
-      marginLeft: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em'
-    }}>
       {status}
     </span>
   );
 };
+
 
 const LanguageSwitcher = ({ current, onSelect, isMobile }) => {
   return (
