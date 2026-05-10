@@ -181,7 +181,7 @@ const SafetyGuardView = () => {
               <span style={{ fontSize: '1rem', fontWeight: 900, color: stat.color }}>{stat.value}</span>
             </div>
           ))}
-          <button onClick={() => setShowSettings(true)} style={{ 
+          <button onClick={() => setShowSettings(true)} data-testid="safety-settings-button" style={{ 
             width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', 
             display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white'
           }}>
