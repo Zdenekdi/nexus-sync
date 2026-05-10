@@ -22,7 +22,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: 1, // Reverted to 1 worker to avoid RBAC race conditions on live production DB
   timeout: 180_000,        // Increase timeout for long video recording
-  reporter: 'list',
+  reporter: [['list'], ['json', { outputFile: 'test-results.json' }]],
 
   use: {
     baseURL: process.env.FRONTEND_URL || 'https://nexus-sync-8d50b.web.app',
@@ -57,14 +57,10 @@ export default defineConfig({
     },
   ],
 
-  /**
-   * webServer is disabled by default since we test against the LIVE frontend.
-   * If you ever want to test locally again, you can uncomment this block.
+  /*
+   * webServer is disabled because of local binding restrictions (EPERM).
+   * We test against the live production frontend but use setupApiMocks() 
+   * to intercept all backend traffic.
    */
-  // webServer: {
-  //   command: 'cd client && npx vite --host 127.0.0.1',
-  //   url: 'http://127.0.0.1:5173',
-  //   reuseExistingServer: !process.env.CI,
-  //   timeout: 180_000,
-  // },
+  // webServer: [ ... ],
 });

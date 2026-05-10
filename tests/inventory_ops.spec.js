@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { TEST_USERS } from './helpers/api.js';
+import { setupApiMocks } from './helpers/mocks.js';
 
 async function loginToApp(page, email, password) {
   await page.goto('/');
@@ -25,6 +26,7 @@ async function loginToApp(page, email, password) {
 
 test.describe('Inventory Operations E2E', () => {
   test.beforeEach(async ({ page }) => {
+    await setupApiMocks(page);
     await loginToApp(page, TEST_USERS.seniorOp.email, TEST_USERS.seniorOp.password);
     
     // Navigate to Inventory
