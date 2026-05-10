@@ -149,7 +149,7 @@ const SafetyGuardView = () => {
   };
 
   return (
-    <div style={{ padding: isMobile ? '1rem' : '2rem', height: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', background: 'radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.03), transparent)' }}>
+    <div data-testid="page-safety-container" style={{ padding: isMobile ? '1rem' : '2rem', height: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', background: 'radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.03), transparent)' }}>
       {/* Header & Stats Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
@@ -187,7 +187,7 @@ const SafetyGuardView = () => {
           }}>
             <Settings size={18} />
           </button>
-          <button onClick={() => fetchSessions(true)} style={{ 
+          <button onClick={() => fetchSessions(true)} data-testid="safety-refresh-button" style={{ 
             width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', 
             display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white'
           }}>
@@ -201,6 +201,7 @@ const SafetyGuardView = () => {
         <div style={{ position: 'relative', flex: 1, minWidth: '250px' }}>
           <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.3 }} size={18} />
           <input 
+            data-testid="safety-search-input"
             type="text" 
             placeholder={t('searchModel')}
             value={search}
@@ -223,6 +224,7 @@ const SafetyGuardView = () => {
                 color: filter === f ? 'white' : 'var(--text-secondary)',
                 border: 'none', transition: 'all 0.2s'
               }}
+              data-testid={`safety-filter-${f.toLowerCase().replace('_', '-')}`}
             >
               {f === 'all' ? t('all').toUpperCase() : (f === 'CHECKED_IN' ? t('active').toUpperCase() : (f === 'GRACE' ? t('grace').toUpperCase() : (f === 'ESCALATED' ? t('escalated').toUpperCase() : f.replace('_', ' ').toUpperCase())))}
             </button>
@@ -245,7 +247,7 @@ const SafetyGuardView = () => {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.25rem' }}>
               {filteredSessions.map(session => (
-                <div key={session.id} style={{ 
+                <div key={session.id} data-testid={`safety-session-card-${session.id}`} style={{ 
                   background: 'rgba(255,255,255,0.03)', border: `1px solid ${getStatusColor(session.state)}40`, borderRadius: '20px', padding: '1.25rem',
                   display: 'flex', flexDirection: 'column', gap: '1rem', transition: 'all 0.3s ease',
                   boxShadow: session.state === 'ESCALATED' ? '0 0 20px rgba(239, 68, 68, 0.1)' : 'none'
@@ -273,14 +275,14 @@ const SafetyGuardView = () => {
                        <Activity size={14} color="#ef4444" className={simData[session.id]?.bpm > 90 ? 'heart-pulse' : ''} />
                        <div>
                           <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('heartRate')}</div>
-                          <div style={{ fontSize: '0.85rem', fontWeight: 900, color: 'white' }}>{simData[session.id]?.bpm || 72} BPM</div>
+                          <div data-testid={`safety-bpm-${session.id}`} style={{ fontSize: '0.85rem', fontWeight: 900, color: 'white' }}>{simData[session.id]?.bpm || 72} BPM</div>
                        </div>
                     </div>
                     <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                        <Battery size={14} color={simData[session.id]?.battery < 20 ? '#ef4444' : '#10b981'} />
                        <div>
                           <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('battery')}</div>
-                          <div style={{ fontSize: '0.85rem', fontWeight: 900, color: 'white' }}>{simData[session.id]?.battery || 100}%</div>
+                          <div data-testid={`safety-battery-${session.id}`} style={{ fontSize: '0.85rem', fontWeight: 900, color: 'white' }}>{simData[session.id]?.battery || 100}%</div>
                        </div>
                     </div>
                   </div>
@@ -293,6 +295,7 @@ const SafetyGuardView = () => {
                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: 'auto' }}>
                     <button 
                       onClick={() => handleGhostCall(session.profileId)}
+                      data-testid={`safety-ghostcall-button-${session.id}`}
                       style={{ 
                         flex: 1, padding: '0.6rem', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', 
                         color: '#60a5fa', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem'
@@ -353,7 +356,7 @@ const SafetyGuardView = () => {
       {/* Safety Settings Modal */}
       {showSettings && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="glass-card fade-in" style={{ width: '100%', maxWidth: '450px', padding: '2.5rem' }}>
+          <div data-testid="safety-settings-modal" className="glass-card fade-in" style={{ width: '100%', maxWidth: '450px', padding: '2.5rem' }}>
             <h3 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <ShieldCheck size={24} color="#3b82f6" /> {isCz ? 'Nastavení bezpečnosti' : 'Safety Settings'}
             </h3>
@@ -394,7 +397,7 @@ const SafetyGuardView = () => {
 
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                 <button onClick={() => setShowSettings(false)} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--card-border)', background: 'transparent', color: 'white', fontWeight: '800', cursor: 'pointer' }}>ZRUŠIT</button>
-                <button onClick={handleUpdateSettings} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: 'none', background: 'var(--accent-color)', color: 'white', fontWeight: '800', cursor: 'pointer' }}>ULOŽIT</button>
+                <button onClick={handleUpdateSettings} data-testid="safety-settings-save" style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: 'none', background: 'var(--accent-color)', color: 'white', fontWeight: '800', cursor: 'pointer' }}>ULOŽIT</button>
               </div>
             </div>
           </div>

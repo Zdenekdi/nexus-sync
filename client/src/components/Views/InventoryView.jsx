@@ -96,7 +96,7 @@ const InventoryView = () => {
   };
 
   return (
-    <div style={{ padding: isMobile ? '1.5rem 1rem' : '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
+    <div data-testid="page-inventory-container" style={{ padding: isMobile ? '1.5rem 1rem' : '3rem', paddingBottom: '8rem', flex: 1, overflowY: 'auto' }} className="fade-in custom-scrollbar">
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '3rem', flexDirection: isMobile ? 'column' : 'row', gap: '1.5rem' }}>
         <div>
@@ -106,7 +106,7 @@ const InventoryView = () => {
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Správa zásob a logistických lokací agentury.</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
-          <button onClick={() => activeTab === 'stock' ? setShowAddItem(true) : setShowAddLoc(true)} className="action-btn" style={{ margin: 0, padding: '0.8rem 1.5rem', borderRadius: '14px' }}>
+          <button onClick={() => activeTab === 'stock' ? setShowAddItem(true) : setShowAddLoc(true)} data-testid="inventory-add-item-button" className="action-btn" style={{ margin: 0, padding: '0.8rem 1.5rem', borderRadius: '14px' }}>
             <Plus size={18} /> {activeTab === 'stock' ? 'PŘIDAT POLOŽKU' : 'NOVÁ LOKACE'}
           </button>
         </div>
@@ -137,6 +137,7 @@ const InventoryView = () => {
             <div style={{ position: 'relative', flex: 1, minWidth: '250px' }}>
               <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.3 }} />
               <input 
+                data-testid="inventory-search-input"
                 type="text" 
                 placeholder="Hledat položku..." 
                 value={searchQuery}
@@ -163,7 +164,7 @@ const InventoryView = () => {
             ) : filteredItems.map(item => {
               const status = getStockStatus(item);
               return (
-                <div key={item.id} className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div key={item.id} data-testid={`inventory-item-card-${item.id}`} className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div style={{ background: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '12px' }}>
                       <Package size={20} color={status.color} />
@@ -190,7 +191,7 @@ const InventoryView = () => {
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
                     <button style={{ flex: 1, padding: '0.6rem', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', cursor: 'pointer' }}><Edit3 size={14} /></button>
-                    <button onClick={() => handleDeleteItem(item.id)} style={{ padding: '0.6rem', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', cursor: 'pointer' }}><Trash2 size={14} /></button>
+                    <button onClick={() => handleDeleteItem(item.id)} data-testid={`inventory-item-delete-${item.id}`} style={{ padding: '0.6rem', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', cursor: 'pointer' }}><Trash2 size={14} /></button>
                   </div>
                 </div>
               );
@@ -201,7 +202,7 @@ const InventoryView = () => {
         /* Locations View */
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
           {locations.map(loc => (
-            <div key={loc.id} className="glass-card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+            <div key={loc.id} data-testid={`inventory-location-card-${loc.id}`} className="glass-card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
               <div style={{ width: '50px', height: '50px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <MapPin size={24} color="#3b82f6" />
               </div>

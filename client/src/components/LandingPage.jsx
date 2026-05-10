@@ -180,7 +180,7 @@ const LanguageSwitcher = ({ current, onSelect, isMobile }) => {
     </div>
   );
 };
-const VideoCard = ({ src, title, desc, features, reverse, lang, poster }) => {
+const VideoCard = ({ src, title, desc, features, reverse, _lang, poster }) => {
   const [ref, isVisible] = useScrollReveal();
   
   return (
@@ -250,7 +250,7 @@ const VideoCard = ({ src, title, desc, features, reverse, lang, poster }) => {
 };
 
 const LandingPage = () => {
-  const { setActiveTab, setShowLanding, lang, setLang, isMobile, activeTab, navigate } = useNexus();
+  const { setActiveTab, _setShowLanding, lang, setLang, isMobile, activeTab, navigate } = useNexus();
 
   const viewingManual = activeTab === 'guide';
 
@@ -400,7 +400,7 @@ const LandingPage = () => {
   };
 
   return (
-    <div className="landing-container fade-in" style={{ 
+    <div data-testid="landing-page-container" className="landing-container fade-in" style={{ 
       minHeight: '100dvh',
       background: '#080a0f',
       color: 'white',
@@ -428,6 +428,7 @@ const LandingPage = () => {
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1.5rem', marginTop: '1rem' }}>
           <button 
             onClick={() => navigate('/login')}
+            data-testid="landing-enter-btn"
             style={{ 
               padding: '1.25rem 3.5rem', borderRadius: '18px', border: 'none', 
               background: 'var(--accent-color)', color: 'white', fontWeight: '900', 
@@ -440,6 +441,7 @@ const LandingPage = () => {
           
           <button 
             onClick={scrollToRegistration}
+            data-testid="landing-how-to-btn"
             style={{ 
               padding: '1.25rem 2.5rem', borderRadius: '18px', 
               border: '1px solid rgba(255, 255, 255, 0.1)', 
@@ -455,7 +457,7 @@ const LandingPage = () => {
 
       {/* Video Sections */}
       <section className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem', position: 'relative', zIndex: 1 }}>
-        {t.videoSections.map((s, i) => (
+        {t.videoSections.map((s, _i) => (
           <VideoCard key={s.id} {...s} lang={lang} />
         ))}
       </section>

@@ -129,7 +129,7 @@ const ProfilesView = () => {
           const canManage = activeRole === 'App Owner' || activeRole === 'Agency Manager' || activeRole === 'Agency Admin' || activeOperator?.role?.isManager;
 
           return (
-            <div key={i} className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2rem', display: 'flex', gap: isMobile ? '1.5rem' : '2.5rem', borderColor: isMyProfile ? 'rgba(59, 130, 246, 0.4)' : 'var(--card-border)', flexDirection: isMobile ? 'column' : 'row' }}>
+            <div key={i} data-testid={`profile-card-${profile.id}`} className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2rem', display: 'flex', gap: isMobile ? '1.5rem' : '2.5rem', borderColor: isMyProfile ? 'rgba(59, 130, 246, 0.4)' : 'var(--card-border)', flexDirection: isMobile ? 'column' : 'row' }}>
               <div style={{ flex: isMobile ? '1 1 auto' : '0 0 250px' }}>
                 <div style={{ fontSize: '1.75rem', fontWeight: '900', marginBottom: '0.5rem' }}>{profile.name}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.5rem' }}>
@@ -166,6 +166,7 @@ const ProfilesView = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   <button
                     onClick={() => toggleOperatorStatus(profile.id, activeOperator?.id)}
+                    data-testid={`profile-status-toggle-${profile.id}`}
                     className={`action-btn ${isMyProfile ? 'active' : ''}`}
                     style={{ 
                       background: isMyProfile ? 'rgba(239, 68, 68, 0.1)' : 'var(--accent-color)', 
@@ -183,6 +184,7 @@ const ProfilesView = () => {
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <button
                       onClick={() => handleEditProfile(profile)}
+                      data-testid={`profile-edit-button-${profile.id}`}
                       style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.03)', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                     >
                       <Settings size={16} /> {t('editProfile')}
@@ -190,6 +192,7 @@ const ProfilesView = () => {
                     {canManage && (
                       <button
                         onClick={() => fetchAndShowCreds(profile.id)}
+                        data-testid={`profile-credentials-button-${profile.id}`}
                         disabled={fetchingCreds}
                         title={t('viewCredentials')}
                         style={{ padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--card-border)', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -204,6 +207,7 @@ const ProfilesView = () => {
                       setActiveProfileId(profile.id);
                       setActiveTab('inbox');
                     }}
+                    data-testid={`profile-open-button-${profile.id}`}
                     style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--card-border)', background: 'transparent', color: 'white', fontWeight: '700', cursor: 'pointer' }}
                   >
                     {t('openContext')}
