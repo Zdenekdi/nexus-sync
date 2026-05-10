@@ -137,6 +137,27 @@ const StatusBadge = ({ type, lang }) => {
   );
 };
 
+const StatusBadge = ({ status }) => {
+  const getColors = () => {
+    switch (status) {
+      case 'DONE':
+      case 'HOTOVO': return { bg: 'rgba(34, 197, 94, 0.1)', border: '#22c55e', text: '#4ade80' };
+      case 'BETA': return { bg: 'rgba(59, 130, 246, 0.1)', border: '#3b82f6', text: '#60a5fa' };
+      default: return { bg: 'rgba(255, 255, 255, 0.05)', border: 'rgba(255,255,255,0.2)', text: 'rgba(255,255,255,0.7)' };
+    }
+  };
+  const colors = getColors();
+  return (
+    <span style={{ 
+      padding: '2px 8px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: '900', 
+      background: colors.bg, border: `1px solid ${colors.border}`, color: colors.text,
+      marginLeft: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em'
+    }}>
+      {status}
+    </span>
+  );
+};
+
 const LanguageSwitcher = ({ current, onSelect, isMobile }) => {
   return (
     <div style={{
@@ -320,6 +341,21 @@ const LandingPage = () => {
           features: ['Inteligentní rezervační kalendář', 'Skladový systém (Inventory)', 'Centralizovaný Messenger']
         }
       ],
+      roadmapTitle: "Stav vývoje & Roadmap",
+      roadmap: [
+        { name: "Jádro systému & Šifrování", status: "HOTOVO" },
+        { name: "Safety Guard™ Real-time", status: "HOTOVO" },
+        { name: "Skladový systém (Inventory)", status: "BETA" },
+        { name: "Native iOS / Android App", status: "BETA" },
+        { name: "AI Automatické odpovědi", status: "Q3 2025" },
+        { name: "Krypto Výplaty & De-Fi", status: "Q4 2025" }
+      ],
+      registrationTitle: "Jak registrovat agenturu?",
+      registrationSteps: [
+        { title: "Kontaktujte nás", desc: "Napište nám na Telegram @nexus_sys pro získání přístupového klíče." },
+        { title: "Vytvořte workspace", desc: "Zadejte údaje o vaší agentuře a nastavte základní parametry." },
+        { title: "Pozvěte svůj tým", desc: "Přidejte operátory a modelky do systému pod vaší kontrolu." }
+      ],
       footer: "Nexus Systems – Váš nástroj pro efektivní škálování."
     },
     en: {
@@ -350,6 +386,21 @@ const LandingPage = () => {
           desc: 'Everything in one place – from calendar management to inventory. Our integrated Inbox allows your team to respond lightning-fast.',
           features: ['Smart booking calendar', 'Inventory management', 'Centralized Messenger']
         }
+      ],
+      roadmapTitle: "Development Status & Roadmap",
+      roadmap: [
+        { name: "Core System & Encryption", status: "DONE" },
+        { name: "Safety Guard™ Real-time", status: "DONE" },
+        { name: "Inventory Management", status: "BETA" },
+        { name: "Native iOS / Android App", status: "BETA" },
+        { name: "AI Automated Replies", status: "Q3 2025" },
+        { name: "Crypto Payouts & De-Fi", status: "Q4 2025" }
+      ],
+      registrationTitle: "How to register an agency?",
+      registrationSteps: [
+        { title: "Contact Us", desc: "Message us on Telegram @nexus_sys to obtain your access key." },
+        { title: "Create Workspace", desc: "Enter your agency details and set initial parameters." },
+        { title: "Invite Your Team", desc: "Add operators and models to the system under your control." }
       ],
       footer: "Nexus Systems – Your tool for efficient scaling."
     }
@@ -401,6 +452,35 @@ const LandingPage = () => {
         {t.videoSections.map((s, i) => (
           <VideoCard key={s.id} {...s} lang={lang} />
         ))}
+      </section>
+
+      {/* Roadmap Section */}
+      <section className="container" style={{ maxWidth: '1000px', margin: '4rem auto', padding: '4rem 2rem', background: 'rgba(255,255,255,0.02)', borderRadius: '32px', border: '1px solid var(--card-border)' }}>
+        <h2 style={{ fontSize: '2rem', fontWeight: '900', textAlign: 'center', marginBottom: '3rem' }}>{t.roadmapTitle}</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1.5rem' }}>
+          {t.roadmap.map((item, idx) => (
+            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <span style={{ fontWeight: '600', fontSize: '0.95rem' }}>{item.name}</span>
+              <StatusBadge status={item.status} />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Registration Section */}
+      <section className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '6rem 2rem' }}>
+        <h2 style={{ fontSize: '2.5rem', fontWeight: '900', textAlign: 'center', marginBottom: '4rem' }}>{t.registrationTitle}</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '3rem' }}>
+          {t.registrationSteps.map((step, idx) => (
+            <div key={idx} style={{ textAlign: 'center' }}>
+              <div style={{ width: '50px', height: '50px', background: 'var(--accent-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', fontSize: '1.25rem', fontWeight: '900', boxShadow: '0 0 20px var(--accent-glow)' }}>
+                {idx + 1}
+              </div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1rem' }}>{step.title}</h3>
+              <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>{step.desc}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* Footer */}
