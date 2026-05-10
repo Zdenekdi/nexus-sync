@@ -308,8 +308,8 @@ const LandingPage = () => {
           id: 'analytics',
           src: '/analytics.mp4',
           title: 'Business pod kontrolou',
-          desc: 'Zapomeňte na tabulky. Nexus Hub vám dává okamžitý přehled o tržbách, konverzích a výkonu jednotlivých modelek. Automatizované výplaty v CZK.',
-          features: ['Detailní tržby a konverze', 'Automatické výplaty v CZK', 'VIP Client Management (CRM)'],
+          desc: 'Zapomeňte na tabulky. Nexus Hub vám dává okamžitý přehled o tržbách, konverzích a výkonu jednotlivých modelek. Přesné výpočty provizí v reálném čase.',
+          features: ['Detailní tržby a konverze', 'Pokročilé finanční přehledy', 'VIP Client Management (CRM)'],
           reverse: true
         },
         {
@@ -339,8 +339,8 @@ const LandingPage = () => {
           id: 'analytics',
           src: '/analytics.mp4',
           title: 'Business Under Control',
-          desc: 'Forget about spreadsheets. Nexus Hub gives you an instant overview of revenue, conversions, and performance. Automated payouts in CZK.',
-          features: ['Detailed revenue & conversions', 'Automated payouts', 'VIP Client Management (CRM)'],
+          desc: 'Forget about spreadsheets. Nexus Hub gives you an instant overview of revenue, conversions, and performance. Precise commission calculations in real-time.',
+          features: ['Detailed revenue & conversions', 'Advanced financial insights', 'VIP Client Management (CRM)'],
           reverse: true
         },
         {
