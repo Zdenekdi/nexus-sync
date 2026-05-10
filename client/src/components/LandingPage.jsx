@@ -238,7 +238,7 @@ const VideoCard = ({ src, title, desc, features, reverse, lang }) => {
           border: '1px solid rgba(255,255,255,0.1)'
         }}>
           <video 
-            controls playsInline 
+            controls playsInline preload="metadata"
             style={{ width: '100%', borderRadius: '16px', display: 'block', objectFit: 'cover' }}
           >
             <source src={src} type="video/mp4" />
