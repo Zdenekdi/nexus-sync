@@ -1,28 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { TEST_USERS } from './helpers/api.js';
 import { setupApiMocks } from './helpers/mocks.js';
+import { doLogin as loginToApp } from './helpers/auth.js';
 
-async function loginToApp(page, email, password) {
-  await page.goto('/');
-  await page.waitForLoadState('networkidle');
 
-  const skipBtn = page.getByTestId('onboarding-skip');
-  if (await skipBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-    await skipBtn.click();
-  } else {
-    const enterBtn = page.getByTestId('landing-enter-btn');
-    if (await enterBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await enterBtn.click();
-    }
-  }
-
-  await page.getByTestId('login-email').waitFor({ state: 'visible', timeout: 15000 });
-  await page.getByTestId('login-email').fill(email);
-  await page.getByTestId('login-password').fill(password);
-  await page.getByTestId('login-submit').click();
-
-  await expect(page.locator('nav')).toBeVisible({ timeout: 30000 });
-}
 
 test.describe('Inventory Operations E2E', () => {
   test.beforeEach(async ({ page }) => {

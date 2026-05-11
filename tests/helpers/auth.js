@@ -6,18 +6,26 @@ import { expect } from '@playwright/test';
  */
 export async function doLogin(page, email, password) {
   console.log(`🔑 UI Login: ${email}...`);
-  await page.goto('/');
-  await page.waitForLoadState('networkidle');
+  await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 60000 });
 
-  // Handle Onboarding slides using data-testid
-  while (await page.getByTestId('onboarding-next').isVisible({ timeout: 2000 }).catch(() => false)) {
-    await page.getByTestId('onboarding-next').click();
-    await page.waitForTimeout(300);
-  }
-
-  // Final enter button in Onboarding
-  if (await page.getByTestId('onboarding-finish').isVisible({ timeout: 2000 }).catch(() => false)) {
-    await page.getByTestId('onboarding-finish').click();
+  // Handle Onboarding - Prefer Skip for speed
+  const skipBtn = page.getByTestId('onboarding-skip');
+  if (await skipBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+    console.log('⏭️ Skipping onboarding...');
+    await skipBtn.click();
+  } else {
+    // Fallback: Click through slides (limit to 10 to avoid infinite loops)
+    let safetyCounter = 0;
+    while (safetyCounter < 10 && await page.getByTestId('onboarding-next').isVisible({ timeout: 1000 }).catch(() => false)) {
+      await page.getByTestId('onboarding-next').click();
+      await page.waitForTimeout(200);
+      safetyCounter++;
+    }
+    // Final enter button
+    const finishBtn = page.getByTestId('onboarding-finish');
+    if (await finishBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
+      await finishBtn.click();
+    }
   }
 
   // Wait for login form
