@@ -1,4 +1,4 @@
-name: 🧪 QA: E2E Testing Suite
+name: "🧪 QA: E2E Testing Suite"
 on:
   push:
     branches: [ main, master ]

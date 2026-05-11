@@ -1,4 +1,4 @@
-name: 🚀 Pipeline: Build & Deploy
+name: "🚀 Pipeline: Build & Deploy"
 
 on:
   push:
