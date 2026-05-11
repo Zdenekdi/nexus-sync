@@ -19,7 +19,8 @@ import {
   HelpCircle,
   ChevronUp,
   ArrowLeft,
-  BookOpen
+  BookOpen,
+  Check
 } from 'lucide-react';
 
 import { useNexus } from '../context/ContextHook';
@@ -417,8 +418,5 @@ const LandingPage = () => {
     </div>
   );
 };
-
-export default LandingPage;
-
 
 export default LandingPage;
