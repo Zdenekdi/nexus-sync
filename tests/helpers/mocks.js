@@ -32,8 +32,38 @@ export async function setupApiMocks(page) {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify([
-        { id: 'prof-1', name: 'Model Diana', status: 'active', active: true },
-        { id: 'prof-2', name: 'Model Sarah', status: 'offline', active: false }
+        { id: 'prof-1', name: 'Model Diana', status: 'active', active: true, agencyId: 'agency-1' },
+        { id: 'prof-2', name: 'Model Sarah', status: 'offline', active: false, agencyId: 'agency-1' }
+      ])
+    });
+  });
+
+  await page.route('**/api/safety/sessions', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        { id: 'sess-1', profileId: 'prof-1', profile: { name: 'Diana' }, bpm: 75, battery: 85, status: 'safe' }
+      ])
+    });
+  });
+
+  await page.route('**/api/chat/conversations', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        { id: 'conv-1', profileId: 'prof-1', lastMessage: 'Hello!', unreadCount: 0, updatedAt: new Date() }
+      ])
+    });
+  });
+
+  await page.route('**/api/messages/**', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        { id: 'msg-1', content: 'Hello from mock!', sender: 'model', createdAt: new Date() }
       ])
     });
   });
