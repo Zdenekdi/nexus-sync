@@ -204,7 +204,8 @@ const LandingPage = () => {
       ],
       videos: [
         { id: 'safety', src: '/safety.mp4', poster: '/thumb_safety.jpg', title: 'Bezpečnost na prvním místě', desc: 'Safety Guard™ s taktickým přehledem v reálném čase. Automatické SOS alerty a sledování polohy.', features: ['Sledování polohy', 'Hlasové SOS', 'Globální blacklist'] },
-        { id: 'analytics', src: '/analytics.mp4', poster: '/thumb_analytics.jpg', title: 'Business pod kontrolou', desc: 'Zapomeňte na tabulky. Okamžitý přehled o tržbách, konverzích a výkonu celého týmu.', features: ['Real-time tržby', 'Výpočet provizí', 'VIP Management'], reverse: true }
+        { id: 'analytics', src: '/analytics.mp4', poster: '/thumb_analytics.jpg', title: 'Business pod kontrolou', desc: 'Zapomeňte na tabulky. Okamžitý přehled o tržbách, konverzích a výkonu celého týmu.', features: ['Real-time tržby', 'Výpočet provizí', 'VIP Management'], reverse: true },
+        { id: 'operations', src: '/operations.mp4', poster: '/thumb_operations.jpg', title: 'Operace jako na dlaní', desc: 'Správa profilů, hierarchie a komunikace na jednom místě. Plná kontrola bez chaosu.', features: ['Správa profilů', 'Týmová hierarchie', 'CRM & Komunikace'] }
       ]
     },
     en: {
@@ -240,7 +241,8 @@ const LandingPage = () => {
       ],
       videos: [
         { id: 'safety', src: '/safety.mp4', poster: '/thumb_safety.jpg', title: 'Safety First', desc: 'Safety Guard™ with real-time tactical overview. Automated SOS alerts and location tracking.', features: ['Location Tracking', 'Voice SOS', 'Global Blacklist'] },
-        { id: 'analytics', src: '/analytics.mp4', poster: '/thumb_analytics.jpg', title: 'Business in Control', desc: 'Forget spreadsheets. Instant overview of revenue, conversions and team performance.', features: ['Real-time Revenue', 'Commission Calculator', 'VIP Management'], reverse: true }
+        { id: 'analytics', src: '/analytics.mp4', poster: '/thumb_analytics.jpg', title: 'Business in Control', desc: 'Forget spreadsheets. Instant overview of revenue, conversions and team performance.', features: ['Real-time Revenue', 'Commission Calculator', 'VIP Management'], reverse: true },
+        { id: 'operations', src: '/operations.mp4', poster: '/thumb_operations.jpg', title: 'Operations at a Glance', desc: 'Profile management, hierarchy and communication in one place. Full control without the chaos.', features: ['Profile Management', 'Team Hierarchy', 'CRM & Communication'] }
       ]
     }
   }[lang];
