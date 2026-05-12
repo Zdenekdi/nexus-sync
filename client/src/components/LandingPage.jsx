@@ -175,8 +175,8 @@ const LandingPage = () => {
         badge: "BUDOUCNOST SPRÁVY AGENTUR",
         title: "Absolutní kontrola.\nNekonečný růst.",
         desc: "Nexus Hub je inteligentní ekosystém pro moderní adult agentury. Kombinujeme pokročilou AI, real-time bezpečnost a analytiku, kterou jinde nenajdete.",
-        cta1: "Vstoupit do aplikace",
-        cta2: "Jak to funguje?"
+        cta1: "Otevřít Nexus",
+        cta2: "Průvodce startem"
       },
       stats: [
         { val: '25+', label: 'Aktivních agentur' },
@@ -192,19 +192,19 @@ const LandingPage = () => {
         { icon: BarChart3, title: "Deep Analytics", desc: "Tržby a konverze pod mikroskopem." },
         { icon: CreditCard, title: "Hybrid Billing", desc: "Automatické platby kartou i převodem." }
       ],
-      pricingTitle: "Tarify a předplatné",
+      pricingTitle: "Plány a ceny",
       plans: [
         { id: 'basic', name: 'Basic', price: '2 900 Kč', desc: 'Ideální pro začínající týmy.', features: ['Správa 5 profilů', 'Základní analytika', 'Safety Guard standard'] },
         { id: 'pro', name: 'Pro', price: '5 900 Kč', desc: 'Pro rostoucí profesionály.', features: ['Správa 10 profilů', 'AI Optimalizace', 'Pokročilé reporty'], popular: true },
         { id: 'agency', name: 'Agency', price: '9 900 Kč', desc: 'Neomezený výkon pro lídry.', features: ['Správa 20+ profilů', 'API Přístup', 'Prioritní podpora'] }
       ],
-      faqTitle: "Často kladené otázky",
+      faqTitle: "Časté dotazy",
       faqs: [
-        { q: "Je systém skutečně anonymní?", a: "Ano, Nexus Hub je navržen s důrazem na soukromí. Neukládáme žádné citlivé údaje, které by mohly spojit operátory s konkrétními osobami." },
-        { q: "Jak funguje Safety Guard SOS?", a: "V případě nebezpečí stačí vyslovit hlasový kód nebo stisknout SOS tlačítko. Systém okamžitě rozešle alerty všem managerům s polohou a zvukem." },
-        { q: "Nabízíte API pro vlastní integrace?", a: "Ano, v rámci tarifu Agency poskytujeme přístup k našemu Public REST API, díky kterému můžete Nexus propojit s vašimi interními systémy nebo vlastními boty." },
-        { q: "Jaké platební metody podporujete?", a: "Podporujeme okamžité platby kartou přes Stripe a také automatizované bankovní převody přes Fio banku (párování plateb probíhá v reálném čase)." },
-        { q: "Mohu přejít na jiný tarif později?", a: "Samozřejmě. Upgrade i downgrade je možný kdykoliv z administračního panelu." }
+        { q: "Je systém 100% anonymní?", a: "Ano, Nexus Hub je navržen s důrazem na soukromí. Neukládáme žádné citlivé údaje, které by mohly spojit operátory s konkrétními osobami." },
+        { q: "Jak funguje SOS a bezpečnost?", a: "V případě nebezpečí stačí vyslovit hlasový kód nebo stisknout SOS tlačítko. Systém okamžitě rozešle alerty všem managerům s polohou a zvukem." },
+        { q: "Nabízíte API pro vývojáře?", a: "Ano, v rámci tarifu Agency poskytujeme přístup k našemu Public REST API, díky kterému můžete Nexus propojit s vašimi interními systémy nebo vlastními boty." },
+        { q: "Jak mohu zaplatit?", a: "Podporujeme okamžité platby kartou přes Stripe a také automatizované bankovní převody přes Fio banku (párování plateb probíhá v reálném čase)." },
+        { q: "Dá se tarif později změnit?", a: "Samozřejmě. Upgrade i downgrade je možný kdykoliv přímo z vašeho administračního panelu." }
       ],
       videos: [
         { id: 'safety', src: '/safety.mp4', poster: '/thumb_safety.jpg', title: 'Bezpečnost na prvním místě', desc: 'Safety Guard™ s taktickým přehledem v reálném čase. Automatické SOS alerty a sledování polohy.', features: ['Sledování polohy', 'Hlasové SOS', 'Globální blacklist'] },
@@ -217,8 +217,8 @@ const LandingPage = () => {
         badge: "FUTURE OF AGENCY MANAGEMENT",
         title: "Absolute Control.\nInfinite Growth.",
         desc: "Nexus Hub is an intelligent ecosystem for modern adult agencies. We combine advanced AI, real-time safety, and analytics you won't find anywhere else.",
-        cta1: "Enter Application",
-        cta2: "How it works?"
+        cta1: "Open Nexus",
+        cta2: "Start Guide"
       },
       stats: [
         { label: "Active Agencies", val: "50+" },
@@ -234,7 +234,7 @@ const LandingPage = () => {
         { icon: BarChart3, title: "Deep Analytics", desc: "Revenue and conversion insights." },
         { icon: CreditCard, title: "Hybrid Billing", desc: "Automated card and bank payments." }
       ],
-      pricingTitle: "Pricing & Subscriptions",
+      pricingTitle: "Plans & Pricing",
       plans: [
         { id: 'basic', name: 'Basic', price: '€120', desc: 'Perfect for starting teams.', features: ['5 Profiles', 'Basic Analytics', 'Safety Guard Standard'] },
         { id: 'pro', name: 'Pro', price: '€240', desc: 'For growing professionals.', features: ['10 Profiles', 'AI Optimization', 'Advanced Reports'], popular: true },
@@ -242,11 +242,11 @@ const LandingPage = () => {
       ],
       faqTitle: "Frequently Asked Questions",
       faqs: [
-        { q: "Is the system truly anonymous?", a: "Yes, Nexus Hub is built with privacy first. We do not store sensitive links between operators and identities." },
-        { q: "How does Safety Guard SOS work?", a: "In case of danger, say the voice code or press SOS. The system alerts managers with location and live audio." },
-        { q: "Do you offer API for custom integrations?", a: "Yes, the Agency plan provides access to our Public REST API, allowing you to connect Nexus with your internal tools or custom bots." },
-        { q: "What payment methods do you support?", a: "We support instant card payments via Stripe as well as automated bank transfers (real-time reconciliation)." },
-        { q: "Can I upgrade my plan later?", a: "Absolutely. You can upgrade or downgrade your subscription at any time via the administration panel." }
+        { q: "Is the system 100% anonymous?", a: "Yes, Nexus Hub is built with privacy first. We do not store sensitive links between operators and identities." },
+        { q: "How does SOS & Safety work?", a: "In case of danger, say the voice code or press SOS. The system alerts managers with location and live audio." },
+        { q: "Do you offer API for developers?", a: "Yes, the Agency plan provides access to our Public REST API, allowing you to connect Nexus with your internal tools or custom bots." },
+        { q: "How can I pay?", a: "We support instant card payments via Stripe as well as automated bank transfers (real-time reconciliation)." },
+        { q: "Can I change my plan later?", a: "Absolutely. You can upgrade or downgrade your subscription at any time via the administration panel." }
       ],
       videos: [
         { id: 'safety', src: '/safety.mp4', poster: '/thumb_safety.jpg', title: 'Safety First', desc: 'Safety Guard™ with real-time tactical overview. Automated SOS alerts and location tracking.', features: ['Location Tracking', 'Voice SOS', 'Global Blacklist'] },
