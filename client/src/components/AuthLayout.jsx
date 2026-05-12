@@ -170,7 +170,7 @@ const AuthLayout = ({ children, title, subtitle }) => {
           
           <div style={{ textAlign: 'center' }}>
             <button 
-              onClick={() => { setShowLanding(true); navigate('/'); }}
+              onClick={() => navigate('/')}
               style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '0.9rem', fontWeight: '600', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '10px', transition: 'color 0.2s' }}
               onMouseEnter={e => e.currentTarget.style.color = 'white'}
               onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}

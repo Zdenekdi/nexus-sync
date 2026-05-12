@@ -160,21 +160,21 @@ const ManualView = () => {
         <button 
           onClick={() => handleNavigate('/register')}
           style={{ 
-            padding: '1.5rem 4rem', borderRadius: '24px', border: 'none',
-            background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', 
+            padding: '1.25rem 3.5rem', borderRadius: '20px', border: 'none',
+            background: '#3b82f6', 
             color: 'white', fontWeight: '900',
-            fontSize: '1.2rem', cursor: 'pointer', display: 'inline-flex', 
+            fontSize: '1.1rem', cursor: 'pointer', display: 'inline-flex', 
             alignItems: 'center', gap: '1rem', 
-            boxShadow: '0 25px 50px -12px rgba(59, 130, 246, 0.5)',
+            boxShadow: '0 20px 40px -10px rgba(59, 130, 246, 0.5)',
             transition: 'all 0.3s ease'
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = 'scale(1.05)';
-            e.currentTarget.style.boxShadow = '0 35px 60px -15px rgba(59, 130, 246, 0.6)';
+            e.currentTarget.style.boxShadow = '0 30px 60px -15px rgba(59, 130, 246, 0.6)';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = '0 25px 50px -12px rgba(59, 130, 246, 0.5)';
+            e.currentTarget.style.boxShadow = '0 20px 40px -10px rgba(59, 130, 246, 0.5)';
           }}
         >
           {t.cta} <ArrowRight size={22} />

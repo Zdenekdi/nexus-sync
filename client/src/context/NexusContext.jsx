@@ -119,6 +119,7 @@ export const NexusProvider = ({ children }) => {
     if (p === '/' || p === '/guide') {
       setShowLanding(true);
       if (p === '/guide') setActiveTab('guide');
+      else setActiveTab('dashboard');
     } else {
       setShowLanding(false);
       const tab = p.substring(1);
