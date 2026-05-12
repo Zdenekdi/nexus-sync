@@ -436,7 +436,7 @@ const LandingPage = () => {
                       </li>
                     ))}
                   </ul>
-                  <button onClick={() => navigate('/login', 'login')} style={{ width: '100%', padding: '1rem', borderRadius: '14px', border: 'none', background: p.popular ? '#3b82f6' : 'rgba(255,255,255,0.05)', color: 'white', fontWeight: '800', cursor: 'pointer', transition: 'all 0.3s' }}>{t.hero.cta1}</button>
+                  <button onClick={() => navigate('/register')} style={{ width: '100%', padding: '1rem', borderRadius: '14px', border: 'none', background: p.popular ? '#3b82f6' : 'rgba(255,255,255,0.05)', color: 'white', fontWeight: '800', cursor: 'pointer', transition: 'all 0.3s' }}>{t.hero.cta1}</button>
                 </div>
               </ScrollReveal>
             ))}
