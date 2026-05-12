@@ -11,7 +11,7 @@ import { CommunicationService } from '../services/communication/CommunicationSer
 import { WhatsAppAdapter } from '../services/communication/WhatsAppAdapter';
 import { SMSAdapter } from '../services/communication/SMSAdapter';
 import { WebChatAdapter } from '../services/communication/WebChatAdapter';
-import { TRANSLATIONS } from '../i18n/translations';
+import { TRANSLATIONS } from '../translations';
 import { NexusContext } from './ContextObject';
 
 // API Configuration
