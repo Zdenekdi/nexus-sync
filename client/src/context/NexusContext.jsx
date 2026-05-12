@@ -91,19 +91,25 @@ export const NexusProvider = ({ children }) => {
     // If navigating to login/register/guide, set the auth tab if provided
     if (authTab) setAuthInitialTab(authTab);
 
-    // Ensure language prefix is preserved
+    // Ensure language prefix is preserved (unless strictly root as requested)
     let targetPath = path;
-    if (lang !== 'cz' && !path.startsWith(`/${lang}`)) {
+    const clean = path.replace(/^\/(en|cz)/, '') || '/';
+
+    if (clean === '/') {
+      targetPath = '/';
+      setShowLanding(true);
+    } else if (lang !== 'cz' && !path.startsWith(`/${lang}`)) {
       targetPath = `/${lang}${path === '/' ? '' : path}`;
     }
     
-    window.history.pushState(null, '', targetPath);
-    setPathname(targetPath);
-
-    const clean = path.replace(/^\/(en|cz)/, '') || '/';
     if (clean !== '/' && clean !== '/guide') {
       setShowLanding(false);
+    } else if (clean === '/guide') {
+      setShowLanding(true);
     }
+
+    window.history.pushState(null, '', targetPath);
+    setPathname(targetPath);
   }, [lang]);
 
   // Sync showLanding and activeTab with pathname

@@ -261,7 +261,7 @@ const LandingPage = () => {
       <div style={{ background: '#040507', minHeight: '100vh', color: 'white', fontFamily: 'Inter, sans-serif' }}>
         <nav style={{ padding: '1.5rem 2rem', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, background: 'rgba(4,5,7,0.8)', backdropFilter: 'blur(10px)', zIndex: 100 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-             <button onClick={() => setActiveTab('dashboard')} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', padding: '8px 15px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+             <button onClick={() => navigate('/')} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', padding: '8px 15px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <ArrowLeft size={18} /> {lang === 'cz' ? 'Zpět' : 'Back'}
             </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
