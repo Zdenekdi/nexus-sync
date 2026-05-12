@@ -4,6 +4,12 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+
+# Cancel any in-progress run for the same branch when a new push arrives
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     timeout-minutes: 60
