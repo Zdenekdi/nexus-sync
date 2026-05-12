@@ -96,7 +96,35 @@ const InboxView = () => {
   const [clientCrmData, setClientCrmData] = React.useState(null);
   const [isCrmLoading, setIsCrmLoading] = React.useState(false);
   const [aiSuggestions, setAiSuggestions] = React.useState([]);
+  const [isUpgrading, setIsUpgrading] = React.useState(false);
   const { getSuggestion, isAiLoading, aiError } = useAI();
+
+  const agency = agencies?.[0] || {};
+  const hasAiAccess = agency.plan === 'Professional' || agency.plan === 'Agency' || agency.extraFeatures?.ai_features === true;
+
+  const handleUpgradeAi = async () => {
+    setIsUpgrading(true);
+    try {
+      const response = await fetch(`${API_BASE}/billing/checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          planId: 'ai_module',
+          successUrl: window.location.href,
+          cancelUrl: window.location.href
+        })
+      });
+      const data = await response.json();
+      if (data.url) window.location.href = data.url;
+    } catch (err) {
+      console.error("AI Upgrade failed:", err);
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
 
   // 2. All functions must be defined BEFORE useEffects to avoid TDZ in production
   const loadClientCrm = React.useCallback(async (phone) => {
@@ -163,10 +191,10 @@ const InboxView = () => {
   }, [selectedChat?.from]);
 
   React.useEffect(() => {
-    if (selectedChatId && inlinePanelTab === 'ai' && chatMessages.length > 0) {
+    if (selectedChatId && inlinePanelTab === 'ai' && chatMessages.length > 0 && hasAiAccess) {
       loadAiSuggestions();
     }
-  }, [selectedChatId, inlinePanelTab, lastMsgId]);
+  }, [selectedChatId, inlinePanelTab, lastMsgId, hasAiAccess]);
 
 
   // Pull to refresh logic
@@ -492,69 +520,95 @@ const InboxView = () => {
                                <span style={{ fontSize: '0.65rem', fontWeight: '800', color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                  {lang === 'cz' ? 'AI CHYTRÉ NÁVRHY' : 'AI SMART SUGGESTIONS'}
                                </span>
-                               <button onClick={loadAiSuggestions} style={{ background: 'none', border: 'none', color: '#a78bfa', cursor: 'pointer', padding: '2px' }}>
-                                 <RefreshCw size={12} className={isAiLoading ? 'animate-spin' : ''} />
-                               </button>
+                               {hasAiAccess && (
+                                 <button onClick={loadAiSuggestions} style={{ background: 'none', border: 'none', color: '#a78bfa', cursor: 'pointer', padding: '2px' }}>
+                                   <RefreshCw size={12} className={isAiLoading ? 'animate-spin' : ''} />
+                                 </button>
+                               )}
                              </div>
                              
-                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                                {isAiLoading ? (
-                                  <div style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
-                                    <Loader2 size={14} className="animate-spin" />
-                                    {lang === 'cz' ? 'Nexus AI připravuje návrhy...' : 'Nexus AI is preparing suggestions...'}
-                                  </div>
-                                ) : aiSuggestions.length > 0 ? (
-                                  aiSuggestions.map((s, i) => (
-                                    <div 
-                                      key={i} 
-                                      className="fade-in"
-                                      style={{ 
-                                        display: 'flex', 
-                                        flexDirection: 'column',
-                                        background: 'rgba(167, 139, 250, 0.04)', 
-                                        border: '1px solid rgba(167, 139, 250, 0.1)', 
-                                        borderRadius: '12px', 
-                                        overflow: 'hidden',
-                                        transition: 'all 0.2s ease',
-                                        marginBottom: '0.2rem'
-                                      }}
-                                    >
-                                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem' }}>
-                                        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                                          <div style={{ marginTop: '0.15rem' }}>
-                                            <Sparkles size={14} color="#a78bfa" />
-                                          </div>
-                                          <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.9)', lineHeight: '1.5' }}>
-                                            {s}
+                             {!hasAiAccess ? (
+                               <div style={{ padding: '1.5rem', background: 'rgba(167, 139, 250, 0.04)', border: '1px solid rgba(167, 139, 250, 0.1)', borderRadius: '16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                                 <div style={{ width: '48px', height: '48px', background: 'rgba(167, 139, 250, 0.1)', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                   <Lock size={20} color="#a78bfa" />
+                                 </div>
+                                 <div>
+                                   <div style={{ fontWeight: '800', color: 'white', fontSize: '0.9rem', marginBottom: '0.25rem' }}>
+                                     {lang === 'cz' ? 'AI Modul je uzamčen' : 'AI Module Locked'}
+                                   </div>
+                                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                                     {lang === 'cz' ? 'Získejte chytré návrhy odpovědí generované AI pro rychlejší komunikaci.' : 'Get AI-powered smart replies for faster client communication.'}
+                                   </div>
+                                 </div>
+                                 <button 
+                                   onClick={handleUpgradeAi}
+                                   disabled={isUpgrading}
+                                   style={{ width: '100%', padding: '0.75rem', background: '#a78bfa', color: 'black', border: 'none', borderRadius: '10px', fontWeight: '900', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                                 >
+                                   {isUpgrading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                                   {lang === 'cz' ? 'AKTIVOVAT AI MODUL' : 'ACTIVATE AI MODULE'}
+                                 </button>
+                               </div>
+                             ) : (
+                               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                                  {isAiLoading ? (
+                                    <div style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                                      <Loader2 size={14} className="animate-spin" />
+                                      {lang === 'cz' ? 'Nexus AI připravuje návrhy...' : 'Nexus AI is preparing suggestions...'}
+                                    </div>
+                                  ) : aiSuggestions.length > 0 ? (
+                                    aiSuggestions.map((s, i) => (
+                                      <div 
+                                        key={i} 
+                                        className="fade-in"
+                                        style={{ 
+                                          display: 'flex', 
+                                          flexDirection: 'column',
+                                          background: 'rgba(167, 139, 250, 0.04)', 
+                                          border: '1px solid rgba(167, 139, 250, 0.1)', 
+                                          borderRadius: '12px', 
+                                          overflow: 'hidden',
+                                          transition: 'all 0.2s ease',
+                                          marginBottom: '0.2rem'
+                                        }}
+                                      >
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem' }}>
+                                          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                                            <div style={{ marginTop: '0.15rem' }}>
+                                              <Sparkles size={14} color="#a78bfa" />
+                                            </div>
+                                            <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.9)', lineHeight: '1.5' }}>
+                                              {s}
+                                            </div>
                                           </div>
                                         </div>
+                                        <div style={{ display: 'flex', borderTop: '1px solid rgba(167, 139, 250, 0.08)' }}>
+                                          <button 
+                                            onClick={() => setMessageValue(s)}
+                                            style={{ flex: 1, padding: '0.5rem', background: 'none', border: 'none', borderRight: '1px solid rgba(167, 139, 250, 0.08)', color: 'var(--text-secondary)', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}
+                                          >
+                                            {lang === 'cz' ? 'UPRAVIT' : 'EDIT'}
+                                          </button>
+                                          <button 
+                                            onClick={() => { sendMessage(s); }}
+                                            style={{ flex: 1, padding: '0.5rem', background: 'none', border: 'none', color: '#a78bfa', fontSize: '0.65rem', fontWeight: '900', cursor: 'pointer', transition: 'all 0.2s' }}
+                                          >
+                                            {lang === 'cz' ? 'POSLAT' : 'SEND'}
+                                          </button>
+                                        </div>
                                       </div>
-                                      <div style={{ display: 'flex', borderTop: '1px solid rgba(167, 139, 250, 0.08)' }}>
-                                        <button 
-                                          onClick={() => setMessageValue(s)}
-                                          style={{ flex: 1, padding: '0.5rem', background: 'none', border: 'none', borderRight: '1px solid rgba(167, 139, 250, 0.08)', color: 'var(--text-secondary)', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}
-                                        >
-                                          {lang === 'cz' ? 'UPRAVIT' : 'EDIT'}
-                                        </button>
-                                        <button 
-                                          onClick={() => { sendMessage(s); }}
-                                          style={{ flex: 1, padding: '0.5rem', background: 'none', border: 'none', color: '#a78bfa', fontSize: '0.65rem', fontWeight: '900', cursor: 'pointer', transition: 'all 0.2s' }}
-                                        >
-                                          {lang === 'cz' ? 'POSLAT' : 'SEND'}
-                                        </button>
-                                      </div>
+                                    ))
+                                  ) : (
+                                    <div style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.1)', textAlign: 'center' }}>
+                                      {aiError ? (
+                                        <span style={{ color: 'var(--error-color)' }}>{aiError}</span>
+                                      ) : (
+                                        lang === 'cz' ? 'Žádné návrhy k dispozici. Zkuste obnovit.' : 'No suggestions available. Try refreshing.'
+                                      )}
                                     </div>
-                                  ))
-                                ) : (
-                                  <div style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.1)', textAlign: 'center' }}>
-                                    {aiError ? (
-                                      <span style={{ color: 'var(--error-color)' }}>{aiError}</span>
-                                    ) : (
-                                      lang === 'cz' ? 'Žádné návrhy k dispozici. Zkuste obnovit.' : 'No suggestions available. Try refreshing.'
-                                    )}
-                                  </div>
-                                )}
-                              </div>
+                                  )}
+                                </div>
+                             )}
                            </div>
                          )}
                          {inlinePanelTab === 'calendar' && (
@@ -674,8 +728,8 @@ const InboxView = () => {
                      </div>
 
                      {/* Tab content */}
-                     <div style={{ padding: '1.25rem', flex: 1, minHeight: 0, overflowY: 'auto' }}>
-                        {activeContextTab === 'translator' ? (
+                      <div style={{ padding: '1.25rem', flex: 1, minHeight: 0, overflowY: 'auto' }}>
+                         {activeContextTab === 'translator' ? (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                               <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -690,9 +744,17 @@ const InboxView = () => {
                               </div>
                             </div>
                             <textarea value={sourceText} onChange={(_err) => setSourceText(_err.target.value)} placeholder={t('typeResponse')} style={{ width: '100%', height: '100px', background: 'rgba(0, 0, 0, 0.2)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '1rem', color: 'white', resize: 'none' }} />
-                            <button onClick={handleTranslate} disabled={isTranslating} style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '0.75rem 1rem', borderRadius: '12px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                              {isTranslating ? (<><div className="loader-dots" style={{ display: 'flex', gap: '4px' }}><span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span><span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span><span style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></span></div>{t('translating')}</>) : (<><Sparkles size={16} /> {lang === 'cz' ? 'PŘELOŽIT PŘES AI' : 'TRANSLATE VIA AI'}</>)}
-                            </button>
+                            <button 
+                               onClick={() => hasAiAccess ? handleTranslate() : handleUpgradeAi()} 
+                               disabled={isTranslating || isUpgrading} 
+                               style={{ background: hasAiAccess ? 'var(--accent-color)' : 'rgba(255,255,255,0.05)', color: hasAiAccess ? 'white' : 'var(--text-secondary)', border: hasAiAccess ? 'none' : '1px solid var(--card-border)', padding: '0.75rem 1rem', borderRadius: '12px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                             >
+                               {isTranslating || isUpgrading ? (
+                                 <><div className="loader-dots" style={{ display: 'flex', gap: '4px' }}><span style={{ width: '4px', height: '4px', background: hasAiAccess ? 'white' : 'var(--text-secondary)', borderRadius: '50%' }}></span><span style={{ width: '4px', height: '4px', background: hasAiAccess ? 'white' : 'var(--text-secondary)', borderRadius: '50%' }}></span><span style={{ width: '4px', height: '4px', background: hasAiAccess ? 'white' : 'var(--text-secondary)', borderRadius: '50%' }}></span></div>{isTranslating ? t('translating') : (lang === 'cz' ? 'NAČÍTÁM...' : 'LOADING...')}</>
+                               ) : (
+                                 <>{hasAiAccess ? <Sparkles size={16} /> : <Lock size={16} />} {hasAiAccess ? (lang === 'cz' ? 'PŘELOŽIT PŘES AI' : 'TRANSLATE VIA AI') : (lang === 'cz' ? 'AKTIVUJTE AI PRO PŘEKLAD' : 'ACTIVATE AI TO TRANSLATE')}</>
+                               )}
+                             </button>
                             {translatedText && (
                               <div className="fade-in" style={{ padding: '1rem', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '12px', position: 'relative' }}>
                                 <div style={{ position: 'absolute', top: '-8px', right: '12px', background: 'var(--accent-color)', color: 'white', fontSize: '0.6rem', fontWeight: '900', padding: '2px 8px', borderRadius: '4px' }}>{t('poweredByAi')}</div>
@@ -702,8 +764,8 @@ const InboxView = () => {
                                 </button>
                               </div>
                             )}
-                          </div>
-                        ) : activeContextTab === 'note' ? (
+                           </div>
+                         ) : activeContextTab === 'note' ? (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                             <textarea value={internalNote} onChange={(_err) => setInternalNote(_err.target.value)} placeholder="Add internal note..." style={{ width: '100%', minHeight: '100px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '12px', padding: '1rem', color: '#f59e0b' }} />
                             <button onClick={handleSaveNote} disabled={!internalNote.trim()} style={{ alignSelf: 'flex-end', background: 'rgba(245,158,11,0.2)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.4)', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: '700' }}>Save Note</button>

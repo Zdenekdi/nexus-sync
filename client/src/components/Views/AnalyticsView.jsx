@@ -16,7 +16,92 @@ const AnalyticsView = () => {
   } = nexus;
 
   const [pinVerified, setPinVerified] = useState(!activeOperator?.hasPin);
+  const [isUpgrading, setIsUpgrading] = useState(false);
 
+  const agency = agencies?.[0] || {};
+  const hasAnalyticsAccess = agency.plan === 'Professional' || agency.plan === 'Agency' || agency.extraFeatures?.analytics === true;
+
+  const handleUpgrade = async () => {
+    setIsUpgrading(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api'}/billing/checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${nexus.token}`
+        },
+        body: JSON.stringify({ 
+          planId: 'pro_monthly',
+          successUrl: window.location.href,
+          cancelUrl: window.location.href
+        })
+      });
+      const data = await response.json();
+      if (data.url) window.location.href = data.url;
+    } catch (err) {
+      console.error("Upgrade failed:", err);
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
+
+  // 1. Subscription Check (Higher Priority than PIN)
+  if (!hasAnalyticsAccess) {
+    return (
+      <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100%', background: 'var(--bg-main)' }}>
+        <div style={{ textAlign: 'center', maxWidth: '500px', padding: '3rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--card-border)', borderRadius: '32px', backdropFilter: 'blur(10px)' }}>
+          <div style={{ 
+            width: '100px', height: '100px', 
+            background: 'linear-gradient(135deg, #3b82f6 0%, #a855f7 100%)', 
+            borderRadius: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+            margin: '0 auto 2.5rem', 
+            boxShadow: '0 20px 40px rgba(59, 130, 246, 0.3)',
+            position: 'relative'
+          }}>
+            <TrendingUp size={48} color="white" />
+            <div style={{ position: 'absolute', bottom: '-10px', right: '-10px', background: '#0f172a', borderRadius: '50%', padding: '8px', border: '2px solid #3b82f6' }}>
+              <Lock size={18} color="#3b82f6" />
+            </div>
+          </div>
+          
+          <h2 style={{ fontSize: '1.75rem', fontWeight: '950', marginBottom: '1.25rem', background: 'linear-gradient(to right, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            {lang === 'cz' ? 'Profesionální analytika' : 'Professional Analytics'}
+          </h2>
+          
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1rem', lineHeight: '1.7', fontWeight: '500' }}>
+            {lang === 'cz' 
+              ? 'Detailní statistiky tržeb, konverzí a výkonu operátorů jsou dostupné pouze v tarifu Professional nebo jako samostatný modul.' 
+              : 'Detailed revenue stats, conversion tracking, and operator performance are only available on the Professional plan or as a separate add-on.'}
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <button 
+              onClick={handleUpgrade}
+              disabled={isUpgrading}
+              className="premium-btn"
+              style={{ 
+                width: '100%', padding: '1.25rem', 
+                background: 'linear-gradient(to right, #3b82f6, #6366f1)', 
+                border: 'none', borderRadius: '16px', 
+                color: 'white', fontWeight: '900', fontSize: '0.95rem',
+                cursor: 'pointer', boxShadow: '0 10px 20px rgba(59, 130, 246, 0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem'
+              }}
+            >
+              {isUpgrading ? <Activity size={20} className="spin" /> : <DollarSign size={20} />}
+              {lang === 'cz' ? 'UPGRADOVAT NA PROFESSIONAL' : 'UPGRADE TO PROFESSIONAL'}
+            </button>
+            
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.5rem' }}>
+              {lang === 'cz' ? 'Okamžitá aktivace po zaplacení' : 'Instant activation after payment'}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. PIN Verification (Sensitive Data Access)
   if (!pinVerified) {
     return (
       <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100%', background: 'var(--bg-main)' }}>

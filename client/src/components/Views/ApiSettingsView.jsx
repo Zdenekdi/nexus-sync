@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Key, Plus, Trash2, Copy, CheckCircle2, AlertTriangle, 
-  ShieldCheck, Globe, Loader2, Terminal, ExternalLink, Info
+  ShieldCheck, Globe, Loader2, Terminal, ExternalLink, Info, Zap, Crown
 } from 'lucide-react';
 import axios from 'axios';
 import { useNexus } from '../../context/ContextHook';
@@ -9,27 +9,33 @@ import { useNexus } from '../../context/ContextHook';
 const ApiSettingsView = () => {
   const { t, showNotification } = useNexus();
   const [keys, setKeys] = useState([]);
+  const [agency, setAgency] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isUpgrading, setIsUpgrading] = useState(false);
   const [newKey, setNewKey] = useState(null);
   const [showConfirmDelete, setShowConfirmDelete] = useState(null);
   const [copiedKey, setCopiedKey] = useState(false);
 
-  const fetchKeys = async () => {
+  const fetchData = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get('/api/developer/keys');
-      setKeys(response.data);
+      const [keysRes, agencyRes] = await Promise.all([
+        axios.get('/api/developer/keys'),
+        axios.get('/api/agency/settings')
+      ]);
+      setKeys(keysRes.data);
+      setAgency(agencyRes.data);
     } catch (error) {
-      console.error('Failed to fetch API keys:', error);
-      showNotification('error', 'Nepodařilo se načíst API klíče');
+      console.error('Failed to fetch data:', error);
+      showNotification('error', 'Nepodařilo se načíst data');
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchKeys();
+    fetchData();
   }, []);
 
   const handleCreateKey = async (e) => {
@@ -44,7 +50,7 @@ const ApiSettingsView = () => {
       setIsGenerating(true);
       const response = await axios.post('/api/developer/keys', { name, scopes });
       setNewKey(response.data.apiKey);
-      fetchKeys();
+      fetchData();
       showNotification('success', 'API klíč byl vygenerován');
     } catch (error) {
       showNotification('error', error.response?.data?.message || 'Chyba při generování klíče');
@@ -70,6 +76,27 @@ const ApiSettingsView = () => {
     setTimeout(() => setCopiedKey(false), 2000);
     showNotification('info', 'Zkopírováno do schránky');
   };
+
+  const handleUpgrade = async () => {
+    try {
+      setIsUpgrading(true);
+      const { data } = await axios.post('/api/billing/checkout', {
+        planId: 'api_access',
+        successUrl: window.location.href,
+        cancelUrl: window.location.href
+      });
+
+      if (data.url) {
+        showNotification('info', lang === 'cz' ? 'Přesměrování na platební bránu...' : 'Redirecting to payment gateway...');
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      showNotification('error', lang === 'cz' ? 'Chyba při inicializaci platby.' : 'Error initializing payment.');
+      setIsUpgrading(false);
+    }
+  };
+  const extraFeatures = JSON.parse(agency?.extraFeatures || '{}');
+  const hasApiAccess = ['Agency', 'Enterprise'].includes(agency?.plan || agency?.tier) || extraFeatures.api_access;
 
   return (
     <div className="view-container" style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
@@ -104,7 +131,48 @@ const ApiSettingsView = () => {
         
         {/* Main List */}
         <section>
-          <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '20px', minHeight: '400px' }}>
+          {/* Plan Status Banner */}
+          {!hasApiAccess && (
+            <div className="glass-panel" style={{ 
+              padding: '1.5rem', borderRadius: '20px', marginBottom: '1.5rem',
+              background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 165, 0, 0.05) 100%)',
+              border: '1px solid rgba(255, 215, 0, 0.2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255,215,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffd700' }}>
+                  <Crown size={24} />
+                </div>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: '800' }}>Vyžadován prémiový přístup</h4>
+                  <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)' }}>
+                    Pro generování API klíčů potřebujete tarif Agency nebo dokoupený modul.
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={handleUpgrade}
+                disabled={isUpgrading}
+                style={{ 
+                  padding: '0.75rem 1.5rem', borderRadius: '12px', background: '#ffd700', color: 'black',
+                  border: 'none', fontWeight: '800', cursor: 'pointer', fontSize: '0.85rem',
+                  display: 'flex', alignItems: 'center', gap: '0.5rem'
+                }}
+              >
+                {isUpgrading ? <Loader2 className="animate-spin" size={16} /> : <Zap size={16} fill="currentColor" />}
+                Aktivovat API za 990 Kč
+              </button>
+            </div>
+          )}
+
+          <div className="glass-panel" style={{ 
+            padding: '1.5rem', borderRadius: '20px', minHeight: '400px',
+            opacity: hasApiAccess ? 1 : 0.6, pointerEvents: hasApiAccess ? 'all' : 'none',
+            position: 'relative'
+          }}>
+            {!hasApiAccess && (
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.1)', backdropFilter: 'blur(2px)', borderRadius: '20px', zIndex: 5 }}></div>
+            )}
             <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Key size={18} /> Aktivní klíče
             </h3>
@@ -159,7 +227,10 @@ const ApiSettingsView = () => {
 
         {/* Generate Sidebar */}
         <aside>
-          <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '20px', position: 'sticky', top: '2rem' }}>
+          <div className="glass-panel" style={{ 
+            padding: '1.5rem', borderRadius: '20px', position: 'sticky', top: '2rem',
+            opacity: hasApiAccess ? 1 : 0.6, pointerEvents: hasApiAccess ? 'all' : 'none'
+          }}>
             <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Plus size={18} /> Nový klíč
             </h3>
