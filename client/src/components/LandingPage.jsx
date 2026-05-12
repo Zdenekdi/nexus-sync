@@ -322,19 +322,38 @@ const LandingPage = () => {
             <div style={{ marginTop: '6rem', position: 'relative' }}>
               <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '80%', height: '80%', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.2), transparent 70%)', filter: 'blur(50px)', zIndex: -1 }} />
               <div style={{ maxWidth: '1000px', margin: '0 auto', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(40px)', padding: '10px', boxShadow: '0 50px 100px -20px rgba(0,0,0,0.7)' }}>
-                <div style={{ width: '100%', borderRadius: '24px', aspectRatio: '16/9', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
-                   {/* Realistic UI Elements Mockup */}
-                   <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0.1, background: 'url("data:image/svg+xml,%3Csvg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="%239C92AC" fill-opacity="0.4" fill-rule="evenodd"%3E%3Ccircle cx="3" cy="3" r="3"/%3E%3Ccircle cx="13" cy="13" r="3"/%3E%3C/g%3E%3C/svg%3E")' }} />
-                   <div style={{ width: '85%', height: '70%', background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                     <div style={{ display: 'flex', gap: '10px' }}>
-                       <div style={{ width: '100px', height: '12px', background: 'rgba(59, 130, 246, 0.4)', borderRadius: '6px' }} />
-                       <div style={{ width: '60px', height: '12px', background: 'rgba(255,255,255,0.1)', borderRadius: '6px' }} />
-                     </div>
-                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px' }}>
-                       {[1,2,3].map(i => <div key={i} style={{ height: '80px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }} />)}
-                     </div>
-                     <div style={{ height: '40px', width: '100%', background: 'rgba(34, 197, 94, 0.1)', borderRadius: '8px', border: '1px dashed rgba(34, 197, 94, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#22c55e', fontSize: '0.7rem', fontWeight: 'bold' }}>SMS RELAY ACTIVE: 1.2M MSGS</div>
+                <div style={{ width: '100%', borderRadius: '24px', aspectRatio: '16/9', background: '#0a0f18', display: 'flex', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', position: 'relative', boxShadow: '0 0 50px rgba(59, 130, 246, 0.15)' }}>
+                   {/* Sidebar Replica */}
+                   <div style={{ width: '60px', height: '100%', background: 'rgba(15, 23, 42, 0.8)', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '20px', gap: '20px' }}>
+                     <div style={{ width: '24px', height: '24px', borderRadius: '6px', background: 'rgba(59, 130, 246, 0.2)' }} />
+                     {[1,2,3,4].map(i => <div key={i} style={{ width: '20px', height: '20px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)' }} />)}
                    </div>
+                   {/* Main Content Area Replica */}
+                   <div style={{ flex: 1, padding: '25px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                       <div style={{ width: '150px', height: '15px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px' }} />
+                       <div style={{ width: '100px', height: '30px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '8px', border: '1px solid rgba(59, 130, 246, 0.2)' }} />
+                     </div>
+                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                       {[1,2,3].map(i => (
+                         <div key={i} style={{ height: '100px', background: 'rgba(15, 23, 42, 0.5)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', padding: '15px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                           <div style={{ width: '40%', height: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px' }} />
+                           <div style={{ width: '70%', height: '25px', background: i === 1 ? 'linear-gradient(90deg, #3b82f6, #60a5fa)' : 'rgba(255,255,255,0.1)', borderRadius: '6px' }} />
+                         </div>
+                       ))}
+                     </div>
+                     {/* SMS Relay Chart Visualization */}
+                     <div style={{ flex: 1, background: 'rgba(15, 23, 42, 0.5)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', padding: '20px', position: 'relative' }}>
+                        <div style={{ position: 'absolute', bottom: '20%', left: '10%', width: '80%', height: '50%', display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
+                          {[40, 70, 45, 90, 65, 80, 50, 85, 60, 95].map((h, i) => (
+                            <div key={i} style={{ flex: 1, height: `${h}%`, background: `linear-gradient(to top, rgba(59, 130, 246, ${i/10}), #3b82f6)`, borderRadius: '4px 4px 0 0', opacity: 0.7 }} />
+                          ))}
+                        </div>
+                        <div style={{ color: '#3b82f6', fontSize: '0.6rem', fontWeight: 'bold', letterSpacing: '0.1em' }}>SMS THROUGHPUT: LIVE RELAY</div>
+                     </div>
+                   </div>
+                   {/* Glow Effects */}
+                   <div style={{ position: 'absolute', top: '-20%', right: '-10%', width: '40%', height: '40%', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1), transparent 70%)', filter: 'blur(40px)' }} />
                 </div>
               </div>
             </div>
