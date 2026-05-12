@@ -20,26 +20,12 @@ export async function doLogin(page, email, password) {
   const skipBtn = page.getByTestId('onboarding-skip').or(page.getByRole('button', { name: /přeskočit|skip/i }).first());
   const finishBtn = page.getByTestId('onboarding-finish').or(page.getByRole('button', { name: /dokončit|finish/i }).first());
 
-  console.log('⏳ Waiting for app to settle...');
+  // Fast settle: wait for critical elements instead of fixed 2s
+  await page.waitForSelector('body', { state: 'attached' });
   
-  await expect.poll(async () => {
-    if (await emailInput.isVisible().catch(() => false)) return 'login';
-    if (await enterBtn.isVisible().catch(() => false)) return 'landing';
-    if (await skipBtn.isVisible().catch(() => false)) return 'onboarding';
-    if (await nextBtn.isVisible().catch(() => false)) return 'onboarding';
-    if (await finishBtn.isVisible().catch(() => false)) return 'onboarding';
-    return 'loading';
-  }, {
-    timeout: 45000,
-    message: 'App failed to show login, landing or onboarding within 45s'
-  }).not.toBe('loading');
-
-  // Handle Landing Page
   if (await enterBtn.isVisible().catch(() => false)) {
     console.log('🚀 Landing page detected, clicking enter...');
     await enterBtn.click();
-    // After clicking enter, we should be on login or onboarding
-    await page.waitForTimeout(1000);
   }
 
   // Handle Onboarding flow
