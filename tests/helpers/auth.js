@@ -74,8 +74,8 @@ export async function doLogin(page, email, password) {
   console.log('🛰️ Verifying dashboard access...');
   await expect(emailInput).not.toBeVisible({ timeout: 30000 });
   
-  // Wait for either desktop sidebar or mobile bottom nav
-  const dashboardElement = page.locator('nav, .mobile-bottom-nav, [data-testid="page-safety-container"]').first();
+  // Wait for either desktop sidebar, mobile bottom nav, or mobile hamburger menu
+  const dashboardElement = page.locator('nav, .mobile-bottom-nav, [data-testid="page-safety-container"], button .lucide-menu, .lucide-menu').first();
   await dashboardElement.waitFor({ state: 'attached', timeout: 30000 });
 
   console.log(`✅ UI Login Success: ${email}`);
