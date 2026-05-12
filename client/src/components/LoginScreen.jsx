@@ -140,8 +140,8 @@ const PasswordRequirements = memo(({ password, isCz }) => {
 // --- Main Optimized Component ---
 
 const LoginScreen = () => {
-  const { onLogin, onRegisterAgency, onRegisterUser, t, lang, setJustLoggedOut, justLoggedOut, setShowLanding, showToast } = useNexus();
-  const [tab, setTab] = useState('login'); 
+  const { onLogin, onRegisterAgency, onRegisterUser, t, lang, setJustLoggedOut, justLoggedOut, setShowLanding, showToast, authInitialTab } = useNexus();
+  const [tab, setTab] = useState(authInitialTab || 'login'); 
   const [loading, setLoading] = useState(false);
   const [isMounting, setIsMounting] = useState(true);
   const [createdInviteCode, setCreatedInviteCode] = useState(null);

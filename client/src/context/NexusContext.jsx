@@ -102,9 +102,12 @@ export const NexusProvider = ({ children }) => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  const navigate = useCallback((path) => {
+  const navigate = useCallback((path, authTab = 'login') => {
     if (typeof window === 'undefined') return;
     
+    // If navigating to login/guide/etc, set the auth tab if provided
+    if (authTab) setAuthInitialTab(authTab);
+
     // Ensure language prefix is preserved if not already there
     let targetPath = path;
     if (lang !== 'cz' && !path.startsWith(`/${lang}`)) {
@@ -145,6 +148,7 @@ export const NexusProvider = ({ children }) => {
   }, [pathname]);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(() => localStorage.getItem('nexus_hasSeenOnboarding') === 'true');
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [authInitialTab, setAuthInitialTab] = useState('login');
 
   // --- 3. DATA & MESSAGING STATES ---
   const [messages, setMessages] = useState([]);
@@ -862,7 +866,7 @@ export const NexusProvider = ({ children }) => {
   // --- 14. CONTEXT VALUE ---
   const value = useMemo(() => ({
     t, lang, setLang, activeTab, setActiveTab, activeMarket, setActiveMarket,
-    pathname, navigate,
+    pathname, navigate, authInitialTab, setAuthInitialTab,
     loading: nexusData.isDataLoading, activeOperator, activeRole, isAllowed, isLoggedIn, token,
     logout: logoutStable, onLogin: handleLogin, onRegisterAgency: auth.handleRegisterAgency, onRegisterUser: auth.handleRegisterUser,
     isAppOwner: activeOperator?.isAppOwner || false, isManager: activeOperator?.isManager || false, isAdmin: activeOperator?.isAdmin || false,
@@ -914,7 +918,7 @@ export const NexusProvider = ({ children }) => {
     heartRate, setHeartRate, hrThreshold, setHrThreshold, isBluetoothConnected, setIsBluetoothConnected, activeBioWarning,
     commService, agencyGateway, analyticsService, syncService
   }), [
-    t, lang, activeTab, activeMarket, pathname, navigate, nexusData.isDataLoading, activeOperator, activeRole, isAllowed, isLoggedIn, token,
+    t, lang, activeTab, activeMarket, pathname, navigate, authInitialTab, nexusData.isDataLoading, activeOperator, activeRole, isAllowed, isLoggedIn, token,
     logoutStable, handleLogin, auth.handleRegisterAgency, auth.handleRegisterUser,
     showLanding, hasSeenOnboarding, showOnboarding, isMobile, isNativeApp, isSidebarCollapsed, mobileView,
     inlinePanelTab, sourceText, translatedText, isTranslating, internalNote, clientNotes, detectedMeeting, typingProfiles,
