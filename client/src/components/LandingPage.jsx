@@ -199,8 +199,8 @@ const LandingPage = () => {
         { q: "Mohu přejít na jiný tarif později?", a: "Samozřejmě. Upgrade i downgrade je možný kdykoliv z administračního panelu." }
       ],
       videos: [
-        { id: 'safety', src: '/safety.mp4', title: 'Bezpečnost na prvním místě', desc: 'Safety Guard™ s taktickým přehledem v reálném čase. Automatické SOS alerty a sledování polohy.', features: ['Sledování polohy', 'Hlasové SOS', 'Globální blacklist'] },
-        { id: 'analytics', src: '/analytics.mp4', title: 'Business pod kontrolou', desc: 'Zapomeňte na tabulky. Okamžitý přehled o tržbách, konverzích a výkonu celého týmu.', features: ['Real-time tržby', 'Výpočet provizí', 'VIP Management'], reverse: true }
+        { id: 'safety', src: '/safety.mp4', poster: '/assets/marketing/video_thumbnail.png', title: 'Bezpečnost na prvním místě', desc: 'Safety Guard™ s taktickým přehledem v reálném čase. Automatické SOS alerty a sledování polohy.', features: ['Sledování polohy', 'Hlasové SOS', 'Globální blacklist'] },
+        { id: 'analytics', src: '/analytics.mp4', poster: '/assets/marketing/video_thumbnail.png', title: 'Business pod kontrolou', desc: 'Zapomeňte na tabulky. Okamžitý přehled o tržbách, konverzích a výkonu celého týmu.', features: ['Real-time tržby', 'Výpočet provizí', 'VIP Management'], reverse: true }
       ]
     },
     en: {
@@ -235,8 +235,8 @@ const LandingPage = () => {
         { q: "How does Safety Guard SOS work?", a: "In case of danger, say the voice code or press SOS. The system alerts managers with location and live audio." }
       ],
       videos: [
-        { id: 'safety', src: '/safety.mp4', title: 'Safety First', desc: 'Safety Guard™ with real-time tactical overview. Automated SOS alerts and location tracking.', features: ['Location Tracking', 'Voice SOS', 'Global Blacklist'] },
-        { id: 'analytics', src: '/analytics.mp4', title: 'Business Control', desc: 'Forget spreadsheets. Instant overview of revenue, conversions, and team performance.', features: ['Real-time Revenue', 'Commission Tracking', 'VIP Management'], reverse: true }
+        { id: 'safety', src: '/safety.mp4', poster: '/assets/marketing/video_thumbnail.png', title: 'Safety First', desc: 'Safety Guard™ with real-time tactical overview. Automated SOS alerts and location tracking.', features: ['Location Tracking', 'Voice SOS', 'Global Blacklist'] },
+        { id: 'analytics', src: '/analytics.mp4', poster: '/assets/marketing/video_thumbnail.png', title: 'Business Control', desc: 'Forget spreadsheets. Instant overview of revenue, conversions, and team performance.', features: ['Real-time Revenue', 'Commission Tracking', 'VIP Management'], reverse: true }
       ]
     }
   }[lang];
@@ -318,7 +318,7 @@ const LandingPage = () => {
             <div style={{ marginTop: '6rem', position: 'relative' }}>
               <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '80%', height: '80%', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.2), transparent 70%)', filter: 'blur(50px)', zIndex: -1 }} />
               <div style={{ maxWidth: '1000px', margin: '0 auto', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(40px)', padding: '10px', boxShadow: '0 50px 100px -20px rgba(0,0,0,0.7)' }}>
-                <img src="/assets/marketing/dashboard_mockup.png" alt="Nexus Dashboard" style={{ width: '100%', borderRadius: '24px', opacity: 0.9 }} />
+                <img src="/assets/marketing/video_thumbnail.png" alt="Nexus Dashboard" style={{ width: '100%', borderRadius: '24px', opacity: 0.9, filter: 'contrast(1.1) brightness(1.1)' }} />
               </div>
             </div>
           </ScrollReveal>
@@ -327,10 +327,14 @@ const LandingPage = () => {
 
       {/* INTEGRATIONS BAR */}
       <section style={{ padding: '4rem 5%', background: 'rgba(255,255,255,0.01)', borderTop: '1px solid rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: isMobile ? '2rem' : '4rem', opacity: 0.4 }}>
-          {t.integrations.map(name => (
-            <span key={name} style={{ fontSize: '0.85rem', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase' }}>{name}</span>
-          ))}
+        <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <img 
+            src="/assets/marketing/partner_logos.png" 
+            alt="Integrations" 
+            style={{ width: '100%', maxWidth: '800px', opacity: 0.5, filter: 'grayscale(1) brightness(2)', transition: 'opacity 0.3s' }}
+            onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
+            onMouseLeave={e => e.currentTarget.style.opacity = '0.5'}
+          />
         </div>
       </section>
 
