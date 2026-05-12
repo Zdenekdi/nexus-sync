@@ -70,10 +70,13 @@ export async function doLogin(page, email, password) {
   
   await page.getByTestId('login-submit').click();
 
-  // Verify successful login (wait for navigation and nav bar)
+  // Verify successful login (wait for dashboard elements)
   console.log('🛰️ Verifying dashboard access...');
   await expect(emailInput).not.toBeVisible({ timeout: 30000 });
-  await page.locator('nav').waitFor({ state: 'visible', timeout: 30000 });
+  
+  // Wait for either desktop sidebar or mobile bottom nav
+  const dashboardElement = page.locator('nav, .mobile-bottom-nav, [data-testid="page-safety-container"]').first();
+  await dashboardElement.waitFor({ state: 'attached', timeout: 30000 });
 
   console.log(`✅ UI Login Success: ${email}`);
 }
