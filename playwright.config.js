@@ -20,7 +20,7 @@ export default defineConfig({
   fullyParallel: true,    // Parallelize tests for speed
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: 1, // Reverted to 1 worker to avoid RBAC race conditions on live production DB
+  workers: '50%', // Increased to 50% of CPU cores to speed up test execution
   timeout: 180_000,        // Increase timeout for long video recording
   reporter: [['list'], ['json', { outputFile: 'test-results.json' }]],
 
