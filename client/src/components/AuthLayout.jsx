@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { 
-  Shield, BarChart3, Globe, ChevronLeft
+  Shield, BarChart3, Globe, ChevronLeft, Zap
 } from 'lucide-react';
 import { useNexus } from '../context/ContextHook';
 
@@ -110,45 +110,55 @@ const AuthLayout = ({ children, title, subtitle }) => {
         input:focus { border-color: #3b82f6 !important; background: rgba(59, 130, 246, 0.05) !important; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1) !important; }
       `}</style>
 
-      <div style={STYLES.leftSide}>
+      <div style={{ ...STYLES.leftSide, background: '#040507' }}>
         <div style={{ ...STYLES.glow, top: '-10%', left: '-10%' }} />
         
         <div style={{ position: 'relative', zIndex: 10, maxWidth: '600px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '4rem' }}>
-            <div style={{ position: 'relative' }}>
-              <div style={{ position: 'absolute', inset: -4, background: '#3b82f6', borderRadius: '18px', filter: 'blur(12px)', opacity: 0.5 }} />
-              <img src="/nexus_icon.png" alt="Nexus" style={{ width: '64px', height: '64px', borderRadius: '16px', position: 'relative' }} />
-            </div>
-            <span style={{ fontSize: '2rem', fontWeight: '950', color: 'white', letterSpacing: '0.15em' }}>NEXUS HUB</span>
+          <div style={{ 
+            display: 'inline-flex', alignItems: 'center', gap: '0.75rem', 
+            padding: '0.6rem 1.4rem', background: 'rgba(59, 130, 246, 0.08)',
+            borderRadius: '30px', color: '#60a5fa', marginBottom: '2.5rem',
+            border: '1px solid rgba(59, 130, 246, 0.2)',
+            fontSize: '0.7rem', fontWeight: '900', letterSpacing: '0.15em',
+            animation: 'fadeInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) both'
+          }}>
+            <Zap size={16} fill="currentColor" />
+            {isCz ? 'BUDOUCNOST SPRÁVY AGENTUR' : 'FUTURE OF AGENCY MANAGEMENT'}
           </div>
 
-          <h2 style={{ fontSize: '4.5rem', fontWeight: '950', color: 'white', lineHeight: 1.05, marginBottom: '2.5rem', letterSpacing: '-0.05em' }}>
-            {title || (isCz ? 'Absolutní kontrola nad vaší agenturou.' : 'Absolute control over your agency.')}
-          </h2>
+          <h1 style={{ 
+            fontSize: '4.5rem', fontWeight: '950', lineHeight: 1.1, marginBottom: '2.5rem', 
+            letterSpacing: '-0.04em',
+            background: 'linear-gradient(to bottom, #fff 40%, #64748b)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            animation: 'fadeInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both'
+          }}>
+            {isCz ? 'Absolutní kontrola.\nNekonečný růst.' : 'Absolute Control.\nInfinite Growth.'}
+          </h1>
 
-          <div style={{ marginTop: '5rem' }}>
+          <div style={{ marginTop: '4rem' }}>
             <FeatureItem 
               icon={Shield} 
               title={isCz ? 'Safety Guard™' : 'Safety Guard™'} 
               desc={isCz ? 'Real-time monitoring, SOS alerty a komplexní zabezpečení vašich dat.' : 'Real-time monitoring, SOS alerts and comprehensive security for your data.'} 
-              delay={0.1}
+              delay={0.2}
             />
             <FeatureItem 
               icon={BarChart3} 
               title={isCz ? 'Deep Analytics' : 'Deep Analytics'} 
               desc={isCz ? 'Detailní přehledy tržeb, predikce výkonu a pokročilé reportování.' : 'Detailed revenue insights, performance predictions and advanced reporting.'} 
-              delay={0.2}
+              delay={0.3}
             />
             <FeatureItem 
               icon={Globe} 
               title={isCz ? 'Omnichannel Sync' : 'Omnichannel Sync'} 
               desc={isCz ? 'WhatsApp, Telegram, OF a další platformy synchronizované v jednom rozhraní.' : 'WhatsApp, Telegram, OF and other platforms synced in one unified interface.'} 
-              delay={0.3}
+              delay={0.4}
             />
           </div>
         </div>
 
-        <div style={{ position: 'absolute', bottom: '4rem', left: '4rem', color: 'rgba(255,255,255,0.2)', fontSize: '0.9rem', fontWeight: '600' }}>
+        <div style={{ position: 'absolute', bottom: '4rem', left: '4rem', color: 'rgba(255,255,255,0.2)', fontSize: '0.9rem', fontWeight: '600', animation: 'fadeInLeft 1s ease 0.5s both' }}>
           © {new Date().getFullYear()} Nexus Systems • Enterprise Grade Infrastructure
         </div>
       </div>
@@ -160,7 +170,7 @@ const AuthLayout = ({ children, title, subtitle }) => {
           
           <div style={{ textAlign: 'center' }}>
             <button 
-              onClick={() => setShowLanding(true)}
+              onClick={() => { setShowLanding(true); navigate('/'); }}
               style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '0.9rem', fontWeight: '600', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '10px', transition: 'color 0.2s' }}
               onMouseEnter={e => e.currentTarget.style.color = 'white'}
               onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
