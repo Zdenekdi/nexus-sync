@@ -20,7 +20,11 @@ import {
   ChevronUp,
   ArrowLeft,
   BookOpen,
-  Check
+  Check,
+  Send,
+  CreditCard,
+  Phone,
+  Database
 } from 'lucide-react';
 
 import { useNexus } from '../context/ContextHook';
