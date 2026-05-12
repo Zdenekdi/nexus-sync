@@ -149,6 +149,7 @@ const ManualView = () => {
             onClick={idx === 0 ? () => handleNavigate('/register', 'register-agency') : (idx === 1 ? () => handleNavigate('/register', 'join-agency') : null)}
           />
         ))}
+      </div>
 
       {/* FINAL CTA */}
       <div style={{ textAlign: 'center', animation: 'fadeInUp 1s ease-out 0.4s both' }}>
