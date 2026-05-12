@@ -199,8 +199,8 @@ const LandingPage = () => {
         { q: "Mohu přejít na jiný tarif později?", a: "Samozřejmě. Upgrade i downgrade je možný kdykoliv z administračního panelu." }
       ],
       videos: [
-        { id: 'safety', src: '/safety.mp4', poster: '/assets/marketing/video_thumbnail.png', title: 'Bezpečnost na prvním místě', desc: 'Safety Guard™ s taktickým přehledem v reálném čase. Automatické SOS alerty a sledování polohy.', features: ['Sledování polohy', 'Hlasové SOS', 'Globální blacklist'] },
-        { id: 'analytics', src: '/analytics.mp4', poster: '/assets/marketing/video_thumbnail.png', title: 'Business pod kontrolou', desc: 'Zapomeňte na tabulky. Okamžitý přehled o tržbách, konverzích a výkonu celého týmu.', features: ['Real-time tržby', 'Výpočet provizí', 'VIP Management'], reverse: true }
+        { id: 'safety', src: '/safety.mp4', title: 'Bezpečnost na prvním místě', desc: 'Safety Guard™ s taktickým přehledem v reálném čase. Automatické SOS alerty a sledování polohy.', features: ['Sledování polohy', 'Hlasové SOS', 'Globální blacklist'] },
+        { id: 'analytics', src: '/analytics.mp4', title: 'Business pod kontrolou', desc: 'Zapomeňte na tabulky. Okamžitý přehled o tržbách, konverzích a výkonu celého týmu.', features: ['Real-time tržby', 'Výpočet provizí', 'VIP Management'], reverse: true }
       ]
     },
     en: {
@@ -235,8 +235,8 @@ const LandingPage = () => {
         { q: "How does Safety Guard SOS work?", a: "In case of danger, say the voice code or press SOS. The system alerts managers with location and live audio." }
       ],
       videos: [
-        { id: 'safety', src: '/safety.mp4', poster: '/assets/marketing/video_thumbnail.png', title: 'Safety First', desc: 'Safety Guard™ with real-time tactical overview. Automated SOS alerts and location tracking.', features: ['Location Tracking', 'Voice SOS', 'Global Blacklist'] },
-        { id: 'analytics', src: '/analytics.mp4', poster: '/assets/marketing/video_thumbnail.png', title: 'Business Control', desc: 'Forget spreadsheets. Instant overview of revenue, conversions, and team performance.', features: ['Real-time Revenue', 'Commission Tracking', 'VIP Management'], reverse: true }
+        { id: 'safety', src: '/safety.mp4', title: 'Safety First', desc: 'Safety Guard™ with real-time tactical overview. Automated SOS alerts and location tracking.', features: ['Location Tracking', 'Voice SOS', 'Global Blacklist'] },
+        { id: 'analytics', src: '/analytics.mp4', title: 'Business Control', desc: 'Forget spreadsheets. Instant overview of revenue, conversions, and team performance.', features: ['Real-time Revenue', 'Commission Tracking', 'VIP Management'], reverse: true }
       ]
     }
   }[lang];
@@ -318,7 +318,10 @@ const LandingPage = () => {
             <div style={{ marginTop: '6rem', position: 'relative' }}>
               <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '80%', height: '80%', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.2), transparent 70%)', filter: 'blur(50px)', zIndex: -1 }} />
               <div style={{ maxWidth: '1000px', margin: '0 auto', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(40px)', padding: '10px', boxShadow: '0 50px 100px -20px rgba(0,0,0,0.7)' }}>
-                <img src="/assets/marketing/video_thumbnail.png" alt="Nexus Dashboard" style={{ width: '100%', borderRadius: '24px', opacity: 0.9, filter: 'contrast(1.1) brightness(1.1)' }} />
+                <div style={{ width: '100%', borderRadius: '24px', aspectRatio: '16/9', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
+                   <div style={{ position: 'absolute', top: '10%', left: '10%', width: '80%', height: '80%', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '12px', background: 'rgba(0,0,0,0.2)' }} />
+                   <div style={{ fontSize: '1rem', fontWeight: '900', color: 'rgba(59, 130, 246, 0.5)', letterSpacing: '0.2em' }}>DASHBOARD PREVIEW</div>
+                </div>
               </div>
             </div>
           </ScrollReveal>
@@ -327,14 +330,37 @@ const LandingPage = () => {
 
       {/* INTEGRATIONS BAR */}
       <section style={{ padding: '4rem 5%', background: 'rgba(255,255,255,0.01)', borderTop: '1px solid rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <img 
-            src="/assets/marketing/partner_logos.png" 
-            alt="Integrations" 
-            style={{ width: '100%', maxWidth: '800px', opacity: 0.5, filter: 'grayscale(1) brightness(2)', transition: 'opacity 0.3s' }}
-            onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
-            onMouseLeave={e => e.currentTarget.style.opacity = '0.5'}
-          />
+        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: isMobile ? '2rem' : '4rem', opacity: 0.5 }}>
+          {/* WhatsApp */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M12.012 2c-5.508 0-9.987 4.479-9.987 9.988 0 1.757.455 3.405 1.253 4.846L2 22l5.304-1.391c1.401.762 2.996 1.199 4.696 1.199 5.508 0 9.988-4.479 9.988-9.988 0-5.509-4.48-9.988-9.988-9.988zM12.012 20.04c-1.583 0-3.064-.424-4.348-1.161l-.312-.179-3.224.845.86-3.142-.197-.313c-.808-1.291-1.236-2.784-1.236-4.321 0-4.426 3.603-8.029 8.029-8.029s8.029 3.603 8.029 8.029c0 4.426-3.603 8.029-8.029 8.029z"/></svg>
+            <span style={{ fontSize: '0.8rem', fontWeight: '900', letterSpacing: '0.1em' }}>WHATSAPP</span>
+          </div>
+          {/* Telegram */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2s-.21-.05-.3-.03c-.12.03-1.92 1.22-5.43 3.58-.51.35-.97.52-1.38.51-.45-.01-1.32-.25-1.97-.46-.8-.26-1.43-.4-1.37-.84.03-.23.35-.46.96-.7 3.76-1.63 6.27-2.71 7.52-3.23 3.58-1.48 4.32-1.74 4.81-1.75.11 0 .35.03.5.15.13.11.17.26.19.37z"/></svg>
+            <span style={{ fontSize: '0.8rem', fontWeight: '900', letterSpacing: '0.1em' }}>TELEGRAM</span>
+          </div>
+          {/* OnlyFans (Represented by a sleek star/circle icon) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm0 2c-4.42 0-8 3.58-8 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 3l1.45 2.94 3.24.47-2.35 2.29.56 3.23L12 12.41l-2.9 1.52.56-3.23-2.35-2.29 3.24-.47L12 7z"/></svg>
+            <span style={{ fontSize: '0.8rem', fontWeight: '900', letterSpacing: '0.1em' }}>ONLYFANS</span>
+          </div>
+          {/* Stripe */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M13.962 8.885c-1.57-.403-2.22-.72-2.22-1.344 0-.54.512-.906 1.344-.906 1.62 0 2.394.885 2.454 1.155.06.326.357.545.673.545h.024c.42 0 .736-.375.666-.788-.236-1.393-1.554-2.296-3.144-2.296-1.5 0-2.88.75-2.88 2.35 0 1.545 1.14 2.23 2.805 2.656 1.635.405 2.145.78 2.145 1.44 0 .61-.63 1.05-1.5 1.05-1.89 0-2.82-1.12-2.92-1.44-.085-.296-.34-.492-.638-.492h-.032c-.44 0-.756.402-.647.828.32 1.253 1.683 2.502 4.237 2.502 1.59 0 3.03-.81 3.03-2.52 0-1.74-1.556-2.316-3.414-2.79zM6.5 10V8c0-.55-.45-1-1-1s-1 .45-1 1v7c0 .55.45 1 1 1s1-.45 1-1v-2h2c.55 0 1-.45 1-1s-.45-1-1-1h-2z"/></svg>
+            <span style={{ fontSize: '0.8rem', fontWeight: '900', letterSpacing: '0.1em' }}>STRIPE</span>
+          </div>
+          {/* VOIP */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <span style={{ fontSize: '0.8rem', fontWeight: '900', letterSpacing: '0.1em' }}>VOIP</span>
+          </div>
+          {/* Crypto */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+            <span style={{ fontSize: '0.8rem', fontWeight: '900', letterSpacing: '0.1em' }}>CRYPTO</span>
+          </div>
         </div>
       </section>
 
