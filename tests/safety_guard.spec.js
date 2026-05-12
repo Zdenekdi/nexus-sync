@@ -18,7 +18,7 @@ test.describe('Safety Guard™ E2E Tests', () => {
 
   test('should display active sessions and metrics', async ({ page }) => {
     // Wait for either session cards or "no active sessions" message
-    const noSessions = page.getByText(/no active sessions|žádné aktivní relace/i);
+    const noSessions = page.getByTestId('safety-no-sessions');
     const sessionCard = page.locator('[data-testid^="safety-session-card-"]').first();
     
     await expect(noSessions.or(sessionCard)).toBeVisible({ timeout: 15000 });
@@ -39,7 +39,7 @@ test.describe('Safety Guard™ E2E Tests', () => {
     await searchInput.fill('NonExistentModel');
     
     // Should show "no active sessions"
-    await expect(page.getByText(/no active sessions|žádné aktivní relace/i)).toBeVisible();
+    await expect(page.getByTestId('safety-no-sessions')).toBeVisible();
     
     await searchInput.fill(''); // Clear search
   });

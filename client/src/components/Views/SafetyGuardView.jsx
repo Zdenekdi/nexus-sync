@@ -128,7 +128,7 @@ const SafetyGuardView = () => {
 
   const filteredSessions = sessions.filter(s => {
     const matchesSearch = s.profile?.name?.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = filter === 'all' || s.state.toLowerCase() === filter.toLowerCase();
+    const matchesFilter = filter === 'all' || s.state?.toLowerCase() === filter.toLowerCase();
     return matchesSearch && matchesFilter;
   });
 
@@ -241,7 +241,7 @@ const SafetyGuardView = () => {
               <div className="spinner" />
             </div>
           ) : filteredSessions.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '24px', border: '1px dashed var(--card-border)' }}>
+            <div data-testid="safety-no-sessions" style={{ textAlign: 'center', padding: '5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '24px', border: '1px dashed var(--card-border)' }}>
               <div style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{t('noActiveSessions')}</div>
             </div>
           ) : (

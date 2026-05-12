@@ -135,25 +135,25 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 33116,
+                      "duration": 20363,
                       "error": {
-                        "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n",
-                        "stack": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5",
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('safety-no-sessions').or(locator('[data-testid^=\"safety-session-card-\"]').first())\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('safety-no-sessions').or(locator('[data-testid^=\"safety-session-card-\"]').first())\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('safety-no-sessions').or(locator('[data-testid^=\"safety-session-card-\"]').first())\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('safety-no-sessions').or(locator('[data-testid^=\"safety-session-card-\"]').first())\u001b[22m\n\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:24:46",
                         "location": {
-                          "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                          "column": 20,
-                          "line": 55
+                          "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js",
+                          "column": 46,
+                          "line": 24
                         },
-                        "snippet": "\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                        "snippet": "\u001b[0m \u001b[90m 22 |\u001b[39m     \u001b[36mconst\u001b[39m sessionCard \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'[data-testid^=\"safety-session-card-\"]'\u001b[39m)\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\n \u001b[90m 23 |\u001b[39m     \n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 24 |\u001b[39m     \u001b[36mawait\u001b[39m expect(noSessions\u001b[33m.\u001b[39mor(sessionCard))\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 25 |\u001b[39m\n \u001b[90m 26 |\u001b[39m     \u001b[36mif\u001b[39m (\u001b[36mawait\u001b[39m sessionCard\u001b[33m.\u001b[39misVisible()) {\n \u001b[90m 27 |\u001b[39m       \u001b[90m// Verify metrics are visible on the first card\u001b[39m\u001b[0m"
                       },
                       "errors": [
                         {
                           "location": {
-                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                            "column": 20,
-                            "line": 55
+                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js",
+                            "column": 46,
+                            "line": 24
                           },
-                          "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n\n\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\u001b[22m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5\u001b[22m"
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('safety-no-sessions').or(locator('[data-testid^=\"safety-session-card-\"]').first())\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('safety-no-sessions').or(locator('[data-testid^=\"safety-session-card-\"]').first())\u001b[22m\n\n\n\u001b[0m \u001b[90m 22 |\u001b[39m     \u001b[36mconst\u001b[39m sessionCard \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'[data-testid^=\"safety-session-card-\"]'\u001b[39m)\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\n \u001b[90m 23 |\u001b[39m     \n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 24 |\u001b[39m     \u001b[36mawait\u001b[39m expect(noSessions\u001b[33m.\u001b[39mor(sessionCard))\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 25 |\u001b[39m\n \u001b[90m 26 |\u001b[39m     \u001b[36mif\u001b[39m (\u001b[36mawait\u001b[39m sessionCard\u001b[33m.\u001b[39misVisible()) {\n \u001b[90m 27 |\u001b[39m       \u001b[90m// Verify metrics are visible on the first card\u001b[39m\u001b[0m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:24:46\u001b[22m"
                         }
                       ],
                       "stdout": [
@@ -164,12 +164,21 @@
                           "text": "⏳ Waiting for app to settle...\n"
                         },
                         {
+                          "text": "🚀 Landing page detected, clicking enter...\n"
+                        },
+                        {
                           "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-11T18:50:00.275Z",
+                      "startTime": "2026-05-12T06:01:04.091Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -189,9 +198,9 @@
                         }
                       ],
                       "errorLocation": {
-                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                        "column": 20,
-                        "line": 55
+                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js",
+                        "column": 46,
+                        "line": 24
                       }
                     }
                   ],
@@ -219,25 +228,25 @@
                       "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 32716,
+                      "duration": 8874,
                       "error": {
-                        "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n",
-                        "stack": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5",
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('safety-no-sessions')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('safety-no-sessions')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('safety-no-sessions')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('safety-no-sessions')\u001b[22m\n\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:42:58",
                         "location": {
-                          "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                          "column": 20,
-                          "line": 55
+                          "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js",
+                          "column": 58,
+                          "line": 42
                         },
-                        "snippet": "\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                        "snippet": "\u001b[0m \u001b[90m 40 |\u001b[39m     \n \u001b[90m 41 |\u001b[39m     \u001b[90m// Should show \"no active sessions\"\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 42 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'safety-no-sessions'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 43 |\u001b[39m     \n \u001b[90m 44 |\u001b[39m     \u001b[36mawait\u001b[39m searchInput\u001b[33m.\u001b[39mfill(\u001b[32m''\u001b[39m)\u001b[33m;\u001b[39m \u001b[90m// Clear search\u001b[39m\n \u001b[90m 45 |\u001b[39m   })\u001b[33m;\u001b[39m\u001b[0m"
                       },
                       "errors": [
                         {
                           "location": {
-                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                            "column": 20,
-                            "line": 55
+                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js",
+                            "column": 58,
+                            "line": 42
                           },
-                          "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n\n\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\u001b[22m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5\u001b[22m"
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('safety-no-sessions')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('safety-no-sessions')\u001b[22m\n\n\n\u001b[0m \u001b[90m 40 |\u001b[39m     \n \u001b[90m 41 |\u001b[39m     \u001b[90m// Should show \"no active sessions\"\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 42 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'safety-no-sessions'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 43 |\u001b[39m     \n \u001b[90m 44 |\u001b[39m     \u001b[36mawait\u001b[39m searchInput\u001b[33m.\u001b[39mfill(\u001b[32m''\u001b[39m)\u001b[33m;\u001b[39m \u001b[90m// Clear search\u001b[39m\n \u001b[90m 45 |\u001b[39m   })\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:42:58\u001b[22m"
                         }
                       ],
                       "stdout": [
@@ -248,12 +257,21 @@
                           "text": "⏳ Waiting for app to settle...\n"
                         },
                         {
+                          "text": "🚀 Landing page detected, clicking enter...\n"
+                        },
+                        {
                           "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-11T18:50:38.506Z",
+                      "startTime": "2026-05-12T06:01:25.386Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -273,9 +291,9 @@
                         }
                       ],
                       "errorLocation": {
-                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                        "column": 20,
-                        "line": 55
+                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js",
+                        "column": 58,
+                        "line": 42
                       }
                     }
                   ],
@@ -289,7 +307,7 @@
             },
             {
               "title": "should toggle filters",
-              "ok": false,
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -302,28 +320,9 @@
                     {
                       "workerIndex": 2,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 32131,
-                      "error": {
-                        "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n",
-                        "stack": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5",
-                        "location": {
-                          "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                          "column": 20,
-                          "line": 55
-                        },
-                        "snippet": "\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                            "column": 20,
-                            "line": 55
-                          },
-                          "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n\n\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\u001b[22m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5\u001b[22m"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 4123,
+                      "errors": [],
                       "stdout": [
                         {
                           "text": "🔑 UI Login: alice@nexus.sync...\n"
@@ -332,38 +331,32 @@
                           "text": "⏳ Waiting for app to settle...\n"
                         },
                         {
+                          "text": "🚀 Landing page detected, clicking enter...\n"
+                        },
+                        {
                           "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-11T18:51:14.165Z",
+                      "startTime": "2026-05-12T06:01:34.843Z",
                       "annotations": [],
                       "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-E2E-Tests-should-toggle-filters-chromium/test-failed-1.png"
-                        },
                         {
                           "name": "video",
                           "contentType": "video/webm",
                           "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-E2E-Tests-should-toggle-filters-chromium/video.webm"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-E2E-Tests-should-toggle-filters-chromium/error-context.md"
                         }
-                      ],
-                      "errorLocation": {
-                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                        "column": 20,
-                        "line": 55
-                      }
+                      ]
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
               "id": "c7c11f9ddbbb13db6ec1-3a02b2406cafcc00e15f",
@@ -373,7 +366,7 @@
             },
             {
               "title": "should manage safety settings",
-              "ok": false,
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -384,30 +377,11 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 3,
+                      "workerIndex": 2,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 33086,
-                      "error": {
-                        "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n",
-                        "stack": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5",
-                        "location": {
-                          "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                          "column": 20,
-                          "line": 55
-                        },
-                        "snippet": "\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                            "column": 20,
-                            "line": 55
-                          },
-                          "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n\n\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\u001b[22m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5\u001b[22m"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 4403,
+                      "errors": [],
                       "stdout": [
                         {
                           "text": "🔑 UI Login: alice@nexus.sync...\n"
@@ -416,38 +390,32 @@
                           "text": "⏳ Waiting for app to settle...\n"
                         },
                         {
+                          "text": "🚀 Landing page detected, clicking enter...\n"
+                        },
+                        {
                           "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-11T18:51:47.537Z",
+                      "startTime": "2026-05-12T06:01:39.062Z",
                       "annotations": [],
                       "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-a58b4-ould-manage-safety-settings-chromium/test-failed-1.png"
-                        },
                         {
                           "name": "video",
                           "contentType": "video/webm",
                           "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-a58b4-ould-manage-safety-settings-chromium/video.webm"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-a58b4-ould-manage-safety-settings-chromium/error-context.md"
                         }
-                      ],
-                      "errorLocation": {
-                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                        "column": 20,
-                        "line": 55
-                      }
+                      ]
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
               "id": "c7c11f9ddbbb13db6ec1-745d8668c34dd068c8b7",
@@ -468,28 +436,28 @@
                   "projectName": "mobile",
                   "results": [
                     {
-                      "workerIndex": 4,
+                      "workerIndex": 3,
                       "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 32568,
+                      "duration": 33899,
                       "error": {
-                        "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n",
-                        "stack": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5",
+                        "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('nav') to be visible\u001b[22m\n",
+                        "stack": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('nav') to be visible\u001b[22m\n\n    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:76:29)\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5",
                         "location": {
                           "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                          "column": 20,
-                          "line": 55
+                          "column": 29,
+                          "line": 76
                         },
-                        "snippet": "\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                        "snippet": "\u001b[90m   at \u001b[39mhelpers/auth.js:76\n\n\u001b[0m \u001b[90m 74 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'🛰️ Verifying dashboard access...'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 75 |\u001b[39m   \u001b[36mawait\u001b[39m expect(emailInput)\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 76 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'nav'\u001b[39m)\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 77 |\u001b[39m\n \u001b[90m 78 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m`✅ UI Login Success: ${email}`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 79 |\u001b[39m }\u001b[0m"
                       },
                       "errors": [
                         {
                           "location": {
                             "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                            "column": 20,
-                            "line": 55
+                            "column": 29,
+                            "line": 76
                           },
-                          "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n\n\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\u001b[22m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5\u001b[22m"
+                          "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('nav') to be visible\u001b[22m\n\n\n\u001b[90m   at \u001b[39mhelpers/auth.js:76\n\n\u001b[0m \u001b[90m 74 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'🛰️ Verifying dashboard access...'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 75 |\u001b[39m   \u001b[36mawait\u001b[39m expect(emailInput)\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 76 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'nav'\u001b[39m)\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 77 |\u001b[39m\n \u001b[90m 78 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m`✅ UI Login Success: ${email}`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 79 |\u001b[39m }\u001b[0m\n\u001b[2m    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:76:29)\u001b[22m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5\u001b[22m"
                         }
                       ],
                       "stdout": [
@@ -500,12 +468,18 @@
                           "text": "⏳ Waiting for app to settle...\n"
                         },
                         {
+                          "text": "🚀 Landing page detected, clicking enter...\n"
+                        },
+                        {
                           "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-11T18:52:22.998Z",
+                      "startTime": "2026-05-12T06:01:43.839Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -526,8 +500,8 @@
                       ],
                       "errorLocation": {
                         "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                        "column": 20,
-                        "line": 55
+                        "column": 29,
+                        "line": 76
                       }
                     }
                   ],
@@ -552,28 +526,28 @@
                   "projectName": "mobile",
                   "results": [
                     {
-                      "workerIndex": 5,
+                      "workerIndex": 4,
                       "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 33181,
+                      "duration": 33841,
                       "error": {
-                        "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n",
-                        "stack": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5",
+                        "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('nav') to be visible\u001b[22m\n",
+                        "stack": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('nav') to be visible\u001b[22m\n\n    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:76:29)\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5",
                         "location": {
                           "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                          "column": 20,
-                          "line": 55
+                          "column": 29,
+                          "line": 76
                         },
-                        "snippet": "\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                        "snippet": "\u001b[90m   at \u001b[39mhelpers/auth.js:76\n\n\u001b[0m \u001b[90m 74 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'🛰️ Verifying dashboard access...'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 75 |\u001b[39m   \u001b[36mawait\u001b[39m expect(emailInput)\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 76 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'nav'\u001b[39m)\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 77 |\u001b[39m\n \u001b[90m 78 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m`✅ UI Login Success: ${email}`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 79 |\u001b[39m }\u001b[0m"
                       },
                       "errors": [
                         {
                           "location": {
                             "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                            "column": 20,
-                            "line": 55
+                            "column": 29,
+                            "line": 76
                           },
-                          "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n\n\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\u001b[22m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5\u001b[22m"
+                          "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('nav') to be visible\u001b[22m\n\n\n\u001b[90m   at \u001b[39mhelpers/auth.js:76\n\n\u001b[0m \u001b[90m 74 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'🛰️ Verifying dashboard access...'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 75 |\u001b[39m   \u001b[36mawait\u001b[39m expect(emailInput)\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 76 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'nav'\u001b[39m)\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 77 |\u001b[39m\n \u001b[90m 78 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m`✅ UI Login Success: ${email}`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 79 |\u001b[39m }\u001b[0m\n\u001b[2m    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:76:29)\u001b[22m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5\u001b[22m"
                         }
                       ],
                       "stdout": [
@@ -584,12 +558,18 @@
                           "text": "⏳ Waiting for app to settle...\n"
                         },
                         {
+                          "text": "🚀 Landing page detected, clicking enter...\n"
+                        },
+                        {
                           "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-11T18:52:57.204Z",
+                      "startTime": "2026-05-12T06:02:18.232Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -610,8 +590,8 @@
                       ],
                       "errorLocation": {
                         "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                        "column": 20,
-                        "line": 55
+                        "column": 29,
+                        "line": 76
                       }
                     }
                   ],
@@ -636,28 +616,28 @@
                   "projectName": "mobile",
                   "results": [
                     {
-                      "workerIndex": 6,
+                      "workerIndex": 5,
                       "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 32146,
+                      "duration": 33568,
                       "error": {
-                        "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n",
-                        "stack": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5",
+                        "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('nav') to be visible\u001b[22m\n",
+                        "stack": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('nav') to be visible\u001b[22m\n\n    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:76:29)\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5",
                         "location": {
                           "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                          "column": 20,
-                          "line": 55
+                          "column": 29,
+                          "line": 76
                         },
-                        "snippet": "\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                        "snippet": "\u001b[90m   at \u001b[39mhelpers/auth.js:76\n\n\u001b[0m \u001b[90m 74 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'🛰️ Verifying dashboard access...'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 75 |\u001b[39m   \u001b[36mawait\u001b[39m expect(emailInput)\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 76 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'nav'\u001b[39m)\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 77 |\u001b[39m\n \u001b[90m 78 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m`✅ UI Login Success: ${email}`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 79 |\u001b[39m }\u001b[0m"
                       },
                       "errors": [
                         {
                           "location": {
                             "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                            "column": 20,
-                            "line": 55
+                            "column": 29,
+                            "line": 76
                           },
-                          "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n\n\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\u001b[22m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5\u001b[22m"
+                          "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('nav') to be visible\u001b[22m\n\n\n\u001b[90m   at \u001b[39mhelpers/auth.js:76\n\n\u001b[0m \u001b[90m 74 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'🛰️ Verifying dashboard access...'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 75 |\u001b[39m   \u001b[36mawait\u001b[39m expect(emailInput)\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 76 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'nav'\u001b[39m)\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 77 |\u001b[39m\n \u001b[90m 78 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m`✅ UI Login Success: ${email}`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 79 |\u001b[39m }\u001b[0m\n\u001b[2m    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:76:29)\u001b[22m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5\u001b[22m"
                         }
                       ],
                       "stdout": [
@@ -668,12 +648,18 @@
                           "text": "⏳ Waiting for app to settle...\n"
                         },
                         {
+                          "text": "🚀 Landing page detected, clicking enter...\n"
+                        },
+                        {
                           "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-11T18:53:32.049Z",
+                      "startTime": "2026-05-12T06:02:52.668Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -694,8 +680,8 @@
                       ],
                       "errorLocation": {
                         "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                        "column": 20,
-                        "line": 55
+                        "column": 29,
+                        "line": 76
                       }
                     }
                   ],
@@ -720,28 +706,28 @@
                   "projectName": "mobile",
                   "results": [
                     {
-                      "workerIndex": 7,
+                      "workerIndex": 6,
                       "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 32477,
+                      "duration": 33688,
                       "error": {
-                        "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n",
-                        "stack": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5",
+                        "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('nav') to be visible\u001b[22m\n",
+                        "stack": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('nav') to be visible\u001b[22m\n\n    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:76:29)\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5",
                         "location": {
                           "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                          "column": 20,
-                          "line": 55
+                          "column": 29,
+                          "line": 76
                         },
-                        "snippet": "\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                        "snippet": "\u001b[90m   at \u001b[39mhelpers/auth.js:76\n\n\u001b[0m \u001b[90m 74 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'🛰️ Verifying dashboard access...'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 75 |\u001b[39m   \u001b[36mawait\u001b[39m expect(emailInput)\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 76 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'nav'\u001b[39m)\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 77 |\u001b[39m\n \u001b[90m 78 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m`✅ UI Login Success: ${email}`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 79 |\u001b[39m }\u001b[0m"
                       },
                       "errors": [
                         {
                           "location": {
                             "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                            "column": 20,
-                            "line": 55
+                            "column": 29,
+                            "line": 76
                           },
-                          "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n\n\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\u001b[22m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5\u001b[22m"
+                          "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('nav') to be visible\u001b[22m\n\n\n\u001b[90m   at \u001b[39mhelpers/auth.js:76\n\n\u001b[0m \u001b[90m 74 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'🛰️ Verifying dashboard access...'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 75 |\u001b[39m   \u001b[36mawait\u001b[39m expect(emailInput)\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 76 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'nav'\u001b[39m)\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 77 |\u001b[39m\n \u001b[90m 78 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m`✅ UI Login Success: ${email}`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 79 |\u001b[39m }\u001b[0m\n\u001b[2m    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:76:29)\u001b[22m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5\u001b[22m"
                         }
                       ],
                       "stdout": [
@@ -752,12 +738,18 @@
                           "text": "⏳ Waiting for app to settle...\n"
                         },
                         {
+                          "text": "🚀 Landing page detected, clicking enter...\n"
+                        },
+                        {
                           "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-11T18:54:04.919Z",
+                      "startTime": "2026-05-12T06:03:26.894Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -778,8 +770,8 @@
                       ],
                       "errorLocation": {
                         "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                        "column": 20,
-                        "line": 55
+                        "column": 29,
+                        "line": 76
                       }
                     }
                   ],
@@ -804,28 +796,28 @@
                   "projectName": "firefox",
                   "results": [
                     {
-                      "workerIndex": 8,
+                      "workerIndex": 7,
                       "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 33252,
+                      "duration": 18996,
                       "error": {
-                        "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n",
-                        "stack": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5",
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('safety-no-sessions').or(locator('[data-testid^=\"safety-session-card-\"]').first())\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('safety-no-sessions').or(locator('[data-testid^=\"safety-session-card-\"]').first())\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('safety-no-sessions').or(locator('[data-testid^=\"safety-session-card-\"]').first())\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('safety-no-sessions').or(locator('[data-testid^=\"safety-session-card-\"]').first())\u001b[22m\n\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:24:46",
                         "location": {
-                          "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                          "column": 20,
-                          "line": 55
+                          "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js",
+                          "column": 46,
+                          "line": 24
                         },
-                        "snippet": "\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                        "snippet": "\u001b[0m \u001b[90m 22 |\u001b[39m     \u001b[36mconst\u001b[39m sessionCard \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'[data-testid^=\"safety-session-card-\"]'\u001b[39m)\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\n \u001b[90m 23 |\u001b[39m     \n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 24 |\u001b[39m     \u001b[36mawait\u001b[39m expect(noSessions\u001b[33m.\u001b[39mor(sessionCard))\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 25 |\u001b[39m\n \u001b[90m 26 |\u001b[39m     \u001b[36mif\u001b[39m (\u001b[36mawait\u001b[39m sessionCard\u001b[33m.\u001b[39misVisible()) {\n \u001b[90m 27 |\u001b[39m       \u001b[90m// Verify metrics are visible on the first card\u001b[39m\u001b[0m"
                       },
                       "errors": [
                         {
                           "location": {
-                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                            "column": 20,
-                            "line": 55
+                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js",
+                            "column": 46,
+                            "line": 24
                           },
-                          "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n\n\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\u001b[22m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5\u001b[22m"
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('safety-no-sessions').or(locator('[data-testid^=\"safety-session-card-\"]').first())\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('safety-no-sessions').or(locator('[data-testid^=\"safety-session-card-\"]').first())\u001b[22m\n\n\n\u001b[0m \u001b[90m 22 |\u001b[39m     \u001b[36mconst\u001b[39m sessionCard \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'[data-testid^=\"safety-session-card-\"]'\u001b[39m)\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\n \u001b[90m 23 |\u001b[39m     \n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 24 |\u001b[39m     \u001b[36mawait\u001b[39m expect(noSessions\u001b[33m.\u001b[39mor(sessionCard))\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 25 |\u001b[39m\n \u001b[90m 26 |\u001b[39m     \u001b[36mif\u001b[39m (\u001b[36mawait\u001b[39m sessionCard\u001b[33m.\u001b[39misVisible()) {\n \u001b[90m 27 |\u001b[39m       \u001b[90m// Verify metrics are visible on the first card\u001b[39m\u001b[0m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:24:46\u001b[22m"
                         }
                       ],
                       "stdout": [
@@ -836,12 +828,21 @@
                           "text": "⏳ Waiting for app to settle...\n"
                         },
                         {
+                          "text": "🚀 Landing page detected, clicking enter...\n"
+                        },
+                        {
                           "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-11T18:54:39.086Z",
+                      "startTime": "2026-05-12T06:04:01.222Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -861,9 +862,9 @@
                         }
                       ],
                       "errorLocation": {
-                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                        "column": 20,
-                        "line": 55
+                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js",
+                        "column": 46,
+                        "line": 24
                       }
                     }
                   ],
@@ -888,28 +889,28 @@
                   "projectName": "firefox",
                   "results": [
                     {
-                      "workerIndex": 9,
+                      "workerIndex": 8,
                       "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 33358,
+                      "duration": 9088,
                       "error": {
-                        "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n",
-                        "stack": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5",
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('safety-no-sessions')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('safety-no-sessions')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('safety-no-sessions')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('safety-no-sessions')\u001b[22m\n\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:42:58",
                         "location": {
-                          "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                          "column": 20,
-                          "line": 55
+                          "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js",
+                          "column": 58,
+                          "line": 42
                         },
-                        "snippet": "\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                        "snippet": "\u001b[0m \u001b[90m 40 |\u001b[39m     \n \u001b[90m 41 |\u001b[39m     \u001b[90m// Should show \"no active sessions\"\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 42 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'safety-no-sessions'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 43 |\u001b[39m     \n \u001b[90m 44 |\u001b[39m     \u001b[36mawait\u001b[39m searchInput\u001b[33m.\u001b[39mfill(\u001b[32m''\u001b[39m)\u001b[33m;\u001b[39m \u001b[90m// Clear search\u001b[39m\n \u001b[90m 45 |\u001b[39m   })\u001b[33m;\u001b[39m\u001b[0m"
                       },
                       "errors": [
                         {
                           "location": {
-                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                            "column": 20,
-                            "line": 55
+                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js",
+                            "column": 58,
+                            "line": 42
                           },
-                          "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n\n\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\u001b[22m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5\u001b[22m"
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('safety-no-sessions')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('safety-no-sessions')\u001b[22m\n\n\n\u001b[0m \u001b[90m 40 |\u001b[39m     \n \u001b[90m 41 |\u001b[39m     \u001b[90m// Should show \"no active sessions\"\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 42 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'safety-no-sessions'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 43 |\u001b[39m     \n \u001b[90m 44 |\u001b[39m     \u001b[36mawait\u001b[39m searchInput\u001b[33m.\u001b[39mfill(\u001b[32m''\u001b[39m)\u001b[33m;\u001b[39m \u001b[90m// Clear search\u001b[39m\n \u001b[90m 45 |\u001b[39m   })\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:42:58\u001b[22m"
                         }
                       ],
                       "stdout": [
@@ -920,12 +921,21 @@
                           "text": "⏳ Waiting for app to settle...\n"
                         },
                         {
+                          "text": "🚀 Landing page detected, clicking enter...\n"
+                        },
+                        {
                           "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-11T18:55:20.087Z",
+                      "startTime": "2026-05-12T06:04:23.052Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -945,9 +955,9 @@
                         }
                       ],
                       "errorLocation": {
-                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                        "column": 20,
-                        "line": 55
+                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js",
+                        "column": 58,
+                        "line": 42
                       }
                     }
                   ],
@@ -961,7 +971,7 @@
             },
             {
               "title": "should toggle filters",
-              "ok": false,
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -972,30 +982,11 @@
                   "projectName": "firefox",
                   "results": [
                     {
-                      "workerIndex": 10,
+                      "workerIndex": 9,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 32891,
-                      "error": {
-                        "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n",
-                        "stack": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5",
-                        "location": {
-                          "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                          "column": 20,
-                          "line": 55
-                        },
-                        "snippet": "\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                            "column": 20,
-                            "line": 55
-                          },
-                          "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n\n\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\u001b[22m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5\u001b[22m"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 4603,
+                      "errors": [],
                       "stdout": [
                         {
                           "text": "🔑 UI Login: alice@nexus.sync...\n"
@@ -1004,38 +995,32 @@
                           "text": "⏳ Waiting for app to settle...\n"
                         },
                         {
+                          "text": "🚀 Landing page detected, clicking enter...\n"
+                        },
+                        {
                           "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-11T18:56:01.820Z",
+                      "startTime": "2026-05-12T06:04:33.784Z",
                       "annotations": [],
                       "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-E2E-Tests-should-toggle-filters-firefox/test-failed-1.png"
-                        },
                         {
                           "name": "video",
                           "contentType": "video/webm",
                           "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-E2E-Tests-should-toggle-filters-firefox/video.webm"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-E2E-Tests-should-toggle-filters-firefox/error-context.md"
                         }
-                      ],
-                      "errorLocation": {
-                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                        "column": 20,
-                        "line": 55
-                      }
+                      ]
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
               "id": "c7c11f9ddbbb13db6ec1-c17b5633e8aa2176a3c6",
@@ -1045,7 +1030,7 @@
             },
             {
               "title": "should manage safety settings",
-              "ok": false,
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -1056,30 +1041,11 @@
                   "projectName": "firefox",
                   "results": [
                     {
-                      "workerIndex": 11,
+                      "workerIndex": 9,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 32359,
-                      "error": {
-                        "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n",
-                        "stack": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5",
-                        "location": {
-                          "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                          "column": 20,
-                          "line": 55
-                        },
-                        "snippet": "\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                            "column": 20,
-                            "line": 55
-                          },
-                          "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n\n\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\u001b[22m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5\u001b[22m"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 4964,
+                      "errors": [],
                       "stdout": [
                         {
                           "text": "🔑 UI Login: alice@nexus.sync...\n"
@@ -1088,38 +1054,32 @@
                           "text": "⏳ Waiting for app to settle...\n"
                         },
                         {
+                          "text": "🚀 Landing page detected, clicking enter...\n"
+                        },
+                        {
                           "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-11T18:56:40.431Z",
+                      "startTime": "2026-05-12T06:04:39.176Z",
                       "annotations": [],
                       "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-a58b4-ould-manage-safety-settings-firefox/test-failed-1.png"
-                        },
                         {
                           "name": "video",
                           "contentType": "video/webm",
                           "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-a58b4-ould-manage-safety-settings-firefox/video.webm"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-a58b4-ould-manage-safety-settings-firefox/error-context.md"
                         }
-                      ],
-                      "errorLocation": {
-                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                        "column": 20,
-                        "line": 55
-                      }
+                      ]
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
               "id": "c7c11f9ddbbb13db6ec1-59fcf6e1236d95346704",
@@ -1140,28 +1100,28 @@
                   "projectName": "webkit",
                   "results": [
                     {
-                      "workerIndex": 12,
+                      "workerIndex": 10,
                       "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 33957,
+                      "duration": 21005,
                       "error": {
-                        "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n",
-                        "stack": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5",
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('safety-no-sessions').or(locator('[data-testid^=\"safety-session-card-\"]').first())\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('safety-no-sessions').or(locator('[data-testid^=\"safety-session-card-\"]').first())\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('safety-no-sessions').or(locator('[data-testid^=\"safety-session-card-\"]').first())\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('safety-no-sessions').or(locator('[data-testid^=\"safety-session-card-\"]').first())\u001b[22m\n\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:24:46",
                         "location": {
-                          "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                          "column": 20,
-                          "line": 55
+                          "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js",
+                          "column": 46,
+                          "line": 24
                         },
-                        "snippet": "\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                        "snippet": "\u001b[0m \u001b[90m 22 |\u001b[39m     \u001b[36mconst\u001b[39m sessionCard \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'[data-testid^=\"safety-session-card-\"]'\u001b[39m)\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\n \u001b[90m 23 |\u001b[39m     \n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 24 |\u001b[39m     \u001b[36mawait\u001b[39m expect(noSessions\u001b[33m.\u001b[39mor(sessionCard))\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 25 |\u001b[39m\n \u001b[90m 26 |\u001b[39m     \u001b[36mif\u001b[39m (\u001b[36mawait\u001b[39m sessionCard\u001b[33m.\u001b[39misVisible()) {\n \u001b[90m 27 |\u001b[39m       \u001b[90m// Verify metrics are visible on the first card\u001b[39m\u001b[0m"
                       },
                       "errors": [
                         {
                           "location": {
-                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                            "column": 20,
-                            "line": 55
+                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js",
+                            "column": 46,
+                            "line": 24
                           },
-                          "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n\n\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\u001b[22m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5\u001b[22m"
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('safety-no-sessions').or(locator('[data-testid^=\"safety-session-card-\"]').first())\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('safety-no-sessions').or(locator('[data-testid^=\"safety-session-card-\"]').first())\u001b[22m\n\n\n\u001b[0m \u001b[90m 22 |\u001b[39m     \u001b[36mconst\u001b[39m sessionCard \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'[data-testid^=\"safety-session-card-\"]'\u001b[39m)\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\n \u001b[90m 23 |\u001b[39m     \n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 24 |\u001b[39m     \u001b[36mawait\u001b[39m expect(noSessions\u001b[33m.\u001b[39mor(sessionCard))\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 25 |\u001b[39m\n \u001b[90m 26 |\u001b[39m     \u001b[36mif\u001b[39m (\u001b[36mawait\u001b[39m sessionCard\u001b[33m.\u001b[39misVisible()) {\n \u001b[90m 27 |\u001b[39m       \u001b[90m// Verify metrics are visible on the first card\u001b[39m\u001b[0m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:24:46\u001b[22m"
                         }
                       ],
                       "stdout": [
@@ -1172,12 +1132,21 @@
                           "text": "⏳ Waiting for app to settle...\n"
                         },
                         {
+                          "text": "🚀 Landing page detected, clicking enter...\n"
+                        },
+                        {
                           "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-11T18:57:15.408Z",
+                      "startTime": "2026-05-12T06:04:45.025Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -1197,9 +1166,9 @@
                         }
                       ],
                       "errorLocation": {
-                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                        "column": 20,
-                        "line": 55
+                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js",
+                        "column": 46,
+                        "line": 24
                       }
                     }
                   ],
@@ -1224,28 +1193,28 @@
                   "projectName": "webkit",
                   "results": [
                     {
-                      "workerIndex": 13,
+                      "workerIndex": 11,
                       "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 33589,
+                      "duration": 9660,
                       "error": {
-                        "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n",
-                        "stack": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5",
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('safety-no-sessions')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('safety-no-sessions')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('safety-no-sessions')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('safety-no-sessions')\u001b[22m\n\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:42:58",
                         "location": {
-                          "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                          "column": 20,
-                          "line": 55
+                          "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js",
+                          "column": 58,
+                          "line": 42
                         },
-                        "snippet": "\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                        "snippet": "\u001b[0m \u001b[90m 40 |\u001b[39m     \n \u001b[90m 41 |\u001b[39m     \u001b[90m// Should show \"no active sessions\"\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 42 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'safety-no-sessions'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 43 |\u001b[39m     \n \u001b[90m 44 |\u001b[39m     \u001b[36mawait\u001b[39m searchInput\u001b[33m.\u001b[39mfill(\u001b[32m''\u001b[39m)\u001b[33m;\u001b[39m \u001b[90m// Clear search\u001b[39m\n \u001b[90m 45 |\u001b[39m   })\u001b[33m;\u001b[39m\u001b[0m"
                       },
                       "errors": [
                         {
                           "location": {
-                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                            "column": 20,
-                            "line": 55
+                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js",
+                            "column": 58,
+                            "line": 42
                           },
-                          "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n\n\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\u001b[22m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5\u001b[22m"
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('safety-no-sessions')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('safety-no-sessions')\u001b[22m\n\n\n\u001b[0m \u001b[90m 40 |\u001b[39m     \n \u001b[90m 41 |\u001b[39m     \u001b[90m// Should show \"no active sessions\"\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 42 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'safety-no-sessions'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 43 |\u001b[39m     \n \u001b[90m 44 |\u001b[39m     \u001b[36mawait\u001b[39m searchInput\u001b[33m.\u001b[39mfill(\u001b[32m''\u001b[39m)\u001b[33m;\u001b[39m \u001b[90m// Clear search\u001b[39m\n \u001b[90m 45 |\u001b[39m   })\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:42:58\u001b[22m"
                         }
                       ],
                       "stdout": [
@@ -1256,12 +1225,21 @@
                           "text": "⏳ Waiting for app to settle...\n"
                         },
                         {
+                          "text": "🚀 Landing page detected, clicking enter...\n"
+                        },
+                        {
                           "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-11T18:57:52.471Z",
+                      "startTime": "2026-05-12T06:05:07.836Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -1281,9 +1259,9 @@
                         }
                       ],
                       "errorLocation": {
-                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                        "column": 20,
-                        "line": 55
+                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js",
+                        "column": 58,
+                        "line": 42
                       }
                     }
                   ],
@@ -1297,7 +1275,7 @@
             },
             {
               "title": "should toggle filters",
-              "ok": false,
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -1308,30 +1286,11 @@
                   "projectName": "webkit",
                   "results": [
                     {
-                      "workerIndex": 14,
+                      "workerIndex": 12,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 32806,
-                      "error": {
-                        "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n",
-                        "stack": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5",
-                        "location": {
-                          "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                          "column": 20,
-                          "line": 55
-                        },
-                        "snippet": "\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                            "column": 20,
-                            "line": 55
-                          },
-                          "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n\n\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\u001b[22m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5\u001b[22m"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 4740,
+                      "errors": [],
                       "stdout": [
                         {
                           "text": "🔑 UI Login: alice@nexus.sync...\n"
@@ -1340,38 +1299,32 @@
                           "text": "⏳ Waiting for app to settle...\n"
                         },
                         {
+                          "text": "🚀 Landing page detected, clicking enter...\n"
+                        },
+                        {
                           "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-11T18:58:28.457Z",
+                      "startTime": "2026-05-12T06:05:18.813Z",
                       "annotations": [],
                       "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-E2E-Tests-should-toggle-filters-webkit/test-failed-1.png"
-                        },
                         {
                           "name": "video",
                           "contentType": "video/webm",
                           "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-E2E-Tests-should-toggle-filters-webkit/video.webm"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-E2E-Tests-should-toggle-filters-webkit/error-context.md"
                         }
-                      ],
-                      "errorLocation": {
-                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                        "column": 20,
-                        "line": 55
-                      }
+                      ]
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
               "id": "c7c11f9ddbbb13db6ec1-9b53e8f750c243177af6",
@@ -1381,7 +1334,7 @@
             },
             {
               "title": "should manage safety settings",
-              "ok": false,
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -1392,30 +1345,11 @@
                   "projectName": "webkit",
                   "results": [
                     {
-                      "workerIndex": 15,
+                      "workerIndex": 12,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 32647,
-                      "error": {
-                        "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n",
-                        "stack": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5",
-                        "location": {
-                          "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                          "column": 20,
-                          "line": 55
-                        },
-                        "snippet": "\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                            "column": 20,
-                            "line": 55
-                          },
-                          "message": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('login-email') to be visible\u001b[22m\n\n\n\u001b[90m   at \u001b[39mhelpers/auth.js:55\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   \u001b[90m// Final wait for login form\u001b[39m\n \u001b[90m 54 |\u001b[39m   console\u001b[33m.\u001b[39mlog(\u001b[32m'📧 Entering credentials...'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   \u001b[36mawait\u001b[39m emailInput\u001b[33m.\u001b[39mfill(email)\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m   \n \u001b[90m 58 |\u001b[39m   \u001b[36mconst\u001b[39m passwordInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'login-password'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at doLogin (/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js:55:20)\u001b[22m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/safety_guard.spec.js:12:5\u001b[22m"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 3891,
+                      "errors": [],
                       "stdout": [
                         {
                           "text": "🔑 UI Login: alice@nexus.sync...\n"
@@ -1424,38 +1358,32 @@
                           "text": "⏳ Waiting for app to settle...\n"
                         },
                         {
+                          "text": "🚀 Landing page detected, clicking enter...\n"
+                        },
+                        {
                           "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-11T18:59:02.821Z",
+                      "startTime": "2026-05-12T06:05:24.221Z",
                       "annotations": [],
                       "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-a58b4-ould-manage-safety-settings-webkit/test-failed-1.png"
-                        },
                         {
                           "name": "video",
                           "contentType": "video/webm",
                           "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-a58b4-ould-manage-safety-settings-webkit/video.webm"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-a58b4-ould-manage-safety-settings-webkit/error-context.md"
                         }
-                      ],
-                      "errorLocation": {
-                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/helpers/auth.js",
-                        "column": 20,
-                        "line": 55
-                      }
+                      ]
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
               "id": "c7c11f9ddbbb13db6ec1-10798b0a5b1ad9bbd911",
@@ -1470,11 +1398,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-05-11T18:49:59.708Z",
-    "duration": 576722.4870000001,
-    "expected": 0,
+    "startTime": "2026-05-12T06:01:03.651Z",
+    "duration": 264532.98,
+    "expected": 6,
     "skipped": 0,
-    "unexpected": 16,
+    "unexpected": 10,
     "flaky": 0
   }
 }

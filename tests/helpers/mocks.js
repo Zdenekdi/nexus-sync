@@ -38,12 +38,20 @@ export async function setupApiMocks(page) {
     });
   });
 
+  await page.route('**/api/safety/sessions/summary', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([])
+    });
+  });
+
   await page.route('**/api/safety/sessions', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify([
-        { id: 'sess-1', profileId: 'prof-1', profile: { name: 'Diana' }, bpm: 75, battery: 85, status: 'safe' }
+        { id: 'sess-1', profileId: 'prof-1', profile: { name: 'Diana' }, bpm: 75, battery: 85, state: 'CHECKED_IN' }
       ])
     });
   });
