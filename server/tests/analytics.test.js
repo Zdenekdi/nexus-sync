@@ -33,6 +33,12 @@ describe('GET /api/analytics/summary', () => {
       { date: new Date('2025-05-25'), revenue: 400, bookingsCount: 8, activeProfiles: 4 },
     ];
 
+    prismaMock.agency.findUnique.mockResolvedValue({ 
+      id: 'agency-1', 
+      plan: 'Professional', 
+      extraFeatures: '{}' 
+    });
+
     prismaMock.dailyStat.findMany
       .mockResolvedValueOnce(currentStats) // current period
       .mockResolvedValueOnce(prevStats);   // previous period for comparison
