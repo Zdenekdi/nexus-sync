@@ -27,6 +27,18 @@ export async function setupApiMocks(page) {
     });
   });
 
+  await page.route('**/api/safety/settings', async route => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ audioSentinelEnabled: true, audioSentinelInterval: 300, audioSentinelVolume: 0.5 })
+      });
+    } else {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
+    }
+  });
+
   await page.route('**/api/profiles', async route => {
     await route.fulfill({
       status: 200,

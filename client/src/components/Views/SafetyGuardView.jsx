@@ -32,7 +32,10 @@ const SafetyGuardView = () => {
   const isCz = lang === 'cz' || lang === 'cs';
 
   const fetchSessions = useCallback(async (isRefresh = false) => {
-    if (!token || !API_BASE) return;
+    if (!token || !API_BASE) {
+      setLoading(false);
+      return;
+    }
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
     
