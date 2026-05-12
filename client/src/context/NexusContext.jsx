@@ -99,6 +99,11 @@ export const NexusProvider = ({ children }) => {
     
     window.history.pushState(null, '', targetPath);
     setPathname(targetPath);
+
+    const clean = path.replace(/^\/(en|cz)/, '') || '/';
+    if (clean !== '/' && clean !== '/guide') {
+      setShowLanding(false);
+    }
   }, [lang]);
 
   // Sync showLanding and activeTab with pathname
