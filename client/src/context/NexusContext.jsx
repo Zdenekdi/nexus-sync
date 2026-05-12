@@ -67,6 +67,7 @@ export const NexusProvider = ({ children }) => {
   });
 
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
+  const isNativeApp = Capacitor.isNativePlatform();
   
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -253,7 +254,7 @@ export const NexusProvider = ({ children }) => {
   }), [
     t, lang, activeTab, activeMarket, pathname, navigateStable, authInitialTab, 
     nexusData.isDataLoading, activeOperator, isLoggedIn, token, logout, handleLogin,
-    showLanding, hasSeenOnboarding, showOnboarding, isMobile, isSidebarOpen, isSidebarCollapsed,
+    showLanding, hasSeenOnboarding, showOnboarding, isMobile, isNativeApp, isSidebarOpen, isSidebarCollapsed,
     messages, selectedChatId, messageValue, isEditProfileOpen, isAddAgencyOpen,
     isAddUserOpen, isBugReportOpen, agencyDetailModalData, calViewDate, showPanicConfirm, _toasts
   ]);
