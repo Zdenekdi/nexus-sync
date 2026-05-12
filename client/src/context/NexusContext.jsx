@@ -57,7 +57,7 @@ export const NexusProvider = ({ children }) => {
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname.substring(1);
-      if (path && path !== '' && path !== 'dashboard' && path !== 'login') return path;
+      if (path && path !== '' && path !== 'dashboard' && path !== 'login' && path !== 'register') return path;
     }
     return localStorage.getItem('nexus_active_tab') || 'dashboard';
   });
@@ -137,7 +137,13 @@ export const NexusProvider = ({ children }) => {
     } else {
       setShowLanding(false);
       const tab = p.substring(1);
-      if (tab && tab !== 'login' && tab !== 'dashboard') {
+      if (tab === 'register') {
+        setAuthInitialTab('register-agency');
+      } else if (tab === 'login') {
+        setAuthInitialTab('login');
+      }
+      
+      if (tab && tab !== 'login' && tab !== 'register' && tab !== 'dashboard') {
         setActiveTab(tab);
       }
     }

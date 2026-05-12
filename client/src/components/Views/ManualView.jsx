@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
-  BookOpen, Rocket, Smartphone, Users,
-  ArrowRight, CheckCircle2, Shield, Zap, Globe, Lock, ChevronRight
+  Rocket, Smartphone, Users,
+  ArrowRight, Zap, ChevronRight
 } from 'lucide-react';
 import { useNexus } from '../../context/ContextHook';
 
@@ -24,14 +24,18 @@ const StepCard = ({ num, title, desc, icon: Icon, delay = 0, onClick }) => (
       animation: `fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s both`
     }}
     onMouseEnter={(e) => {
-      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
-      e.currentTarget.style.transform = 'translateY(-5px)';
-      e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+      if (onClick) {
+        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+        e.currentTarget.style.transform = 'translateY(-5px)';
+        e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+      }
     }}
     onMouseLeave={(e) => {
-      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
-      e.currentTarget.style.transform = 'translateY(0)';
-      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
+      if (onClick) {
+        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
+      }
     }}
   >
     <div style={{ 
@@ -59,7 +63,7 @@ const StepCard = ({ num, title, desc, icon: Icon, delay = 0, onClick }) => (
 
     {onClick && (
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#3b82f6', fontSize: '0.9rem', fontWeight: '800', marginTop: 'auto' }}>
-        <span>Přejít k registraci</span>
+        <span>{num === '1' ? 'Přejít k registraci' : 'Vstoupit'}</span>
         <ChevronRight size={16} />
       </div>
     )}
@@ -67,8 +71,13 @@ const StepCard = ({ num, title, desc, icon: Icon, delay = 0, onClick }) => (
 );
 
 const ManualView = () => {
-  const { lang, navigate } = useNexus();
+  const { lang, navigate, setShowLanding } = useNexus();
   const isCz = lang === 'cz';
+
+  const handleNavigate = (path, tab = 'login') => {
+    navigate(path, tab);
+    setShowLanding(false);
+  };
 
   const t = {
     cz: {
@@ -97,10 +106,10 @@ const ManualView = () => {
       footer: 'Need help with something else?',
       support: 'Contact Support'
     }
-  }[lang];
+  }[isCz ? 'cz' : 'en'];
 
   return (
-    <div style={{ padding: '6rem 2rem 10rem', maxWidth: '1100px', margin: '0 auto', position: 'relative' }}>
+    <div style={{ padding: '6rem 2rem 10rem', maxWidth: '1200px', margin: '0 auto', position: 'relative' }}>
       
       {/* HEADER */}
       <header style={{ marginBottom: '6rem', textAlign: 'center' }}>
@@ -128,16 +137,16 @@ const ManualView = () => {
       </header>
 
       {/* STEPS GRID */}
-      <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 900 ? '1fr' : 'repeat(3, 1fr)', gap: '2rem', marginBottom: '6rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginBottom: '6rem' }}>
         {t.steps.map((step, idx) => (
           <StepCard 
             key={idx} 
-            num={idx + 1} 
+            num={(idx + 1).toString()} 
             title={step.title} 
             desc={step.desc} 
             icon={step.icon}
             delay={idx * 0.1}
-            onClick={idx === 0 ? () => navigate('/login', 'register-agency') : null}
+            onClick={idx === 0 ? () => handleNavigate('/register') : (idx === 1 ? () => handleNavigate('/register') : null)}
           />
         ))}
       </div>
@@ -145,7 +154,7 @@ const ManualView = () => {
       {/* FINAL CTA */}
       <div style={{ textAlign: 'center', animation: 'fadeInUp 1s ease-out 0.4s both' }}>
         <button 
-          onClick={() => navigate('/login', 'register-agency')}
+          onClick={() => handleNavigate('/register')}
           style={{ 
             padding: '1.5rem 4rem', borderRadius: '24px', border: 'none',
             background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', 

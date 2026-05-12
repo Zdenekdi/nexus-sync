@@ -1,421 +1,363 @@
-import React, { useState, useEffect, memo, useMemo, useCallback } from 'react';
-import { useNexus } from '../context/ContextHook';
+import React, { useState, useEffect, memo } from 'react';
 import { 
-  Lock, Mail, ArrowRight, Loader2, 
-  Globe, Zap, CheckCircle2, User, Building2, KeyRound, Copy, Check,
-  Eye, EyeOff, AlertTriangle
+  Shield, Lock, Mail, ArrowRight, Eye, EyeOff, 
+  ChevronLeft, Building2, UserPlus, Zap, CheckCircle2,
+  Globe, BarChart3, Database
 } from 'lucide-react';
+import { useNexus } from '../context/ContextHook';
 
-import { API_BASE, APP_VERSION } from '../constants/config';
-
-// --- Static Styles (Defined outside to prevent recreation overhead) ---
+// --- Static Styles ---
 const STYLES = {
-  page: { minHeight: '100dvh', width: '100vw', background: '#040507', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'auto', padding: '1rem 0.5rem', position: 'fixed' },
-  container: { width: '100%', maxWidth: '380px', display: 'flex', flexDirection: 'column', gap: '0.75rem', animation: 'fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1)', padding: '1rem' },
-  statusBadge: { background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '3px 10px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '6px' },
-  logoBox: { width: '44px', height: '44px', background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(59, 130, 246, 0.3)', marginBottom: '0.5rem' },
-  input: { width: '100%', padding: '0.6rem 0.85rem 0.6rem 2.4rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: 'white', fontSize: '0.85rem', outline: 'none' },
-  label: { fontSize: '0.65rem', fontWeight: '800', color: '#64748b', marginBottom: '0.3rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' },
-  icon: { position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#475569' },
-  eyeToggle: { position: 'absolute', right: '0.85rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#475569', cursor: 'pointer', padding: 0, display: 'flex' },
-  submitButton: { width: '100%', padding: '0.75rem', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '0.85rem', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginTop: '0.25rem' }
+  page: { 
+    minHeight: '100dvh', 
+    width: '100vw', 
+    background: '#040507', 
+    display: 'flex', 
+    flexDirection: 'row', 
+    overflow: 'hidden',
+    fontFamily: 'Inter, sans-serif'
+  },
+  leftSide: {
+    flex: 1.2,
+    background: 'linear-gradient(135deg, #080a0f 0%, #111827 100%)',
+    position: 'relative',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    padding: '4rem',
+    borderRight: '1px solid rgba(255,255,255,0.05)',
+    overflow: 'hidden'
+  },
+  rightSide: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: '2rem',
+    background: '#040507',
+    position: 'relative',
+    zIndex: 10
+  },
+  glow: {
+    position: 'absolute',
+    width: '600px',
+    height: '600px',
+    background: 'radial-gradient(circle, rgba(59, 130, 246, 0.15), transparent 70%)',
+    filter: 'blur(80px)',
+    pointerEvents: 'none',
+    zIndex: 0
+  },
+  formContainer: {
+    width: '100%',
+    maxWidth: '460px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.5rem',
+    animation: 'fadeInRight 0.8s cubic-bezier(0.16, 1, 0.3, 1)'
+  },
+  inputGroup: {
+    position: 'relative',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem'
+  },
+  input: {
+    width: '100%',
+    padding: '1rem 1rem 1rem 3rem',
+    background: 'rgba(255,255,255,0.03)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: '16px',
+    color: 'white',
+    fontSize: '1rem',
+    outline: 'none',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    backdropFilter: 'blur(10px)'
+  },
+  label: {
+    fontSize: '0.8rem',
+    fontWeight: '800',
+    color: 'rgba(255,255,255,0.4)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
+    marginLeft: '0.5rem'
+  },
+  icon: {
+    position: 'absolute',
+    left: '1.1rem',
+    top: '2.5rem',
+    color: 'rgba(255,255,255,0.3)',
+    transition: 'color 0.3s'
+  },
+  submitBtn: {
+    width: '100%',
+    padding: '1.1rem',
+    background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '16px',
+    fontSize: '1.1rem',
+    fontWeight: '900',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.75rem',
+    marginTop: '1rem',
+    boxShadow: '0 20px 40px -10px rgba(59, 130, 246, 0.5)',
+    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+  },
+  featureItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+    marginBottom: '2rem',
+    color: 'rgba(255,255,255,0.6)',
+    animation: 'fadeInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) both'
+  }
 };
 
-// --- Memoized UI Components ---
-
-const StatusBadge = memo(({ isCz }) => (
-  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.25rem' }}>
-    <div style={STYLES.statusBadge}>
-      <div className="status-dot" style={{ width: '6px', height: '6px' }} />
-      <span style={{ fontSize: '0.6rem', fontWeight: '900', color: '#10b981', letterSpacing: '0.05em' }}>
-        {isCz ? 'SYSTÉM AKTIVNÍ' : 'SYSTEM LIVE'}
-      </span>
+const FeatureItem = ({ icon: Icon, title, desc, delay }) => (
+  <div style={{ ...STYLES.featureItem, animationDelay: `${delay}s` }}>
+    <div style={{ 
+      width: '48px', height: '48px', borderRadius: '14px', 
+      background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6'
+    }}>
+      <Icon size={24} />
+    </div>
+    <div>
+      <div style={{ color: 'white', fontWeight: '800', fontSize: '1rem' }}>{title}</div>
+      <div style={{ fontSize: '0.85rem', opacity: 0.6 }}>{desc}</div>
     </div>
   </div>
-));
-
-const LogoHeader = memo(() => (
-  <div style={{ textAlign: 'center' }}>
-    <div style={STYLES.logoBox}>
-      <img src="/nexus_icon.png" alt="Nexus" style={{ width: '100%', height: '100%', borderRadius: '12px' }} />
-    </div>
-    <h1 style={{ fontSize: '1.5rem', fontWeight: '950', color: 'white', letterSpacing: '-0.03em', margin: 0 }}>
-      Nexus Hub
-    </h1>
-  </div>
-));
-
-const AuthTabNavigation = memo(({ activeTab, setTab, labels }) => (
-  <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '3px', border: '1px solid rgba(255,255,255,0.05)' }}>
-    {Object.keys(labels).map(t => (
-      <button 
-        key={t} 
-        onClick={() => setTab(t)} 
-        style={{
-          flex: 1, padding: '0.5rem 0.25rem', border: 'none',
-          background: (activeTab === t || (activeTab === 'join-agency-expanded' && t === 'join-agency')) ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
-          color: (activeTab === t || (activeTab === 'join-agency-expanded' && t === 'join-agency')) ? '#60a5fa' : '#64748b',
-          borderRadius: '10px', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer',
-          transition: 'all 0.2s',
-          borderBottom: (activeTab === t || (activeTab === 'join-agency-expanded' && t === 'join-agency')) ? '2px solid #3b82f6' : '2px solid transparent'
-        }}
-      >
-        {labels[t]}
-      </button>
-    ))}
-  </div>
-));
-
-const MemoInput = memo(({ label, icon: Icon, type, value, onChange, placeholder, showToggle, onToggle, isToggled, ...props }) => (
-  <div>
-    <label style={STYLES.label}>{label}</label>
-    <div style={{ position: 'relative' }}>
-      <Icon size={14} style={STYLES.icon} />
-      <input 
-        type={showToggle ? (isToggled ? 'text' : 'password') : type}
-        value={value}
-        onChange={_err => onChange(_err.target.value)}
-        placeholder={placeholder}
-        style={{ ...STYLES.input, paddingRight: showToggle ? '2.5rem' : '0.85rem' }}
-        data-testid={props['data-testid']}
-        {...props}
-      />
-      {showToggle && (
-        <button type="button" onClick={onToggle} style={STYLES.eyeToggle}>
-          {isToggled ? <EyeOff size={14} /> : <Eye size={14} />}
-        </button>
-      )}
-    </div>
-  </div>
-));
-
-const PasswordRequirements = memo(({ password, isCz }) => {
-  if (!password) return null;
-  
-  const requirements = [
-    { label: isCz ? 'Minimálně 8 znaků' : 'At least 8 characters', met: password.length >= 8 },
-    { label: isCz ? 'Aspoň jedno velké písmeno' : 'At least one uppercase letter', met: /[A-Z]/.test(password) },
-    { label: isCz ? 'Aspoň jedno číslo' : 'At least one number', met: /[0-9]/.test(password) }
-  ];
-
-  const getStrength = () => {
-    const metCount = requirements.filter(r => r.met).length;
-    if (metCount === 3) return { color: '#10b981', label: isCz ? 'Silné' : 'Strong', width: '100%' };
-    if (metCount === 2) return { color: '#f59e0b', label: isCz ? 'Střední' : 'Medium', width: '66%' };
-    return { color: '#ef4444', label: isCz ? 'Slabé' : 'Weak', width: '33%' };
-  };
-
-  const strength = getStrength();
-
-  return (
-    <div style={{ marginTop: '0.5rem', animation: 'fadeInUp 0.3s ease-out' }}>
-      <div style={{ height: '3px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden', marginBottom: '0.4rem' }}>
-        <div style={{ height: '100%', width: strength.width, background: strength.color, borderRadius: '2px', transition: 'all 0.3s ease' }} />
-      </div>
-      
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-        {requirements.map((req, idx) => (
-          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.65rem' }}>
-            <div style={{ 
-              width: '4px', height: '4px', borderRadius: '50%', 
-              background: req.met ? '#10b981' : '#475569',
-              boxShadow: req.met ? '0 0 4px #10b981' : 'none'
-            }} />
-            <span style={{ 
-              color: req.met ? '#10b981' : '#64748b',
-              fontWeight: req.met ? '700' : '500',
-              textDecoration: req.met ? 'line-through' : 'none',
-              opacity: req.met ? 0.7 : 1,
-              transition: 'all 0.2s ease'
-            }}>
-              {req.label}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-});
-
-// --- Main Optimized Component ---
+);
 
 const LoginScreen = () => {
-  const { onLogin, onRegisterAgency, onRegisterUser, t, lang, setJustLoggedOut, justLoggedOut, setShowLanding, showToast, authInitialTab } = useNexus();
-  const [tab, setTab] = useState(authInitialTab || 'login'); 
-  const [loading, setLoading] = useState(false);
-  const [isMounting, setIsMounting] = useState(true);
-  const [createdInviteCode, setCreatedInviteCode] = useState(null);
-  const [copied, setCopied] = useState(false);
-  
-  // Password Visibility States
+  const { lang, onLogin, onRegisterAgency, onRegisterUser, authInitialTab, isMobile, setShowLanding } = useNexus();
+  const [activeTab, setActiveTab] = useState(authInitialTab || 'login');
   const [showPassword, setShowPassword] = useState(false);
-  const [showRegPassword, setShowRegPassword] = useState(false);
-  const [showJoinPassword, setShowJoinPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({ email: '', password: '', agencyName: '', inviteCode: '', name: '' });
 
-  // Form States (Split for better isolated updates)
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [regFullName, setRegFullName] = useState('');
-  const [regAgencyName, setRegAgencyName] = useState('');
-  const [regEmail, setRegEmail] = useState('');
-  const [regPassword, setRegPassword] = useState('');
-  const [joinFullName, setJoinFullName] = useState('');
-  const [joinEmail, setJoinEmail] = useState('');
-  const [joinPassword, setJoinPassword] = useState('');
-  const [joinInviteCode, setJoinInviteCode] = useState('');
-
-  const isCz = useMemo(() => lang === 'cz' || lang === 'cs', [lang]);
+  const isCz = lang === 'cz';
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsMounting(false), 500);
-    return () => clearTimeout(timer);
-  }, []);
+    if (authInitialTab) setActiveTab(authInitialTab);
+  }, [authInitialTab]);
 
-  // Auto-clear logout message after 5s
-  useEffect(() => {
-    if (justLoggedOut) {
-      const timer = setTimeout(() => {
-        setJustLoggedOut(false);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [justLoggedOut, setJustLoggedOut]);
-
-  const [authError, setAuthError] = useState(null);
-
-  const handleLogin = async (_err) => {
-    _err.preventDefault();
-    setAuthError(null);
-    if (!email || !password) {
-      setAuthError(isCz ? 'Vyplňte všechna pole' : 'Please fill in all fields');
-      return;
-    }
-    setLoading(true);
-    try { 
-      const result = await onLogin(email, password); 
-      if (result && !result.success) {
-        setAuthError(result.error || (isCz ? 'Nesprávné přihlašovací údaje' : 'Invalid credentials'));
-      }
-    } 
-    catch (_err) { 
-      console.error(_err);
-      setAuthError(isCz ? 'Chyba serveru nebo sítě' : 'Server or network error');
-    } 
-    finally { setLoading(false); }
-  };
-
-  const handleRegisterAgency = async (_err) => {
-    _err.preventDefault();
-    if (regPassword.length < 8) {
-      showToast(isCz ? 'Heslo musí mít alespoň 8 znaků' : 'Password too short', 'error');
-      return;
-    }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setLoading(true);
     try {
-      const result = await onRegisterAgency({ fullName: regFullName, agencyName: regAgencyName, email: regEmail, password: regPassword });
-      if (result?.success) {
-        showToast(isCz ? 'Agentura registrována!' : 'Agency registered!', 'success');
-        setCreatedInviteCode(result.inviteCode);
-      }
-    } catch (_err) { console.error(_err); } 
-    finally { setLoading(false); }
+      if (activeTab === 'login') await onLogin(formData.email, formData.password);
+      else if (activeTab === 'register-agency') await onRegisterAgency(formData.agencyName, formData.email, formData.password);
+      else if (activeTab === 'join-agency') await onRegisterUser(formData.inviteCode, formData.email, formData.password, formData.name);
+    } catch (err) {
+      console.error('Auth error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const tabLabels = useMemo(() => ({
+  const labels = {
     login: isCz ? 'Přihlášení' : 'Login',
     'register-agency': isCz ? 'Nová agentura' : 'New Agency',
-    'join-agency': isCz ? 'Připojit se' : 'Join Agency'
-  }), [isCz]);
+    'join-agency': isCz ? 'Připojit se' : 'Join'
+  };
 
-  const handleCopyCode = useCallback(() => {
-    if (createdInviteCode) {
-      navigator.clipboard.writeText(createdInviteCode);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  }, [createdInviteCode]);
+  if (isMobile) {
+    return (
+      <div style={{ ...STYLES.page, flexDirection: 'column', overflow: 'auto', background: '#040507' }}>
+        <div style={{ padding: '2rem', textAlign: 'center' }}>
+          <img src="/nexus_icon.png" alt="Nexus" style={{ width: '48px', borderRadius: '12px', marginBottom: '1rem' }} />
+          <h1 style={{ color: 'white', fontSize: '1.5rem', fontWeight: '950', margin: 0 }}>Nexus Hub</h1>
+        </div>
+        <div style={{ padding: '0 1.5rem 4rem', width: '100%' }}>
+          {renderForm()}
+        </div>
+      </div>
+    );
+  }
 
-  return (
-    <div className="login-page" style={STYLES.page}>
-      <div style={STYLES.container}>
-        
-        <StatusBadge isCz={isCz} />
-        <LogoHeader />
+  function renderForm() {
+    return (
+      <div style={STYLES.formContainer}>
+        <div style={{ display: 'flex', gap: '1rem', background: 'rgba(255,255,255,0.03)', padding: '6px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
+          {Object.entries(labels).map(([key, label]) => (
+            <button 
+              key={key}
+              onClick={() => setActiveTab(key)}
+              style={{
+                flex: 1, padding: '0.8rem 0.5rem', border: 'none', borderRadius: '16px',
+                background: activeTab === key ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+                color: activeTab === key ? 'white' : 'rgba(255,255,255,0.4)',
+                fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s'
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
-        {justLoggedOut && (
-          <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '0.75rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.75rem', animation: 'fadeInUp 0.4s ease-out' }}>
-            <CheckCircle2 color="#10b981" size={18} />
-            <span style={{ color: '#10b981', fontSize: '0.8rem', fontWeight: '600' }}>{t('loggedOutSuccess')}</span>
-            <button onClick={() => setJustLoggedOut(false)} style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer' }}>×</button>
-          </div>
-        )}
-
-        {createdInviteCode ? (
-          <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', padding: '1rem', borderRadius: '12px', animation: 'fadeInUp 0.4s ease-out' }}>
-            <div style={{ color: '#93c5fd', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem', textTransform: 'uppercase' }}>{isCz ? 'Zvací kód' : 'Invite Code'}</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <code style={{ flex: 1, padding: '0.6rem 1rem', background: 'rgba(0,0,0,0.4)', borderRadius: '8px', color: '#60a5fa', fontSize: '1rem', fontWeight: '900', fontFamily: 'monospace' }}>{createdInviteCode}</code>
-              <button onClick={handleCopyCode} style={{ padding: '0.6rem', background: 'rgba(59, 130, 246, 0.2)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '8px', color: '#60a5fa', cursor: 'pointer' }}>{copied ? <Check size={16} /> : <Copy size={16} />}</button>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {activeTab === 'register-agency' && (
+            <div style={STYLES.inputGroup}>
+              <label style={STYLES.label}>{isCz ? 'Název agentury' : 'Agency Name'}</label>
+              <Building2 style={STYLES.icon} size={20} />
+              <input 
+                required 
+                style={STYLES.input} 
+                placeholder={isCz ? 'Např. Elite Models' : 'e.g. Elite Models'}
+                value={formData.agencyName}
+                onChange={e => setFormData({ ...formData, agencyName: e.target.value })}
+              />
             </div>
-            <button onClick={() => { setCreatedInviteCode(null); setTab('login'); }} style={{ ...STYLES.submitButton, marginTop: '1rem' }}>{isCz ? 'Přejít na přihlášení' : 'Go to Login'}</button>
+          )}
+
+          {activeTab === 'join-agency' && (
+            <>
+              <div style={STYLES.inputGroup}>
+                <label style={STYLES.label}>{isCz ? 'Zvací kód' : 'Invite Code'}</label>
+                <Zap style={STYLES.icon} size={20} />
+                <input 
+                  required 
+                  style={STYLES.input} 
+                  placeholder="EX-123-ABC"
+                  value={formData.inviteCode}
+                  onChange={e => setFormData({ ...formData, inviteCode: e.target.value })}
+                />
+              </div>
+              <div style={STYLES.inputGroup}>
+                <label style={STYLES.label}>{isCz ? 'Vaše jméno' : 'Your Name'}</label>
+                <UserPlus style={STYLES.icon} size={20} />
+                <input 
+                  required 
+                  style={STYLES.input} 
+                  value={formData.name}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
+                />
+              </div>
+            </>
+          )}
+
+          <div style={STYLES.inputGroup}>
+            <label style={STYLES.label}>{isCz ? 'E-mail' : 'Email'}</label>
+            <Mail style={STYLES.icon} size={20} />
+            <input 
+              required 
+              type="email"
+              style={STYLES.input} 
+              placeholder="name@agency.com"
+              value={formData.email}
+              onChange={e => setFormData({ ...formData, email: e.target.value })}
+            />
           </div>
-        ) : (
-          <>
-            <AuthTabNavigation activeTab={tab} setTab={setTab} labels={tabLabels} />
 
-            <div className="glass-card" style={{ padding: '1.25rem', borderRadius: '20px', background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)', minHeight: '280px' }}>
-              {isMounting ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                   <div className="skeleton" style={{ width: '100%', height: '42px', borderRadius: '10px' }} />
-                   <div className="skeleton" style={{ width: '100%', height: '42px', borderRadius: '10px' }} />
-                   <div className="skeleton" style={{ width: '100%', height: '48px', borderRadius: '10px' }} />
-                </div>
-              ) : (
-                <>
-                  {tab === 'login' && (
-                    <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      {authError && (
-                        <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '0.75rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.75rem', animation: 'fadeInUp 0.3s ease-out', marginBottom: '0.5rem' }}>
-                          <AlertTriangle color="#ef4444" size={18} />
-                          <span style={{ color: '#f87171', fontSize: '0.8rem', fontWeight: '700' }}>{authError}</span>
-                        </div>
-                      )}
-                      <MemoInput label={isCz ? 'E-mail' : 'Email'} icon={Mail} type="email" value={email} onChange={(v) => { setEmail(v); setAuthError(null); }} placeholder="you@email.com" data-testid="login-email" autoFocus />
-                      <MemoInput label={isCz ? 'Heslo' : 'Password'} icon={Lock} value={password} onChange={setPassword} placeholder="••••••••" showToggle onToggle={() => setShowPassword(!showPassword)} isToggled={showPassword} data-testid="login-password" />
-                      <button type="submit" disabled={loading} style={STYLES.submitButton} data-testid="login-submit">
-                        {loading ? <Loader2 className="animate-spin" size={16} /> : <>{isCz ? 'Přihlásit' : 'Sign In'}<ArrowRight size={16} /></>}
-                      </button>
-                    </form>
-                  )}
-
-                  {tab === 'register-agency' && (
-                    <form onSubmit={handleRegisterAgency} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      <MemoInput label={isCz ? 'Název agentury' : 'Agency Name'} icon={Building2} value={regAgencyName} onChange={setRegAgencyName} placeholder="..." data-testid="reg-agency-name" />
-                      <MemoInput label={isCz ? 'Vaše jméno' : ' Your Name'} icon={User} value={regFullName} onChange={setRegFullName} placeholder="..." data-testid="reg-full-name" />
-                      <MemoInput label="Email" icon={Mail} type="email" value={regEmail} onChange={setRegEmail} placeholder="..." data-testid="reg-email" />
-                      <div>
-                        <MemoInput label={isCz ? 'Heslo' : 'Password'} icon={Lock} value={regPassword} onChange={setRegPassword} placeholder="..." showToggle onToggle={() => setShowRegPassword(!showRegPassword)} isToggled={showRegPassword} data-testid="reg-password" />
-                        <PasswordRequirements password={regPassword} isCz={isCz} />
-                      </div>
-                      <button type="submit" disabled={loading} style={{ ...STYLES.submitButton, background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }} data-testid="reg-submit">
-                        {loading ? <Loader2 className="animate-spin" size={16} /> : (isCz ? 'Vytvořit agenturu' : 'Create Agency')}
-                        <ArrowRight size={16} />
-                      </button>
-                    </form>
-                  )}
-
-                  {(tab === 'join-agency' || tab === 'join-agency-expanded') && (
-                    <form 
-                      onSubmit={async (_err) => {
-                        _err.preventDefault();
-                        if (!joinInviteCode) return showToast(isCz ? 'Zadejte kód' : 'Enter code', 'error');
-                        
-                        if (tab === 'join-agency') {
-                          setTab('join-agency-expanded');
-                          return;
-                        }
-
-                        if (!joinFullName || !joinEmail || !joinPassword) {
-                          return showToast(isCz ? 'Vyplňte všechna pole' : 'Fill all fields', 'error');
-                        }
-
-                        setLoading(true);
-                        try {
-                          const result = await onRegisterUser({ 
-                            fullName: joinFullName, 
-                            email: joinEmail, 
-                            password: joinPassword, 
-                            inviteCode: joinInviteCode 
-                          });
-                          
-                          if (result?.success) {
-                            showToast(isCz ? 'Registrace úspěšná! Nyní se můžete přihlásit.' : 'Registration successful! You can now log in.', 'success');
-                            setTab('login');
-                            setEmail(joinEmail);
-                          } else {
-                            showToast(result?.error || (isCz ? 'Registrace se nezdařila' : 'Registration failed'), 'error');
-                          }
-                        } catch (_err) {
-                          console.error(_err);
-                          showToast(isCz ? 'Chyba připojení' : 'Connection _err', 'error');
-                        } finally {
-                          setLoading(false);
-                        }
-                      }} 
-                      style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
-                    >
-                      <MemoInput label={isCz ? 'Zvací kód' : 'Invite Code'} icon={KeyRound} value={joinInviteCode} onChange={setJoinInviteCode} placeholder="NEXUS-..." data-testid="join-invite-code" />
-                      
-                      {tab === 'join-agency-expanded' && (
-                        <>
-                          <MemoInput label={isCz ? 'Vaše jméno' : 'Your Name'} icon={User} value={joinFullName} onChange={setJoinFullName} placeholder="..." data-testid="join-full-name" />
-                          <MemoInput label="Email" icon={Mail} type="email" value={joinEmail} onChange={setJoinEmail} placeholder="..." data-testid="join-email" />
-                          <div>
-                            <MemoInput label={isCz ? 'Heslo' : 'Password'} icon={Lock} value={joinPassword} onChange={setJoinPassword} placeholder="..." showToggle onToggle={() => setShowJoinPassword(!setShowJoinPassword)} isToggled={showJoinPassword} data-testid="join-password" />
-                            <PasswordRequirements password={joinPassword} isCz={isCz} />
-                          </div>
-                        </>
-                      )}
-
-                      <button 
-                        type="submit"
-                        disabled={loading} 
-                        style={STYLES.submitButton}
-                        data-testid="join-submit"
-                      >
-                        {loading ? <Loader2 className="animate-spin" size={16} /> : (
-                          tab === 'join-agency' ? (isCz ? 'Pokračovat' : 'Continue') : (isCz ? 'Zaregistrovat se' : 'Join Now')
-                        )}
-                      </button>
-                    </form>
-                  )}
-                </>
+          <div style={STYLES.inputGroup}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label style={STYLES.label}>{isCz ? 'Heslo' : 'Password'}</label>
+              {activeTab === 'login' && (
+                <button type="button" style={{ background: 'none', border: 'none', color: '#3b82f6', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer' }}>
+                  {isCz ? 'Zapomenuté heslo?' : 'Forgot password?'}
+                </button>
               )}
             </div>
-          </>
-        )}
+            <Lock style={STYLES.icon} size={20} />
+            <input 
+              required 
+              type={showPassword ? 'text' : 'password'}
+              style={STYLES.input} 
+              value={formData.password}
+              onChange={e => setFormData({ ...formData, password: e.target.value })}
+            />
+            <button 
+              type="button" 
+              onClick={() => setShowPassword(!showPassword)}
+              style={{ position: 'absolute', right: '1.25rem', top: '2.5rem', background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer' }}
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
 
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.25rem' }}>
+          <button disabled={loading} style={{ 
+            ...STYLES.submitBtn, 
+            opacity: loading ? 0.7 : 1, 
+            transform: loading ? 'scale(0.98)' : 'scale(1)' 
+          }}>
+            {loading ? (isCz ? 'Pracuji...' : 'Processing...') : (
+              <>
+                {activeTab === 'login' ? (isCz ? 'Přihlásit se' : 'Sign In') : (isCz ? 'Vytvořit účet' : 'Create Account')}
+                <ArrowRight size={20} />
+              </>
+            )}
+          </button>
+        </form>
+
+        <div style={{ textAlign: 'center', marginTop: '1rem' }}>
           <button 
-            type="button"
-            onClick={(_err) => {
-              _err.preventDefault();
-              setShowLanding(true);
-            }} 
-            style={{ 
-              background: 'rgba(255,255,255,0.03)', 
-              border: '1px solid rgba(255,255,255,0.05)', 
-              borderRadius: '12px',
-              padding: '0.6rem 1rem',
-              color: '#94a3b8', 
-              fontSize: '0.75rem', 
-              fontWeight: '700', 
-              cursor: 'pointer', 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '8px',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(_err) => _err.currentTarget.style.color = 'white'}
-            onMouseLeave={(_err) => _err.currentTarget.style.color = '#94a3b8'}
+            onClick={() => setShowLanding(true)}
+            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 auto' }}
           >
-            <Globe size={14} /> {t('backToProduct')}
+            <ChevronLeft size={16} /> {isCz ? 'Zpět na úvod' : 'Back to home'}
           </button>
         </div>
+      </div>
+    );
+  }
 
-        <div style={{ textAlign: 'center', opacity: 0.3, fontSize: '0.65rem', color: '#64748b', marginTop: '1rem', fontWeight: '800' }}>
-          {APP_VERSION} • {API_BASE} • v3.21.1
+  return (
+    <div style={STYLES.page}>
+      <style>{`
+        @keyframes fadeInLeft { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes fadeInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+        input:focus { border-color: #3b82f6 !important; background: rgba(59, 130, 246, 0.05) !important; }
+      `}</style>
+
+      <div style={STYLES.leftSide}>
+        <div style={{ ...STYLES.glow, top: '-10%', left: '-10%' }} />
+        
+        <div style={{ position: 'relative', zIndex: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '3rem' }}>
+            <img src="/nexus_icon.png" alt="Nexus" style={{ width: '56px', borderRadius: '16px', boxShadow: '0 0 30px rgba(59, 130, 246, 0.5)' }} />
+            <span style={{ fontSize: '1.75rem', fontWeight: '950', color: 'white', letterSpacing: '0.1em' }}>NEXUS HUB</span>
+          </div>
+
+          <h2 style={{ fontSize: '3.5rem', fontWeight: '950', color: 'white', lineHeight: 1.1, marginBottom: '2rem', letterSpacing: '-0.04em' }}>
+            {isCz ? 'Absolutní kontrola nad vaší agenturou.' : 'Absolute control over your agency.'}
+          </h2>
+
+          <div style={{ marginTop: '4rem' }}>
+            <FeatureItem 
+              icon={Shield} 
+              title={isCz ? 'Safety Guard™' : 'Safety Guard™'} 
+              desc={isCz ? 'Real-time monitoring a SOS alerty.' : 'Real-time monitoring and SOS alerts.'} 
+              delay={0.1}
+            />
+            <FeatureItem 
+              icon={BarChart3} 
+              title={isCz ? 'Deep Analytics' : 'Deep Analytics'} 
+              desc={isCz ? 'Detailní přehledy tržeb a výkonu.' : 'Detailed revenue and performance insights.'} 
+              delay={0.2}
+            />
+            <FeatureItem 
+              icon={Globe} 
+              title={isCz ? 'Omnichannel Sync' : 'Omnichannel Sync'} 
+              desc={isCz ? 'WhatsApp, Telegram a OF na jednom místě.' : 'WhatsApp, Telegram and OF in one place.'} 
+              delay={0.3}
+            />
+          </div>
         </div>
 
+        <div style={{ position: 'absolute', bottom: '4rem', color: 'rgba(255,255,255,0.2)', fontSize: '0.85rem' }}>
+          © {new Date().getFullYear()} Nexus Systems. All rights reserved.
+        </div>
       </div>
 
-      <style>{`
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-spin { animation: spin 1s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.05) 75%); background-size: 200% 100%; animation: skeleton-loading 1.5s infinite; }
-        @keyframes skeleton-loading { from { background-position: 200% 0; } to { background-position: -200% 0; } }
-      `}</style>
+      <div style={STYLES.rightSide}>
+        <div style={{ ...STYLES.glow, bottom: '-10%', right: '-10%', background: 'radial-gradient(circle, rgba(139, 92, 246, 0.1), transparent 70%)' }} />
+        {renderForm()}
+      </div>
     </div>
   );
 };
