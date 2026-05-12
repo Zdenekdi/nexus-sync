@@ -1,6 +1,7 @@
 import React from 'react';
 import { 
-  Activity, Building2, Smartphone, ShieldCheck, Lock 
+  Activity, Building2, Smartphone, ShieldCheck, Lock, 
+  DollarSign, Sparkles, TrendingUp, Terminal, CheckCircle2 
 } from 'lucide-react';
 
 import { useNexus } from '../../context/ContextHook';
@@ -32,6 +33,37 @@ const SettingsView = () => {
   } = nexus || {};
 
   const activeClient = (agencies || [])[0] || null;
+  const [bankInstructions, setBankInstructions] = React.useState(null);
+
+  const handleUpgrade = async (planId, method = 'card') => {
+    try {
+      setBankInstructions(null);
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api'}/billing/checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${nexus.token}`
+        },
+        body: JSON.stringify({ 
+          planId,
+          paymentMethod: method,
+          successUrl: window.location.href,
+          cancelUrl: window.location.href
+        })
+      });
+      const data = await response.json();
+      
+      if (method === 'card' && data.url) {
+        window.location.href = data.url;
+      } else if (method === 'transfer' && data.instructions) {
+        setBankInstructions(data.instructions);
+      }
+    } catch (err) {
+      console.error("Upgrade failed:", err);
+      showToast(lang === 'cz' ? 'Chyba při inicializaci platby.' : 'Error initializing payment.', 'error');
+    }
+  };
+
   return (
     <div data-testid="page-settings-container" style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto' }} className="fade-in custom-scrollbar">
       <h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('controlCenter')}</h2>
@@ -59,6 +91,147 @@ const SettingsView = () => {
             </div>
           </div>
         )}
+
+        {/* --- SUBSCRIPTIONS & MODULES SECTION --- */}
+        <div className="settings-section">
+          <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <DollarSign size={20} color="#fbbf24" /> {lang === 'cz' ? 'Předplatné a moduly' : 'Subscriptions & Modules'}
+          </h3>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {/* Current Plan Overview */}
+            <div className="glass-card" style={{ padding: '1.5rem', background: 'linear-gradient(135deg, rgba(251,191,36,0.05) 0%, rgba(255,255,255,0.02) 100%)', border: '1px solid rgba(251,191,36,0.2)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <div>
+                  <div style={{ fontSize: '0.65rem', fontWeight: '800', color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                    {lang === 'cz' ? 'AKTUÁLNÍ TARIF' : 'CURRENT PLAN'}
+                  </div>
+                  <div style={{ fontSize: '1.75rem', fontWeight: '950', marginTop: '0.25rem' }}>
+                    {activeClient?.plan || 'Starter'}
+                  </div>
+                </div>
+                <div style={{ padding: '0.5rem 1rem', background: 'rgba(251,191,36,0.1)', color: '#fbbf24', borderRadius: '12px', fontSize: '0.75rem', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <CheckCircle2 size={16} /> {lang === 'cz' ? 'AKTIVNÍ' : 'ACTIVE'}
+                </div>
+              </div>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1rem' }}>
+                {/* Analytics Module */}
+                <div style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid var(--card-border)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                    <TrendingUp size={18} color="#3b82f6" />
+                    <span style={{ fontWeight: '800', fontSize: '0.85rem' }}>Analytics</span>
+                  </div>
+                  {(activeClient?.plan === 'Professional' || activeClient?.plan === 'Agency' || activeClient?.extraFeatures?.analytics) ? (
+                    <div style={{ fontSize: '0.7rem', color: 'var(--success-color)', fontWeight: '900' }}>✓ {lang === 'cz' ? 'AKTIVOVÁNO' : 'ACTIVATED'}</div>
+                  ) : (
+                    <button 
+                      onClick={() => handleUpgrade('pro_monthly')}
+                      className="premium-btn-sm"
+                      style={{ width: '100%', padding: '0.5rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '900', cursor: 'pointer' }}
+                    >
+                      {lang === 'cz' ? 'AKTIVOVAT' : 'ACTIVATE'}
+                    </button>
+                  )}
+                </div>
+
+                {/* AI Module */}
+                <div style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid var(--card-border)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                    <Sparkles size={18} color="#a78bfa" />
+                    <span style={{ fontWeight: '800', fontSize: '0.85rem' }}>AI Features</span>
+                  </div>
+                  {(activeClient?.plan === 'Professional' || activeClient?.plan === 'Agency' || activeClient?.extraFeatures?.ai_features) ? (
+                    <div style={{ fontSize: '0.7rem', color: 'var(--success-color)', fontWeight: '900' }}>✓ {lang === 'cz' ? 'AKTIVOVÁNO' : 'ACTIVATED'}</div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                      <button 
+                        onClick={() => handleUpgrade('ai_module', 'card')}
+                        className="premium-btn-sm"
+                        style={{ width: '100%', padding: '0.5rem', background: '#a78bfa', color: 'black', border: 'none', borderRadius: '8px', fontSize: '0.65rem', fontWeight: '900', cursor: 'pointer' }}
+                      >
+                        {lang === 'cz' ? 'KARTOU (Hned)' : 'BY CARD (Instant)'}
+                      </button>
+                      <button 
+                        onClick={() => handleUpgrade('ai_module', 'transfer')}
+                        style={{ width: '100%', padding: '0.4rem', background: 'transparent', color: 'var(--text-secondary)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '0.6rem', fontWeight: '700', cursor: 'pointer' }}
+                      >
+                        {lang === 'cz' ? 'PŘEVODEM' : 'TRANSFER'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* API Module */}
+                <div style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid var(--card-border)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                    <Terminal size={18} color="#10b981" />
+                    <span style={{ fontWeight: '800', fontSize: '0.85rem' }}>API Access</span>
+                  </div>
+                  {(activeClient?.plan === 'Agency' || activeClient?.extraFeatures?.api_access) ? (
+                    <div style={{ fontSize: '0.7rem', color: 'var(--success-color)', fontWeight: '900' }}>✓ {lang === 'cz' ? 'AKTIVOVÁNO' : 'ACTIVATED'}</div>
+                  ) : (
+                    <button 
+                      onClick={() => handleUpgrade('api_access')}
+                      className="premium-btn-sm"
+                      style={{ width: '100%', padding: '0.5rem', background: '#10b981', color: 'black', border: 'none', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '900', cursor: 'pointer' }}
+                    >
+                      {lang === 'cz' ? 'AKTIVOVAT' : 'ACTIVATE'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {/* Promo Banner for Professional */}
+            {activeClient?.plan === 'Starter' && (
+              <div className="glass-card" style={{ padding: '1.25rem', background: 'linear-gradient(to right, rgba(59,130,246,0.1), rgba(167,139,250,0.1))', border: '1px dashed rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <div style={{ width: '40px', height: '40px', background: 'white', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <TrendingUp size={20} color="#3b82f6" />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: '800', fontSize: '0.9rem' }}>{lang === 'cz' ? 'Chcete vše najednou?' : 'Want everything at once?'}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{lang === 'cz' ? 'Přejděte na tarif Professional a získejte všechny moduly v jedné ceně.' : 'Switch to Professional and get all modules in one package.'}</div>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => handleUpgrade('pro_monthly')}
+                  style={{ padding: '0.6rem 1.25rem', background: 'white', color: 'black', border: 'none', borderRadius: '10px', fontWeight: '900', fontSize: '0.75rem', cursor: 'pointer' }}
+                >
+                  {lang === 'cz' ? 'ZJISTIT VÍCE' : 'LEARN MORE'}
+                </button>
+              </div>
+            )}
+          </div>
+          
+          {/* Bank Instructions Modal Overlay */}
+          {bankInstructions && (
+            <div className="fade-in" style={{ padding: '1.5rem', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: '16px', marginTop: '1.5rem' }}>
+               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <div style={{ fontWeight: '900', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Building2 size={18} /> {lang === 'cz' ? 'Platební údaje pro převod' : 'Bank Transfer Details'}
+                  </div>
+                  <button onClick={() => setBankInstructions(null)} style={{ background: 'none', border: 'none', color: '#fbbf24', cursor: 'pointer', fontWeight: '900' }}>✕</button>
+               </div>
+               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.8rem' }}>
+                  <div style={{ opacity: 0.7 }}>{lang === 'cz' ? 'Číslo účtu' : 'Account Number'}</div>
+                  <div style={{ fontWeight: '700' }}>{bankInstructions.accountNumber}</div>
+                  <div style={{ opacity: 0.7 }}>{lang === 'cz' ? 'Banka' : 'Bank'}</div>
+                  <div style={{ fontWeight: '700' }}>{bankInstructions.bankName}</div>
+                  <div style={{ opacity: 0.7 }}>{lang === 'cz' ? 'Variabilní symbol' : 'Variable Symbol'}</div>
+                  <div style={{ fontWeight: '900', color: '#fbbf24', fontSize: '1rem' }}>{bankInstructions.variableSymbol}</div>
+                  <div style={{ opacity: 0.7 }}>{lang === 'cz' ? 'Částka' : 'Amount'}</div>
+                  <div style={{ fontWeight: '900' }}>{bankInstructions.amount} {bankInstructions.currency}</div>
+               </div>
+               <p style={{ fontSize: '0.7rem', marginTop: '1rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                 {lang === 'cz' 
+                   ? '⚠️ Funkce bude automaticky aktivována jakmile platba dorazí do naší banky (obvykle v den zadání).' 
+                   : '⚠️ Features will be automatically activated as soon as the payment reaches our bank.'}
+               </p>
+            </div>
+          )}
+        </div>
 
         <div className="settings-section">
           <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

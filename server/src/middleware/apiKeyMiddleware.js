@@ -43,14 +43,28 @@ const apiKeyAuth = async (req, res, next) => {
       return res.status(403).json({ message: 'API key has expired' });
     }
 
-    // 4. Check Agency Plan (Strictly 'Agency' or 'Professional' for now)
+    // 4. Check Agency Plan OR Feature Add-on
     const allowedPlans = ['Agency', 'Professional', 'Enterprise'];
     const currentPlan = apiKeyRecord.agency.plan || apiKeyRecord.agency.tier;
     
-    if (!allowedPlans.includes(currentPlan)) {
-      logger.warn(`[API Auth] Agency ${apiKeyRecord.agencyId} attempted API access with plan: ${currentPlan}`);
+    let hasAccess = allowedPlans.includes(currentPlan);
+
+    // If plan doesn't match, check for specific add-on feature
+    if (!hasAccess && apiKeyRecord.agency.extraFeatures) {
+      try {
+        const features = JSON.parse(apiKeyRecord.agency.extraFeatures);
+        if (features.api_access === true || features.api_access === 'true') {
+          hasAccess = true;
+        }
+      } catch (e) {
+        logger.error('[API Auth] Failed to parse extraFeatures JSON:', e);
+      }
+    }
+
+    if (!hasAccess) {
+      logger.warn(`[API Auth] Agency ${apiKeyRecord.agencyId} denied access (Plan: ${currentPlan}, No Add-on)`);
       return res.status(403).json({ 
-        message: 'API access requires an Agency plan. Please upgrade your subscription.' 
+        message: 'API access requires an Agency plan or a purchased API add-on.' 
       });
     }
 
