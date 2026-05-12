@@ -1,365 +1,331 @@
 import React, { useState, useEffect, memo } from 'react';
 import { 
-  Shield, Lock, Mail, ArrowRight, Eye, EyeOff, 
-  ChevronLeft, Building2, UserPlus, Zap, CheckCircle2,
-  Globe, BarChart3, Database
+  Lock, Mail, ArrowRight, Eye, EyeOff, 
+  Building2, User, Zap, UserPlus, ShieldCheck,
+  ChevronRight, Copy, Check
 } from 'lucide-react';
 import { useNexus } from '../context/ContextHook';
+import AuthLayout from './AuthLayout';
+import PasswordRequirements from './UI/PasswordRequirements';
 
-// --- Static Styles ---
-const STYLES = {
-  page: { 
-    minHeight: '100dvh', 
-    width: '100vw', 
-    background: '#040507', 
-    display: 'flex', 
-    flexDirection: 'row', 
-    overflow: 'hidden',
-    fontFamily: 'Inter, sans-serif'
-  },
-  leftSide: {
-    flex: 1.2,
-    background: 'linear-gradient(135deg, #080a0f 0%, #111827 100%)',
-    position: 'relative',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    padding: '4rem',
-    borderRight: '1px solid rgba(255,255,255,0.05)',
-    overflow: 'hidden'
-  },
-  rightSide: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: '2rem',
-    background: '#040507',
-    position: 'relative',
-    zIndex: 10
-  },
-  glow: {
-    position: 'absolute',
-    width: '600px',
-    height: '600px',
-    background: 'radial-gradient(circle, rgba(59, 130, 246, 0.15), transparent 70%)',
-    filter: 'blur(80px)',
-    pointerEvents: 'none',
-    zIndex: 0
-  },
-  formContainer: {
-    width: '100%',
-    maxWidth: '460px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1.5rem',
-    animation: 'fadeInRight 0.8s cubic-bezier(0.16, 1, 0.3, 1)'
-  },
-  inputGroup: {
-    position: 'relative',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.5rem'
-  },
-  input: {
-    width: '100%',
-    padding: '1rem 1rem 1rem 3rem',
-    background: 'rgba(255,255,255,0.03)',
-    border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: '16px',
-    color: 'white',
-    fontSize: '1rem',
-    outline: 'none',
-    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-    backdropFilter: 'blur(10px)'
-  },
-  label: {
-    fontSize: '0.8rem',
-    fontWeight: '800',
-    color: 'rgba(255,255,255,0.4)',
-    textTransform: 'uppercase',
-    letterSpacing: '0.1em',
-    marginLeft: '0.5rem'
-  },
-  icon: {
-    position: 'absolute',
-    left: '1.1rem',
-    top: '2.5rem',
-    color: 'rgba(255,255,255,0.3)',
-    transition: 'color 0.3s'
-  },
-  submitBtn: {
-    width: '100%',
-    padding: '1.1rem',
-    background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '16px',
-    fontSize: '1.1rem',
-    fontWeight: '900',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '0.75rem',
-    marginTop: '1rem',
-    boxShadow: '0 20px 40px -10px rgba(59, 130, 246, 0.5)',
-    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-  },
-  featureItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '1rem',
-    marginBottom: '2rem',
-    color: 'rgba(255,255,255,0.6)',
-    animation: 'fadeInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) both'
-  }
-};
-
-const FeatureItem = ({ icon: Icon, title, desc, delay }) => (
-  <div style={{ ...STYLES.featureItem, animationDelay: `${delay}s` }}>
-    <div style={{ 
-      width: '48px', height: '48px', borderRadius: '14px', 
-      background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6'
+// --- Shared Components ---
+const InputGroup = ({ label, icon: Icon, children }) => (
+  <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+    <label style={{ 
+      fontSize: '0.85rem', fontWeight: '800', color: 'rgba(255,255,255,0.4)', 
+      textTransform: 'uppercase', letterSpacing: '0.12em', marginLeft: '0.5rem' 
     }}>
-      <Icon size={24} />
-    </div>
-    <div>
-      <div style={{ color: 'white', fontWeight: '800', fontSize: '1rem' }}>{title}</div>
-      <div style={{ fontSize: '0.85rem', opacity: 0.6 }}>{desc}</div>
+      {label}
+    </label>
+    <div style={{ position: 'relative' }}>
+      <Icon size={20} style={{ 
+        position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', 
+        color: 'rgba(255,255,255,0.25)', transition: 'color 0.3s' 
+      }} />
+      {children}
     </div>
   </div>
 );
 
-const LoginScreen = () => {
-  const { lang, onLogin, onRegisterAgency, onRegisterUser, authInitialTab, isMobile, setShowLanding } = useNexus();
-  const [activeTab, setActiveTab] = useState(authInitialTab || 'login');
+const StyledInput = (props) => (
+  <input 
+    {...props}
+    style={{
+      width: '100%', padding: '1.1rem 1.25rem 1.1rem 3.25rem',
+      background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: '18px', color: 'white', fontSize: '1.05rem', outline: 'none',
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', backdropFilter: 'blur(10px)',
+      ...props.style
+    }}
+  />
+);
+
+const PrimaryButton = ({ children, loading, ...props }) => (
+  <button 
+    {...props}
+    disabled={loading || props.disabled}
+    style={{
+      width: '100%', padding: '1.25rem',
+      background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+      color: 'white', border: 'none', borderRadius: '18px',
+      fontSize: '1.1rem', fontWeight: '900', cursor: 'pointer',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.85rem',
+      marginTop: '1rem', boxShadow: '0 20px 40px -10px rgba(59, 130, 246, 0.5)',
+      transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+      opacity: loading ? 0.7 : 1,
+      transform: loading ? 'scale(0.98)' : 'scale(1)',
+      ...props.style
+    }}
+  >
+    {loading ? '...' : children}
+  </button>
+);
+
+// --- Sub-Views ---
+
+const LoginView = ({ isCz, onSwitch }) => {
+  const { onLogin, showToast } = useNexus();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ email: '', password: '', agencyName: '', inviteCode: '', name: '' });
-
-  const isCz = lang === 'cz';
-
-  useEffect(() => {
-    if (authInitialTab) setActiveTab(authInitialTab);
-  }, [authInitialTab]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      if (activeTab === 'login') await onLogin(formData.email, formData.password);
-      else if (activeTab === 'register-agency') await onRegisterAgency(formData.agencyName, formData.email, formData.password);
-      else if (activeTab === 'join-agency') await onRegisterUser(formData.inviteCode, formData.email, formData.password, formData.name);
-    } catch (err) {
-      console.error('Auth error:', err);
-    } finally {
-      setLoading(false);
-    }
+      const res = await onLogin(email, password);
+      if (res && !res.success) showToast(res.error, 'error');
+    } finally { setLoading(false); }
   };
-
-  const labels = {
-    login: isCz ? 'Přihlášení' : 'Login',
-    'register-agency': isCz ? 'Nová agentura' : 'New Agency',
-    'join-agency': isCz ? 'Připojit se' : 'Join'
-  };
-
-  if (isMobile) {
-    return (
-      <div style={{ ...STYLES.page, flexDirection: 'column', overflow: 'auto', background: '#040507' }}>
-        <div style={{ padding: '2rem', textAlign: 'center' }}>
-          <img src="/nexus_icon.png" alt="Nexus" style={{ width: '48px', borderRadius: '12px', marginBottom: '1rem' }} />
-          <h1 style={{ color: 'white', fontSize: '1.5rem', fontWeight: '950', margin: 0 }}>Nexus Hub</h1>
-        </div>
-        <div style={{ padding: '0 1.5rem 4rem', width: '100%' }}>
-          {renderForm()}
-        </div>
-      </div>
-    );
-  }
-
-  function renderForm() {
-    return (
-      <div style={STYLES.formContainer}>
-        <div style={{ display: 'flex', gap: '1rem', background: 'rgba(255,255,255,0.03)', padding: '6px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
-          {Object.entries(labels).map(([key, label]) => (
-            <button 
-              key={key}
-              onClick={() => setActiveTab(key)}
-              style={{
-                flex: 1, padding: '0.8rem 0.5rem', border: 'none', borderRadius: '16px',
-                background: activeTab === key ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
-                color: activeTab === key ? 'white' : 'rgba(255,255,255,0.4)',
-                fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s'
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {activeTab === 'register-agency' && (
-            <div style={STYLES.inputGroup}>
-              <label style={STYLES.label}>{isCz ? 'Název agentury' : 'Agency Name'}</label>
-              <Building2 style={STYLES.icon} size={20} />
-              <input 
-                required 
-                style={STYLES.input} 
-                placeholder={isCz ? 'Např. Elite Models' : 'e.g. Elite Models'}
-                value={formData.agencyName}
-                onChange={e => setFormData({ ...formData, agencyName: e.target.value })}
-              />
-            </div>
-          )}
-
-          {activeTab === 'join-agency' && (
-            <>
-              <div style={STYLES.inputGroup}>
-                <label style={STYLES.label}>{isCz ? 'Zvací kód' : 'Invite Code'}</label>
-                <Zap style={STYLES.icon} size={20} />
-                <input 
-                  required 
-                  style={STYLES.input} 
-                  placeholder="EX-123-ABC"
-                  value={formData.inviteCode}
-                  onChange={e => setFormData({ ...formData, inviteCode: e.target.value })}
-                />
-              </div>
-              <div style={STYLES.inputGroup}>
-                <label style={STYLES.label}>{isCz ? 'Vaše jméno' : 'Your Name'}</label>
-                <UserPlus style={STYLES.icon} size={20} />
-                <input 
-                  required 
-                  style={STYLES.input} 
-                  value={formData.name}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })}
-                />
-              </div>
-            </>
-          )}
-
-          <div style={STYLES.inputGroup}>
-            <label style={STYLES.label}>{isCz ? 'E-mail' : 'Email'}</label>
-            <Mail style={STYLES.icon} size={20} />
-            <input 
-              required 
-              type="email"
-              style={STYLES.input} 
-              placeholder="name@agency.com"
-              value={formData.email}
-              onChange={e => setFormData({ ...formData, email: e.target.value })}
-            />
-          </div>
-
-          <div style={STYLES.inputGroup}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label style={STYLES.label}>{isCz ? 'Heslo' : 'Password'}</label>
-              {activeTab === 'login' && (
-                <button type="button" style={{ background: 'none', border: 'none', color: '#3b82f6', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer' }}>
-                  {isCz ? 'Zapomenuté heslo?' : 'Forgot password?'}
-                </button>
-              )}
-            </div>
-            <Lock style={STYLES.icon} size={20} />
-            <input 
-              required 
-              type={showPassword ? 'text' : 'password'}
-              style={STYLES.input} 
-              value={formData.password}
-              onChange={e => setFormData({ ...formData, password: e.target.value })}
-            />
-            <button 
-              type="button" 
-              onClick={() => setShowPassword(!showPassword)}
-              style={{ position: 'absolute', right: '1.25rem', top: '2.5rem', background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer' }}
-            >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
-          </div>
-
-          <button disabled={loading} style={{ 
-            ...STYLES.submitBtn, 
-            opacity: loading ? 0.7 : 1, 
-            transform: loading ? 'scale(0.98)' : 'scale(1)' 
-          }}>
-            {loading ? (isCz ? 'Pracuji...' : 'Processing...') : (
-              <>
-                {activeTab === 'login' ? (isCz ? 'Přihlásit se' : 'Sign In') : (isCz ? 'Vytvořit účet' : 'Create Account')}
-                <ArrowRight size={20} />
-              </>
-            )}
-          </button>
-        </form>
-
-        <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-          <button 
-            onClick={() => setShowLanding(true)}
-            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 auto' }}
-          >
-            <ChevronLeft size={16} /> {isCz ? 'Zpět na úvod' : 'Back to home'}
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div style={STYLES.page}>
-      <style>{`
-        @keyframes fadeInLeft { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes fadeInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
-        input:focus { border-color: #3b82f6 !important; background: rgba(59, 130, 246, 0.05) !important; }
-      `}</style>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      <header>
+        <h3 style={{ fontSize: '2rem', fontWeight: '950', color: 'white', margin: 0, letterSpacing: '-0.02em' }}>
+          {isCz ? 'Vítejte zpět' : 'Welcome back'}
+        </h3>
+        <p style={{ color: 'rgba(255,255,255,0.4)', marginTop: '0.5rem', fontWeight: '500' }}>
+          {isCz ? 'Přihlaste se ke svému Nexus účtu.' : 'Sign in to your Nexus account.'}
+        </p>
+      </header>
 
-      <div style={STYLES.leftSide}>
-        <div style={{ ...STYLES.glow, top: '-10%', left: '-10%' }} />
-        
-        <div style={{ position: 'relative', zIndex: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '3rem' }}>
-            <img src="/nexus_icon.png" alt="Nexus" style={{ width: '56px', borderRadius: '16px', boxShadow: '0 0 30px rgba(59, 130, 246, 0.5)' }} />
-            <span style={{ fontSize: '1.75rem', fontWeight: '950', color: 'white', letterSpacing: '0.1em' }}>NEXUS HUB</span>
-          </div>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <InputGroup label={isCz ? 'E-mail' : 'Email'} icon={Mail}>
+          <StyledInput type="email" required placeholder="name@agency.com" value={email} onChange={e => setEmail(e.target.value)} />
+        </InputGroup>
 
-          <h2 style={{ fontSize: '3.5rem', fontWeight: '950', color: 'white', lineHeight: 1.1, marginBottom: '2rem', letterSpacing: '-0.04em' }}>
-            {isCz ? 'Absolutní kontrola nad vaší agenturou.' : 'Absolute control over your agency.'}
-          </h2>
+        <InputGroup label={isCz ? 'Heslo' : 'Password'} icon={Lock}>
+          <StyledInput type={showPassword ? 'text' : 'password'} required placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} />
+          <button 
+            type="button" onClick={() => setShowPassword(!showPassword)}
+            style={{ position: 'absolute', right: '1.25rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer' }}
+          >
+            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+          </button>
+        </InputGroup>
 
-          <div style={{ marginTop: '4rem' }}>
-            <FeatureItem 
-              icon={Shield} 
-              title={isCz ? 'Safety Guard™' : 'Safety Guard™'} 
-              desc={isCz ? 'Real-time monitoring a SOS alerty.' : 'Real-time monitoring and SOS alerts.'} 
-              delay={0.1}
-            />
-            <FeatureItem 
-              icon={BarChart3} 
-              title={isCz ? 'Deep Analytics' : 'Deep Analytics'} 
-              desc={isCz ? 'Detailní přehledy tržeb a výkonu.' : 'Detailed revenue and performance insights.'} 
-              delay={0.2}
-            />
-            <FeatureItem 
-              icon={Globe} 
-              title={isCz ? 'Omnichannel Sync' : 'Omnichannel Sync'} 
-              desc={isCz ? 'WhatsApp, Telegram a OF na jednom místě.' : 'WhatsApp, Telegram and OF in one place.'} 
-              delay={0.3}
-            />
-          </div>
+        <PrimaryButton type="submit" loading={loading}>
+          {isCz ? 'Přihlásit se' : 'Sign In'} <ArrowRight size={20} />
+        </PrimaryButton>
+      </form>
+
+      <div style={{ padding: '1.5rem', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.95rem', margin: '0 0 1rem 0' }}>
+          {isCz ? 'Ještě nemáte účet?' : "Don't have an account yet?"}
+        </p>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <button 
+            onClick={() => onSwitch('register-agency')}
+            style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', color: '#3b82f6', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer' }}
+          >
+            {isCz ? 'Založit agenturu' : 'Start Agency'}
+          </button>
+          <button 
+            onClick={() => onSwitch('join-agency')}
+            style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer' }}
+          >
+            {isCz ? 'Připojit se' : 'Join Agency'}
+          </button>
         </div>
-
-        <div style={{ position: 'absolute', bottom: '4rem', color: 'rgba(255,255,255,0.2)', fontSize: '0.85rem' }}>
-          © {new Date().getFullYear()} Nexus Systems. All rights reserved.
-        </div>
-      </div>
-
-      <div style={STYLES.rightSide}>
-        <div style={{ ...STYLES.glow, bottom: '-10%', right: '-10%', background: 'radial-gradient(circle, rgba(139, 92, 246, 0.1), transparent 70%)' }} />
-        {renderForm()}
       </div>
     </div>
   );
 };
 
-export default LoginScreen;
+const RegisterAgencyView = ({ isCz, onSwitch }) => {
+  const { onRegisterAgency, showToast } = useNexus();
+  const [formData, setFormData] = useState({ agencyName: '', fullName: '', email: '', password: '', confirmPassword: '' });
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [inviteCode, setInviteCode] = useState(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (formData.password !== formData.confirmPassword) return showToast(isCz ? 'Hesla se neshodují' : 'Passwords do not match', 'error');
+    if (formData.password.length < 8) return showToast(isCz ? 'Heslo je příliš krátké' : 'Password too short', 'error');
+    
+    setLoading(true);
+    try {
+      const res = await onRegisterAgency({ 
+        agencyName: formData.agencyName, 
+        fullName: formData.fullName, 
+        email: formData.email, 
+        password: formData.password 
+      });
+      if (res?.success) setInviteCode(res.inviteCode);
+      else if (res?.error) showToast(res.error, 'error');
+    } finally { setLoading(false); }
+  };
+
+  if (inviteCode) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', textAlign: 'center' }}>
+        <div style={{ width: '80px', height: '80px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', margin: '0 auto' }}>
+          <ShieldCheck size={40} />
+        </div>
+        <header>
+          <h3 style={{ fontSize: '2rem', fontWeight: '950', color: 'white', margin: 0 }}>{isCz ? 'Agentura vytvořena!' : 'Agency Created!'}</h3>
+          <p style={{ color: 'rgba(255,255,255,0.4)', marginTop: '0.5rem' }}>
+            {isCz ? 'Zde je váš unikátní zvací kód pro modelky:' : 'Here is your unique invite code for models:'}
+          </p>
+        </header>
+        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', padding: '1.5rem', position: 'relative' }}>
+          <code style={{ fontSize: '2rem', fontWeight: '900', color: '#3b82f6', letterSpacing: '0.1em', fontFamily: 'monospace' }}>{inviteCode}</code>
+          <button 
+            onClick={() => { navigator.clipboard.writeText(inviteCode); showToast(isCz ? 'Zkopírováno!' : 'Copied!', 'success'); }}
+            style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', background: 'rgba(59, 130, 246, 0.1)', border: 'none', padding: '0.75rem', borderRadius: '12px', color: '#3b82f6', cursor: 'pointer' }}
+          >
+            <Copy size={18} />
+          </button>
+        </div>
+        <PrimaryButton onClick={() => onSwitch('login')}>
+          {isCz ? 'Pokračovat k přihlášení' : 'Continue to Login'} <ChevronRight size={20} />
+        </PrimaryButton>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      <header>
+        <h3 style={{ fontSize: '2rem', fontWeight: '950', color: 'white', margin: 0 }}>{isCz ? 'Nová agentura' : 'Register Agency'}</h3>
+        <p style={{ color: 'rgba(255,255,255,0.4)', marginTop: '0.5rem' }}>{isCz ? 'Získejte Enterprise infrastrukturu pro vaši firmu.' : 'Get Enterprise infrastructure for your business.'}</p>
+      </header>
+
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <InputGroup label={isCz ? 'Název agentury' : 'Agency Name'} icon={Building2}>
+          <StyledInput required placeholder="e.g. Elite Models" value={formData.agencyName} onChange={e => setFormData({...formData, agencyName: e.target.value})} />
+        </InputGroup>
+        <InputGroup label={isCz ? 'Vaše celé jméno' : 'Your Full Name'} icon={User}>
+          <StyledInput required placeholder="John Doe" value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} />
+        </InputGroup>
+        <InputGroup label={isCz ? 'E-mail' : 'Email'} icon={Mail}>
+          <StyledInput type="email" required placeholder="john@agency.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+        </InputGroup>
+        <InputGroup label={isCz ? 'Heslo' : 'Password'} icon={Lock}>
+          <StyledInput type={showPassword ? 'text' : 'password'} required placeholder="••••••••" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
+          <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '1.25rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer' }}>
+            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+          </button>
+        </InputGroup>
+        <PasswordRequirements password={formData.password} isCz={isCz} />
+        <InputGroup label={isCz ? 'Potvrďte heslo' : 'Confirm Password'} icon={Lock}>
+          <StyledInput type={showPassword ? 'text' : 'password'} required placeholder="••••••••" value={formData.confirmPassword} onChange={e => setFormData({...formData, confirmPassword: e.target.value})} />
+        </InputGroup>
+
+        <PrimaryButton type="submit" loading={loading}>
+          {isCz ? 'Vytvořit agenturu' : 'Create Agency'} <ArrowRight size={20} />
+        </PrimaryButton>
+      </form>
+
+      <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '0.9rem' }}>
+        {isCz ? 'Už máte účet?' : 'Already have an account?'} {' '}
+        <button onClick={() => onSwitch('login')} style={{ background: 'none', border: 'none', color: '#3b82f6', fontWeight: '800', cursor: 'pointer', padding: 0 }}>
+          {isCz ? 'Přihlásit se' : 'Sign In'}
+        </button>
+      </p>
+    </div>
+  );
+};
+
+const JoinAgencyView = ({ isCz, onSwitch }) => {
+  const { onRegisterUser, showToast } = useNexus();
+  const [formData, setFormData] = useState({ inviteCode: '', fullName: '', email: '', password: '', confirmPassword: '' });
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (formData.password !== formData.confirmPassword) return showToast(isCz ? 'Hesla se neshodují' : 'Passwords do not match', 'error');
+    if (formData.password.length < 8) return showToast(isCz ? 'Heslo je příliš krátké' : 'Password too short', 'error');
+
+    setLoading(true);
+    try {
+      const { confirmPassword, ...submitData } = formData;
+      const res = await onRegisterUser(submitData);
+      if (res?.success) {
+        showToast(isCz ? 'Registrace úspěšná!' : 'Registration successful!', 'success');
+        onSwitch('login');
+      } else if (res?.error) showToast(res.error, 'error');
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      <header>
+        <h3 style={{ fontSize: '2rem', fontWeight: '950', color: 'white', margin: 0 }}>{isCz ? 'Připojit se k agentuře' : 'Join an Agency'}</h3>
+        <p style={{ color: 'rgba(255,255,255,0.4)', marginTop: '0.5rem' }}>{isCz ? 'Zadejte kód, který jste obdrželi od své agentury.' : 'Enter the code you received from your agency.'}</p>
+      </header>
+
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <InputGroup label={isCz ? 'Zvací kód' : 'Invite Code'} icon={Zap}>
+          <StyledInput required placeholder="NEXUS-..." value={formData.inviteCode} onChange={e => setFormData({...formData, inviteCode: e.target.value})} />
+        </InputGroup>
+        <InputGroup label={isCz ? 'Vaše celé jméno' : 'Your Full Name'} icon={UserPlus}>
+          <StyledInput required placeholder="Jane Doe" value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} />
+        </InputGroup>
+        <InputGroup label={isCz ? 'E-mail' : 'Email'} icon={Mail}>
+          <StyledInput type="email" required placeholder="jane@email.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+        </InputGroup>
+        <InputGroup label={isCz ? 'Heslo' : 'Password'} icon={Lock}>
+          <StyledInput type={showPassword ? 'text' : 'password'} required placeholder="••••••••" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
+          <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '1.25rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer' }}>
+            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+          </button>
+        </InputGroup>
+        <PasswordRequirements password={formData.password} isCz={isCz} />
+        <InputGroup label={isCz ? 'Potvrďte heslo' : 'Confirm Password'} icon={Lock}>
+          <StyledInput type={showPassword ? 'text' : 'password'} required placeholder="••••••••" value={formData.confirmPassword} onChange={e => setFormData({...formData, confirmPassword: e.target.value})} />
+        </InputGroup>
+
+        <PrimaryButton type="submit" loading={loading}>
+          {isCz ? 'Zaregistrovat se' : 'Join Now'} <ArrowRight size={20} />
+        </PrimaryButton>
+      </form>
+
+      <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '0.9rem' }}>
+        {isCz ? 'Chcete založit vlastní agenturu?' : 'Want to start your own agency?'} {' '}
+        <button onClick={() => onSwitch('register-agency')} style={{ background: 'none', border: 'none', color: '#3b82f6', fontWeight: '800', cursor: 'pointer', padding: 0 }}>
+          {isCz ? 'Registrovat se zde' : 'Register here'}
+        </button>
+      </p>
+    </div>
+  );
+};
+
+// --- Main Optimized Component ---
+
+const LoginScreen = () => {
+  const { lang, authInitialTab, setAuthInitialTab } = useNexus();
+  const [view, setView] = useState(authInitialTab || 'login');
+
+  useEffect(() => {
+    if (authInitialTab) setView(authInitialTab);
+  }, [authInitialTab]);
+
+  const isCz = lang === 'cz';
+
+  const handleSwitch = (newView) => {
+    setView(newView);
+    setAuthInitialTab(newView);
+    // Optionally update URL
+    const path = newView === 'login' ? '/login' : '/register';
+    window.history.pushState(null, '', path);
+  };
+
+  return (
+    <AuthLayout 
+      title={
+        view === 'login' ? null : 
+        (view === 'register-agency' ? (isCz ? 'Enterprise infrastruktura.' : 'Enterprise infrastructure.') : (isCz ? 'Vaše kariéra začíná zde.' : 'Your career starts here.'))
+      }
+    >
+      {view === 'login' && <LoginView isCz={isCz} onSwitch={handleSwitch} />}
+      {view === 'register-agency' && <RegisterAgencyView isCz={isCz} onSwitch={handleSwitch} />}
+      {view === 'join-agency' && <JoinAgencyView isCz={isCz} onSwitch={handleSwitch} />}
+    </AuthLayout>
+  );
+};
+
+export default memo(LoginScreen);
