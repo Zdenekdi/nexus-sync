@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const prisma = require('../../services/db');
-const { apiKeyAuth, requireScope } = require('../../middleware/apiKeyMiddleware');
+const prisma = require('../../../services/db');
+const { apiKeyAuth, requireScope } = require('../../../middleware/apiKeyMiddleware');
 const rateLimit = require('express-rate-limit');
 
 // Public API Rate Limiting: 60 requests per minute per API key
