@@ -319,20 +319,14 @@ const LandingPage = () => {
         {/* HERO PREVIEW CARD */}
         {!isMobile && (
           <ScrollReveal delay={0.3}>
-            <div style={{ marginTop: '6rem', position: 'relative' }}>
+            <div style={{ marginTop: '6rem', position: 'relative', maxWidth: '1000px', margin: '6rem auto 0' }}>
               <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '80%', height: '80%', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.2), transparent 70%)', filter: 'blur(50px)', zIndex: -1 }} />
-                     <div style={{ flex: 1, background: 'rgba(15, 23, 42, 0.5)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', padding: '20px', position: 'relative' }}>
-                        <div style={{ position: 'absolute', bottom: '20%', left: '10%', width: '80%', height: '50%', display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
-                          {[40, 70, 45, 90, 65, 80, 50, 85, 60, 95].map((h, i) => (
-                            <div key={i} style={{ flex: 1, height: `${h}%`, background: `linear-gradient(to top, rgba(59, 130, 246, ${i/10}), #3b82f6)`, borderRadius: '4px 4px 0 0', opacity: 0.7 }} />
-                          ))}
-                        </div>
-                        <div style={{ color: '#3b82f6', fontSize: '0.6rem', fontWeight: 'bold', letterSpacing: '0.1em' }}>SMS THROUGHPUT: LIVE RELAY</div>
-                     </div>
-                   </div>
-                   {/* Glow Effects */}
-                   <div style={{ position: 'absolute', top: '-20%', right: '-10%', width: '40%', height: '40%', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1), transparent 70%)', filter: 'blur(40px)' }} />
-                </div>
+              <div style={{ background: 'rgba(15, 23, 42, 0.4)', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(40px)', padding: '10px', boxShadow: '0 50px 100px -20px rgba(0,0,0,0.7)' }}>
+                <img
+                  src="/thumb_analytics.jpg"
+                  alt="Nexus Hub Dashboard"
+                  style={{ width: '100%', borderRadius: '24px', display: 'block', objectFit: 'cover' }}
+                />
               </div>
             </div>
           </ScrollReveal>
