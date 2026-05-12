@@ -203,8 +203,8 @@ const LandingPage = () => {
         { q: "Mohu přejít na jiný tarif později?", a: "Samozřejmě. Upgrade i downgrade je možný kdykoliv z administračního panelu." }
       ],
       videos: [
-        { id: 'safety', src: '/safety.mp4', title: 'Bezpečnost na prvním místě', desc: 'Safety Guard™ s taktickým přehledem v reálném čase. Automatické SOS alerty a sledování polohy.', features: ['Sledování polohy', 'Hlasové SOS', 'Globální blacklist'] },
-        { id: 'analytics', src: '/analytics.mp4', title: 'Business pod kontrolou', desc: 'Zapomeňte na tabulky. Okamžitý přehled o tržbách, konverzích a výkonu celého týmu.', features: ['Real-time tržby', 'Výpočet provizí', 'VIP Management'], reverse: true }
+        { id: 'safety', src: '/safety.mp4', poster: '/thumb_safety.jpg', title: 'Bezpečnost na prvním místě', desc: 'Safety Guard™ s taktickým přehledem v reálném čase. Automatické SOS alerty a sledování polohy.', features: ['Sledování polohy', 'Hlasové SOS', 'Globální blacklist'] },
+        { id: 'analytics', src: '/analytics.mp4', poster: '/thumb_analytics.jpg', title: 'Business pod kontrolou', desc: 'Zapomeňte na tabulky. Okamžitý přehled o tržbách, konverzích a výkonu celého týmu.', features: ['Real-time tržby', 'Výpočet provizí', 'VIP Management'], reverse: true }
       ]
     },
     en: {
@@ -239,8 +239,8 @@ const LandingPage = () => {
         { q: "How does Safety Guard SOS work?", a: "In case of danger, say the voice code or press SOS. The system alerts managers with location and live audio." }
       ],
       videos: [
-        { id: 'safety', src: '/safety.mp4', title: 'Safety First', desc: 'Safety Guard™ with real-time tactical overview. Automated SOS alerts and location tracking.', features: ['Location Tracking', 'Voice SOS', 'Global Blacklist'] },
-        { id: 'analytics', src: '/analytics.mp4', title: 'Business Control', desc: 'Forget spreadsheets. Instant overview of revenue, conversions, and team performance.', features: ['Real-time Revenue', 'Commission Tracking', 'VIP Management'], reverse: true }
+        { id: 'safety', src: '/safety.mp4', poster: '/thumb_safety.jpg', title: 'Safety First', desc: 'Safety Guard™ with real-time tactical overview. Automated SOS alerts and location tracking.', features: ['Location Tracking', 'Voice SOS', 'Global Blacklist'] },
+        { id: 'analytics', src: '/analytics.mp4', poster: '/thumb_analytics.jpg', title: 'Business in Control', desc: 'Forget spreadsheets. Instant overview of revenue, conversions and team performance.', features: ['Real-time Revenue', 'Commission Calculator', 'VIP Management'], reverse: true }
       ]
     }
   }[lang];
@@ -321,28 +321,6 @@ const LandingPage = () => {
           <ScrollReveal delay={0.3}>
             <div style={{ marginTop: '6rem', position: 'relative' }}>
               <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '80%', height: '80%', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.2), transparent 70%)', filter: 'blur(50px)', zIndex: -1 }} />
-              <div style={{ maxWidth: '1000px', margin: '0 auto', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(40px)', padding: '10px', boxShadow: '0 50px 100px -20px rgba(0,0,0,0.7)' }}>
-                <div style={{ width: '100%', borderRadius: '24px', aspectRatio: '16/9', background: '#0a0f18', display: 'flex', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', position: 'relative', boxShadow: '0 0 50px rgba(59, 130, 246, 0.15)' }}>
-                   {/* Sidebar Replica */}
-                   <div style={{ width: '60px', height: '100%', background: 'rgba(15, 23, 42, 0.8)', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '20px', gap: '20px' }}>
-                     <div style={{ width: '24px', height: '24px', borderRadius: '6px', background: 'rgba(59, 130, 246, 0.2)' }} />
-                     {[1,2,3,4].map(i => <div key={i} style={{ width: '20px', height: '20px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)' }} />)}
-                   </div>
-                   {/* Main Content Area Replica */}
-                   <div style={{ flex: 1, padding: '25px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                       <div style={{ width: '150px', height: '15px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px' }} />
-                       <div style={{ width: '100px', height: '30px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '8px', border: '1px solid rgba(59, 130, 246, 0.2)' }} />
-                     </div>
-                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-                       {[1,2,3].map(i => (
-                         <div key={i} style={{ height: '100px', background: 'rgba(15, 23, 42, 0.5)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', padding: '15px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                           <div style={{ width: '40%', height: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px' }} />
-                           <div style={{ width: '70%', height: '25px', background: i === 1 ? 'linear-gradient(90deg, #3b82f6, #60a5fa)' : 'rgba(255,255,255,0.1)', borderRadius: '6px' }} />
-                         </div>
-                       ))}
-                     </div>
-                     {/* SMS Relay Chart Visualization */}
                      <div style={{ flex: 1, background: 'rgba(15, 23, 42, 0.5)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', padding: '20px', position: 'relative' }}>
                         <div style={{ position: 'absolute', bottom: '20%', left: '10%', width: '80%', height: '50%', display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
                           {[40, 70, 45, 90, 65, 80, 50, 85, 60, 95].map((h, i) => (
