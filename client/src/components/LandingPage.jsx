@@ -179,9 +179,9 @@ const LandingPage = () => {
         cta2: "Jak to funguje?"
       },
       stats: [
-        { label: "Aktivních agentur", val: "50+" },
-        { label: "Zpráv / měsíc", val: "2.4M+" },
-        { label: "Bezpečnostní skóre", val: "99.9%" }
+        { val: '25+', label: 'Aktivních agentur' },
+        { val: '1.2M+', label: 'Zpráv / měsíc' },
+        { val: '99.9%', label: 'Bezpečnostní skóre' }
       ],
       integrations: ["WhatsApp", "Telegram", "OnlyFans", "Stripe", "VOIP", "Crypto"],
       features: [
@@ -333,7 +333,7 @@ const LandingPage = () => {
                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px' }}>
                        {[1,2,3].map(i => <div key={i} style={{ height: '80px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }} />)}
                      </div>
-                     <div style={{ height: '40px', width: '100%', background: 'rgba(34, 197, 94, 0.1)', borderRadius: '8px', border: '1px dashed rgba(34, 197, 94, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#22c55e', fontSize: '0.7rem', fontWeight: 'bold' }}>SMS RELAY ACTIVE: 2.4M MSGS</div>
+                     <div style={{ height: '40px', width: '100%', background: 'rgba(34, 197, 94, 0.1)', borderRadius: '8px', border: '1px dashed rgba(34, 197, 94, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#22c55e', fontSize: '0.7rem', fontWeight: 'bold' }}>SMS RELAY ACTIVE: 1.2M MSGS</div>
                    </div>
                 </div>
               </div>
