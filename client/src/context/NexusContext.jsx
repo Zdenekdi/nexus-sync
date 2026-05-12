@@ -4,13 +4,13 @@ import React, {
 import { Capacitor } from '@capacitor/core';
 import { useAuth } from '../hooks/useAuth';
 import { useNexusData } from '../hooks/useNexusData';
-import { AgencyDataGateway } from '../services/AgencyDataGateway';
-import { AnalyticsService } from '../services/AnalyticsService';
-import { ContentSyncService } from '../services/ContentSyncService';
-import { CommunicationService } from '../services/CommunicationService';
-import { WhatsAppAdapter } from '../services/adapters/WhatsAppAdapter';
-import { SMSAdapter } from '../services/adapters/SMSAdapter';
-import { WebChatAdapter } from '../services/adapters/WebChatAdapter';
+import { AgencyDataGateway } from '../services/agency/AgencyDataGateway';
+import { AnalyticsService } from '../services/analytics/AnalyticsService';
+import { ContentSyncService } from '../services/content/ContentSyncService';
+import { CommunicationService } from '../services/communication/CommunicationService';
+import { WhatsAppAdapter } from '../services/communication/WhatsAppAdapter';
+import { SMSAdapter } from '../services/communication/SMSAdapter';
+import { WebChatAdapter } from '../services/communication/WebChatAdapter';
 import { TRANSLATIONS } from '../i18n/translations';
 import { NexusContext } from './ContextObject';
 
