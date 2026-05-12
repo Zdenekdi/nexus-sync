@@ -304,7 +304,7 @@ const LandingPage = () => {
             ))}
           </div>
           {!isMobile && (
-            <button onClick={() => navigate('/login')} style={{ background: 'white', color: 'black', border: 'none', padding: '10px 22px', borderRadius: '12px', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer', transition: 'transform 0.2s' }}>
+            <button onClick={() => navigate('/login', 'login')} style={{ background: 'white', color: 'black', border: 'none', padding: '10px 22px', borderRadius: '12px', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer', transition: 'transform 0.2s' }}>
               {t.hero.cta1}
             </button>
           )}
@@ -324,7 +324,7 @@ const LandingPage = () => {
             {t.hero.desc}
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1.5rem' }}>
-            <button onClick={() => navigate('/login')} style={{ padding: '1.25rem 3.5rem', borderRadius: '20px', border: 'none', background: '#3b82f6', color: 'white', fontWeight: '900', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 20px 40px -10px rgba(59, 130, 246, 0.5)', transition: 'all 0.3s ease' }}>
+            <button onClick={() => navigate('/login', 'login')} style={{ padding: '1.25rem 3.5rem', borderRadius: '20px', border: 'none', background: '#3b82f6', color: 'white', fontWeight: '900', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 20px 40px -10px rgba(59, 130, 246, 0.5)', transition: 'all 0.3s ease' }}>
               {t.hero.cta1}
             </button>
             <button onClick={() => setActiveTab('guide')} style={{ padding: '1.25rem 3rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: 'white', fontWeight: '800', fontSize: '1.1rem', cursor: 'pointer', backdropFilter: 'blur(10px)', transition: 'all 0.3s ease' }}>
@@ -436,7 +436,7 @@ const LandingPage = () => {
                       </li>
                     ))}
                   </ul>
-                  <button onClick={() => navigate('/login')} style={{ width: '100%', padding: '1rem', borderRadius: '14px', border: 'none', background: p.popular ? '#3b82f6' : 'rgba(255,255,255,0.05)', color: 'white', fontWeight: '800', cursor: 'pointer', transition: 'all 0.3s' }}>{t.hero.cta1}</button>
+                  <button onClick={() => navigate('/login', 'login')} style={{ width: '100%', padding: '1rem', borderRadius: '14px', border: 'none', background: p.popular ? '#3b82f6' : 'rgba(255,255,255,0.05)', color: 'white', fontWeight: '800', cursor: 'pointer', transition: 'all 0.3s' }}>{t.hero.cta1}</button>
                 </div>
               </ScrollReveal>
             ))}
