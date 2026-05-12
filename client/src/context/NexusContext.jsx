@@ -13,6 +13,7 @@ import { SMSAdapter } from '../services/communication/SMSAdapter';
 import { WebChatAdapter } from '../services/communication/WebChatAdapter';
 import { TRANSLATIONS } from '../translations';
 import { NexusContext } from './ContextObject';
+import { usePermissions } from '../hooks/usePermissions';
 
 // API Configuration
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -249,6 +250,27 @@ export const NexusProvider = ({ children }) => {
     };
   }, [activeOperatorState, authUser]);
 
+  // --- 4. PERMISSIONS & PROFILES ---
+  const { isAllowed, activeRole: normalizedRole } = usePermissions(activeOperator, activeOperator?.permissions);
+
+  const activeProfile = useMemo(() => {
+    if (!activeProfileId || activeProfileId === 'all') return null;
+    return (nexusData.profiles || []).find(p => String(p.id) === String(activeProfileId));
+  }, [activeProfileId, nexusData.profiles]);
+
+  const myProfiles = useMemo(() => {
+    const all = nexusData.profiles || [];
+    if (!activeOperator) return [];
+    if (activeOperator.isAppOwner || activeOperator.isAdmin || activeOperator.isManager) return all;
+    
+    // For operators, filter by assigned profiles
+    return all.filter(p => 
+      p.operatorIds?.includes(activeOperator.id) || 
+      p.operatorIds?.includes(activeOperator._id) ||
+      p.assignedOperatorIds?.includes(activeOperator.id)
+    );
+  }, [nexusData.profiles, activeOperator]);
+
   const navigateStable = useCallback((path, tab) => navigate(path, tab), [navigate]);
 
   const value = useMemo(() => ({
@@ -263,13 +285,19 @@ export const NexusProvider = ({ children }) => {
     isAddUserOpen, setIsAddUserOpen, isBugReportOpen, setIsBugReportOpen,
     agencyDetailModalData, setAgencyDetailModalData,
     calViewDate, setCalViewDate, showPanicConfirm, setShowPanicConfirm,
-    chatScrollRef, isUserScrolled, showToast, _toasts
+    chatScrollRef, isUserScrolled, showToast, _toasts,
+    isAllowed, activeRole: normalizedRole,
+    activeProfile, activeProfileId, setActiveProfileId, 
+    myProfiles, _profiles: nexusData.profiles,
+    onlineOnly, setOnlineOnly,
+    totalUnread: messages.filter(m => m.status === 'unread').length
   }), [
     t, lang, activeTab, activeMarket, pathname, navigateStable, authInitialTab, 
     nexusData.isDataLoading, activeOperator, isLoggedIn, token, logout, handleLogin,
     showLanding, hasSeenOnboarding, showOnboarding, isMobile, isNativeApp, isSidebarOpen, isSidebarCollapsed,
     messages, selectedChatId, messageValue, isEditProfileOpen, isAddAgencyOpen,
-    isAddUserOpen, isBugReportOpen, agencyDetailModalData, calViewDate, showPanicConfirm, _toasts
+    isAddUserOpen, isBugReportOpen, agencyDetailModalData, calViewDate, showPanicConfirm, _toasts,
+    isAllowed, normalizedRole, activeProfile, activeProfileId, myProfiles, nexusData.profiles, onlineOnly
   ]);
 
   return (
