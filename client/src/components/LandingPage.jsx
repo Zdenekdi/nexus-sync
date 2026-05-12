@@ -187,8 +187,10 @@ const LandingPage = () => {
       features: [
         { icon: Shield, title: "Safety Guard™", desc: "Real-time SOS a monitoring výjezdů." },
         { icon: Zap, title: "AI Smart Replies", desc: "Automatizované odpovědi a překlady." },
+        { icon: Database, title: "Public API", desc: "REST rozhraní pro vaše vlastní integrace." },
         { icon: Globe, title: "Global Sync", desc: "Synchronizace napříč všemi zařízeními." },
-        { icon: BarChart3, title: "Deep Analytics", desc: "Tržby a konverze pod mikroskopem." }
+        { icon: BarChart3, title: "Deep Analytics", desc: "Tržby a konverze pod mikroskopem." },
+        { icon: CreditCard, title: "Hybrid Billing", desc: "Automatické platby kartou i převodem." }
       ],
       pricingTitle: "Tarify a předplatné",
       plans: [
@@ -200,6 +202,8 @@ const LandingPage = () => {
       faqs: [
         { q: "Je systém skutečně anonymní?", a: "Ano, Nexus Hub je navržen s důrazem na soukromí. Neukládáme žádné citlivé údaje, které by mohly spojit operátory s konkrétními osobami." },
         { q: "Jak funguje Safety Guard SOS?", a: "V případě nebezpečí stačí vyslovit hlasový kód nebo stisknout SOS tlačítko. Systém okamžitě rozešle alerty všem managerům s polohou a zvukem." },
+        { q: "Nabízíte API pro vlastní integrace?", a: "Ano, v rámci tarifu Agency poskytujeme přístup k našemu Public REST API, díky kterému můžete Nexus propojit s vašimi interními systémy nebo vlastními boty." },
+        { q: "Jaké platební metody podporujete?", a: "Podporujeme okamžité platby kartou přes Stripe a také automatizované bankovní převody přes Fio banku (párování plateb probíhá v reálném čase)." },
         { q: "Mohu přejít na jiný tarif později?", a: "Samozřejmě. Upgrade i downgrade je možný kdykoliv z administračního panelu." }
       ],
       videos: [
@@ -225,8 +229,10 @@ const LandingPage = () => {
       features: [
         { icon: Shield, title: "Safety Guard™", desc: "Real-time SOS and outcall monitoring." },
         { icon: Zap, title: "AI Smart Replies", desc: "Automated responses and translations." },
+        { icon: Database, title: "Public API", desc: "REST interface for your own integrations." },
         { icon: Globe, title: "Global Sync", desc: "Synchronization across all devices." },
-        { icon: BarChart3, title: "Deep Analytics", desc: "Revenue and conversion insights." }
+        { icon: BarChart3, title: "Deep Analytics", desc: "Revenue and conversion insights." },
+        { icon: CreditCard, title: "Hybrid Billing", desc: "Automated card and bank payments." }
       ],
       pricingTitle: "Pricing & Subscriptions",
       plans: [
@@ -237,7 +243,10 @@ const LandingPage = () => {
       faqTitle: "Frequently Asked Questions",
       faqs: [
         { q: "Is the system truly anonymous?", a: "Yes, Nexus Hub is built with privacy first. We do not store sensitive links between operators and identities." },
-        { q: "How does Safety Guard SOS work?", a: "In case of danger, say the voice code or press SOS. The system alerts managers with location and live audio." }
+        { q: "How does Safety Guard SOS work?", a: "In case of danger, say the voice code or press SOS. The system alerts managers with location and live audio." },
+        { q: "Do you offer API for custom integrations?", a: "Yes, the Agency plan provides access to our Public REST API, allowing you to connect Nexus with your internal tools or custom bots." },
+        { q: "What payment methods do you support?", a: "We support instant card payments via Stripe as well as automated bank transfers (real-time reconciliation)." },
+        { q: "Can I upgrade my plan later?", a: "Absolutely. You can upgrade or downgrade your subscription at any time via the administration panel." }
       ],
       videos: [
         { id: 'safety', src: '/safety.mp4', poster: '/thumb_safety.jpg', title: 'Safety First', desc: 'Safety Guard™ with real-time tactical overview. Automated SOS alerts and location tracking.', features: ['Location Tracking', 'Voice SOS', 'Global Blacklist'] },
@@ -283,6 +292,12 @@ const LandingPage = () => {
           <span style={{ fontWeight: '900', letterSpacing: '0.1em', fontSize: '1.1rem' }}>NEXUS HUB</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          {!isMobile && (
+            <div style={{ display: 'flex', gap: '1.5rem', marginRight: '1rem' }}>
+              <button onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.6)', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', transition: 'color 0.2s' }}>{lang === 'cz' ? 'Ceník' : 'Pricing'}</button>
+              <button onClick={() => setActiveTab('guide')} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.6)', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', transition: 'color 0.2s' }}>{lang === 'cz' ? 'Průvodce' : 'Guide'}</button>
+            </div>
+          )}
           <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '3px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
             {['cz', 'en'].map(l => (
               <button key={l} onClick={() => setLang(l)} style={{ padding: '4px 10px', borderRadius: '8px', border: 'none', background: lang === l ? 'rgba(59, 130, 246, 0.2)' : 'transparent', color: lang === l ? '#3b82f6' : 'rgba(255,255,255,0.4)', fontSize: '0.7rem', fontWeight: '900', cursor: 'pointer', transition: 'all 0.2s' }}>{l.toUpperCase()}</button>
@@ -312,7 +327,7 @@ const LandingPage = () => {
             <button onClick={() => navigate('/login')} style={{ padding: '1.25rem 3.5rem', borderRadius: '20px', border: 'none', background: '#3b82f6', color: 'white', fontWeight: '900', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 20px 40px -10px rgba(59, 130, 246, 0.5)', transition: 'all 0.3s ease' }}>
               {t.hero.cta1}
             </button>
-            <button onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} style={{ padding: '1.25rem 3rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: 'white', fontWeight: '800', fontSize: '1.1rem', cursor: 'pointer', backdropFilter: 'blur(10px)', transition: 'all 0.3s ease' }}>
+            <button onClick={() => setActiveTab('guide')} style={{ padding: '1.25rem 3rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: 'white', fontWeight: '800', fontSize: '1.1rem', cursor: 'pointer', backdropFilter: 'blur(10px)', transition: 'all 0.3s ease' }}>
               {t.hero.cta2}
             </button>
           </div>
@@ -381,7 +396,7 @@ const LandingPage = () => {
       {/* FEATURES GRID */}
       <section id="features" style={{ padding: '6rem 5%' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1.5rem' }}>
             {t.features.map((f, i) => (
               <ScrollReveal key={i} delay={i * 0.1}>
                 <div style={{ padding: '2rem', borderRadius: '24px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', transition: 'all 0.3s ease' }}>
