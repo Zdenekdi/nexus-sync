@@ -98,6 +98,7 @@ export const NexusProvider = ({ children }) => {
     if (clean === '/') {
       targetPath = '/';
       setShowLanding(true);
+      setActiveTab('dashboard');
     } else if (lang !== 'cz' && !path.startsWith(`/${lang}`)) {
       targetPath = `/${lang}${path === '/' ? '' : path}`;
     }
