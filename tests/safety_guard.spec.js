@@ -12,7 +12,15 @@ test.describe('Safety Guard™ E2E Tests', () => {
     await loginToApp(page, TEST_USERS.seniorOp.email, TEST_USERS.seniorOp.password);
     
     // Navigate to Safety Guard (Monitoring)
-    await page.getByTestId('nav-link-safety-guard').click();
+    const navLink = page.getByTestId('nav-link-safety-guard');
+    if (!(await navLink.isVisible())) {
+      console.log('📱 Mobile detected, opening menu...');
+      // Click hamburger menu (look for lucide-menu icon or a button near the top left)
+      await page.locator('button .lucide-menu, .lucide-menu, button:has-text("Menu")').first().click();
+      await expect(navLink).toBeVisible({ timeout: 5000 });
+    }
+    
+    await navLink.click();
     await expect(page.getByTestId('page-safety-container')).toBeVisible({ timeout: 15000 });
   });
 
