@@ -23,6 +23,8 @@ model Agency {
   
   referralCode String? @unique
   referrals   Referral[] @relation("AgencyReferrer")
+  
+  apiKeys     ApiKey[]
   referralOf  Referral?  @relation("AgencyReferred")
 
   users     User[]
@@ -806,4 +808,26 @@ model SOSLocationUpdate {
   receivedAt  DateTime @default(now())
   
   @@index([sosAlertId])
+}
+
+// ─── API Keys for External Access (Agency Plan) ────────────────
+model ApiKey {
+  id          String   @id @default(cuid())
+  keyId       String   @unique // Public part for lookup (e.g. nx_live_a1b2c3)
+  keyHash     String   // Hashed secret part
+  name        String   // Friendly name
+  
+  agencyId    String
+  agency      Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  
+  scopes      String   @default("read:stats") 
+  
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([agencyId])
+  @@index([keyId])
 }

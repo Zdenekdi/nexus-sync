@@ -2,7 +2,7 @@ import React, { Suspense } from "react";
 import { 
   Loader2, Menu, LayoutDashboard, MessageSquare, Calendar, 
   Shield, Users, Globe, Smartphone, FileSearch, BarChart3, 
-  Activity, Settings, UserCheck 
+  Activity, Settings, UserCheck, Terminal 
 } from 'lucide-react';
 import { useNexus } from './context/ContextHook';
 import GlobalAppStyles from './styles/GlobalAppStyles';
@@ -50,6 +50,7 @@ function AppContent() {
     analytics: { label: t('analytics'), icon: BarChart3 },
     crm: { label: t('crm') || 'CRM', icon: UserCheck },
     activity: { label: t('activity'), icon: Activity },
+    developer: { label: 'Developer API', icon: Terminal },
     settings: { label: t('settings'), icon: Settings }
   };
 

@@ -4,7 +4,7 @@ import {
   Settings, Activity, Radio, Globe, Smartphone, FileSearch, 
   Shield, ShieldCheck, Building2, HardDrive, CreditCard, Zap, UserCheck,
   LogOut, Menu, X, Circle, Package as PackageIcon, Gift, Wallet,
-  ChevronDown, ChevronRight, BookOpen
+  ChevronDown, ChevronRight, BookOpen, Terminal
 } from 'lucide-react';
 import { useNexus } from '../../context/ContextHook';
 
@@ -466,6 +466,7 @@ const Sidebar = () => {
                       {[
                         { id: 'device-setup', icon: Smartphone, label: t('deviceSetup'), perm: 'device_setup' },
                         { id: 'relay', icon: Radio, label: t('relay'), perm: 'relay' },
+                        { id: 'developer', icon: Terminal, label: 'Developer API', perm: 'settings' },
                         { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
                       ].filter(item => !item.perm || isAllowed(item.perm)).map(item => (
                         <TooltipItem key={item.id} label={capitalize(item.label)} isMobile={isMobile} isSidebarCollapsed={isSidebarCollapsed}>

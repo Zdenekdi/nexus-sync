@@ -10,6 +10,7 @@ import AuditLogsView from '../Views/AuditLogsView';
 import PayoutsView from '../Views/PayoutsView';
 import SafetyView from '../Views/SafetyView';
 import SafetyGuardView from '../Views/SafetyGuardView';
+import ApiSettingsView from '../Views/ApiSettingsView';
 
 /**
  * Agency Unit: Management hub for agencies and global activity.
@@ -48,6 +49,8 @@ const AgencyUnit = () => {
       return <PayoutsView />;
     case 'safety-guard':
       return <SafetyGuardView />;
+    case 'developer':
+      return <ApiSettingsView />;
     default:
       return null;
   }

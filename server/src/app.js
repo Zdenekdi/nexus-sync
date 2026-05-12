@@ -44,6 +44,8 @@ const webhookRoutes = require('./routes/webhookRoutes');
 const clientRoutes = require('./routes/clientRoutes');
 const payoutRoutes = require('./routes/payoutRoutes');
 const hetznerRoutes = require('./routes/hetznerRoutes');
+const apiKeyRoutes = require('./routes/apiKeyRoutes');
+const publicApiRoutes = require('./routes/api/v1/publicApiRoutes');
 
 const app = express();
 
@@ -220,6 +222,8 @@ app.use('/api/audit-logs', auditRoutes);
 app.use('/api/payouts', payoutRoutes);
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/clients', clientRoutes);
+app.use('/api/developer/keys', apiKeyRoutes);
+app.use('/api/v1/public', publicApiRoutes);
 
 // Health check with system status
 app.get('/health', async (req, res) => {
