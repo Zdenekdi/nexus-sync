@@ -323,8 +323,18 @@ const LandingPage = () => {
               <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '80%', height: '80%', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.2), transparent 70%)', filter: 'blur(50px)', zIndex: -1 }} />
               <div style={{ maxWidth: '1000px', margin: '0 auto', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(40px)', padding: '10px', boxShadow: '0 50px 100px -20px rgba(0,0,0,0.7)' }}>
                 <div style={{ width: '100%', borderRadius: '24px', aspectRatio: '16/9', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
-                   <div style={{ position: 'absolute', top: '10%', left: '10%', width: '80%', height: '80%', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '12px', background: 'rgba(0,0,0,0.2)' }} />
-                   <div style={{ fontSize: '1rem', fontWeight: '900', color: 'rgba(59, 130, 246, 0.5)', letterSpacing: '0.2em' }}>DASHBOARD PREVIEW</div>
+                   {/* Realistic UI Elements Mockup */}
+                   <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0.1, background: 'url("data:image/svg+xml,%3Csvg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="%239C92AC" fill-opacity="0.4" fill-rule="evenodd"%3E%3Ccircle cx="3" cy="3" r="3"/%3E%3Ccircle cx="13" cy="13" r="3"/%3E%3C/g%3E%3C/svg%3E")' }} />
+                   <div style={{ width: '85%', height: '70%', background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                     <div style={{ display: 'flex', gap: '10px' }}>
+                       <div style={{ width: '100px', height: '12px', background: 'rgba(59, 130, 246, 0.4)', borderRadius: '6px' }} />
+                       <div style={{ width: '60px', height: '12px', background: 'rgba(255,255,255,0.1)', borderRadius: '6px' }} />
+                     </div>
+                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px' }}>
+                       {[1,2,3].map(i => <div key={i} style={{ height: '80px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }} />)}
+                     </div>
+                     <div style={{ height: '40px', width: '100%', background: 'rgba(34, 197, 94, 0.1)', borderRadius: '8px', border: '1px dashed rgba(34, 197, 94, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#22c55e', fontSize: '0.7rem', fontWeight: 'bold' }}>SMS RELAY ACTIVE: 2.4M MSGS</div>
+                   </div>
                 </div>
               </div>
             </div>
@@ -334,36 +344,31 @@ const LandingPage = () => {
 
       {/* INTEGRATIONS BAR */}
       <section style={{ padding: '4rem 5%', background: 'rgba(255,255,255,0.01)', borderTop: '1px solid rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: isMobile ? '2rem' : '4rem', opacity: 0.5 }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: isMobile ? '2rem' : '5rem', opacity: 0.6 }}>
           {/* WhatsApp */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <MessageSquare size={20} color="white" />
-            <span style={{ fontSize: '0.8rem', fontWeight: '900', letterSpacing: '0.1em' }}>WHATSAPP</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', filter: 'drop-shadow(0 0 10px rgba(37, 211, 102, 0.2))' }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.94 3.659 1.437 5.634 1.437h.005c6.558 0 11.894-5.335 11.897-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            <span style={{ fontSize: '0.85rem', fontWeight: '900', color: 'white', letterSpacing: '0.1em' }}>WHATSAPP</span>
           </div>
           {/* Telegram */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Send size={20} color="white" />
-            <span style={{ fontSize: '0.8rem', fontWeight: '900', letterSpacing: '0.1em' }}>TELEGRAM</span>
-          </div>
-          {/* OnlyFans */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Star size={20} color="white" />
-            <span style={{ fontSize: '0.8rem', fontWeight: '900', letterSpacing: '0.1em' }}>ONLYFANS</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', filter: 'drop-shadow(0 0 10px rgba(0, 136, 204, 0.2))' }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="#0088cc"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2s-.21-.05-.3-.03c-.12.03-1.92 1.22-5.43 3.58-.51.35-.97.52-1.38.51-.45-.01-1.32-.25-1.97-.46-.8-.26-1.43-.4-1.37-.84.03-.23.35-.46.96-.7 3.76-1.63 6.27-2.71 7.52-3.23 3.58-1.48 4.32-1.74 4.81-1.75.11 0 .35.03.5.15.13.11.17.26.19.37z"/></svg>
+            <span style={{ fontSize: '0.85rem', fontWeight: '900', color: 'white', letterSpacing: '0.1em' }}>TELEGRAM</span>
           </div>
           {/* Stripe */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <CreditCard size={20} color="white" />
-            <span style={{ fontSize: '0.8rem', fontWeight: '900', letterSpacing: '0.1em' }}>STRIPE</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', filter: 'drop-shadow(0 0 10px rgba(103, 114, 229, 0.2))' }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="#6772e5"><path d="M13.962 8.885c-1.57-.403-2.22-.72-2.22-1.344 0-.54.512-.906 1.344-.906 1.62 0 2.394.885 2.454 1.155.06.326.357.545.673.545h.024c.42 0 .736-.375.666-.788-.236-1.393-1.554-2.296-3.144-2.296-1.5 0-2.88.75-2.88 2.35 0 1.545 1.14 2.23 2.805 2.656 1.635.405 2.145.78 2.145 1.44 0 .61-.63 1.05-1.5 1.05-1.89 0-2.82-1.12-2.92-1.44-.085-.296-.34-.492-.638-.492h-.032c-.44 0-.756.402-.647.828.32 1.253 1.683 2.502 4.237 2.502 1.59 0 3.03-.81 3.03-2.52 0-1.74-1.556-2.316-3.414-2.79zM6.5 10V8c0-.55-.45-1-1-1s-1 .45-1 1v7c0 .55.45 1 1 1s1-.45 1-1v-2h2c.55 0 1-.45 1-1s-.45-1-1-1h-2z"/></svg>
+            <span style={{ fontSize: '0.85rem', fontWeight: '900', color: 'white', letterSpacing: '0.1em' }}>STRIPE</span>
           </div>
-          {/* VOIP */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Phone size={20} color="white" />
-            <span style={{ fontSize: '0.8rem', fontWeight: '900', letterSpacing: '0.1em' }}>VOIP</span>
+          {/* OnlyFans */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', filter: 'drop-shadow(0 0 10px rgba(0, 175, 240, 0.2))' }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="#00aff0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 2c4.42 0 8 3.58 8 8s-3.58 8-8 8-8-3.58-8-8 3.58-8 8-8zm-1 4h2v2h-2V8zm0 4h2v6h-2v-6z"/></svg>
+            <span style={{ fontSize: '0.85rem', fontWeight: '900', color: 'white', letterSpacing: '0.1em' }}>ONLYFANS</span>
           </div>
-          {/* Crypto */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Database size={20} color="white" />
-            <span style={{ fontSize: '0.8rem', fontWeight: '900', letterSpacing: '0.1em' }}>CRYPTO</span>
+          {/* SMS Relay */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', filter: 'drop-shadow(0 0 10px rgba(59, 130, 246, 0.2))' }}>
+            <MessageSquare size={24} color="#3b82f6" />
+            <span style={{ fontSize: '0.85rem', fontWeight: '900', color: 'white', letterSpacing: '0.1em' }}>SMS RELAY</span>
           </div>
         </div>
       </section>
