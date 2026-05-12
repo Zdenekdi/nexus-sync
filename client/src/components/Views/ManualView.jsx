@@ -48,7 +48,7 @@ const StepCard = ({ num, title, desc, icon: Icon, delay = 0, onClick }) => (
 
     <div style={{ 
       width: '56px', height: '56px', borderRadius: '18px', 
-      background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.1) 100%)', 
+      background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)',
       color: '#60a5fa', 
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       boxShadow: '0 10px 20px -5px rgba(59, 130, 246, 0.2)'
@@ -58,7 +58,7 @@ const StepCard = ({ num, title, desc, icon: Icon, delay = 0, onClick }) => (
 
     <div>
       <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '1.4rem', fontWeight: '900', letterSpacing: '-0.01em' }}>{title}</h4>
-      <p style={{ margin: 0, color: 'rgba(255,255,255,0.5)', fontSize: '1rem', lineHeight: 1.6 }}>{desc}</p>
+      <p style={{ margin: 0, color: 'rgba(255,255,255,0.4)', fontSize: '1rem', lineHeight: 1.6 }}>{desc}</p>
     </div>
 
     {onClick && (
@@ -111,14 +111,18 @@ const ManualView = () => {
   return (
     <div style={{ padding: '6rem 2rem 10rem', maxWidth: '1200px', margin: '0 auto', position: 'relative' }}>
       
+      {/* BACKGROUND EFFECTS */}
+      <div style={{ position: 'absolute', top: '0', left: '50%', transform: 'translateX(-50%)', width: '100%', height: '100%', background: 'radial-gradient(circle at 50% -20%, rgba(59, 130, 246, 0.15), transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
+
       {/* HEADER */}
-      <header style={{ marginBottom: '6rem', textAlign: 'center' }}>
+      <header style={{ marginBottom: '6rem', textAlign: 'center', position: 'relative', zIndex: 1 }}>
         <div style={{ 
           display: 'inline-flex', alignItems: 'center', gap: '0.75rem', 
           padding: '0.6rem 1.5rem', background: 'rgba(59, 130, 246, 0.08)',
-          borderRadius: '30px', color: '#60a5fa', marginBottom: '2rem',
+          borderRadius: '30px', color: '#60a5fa', marginBottom: '2.5rem',
           border: '1px solid rgba(59, 130, 246, 0.2)',
-          fontSize: '0.75rem', fontWeight: '900', letterSpacing: '0.15em'
+          fontSize: '0.75rem', fontWeight: '900', letterSpacing: '0.15em',
+          textShadow: '0 0 10px rgba(59, 130, 246, 0.3)'
         }}>
           <Zap size={16} fill="currentColor" />
           {t.badge}
@@ -137,7 +141,7 @@ const ManualView = () => {
       </header>
 
       {/* STEPS GRID */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginBottom: '6rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginBottom: '6rem', position: 'relative', zIndex: 1 }}>
         {t.steps.map((step, idx) => (
           <StepCard 
             key={idx} 
@@ -152,7 +156,7 @@ const ManualView = () => {
       </div>
 
       {/* FINAL CTA */}
-      <div style={{ textAlign: 'center', animation: 'fadeInUp 1s ease-out 0.4s both' }}>
+      <div style={{ textAlign: 'center', animation: 'fadeInUp 1s ease-out 0.4s both', position: 'relative', zIndex: 1 }}>
         <button 
           onClick={() => handleNavigate('/register')}
           style={{ 
