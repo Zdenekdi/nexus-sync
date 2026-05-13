@@ -8,16 +8,16 @@ export async function doLogin(page, email, password) {
   console.log(`🔑 UI Login: ${email}...`);
 
   // Navigate to root
-  await page.goto('/', { waitUntil: 'load', timeout: 60000 });
+  await page.goto('/login', { waitUntil: 'load', timeout: 60000 }).catch(() => page.goto('/', { waitUntil: 'load' }));
 
   // Wait for either the login form or the onboarding screen
   // We use a combination of test-ids and roles for maximum robustness
-  const emailInput = page.getByTestId('login-email')
-    .or(page.getByPlaceholder(/name@agency.com/i))
-    .or(page.getByLabel(/email/i));
+  const emailInput = page.getByTestId('login-email');
+  const passwordInput = page.getByTestId('login-password');
+  const submitBtn = page.getByTestId('login-submit');
   
   // Potential landing/onboarding elements
-  const enterBtn = page.getByTestId('landing-enter-btn').or(page.getByRole('button', { name: /vstoupit do aplikace|enter application|open nexus|otevřít nexus/i }).first());
+  const enterBtn = page.getByTestId('landing-enter-btn').or(page.getByText(/vstoupit do aplikace|enter application|open nexus|otevřít nexus/i).first());
   const nextBtn = page.getByRole('button', { name: /pokračovat|continue/i }).first();
   const skipBtn = page.getByTestId('onboarding-skip').or(page.getByRole('button', { name: /přeskočit|skip/i }).first());
   const finishBtn = page.getByTestId('onboarding-finish').or(page.getByRole('button', { name: /dokončit|finish/i }).first());
@@ -28,6 +28,11 @@ export async function doLogin(page, email, password) {
   if (await enterBtn.isVisible().catch(() => false)) {
     console.log('🚀 Landing page detected, clicking enter...');
     await enterBtn.click();
+    // Wait for login screen to appear
+    await emailInput.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {
+      console.log('⚠️ Login screen did not appear after clicking enter, retrying click...');
+      return enterBtn.click();
+    });
   }
 
   // Handle Onboarding flow
@@ -50,17 +55,10 @@ export async function doLogin(page, email, password) {
 
   // Final wait for login form
   console.log('📧 Entering credentials...');
-  await emailInput.waitFor({ state: 'visible', timeout: 30000 });
-  await emailInput.fill(email);
-  
-  const passwordInput = page.getByTestId('login-password')
-    .or(page.getByPlaceholder(/••••••••/))
-    .or(page.getByLabel(/password|heslo/i));
-  await passwordInput.fill(password);
-  
-  const submitBtn = page.getByTestId('login-submit')
-    .or(page.getByRole('button', { name: /přihlásit se|sign in/i }));
-  await submitBtn.click();
+  await page.waitForSelector('[data-testid="login-email"]', { state: 'visible', timeout: 15000 });
+  await page.fill('[data-testid="login-email"]', email);
+  await page.fill('[data-testid="login-password"]', password);
+  await page.click('[data-testid="login-submit"]');
 
   // Verify successful login (wait for dashboard elements)
   console.log('🛰️ Verifying dashboard access...');

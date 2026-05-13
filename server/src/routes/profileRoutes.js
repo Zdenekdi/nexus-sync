@@ -12,5 +12,6 @@ router.patch('/:id/assignees', authMiddleware, validate(assignUsers), profileCon
 router.post('/:id/sync', authMiddleware, profileController.syncProfile);
 router.get('/:id/credentials', authMiddleware, profileController.getCredentials);
 router.post('/:id/credentials', authMiddleware, profileController.updateCredentials);
+router.post('/:id/boost', authMiddleware, profileController.boostProfile);
 
 module.exports = router;
