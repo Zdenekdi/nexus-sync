@@ -84,7 +84,7 @@ const HierarchyView = () => {
           cursor: pointer;
           position: relative;
           backdrop-filter: blur(12px);
-          z-index: 1;
+          z-index: 5;
           box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
         }
 
@@ -96,26 +96,13 @@ const HierarchyView = () => {
                       0 0 20px rgba(59, 130, 246, 0.1);
         }
 
-        .hierarchy-card::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: 24px;
-          padding: 1px;
-          background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent, rgba(255,255,255,0.05));
-          mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          pointer-events: none;
-        }
-
         .tier-label {
           font-size: 0.7rem;
           text-transform: uppercase;
           letter-spacing: 0.2em;
           color: rgba(255, 255, 255, 0.4);
           font-weight: 800;
-          margin-bottom: 2rem;
+          margin-bottom: 2.5rem;
           background: rgba(255, 255, 255, 0.02);
           padding: 0.5rem 1.5rem;
           border-radius: 30px;
@@ -123,9 +110,17 @@ const HierarchyView = () => {
           backdrop-filter: blur(5px);
         }
 
-        .connection-line {
-          background: linear-gradient(to bottom, rgba(59, 130, 246, 0.3), rgba(139, 92, 246, 0.1));
-          box-shadow: 0 0 10px rgba(59, 130, 246, 0.1);
+        .line-vertical {
+          width: 2px;
+          background: linear-gradient(to bottom, rgba(59, 130, 246, 0.4), rgba(59, 130, 246, 0.2));
+          box-shadow: 0 0 8px rgba(59, 130, 246, 0.15);
+        }
+
+        .line-horizontal {
+          height: 2px;
+          background: rgba(59, 130, 246, 0.2);
+          box-shadow: 0 0 8px rgba(59, 130, 246, 0.1);
+          border-radius: 2px;
         }
 
         .view-details-btn {
@@ -135,11 +130,12 @@ const HierarchyView = () => {
           background: linear-gradient(90deg, #3b82f6, #8b5cf6);
           color: white;
           border: none;
-          padding: 0.4rem 1rem;
-          border-radius: 12px;
-          font-size: 0.75rem;
-          font-weight: 700;
+          padding: 0.5rem 1.2rem;
+          border-radius: 14px;
+          font-size: 0.8rem;
+          font-weight: 800;
           margin-top: 0.5rem;
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
 
         .hierarchy-card:hover .view-details-btn {
@@ -170,7 +166,7 @@ const HierarchyView = () => {
           {t('teamHierarchy') || 'Hierarchie týmu'}
         </h2>
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: isMobile ? '0.95rem' : '1.2rem', maxWidth: '600px', margin: '0 auto' }}>
-          {t('teamHierarchyDesc') || 'Kompletní přehled struktury vaší agentury v reálném čase.'}
+          {t('teamHierarchyDesc') || 'Kompletní přehled struktury vaší agentury.'}
         </p>
       </div>
 
@@ -178,7 +174,7 @@ const HierarchyView = () => {
         display: 'flex', 
         flexDirection: 'column', 
         alignItems: 'center', 
-        gap: '0rem',
+        width: '100%',
         position: 'relative'
       }}>
         {activeTiers.map((tierName, index) => {
@@ -192,34 +188,50 @@ const HierarchyView = () => {
               alignItems: 'center', 
               position: 'relative', 
               width: '100%',
-              marginTop: index === 0 ? '0' : '3rem',
+              zIndex: 10 - index,
               animationDelay: `${index * 0.15}s`
             }}>
+              
+              {/* Vertical line from previous tier */}
+              {index > 0 && (
+                <div className="line-vertical" style={{ height: '2.5rem' }} />
+              )}
+
               <div className="tier-label">
                 {t(`roleLabels.${normalizeRole(tierName)}`) || tierName}
               </div>
+
+              {/* Horizontal connection line for multiple items */}
+              {usersInTier.length > 1 && (
+                <div style={{ position: 'relative', width: '80%', maxWidth: '1200px', height: '2px', marginBottom: '2.5rem' }}>
+                  <div className="line-horizontal" style={{ width: '100%' }} />
+                </div>
+              )}
 
               <div style={{ 
                 display: 'flex', 
                 flexWrap: 'wrap', 
                 justifyContent: 'center', 
-                gap: isMobile ? '1.2rem' : '3rem',
-                width: '100%'
+                gap: isMobile ? '1.2rem' : '4rem',
+                width: '100%',
+                marginBottom: '2rem'
               }}>
                 {usersInTier.map(user => (
-                  <div key={user.id} style={{ position: 'relative' }}>
-                    {/* Vertical line from top to card */}
-                    <div className="connection-line" style={{
-                      position: 'absolute',
-                      top: '-1.5rem',
-                      left: '50%',
-                      width: '2px',
-                      height: '1.5rem',
-                      display: index === 0 ? 'none' : 'block'
-                    }} />
+                  <div key={user.id} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    
+                    {/* Vertical line from horizontal bridge to card */}
+                    {index > 0 && (
+                      <div className="line-vertical" style={{
+                        position: 'absolute',
+                        top: usersInTier.length > 1 ? '-2.5rem' : '-2.5rem',
+                        height: '2.5rem'
+                      }} />
+                    )}
                     
                     <div className="hierarchy-card" onClick={() => {
-                      if (user.isProfileOnly) nexus.setActiveProfileId(user.id.replace('profile-', ''));
+                      const id = user.id.startsWith('profile-') ? user.id.replace('profile-', '') : user.id;
+                      nexus.setActiveProfileId(id);
+                      nexus.navigate('/profiles');
                     }}>
                       <div style={{ 
                         width: '72px', 
@@ -247,36 +259,18 @@ const HierarchyView = () => {
 
                       {isModelTier && (
                         <button className="view-details-btn">
-                          {t('viewProfile') || 'Profil'}
+                          {t('profile') || 'Profil'}
                         </button>
                       )}
                     </div>
+
+                    {/* Vertical line from card down to next tier bridge */}
+                    {index < activeTiers.length - 1 && usersInTier.length === 1 && (
+                      <div className="line-vertical" style={{ height: '3rem', marginTop: '0rem' }} />
+                    )}
                   </div>
                 ))}
               </div>
-
-              {/* Connector line to next tier */}
-              {index < activeTiers.length - 1 && (
-                <div style={{
-                  marginTop: '1.5rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  width: '100%'
-                }}>
-                  <div className="connection-line" style={{
-                    width: '2px',
-                    height: isMobile ? '1.5rem' : '2.5rem'
-                  }} />
-                  <div className="connection-line" style={{
-                    width: '85%',
-                    maxWidth: '1200px',
-                    height: '2px',
-                    borderRadius: '2px',
-                    opacity: 0.5
-                  }} />
-                </div>
-              )}
             </div>
           );
         })}
