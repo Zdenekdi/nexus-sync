@@ -18,7 +18,7 @@ import { usePermissions } from '../hooks/usePermissions';
 // API Configuration
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:5000'
-  : 'http://78.141.202.139/api';
+  : 'https://nexus-api.myvnc.com/api';
 
 /**
  * Main Provider for Nexus Hub.
