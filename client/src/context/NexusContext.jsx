@@ -263,14 +263,22 @@ export const NexusProvider = ({ children }) => {
   const myProfiles = useMemo(() => {
     const all = nexusData.profiles || [];
     if (!activeOperator) return [];
-    if (activeOperator.isAppOwner || activeOperator.isAdmin || activeOperator.isManager) return all;
     
-    // For operators, filter by assigned profiles
-    return all.filter(p => 
-      p.operatorIds?.includes(activeOperator.id) || 
-      p.operatorIds?.includes(activeOperator._id) ||
-      p.assignedOperatorIds?.includes(activeOperator.id)
-    );
+    // Admins, App Owners, Managers and Senior Operators usually see all profiles in this agency setup
+    if (activeOperator.isAppOwner || activeOperator.isAdmin || activeOperator.isManager || activeOperator.isSeniorOperator) {
+      return all;
+    }
+    
+    // For regular operators, filter by assigned profiles using multiple possible field names
+    return all.filter(p => {
+      const opId = activeOperator.id || activeOperator._id;
+      return (
+        p.operatorIds?.includes(opId) || 
+        p.assignedOperatorIds?.includes(opId) ||
+        p.assignees?.includes(opId) ||
+        (Array.isArray(p.operators) && p.operators.some(o => (o.id || o._id || o) === opId))
+      );
+    });
   }, [nexusData.profiles, activeOperator]);
 
   const navigateStable = useCallback((path, tab) => navigate(path, tab), [navigate]);
