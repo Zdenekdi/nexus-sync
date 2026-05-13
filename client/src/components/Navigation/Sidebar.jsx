@@ -89,7 +89,7 @@ const groups = {
 const Sidebar = () => {
   const nexus = useNexus();
   const { 
-    activeTab, setActiveTab, t, 
+    activeTab, setActiveTab, t, navigate,
     activeOperator, logout, isMobile, 
     totalUnread,
     activeProfile, setActiveProfileId, activeRole, _profiles,
