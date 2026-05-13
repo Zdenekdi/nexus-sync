@@ -92,11 +92,11 @@ const LoginView = ({ isCz, onSwitch }) => {
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         <InputGroup label={isCz ? 'E-mail' : 'Email'} icon={Mail}>
-          <StyledInput type="email" required placeholder="name@agency.com" value={email} onChange={e => setEmail(e.target.value)} />
+          <StyledInput data-testid="login-email" type="email" required placeholder="name@agency.com" value={email} onChange={e => setEmail(e.target.value)} />
         </InputGroup>
 
         <InputGroup label={isCz ? 'Heslo' : 'Password'} icon={Lock}>
-          <StyledInput type={showPassword ? 'text' : 'password'} required placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} />
+          <StyledInput data-testid="login-password" type={showPassword ? 'text' : 'password'} required placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} />
           <button 
             type="button" onClick={() => setShowPassword(!showPassword)}
             style={{ position: 'absolute', right: '1.25rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer' }}
@@ -105,7 +105,7 @@ const LoginView = ({ isCz, onSwitch }) => {
           </button>
         </InputGroup>
 
-        <PrimaryButton type="submit" loading={loading}>
+        <PrimaryButton data-testid="login-submit" type="submit" loading={loading}>
           {isCz ? 'Přihlásit se' : 'Sign In'} <ArrowRight size={20} />
         </PrimaryButton>
       </form>

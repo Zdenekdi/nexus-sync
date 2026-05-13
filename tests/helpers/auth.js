@@ -12,10 +12,12 @@ export async function doLogin(page, email, password) {
 
   // Wait for either the login form or the onboarding screen
   // We use a combination of test-ids and roles for maximum robustness
-  const emailInput = page.getByTestId('login-email');
+  const emailInput = page.getByTestId('login-email')
+    .or(page.getByPlaceholder(/name@agency.com/i))
+    .or(page.getByLabel(/email/i));
   
   // Potential landing/onboarding elements
-  const enterBtn = page.getByTestId('landing-enter-btn').or(page.getByRole('button', { name: /vstoupit do aplikace|enter application/i }).first());
+  const enterBtn = page.getByTestId('landing-enter-btn').or(page.getByRole('button', { name: /vstoupit do aplikace|enter application|open nexus|otevřít nexus/i }).first());
   const nextBtn = page.getByRole('button', { name: /pokračovat|continue/i }).first();
   const skipBtn = page.getByTestId('onboarding-skip').or(page.getByRole('button', { name: /přeskočit|skip/i }).first());
   const finishBtn = page.getByTestId('onboarding-finish').or(page.getByRole('button', { name: /dokončit|finish/i }).first());
@@ -51,10 +53,14 @@ export async function doLogin(page, email, password) {
   await emailInput.waitFor({ state: 'visible', timeout: 30000 });
   await emailInput.fill(email);
   
-  const passwordInput = page.getByTestId('login-password');
+  const passwordInput = page.getByTestId('login-password')
+    .or(page.getByPlaceholder(/••••••••/))
+    .or(page.getByLabel(/password|heslo/i));
   await passwordInput.fill(password);
   
-  await page.getByTestId('login-submit').click();
+  const submitBtn = page.getByTestId('login-submit')
+    .or(page.getByRole('button', { name: /přihlásit se|sign in/i }));
+  await submitBtn.click();
 
   // Verify successful login (wait for dashboard elements)
   console.log('🛰️ Verifying dashboard access...');
