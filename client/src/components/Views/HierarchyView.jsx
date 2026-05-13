@@ -97,17 +97,19 @@ const HierarchyView = () => {
         }
 
         .tier-label {
-          font-size: 0.7rem;
+          font-size: 0.65rem;
           text-transform: uppercase;
-          letter-spacing: 0.2em;
-          color: rgba(255, 255, 255, 0.4);
-          font-weight: 800;
-          margin-bottom: 2.5rem;
-          background: rgba(255, 255, 255, 0.02);
-          padding: 0.5rem 1.5rem;
+          letter-spacing: 0.25em;
+          color: rgba(255, 255, 255, 0.6);
+          font-weight: 900;
+          background: #0a0c10;
+          padding: 0.4rem 1.2rem;
           border-radius: 30px;
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          backdrop-filter: blur(5px);
+          border: 1px solid rgba(59, 130, 246, 0.3);
+          backdrop-filter: blur(10px);
+          z-index: 10;
+          white-space: nowrap;
+          box-shadow: 0 0 15px rgba(59, 130, 246, 0.1);
         }
 
         .line-vertical {
@@ -192,13 +194,20 @@ const HierarchyView = () => {
               animationDelay: `${index * 0.15}s`
             }}>
               
-              {/* Vertical line from previous tier */}
-              {index > 0 && (
-                <div className="line-vertical" style={{ height: '2.5rem' }} />
-              )}
-
-              <div className="tier-label">
-                {t(`roleLabels.${normalizeRole(tierName)}`) || tierName}
+              {/* Continuous vertical line container with label inside */}
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                width: '100%',
+                position: 'relative',
+                marginBottom: '2rem'
+              }}>
+                <div className="line-vertical" style={{ height: '5rem', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                   <div className="tier-label" style={{ position: 'absolute' }}>
+                    {t(`roleLabels.${normalizeRole(tierName)}`) || tierName}
+                  </div>
+                </div>
               </div>
 
               {/* Horizontal connection line for multiple items */}
