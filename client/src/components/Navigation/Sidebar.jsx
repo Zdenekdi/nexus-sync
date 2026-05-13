@@ -366,7 +366,7 @@ const Sidebar = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {(activeOperator?.isAppOwner || isAllowed('agencies')) ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0rem' }}>
-                  <SidebarSection id="global" label={activeOperator?.isAppOwner ? t('navSections.globalManagement') : t('navSections.myAgency')} isOpen={sectionsOpen.global} onToggle={toggleSection} isSidebarCollapsed={isSidebarCollapsed}>
+                  <SidebarSection id="global" label={activeOperator?.isAppOwner ? (t('navSections.globalManagement') || 'Globální správa') : (t('navSections.myAgency') || 'Moje agentura')} isOpen={sectionsOpen.global} onToggle={toggleSection} isSidebarCollapsed={isSidebarCollapsed}>
                     {[
                       { id: 'agencies', icon: Building2, label: t('agencies'), perm: 'agencies' },
                       { id: 'infra', icon: Activity, label: t('infra'), perm: 'infrastructure' },
@@ -381,21 +381,23 @@ const Sidebar = () => {
                     ))}
                   </SidebarSection>
 
-                  <SidebarSection id="config" label={t('navSections.systemConfiguration')} isOpen={sectionsOpen.config} onToggle={toggleSection} isSidebarCollapsed={isSidebarCollapsed}>
-                    {[
-                      { id: 'permissions', icon: Shield, label: t('permissions') },
-                      { id: 'plans', icon: CreditCard, label: t('plansManagement') },
-                      { id: 'features', icon: Zap, label: t('features') },
-                      { id: 'docs', icon: FileSearch, label: t('documentation') },
-                    ].map(item => (
-                      <TooltipItem key={item.id} label={capitalize(item.label)} isMobile={isMobile} isSidebarCollapsed={isSidebarCollapsed}>
-                        <button data-testid={`nav-link-${item.id}`} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
-                          <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
-                          {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(item.label)}</span>}
-                        </button>
-                      </TooltipItem>
-                    ))}
-                  </SidebarSection>
+                  {activeOperator?.isAppOwner && (
+                    <SidebarSection id="config" label={t('navSections.systemConfiguration') || 'Konfigurace systému'} isOpen={sectionsOpen.config} onToggle={toggleSection} isSidebarCollapsed={isSidebarCollapsed}>
+                      {[
+                        { id: 'permissions', icon: Shield, label: t('permissions') },
+                        { id: 'plans', icon: CreditCard, label: t('plansManagement') },
+                        { id: 'features', icon: Zap, label: t('features') },
+                        { id: 'docs', icon: FileSearch, label: t('documentation') },
+                      ].map(item => (
+                        <TooltipItem key={item.id} label={capitalize(item.label)} isMobile={isMobile} isSidebarCollapsed={isSidebarCollapsed}>
+                          <button data-testid={`nav-link-${item.id}`} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
+                            <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
+                            {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(item.label)}</span>}
+                          </button>
+                        </TooltipItem>
+                      ))}
+                    </SidebarSection>
+                  )}
                 </div>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0rem' }}>
