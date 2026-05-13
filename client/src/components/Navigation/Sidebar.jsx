@@ -172,7 +172,8 @@ const Sidebar = () => {
   }, [activeTab, storageKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleNavigation = (tabId) => {
-    setActiveTab(tabId);
+    // Update both state and URL path
+    navigate(`/${tabId}`);
     if (isMobile) setIsSidebarOpen(false);
   };
 
@@ -363,14 +364,14 @@ const Sidebar = () => {
         {/* Navigation */}
         <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1.5rem' }} className="custom-scrollbar">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {activeOperator?.isAppOwner ? (
+            {(activeOperator?.isAppOwner || isAllowed('agencies')) ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0rem' }}>
-                  <SidebarSection id="global" label={t('navSections.globalManagement')} isOpen={sectionsOpen.global} onToggle={toggleSection} isSidebarCollapsed={isSidebarCollapsed}>
+                  <SidebarSection id="global" label={activeOperator?.isAppOwner ? t('navSections.globalManagement') : t('navSections.myAgency')} isOpen={sectionsOpen.global} onToggle={toggleSection} isSidebarCollapsed={isSidebarCollapsed}>
                     {[
-                      { id: 'agencies', icon: Building2, label: t('agencies') },
-                      { id: 'infra', icon: Activity, label: t('infra') },
-                      { id: 'maintenance', icon: HardDrive, label: t('maintenance') },
-                    ].map(item => (
+                      { id: 'agencies', icon: Building2, label: t('agencies'), perm: 'agencies' },
+                      { id: 'infra', icon: Activity, label: t('infra'), perm: 'infrastructure' },
+                      { id: 'maintenance', icon: HardDrive, label: t('maintenance'), perm: 'maintenance' },
+                    ].filter(item => activeOperator?.isAppOwner || isAllowed(item.perm)).map(item => (
                       <TooltipItem key={item.id} label={capitalize(item.label)} isMobile={isMobile} isSidebarCollapsed={isSidebarCollapsed}>
                         <button data-testid={`nav-link-${item.id}`} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
                           <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
