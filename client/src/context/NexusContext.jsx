@@ -224,15 +224,17 @@ export const NexusProvider = ({ children }) => {
 
   const memoizedSetActiveOperator = useCallback((op) => setActiveOperatorState(op), []);
   const memoizedSetMessages = useCallback((msgs) => setMessages(msgs), []);
+  const memoizedNormalizeProfileId = useCallback((id) => id, []);
+  const memoizedNoop = useCallback(() => {}, []);
 
   const nexusData = useNexusData({
     token, isLoggedIn, API_BASE, activeProfileId,
     setActiveOperator: memoizedSetActiveOperator,
-    normalizeProfileId: (id) => id,
+    normalizeProfileId: memoizedNormalizeProfileId,
     setMessages: memoizedSetMessages,
-    setActiveSafetySession: () => {},
-    setIsTimerActive: () => {},
-    setTimeLeft: () => {},
+    setActiveSafetySession: memoizedNoop,
+    setIsTimerActive: memoizedNoop,
+    setTimeLeft: memoizedNoop,
     showToast, lang
   });
 
