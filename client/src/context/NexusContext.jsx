@@ -255,14 +255,15 @@ export const NexusProvider = ({ children }) => {
   const activeOperator = useMemo(() => {
     const raw = activeOperatorState || authUser;
     if (!raw) return null;
+    const role = String(raw.role || '').toUpperCase().replace(/\s+/g, '_');
     return {
       ...raw,
-      isAppOwner: raw.role === 'APP_OWNER',
-      isAdmin: raw.role === 'ADMIN',
-      isManager: raw.role === 'MANAGER',
-      isSeniorOperator: raw.role === 'SENIOR_OPERATOR',
-      isOperator: raw.role === 'OPERATOR',
-      isModel: raw.role === 'MODEL'
+      isAppOwner: role === 'APP_OWNER',
+      isAdmin: role === 'ADMIN' || role === 'AGENCY_ADMIN',
+      isManager: role === 'MANAGER',
+      isSeniorOperator: role === 'SENIOR_OPERATOR' || role === 'SENIOR_OPERÁTOR',
+      isOperator: role === 'OPERATOR',
+      isModel: role === 'MODEL'
     };
   }, [activeOperatorState, authUser]);
 
@@ -305,6 +306,12 @@ export const NexusProvider = ({ children }) => {
     
     // Admins, App Owners, Managers and Senior Operators usually see all profiles in this agency setup
     if (activeOperator.isAppOwner || activeOperator.isAdmin || activeOperator.isManager || activeOperator.isSeniorOperator) {
+      return all;
+    }
+    
+    // Explicit role string check as safety fallback
+    const role = String(activeOperator.role || '').toUpperCase().replace(/\s+/g, '_');
+    if (['ADMIN', 'AGENCY_ADMIN', 'APP_OWNER', 'MANAGER', 'SENIOR_OPERATOR', 'SENIOR_OPERÁTOR'].includes(role)) {
       return all;
     }
     

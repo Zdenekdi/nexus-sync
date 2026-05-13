@@ -170,7 +170,10 @@ export function useChatLogic({
     };
 
     const effectiveActiveProfileId = normalizeProfileId(activeProfileId ?? activeOperator?.profileId ?? null);
-    const base = (messages || []).filter(m => normalizeProfileId(m.profileId) === effectiveActiveProfileId);
+    const base = (messages || []).filter(m => {
+      if (effectiveActiveProfileId === 'all') return true;
+      return normalizeProfileId(m.profileId) === effectiveActiveProfileId;
+    });
     return [...base].sort((a, b) => toTimestamp(b) - toTimestamp(a));
   }, [messages, activeProfileId, activeOperator?.profileId, normalizeProfileId]);
 
