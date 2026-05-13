@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   Search, MessageSquare, Phone, Clock, Link, Globe, Shield, Check, 
   Zap, Calendar, ChevronDown, ChevronLeft, ChevronRight, PlusCircle, 
-  Signal, MoreVertical, StickyNote, Languages, Sparkles, Loader2, RefreshCw, UserCheck, X
+  Signal, MoreVertical, StickyNote, Languages, Sparkles, Loader2, RefreshCw, UserCheck, X, Lock
 } from 'lucide-react';
 
 import { useNexus } from '../../context/ContextHook';
