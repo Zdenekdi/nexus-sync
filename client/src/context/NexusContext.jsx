@@ -123,7 +123,8 @@ export const NexusProvider = ({ children }) => {
       else setActiveTab('dashboard');
     } else {
       setShowLanding(false);
-      const tab = p.substring(1);
+      // Extract tab ID from path (e.g. /hierarchy -> hierarchy)
+      const tab = p.split('/')[1] || p.substring(1);
       
       // Handle special auth routes
       if (tab === 'register') {
@@ -132,7 +133,7 @@ export const NexusProvider = ({ children }) => {
         setAuthInitialTab('login');
       }
       
-      if (tab && tab !== 'login' && tab !== 'register' && tab !== 'dashboard') {
+      if (tab && tab !== 'login' && tab !== 'register') {
         setActiveTab(tab);
       }
     }
@@ -298,16 +299,18 @@ export const NexusProvider = ({ children }) => {
     chatScrollRef, isUserScrolled, showToast, _toasts,
     isAllowed, activeRole: normalizedRole,
     activeProfile, activeProfileId, setActiveProfileId, 
-    myProfiles, _profiles: nexusData.profiles,
+    myProfiles, profiles: nexusData.profiles, _profiles: nexusData.profiles,
+    operators: nexusData.operators,
     onlineOnly, setOnlineOnly,
     totalUnread: messages.filter(m => m.status === 'unread').length
   }), [
-    t, lang, activeTab, activeMarket, pathname, navigateStable, authInitialTab, 
+    t, lang, activeTab, setActiveTab, activeMarket, pathname, navigateStable, authInitialTab, 
     nexusData.isDataLoading, activeOperator, isLoggedIn, token, logout, handleLogin,
     showLanding, hasSeenOnboarding, showOnboarding, isMobile, isNativeApp, isSidebarOpen, isSidebarCollapsed,
     messages, selectedChatId, messageValue, isEditProfileOpen, isAddAgencyOpen,
     isAddUserOpen, isBugReportOpen, agencyDetailModalData, calViewDate, showPanicConfirm, _toasts,
-    isAllowed, normalizedRole, activeProfile, activeProfileId, myProfiles, nexusData.profiles, onlineOnly
+    isAllowed, normalizedRole, activeProfile, activeProfileId, myProfiles, nexusData.profiles, 
+    nexusData.operators, onlineOnly
   ]);
 
   return (
