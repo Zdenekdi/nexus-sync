@@ -339,6 +339,7 @@ export const NexusProvider = ({ children }) => {
     activeProfile, activeProfileId, setActiveProfileId, 
     myProfiles, profiles: nexusData.profiles, _profiles: nexusData.profiles,
     operators: nexusData.operators,
+    agencies: nexusData.agencies,
     onlineOnly, setOnlineOnly,
     totalUnread: messages.filter(m => m.status === 'unread').length,
     // Chat Logic
@@ -353,7 +354,7 @@ export const NexusProvider = ({ children }) => {
     messages, selectedChatId, messageValue, isEditProfileOpen, isAddAgencyOpen,
     isAddUserOpen, isBugReportOpen, agencyDetailModalData, calViewDate, showPanicConfirm, _toasts,
     isAllowed, normalizedRole, activeProfile, activeProfileId, myProfiles, nexusData.profiles, 
-    nexusData.operators, onlineOnly,
+    nexusData.operators, nexusData.agencies, onlineOnly,
     // Chat Logic Deps
     chatMessages, isHistoryLoading, fetchChatMessages, handleSendMessage,
     handleSaveNote, clientNotes, internalNote, setInternalNote,

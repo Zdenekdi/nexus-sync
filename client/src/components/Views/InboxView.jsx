@@ -32,7 +32,7 @@ const InboxView = () => {
     handleDeleteNote = () => {}, startCall = () => {}, showToast = () => {}, handleSyncChatHistory = () => {},
     loading: isInitialLoading = false,
     initData: refreshData = () => {}, isBackgroundLoading = false, fetchClientByPhone = () => {},
-    setActiveTab = () => {}
+    setActiveTab = () => {}, agencies = []
   } = nexus;
 
   const omnichannel = useOmnichannel({
