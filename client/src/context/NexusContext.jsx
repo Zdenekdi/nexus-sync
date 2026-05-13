@@ -12,6 +12,7 @@ import { WhatsAppAdapter } from '../services/communication/WhatsAppAdapter';
 import { SMSAdapter } from '../services/communication/SMSAdapter';
 import { WebChatAdapter } from '../services/communication/WebChatAdapter';
 import { TRANSLATIONS } from '../translations';
+import { NexusContext } from './ContextObject';
 import { usePermissions } from '../hooks/usePermissions';
 import { useChatLogic } from '../hooks/useChatLogic';
 
