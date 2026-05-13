@@ -288,8 +288,8 @@ export const NexusProvider = ({ children }) => {
 
   const { 
     chatMessages, fetchChatMessages, handleSendMessage,
-    handleSaveNote, clientNotes, internalNote, setInternalNote,
-    setActiveContactId, selectedChat
+    handleSaveNote, handleDeleteNote, handleTranslate, clientNotes, internalNote, setInternalNote,
+    filteredMessages, setActiveContactId, selectedChat, typingProfiles
   } = chatLogic;
 
   // --- 5. PERMISSIONS & PROFILES ---
@@ -351,8 +351,8 @@ export const NexusProvider = ({ children }) => {
     totalUnread: messages.filter(m => m.status === 'unread').length,
     // Chat Logic
     chatMessages, isHistoryLoading, fetchChatMessages, handleSendMessage,
-    handleSaveNote, clientNotes, internalNote, setInternalNote,
-    setActiveContactId, selectedChat,
+    handleSaveNote, handleDeleteNote, handleTranslate, clientNotes, internalNote, setInternalNote,
+    filteredMessages, setActiveContactId, selectedChat, typingProfiles,
     handleSyncChatHistory: nexusData.handleSyncChatHistory
   }), [
     t, lang, activeTab, setActiveTab, activeMarket, pathname, navigateStable, authInitialTab, 
@@ -364,8 +364,9 @@ export const NexusProvider = ({ children }) => {
     nexusData.operators, nexusData.agencies, onlineOnly,
     // Chat Logic Deps
     chatMessages, isHistoryLoading, fetchChatMessages, handleSendMessage,
-    handleSaveNote, clientNotes, internalNote, setInternalNote,
-    setActiveContactId, selectedChat, nexusData.handleSyncChatHistory
+    handleSaveNote, handleDeleteNote, handleTranslate, clientNotes, internalNote, setInternalNote,
+    filteredMessages, setActiveContactId, selectedChat, typingProfiles,
+    nexusData.handleSyncChatHistory
   ]);
 
   return (
