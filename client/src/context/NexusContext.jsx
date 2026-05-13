@@ -140,7 +140,19 @@ export const NexusProvider = ({ children }) => {
     
     if (pathname.startsWith('/en')) setLang('en');
     else if (pathname.startsWith('/cz')) setLang('cz');
+    
+    // Save to localStorage for persistence
+    localStorage.setItem('nexus_active_tab', p.split('/')[1] || p.substring(1) || 'dashboard');
   }, [pathname]);
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      setPathname(window.location.pathname);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(() => localStorage.getItem('nexus_hasSeenOnboarding') === 'true');
   const [showOnboarding, setShowOnboarding] = useState(false);

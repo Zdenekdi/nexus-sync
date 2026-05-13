@@ -4,7 +4,7 @@ import {
   Settings, Activity, Radio, Globe, Smartphone, FileSearch, 
   Shield, ShieldCheck, Building2, HardDrive, CreditCard, Zap, UserCheck,
   LogOut, Menu, X, Circle, Package as PackageIcon, Gift, Wallet,
-  ChevronDown, ChevronRight, BookOpen, Terminal
+  ChevronDown, ChevronRight, BookOpen, Terminal, GitGraph
 } from 'lucide-react';
 import { useNexus } from '../../context/ContextHook';
 
@@ -200,6 +200,10 @@ const Sidebar = () => {
     'OPERATOR': 'Operátor',
     'Model': 'Modelka',
     'MODEL': 'Modelka',
+    'Profily': 'Profily',
+    'Profiles': 'Profily',
+    'PROFILY': 'Profily',
+    'PROFILŮ': 'Profily',
     'App Owner': 'Vlastník Aplikace',
     'APP OWNER': 'Vlastník Aplikace'
   };
@@ -421,8 +425,8 @@ const Sidebar = () => {
                       {[
                         { id: 'inbox', icon: MessageSquare, label: t('messages'), badge: totalUnread, perm: 'messaging' },
                         { id: 'calendar', icon: Calendar, label: t('schedule'), perm: 'calendar' },
-                        { id: 'profiles', icon: Users, label: t('profiles'), perm: 'profiles' },
-                        { id: 'hierarchy', icon: Users, label: t('hierarchy'), perm: 'hierarchy' },
+                        { id: 'profiles', icon: Users, label: t('profiles') || 'Profily', perm: 'profiles' },
+                        { id: 'hierarchy', icon: GitGraph, label: t('hierarchy'), perm: 'hierarchy' },
                         { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub' },
                         { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles' },
                       ].filter(item => !item.perm || isAllowed(item.perm)).map(item => (
