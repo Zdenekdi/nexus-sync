@@ -5,7 +5,9 @@
  */
 
 export async function setupApiMocks(page) {
-  await page.route('**/api/auth/login', async route => {
+  const context = page.context();
+
+  await context.route(url => url.toString().includes('/api/auth/login'), async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -16,7 +18,7 @@ export async function setupApiMocks(page) {
     });
   });
 
-  await page.route('**/api/inventory/**', async route => {
+  await context.route('**/api/inventory/**', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -27,7 +29,7 @@ export async function setupApiMocks(page) {
     });
   });
 
-  await page.route('**/api/safety/settings', async route => {
+  await context.route('**/api/safety/settings', async route => {
     if (route.request().method() === 'GET') {
       await route.fulfill({
         status: 200,
@@ -39,7 +41,7 @@ export async function setupApiMocks(page) {
     }
   });
 
-  await page.route('**/api/profiles', async route => {
+  await context.route('**/api/profiles', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -50,7 +52,7 @@ export async function setupApiMocks(page) {
     });
   });
 
-  await page.route('**/api/safety/sessions/summary', async route => {
+  await context.route('**/api/safety/sessions/summary', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -58,7 +60,7 @@ export async function setupApiMocks(page) {
     });
   });
 
-  await page.route('**/api/safety/sessions', async route => {
+  await context.route('**/api/safety/sessions', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -68,7 +70,7 @@ export async function setupApiMocks(page) {
     });
   });
 
-  await page.route('**/api/chat/conversations', async route => {
+  await context.route('**/api/chat/conversations', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -78,7 +80,7 @@ export async function setupApiMocks(page) {
     });
   });
 
-  await page.route('**/api/messages/**', async route => {
+  await context.route('**/api/messages/**', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -89,7 +91,7 @@ export async function setupApiMocks(page) {
   });
 
   // Default fallback for other API calls to prevent 404s
-  await page.route('**/api/**', async route => {
+  await context.route('**/api/**', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
