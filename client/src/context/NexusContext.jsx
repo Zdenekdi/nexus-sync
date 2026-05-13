@@ -12,8 +12,8 @@ import { WhatsAppAdapter } from '../services/communication/WhatsAppAdapter';
 import { SMSAdapter } from '../services/communication/SMSAdapter';
 import { WebChatAdapter } from '../services/communication/WebChatAdapter';
 import { TRANSLATIONS } from '../translations';
-import { NexusContext } from './ContextObject';
 import { usePermissions } from '../hooks/usePermissions';
+import { useChatLogic } from '../hooks/useChatLogic';
 
 // API Configuration
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -265,7 +265,32 @@ export const NexusProvider = ({ children }) => {
     };
   }, [activeOperatorState, authUser]);
 
-  // --- 4. PERMISSIONS & PROFILES ---
+  // --- 4. CHAT & MESSAGING LOGIC ---
+  const chatLogic = useChatLogic({
+    token,
+    API_BASE,
+    activeOperator,
+    activeProfileId,
+    _showToast: showToast,
+    t,
+    addNotification: (n) => showToast(n.message, n.type === '_err' ? 'error' : 'info'),
+    _playNotificationSound: () => {},
+    profiles: nexusData.profiles,
+    messages,
+    setMessages,
+    selectedChatId,
+    setSelectedChatId,
+    isHistoryLoading,
+    setIsHistoryLoading
+  });
+
+  const { 
+    chatMessages, fetchChatMessages, handleSendMessage,
+    handleSaveNote, clientNotes, internalNote, setInternalNote,
+    setActiveContactId, selectedChat
+  } = chatLogic;
+
+  // --- 5. PERMISSIONS & PROFILES ---
   const { isAllowed, activeRole: normalizedRole } = usePermissions(activeOperator, activeOperator?.permissions);
 
   const activeProfile = useMemo(() => {
@@ -314,7 +339,12 @@ export const NexusProvider = ({ children }) => {
     myProfiles, profiles: nexusData.profiles, _profiles: nexusData.profiles,
     operators: nexusData.operators,
     onlineOnly, setOnlineOnly,
-    totalUnread: messages.filter(m => m.status === 'unread').length
+    totalUnread: messages.filter(m => m.status === 'unread').length,
+    // Chat Logic
+    chatMessages, isHistoryLoading, fetchChatMessages, handleSendMessage,
+    handleSaveNote, clientNotes, internalNote, setInternalNote,
+    setActiveContactId, selectedChat,
+    handleSyncChatHistory: nexusData.handleSyncChatHistory
   }), [
     t, lang, activeTab, setActiveTab, activeMarket, pathname, navigateStable, authInitialTab, 
     nexusData.isDataLoading, activeOperator, isLoggedIn, token, logout, handleLogin,
@@ -322,7 +352,11 @@ export const NexusProvider = ({ children }) => {
     messages, selectedChatId, messageValue, isEditProfileOpen, isAddAgencyOpen,
     isAddUserOpen, isBugReportOpen, agencyDetailModalData, calViewDate, showPanicConfirm, _toasts,
     isAllowed, normalizedRole, activeProfile, activeProfileId, myProfiles, nexusData.profiles, 
-    nexusData.operators, onlineOnly
+    nexusData.operators, onlineOnly,
+    // Chat Logic Deps
+    chatMessages, isHistoryLoading, fetchChatMessages, handleSendMessage,
+    handleSaveNote, clientNotes, internalNote, setInternalNote,
+    setActiveContactId, selectedChat, nexusData.handleSyncChatHistory
   ]);
 
   return (

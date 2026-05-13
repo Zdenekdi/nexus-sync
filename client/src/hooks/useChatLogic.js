@@ -16,15 +16,16 @@ export function useChatLogic({
   _playNotificationSound,
   profiles,
   messages,
-  setMessages
+  setMessages,
+  selectedChatId,
+  setSelectedChatId,
+  isHistoryLoading,
+  setIsHistoryLoading
 }) {
   // --- States ---
   // messages state is now passed from NexusContext
   const [chatMessages, setChatMessages] = useState([]);
-  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
-  const [selectedChatId, setSelectedChatId] = useState(() => 
-    localStorage.getItem('nexus_lastSelectedChatId') || null
-  );
+  // isHistoryLoading and selectedChatId are now passed from props
   const [typingProfiles, setTypingProfiles] = useState({});
   const [detectedMeeting, setDetectedMeeting] = useState(null);
   const [messageValue, setMessageValue] = useState('');
