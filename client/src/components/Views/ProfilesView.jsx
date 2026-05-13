@@ -39,6 +39,28 @@ const ProfilesView = () => {
   const currentAssigningProfile = assigningProfile || localAssigningProfile;
   const setCurrentAssigningProfile = setAssigningProfile || setLocalAssigningProfile;
 
+  // Auto-scroll to active profile if coming from hierarchy
+  const { activeProfileId } = nexus;
+  React.useEffect(() => {
+    if (activeProfileId && activeProfileId !== 'all') {
+      const timer = setTimeout(() => {
+        const element = document.getElementById(`profile-card-${activeProfileId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          element.style.ring = '4px solid var(--accent-color)';
+          element.style.boxShadow = '0 0 30px rgba(59, 130, 246, 0.5)';
+          
+          // Remove highlight after a few seconds
+          setTimeout(() => {
+            element.style.ring = 'none';
+            element.style.boxShadow = '';
+          }, 3000);
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [activeProfileId]);
+
   const fetchAndShowCreds = async (profileId) => {
     setFetchingCreds(true);
     try {
@@ -129,7 +151,7 @@ const ProfilesView = () => {
           const canManage = activeRole === 'App Owner' || activeRole === 'Agency Manager' || activeRole === 'Agency Admin' || activeOperator?.role?.isManager;
 
           return (
-            <div key={i} data-testid={`profile-card-${profile.id}`} className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2rem', display: 'flex', gap: isMobile ? '1.5rem' : '2.5rem', borderColor: isMyProfile ? 'rgba(59, 130, 246, 0.4)' : 'var(--card-border)', flexDirection: isMobile ? 'column' : 'row' }}>
+            <div key={i} id={`profile-card-${profile.id}`} data-testid={`profile-card-${profile.id}`} className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2rem', display: 'flex', gap: isMobile ? '1.5rem' : '2.5rem', borderColor: isMyProfile ? 'rgba(59, 130, 246, 0.4)' : 'var(--card-border)', flexDirection: isMobile ? 'column' : 'row' }}>
               <div style={{ flex: isMobile ? '1 1 auto' : '0 0 250px' }}>
                 <div style={{ fontSize: '1.75rem', fontWeight: '900', marginBottom: '0.5rem' }}>{profile.name}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.5rem' }}>
