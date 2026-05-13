@@ -86,7 +86,7 @@ export const DEFAULT_ROLE_PERMISSIONS = {
   },
   'Senior Operator': {
     infrastructure: false,
-    agencies: true,
+    agencies: false,
     permissions: false,
     plans: false,
     global_features: false,

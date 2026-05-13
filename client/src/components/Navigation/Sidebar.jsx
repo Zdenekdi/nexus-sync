@@ -364,9 +364,9 @@ const Sidebar = () => {
         {/* Navigation */}
         <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1.5rem' }} className="custom-scrollbar">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {(activeOperator?.isAppOwner || isAllowed('agencies')) ? (
+            {activeOperator?.isAppOwner ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0rem' }}>
-                  <SidebarSection id="global" label={activeOperator?.isAppOwner ? (t('navSections.globalManagement') || 'Globální správa') : (t('navSections.myAgency') || 'Moje agentura')} isOpen={sectionsOpen.global} onToggle={toggleSection} isSidebarCollapsed={isSidebarCollapsed}>
+                  <SidebarSection id="global" label={t('navSections.globalManagement')} isOpen={sectionsOpen.global} onToggle={toggleSection} isSidebarCollapsed={isSidebarCollapsed}>
                     {[
                       { id: 'agencies', icon: Building2, label: t('agencies'), perm: 'agencies' },
                       { id: 'infra', icon: Activity, label: t('infra'), perm: 'infrastructure' },
