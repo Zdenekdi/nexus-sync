@@ -185,3 +185,41 @@ exports.getCredentials = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+exports.boostProfile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { agencyId } = req.user;
+    const { platform } = req.body;
+
+    const profile = await prisma.profile.findUnique({ where: { id } });
+    if (!profile) return res.status(404).json({ message: 'Not found' });
+
+    let decryptedCredentials = null;
+    if (profile.credentials) {
+      const decryptedString = decrypt(profile.credentials);
+      if (decryptedString) decryptedCredentials = JSON.parse(decryptedString);
+    }
+
+    const data = parseData(profile.data);
+    const automationSettings = data.awAutomation || {};
+
+    const io = getIO();
+    io.to(`agency_${agencyId}`).emit('relay_command', { 
+      type: 'BOOST_WEB_PROFILE', 
+      profileId: id, 
+      payload: { 
+        name: profile.name, 
+        credentials: decryptedCredentials, 
+        platform,
+        settings: automationSettings,
+        adsPowerId: decryptedCredentials?.adsPowerId || profile.adsPowerId
+      } 
+    });
+
+    res.json({ ok: true, message: 'Boost command sent to local agent' });
+  } catch (error) {
+    logger.error('[Profiles] Boost error:', error);
+    res.status(500).json({ message: 'Failed to start boost' });
+  }
+};

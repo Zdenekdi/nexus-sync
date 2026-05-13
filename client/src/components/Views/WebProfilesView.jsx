@@ -47,6 +47,12 @@ const WebProfilesView = () => {
   const [platformPass, setPlatformPass] = useState('');
   const [proxyConfig, setProxyConfig] = useState('');
 
+  // AdultWork Specific Automation Settings
+  const [awAutoAvailable, setAwAutoAvailable] = useState(false);
+  const [awRotatePhotos, setAwRotatePhotos] = useState(false);
+  const [awTweakSummary, setAwTweakSummary] = useState(false);
+  const [awAutoLogin, setAwAutoLogin] = useState(false);
+
   // Update fields when activeProfile changes
   useEffect(() => {
     if (activeProfile) {
@@ -67,6 +73,13 @@ const WebProfilesView = () => {
       setPlatformUser('');
       setPlatformPass('');
       setProxyConfig('');
+
+      // Load automation settings
+      const awSettings = activeProfile.data?.awAutomation || {};
+      setAwAutoAvailable(awSettings.autoAvailable || false);
+      setAwRotatePhotos(awSettings.rotatePhotos || false);
+      setAwTweakSummary(awSettings.tweakSummary || false);
+      setAwAutoLogin(awSettings.autoLogin || false);
     }
   }, [activeProfileId, activeProfile]);
 
@@ -104,6 +117,41 @@ const WebProfilesView = () => {
     };
 
     await handleSaveCredentials(credentials);
+  };
+
+  const onToggleAWAutomation = async (type, val) => {
+    if (!activeProfileId) return;
+    try {
+      const currentAW = activeProfile.data?.awAutomation || {};
+      const newAW = { ...currentAW, [type]: val };
+      
+      await axios.patch(`${API_BASE}/profiles/${activeProfileId}`, { 
+        data: { ...activeProfile.data, awAutomation: newAW }
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (type === 'autoAvailable') setAwAutoAvailable(val);
+      if (type === 'rotatePhotos') setAwRotatePhotos(val);
+      if (type === 'tweakSummary') setAwTweakSummary(val);
+      if (type === 'autoLogin') setAwAutoLogin(val);
+      
+      showToast(t('saveSuccess'), 'success');
+    } catch {
+      showToast(t('saveError'), 'error');
+    }
+  };
+
+  const onStartAWBoost = async () => {
+    if (!activeProfileId) return;
+    try {
+      await axios.post(`${API_BASE}/profiles/${activeProfileId}/boost`, { platform: 'adultwork' }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      showToast(lang === 'cz' ? 'Organické topování spuštěno!' : 'Organic boost started!', 'success');
+    } catch {
+      showToast(t('error'), 'error');
+    }
   };
 
   return (
@@ -210,6 +258,49 @@ const WebProfilesView = () => {
             <button onClick={onSaveAutomation} className="action-btn" style={{ marginTop: '1.5rem', width: '100%' }}>
               Uložit a ověřit spojení
             </button>
+
+            {automationPlatform === 'adultwork' && (
+              <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '15px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: 'var(--accent-color)', fontWeight: '900' }}>
+                  🚀 AdultWork Organic Boost (Nová strategie)
+                </h4>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '0.8rem' }}>Automaticky "Available Today"</span>
+                    <input type="checkbox" checked={awAutoAvailable} onChange={(e) => onToggleAWAutomation('autoAvailable', e.target.checked)} />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '0.8rem' }}>Rotace hlavní fotky (organická změna)</span>
+                    <input type="checkbox" checked={awRotatePhotos} onChange={(e) => onToggleAWAutomation('rotatePhotos', e.target.checked)} />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '0.8rem' }}>Drobné úpravy Summary (signál aktivity)</span>
+                    <input type="checkbox" checked={awTweakSummary} onChange={(e) => onToggleAWAutomation('tweakSummary', e.target.checked)} />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '0.8rem' }}>Udržovat online (Auto-Login)</span>
+                    <input type="checkbox" checked={awAutoLogin} onChange={(e) => onToggleAWAutomation('autoLogin', e.target.checked)} />
+                  </div>
+                </div>
+
+                <button 
+                  onClick={onStartAWBoost} 
+                  className="action-btn" 
+                  style={{ 
+                    marginTop: '1.25rem', 
+                    width: '100%', 
+                    background: 'linear-gradient(to right, var(--accent-color), #60a5fa)',
+                    fontWeight: '900'
+                  }}
+                >
+                  SPUSTIT ORGANICKÝ BOOST TEĎ
+                </button>
+                <p style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', marginTop: '0.75rem', textAlign: 'center', lineHeight: '1.4' }}>
+                  Tato funkce využívá reálné aktivity k posunu profilu v algoritmu bez rizika detekce.
+                </p>
+              </div>
+            )}
 
             <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
               <label className="input-label-premium">{t('relayTokenLabel')}</label>

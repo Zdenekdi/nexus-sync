@@ -35,7 +35,10 @@ exports.handleTelegram = async (req, res) => {
 
     await prisma.chat.update({
       where: { id: chat.id },
-      data: { lastMessageAt: new Date() },
+      data: { 
+        lastMessageAt: new Date(),
+        updatedAt: new Date()
+      },
     });
 
     const io = getIO();
@@ -107,7 +110,10 @@ exports.handleWhatsApp = async (req, res) => {
 
     await prisma.chat.update({
       where: { id: chat.id },
-      data: { lastMessageAt: new Date() },
+      data: { 
+        lastMessageAt: new Date(),
+        updatedAt: new Date()
+      },
     });
 
     const io = getIO();
@@ -159,7 +165,10 @@ exports.handleGeneric = async (req, res) => {
 
     await prisma.chat.update({
       where: { id: chat.id },
-      data: { lastMessageAt: new Date() },
+      data: { 
+        lastMessageAt: new Date(),
+        updatedAt: new Date()
+      },
     });
 
     const io = getIO();
@@ -198,6 +207,14 @@ exports.handleAdultWork = async (req, res) => {
         direction: 'INBOUND',
         status: 'delivered',
         transport: 'adultwork',
+      },
+    });
+
+    await prisma.chat.update({
+      where: { id: chat.id },
+      data: { 
+        lastMessageAt: new Date(),
+        updatedAt: new Date()
       },
     });
 

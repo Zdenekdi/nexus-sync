@@ -39,6 +39,9 @@ async function startAgent() {
         if (data.type === 'SYNC_WEB_PROFILE') {
             console.log(`📥 Úkol: Sync pro modelku ${data.payload.name}`);
             await runMasterSync(data.payload);
+        } else if (data.type === 'BOOST_WEB_PROFILE') {
+            console.log(`🚀 Úkol: Organic Boost pro modelku ${data.payload.name} na ${data.payload.platform}`);
+            await runMasterBoost(data.payload);
         }
     });
 
@@ -132,6 +135,40 @@ async function runMasterSync(payload) {
     }
 }
 
+async function runMasterBoost(payload) {
+    const { adsPowerId, credentials, platform, settings } = payload;
+    if (!adsPowerId) return console.error("❌ Chybí AdsPower ID.");
+
+    let browser;
+    try {
+        const check = await axios.get(`${ADS_POWER_URL}/api/v1/browser/active?user_id=${adsPowerId}`).catch(() => ({data:{}}));
+        let wsEndpoint;
+
+        if (check.data?.data?.status === 'active') {
+            wsEndpoint = check.data.data.ws.puppeteer;
+        } else {
+            const resp = await axios.get(`${ADS_POWER_URL}/api/v1/browser/start?user_id=${adsPowerId}`);
+            if (resp.data.code !== 0) throw new Error(`AdsPower: ${resp.data.msg}`);
+            wsEndpoint = resp.data.data.ws.puppeteer;
+        }
+
+        browser = await chromium.connectOverCDP(wsEndpoint);
+        const context = browser.contexts()[0];
+        const page = context.pages().length > 0 ? context.pages()[0] : await context.newPage();
+        const cursor = createCursor(page);
+
+        const creds = credentials ? credentials[platform] : null;
+
+        if (platform === 'adultwork') {
+            await boostAdultwork(page, cursor, creds, settings);
+        }
+
+        console.log(`✅ Boost pro ${platform} dokončen.`);
+    } catch (err) {
+        console.error(`🔴 Chyba boostu: ${err.message}`);
+    }
+}
+
 // --- ADULTWORK MODUL ---
 async function syncAdultwork(page, cursor, bio, creds) {
     try {
@@ -156,6 +193,73 @@ async function syncAdultwork(page, cursor, bio, creds) {
         await cursor.click('#btnSave');
         console.log("   -> Adultwork: Hotovo.");
     } catch (e) { console.error(`   ! Adultwork error: ${e.message}`); }
+}
+
+async function boostAdultwork(page, cursor, creds, settings) {
+    try {
+        console.log("   -> Adultwork Organic Boost start...");
+        await page.goto('https://www.adultwork.com/Member/Profile.asp', { waitUntil: 'domcontentloaded' });
+
+        if (page.url().includes('Login.asp')) {
+            if (!creds) return console.warn("      ! Chybí credentials");
+            await humanType(page, '#txtLogin', creds.user);
+            await humanType(page, '#txtPassword', creds.pass);
+            await solver.solve(page, 'hcaptcha');
+            await cursor.click('#btnLogin');
+            await page.waitForNavigation({ waitUntil: 'networkidle', timeout: 30000 }).catch(() => {});
+        }
+
+        // 1. Available Today/Now
+        if (settings.autoAvailable) {
+            console.log("   -> Zapínám Available status...");
+            await page.goto('https://www.adultwork.com/Member/Available.asp', { waitUntil: 'domcontentloaded' });
+            const isSet = await page.$('input[name="chkAvailableToday"]:checked');
+            if (!isSet) {
+                await cursor.click('input[name="chkAvailableToday"]');
+                await page.waitForTimeout(1000);
+                await cursor.click('#btnUpdate');
+                console.log("      [OK] Status Available Today aktivován.");
+            } else {
+                console.log("      [INFO] Již aktivní.");
+            }
+        }
+
+        // 2. Summary Tweak (Organic Activity)
+        if (settings.tweakSummary) {
+            console.log("   -> Provádím drobnou úpravu Summary...");
+            await page.goto('https://www.adultwork.com/Member/ProfileEdit.asp', { waitUntil: 'domcontentloaded' });
+            const currentAbout = await page.$eval('#txtAboutMe', el => el.value);
+            
+            // Přidáme nebo odebereme tečku na konci pro minimální změnu
+            let newAbout = currentAbout.trim();
+            if (newAbout.endsWith('.')) {
+                newAbout = newAbout.slice(0, -1);
+            } else {
+                newAbout = newAbout + '.';
+            }
+
+            await humanType(page, '#txtAboutMe', newAbout);
+            await cursor.click('#btnSave');
+            console.log("      [OK] Summary upraveno.");
+        }
+
+        // 3. Photo Rotation
+        if (settings.rotatePhotos) {
+            console.log("   -> Rotace fotek...");
+            await page.goto('https://www.adultwork.com/Member/ProfilePhotos.asp', { waitUntil: 'domcontentloaded' });
+            // Najdeme tlačítka pro prohození nebo nastavení jako hlavní
+            const swapBtns = await page.$$('input[value="Make Main"]');
+            if (swapBtns.length > 0) {
+                const randomPhotoIdx = Math.floor(Math.random() * swapBtns.length);
+                console.log(`      [OK] Nastavuji fotku ${randomPhotoIdx + 1} jako hlavní.`);
+                await swapBtns[randomPhotoIdx].click();
+                await page.waitForTimeout(2000);
+            }
+        }
+
+    } catch (e) {
+        console.error(`   ! Adultwork Boost Error: ${e.message}`);
+    }
 }
 
 // --- AMATERI.COM MODUL ---
