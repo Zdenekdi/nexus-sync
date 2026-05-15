@@ -172,53 +172,79 @@ async function runMasterBoost(payload) {
 // --- ADULTWORK MODUL ---
 async function syncAdultwork(page, cursor, bio, creds) {
     try {
-        await page.goto('https://www.adultwork.com/Member/Profile.asp', { waitUntil: 'domcontentloaded', timeout: 30000 });
+        console.log("   -> Adultwork Mobile Sync start...");
+        await page.goto('https://m.adultwork.com/Member/Profile.asp', { waitUntil: 'domcontentloaded', timeout: 45000 });
         
-        if (page.url().includes('Login.asp')) {
-            console.log("   -> Vyžadováno přihlášení...");
-            if (!creds) return console.warn("      ! Chybí credentials pro Adultwork");
-            await humanType(page, '#txtLogin', creds.user);
-            await humanType(page, '#txtPassword', creds.pass);
-            
-            // Kontrola Captchy před kliknutím na login
-            await solver.solve(page, 'hcaptcha');
-            
-            await cursor.click('#btnLogin');
-            await page.waitForNavigation({ timeout: 15000 }).catch(() => {});
+        // Detekce Cloudflare / Blokace
+        if (await page.title() === "Attention Required! | Cloudflare" || await page.content().then(c => c.includes('Sorry, you have been blocked'))) {
+            console.error("   🔴 KRITICKÉ: Adultwork zablokoval přístup (Cloudflare). Zkontrolujte Proxy/AdsPower.");
+            return;
         }
 
-        console.log("   -> Upravuji profil...");
-        await page.goto('https://www.adultwork.com/Member/ProfileEdit.asp', { waitUntil: 'domcontentloaded' });
-        await humanType(page, '#txtAboutMe', bio);
-        await cursor.click('#btnSave');
-        console.log("   -> Adultwork: Hotovo.");
+        if (page.url().includes('login.asp')) {
+            console.log("   -> Vyžadováno přihlášení (Mobilní verze)...");
+            if (!creds) return console.warn("      ! Chybí credentials pro Adultwork");
+            
+            // Mobilní login selektory
+            await humanType(page, 'input[name="UserID"], input[name="nickname"]', creds.user);
+            await humanType(page, 'input[name="password"]', creds.pass);
+            
+            await solver.solve(page, 'hcaptcha'); // Případně ALTCHA, pokud se objeví
+            
+            await cursor.click('input[value="Login"], button[type="submit"]');
+            await page.waitForNavigation({ timeout: 20000 }).catch(() => {});
+        }
+
+        console.log("   -> Upravuji profil (Mobilní verze)...");
+        await page.goto('https://m.adultwork.com/Member/Profile.asp', { waitUntil: 'domcontentloaded' });
+        // Na mobilu je About Me často přímo na této stránce nebo pod odkazem Edit
+        if (await page.$('#txtAboutMe')) {
+            await humanType(page, '#txtAboutMe', bio);
+            await cursor.click('#btnUpdate, input[value="Update"]');
+        } else {
+            console.log("      [INFO] Přepínám na detailní editaci...");
+            await page.goto('https://m.adultwork.com/Member/ProfileEdit.asp', { waitUntil: 'domcontentloaded' });
+            await humanType(page, '#txtAboutMe', bio);
+            await cursor.click('#btnSave, input[value="Save"]');
+        }
+        console.log("   -> Adultwork Mobile: Hotovo.");
     } catch (e) { console.error(`   ! Adultwork error: ${e.message}`); }
 }
 
 async function boostAdultwork(page, cursor, creds, settings) {
     try {
-        console.log("   -> Adultwork Organic Boost start...");
-        await page.goto('https://www.adultwork.com/Member/Profile.asp', { waitUntil: 'domcontentloaded' });
+        console.log("   -> Adultwork Mobile Organic Boost start...");
+        await page.goto('https://m.adultwork.com/Member/Profile.asp', { waitUntil: 'domcontentloaded', timeout: 45000 });
 
-        if (page.url().includes('Login.asp')) {
+        // Detekce Blokace
+        if (await page.content().then(c => c.includes('Sorry, you have been blocked'))) {
+            console.error("   🔴 KRITICKÉ: Adultwork zablokoval přístup (Cloudflare).");
+            return;
+        }
+
+        if (page.url().includes('login.asp')) {
             if (!creds) return console.warn("      ! Chybí credentials");
-            await humanType(page, '#txtLogin', creds.user);
-            await humanType(page, '#txtPassword', creds.pass);
+            await humanType(page, 'input[name="UserID"], input[name="nickname"]', creds.user);
+            await humanType(page, 'input[name="password"]', creds.pass);
             await solver.solve(page, 'hcaptcha');
-            await cursor.click('#btnLogin');
+            await cursor.click('input[value="Login"]');
             await page.waitForNavigation({ waitUntil: 'networkidle', timeout: 30000 }).catch(() => {});
         }
 
         // 1. Available Today/Now
         if (settings.autoAvailable) {
-            console.log("   -> Zapínám Available status...");
-            await page.goto('https://www.adultwork.com/Member/Available.asp', { waitUntil: 'domcontentloaded' });
+            console.log("   -> Zapínám Available status (Mobilní verze)...");
+            // Na mobilu je to často přímo na Profile.asp nebo v Available.asp
+            await page.goto('https://m.adultwork.com/Member/Available.asp', { waitUntil: 'domcontentloaded' }).catch(() => {});
             const isSet = await page.$('input[name="chkAvailableToday"]:checked');
             if (!isSet) {
-                await cursor.click('input[name="chkAvailableToday"]');
-                await page.waitForTimeout(1000);
-                await cursor.click('#btnUpdate');
-                console.log("      [OK] Status Available Today aktivován.");
+                const check = await page.$('input[name="chkAvailableToday"]');
+                if (check) {
+                    await cursor.click('input[name="chkAvailableToday"]');
+                    await page.waitForTimeout(1000);
+                    await cursor.click('input[value="Update"], #btnUpdate');
+                    console.log("      [OK] Status Available Today aktivován.");
+                }
             } else {
                 console.log("      [INFO] Již aktivní.");
             }
@@ -226,29 +252,29 @@ async function boostAdultwork(page, cursor, creds, settings) {
 
         // 2. Summary Tweak (Organic Activity)
         if (settings.tweakSummary) {
-            console.log("   -> Provádím drobnou úpravu Summary...");
-            await page.goto('https://www.adultwork.com/Member/ProfileEdit.asp', { waitUntil: 'domcontentloaded' });
-            const currentAbout = await page.$eval('#txtAboutMe', el => el.value);
+            console.log("   -> Provádím drobnou úpravu Summary (Mobilní verze)...");
+            await page.goto('https://m.adultwork.com/Member/Profile.asp', { waitUntil: 'domcontentloaded' });
             
-            // Přidáme nebo odebereme tečku na konci pro minimální změnu
-            let newAbout = currentAbout.trim();
-            if (newAbout.endsWith('.')) {
-                newAbout = newAbout.slice(0, -1);
-            } else {
-                newAbout = newAbout + '.';
+            let selector = '#txtAboutMe';
+            if (!(await page.$(selector))) {
+                await page.goto('https://m.adultwork.com/Member/ProfileEdit.asp', { waitUntil: 'domcontentloaded' });
             }
 
-            await humanType(page, '#txtAboutMe', newAbout);
-            await cursor.click('#btnSave');
-            console.log("      [OK] Summary upraveno.");
+            const currentAbout = await page.$eval(selector, el => el.value).catch(() => "");
+            if (currentAbout) {
+                let newAbout = currentAbout.trim();
+                newAbout = newAbout.endsWith('.') ? newAbout.slice(0, -1) : newAbout + '.';
+                await humanType(page, selector, newAbout);
+                await cursor.click('input[value="Update"], input[value="Save"], #btnSave');
+                console.log("      [OK] Summary upraveno.");
+            }
         }
 
         // 3. Photo Rotation
         if (settings.rotatePhotos) {
-            console.log("   -> Rotace fotek...");
-            await page.goto('https://www.adultwork.com/Member/ProfilePhotos.asp', { waitUntil: 'domcontentloaded' });
-            // Najdeme tlačítka pro prohození nebo nastavení jako hlavní
-            const swapBtns = await page.$$('input[value="Make Main"]');
+            console.log("   -> Rotace fotek (Mobilní verze)...");
+            await page.goto('https://m.adultwork.com/Member/Photos.asp', { waitUntil: 'domcontentloaded' });
+            const swapBtns = await page.$$('input[value="Make Main"], input[value="Set as Main"]');
             if (swapBtns.length > 0) {
                 const randomPhotoIdx = Math.floor(Math.random() * swapBtns.length);
                 console.log(`      [OK] Nastavuji fotku ${randomPhotoIdx + 1} jako hlavní.`);
@@ -258,7 +284,7 @@ async function boostAdultwork(page, cursor, creds, settings) {
         }
 
     } catch (e) {
-        console.error(`   ! Adultwork Boost Error: ${e.message}`);
+        console.error(`   ! Adultwork Mobile Boost Error: ${e.message}`);
     }
 }
 
