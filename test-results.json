@@ -144,7 +144,7 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 32705,
+                      "duration": 33171,
                       "error": {
                         "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('nav').getByText(/agentury|agencies/i).first()\nExpected: visible\nTimeout: 30000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 30000ms\u001b[22m\n\u001b[2m  - waiting for locator('nav').getByText(/agentury|agencies/i).first()\u001b[22m\n",
                         "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('nav').getByText(/agentury|agencies/i).first()\nExpected: visible\nTimeout: 30000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 30000ms\u001b[22m\n\u001b[2m  - waiting for locator('nav').getByText(/agentury|agencies/i).first()\u001b[22m\n\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js:10:79",
@@ -181,7 +181,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-18T17:01:42.592Z",
+                      "startTime": "2026-05-18T17:04:55.267Z",
                       "annotations": [
                         {
                           "type": "slow",
@@ -249,7 +249,7 @@
                       "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1972,
+                      "duration": 2354,
                       "errors": [],
                       "stdout": [
                         {
@@ -267,7 +267,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-18T17:02:16.669Z",
+                      "startTime": "2026-05-18T17:05:29.718Z",
                       "annotations": [
                         {
                           "type": "slow",
@@ -320,7 +320,7 @@
                       "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1777,
+                      "duration": 2202,
                       "errors": [],
                       "stdout": [
                         {
@@ -338,7 +338,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-18T17:02:19.033Z",
+                      "startTime": "2026-05-18T17:05:32.608Z",
                       "annotations": [
                         {
                           "type": "slow",
@@ -391,7 +391,7 @@
                       "workerIndex": 1,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2290,
+                      "duration": 2312,
                       "errors": [],
                       "stdout": [
                         {
@@ -409,7 +409,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-18T17:02:20.818Z",
+                      "startTime": "2026-05-18T17:05:34.820Z",
                       "annotations": [
                         {
                           "type": "slow",
@@ -444,8 +444,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-05-18T17:01:42.177Z",
-    "duration": 40970.182,
+    "startTime": "2026-05-18T17:04:54.915Z",
+    "duration": 42272.655,
     "expected": 3,
     "skipped": 0,
     "unexpected": 1,
