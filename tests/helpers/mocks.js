@@ -10,6 +10,14 @@ import path from 'path';
 export async function setupApiMocks(page) {
   const context = page.context();
 
+  const TEST_USERS = {
+    owner: { id: 'owner-001', name: 'Owner (App Owner)', role: 'App Owner' },
+    admin: { id: 'mark-001', name: 'Mark (Agency Admin)', role: 'Agency Admin' },
+    senior: { id: 'alice-001', name: 'Alice (Senior Op)', role: 'Senior Operator' },
+    model: { id: 'diana-001', name: 'Diana (Model)', role: 'Model' },
+    manager: { id: 'jan-001', name: 'Jan (Manager)', role: 'Manager' }
+  };
+
   // Match /auth/login universally (handles both /api/auth/login and localhost:5000/auth/login)
   await context.route(url => url.toString().includes('/auth/login'), async route => {
     let email = '';
@@ -30,27 +38,56 @@ export async function setupApiMocks(page) {
     
     console.log(`📡 [Mock API] Login request intercepted for email: "${email}"`);
     
-    let user = { id: 'alice-001', name: 'Alice (Senior Op)', role: 'Senior Operator' };
+    let token = 'mock-token-senior';
+    let user = TEST_USERS.senior;
     
     if (email.includes('owner')) {
-      user = { id: 'owner-001', name: 'Owner (App Owner)', role: 'App Owner' };
+      token = 'mock-token-owner';
+      user = TEST_USERS.owner;
     } else if (email.includes('mark') || email.includes('admin')) {
-      user = { id: 'mark-001', name: 'Mark (Agency Admin)', role: 'Agency Admin' };
+      token = 'mock-token-admin';
+      user = TEST_USERS.admin;
     } else if (email.includes('diana') || email.includes('model')) {
-      user = { id: 'diana-001', name: 'Diana (Model)', role: 'Model' };
+      token = 'mock-token-model';
+      user = TEST_USERS.model;
     } else if (email.includes('jan') || email.includes('manager')) {
-      user = { id: 'jan-001', name: 'Jan (Manager)', role: 'Manager' };
+      token = 'mock-token-manager';
+      user = TEST_USERS.manager;
     }
 
-    console.log(`🛰️ [Mock API] Returning user role: "${user.role}"`);
+    console.log(`🛰️ [Mock API] Returning user role: "${user.role}" with token: "${token}"`);
 
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        token: 'mock-token-123',
+        token,
         user
       })
+    });
+  });
+
+  // Match /auth/me universally (returns the profile corresponding to the authorization token)
+  await context.route(url => url.toString().includes('/auth/me'), async route => {
+    const authHeader = route.request().headers()['authorization'] || '';
+    let user = TEST_USERS.senior;
+
+    if (authHeader.includes('owner')) {
+      user = TEST_USERS.owner;
+    } else if (authHeader.includes('admin')) {
+      user = TEST_USERS.admin;
+    } else if (authHeader.includes('model')) {
+      user = TEST_USERS.model;
+    } else if (authHeader.includes('manager')) {
+      user = TEST_USERS.manager;
+    }
+
+    console.log(`🛰️ [Mock API] Me request intercepted. Header: "${authHeader}". Returning: "${user.role}"`);
+
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(user)
     });
   });
 
