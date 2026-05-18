@@ -10,6 +10,22 @@ import path from 'path';
 export async function setupApiMocks(page) {
   const context = page.context();
 
+  // Default fallback for any other API/backend requests to prevent unmocked 404s/hangs
+  // Registered first so that specific mocks registered later override it
+  await context.route(
+    url => {
+      const s = url.toString();
+      return s.includes('/api/') || s.includes(':5000/') || s.includes('/auth/');
+    },
+    async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Mocked Response' })
+      });
+    }
+  );
+
   const TEST_USERS = {
     owner: { id: 'owner-001', name: 'Owner (App Owner)', role: 'App Owner' },
     admin: { id: 'mark-001', name: 'Mark (Agency Admin)', role: 'Agency Admin' },
@@ -163,20 +179,6 @@ export async function setupApiMocks(page) {
     });
   });
 
-  // Default fallback for any other API/backend requests to prevent unmocked 404s/hangs
-  await context.route(
-    url => {
-      const s = url.toString();
-      return s.includes('/api/') || s.includes(':5000/') || s.includes('/auth/');
-    },
-    async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ message: 'Mocked Response' })
-      });
-    }
-  );
 }
 
 /**
