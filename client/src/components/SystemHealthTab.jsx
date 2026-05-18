@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Activity, Cpu, HardDrive, Clock, 
   RefreshCw, Server, Shield, Zap,
@@ -16,7 +16,7 @@ const SystemHealthTab = ({ server }) => {
 
   const isMainHub = !server || server.id === 'main-hub';
 
-  const fetchHealth = async () => {
+  const fetchHealth = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -25,7 +25,7 @@ const SystemHealthTab = ({ server }) => {
           headers: { Authorization: `Bearer ${token}` }
         });
         setHealth(r.data);
-      } else if (server.id === 'ai-node') {
+      } else if (server?.id === 'ai-node') {
         const r = await axios.get(`${API_BASE}/hetzner/status`, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -64,7 +64,7 @@ const SystemHealthTab = ({ server }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isMainHub, API_BASE, token, server, t]);
 
   useEffect(() => {
     setHealth(null);
@@ -74,7 +74,7 @@ const SystemHealthTab = ({ server }) => {
       const interval = setInterval(fetchHealth, 30000);
       return () => clearInterval(interval);
     }
-  }, [server, isMainHub]);
+  }, [server, isMainHub, fetchHealth]);
 
   if (loading && !health) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '300px' }}>

@@ -1,0 +1,454 @@
+{
+  "config": {
+    "configFile": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/playwright.config.js",
+    "rootDir": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 180000
+      },
+      {
+        "outputDir": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile",
+        "name": "mobile",
+        "testDir": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 180000
+      },
+      {
+        "outputDir": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 180000
+      },
+      {
+        "outputDir": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 180000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "smoke.spec.js",
+      "file": "smoke.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Nexus Hub Multi-Role Smoke",
+          "file": "smoke.spec.js",
+          "line": 5,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Login & Dashboard — App Owner",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 540000,
+                  "annotations": [
+                    {
+                      "type": "slow",
+                      "location": {
+                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js",
+                        "line": 6,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 32705,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('nav').getByText(/agentury|agencies/i).first()\nExpected: visible\nTimeout: 30000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 30000ms\u001b[22m\n\u001b[2m  - waiting for locator('nav').getByText(/agentury|agencies/i).first()\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('nav').getByText(/agentury|agencies/i).first()\nExpected: visible\nTimeout: 30000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 30000ms\u001b[22m\n\u001b[2m  - waiting for locator('nav').getByText(/agentury|agencies/i).first()\u001b[22m\n\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js:10:79",
+                        "location": {
+                          "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js",
+                          "column": 79,
+                          "line": 10
+                        },
+                        "snippet": "\u001b[0m \u001b[90m  8 |\u001b[39m   test(\u001b[32m'Login & Dashboard — App Owner'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m  9 |\u001b[39m     \u001b[36mawait\u001b[39m doLogin(page\u001b[33m,\u001b[39m \u001b[33mTEST_USERS\u001b[39m\u001b[33m.\u001b[39mappOwner\u001b[33m.\u001b[39memail\u001b[33m,\u001b[39m \u001b[33mTEST_USERS\u001b[39m\u001b[33m.\u001b[39mappOwner\u001b[33m.\u001b[39mpassword)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 10 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'nav'\u001b[39m)\u001b[33m.\u001b[39mgetByText(\u001b[35m/agentury|agencies/i\u001b[39m)\u001b[33m.\u001b[39mfirst())\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                                               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 11 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 12 |\u001b[39m\n \u001b[90m 13 |\u001b[39m   test(\u001b[32m'Login & Dashboard — Agency Admin'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js",
+                            "column": 79,
+                            "line": 10
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('nav').getByText(/agentury|agencies/i).first()\nExpected: visible\nTimeout: 30000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 30000ms\u001b[22m\n\u001b[2m  - waiting for locator('nav').getByText(/agentury|agencies/i).first()\u001b[22m\n\n\n\u001b[0m \u001b[90m  8 |\u001b[39m   test(\u001b[32m'Login & Dashboard — App Owner'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m  9 |\u001b[39m     \u001b[36mawait\u001b[39m doLogin(page\u001b[33m,\u001b[39m \u001b[33mTEST_USERS\u001b[39m\u001b[33m.\u001b[39mappOwner\u001b[33m.\u001b[39memail\u001b[33m,\u001b[39m \u001b[33mTEST_USERS\u001b[39m\u001b[33m.\u001b[39mappOwner\u001b[33m.\u001b[39mpassword)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 10 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'nav'\u001b[39m)\u001b[33m.\u001b[39mgetByText(\u001b[35m/agentury|agencies/i\u001b[39m)\u001b[33m.\u001b[39mfirst())\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                                               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 11 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 12 |\u001b[39m\n \u001b[90m 13 |\u001b[39m   test(\u001b[32m'Login & Dashboard — Agency Admin'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js:10:79\u001b[22m"
+                        }
+                      ],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: owner@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: owner@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-18T17:01:42.592Z",
+                      "annotations": [
+                        {
+                          "type": "slow",
+                          "location": {
+                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js",
+                            "line": 6,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/smoke-Nexus-Hub-Multi-Role-Smoke-Login-Dashboard-—-App-Owner-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/smoke-Nexus-Hub-Multi-Role-Smoke-Login-Dashboard-—-App-Owner-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/smoke-Nexus-Hub-Multi-Role-Smoke-Login-Dashboard-—-App-Owner-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js",
+                        "column": 79,
+                        "line": 10
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-cf547d6cfe27d466841c",
+              "file": "smoke.spec.js",
+              "line": 8,
+              "column": 7
+            },
+            {
+              "title": "Login & Dashboard — Agency Admin",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 540000,
+                  "annotations": [
+                    {
+                      "type": "slow",
+                      "location": {
+                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js",
+                        "line": 6,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1972,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: mark@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: mark@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-18T17:02:16.669Z",
+                      "annotations": [
+                        {
+                          "type": "slow",
+                          "location": {
+                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js",
+                            "line": 6,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/smoke-Nexus-Hub-Multi-Role-c94e8-in-Dashboard-—-Agency-Admin-chromium/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-e945af0f57db02387b3e",
+              "file": "smoke.spec.js",
+              "line": 13,
+              "column": 7
+            },
+            {
+              "title": "Login & Dashboard — Senior Operator",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 540000,
+                  "annotations": [
+                    {
+                      "type": "slow",
+                      "location": {
+                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js",
+                        "line": 6,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1777,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-18T17:02:19.033Z",
+                      "annotations": [
+                        {
+                          "type": "slow",
+                          "location": {
+                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js",
+                            "line": 6,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/smoke-Nexus-Hub-Multi-Role-8ade9-Dashboard-—-Senior-Operator-chromium/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-7babb9ee52b20ecea6dc",
+              "file": "smoke.spec.js",
+              "line": 19,
+              "column": 7
+            },
+            {
+              "title": "Login & Dashboard — Model",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 540000,
+                  "annotations": [
+                    {
+                      "type": "slow",
+                      "location": {
+                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js",
+                        "line": 6,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2290,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: diana@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: diana@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-18T17:02:20.818Z",
+                      "annotations": [
+                        {
+                          "type": "slow",
+                          "location": {
+                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js",
+                            "line": 6,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/smoke-Nexus-Hub-Multi-Role-Smoke-Login-Dashboard-—-Model-chromium/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-ae56abd15e2f2291ead3",
+              "file": "smoke.spec.js",
+              "line": 24,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-05-18T17:01:42.177Z",
+    "duration": 40970.182,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

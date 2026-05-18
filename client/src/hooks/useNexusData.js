@@ -343,7 +343,7 @@ export function useNexusData({
       clearTimeout(safetyTimer);
       setIsBackgroundLoading(false);
     }
-  }, [isLoggedIn, token, API_BASE, axiosWithTiming, normalizeProfileId, setMessages, setActiveOperator, setActiveSafetySession, setIsTimerActive, setTimeLeft, hasHydrated, lang]);
+  }, [isLoggedIn, token, API_BASE, axiosWithTiming, normalizeProfileId, setMessages, setActiveOperator, setActiveSafetySession, setIsTimerActive, setTimeLeft, hasHydrated, lang, showToast]);
 
   useEffect(() => {
     initData();

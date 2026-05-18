@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test';
+import { setupOfflineMocks } from './mocks.js';
 
 /**
  * Common login helper for UI tests.
@@ -6,6 +7,9 @@ import { expect } from '@playwright/test';
  */
 export async function doLogin(page, email, password) {
   console.log(`🔑 UI Login: ${email}...`);
+
+  // Setup local offline routing and mocks before any navigation
+  await setupOfflineMocks(page);
 
   // Navigate to root
   await page.goto('/login', { waitUntil: 'load', timeout: 60000 }).catch(() => page.goto('/', { waitUntil: 'load' }));
