@@ -194,7 +194,7 @@ const InboxView = () => {
     if (selectedChatId && inlinePanelTab === 'ai' && chatMessages.length > 0 && hasAiAccess) {
       loadAiSuggestions();
     }
-  }, [selectedChatId, inlinePanelTab, lastMsgId, hasAiAccess]);
+  }, [selectedChatId, inlinePanelTab, lastMsgId, hasAiAccess, chatMessages.length, loadAiSuggestions]);
 
 
   // Pull to refresh logic

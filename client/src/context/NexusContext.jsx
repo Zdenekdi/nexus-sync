@@ -1,5 +1,5 @@
 import React, { 
-  createContext, useState, useEffect, useCallback, useMemo, useRef 
+  useState, useEffect, useCallback, useMemo, useRef 
 } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { useAuth } from '../hooks/useAuth';
@@ -41,7 +41,7 @@ export const NexusProvider = ({ children }) => {
     return getSafeStorage('nexus_lang', 'cz');
   });
   
-  const [activeMarket, setActiveMarket] = useState(() => getSafeStorage('nexus_active_market', 'UK'));
+  const [activeMarket, _setActiveMarket] = useState(() => getSafeStorage('nexus_active_market', 'UK'));
   
   // Auth & Routing States (Moved up to prevent hoisting errors)
   const [authInitialTab, setAuthInitialTab] = useState('login');
@@ -116,6 +116,7 @@ export const NexusProvider = ({ children }) => {
   }, [lang]);
 
   // Sync showLanding and activeTab with pathname
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const p = pathname.replace(/^\/(en|cz)/, '') || '/';
     if (p === '/' || p === '/guide') {
@@ -145,6 +146,7 @@ export const NexusProvider = ({ children }) => {
     // Save to localStorage for persistence
     localStorage.setItem('nexus_active_tab', p.split('/')[1] || p.substring(1) || 'dashboard');
   }, [pathname]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Handle browser back/forward buttons
   useEffect(() => {
@@ -166,32 +168,32 @@ export const NexusProvider = ({ children }) => {
   const [selectedChatId, setSelectedChatId] = useState(null);
   const [messageValue, setMessageValue] = useState('');
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
-  const [chatHistory, setChatHistory] = useState([]);
+  const [_chatHistory, _setChatHistory] = useState([]);
   const [onlineOnly, setOnlineOnly] = useState(false);
-  const [relaySimSlot, setRelaySimSlot] = useState(() => localStorage.getItem('nexus_relay_sim_slot') || 'auto');
-  const [relayLogs, setRelayLogs] = useState(() => {
+  const [_relaySimSlot, _setRelaySimSlot] = useState(() => localStorage.getItem('nexus_relay_sim_slot') || 'auto');
+  const [_relayLogs, _setRelayLogs] = useState(() => {
     try {
       const saved = localStorage.getItem('nexus_relay_logs');
       return saved ? JSON.parse(saved) : [];
     } catch { return []; }
   });
-  const [isRelayActive, setIsRelayActive] = useState(() => localStorage.getItem('nexus_relay_active') === 'true');
+  const [_isRelayActive, setIsRelayActive] = useState(() => localStorage.getItem('nexus_relay_active') === 'true');
 
-  const [sosActive, setSosActive] = useState(false);
+  const [_sosActive, _setSosActive] = useState(false);
   const [showPanicConfirm, setShowPanicConfirm] = useState(false);
 
   // UI Modals
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-  const [editingProfileData, setEditingProfileData] = useState(null);
+  const [_editingProfileData, _setEditingProfileData] = useState(null);
   const [isAddAgencyOpen, setIsAddAgencyOpen] = useState(false);
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isBugReportOpen, setIsBugReportOpen] = useState(false);
   const [agencyDetailModalData, setAgencyDetailModalData] = useState(null);
-  const [addUserModalAgencyId, setAddUserModalAgencyId] = useState(null);
+  const [_addUserModalAgencyId, _setAddUserModalAgencyId] = useState(null);
   const [_toasts, _setToasts] = useState([]);
-  const [mobileView, setMobileView] = useState('list');
-  const [activeContextTab, setActiveContextTab] = useState('history');
-  const [inlinePanelTab, setInlinePanelTab] = useState('notes');
+  const [_mobileView, _setMobileView] = useState('list');
+  const [_activeContextTab, _setActiveContextTab] = useState('history');
+  const [_inlinePanelTab, _setInlinePanelTab] = useState('notes');
   const [calViewDate, setCalViewDate] = useState(new Date());
 
   const chatScrollRef = useRef(null);
@@ -357,6 +359,7 @@ export const NexusProvider = ({ children }) => {
   }), [
     t, lang, activeTab, setActiveTab, activeMarket, pathname, navigateStable, authInitialTab, 
     nexusData.isDataLoading, activeOperator, isLoggedIn, token, logout, handleLogin,
+    auth.handleRegisterAgency, auth.handleRegisterUser, showToast,
     showLanding, hasSeenOnboarding, showOnboarding, isMobile, isNativeApp, isSidebarOpen, isSidebarCollapsed,
     messages, selectedChatId, messageValue, isEditProfileOpen, isAddAgencyOpen,
     isAddUserOpen, isBugReportOpen, agencyDetailModalData, calViewDate, showPanicConfirm, _toasts,

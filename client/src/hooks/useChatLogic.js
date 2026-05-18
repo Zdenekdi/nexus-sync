@@ -160,7 +160,7 @@ export function useChatLogic({
     } finally {
       setIsHistoryLoading(false);
     }
-  }, [token, API_BASE, _showToast, t]);
+  }, [token, API_BASE, _showToast, t, setIsHistoryLoading]);
 
   const filteredMessages = useMemo(() => {
     const toTimestamp = (message) => {

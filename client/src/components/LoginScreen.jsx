@@ -242,7 +242,7 @@ const JoinAgencyView = ({ isCz, onSwitch }) => {
 
     setLoading(true);
     try {
-      const { confirmPassword, ...submitData } = formData;
+      const { confirmPassword: _confirmPassword, ...submitData } = formData;
       const res = await onRegisterUser(submitData);
       if (res?.success) {
         showToast(isCz ? 'Registrace úspěšná!' : 'Registration successful!', 'success');
@@ -300,9 +300,11 @@ const LoginScreen = () => {
   const { lang, authInitialTab, setAuthInitialTab } = useNexus();
   const [view, setView] = useState(authInitialTab || 'login');
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (authInitialTab) setView(authInitialTab);
   }, [authInitialTab]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const isCz = lang === 'cz';
 

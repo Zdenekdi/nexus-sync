@@ -12,7 +12,7 @@ function generateSecureInstallationId() {
 /**
  * Custom hook to manage authentication state and logic for Nexus Hub.
  */
-export function useAuth({ API_BASE, _t, setIsRelayMode, setSelectedChatId, setActiveProfileId, setShowLanding }) {
+export function useAuth({ API_BASE, _t, setIsRelayMode, _setSelectedChatId, _setActiveProfileId, setShowLanding }) {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem('nexus_isLoggedIn') === 'true';
   });
@@ -61,6 +61,7 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, setSelectedChatId, setAc
   const [originalOperator, setOriginalOperator] = useState(null);
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const refreshTimerRef = useRef(null);
+  const scheduleTokenRefreshRef = useRef(null);
 
   const isNativeApp = Capacitor.isNativePlatform();
 
@@ -68,7 +69,7 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, setSelectedChatId, setAc
     if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
     localStorage.clear(); // Nuclear option to ensure no stale data remains
     window.location.href = '/';
-  }, [setIsRelayMode, setSelectedChatId, setActiveProfileId, setShowLanding]);
+  }, []);
 
   const handleLogout = useCallback(() => {
     const storedRefreshToken = localStorage.getItem('nexus_refreshToken');
@@ -108,7 +109,9 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, setSelectedChatId, setAc
           localStorage.setItem('nexus_isLoggedIn', 'true');
           setToken(data.token);
           if (setShowLanding) setShowLanding(false);
-          scheduleTokenRefresh(data.expiresIn || 3600);
+          if (scheduleTokenRefreshRef.current) {
+            scheduleTokenRefreshRef.current(data.expiresIn || 3600);
+          }
           console.log('[Auth] Token refreshed');
           return data.token;
         } else {
@@ -139,6 +142,10 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, setSelectedChatId, setAc
       performRefresh();
     }, refreshMs);
   }, [performRefresh]);
+
+  useEffect(() => {
+    scheduleTokenRefreshRef.current = scheduleTokenRefresh;
+  }, [scheduleTokenRefresh]);
 
   useEffect(() => {
     if (isLoggedIn && token) {

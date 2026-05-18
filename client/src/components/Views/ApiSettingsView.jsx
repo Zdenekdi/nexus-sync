@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Key, Plus, Trash2, Copy, CheckCircle2, AlertTriangle, 
   ShieldCheck, Globe, Loader2, Terminal, ExternalLink, Info, Zap, Crown
@@ -7,7 +7,7 @@ import axios from 'axios';
 import { useNexus } from '../../context/ContextHook';
 
 const ApiSettingsView = () => {
-  const { t, showNotification } = useNexus();
+  const { lang, showToast } = useNexus();
   const [keys, setKeys] = useState([]);
   const [agency, setAgency] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -17,7 +17,7 @@ const ApiSettingsView = () => {
   const [showConfirmDelete, setShowConfirmDelete] = useState(null);
   const [copiedKey, setCopiedKey] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setIsLoading(true);
       const [keysRes, agencyRes] = await Promise.all([
@@ -28,15 +28,15 @@ const ApiSettingsView = () => {
       setAgency(agencyRes.data);
     } catch (error) {
       console.error('Failed to fetch data:', error);
-      showNotification('error', 'Nepodařilo se načíst data');
+      showToast('Nepodařilo se načíst data', 'error');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [showToast]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const handleCreateKey = async (e) => {
     e.preventDefault();
@@ -51,9 +51,9 @@ const ApiSettingsView = () => {
       const response = await axios.post('/api/developer/keys', { name, scopes });
       setNewKey(response.data.apiKey);
       fetchData();
-      showNotification('success', 'API klíč byl vygenerován');
+      showToast('API klíč byl vygenerován', 'success');
     } catch (error) {
-      showNotification('error', error.response?.data?.message || 'Chyba při generování klíče');
+      showToast(error.response?.data?.message || 'Chyba při generování klíče', 'error');
     } finally {
       setIsGenerating(false);
     }
@@ -64,9 +64,9 @@ const ApiSettingsView = () => {
       await axios.delete(`/api/developer/keys/${id}`);
       setKeys(keys.filter(k => k.id !== id));
       setShowConfirmDelete(null);
-      showNotification('success', 'API klíč byl zneplatněn');
-    } catch (error) {
-      showNotification('error', 'Nepodařilo se smazat klíč');
+      showToast('API klíč byl zneplatněn', 'success');
+    } catch (_error) {
+      showToast('Nepodařilo se smazat klíč', 'error');
     }
   };
 
@@ -74,7 +74,7 @@ const ApiSettingsView = () => {
     navigator.clipboard.writeText(text);
     setCopiedKey(true);
     setTimeout(() => setCopiedKey(false), 2000);
-    showNotification('info', 'Zkopírováno do schránky');
+    showToast('Zkopírováno do schránky', 'info');
   };
 
   const handleUpgrade = async () => {
@@ -87,11 +87,11 @@ const ApiSettingsView = () => {
       });
 
       if (data.url) {
-        showNotification('info', lang === 'cz' ? 'Přesměrování na platební bránu...' : 'Redirecting to payment gateway...');
+        showToast(lang === 'cz' ? 'Přesměrování na platební bránu...' : 'Redirecting to payment gateway...', 'info');
         window.location.href = data.url;
       }
-    } catch (error) {
-      showNotification('error', lang === 'cz' ? 'Chyba při inicializaci platby.' : 'Error initializing payment.');
+    } catch (_error) {
+      showToast(lang === 'cz' ? 'Chyba při inicializaci platby.' : 'Error initializing payment.', 'error');
       setIsUpgrading(false);
     }
   };

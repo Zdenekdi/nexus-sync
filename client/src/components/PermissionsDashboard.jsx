@@ -6,7 +6,8 @@ import { useNexus } from '../context/ContextHook';
 
 const PermissionsDashboard = ({ agencyId: agencyIdProp = null, onUpdate = null }) => {
   const nexus = useNexus();
-  const { t, _activeOperator, isMobile, API_BASE, token, showToast, agencies, isAppOwner } = nexus;
+  const { t, activeOperator, isMobile, API_BASE, token, showToast, agencies } = nexus;
+  const isAppOwner = activeOperator?.isAppOwner;
 
   // App Owner can switch between global templates and per-agency view
   const [selectedAgencyId, setSelectedAgencyId] = useState(agencyIdProp);

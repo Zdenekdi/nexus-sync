@@ -29,7 +29,7 @@ const DashboardHome = () => {
 
   const [systemHealth, setSystemHealth] = useState(null);
 
-  const isAppOwner = nexus.isAppOwner;
+  const isAppOwner = user?.isAppOwner;
 
   useEffect(() => {
     if (isAppOwner && isLoggedIn && API_BASE && token) {

@@ -79,8 +79,8 @@ const FeatureItem = ({ icon: Icon, title, desc, delay }) => (
   </div>
 );
 
-const AuthLayout = ({ children, title, subtitle }) => {
-  const { lang, isMobile, setShowLanding } = useNexus();
+const AuthLayout = ({ children, title: _title, subtitle }) => {
+  const { lang, isMobile, navigate } = useNexus();
   const isCz = lang === 'cz';
 
   if (isMobile) {

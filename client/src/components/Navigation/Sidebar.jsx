@@ -169,7 +169,7 @@ const Sidebar = () => {
         });
       }, 0);
     }
-  }, [activeTab, storageKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeTab, storageKey]);
 
   const handleNavigation = (tabId) => {
     // Update both state and URL path
