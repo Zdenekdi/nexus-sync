@@ -58,7 +58,7 @@ const DashboardHome = () => {
   
   // Auto-detect active booking and link it to safety session (for Models)
   useEffect(() => {
-    if (!isLoggedIn || activeRole !== 'Model' || linkedSessionId) return;
+    if (!isLoggedIn || activeRole !== 'model' || linkedSessionId) return;
     
     const now = new Date();
     const nowMin = now.getHours() * 60 + now.getMinutes();
@@ -88,8 +88,8 @@ const DashboardHome = () => {
   };
 
   const isCz = lang === 'cz' || lang === 'cs';
-  const isManager = activeRole === 'Agency Admin' || activeRole === 'Manager';
-  const isModel = activeRole === 'Model';
+  const isManager = activeRole === 'agency_admin' || activeRole === 'manager';
+  const isModel = activeRole === 'model';
 
 
 
@@ -787,7 +787,7 @@ const AlertsSection = ({ activeSubscription, agencies, stats, profiles, activeRo
   const myAgency = (agencies || [])?.[0];
   const hasProfilesInAgency = (stats?.totalProfiles || 0) > 0 || (stats?.activeProfiles || 0) > 0 || (myAgency?.totalProfiles || 0) > 0;
   
-  if (!hasProfilesInAgency && (profiles || []).length === 0 && (activeRole === 'App Owner' || activeRole === 'Agency Admin' || activeRole === 'Manager')) {
+  if (!hasProfilesInAgency && (profiles || []).length === 0 && (activeRole === 'app_owner' || activeRole === 'agency_admin' || activeRole === 'manager')) {
     alerts.push({ message: t('createFirstProfile'), color: '#3b82f6' });
   }
   if (alerts.length === 0) return null;

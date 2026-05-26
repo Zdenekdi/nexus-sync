@@ -179,6 +179,104 @@ export async function setupApiMocks(page) {
     });
   });
 
+  await context.route('**/agency/all', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        { id: 'agency-1', name: 'Premium Sync Europe', region: 'EU', subscription: { status: 'active', plan: 'Enterprise' } },
+        { id: 'agency-2', name: 'Global Talents UK', region: 'UK', subscription: { status: 'active', plan: 'Pro' } }
+      ])
+    });
+  });
+
+  await context.route('**/admin/health', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        cpu: { loadAvg: [0.15, 0.22, 0.18] },
+        memory: { percent: 42 },
+        disk: { percent: '60%', used: '120GB / 200GB' },
+        uptime: { days: 5, hours: 12, minutes: 30 }
+      })
+    });
+  });
+
+  await context.route('**/subscriptions/admin/stats', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        activeSubscriptions: 20,
+        revenueByCurrency: { CZK: 150000, EUR: 6000, GBP: 5000, USD: 7000 },
+        planDistribution: { TRIAL: 5, ANNUAL: 8, SEMI_ANNUAL: 4, MONTHLY: 3 },
+        recentTransactions: [
+          { id: 'tx-1', agencyName: 'Premium Sync Europe', plan: 'Enterprise', amount: 6000, currency: 'EUR', status: 'ACTIVE' },
+          { id: 'tx-2', agencyName: 'Global Talents UK', plan: 'Pro', amount: 5000, currency: 'GBP', status: 'ACTIVE' }
+        ]
+      })
+    });
+  });
+
+  await context.route('**/admin/features', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([])
+    });
+  });
+
+  await context.route('**/admin/settings', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([])
+    });
+  });
+
+  await context.route('**/admin/permissions', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        roles: ['App Owner', 'Agency Admin', 'Manager', 'Senior Operator', 'Operator', 'Model']
+      })
+    });
+  });
+
+  await context.route('**/agency/users', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        { id: 'user-1', email: 'mark@nexus.sync', role: 'Agency Admin' },
+        { id: 'user-2', email: 'alice@nexus.sync', role: 'Senior Operator' }
+      ])
+    });
+  });
+
+  await context.route('**/agency/roles', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        { id: 'role-1', name: 'Agency Admin', permissions: { settings: true, messaging: true } },
+        { id: 'role-2', name: 'Senior Operator', permissions: { settings: false, messaging: true } }
+      ])
+    });
+  });
+
+  await context.route('**/bookings', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        { id: 'booking-1', title: 'Diana - Photo Shoot', start: new Date().toISOString(), end: new Date().toISOString() }
+      ])
+    });
+  });
+
 }
 
 /**
@@ -225,7 +323,7 @@ export async function setupOfflineMocks(page) {
     }
   });
 
-  // 3. Intercept all page/SPA requests universally and serve index.html
+  // 3. Intercept all page/SPA requests universally and serve index.html or root static assets
   await context.route(
     url => {
       const s = url.toString();
@@ -234,8 +332,31 @@ export async function setupOfflineMocks(page) {
     },
     async route => {
       try {
-        const indexPath = path.resolve(process.cwd(), 'client/dist/index.html');
-        await route.fulfill({ path: indexPath, contentType: 'text/html' });
+        const urlStr = route.request().url();
+        const urlObj = new URL(urlStr);
+        // Get the filename at the end of the pathname (e.g., /safety.mp4 -> safety.mp4)
+        const pathname = urlObj.pathname;
+        const filename = pathname.startsWith('/') ? pathname.substring(1) : pathname;
+        const filePath = path.resolve(process.cwd(), 'client/dist', filename);
+
+        if (filename && fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+          let contentType = 'application/octet-stream';
+          if (filePath.endsWith('.mp4')) {
+            contentType = 'video/mp4';
+          } else if (filePath.endsWith('.png')) {
+            contentType = 'image/png';
+          } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+            contentType = 'image/jpeg';
+          } else if (filePath.endsWith('.svg')) {
+            contentType = 'image/svg+xml';
+          } else if (filePath.endsWith('.ico')) {
+            contentType = 'image/x-icon';
+          }
+          await route.fulfill({ path: filePath, contentType });
+        } else {
+          const indexPath = path.resolve(process.cwd(), 'client/dist/index.html');
+          await route.fulfill({ path: indexPath, contentType: 'text/html' });
+        }
       } catch (err) {
         console.error(`🔴 Error routing page ${route.request().url()}:`, err);
         await route.continue();

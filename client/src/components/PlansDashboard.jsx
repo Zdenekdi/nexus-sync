@@ -8,7 +8,7 @@ const PlansDashboard = () => {
   const currentAgency = agencies[0];
   const [editingPlan, setEditingPlan] = useState(null);
   
-  const showInitialize = activeRole === 'App Owner' && (
+  const showInitialize = activeRole === 'app_owner' && (
     !subscriptionPlans || 
     subscriptionPlans.length === 0 || 
     !subscriptionPlans[0]?.name ||
@@ -76,7 +76,7 @@ const PlansDashboard = () => {
           <h3 style={{ color: 'white', marginBottom: '0.75rem', fontWeight: '800' }}>Tarify nejsou inicializovány</h3>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', maxWidth: '500px', marginInline: 'auto' }}>Systém nemá definované základní cenové hladiny. Jako App Owner je můžete inicializovat jedním kliknutím.</p>
           
-          {activeOperator?.role === 'APP OWNER' && (
+          {activeRole === 'app_owner' && (
             <button 
               onClick={async () => {
                 const defaultPlans = [
@@ -164,7 +164,7 @@ const PlansDashboard = () => {
                 </div>
               </div>
               
-              {activeRole === 'App Owner' ? (
+              {activeRole === 'app_owner' ? (
                 <button 
                   onClick={() => setEditingPlan(plan)}
                   style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: '10px', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
@@ -216,14 +216,14 @@ const PlansDashboard = () => {
                   {addon.prices[activeMarket.toLowerCase()]} {getCurrencySymbol(activeMarket)}
                 </span>
                 <button 
-                  onClick={() => activeOperator?.role === 'APP OWNER' ? setEditingPlan({ ...addon, isAddon: true }) : showToast(lang === 'cz' ? 'Platba bude integrována přes GoPay.' : 'Payment will be integrated via GoPay.', 'info')}
+                  onClick={() => activeRole === 'app_owner' ? setEditingPlan({ ...addon, isAddon: true }) : showToast(lang === 'cz' ? 'Platba bude integrována přes GoPay.' : 'Payment will be integrated via GoPay.', 'info')}
                   style={{ 
                     padding: '0.5rem 1rem', 
-                    background: activeOperator?.role === 'APP OWNER' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(59, 130, 246, 0.1)', 
-                    border: activeOperator?.role === 'APP OWNER' ? '1px solid #fbbf24' : '1px solid var(--accent-color)', 
+                    background: activeRole === 'app_owner' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(59, 130, 246, 0.1)', 
+                    border: activeRole === 'app_owner' ? '1px solid #fbbf24' : '1px solid var(--accent-color)', 
                     borderRadius: '8px', color: 'white', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer' 
                   }}>
-                  {activeOperator?.role === 'APP OWNER' ? 'NASTAVIT' : 'AKTIVOVAT'}
+                  {activeRole === 'app_owner' ? 'NASTAVIT' : 'AKTIVOVAT'}
                 </button>
               </div>
             </div>

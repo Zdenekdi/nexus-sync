@@ -57,7 +57,7 @@ const CalendarView = () => {
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '220px' }} className="premium-selector-fix">
                 <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>•</span>
                 <PremiumSelector
-                  options={(activeRole === 'App Owner' || activeRole === 'Agency Admin' || activeRole === 'Manager') ? safeProfiles : safeMyProfiles}
+                  options={(activeRole === 'app_owner' || activeRole === 'agency_admin' || activeRole === 'manager') ? safeProfiles : safeMyProfiles}
                   value={activeProfileId || ''}
                   onChange={(val) => setActiveProfileId(val)}
                   placeholder={t('selectProfile')}

@@ -22,7 +22,7 @@ const AddOperatorModal = ({ isOpen, onClose, data, onDataChange, onAdd, t, lang,
               { id: 'Operator', name: lang === 'cz' ? 'Operátorka' : 'Operator' },
               { id: 'Senior Operator', name: 'Senior Operator' },
               { id: 'Agency Manager', name: lang === 'cz' ? 'Manažer agentury' : 'Agency Manager' },
-              ...((activeRole === 'App Owner' || activeOperator?.role?.isManager) ? [{ id: 'Agency Admin', name: 'Agency Admin' }] : [])
+              ...((activeRole === 'app_owner' || activeOperator?.isManager || activeOperator?.isSeniorOperator) ? [{ id: 'Agency Admin', name: 'Agency Admin' }] : [])
             ]}
             value={data.role}
             onChange={val => onDataChange({...data, role: val})}

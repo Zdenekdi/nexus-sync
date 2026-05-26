@@ -81,7 +81,7 @@ const AIInsightCard = ({ stats, _agencies, systemHealth }) => {
 
   const generateInsight = async () => {
     const isCz = lang === 'cz' || lang === 'cs';
-    const isAppOwner = activeRole === 'App Owner';
+    const isAppOwner = activeRole === 'app_owner';
     
     let context = "";
     let systemPrompt = "";
@@ -131,7 +131,7 @@ const AIInsightCard = ({ stats, _agencies, systemHealth }) => {
   };
 
   const handleDetailedAction = async () => {
-    if (activeRole === 'App Owner') {
+    if (activeRole === 'app_owner') {
       setShowDetailedAudit(true);
       if (!detailedReport && !isReportLoading) {
         setIsReportLoading(true);

@@ -87,6 +87,15 @@ const groups = {
 };
 
 const Sidebar = () => {
+  const isProfileOnline = (p) => {
+    if (!p) return false;
+    const statusClean = String(p.status || '').toLowerCase();
+    const isStatusOnline = statusClean === 'online' || statusClean === 'active';
+    const hasActiveOperators = Array.isArray(p.operators) && p.operators.some(op => op.active);
+    const hasAssignees = Array.isArray(p.assignees) && p.assignees.length > 0;
+    return isStatusOnline || hasActiveOperators || hasAssignees;
+  };
+
   const nexus = useNexus();
   const { 
     activeTab, setActiveTab, t, navigate,
@@ -349,11 +358,11 @@ const Sidebar = () => {
                   <div style={{ padding: '0.5rem 0.65rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.2)' }}>{t('noAssignedGirls')}</div>
                 ) : (
                   <>
-                    {myProfiles.filter(p => !onlineOnly || p.status === 'online').map(p => {
+                    {myProfiles.filter(p => !onlineOnly || isProfileOnline(p)).map(p => {
                       const isActive = activeProfile?.id === p.id;
                       return (
                         <button key={p.id} onClick={() => { setActiveProfileId(p.id); setActiveTab('inbox'); if(isMobile) setIsSidebarOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.6rem 0.65rem', borderRadius: '12px', cursor: 'pointer', textAlign: 'left', background: isActive ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none' }}>
-                          <div style={{ width: '6px', height: '6px', background: p.status === 'online' ? 'var(--success-color)' : 'rgba(255,255,255,0.1)', borderRadius: '50%' }} />
+                          <div style={{ width: '6px', height: '6px', background: isProfileOnline(p) ? 'var(--success-color)' : 'rgba(255,255,255,0.1)', borderRadius: '50%' }} />
                           <div style={{ flex: 1, minWidth: 0, fontSize: '0.85rem', fontWeight: isActive ? '800' : '600', color: isActive ? 'white' : 'rgba(255,255,255,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
                         </button>
                       );
@@ -473,7 +482,7 @@ const Sidebar = () => {
                       {[
                         { id: 'device-setup', icon: Smartphone, label: t('deviceSetup'), perm: 'device_setup' },
                         { id: 'relay', icon: Radio, label: t('relay'), perm: 'relay' },
-                        { id: 'developer', icon: Terminal, label: 'Developer API', perm: 'settings' },
+                        { id: 'developer', icon: Terminal, label: 'Developer API', perm: 'permissions' },
                         { id: 'settings', icon: Settings, label: t('settings'), perm: 'settings' },
                       ].filter(item => !item.perm || isAllowed(item.perm)).map(item => (
                         <TooltipItem key={item.id} label={capitalize(item.label)} isMobile={isMobile} isSidebarCollapsed={isSidebarCollapsed}>

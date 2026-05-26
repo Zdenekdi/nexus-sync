@@ -14,7 +14,20 @@ test.describe('Operator Inbox & Chat E2E', () => {
     await loginToApp(page, TEST_USERS.seniorOp.email, TEST_USERS.seniorOp.password);
     
     // Navigate to Inbox
-    await page.getByTestId('nav-link-inbox').click();
+    const navLink = page.getByTestId('nav-link-inbox');
+    if (!(await navLink.isVisible())) {
+      const mobileNavInbox = page.getByTestId('nav-mobile-inbox');
+      if (await mobileNavInbox.isVisible()) {
+        await mobileNavInbox.click();
+      } else {
+        console.log('📱 Mobile detected, opening menu...');
+        await page.locator('button .lucide-menu, .lucide-menu, button:has-text("Menu")').first().click();
+        await expect(navLink).toBeVisible({ timeout: 5000 });
+        await navLink.click();
+      }
+    } else {
+      await navLink.click();
+    }
     await expect(page.getByTestId('page-inbox-container')).toBeVisible({ timeout: 15000 });
   });
 

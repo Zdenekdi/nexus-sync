@@ -51,6 +51,7 @@ const ViewRouter = () => {
       case 'payouts':
       case 'settings':
       case 'safety-guard':
+      case 'developer':
         return <AgencyUnit />;
 
       // Infrastructure Unit Views

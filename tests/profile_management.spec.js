@@ -10,7 +10,13 @@ test.describe('Profile Management E2E', () => {
     await loginToApp(page, TEST_USERS.seniorOp.email, TEST_USERS.seniorOp.password);
     
     // Navigate to Profiles
-    await page.getByTestId('nav-link-profiles').click();
+    const navLink = page.getByTestId('nav-link-profiles');
+    if (!(await navLink.isVisible())) {
+      console.log('📱 Mobile detected, opening menu...');
+      await page.locator('button .lucide-menu, .lucide-menu, button:has-text("Menu")').first().click();
+      await expect(navLink).toBeVisible({ timeout: 5000 });
+    }
+    await navLink.click();
     await expect(page.getByTestId('page-profiles-container')).toBeVisible({ timeout: 15000 });
   });
 
@@ -33,11 +39,11 @@ test.describe('Profile Management E2E', () => {
     
     await page.getByTestId(`profile-edit-button-${id}`).click();
     
-    // Check if modal title or specific field appears
-    await expect(page.getByText(/upravit profil|edit profile/i)).toBeVisible();
+    // Check modal opened via dedicated testid on the title
+    await expect(page.getByTestId('edit-profile-modal-title')).toBeVisible();
     
     // Close modal
-    await page.getByRole('button', { name: /zrušit|cancel/i }).click();
+    await page.getByTestId('edit-profile-modal-cancel').click();
   });
 
   test('should show credentials for authorized users', async ({ page }) => {

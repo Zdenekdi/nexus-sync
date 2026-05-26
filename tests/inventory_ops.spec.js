@@ -11,7 +11,13 @@ test.describe('Inventory Operations E2E', () => {
     await loginToApp(page, TEST_USERS.seniorOp.email, TEST_USERS.seniorOp.password);
     
     // Navigate to Inventory
-    await page.getByTestId('nav-link-inventory').click();
+    const navLink = page.getByTestId('nav-link-inventory');
+    if (!(await navLink.isVisible())) {
+      console.log('📱 Mobile detected, opening menu...');
+      await page.locator('button .lucide-menu, .lucide-menu, button:has-text("Menu")').first().click();
+      await expect(navLink).toBeVisible({ timeout: 5000 });
+    }
+    await navLink.click();
     await expect(page.getByTestId('page-inventory-container')).toBeVisible({ timeout: 15000 });
   });
 
@@ -36,7 +42,7 @@ test.describe('Inventory Operations E2E', () => {
     const addBtn = page.getByTestId('inventory-add-item-button');
     await addBtn.click();
     
-    await expect(page.getByText(/přidat položku|add item/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /přidat položku|add item/i })).toBeVisible();
     // Close modal (assuming clicking outside or having a cancel button)
     await page.getByRole('button', { name: /zrušit|cancel/i }).click();
   });
