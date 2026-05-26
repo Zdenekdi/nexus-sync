@@ -37,7 +37,7 @@ const QAView = () => {
   // Determine which profiles are visible based on filters and roles
   const visibleProfileIds = useMemo(() => {
     // 1. Privacy Check: If Model, only allow seeing own profile
-    if (activeRole === 'Model') {
+    if (activeRole === 'model') {
       const myProfileIds = (profiles || [])
         .filter(p => p?.userId === activeOperator?.id || p?.id === activeOperator?.profileId)
         .map(p => p.id);
@@ -85,7 +85,7 @@ const QAView = () => {
   const visibleMessages = useMemo(() => {
     const pIds = (visibleProfileIds || []);
     const msgs = (messages || []);
-    if (pIds.length === 0) return activeRole === 'Model' ? [] : msgs;
+    if (pIds.length === 0) return activeRole === 'model' ? [] : msgs;
     return msgs.filter(m => pIds.includes(m?.profileId));
   }, [messages, visibleProfileIds, activeRole]);
 
@@ -142,7 +142,7 @@ const QAView = () => {
 
   // Profiles for the selected operator (or all agency profiles)
   const operatorProfiles = useMemo(() => {
-    if (activeRole === 'Model') return (profiles || []).filter(p => p.userId === activeOperator?.id);
+    if (activeRole === 'model') return (profiles || []).filter(p => p.userId === activeOperator?.id);
     
     if (filterOperatorId === 'all') {
       return (profiles || []).filter(p => activeOperator?.isAppOwner || p.clientId === activeOperator?.clientId);
@@ -203,7 +203,7 @@ const QAView = () => {
           </h2>
 
           {/* Role-based Filter Visibility */}
-          {activeRole !== 'Model' && (
+          {activeRole !== 'model' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '1rem' }}>
               <div style={{ position: 'relative' }}>
                 <PremiumSelector

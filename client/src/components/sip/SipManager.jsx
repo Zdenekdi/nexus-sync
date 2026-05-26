@@ -26,10 +26,7 @@ export default function SipManager() {
   const fetchedRef = useRef(false);
 
   // Only operators and senior operators handle SIP calls on the web
-  const isSipRole = activeRole === 'Operator'
-    || activeRole === 'Senior Operator'
-    || activeRole === 'OPERATOR'
-    || activeRole === 'SENIOR OPERATOR';
+  const isSipRole = activeRole === 'operator' || activeRole === 'senior_operator';
 
   // Fetch SIP credentials once after login
   useEffect(() => {

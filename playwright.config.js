@@ -25,7 +25,7 @@ export default defineConfig({
   reporter: [['list'], ['json', { outputFile: 'test-results.json' }]],
 
   use: {
-    baseURL: process.env.FRONTEND_URL || 'https://nexus-sync-8d50b.web.app',
+    baseURL: 'http://localhost:5173', // FORCE LOCAL
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'on',

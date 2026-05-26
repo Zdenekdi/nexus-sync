@@ -7,6 +7,15 @@ import axios from 'axios';
 import { useNexus } from '../../context/ContextHook';
 
 const ProfilesView = () => {
+  const isProfileOnline = (p) => {
+    if (!p) return false;
+    const statusClean = String(p.status || '').toLowerCase();
+    const isStatusOnline = statusClean === 'online' || statusClean === 'active';
+    const hasActiveOperators = Array.isArray(p.operators) && p.operators.some(op => op.active);
+    const hasAssignees = Array.isArray(p.assignees) && p.assignees.length > 0;
+    return isStatusOnline || hasActiveOperators || hasAssignees;
+  };
+
   const nexus = useNexus() || {};
   const {
     isMobile = false,
@@ -88,7 +97,7 @@ const ProfilesView = () => {
       {!isMobile && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
           <h2 data-testid="page-profiles-title" style={{ fontSize: '2rem', fontWeight: '800' }}>{t('managedProfiles')}</h2>
-          {(activeRole === 'App Owner' || activeRole === 'Agency Manager' || activeRole === 'Agency Admin' || activeOperator?.role?.isManager) && (
+          {(activeRole === 'app_owner' || activeRole === 'agency_manager' || activeRole === 'agency_admin' || activeRole === 'manager' || activeRole === 'senior_operator' || activeOperator?.isManager || activeOperator?.isSeniorOperator) && (
             <button
               onClick={async () => {
                 const name = window.prompt(lang === 'cz' ? 'Jméno nového profilu (pracovní jméno):' : 'New profile name (stage name):');
@@ -108,7 +117,7 @@ const ProfilesView = () => {
         </div>
       )}
 
-      {isMobile && (activeRole === 'App Owner' || activeRole === 'Agency Manager' || activeRole === 'Agency Admin' || activeOperator?.role?.isManager) && (
+      {isMobile && (activeRole === 'app_owner' || activeRole === 'agency_manager' || activeRole === 'agency_admin' || activeRole === 'manager' || activeRole === 'senior_operator' || activeOperator?.isManager || activeOperator?.isSeniorOperator) && (
         <div style={{ marginBottom: '1.5rem' }}>
           <button
             onClick={async () => {
@@ -130,7 +139,7 @@ const ProfilesView = () => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
         {(allAgencyProfiles || []).length === 0 && (
           <div style={{ 
-            padding: '4rem', 
+            padding: '3rem', 
             textAlign: 'center', 
             background: 'var(--card-bg)', 
             borderRadius: '16px', 
@@ -147,8 +156,8 @@ const ProfilesView = () => {
         )}
         {(allAgencyProfiles || []).map((profile, i) => {
           const isMyProfile = (myProfiles || []).find(p => p.id === profile.id);
-          const activeCount = ((profile.operators || []).filter(op => op.active).length || 0) + ((profile.assignees || []).length || 0);
-          const canManage = activeRole === 'App Owner' || activeRole === 'Agency Manager' || activeRole === 'Agency Admin' || activeOperator?.role?.isManager;
+          const isOnline = isProfileOnline(profile);
+          const canManage = activeRole === 'app_owner' || activeRole === 'agency_manager' || activeRole === 'agency_admin' || activeRole === 'manager' || activeRole === 'senior_operator' || activeOperator?.isManager || activeOperator?.isSeniorOperator;
 
           return (
             <div key={i} id={`profile-card-${profile.id}`} data-testid={`profile-card-${profile.id}`} className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2rem', display: 'flex', gap: isMobile ? '1.5rem' : '2.5rem', borderColor: isMyProfile ? 'rgba(59, 130, 246, 0.4)' : 'var(--card-border)', flexDirection: isMobile ? 'column' : 'row' }}>
@@ -158,25 +167,25 @@ const ProfilesView = () => {
                   <div style={{ 
                     padding: '0.3rem 0.8rem', 
                     borderRadius: '8px', 
-                    background: activeCount > 0 ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.05)', 
-                    color: activeCount > 0 ? '#34d399' : 'var(--text-secondary)', 
+                    background: isOnline ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.05)', 
+                    color: isOnline ? '#34d399' : 'var(--text-secondary)', 
                     fontSize: '0.75rem', 
                     fontWeight: '900', 
                     border: '1px solid',
-                    borderColor: activeCount > 0 ? 'rgba(34, 197, 94, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+                    borderColor: isOnline ? 'rgba(34, 197, 94, 0.3)' : 'rgba(255, 255, 255, 0.1)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
-                    boxShadow: activeCount > 0 ? '0 0 20px rgba(52, 211, 153, 0.15)' : 'none'
+                    boxShadow: isOnline ? '0 0 20px rgba(52, 211, 153, 0.15)' : 'none'
                   }}>
                     <span style={{ 
                       width: '8px', 
                       height: '8px', 
                       borderRadius: '50%', 
-                      background: activeCount > 0 ? '#34d399' : 'rgba(255,255,255,0.2)',
-                      animation: activeCount > 0 ? 'pulse-green 2s infinite' : 'none'
+                      background: isOnline ? '#34d399' : 'rgba(255,255,255,0.2)',
+                      animation: isOnline ? 'pulse-green 2s infinite' : 'none'
                     }} />
-                    {activeCount > 0 ? (lang === 'cz' ? 'ONLINE / AKTIVNÍ' : 'LIVE / ACTIVE') : (lang === 'cz' ? 'OFFLINE / BEZ POKRYTÍ' : 'OFFLINE / NO COVERAGE')}
+                    {isOnline ? (lang === 'cz' ? 'ONLINE / AKTIVNÍ' : 'LIVE / ACTIVE') : (lang === 'cz' ? 'OFFLINE / BEZ POKRYTÍ' : 'OFFLINE / NO COVERAGE')}
                   </div>
                   {profile.lastOnline && (
                     <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600' }}>

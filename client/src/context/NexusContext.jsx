@@ -184,7 +184,7 @@ export const NexusProvider = ({ children }) => {
 
   // UI Modals
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-  const [_editingProfileData, _setEditingProfileData] = useState(null);
+  const [editingProfileData, setEditingProfileData] = useState(null);
   const [isAddAgencyOpen, setIsAddAgencyOpen] = useState(false);
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isBugReportOpen, setIsBugReportOpen] = useState(false);
@@ -341,10 +341,13 @@ export const NexusProvider = ({ children }) => {
     messages, selectedChatId, setSelectedChatId, messageValue, setMessageValue,
     isEditProfileOpen, setIsEditProfileOpen, isAddAgencyOpen, setIsAddAgencyOpen,
     isAddUserOpen, setIsAddUserOpen, isBugReportOpen, setIsBugReportOpen,
+    editingProfileData, setEditingProfileData,
+    handleEditProfile: (profile) => { setEditingProfileData(profile); setIsEditProfileOpen(true); },
     agencyDetailModalData, setAgencyDetailModalData,
     calViewDate, setCalViewDate, showPanicConfirm, setShowPanicConfirm,
     chatScrollRef, isUserScrolled, showToast, _toasts,
     isAllowed, activeRole: normalizedRole,
+    isAppOwner: activeOperator?.isAppOwner,
     activeProfile, activeProfileId, setActiveProfileId, 
     myProfiles, profiles: nexusData.profiles, _profiles: nexusData.profiles,
     operators: nexusData.operators,
@@ -362,7 +365,7 @@ export const NexusProvider = ({ children }) => {
     auth.handleRegisterAgency, auth.handleRegisterUser, showToast,
     showLanding, hasSeenOnboarding, showOnboarding, isMobile, isNativeApp, isSidebarOpen, isSidebarCollapsed,
     messages, selectedChatId, messageValue, isEditProfileOpen, isAddAgencyOpen,
-    isAddUserOpen, isBugReportOpen, agencyDetailModalData, calViewDate, showPanicConfirm, _toasts,
+    isAddUserOpen, isBugReportOpen, agencyDetailModalData, editingProfileData, calViewDate, showPanicConfirm, _toasts,
     isAllowed, normalizedRole, activeProfile, activeProfileId, myProfiles, nexusData.profiles, 
     nexusData.operators, nexusData.agencies, onlineOnly,
     // Chat Logic Deps

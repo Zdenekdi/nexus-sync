@@ -9,7 +9,7 @@ const RelayControlCenter = () => {
     sessions, profiles, activeRole, activeOperator, 
     handleRevokeBinding, showToast, t, lang, isMobile 
   } = nexus;
-  const isManager = activeRole === 'App Owner' || activeRole === 'Agency Admin' || activeRole === 'Agency Manager' || activeOperator?.role?.isManager;
+  const isManager = activeRole === 'app_owner' || activeRole === 'agency_admin' || activeRole === 'agency_manager' || activeOperator?.isManager || activeOperator?.isSeniorOperator;
 
   // Icons used for status badges
   const getStatusColor = (status) => {

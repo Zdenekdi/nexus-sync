@@ -70,7 +70,7 @@ const SettingsView = () => {
       <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem' }}>{t('configSubtitle')}</p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem', maxWidth: '800px' }}>
-        {activeRole === 'App Owner' && (
+        {activeRole === 'app_owner' && (
           <div className="settings-section">
             <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Activity size={20} color="var(--success-color)" /> Platform Health Snapshot
@@ -328,7 +328,7 @@ const SettingsView = () => {
         <div className="settings-section">
           <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Building2 size={20} color="var(--accent-color)" /> 
-            {activeRole === 'App Owner' ? 'Agency Information' : t('agencyInsight')}: {activeClient?.name || t('global')}
+            {activeRole === 'app_owner' ? 'Agency Information' : t('agencyInsight')}: {activeClient?.name || t('global')}
           </h3>
           <div className="grid" style={{ gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1.5rem' }}>
             <div className="glass-card" style={{ padding: '1.5rem' }}>
@@ -348,7 +348,7 @@ const SettingsView = () => {
           </h3>
           <div className="glass-card" style={{ padding: 0 }}>
             {(() => {
-              const isManager = activeRole === 'App Owner' || activeRole === 'Agency Admin' || activeRole === 'Agency Manager' || activeOperator?.role?.isManager;
+              const isManager = activeRole === 'app_owner' || activeRole === 'agency_admin' || activeRole === 'agency_manager' || activeOperator?.isManager || activeOperator?.isSeniorOperator;
               const visibleSessions = (sessions || []).filter(s => {
                 if (isManager) return true;
                 const sessionProfile = (profiles || []).find(p => p.id === s.profileId);
@@ -445,7 +445,7 @@ const SettingsView = () => {
           </div>
         </div>
 
-        {activeRole === 'App Owner' && (
+        {activeRole === 'app_owner' && (
           <div className="settings-section">
             <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Lock size={20} color="var(--accent-color)" /> Platform Management (App Owner Only)

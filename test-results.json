@@ -11,7 +11,7 @@
     "grepInvert": null,
     "maxFailures": 0,
     "metadata": {
-      "actualWorkers": 1
+      "actualWorkers": 4
     },
     "preserveOutput": "always",
     "projects": [
@@ -20,7 +20,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 1
+          "actualWorkers": 4
         },
         "id": "chromium",
         "name": "chromium",
@@ -36,7 +36,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 1
+          "actualWorkers": 4
         },
         "id": "mobile",
         "name": "mobile",
@@ -52,7 +52,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 1
+          "actualWorkers": 4
         },
         "id": "firefox",
         "name": "firefox",
@@ -68,7 +68,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 1
+          "actualWorkers": 4
         },
         "id": "webkit",
         "name": "webkit",
@@ -83,14 +83,7 @@
     "quiet": false,
     "reporter": [
       [
-        "list",
-        null
-      ],
-      [
-        "json",
-        {
-          "outputFile": "test-results.json"
-        }
+        "json"
       ]
     ],
     "reportSlowTests": {
@@ -102,40 +95,31 @@
     "updateSnapshots": "missing",
     "updateSourceMethod": "patch",
     "version": "1.59.1",
-    "workers": 1,
+    "workers": 4,
     "webServer": null
   },
   "suites": [
     {
-      "title": "smoke.spec.js",
-      "file": "smoke.spec.js",
+      "title": "inventory_ops.spec.js",
+      "file": "inventory_ops.spec.js",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Nexus Hub Multi-Role Smoke",
-          "file": "smoke.spec.js",
-          "line": 5,
+          "title": "Inventory Operations E2E",
+          "file": "inventory_ops.spec.js",
+          "line": 8,
           "column": 6,
           "specs": [
             {
-              "title": "Login & Dashboard — App Owner",
-              "ok": false,
+              "title": "should display inventory items and search",
+              "ok": true,
               "tags": [],
               "tests": [
                 {
-                  "timeout": 540000,
-                  "annotations": [
-                    {
-                      "type": "slow",
-                      "location": {
-                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js",
-                        "line": 6,
-                        "column": 8
-                      }
-                    }
-                  ],
+                  "timeout": 180000,
+                  "annotations": [],
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
@@ -143,146 +127,44 @@
                     {
                       "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 34993,
-                      "error": {
-                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('nav').getByText(/agentury|agencies/i).first()\nExpected: visible\nTimeout: 30000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 30000ms\u001b[22m\n\u001b[2m  - waiting for locator('nav').getByText(/agentury|agencies/i).first()\u001b[22m\n",
-                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('nav').getByText(/agentury|agencies/i).first()\nExpected: visible\nTimeout: 30000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 30000ms\u001b[22m\n\u001b[2m  - waiting for locator('nav').getByText(/agentury|agencies/i).first()\u001b[22m\n\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js:10:79",
-                        "location": {
-                          "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js",
-                          "column": 79,
-                          "line": 10
-                        },
-                        "snippet": "\u001b[0m \u001b[90m  8 |\u001b[39m   test(\u001b[32m'Login & Dashboard — App Owner'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m  9 |\u001b[39m     \u001b[36mawait\u001b[39m doLogin(page\u001b[33m,\u001b[39m \u001b[33mTEST_USERS\u001b[39m\u001b[33m.\u001b[39mappOwner\u001b[33m.\u001b[39memail\u001b[33m,\u001b[39m \u001b[33mTEST_USERS\u001b[39m\u001b[33m.\u001b[39mappOwner\u001b[33m.\u001b[39mpassword)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 10 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'nav'\u001b[39m)\u001b[33m.\u001b[39mgetByText(\u001b[35m/agentury|agencies/i\u001b[39m)\u001b[33m.\u001b[39mfirst())\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                                               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 11 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 12 |\u001b[39m\n \u001b[90m 13 |\u001b[39m   test(\u001b[32m'Login & Dashboard — Agency Admin'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js",
-                            "column": 79,
-                            "line": 10
-                          },
-                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('nav').getByText(/agentury|agencies/i).first()\nExpected: visible\nTimeout: 30000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 30000ms\u001b[22m\n\u001b[2m  - waiting for locator('nav').getByText(/agentury|agencies/i).first()\u001b[22m\n\n\n\u001b[0m \u001b[90m  8 |\u001b[39m   test(\u001b[32m'Login & Dashboard — App Owner'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m  9 |\u001b[39m     \u001b[36mawait\u001b[39m doLogin(page\u001b[33m,\u001b[39m \u001b[33mTEST_USERS\u001b[39m\u001b[33m.\u001b[39mappOwner\u001b[33m.\u001b[39memail\u001b[33m,\u001b[39m \u001b[33mTEST_USERS\u001b[39m\u001b[33m.\u001b[39mappOwner\u001b[33m.\u001b[39mpassword)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 10 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'nav'\u001b[39m)\u001b[33m.\u001b[39mgetByText(\u001b[35m/agentury|agencies/i\u001b[39m)\u001b[33m.\u001b[39mfirst())\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                                               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 11 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 12 |\u001b[39m\n \u001b[90m 13 |\u001b[39m   test(\u001b[32m'Login & Dashboard — Agency Admin'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m\n\u001b[2m    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js:10:79\u001b[22m"
-                        }
-                      ],
-                      "stdout": [
-                        {
-                          "text": "🔑 UI Login: owner@nexus.sync...\n"
-                        },
-                        {
-                          "text": "📧 Entering credentials...\n"
-                        },
-                        {
-                          "text": "🛰️ Verifying dashboard access...\n"
-                        },
-                        {
-                          "text": "✅ UI Login Success: owner@nexus.sync\n"
-                        }
-                      ],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-05-18T17:59:42.530Z",
-                      "annotations": [
-                        {
-                          "type": "slow",
-                          "location": {
-                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js",
-                            "line": 6,
-                            "column": 8
-                          }
-                        }
-                      ],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/smoke-Nexus-Hub-Multi-Role-Smoke-Login-Dashboard-—-App-Owner-chromium/test-failed-1.png"
-                        },
-                        {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/smoke-Nexus-Hub-Multi-Role-Smoke-Login-Dashboard-—-App-Owner-chromium/video.webm"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/smoke-Nexus-Hub-Multi-Role-Smoke-Login-Dashboard-—-App-Owner-chromium/error-context.md"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js",
-                        "column": 79,
-                        "line": 10
-                      }
-                    }
-                  ],
-                  "status": "unexpected"
-                }
-              ],
-              "id": "2c14808d47b386fba9eb-cf547d6cfe27d466841c",
-              "file": "smoke.spec.js",
-              "line": 8,
-              "column": 7
-            },
-            {
-              "title": "Login & Dashboard — Agency Admin",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 540000,
-                  "annotations": [
-                    {
-                      "type": "slow",
-                      "location": {
-                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js",
-                        "line": 6,
-                        "column": 8
-                      }
-                    }
-                  ],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2423,
+                      "duration": 4062,
                       "errors": [],
                       "stdout": [
                         {
-                          "text": "🔑 UI Login: mark@nexus.sync...\n"
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
                         },
                         {
                           "text": "📧 Entering credentials...\n"
                         },
                         {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
                           "text": "🛰️ Verifying dashboard access...\n"
                         },
                         {
-                          "text": "✅ UI Login Success: mark@nexus.sync\n"
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-18T18:00:20.243Z",
-                      "annotations": [
-                        {
-                          "type": "slow",
-                          "location": {
-                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js",
-                            "line": 6,
-                            "column": 8
-                          }
-                        }
-                      ],
+                      "startTime": "2026-05-26T07:57:29.511Z",
+                      "annotations": [],
                       "attachments": [
                         {
                           "name": "video",
                           "contentType": "video/webm",
-                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/smoke-Nexus-Hub-Multi-Role-c94e8-in-Dashboard-—-Agency-Admin-chromium/video.webm"
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/inventory_ops-Inventory-Op-fb2a0--inventory-items-and-search-chromium/video.webm"
                         }
                       ]
                     }
@@ -290,37 +172,1688 @@
                   "status": "expected"
                 }
               ],
-              "id": "2c14808d47b386fba9eb-e945af0f57db02387b3e",
-              "file": "smoke.spec.js",
-              "line": 13,
+              "id": "3f31676fba3f59de6abc-e6d4be1e127dd3e9a675",
+              "file": "inventory_ops.spec.js",
+              "line": 24,
               "column": 7
             },
             {
-              "title": "Login & Dashboard — Senior Operator",
+              "title": "should open add item modal",
               "ok": true,
               "tags": [],
               "tests": [
                 {
-                  "timeout": 540000,
-                  "annotations": [
-                    {
-                      "type": "slow",
-                      "location": {
-                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js",
-                        "line": 6,
-                        "column": 8
-                      }
-                    }
-                  ],
+                  "timeout": 180000,
+                  "annotations": [],
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
                   "results": [
                     {
                       "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 5402,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:57:29.507Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/inventory_ops-Inventory-Op-ebb7a--should-open-add-item-modal-chromium/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f31676fba3f59de6abc-398e7ee8c8562a030962",
+              "file": "inventory_ops.spec.js",
+              "line": 41,
+              "column": 7
+            },
+            {
+              "title": "should filter by search query",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 3996,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:57:29.493Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/inventory_ops-Inventory-Op-07ee2-ould-filter-by-search-query-chromium/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f31676fba3f59de6abc-4b51366ce8cf5f7f4a4c",
+              "file": "inventory_ops.spec.js",
+              "line": 50,
+              "column": 7
+            },
+            {
+              "title": "should display inventory items and search",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 2141,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        },
+                        {
+                          "text": "📱 Mobile detected, opening menu...\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:57:54.749Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/inventory_ops-Inventory-Op-fb2a0--inventory-items-and-search-mobile/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f31676fba3f59de6abc-04ce838a6d96c313f89b",
+              "file": "inventory_ops.spec.js",
+              "line": 24,
+              "column": 7
+            },
+            {
+              "title": "should open add item modal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 3752,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        },
+                        {
+                          "text": "📱 Mobile detected, opening menu...\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:57:56.134Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/inventory_ops-Inventory-Op-ebb7a--should-open-add-item-modal-mobile/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f31676fba3f59de6abc-cd109ece19ef23f0f536",
+              "file": "inventory_ops.spec.js",
+              "line": 41,
+              "column": 7
+            },
+            {
+              "title": "should filter by search query",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 3143,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        },
+                        {
+                          "text": "📱 Mobile detected, opening menu...\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:57:56.676Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/inventory_ops-Inventory-Op-07ee2-ould-filter-by-search-query-mobile/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f31676fba3f59de6abc-d3832505203a0842ebd0",
+              "file": "inventory_ops.spec.js",
+              "line": 50,
+              "column": 7
+            },
+            {
+              "title": "should display inventory items and search",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 5046,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:04.873Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/inventory_ops-Inventory-Op-fb2a0--inventory-items-and-search-firefox/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f31676fba3f59de6abc-19604482221f5489812e",
+              "file": "inventory_ops.spec.js",
+              "line": 24,
+              "column": 7
+            },
+            {
+              "title": "should open add item modal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 9,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 4614,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:05.415Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/inventory_ops-Inventory-Op-ebb7a--should-open-add-item-modal-firefox/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f31676fba3f59de6abc-e9a38a0c28ff665a6ebe",
+              "file": "inventory_ops.spec.js",
+              "line": 41,
+              "column": 7
+            },
+            {
+              "title": "should filter by search query",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 4995,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:06.954Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/inventory_ops-Inventory-Op-07ee2-ould-filter-by-search-query-firefox/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f31676fba3f59de6abc-7171a8d73090ce510161",
+              "file": "inventory_ops.spec.js",
+              "line": 50,
+              "column": 7
+            },
+            {
+              "title": "should display inventory items and search",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 5811,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:20.948Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/inventory_ops-Inventory-Op-fb2a0--inventory-items-and-search-webkit/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f31676fba3f59de6abc-031be8ddf0d058beb998",
+              "file": "inventory_ops.spec.js",
+              "line": 24,
+              "column": 7
+            },
+            {
+              "title": "should open add item modal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 13,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 7101,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:21.088Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/inventory_ops-Inventory-Op-ebb7a--should-open-add-item-modal-webkit/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f31676fba3f59de6abc-d6c207a2d50302905cd0",
+              "file": "inventory_ops.spec.js",
+              "line": 41,
+              "column": 7
+            },
+            {
+              "title": "should filter by search query",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 14,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 3846,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:23.782Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/inventory_ops-Inventory-Op-07ee2-ould-filter-by-search-query-webkit/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3f31676fba3f59de6abc-026f244791d8e7c67ec0",
+              "file": "inventory_ops.spec.js",
+              "line": 50,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "operator_chat.spec.js",
+      "file": "operator_chat.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Operator Inbox & Chat E2E",
+          "file": "operator_chat.spec.js",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should load chat list or empty state",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 5521,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:57:29.502Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/operator_chat-Operator-Inb-c7f46-ad-chat-list-or-empty-state-chromium/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3479b88ca20cdedb5dc5-a7adf669b11aa1ba1dbb",
+              "file": "operator_chat.spec.js",
+              "line": 34,
+              "column": 7
+            },
+            {
+              "title": "should be able to type a message if chat exists",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 20881,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        },
+                        {
+                          "text": "Skipping message typing: No active chats found for Alice.\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:57:34.621Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/operator_chat-Operator-Inb-7543d-pe-a-message-if-chat-exists-chromium/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3479b88ca20cdedb5dc5-288346bfeb0177e0012c",
+              "file": "operator_chat.spec.js",
+              "line": 48,
+              "column": 7
+            },
+            {
+              "title": "should show panic and sync buttons in chat header if chat exists",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2795,
+                      "duration": 21367,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:57:34.603Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/operator_chat-Operator-Inb-2d8c6--chat-header-if-chat-exists-chromium/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3479b88ca20cdedb5dc5-a01e1491c5c9042da409",
+              "file": "operator_chat.spec.js",
+              "line": 60,
+              "column": 7
+            },
+            {
+              "title": "should load chat list or empty state",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3921,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        },
+                        {
+                          "text": "📱 Mobile detected, opening menu...\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:57:56.725Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/operator_chat-Operator-Inb-c7f46-ad-chat-list-or-empty-state-mobile/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3479b88ca20cdedb5dc5-3c7f28c5380160d18c57",
+              "file": "operator_chat.spec.js",
+              "line": 34,
+              "column": 7
+            },
+            {
+              "title": "should be able to type a message if chat exists",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 3995,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        },
+                        {
+                          "text": "📱 Mobile detected, opening menu...\n"
+                        },
+                        {
+                          "text": "Skipping message typing: No active chats found for Alice.\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:57:57.141Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/operator_chat-Operator-Inb-7543d-pe-a-message-if-chat-exists-mobile/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3479b88ca20cdedb5dc5-a99559985aa46171e063",
+              "file": "operator_chat.spec.js",
+              "line": 48,
+              "column": 7
+            },
+            {
+              "title": "should show panic and sync buttons in chat header if chat exists",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 2622,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        },
+                        {
+                          "text": "📱 Mobile detected, opening menu...\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:57:59.949Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/operator_chat-Operator-Inb-2d8c6--chat-header-if-chat-exists-mobile/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3479b88ca20cdedb5dc5-50315b0295f6bf47bb8d",
+              "file": "operator_chat.spec.js",
+              "line": 60,
+              "column": 7
+            },
+            {
+              "title": "should load chat list or empty state",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 11,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4197,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:08.376Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/operator_chat-Operator-Inb-c7f46-ad-chat-list-or-empty-state-firefox/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3479b88ca20cdedb5dc5-c7c7d1dc39ded161a35b",
+              "file": "operator_chat.spec.js",
+              "line": 34,
+              "column": 7
+            },
+            {
+              "title": "should be able to type a message if chat exists",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 9,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 4025,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        },
+                        {
+                          "text": "Skipping message typing: No active chats found for Alice.\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:11.275Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/operator_chat-Operator-Inb-7543d-pe-a-message-if-chat-exists-firefox/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3479b88ca20cdedb5dc5-398ff96775497b67b34d",
+              "file": "operator_chat.spec.js",
+              "line": 48,
+              "column": 7
+            },
+            {
+              "title": "should show panic and sync buttons in chat header if chat exists",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 3075,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:12.042Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/operator_chat-Operator-Inb-2d8c6--chat-header-if-chat-exists-firefox/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3479b88ca20cdedb5dc5-3f711ddd05313ce03ae1",
+              "file": "operator_chat.spec.js",
+              "line": 60,
+              "column": 7
+            },
+            {
+              "title": "should load chat list or empty state",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 15,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3834,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:23.815Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/operator_chat-Operator-Inb-c7f46-ad-chat-list-or-empty-state-webkit/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3479b88ca20cdedb5dc5-a522e14d278cbbcc2655",
+              "file": "operator_chat.spec.js",
+              "line": 34,
+              "column": 7
+            },
+            {
+              "title": "should be able to type a message if chat exists",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 4511,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        },
+                        {
+                          "text": "Skipping message typing: No active chats found for Alice.\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:27.875Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/operator_chat-Operator-Inb-7543d-pe-a-message-if-chat-exists-webkit/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3479b88ca20cdedb5dc5-107f7ea6078573b07091",
+              "file": "operator_chat.spec.js",
+              "line": 48,
+              "column": 7
+            },
+            {
+              "title": "should show panic and sync buttons in chat header if chat exists",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 15,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4042,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:27.862Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/operator_chat-Operator-Inb-2d8c6--chat-header-if-chat-exists-webkit/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3479b88ca20cdedb5dc5-18c60c6598bcd71e2edf",
+              "file": "operator_chat.spec.js",
+              "line": 60,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "profile_management.spec.js",
+      "file": "profile_management.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Profile Management E2E",
+          "file": "profile_management.spec.js",
+          "line": 6,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display profile cards and actions",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 6307,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:57:35.962Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/profile_management-Profile-cc1b3-y-profile-cards-and-actions-chromium/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ea23e3108164a75fd00c-9b81ffd597964c8fd53a",
+              "file": "profile_management.spec.js",
+              "line": 23,
+              "column": 7
+            },
+            {
+              "title": "should open edit profile modal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 6749,
                       "errors": [],
                       "stdout": [
                         {
@@ -333,27 +1866,30 @@
                           "text": "🛰️ Verifying dashboard access...\n"
                         },
                         {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
                           "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-18T18:00:23.465Z",
-                      "annotations": [
-                        {
-                          "type": "slow",
-                          "location": {
-                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js",
-                            "line": 6,
-                            "column": 8
-                          }
-                        }
-                      ],
+                      "startTime": "2026-05-26T07:57:36.070Z",
+                      "annotations": [],
                       "attachments": [
                         {
                           "name": "video",
                           "contentType": "video/webm",
-                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/smoke-Nexus-Hub-Multi-Role-8ade9-Dashboard-—-Senior-Operator-chromium/video.webm"
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/profile_management-Profile-ae1e7-uld-open-edit-profile-modal-chromium/video.webm"
                         }
                       ]
                     }
@@ -361,70 +1897,64 @@
                   "status": "expected"
                 }
               ],
-              "id": "2c14808d47b386fba9eb-7babb9ee52b20ecea6dc",
-              "file": "smoke.spec.js",
-              "line": 19,
+              "id": "ea23e3108164a75fd00c-1afa51ac20bf473b69f8",
+              "file": "profile_management.spec.js",
+              "line": 35,
               "column": 7
             },
             {
-              "title": "Login & Dashboard — Model",
+              "title": "should show credentials for authorized users",
               "ok": true,
               "tags": [],
               "tests": [
                 {
-                  "timeout": 540000,
-                  "annotations": [
-                    {
-                      "type": "slow",
-                      "location": {
-                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js",
-                        "line": 6,
-                        "column": 8
-                      }
-                    }
-                  ],
+                  "timeout": 180000,
+                  "annotations": [],
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
                   "results": [
                     {
                       "workerIndex": 1,
-                      "parallelIndex": 0,
+                      "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 1974,
+                      "duration": 5306,
                       "errors": [],
                       "stdout": [
                         {
-                          "text": "🔑 UI Login: diana@nexus.sync...\n"
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
                         },
                         {
                           "text": "📧 Entering credentials...\n"
                         },
                         {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
                           "text": "🛰️ Verifying dashboard access...\n"
                         },
                         {
-                          "text": "✅ UI Login Success: diana@nexus.sync\n"
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-18T18:00:26.383Z",
-                      "annotations": [
-                        {
-                          "type": "slow",
-                          "location": {
-                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/smoke.spec.js",
-                            "line": 6,
-                            "column": 8
-                          }
-                        }
-                      ],
+                      "startTime": "2026-05-26T07:57:42.325Z",
+                      "annotations": [],
                       "attachments": [
                         {
                           "name": "video",
                           "contentType": "video/webm",
-                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/smoke-Nexus-Hub-Multi-Role-Smoke-Login-Dashboard-—-Model-chromium/video.webm"
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/profile_management-Profile-95c4a-ntials-for-authorized-users-chromium/video.webm"
                         }
                       ]
                     }
@@ -432,9 +1962,1693 @@
                   "status": "expected"
                 }
               ],
-              "id": "2c14808d47b386fba9eb-ae56abd15e2f2291ead3",
-              "file": "smoke.spec.js",
-              "line": 24,
+              "id": "ea23e3108164a75fd00c-41d01ddc809b17bfca07",
+              "file": "profile_management.spec.js",
+              "line": 49,
+              "column": 7
+            },
+            {
+              "title": "should display profile cards and actions",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 2361,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        },
+                        {
+                          "text": "📱 Mobile detected, opening menu...\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:00.084Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/profile_management-Profile-cc1b3-y-profile-cards-and-actions-mobile/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ea23e3108164a75fd00c-a8d451d71654c3c3ec75",
+              "file": "profile_management.spec.js",
+              "line": 23,
+              "column": 7
+            },
+            {
+              "title": "should open edit profile modal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3209,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        },
+                        {
+                          "text": "📱 Mobile detected, opening menu...\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:00.788Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/profile_management-Profile-ae1e7-uld-open-edit-profile-modal-mobile/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ea23e3108164a75fd00c-2df95983a1dcb4d7bea5",
+              "file": "profile_management.spec.js",
+              "line": 35,
+              "column": 7
+            },
+            {
+              "title": "should show credentials for authorized users",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 2699,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        },
+                        {
+                          "text": "📱 Mobile detected, opening menu...\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:01.150Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/profile_management-Profile-95c4a-ntials-for-authorized-users-mobile/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ea23e3108164a75fd00c-50c79df0ee00a5b06300",
+              "file": "profile_management.spec.js",
+              "line": 49,
+              "column": 7
+            },
+            {
+              "title": "should display profile cards and actions",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 4134,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:12.681Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/profile_management-Profile-cc1b3-y-profile-cards-and-actions-firefox/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ea23e3108164a75fd00c-e0108b9c4a3a33bb5c43",
+              "file": "profile_management.spec.js",
+              "line": 23,
+              "column": 7
+            },
+            {
+              "title": "should open edit profile modal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 11,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4815,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:13.833Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/profile_management-Profile-ae1e7-uld-open-edit-profile-modal-firefox/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ea23e3108164a75fd00c-6381551394892c777edc",
+              "file": "profile_management.spec.js",
+              "line": 35,
+              "column": 7
+            },
+            {
+              "title": "should show credentials for authorized users",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 4400,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:15.171Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/profile_management-Profile-95c4a-ntials-for-authorized-users-firefox/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ea23e3108164a75fd00c-c8d5ff783c1161e414d2",
+              "file": "profile_management.spec.js",
+              "line": 49,
+              "column": 7
+            },
+            {
+              "title": "should display profile cards and actions",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 14,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 3983,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:27.875Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/profile_management-Profile-cc1b3-y-profile-cards-and-actions-webkit/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ea23e3108164a75fd00c-90cec33a6fa2790e5f16",
+              "file": "profile_management.spec.js",
+              "line": 23,
+              "column": 7
+            },
+            {
+              "title": "should open edit profile modal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 13,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 3750,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:29.140Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/profile_management-Profile-ae1e7-uld-open-edit-profile-modal-webkit/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ea23e3108164a75fd00c-0a4a81b7d094ab29bcb4",
+              "file": "profile_management.spec.js",
+              "line": 35,
+              "column": 7
+            },
+            {
+              "title": "should show credentials for authorized users",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 14,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 3032,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:31.880Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/profile_management-Profile-95c4a-ntials-for-authorized-users-webkit/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ea23e3108164a75fd00c-73ebe5098954e1da6180",
+              "file": "profile_management.spec.js",
+              "line": 49,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "safety_guard.spec.js",
+      "file": "safety_guard.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Safety Guard™ E2E Tests",
+          "file": "safety_guard.spec.js",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display active sessions and metrics",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 5320,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:57:42.875Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-8aaaa-active-sessions-and-metrics-chromium/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c7c11f9ddbbb13db6ec1-b45f6316998a1d9416a5",
+              "file": "safety_guard.spec.js",
+              "line": 27,
+              "column": 7
+            },
+            {
+              "title": "should search for a model",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 4704,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:57:47.738Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-950cb-s-should-search-for-a-model-chromium/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c7c11f9ddbbb13db6ec1-77157a55a1330c9efb48",
+              "file": "safety_guard.spec.js",
+              "line": 45,
+              "column": 7
+            },
+            {
+              "title": "should toggle filters",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 5573,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:57:48.245Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-E2E-Tests-should-toggle-filters-chromium/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c7c11f9ddbbb13db6ec1-3a02b2406cafcc00e15f",
+              "file": "safety_guard.spec.js",
+              "line": 55,
+              "column": 7
+            },
+            {
+              "title": "should manage safety settings",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 3489,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:57:52.470Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-a58b4-ould-manage-safety-settings-chromium/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c7c11f9ddbbb13db6ec1-745d8668c34dd068c8b7",
+              "file": "safety_guard.spec.js",
+              "line": 67,
+              "column": 7
+            },
+            {
+              "title": "should display active sessions and metrics",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 2502,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        },
+                        {
+                          "text": "📱 Mobile detected, opening menu...\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:02.488Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-8aaaa-active-sessions-and-metrics-mobile/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c7c11f9ddbbb13db6ec1-b2bba811314d79f21236",
+              "file": "safety_guard.spec.js",
+              "line": 27,
+              "column": 7
+            },
+            {
+              "title": "should search for a model",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 1882,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        },
+                        {
+                          "text": "📱 Mobile detected, opening menu...\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:02.631Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-950cb-s-should-search-for-a-model-mobile/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c7c11f9ddbbb13db6ec1-97d09d1b312be7a7a2fc",
+              "file": "safety_guard.spec.js",
+              "line": 45,
+              "column": 7
+            },
+            {
+              "title": "should toggle filters",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 2604,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        },
+                        {
+                          "text": "📱 Mobile detected, opening menu...\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:03.877Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-E2E-Tests-should-toggle-filters-mobile/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c7c11f9ddbbb13db6ec1-9888a95514e4b0e96e16",
+              "file": "safety_guard.spec.js",
+              "line": 55,
+              "column": 7
+            },
+            {
+              "title": "should manage safety settings",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile",
+                  "projectName": "mobile",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3380,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        },
+                        {
+                          "text": "📱 Mobile detected, opening menu...\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:04.014Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-a58b4-ould-manage-safety-settings-mobile/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c7c11f9ddbbb13db6ec1-1b74881c835bf658be94",
+              "file": "safety_guard.spec.js",
+              "line": 67,
+              "column": 7
+            },
+            {
+              "title": "should display active sessions and metrics",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 9,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 4129,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:15.314Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-8aaaa-active-sessions-and-metrics-firefox/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c7c11f9ddbbb13db6ec1-480dc5009259ea66d508",
+              "file": "safety_guard.spec.js",
+              "line": 27,
+              "column": 7
+            },
+            {
+              "title": "should search for a model",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 3183,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:16.840Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-950cb-s-should-search-for-a-model-firefox/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c7c11f9ddbbb13db6ec1-600bc81acfe7b283e02f",
+              "file": "safety_guard.spec.js",
+              "line": 45,
+              "column": 7
+            },
+            {
+              "title": "should toggle filters",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 11,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4323,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:18.668Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-E2E-Tests-should-toggle-filters-firefox/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c7c11f9ddbbb13db6ec1-c17b5633e8aa2176a3c6",
+              "file": "safety_guard.spec.js",
+              "line": 55,
+              "column": 7
+            },
+            {
+              "title": "should manage safety settings",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 9,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 3452,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:19.457Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-a58b4-ould-manage-safety-settings-firefox/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c7c11f9ddbbb13db6ec1-59fcf6e1236d95346704",
+              "file": "safety_guard.spec.js",
+              "line": 67,
+              "column": 7
+            },
+            {
+              "title": "should display active sessions and metrics",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 15,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3361,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:31.921Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-8aaaa-active-sessions-and-metrics-webkit/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c7c11f9ddbbb13db6ec1-c2680fb327bdd7a6cc9f",
+              "file": "safety_guard.spec.js",
+              "line": 27,
+              "column": 7
+            },
+            {
+              "title": "should search for a model",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 3250,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:32.400Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-950cb-s-should-search-for-a-model-webkit/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c7c11f9ddbbb13db6ec1-7d3d6fdd7e054cebac99",
+              "file": "safety_guard.spec.js",
+              "line": 45,
+              "column": 7
+            },
+            {
+              "title": "should toggle filters",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 13,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 3791,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:32.905Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-E2E-Tests-should-toggle-filters-webkit/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c7c11f9ddbbb13db6ec1-9b53e8f750c243177af6",
+              "file": "safety_guard.spec.js",
+              "line": 55,
+              "column": 7
+            },
+            {
+              "title": "should manage safety settings",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [
+                    {
+                      "workerIndex": 14,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 2886,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-26T07:58:34.922Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/safety_guard-Safety-Guard™-a58b4-ould-manage-safety-settings-webkit/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c7c11f9ddbbb13db6ec1-10798b0a5b1ad9bbd911",
+              "file": "safety_guard.spec.js",
+              "line": 67,
               "column": 7
             }
           ]
@@ -444,11 +3658,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-05-18T17:59:41.536Z",
-    "duration": 47363.12,
-    "expected": 3,
+    "startTime": "2026-05-26T07:57:28.543Z",
+    "duration": 69309.31,
+    "expected": 52,
     "skipped": 0,
-    "unexpected": 1,
+    "unexpected": 0,
     "flaky": 0
   }
 }
