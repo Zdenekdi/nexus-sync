@@ -260,6 +260,16 @@ export const NexusProvider = ({ children }) => {
   });
   const { activeOperator: authUser, token, handleLogout: logout, isLoggedIn, handleLogin } = auth;
 
+  // Redirect unauthenticated users from protected routes to login
+  useEffect(() => {
+    if (!isLoggedIn) {
+      const clean = pathname.replace(/^\/(en|cz)/, '') || '/';
+      if (clean !== '/' && clean !== '/guide' && clean !== '/login' && clean !== '/register') {
+        navigate('/login', 'login');
+      }
+    }
+  }, [isLoggedIn, pathname, navigate]);
+
   const memoizedSetActiveOperator = useCallback((op) => setActiveOperatorState(op), []);
   const memoizedSetMessages = useCallback((msgs) => setMessages(msgs), []);
   const memoizedNormalizeProfileId = useCallback((id) => id, []);
