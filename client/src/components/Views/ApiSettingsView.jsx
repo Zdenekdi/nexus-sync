@@ -7,7 +7,7 @@ import axios from 'axios';
 import { useNexus } from '../../context/ContextHook';
 
 const ApiSettingsView = () => {
-  const { lang, showToast } = useNexus();
+  const { lang, showToast, API_BASE, token } = useNexus();
   const [keys, setKeys] = useState([]);
   const [agency, setAgency] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,8 +21,8 @@ const ApiSettingsView = () => {
     try {
       setIsLoading(true);
       const [keysRes, agencyRes] = await Promise.all([
-        axios.get('/api/developer/keys'),
-        axios.get('/api/agency/settings')
+        axios.get(`${API_BASE}/developer/keys`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${API_BASE}/agency/settings`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
       setKeys(keysRes.data);
       setAgency(agencyRes.data);
@@ -32,7 +32,7 @@ const ApiSettingsView = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [showToast]);
+  }, [showToast, API_BASE, token]);
 
   useEffect(() => {
     fetchData();
@@ -48,7 +48,7 @@ const ApiSettingsView = () => {
 
     try {
       setIsGenerating(true);
-      const response = await axios.post('/api/developer/keys', { name, scopes });
+      const response = await axios.post(`${API_BASE}/developer/keys`, { name, scopes }, { headers: { Authorization: `Bearer ${token}` } });
       setNewKey(response.data.apiKey);
       fetchData();
       showToast('API klíč byl vygenerován', 'success');
@@ -61,7 +61,7 @@ const ApiSettingsView = () => {
 
   const handleRevokeKey = async (id) => {
     try {
-      await axios.delete(`/api/developer/keys/${id}`);
+      await axios.delete(`${API_BASE}/developer/keys/${id}`, { headers: { Authorization: `Bearer ${token}` } });
       setKeys(keys.filter(k => k.id !== id));
       setShowConfirmDelete(null);
       showToast('API klíč byl zneplatněn', 'success');
@@ -80,11 +80,11 @@ const ApiSettingsView = () => {
   const handleUpgrade = async () => {
     try {
       setIsUpgrading(true);
-      const { data } = await axios.post('/api/billing/checkout', {
+      const { data } = await axios.post(`${API_BASE}/billing/checkout`, {
         planId: 'api_access',
         successUrl: window.location.href,
         cancelUrl: window.location.href
-      });
+      }, { headers: { Authorization: `Bearer ${token}` } });
 
       if (data.url) {
         showToast(lang === 'cz' ? 'Přesměrování na platební bránu...' : 'Redirecting to payment gateway...', 'info');

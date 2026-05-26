@@ -20,7 +20,7 @@ const LoadingFallback = () => (
 );
 
 const ViewRouter = () => {
-  const { activeTab, isTvMode } = useNexus();
+  const { activeTab, isTvMode, isAllowed } = useNexus();
 
   const renderContent = () => {
     if (isTvMode) return <TvDashboard />;
@@ -51,8 +51,9 @@ const ViewRouter = () => {
       case 'payouts':
       case 'settings':
       case 'safety-guard':
-      case 'developer':
         return <AgencyUnit />;
+      case 'developer':
+        return isAllowed('permissions') ? <AgencyUnit /> : <DashboardHome />;
 
       // Infrastructure Unit Views
       case 'agencies':
