@@ -195,7 +195,7 @@ const RegisterAgencyView = ({ isCz, onSwitch }) => {
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
         <InputGroup label={isCz ? 'Název agentury' : 'Agency Name'} icon={Building2}>
-          <StyledInput required placeholder="e.g. Elite Models" value={formData.agencyName} onChange={e => setFormData({...formData, agencyName: e.target.value})} />
+          <StyledInput required placeholder={isCz ? 'např. Elite Models' : 'e.g. Elite Models'} value={formData.agencyName} onChange={e => setFormData({...formData, agencyName: e.target.value})} />
         </InputGroup>
         <InputGroup label={isCz ? 'Vaše celé jméno' : 'Your Full Name'} icon={User}>
           <StyledInput required placeholder="John Doe" value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} />

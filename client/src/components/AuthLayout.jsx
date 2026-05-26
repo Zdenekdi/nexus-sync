@@ -79,13 +79,49 @@ const FeatureItem = ({ icon: Icon, title, desc, delay }) => (
   </div>
 );
 
+const LanguageSwitcher = ({ lang, setLang }) => (
+  <div style={{ 
+    display: 'flex', 
+    background: 'rgba(255,255,255,0.03)', 
+    padding: '3px', 
+    borderRadius: '10px', 
+    border: '1px solid rgba(255,255,255,0.06)',
+    backdropFilter: 'blur(10px)',
+    zIndex: 20
+  }}>
+    {['cz', 'en'].map(l => (
+      <button 
+        key={l} 
+        onClick={() => setLang(l)} 
+        style={{ 
+          padding: '4px 10px', 
+          borderRadius: '8px', 
+          border: 'none', 
+          background: lang === l ? 'rgba(59, 130, 246, 0.2)' : 'transparent', 
+          color: lang === l ? '#60a5fa' : 'rgba(255,255,255,0.4)', 
+          fontSize: '0.7rem', 
+          fontWeight: '900', 
+          cursor: 'pointer', 
+          transition: 'all 0.2s',
+          textTransform: 'uppercase'
+        }}
+      >
+        {l}
+      </button>
+    ))}
+  </div>
+);
+
 const AuthLayout = ({ children, title: _title, subtitle }) => {
-  const { lang, isMobile, navigate } = useNexus();
+  const { lang, setLang, isMobile, navigate } = useNexus();
   const isCz = lang === 'cz';
 
   if (isMobile) {
     return (
-      <div style={{ ...STYLES.page, flexDirection: 'column', overflow: 'auto', background: '#040507' }}>
+      <div style={{ ...STYLES.page, flexDirection: 'column', overflow: 'auto', background: '#040507', position: 'relative' }}>
+        <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem' }}>
+          <LanguageSwitcher lang={lang} setLang={setLang} />
+        </div>
         <div style={{ padding: '2.5rem 1.5rem', textAlign: 'center' }}>
           <img src="/nexus_icon.png" alt="Nexus" style={{ width: '56px', borderRadius: '14px', marginBottom: '1.5rem', boxShadow: '0 10px 30px rgba(59, 130, 246, 0.3)' }} />
           <h1 style={{ color: 'white', fontSize: '1.75rem', fontWeight: '950', margin: 0, letterSpacing: '-0.02em' }}>Nexus Hub</h1>
@@ -139,20 +175,20 @@ const AuthLayout = ({ children, title: _title, subtitle }) => {
           <div style={{ marginTop: '4rem' }}>
             <FeatureItem 
               icon={Shield} 
-              title={isCz ? 'Safety Guard™' : 'Safety Guard™'} 
-              desc={isCz ? 'Real-time monitoring, SOS alerty a komplexní zabezpečení vašich dat.' : 'Real-time monitoring, SOS alerts and comprehensive security for your data.'} 
+              title={isCz ? 'Bezpečnostní dohled™' : 'Safety Guard™'} 
+              desc={isCz ? 'Nepřetržitý monitoring, SOS upozornění a komplexní zabezpečení vašich dat.' : 'Real-time monitoring, SOS alerts and comprehensive security for your data.'} 
               delay={0.2}
             />
             <FeatureItem 
               icon={BarChart3} 
-              title={isCz ? 'Deep Analytics' : 'Deep Analytics'} 
+              title={isCz ? 'Hloubková analytika' : 'Deep Analytics'} 
               desc={isCz ? 'Detailní přehledy tržeb, predikce výkonu a pokročilé reportování.' : 'Detailed revenue insights, performance predictions and advanced reporting.'} 
               delay={0.3}
             />
             <FeatureItem 
               icon={Globe} 
-              title={isCz ? 'Omnichannel Sync' : 'Omnichannel Sync'} 
-              desc={isCz ? 'WhatsApp, Telegram, OF a další platformy synchronizované v jednom rozhraní.' : 'WhatsApp, Telegram, OF and other platforms synced in one unified interface.'} 
+              title={isCz ? 'Omnichannel synchronizace' : 'Omnichannel Sync'} 
+              desc={isCz ? 'WhatsApp, Telegram, OnlyFans a další platformy synchronizované v jednom rozhraní.' : 'WhatsApp, Telegram, OnlyFans and other platforms synced in one unified interface.'} 
               delay={0.4}
             />
           </div>
@@ -164,6 +200,9 @@ const AuthLayout = ({ children, title: _title, subtitle }) => {
       </div>
 
       <div style={STYLES.rightSide}>
+        <div style={{ position: 'absolute', top: '2rem', right: '2rem' }}>
+          <LanguageSwitcher lang={lang} setLang={setLang} />
+        </div>
         <div style={{ ...STYLES.glow, bottom: '-10%', right: '-10%', background: 'radial-gradient(circle, rgba(139, 92, 246, 0.1), transparent 70%)' }} />
         <div style={STYLES.formContainer}>
           {children}

@@ -32,7 +32,7 @@ export const NexusProvider = ({ children }) => {
     catch { return fallback; }
   };
 
-  const [lang, setLang] = useState(() => {
+  const [lang, setLangState] = useState(() => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
       if (path.startsWith('/en')) return 'en';
@@ -40,6 +40,28 @@ export const NexusProvider = ({ children }) => {
     }
     return getSafeStorage('nexus_lang', 'cz');
   });
+
+  const setLang = useCallback((newLang) => {
+    setLangState(newLang);
+    try {
+      localStorage.setItem('nexus_lang', newLang);
+    } catch (_err) {}
+
+    if (typeof window !== 'undefined') {
+      const currentPath = window.location.pathname;
+      const cleanPath = currentPath.replace(/^\/(en|cz)/, '') || '/';
+      
+      let targetPath = cleanPath;
+      if (newLang !== 'cz') {
+        targetPath = `/${newLang}${cleanPath === '/' ? '' : cleanPath}`;
+      }
+      
+      if (targetPath !== currentPath) {
+        window.history.pushState(null, '', targetPath);
+        setPathname(targetPath);
+      }
+    }
+  }, []);
   
   const [activeMarket, _setActiveMarket] = useState(() => getSafeStorage('nexus_active_market', 'UK'));
   
@@ -140,8 +162,8 @@ export const NexusProvider = ({ children }) => {
       }
     }
     
-    if (pathname.startsWith('/en')) setLang('en');
-    else if (pathname.startsWith('/cz')) setLang('cz');
+    if (pathname.startsWith('/en')) setLangState('en');
+    else if (pathname.startsWith('/cz')) setLangState('cz');
     
     // Save to localStorage for persistence
     localStorage.setItem('nexus_active_tab', p.split('/')[1] || p.substring(1) || 'dashboard');
