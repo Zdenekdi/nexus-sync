@@ -128,7 +128,7 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3920,
+                      "duration": 3636,
                       "errors": [],
                       "stdout": [
                         {
@@ -158,7 +158,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:24.585Z",
+                      "startTime": "2026-05-26T11:34:23.783Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -193,7 +193,7 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 4481,
+                      "duration": 4592,
                       "errors": [],
                       "stdout": [
                         {
@@ -203,16 +203,13 @@
                           "text": "📧 Entering credentials...\n"
                         },
                         {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
                           "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
                         },
                         {
                           "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
-                        },
-                        {
-                          "text": "🛰️ Verifying dashboard access...\n"
-                        },
-                        {
-                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
                           "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
@@ -226,7 +223,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:24.586Z",
+                      "startTime": "2026-05-26T11:34:23.779Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -261,7 +258,7 @@
                       "workerIndex": 2,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 3992,
+                      "duration": 3692,
                       "errors": [],
                       "stdout": [
                         {
@@ -294,7 +291,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:24.585Z",
+                      "startTime": "2026-05-26T11:34:23.774Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -329,7 +326,7 @@
                       "workerIndex": 4,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 1910,
+                      "duration": 1951,
                       "errors": [],
                       "stdout": [
                         {
@@ -365,7 +362,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:45.195Z",
+                      "startTime": "2026-05-26T11:34:43.128Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -400,7 +397,7 @@
                       "workerIndex": 5,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 4305,
+                      "duration": 3251,
                       "errors": [],
                       "stdout": [
                         {
@@ -433,7 +430,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:45.495Z",
+                      "startTime": "2026-05-26T11:34:43.478Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -468,7 +465,7 @@
                       "workerIndex": 6,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2522,
+                      "duration": 2447,
                       "errors": [],
                       "stdout": [
                         {
@@ -493,9 +490,6 @@
                           "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
-                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
-                        },
-                        {
                           "text": "✅ UI Login Success: alice@nexus.sync\n"
                         },
                         {
@@ -504,7 +498,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:45.689Z",
+                      "startTime": "2026-05-26T11:34:43.937Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -537,9 +531,9 @@
                   "results": [
                     {
                       "workerIndex": 8,
-                      "parallelIndex": 1,
+                      "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 4056,
+                      "duration": 4008,
                       "errors": [],
                       "stdout": [
                         {
@@ -564,15 +558,12 @@
                           "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
-                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
-                        },
-                        {
                           "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:52.633Z",
+                      "startTime": "2026-05-26T11:34:50.584Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -605,9 +596,9 @@
                   "results": [
                     {
                       "workerIndex": 9,
-                      "parallelIndex": 3,
+                      "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 5613,
+                      "duration": 5018,
                       "errors": [],
                       "stdout": [
                         {
@@ -637,7 +628,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:53.273Z",
+                      "startTime": "2026-05-26T11:34:50.988Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -670,9 +661,9 @@
                   "results": [
                     {
                       "workerIndex": 10,
-                      "parallelIndex": 2,
+                      "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 3994,
+                      "duration": 4097,
                       "errors": [],
                       "stdout": [
                         {
@@ -702,7 +693,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:54.739Z",
+                      "startTime": "2026-05-26T11:34:52.489Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -737,7 +728,7 @@
                       "workerIndex": 12,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 4977,
+                      "duration": 3604,
                       "errors": [],
                       "stdout": [
                         {
@@ -759,12 +750,15 @@
                           "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
                           "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:31:06.829Z",
+                      "startTime": "2026-05-26T11:35:04.567Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -797,9 +791,9 @@
                   "results": [
                     {
                       "workerIndex": 13,
-                      "parallelIndex": 0,
+                      "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 6817,
+                      "duration": 4679,
                       "errors": [],
                       "stdout": [
                         {
@@ -821,12 +815,15 @@
                           "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
                           "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:31:07.111Z",
+                      "startTime": "2026-05-26T11:35:05.341Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -859,9 +856,9 @@
                   "results": [
                     {
                       "workerIndex": 14,
-                      "parallelIndex": 3,
+                      "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 3776,
+                      "duration": 3266,
                       "errors": [],
                       "stdout": [
                         {
@@ -883,12 +880,15 @@
                           "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
                           "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:31:09.396Z",
+                      "startTime": "2026-05-26T11:35:07.875Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -940,7 +940,7 @@
                       "workerIndex": 3,
                       "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 5458,
+                      "duration": 4224,
                       "errors": [],
                       "stdout": [
                         {
@@ -965,12 +965,15 @@
                           "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
                           "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:24.589Z",
+                      "startTime": "2026-05-26T11:34:23.782Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -1005,7 +1008,7 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 15864,
+                      "duration": 15691,
                       "errors": [],
                       "stdout": [
                         {
@@ -1038,7 +1041,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:29.291Z",
+                      "startTime": "2026-05-26T11:34:27.760Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -1073,7 +1076,7 @@
                       "workerIndex": 2,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 15684,
+                      "duration": 15144,
                       "errors": [],
                       "stdout": [
                         {
@@ -1106,7 +1109,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:29.315Z",
+                      "startTime": "2026-05-26T11:34:27.802Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -1138,10 +1141,10 @@
                   "projectName": "mobile",
                   "results": [
                     {
-                      "workerIndex": 7,
-                      "parallelIndex": 3,
+                      "workerIndex": 4,
+                      "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 1927,
+                      "duration": 1807,
                       "errors": [],
                       "stdout": [
                         {
@@ -1174,7 +1177,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:45.936Z",
+                      "startTime": "2026-05-26T11:34:45.175Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -1206,10 +1209,10 @@
                   "projectName": "mobile",
                   "results": [
                     {
-                      "workerIndex": 4,
-                      "parallelIndex": 1,
+                      "workerIndex": 7,
+                      "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 1878,
+                      "duration": 1977,
                       "errors": [],
                       "stdout": [
                         {
@@ -1248,7 +1251,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:47.222Z",
+                      "startTime": "2026-05-26T11:34:45.628Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -1280,10 +1283,10 @@
                   "projectName": "mobile",
                   "results": [
                     {
-                      "workerIndex": 7,
-                      "parallelIndex": 3,
+                      "workerIndex": 6,
+                      "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2482,
+                      "duration": 1937,
                       "errors": [],
                       "stdout": [
                         {
@@ -1316,7 +1319,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:47.940Z",
+                      "startTime": "2026-05-26T11:34:46.461Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -1349,9 +1352,9 @@
                   "results": [
                     {
                       "workerIndex": 11,
-                      "parallelIndex": 0,
+                      "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 4147,
+                      "duration": 4127,
                       "errors": [],
                       "stdout": [
                         {
@@ -1381,7 +1384,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:55.210Z",
+                      "startTime": "2026-05-26T11:34:53.287Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -1414,9 +1417,9 @@
                   "results": [
                     {
                       "workerIndex": 8,
-                      "parallelIndex": 1,
+                      "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3041,
+                      "duration": 3490,
                       "errors": [],
                       "stdout": [
                         {
@@ -1452,7 +1455,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:58.102Z",
+                      "startTime": "2026-05-26T11:34:55.876Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -1485,9 +1488,9 @@
                   "results": [
                     {
                       "workerIndex": 10,
-                      "parallelIndex": 2,
+                      "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 3475,
+                      "duration": 3574,
                       "errors": [],
                       "stdout": [
                         {
@@ -1517,7 +1520,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:59.365Z",
+                      "startTime": "2026-05-26T11:34:57.206Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -1550,9 +1553,9 @@
                   "results": [
                     {
                       "workerIndex": 15,
-                      "parallelIndex": 1,
+                      "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3363,
+                      "duration": 3272,
                       "errors": [],
                       "stdout": [
                         {
@@ -1574,12 +1577,15 @@
                           "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
                           "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:31:09.667Z",
+                      "startTime": "2026-05-26T11:35:08.217Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -1614,7 +1620,7 @@
                       "workerIndex": 12,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 3106,
+                      "duration": 3014,
                       "errors": [],
                       "stdout": [
                         {
@@ -1647,7 +1653,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:31:12.495Z",
+                      "startTime": "2026-05-26T11:35:08.894Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -1679,10 +1685,10 @@
                   "projectName": "webkit",
                   "results": [
                     {
-                      "workerIndex": 15,
-                      "parallelIndex": 1,
+                      "workerIndex": 13,
+                      "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 3201,
+                      "duration": 3092,
                       "errors": [],
                       "stdout": [
                         {
@@ -1704,12 +1710,15 @@
                           "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
                           "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:31:13.271Z",
+                      "startTime": "2026-05-26T11:35:10.213Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -1758,10 +1767,10 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 2409,
+                      "duration": 3767,
                       "errors": [],
                       "stdout": [
                         {
@@ -1786,15 +1795,12 @@
                           "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
-                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
-                        },
-                        {
                           "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:29.797Z",
+                      "startTime": "2026-05-26T11:34:28.313Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -1826,10 +1832,10 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 3,
-                      "parallelIndex": 3,
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 5392,
+                      "duration": 4579,
                       "errors": [],
                       "stdout": [
                         {
@@ -1862,7 +1868,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:30.770Z",
+                      "startTime": "2026-05-26T11:34:28.683Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -1894,10 +1900,10 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 3999,
+                      "duration": 4998,
                       "errors": [],
                       "stdout": [
                         {
@@ -1922,15 +1928,12 @@
                           "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
-                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
-                        },
-                        {
                           "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:32.214Z",
+                      "startTime": "2026-05-26T11:34:32.136Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -1962,10 +1965,10 @@
                   "projectName": "mobile",
                   "results": [
                     {
-                      "workerIndex": 6,
-                      "parallelIndex": 0,
+                      "workerIndex": 5,
+                      "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 1822,
+                      "duration": 1903,
                       "errors": [],
                       "stdout": [
                         {
@@ -1990,6 +1993,9 @@
                           "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
                           "text": "✅ UI Login Success: alice@nexus.sync\n"
                         },
                         {
@@ -1998,7 +2004,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:48.296Z",
+                      "startTime": "2026-05-26T11:34:46.842Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -2033,7 +2039,7 @@
                       "workerIndex": 4,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 3185,
+                      "duration": 3089,
                       "errors": [],
                       "stdout": [
                         {
@@ -2066,7 +2072,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:49.110Z",
+                      "startTime": "2026-05-26T11:34:46.989Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -2098,10 +2104,10 @@
                   "projectName": "mobile",
                   "results": [
                     {
-                      "workerIndex": 5,
-                      "parallelIndex": 2,
+                      "workerIndex": 7,
+                      "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 1856,
+                      "duration": 1878,
                       "errors": [],
                       "stdout": [
                         {
@@ -2137,7 +2143,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:49.891Z",
+                      "startTime": "2026-05-26T11:34:47.695Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -2169,10 +2175,10 @@
                   "projectName": "firefox",
                   "results": [
                     {
-                      "workerIndex": 11,
-                      "parallelIndex": 0,
+                      "workerIndex": 9,
+                      "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 3220,
+                      "duration": 2877,
                       "errors": [],
                       "stdout": [
                         {
@@ -2197,15 +2203,12 @@
                           "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
-                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
-                        },
-                        {
                           "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:31:00.019Z",
+                      "startTime": "2026-05-26T11:34:57.299Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -2237,10 +2240,10 @@
                   "projectName": "firefox",
                   "results": [
                     {
-                      "workerIndex": 9,
-                      "parallelIndex": 3,
+                      "workerIndex": 11,
+                      "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 4332,
+                      "duration": 5183,
                       "errors": [],
                       "stdout": [
                         {
@@ -2250,13 +2253,13 @@
                           "text": "📧 Entering credentials...\n"
                         },
                         {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
                           "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
                         },
                         {
                           "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
-                        },
-                        {
-                          "text": "🛰️ Verifying dashboard access...\n"
                         },
                         {
                           "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
@@ -2270,7 +2273,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:31:00.107Z",
+                      "startTime": "2026-05-26T11:34:58.053Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -2303,9 +2306,9 @@
                   "results": [
                     {
                       "workerIndex": 8,
-                      "parallelIndex": 1,
+                      "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3472,
+                      "duration": 3469,
                       "errors": [],
                       "stdout": [
                         {
@@ -2335,7 +2338,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:31:01.163Z",
+                      "startTime": "2026-05-26T11:34:59.398Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -2368,9 +2371,9 @@
                   "results": [
                     {
                       "workerIndex": 14,
-                      "parallelIndex": 3,
+                      "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 3079,
+                      "duration": 2557,
                       "errors": [],
                       "stdout": [
                         {
@@ -2397,7 +2400,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:31:13.364Z",
+                      "startTime": "2026-05-26T11:35:11.328Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -2429,10 +2432,10 @@
                   "projectName": "webkit",
                   "results": [
                     {
-                      "workerIndex": 13,
+                      "workerIndex": 15,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3917,
+                      "duration": 3905,
                       "errors": [],
                       "stdout": [
                         {
@@ -2462,7 +2465,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:31:14.335Z",
+                      "startTime": "2026-05-26T11:35:11.710Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -2497,7 +2500,7 @@
                       "workerIndex": 12,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 2991,
+                      "duration": 2425,
                       "errors": [],
                       "stdout": [
                         {
@@ -2519,12 +2522,15 @@
                           "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
                           "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:31:15.612Z",
+                      "startTime": "2026-05-26T11:35:11.916Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -2573,10 +2579,10 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 3,
-                      "parallelIndex": 3,
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 4535,
+                      "duration": 4465,
                       "errors": [],
                       "stdout": [
                         {
@@ -2609,7 +2615,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:36.202Z",
+                      "startTime": "2026-05-26T11:34:33.328Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -2641,10 +2647,10 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 3944,
+                      "duration": 4015,
                       "errors": [],
                       "stdout": [
                         {
@@ -2654,13 +2660,13 @@
                           "text": "📧 Entering credentials...\n"
                         },
                         {
-                          "text": "🛰️ Verifying dashboard access...\n"
-                        },
-                        {
                           "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
                         },
                         {
                           "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
                         },
                         {
                           "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
@@ -2674,7 +2680,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:36.254Z",
+                      "startTime": "2026-05-26T11:34:37.238Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -2709,7 +2715,7 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 4377,
+                      "duration": 4376,
                       "errors": [],
                       "stdout": [
                         {
@@ -2734,12 +2740,15 @@
                           "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
                           "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:40.257Z",
+                      "startTime": "2026-05-26T11:34:37.823Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -2774,7 +2783,7 @@
                       "workerIndex": 3,
                       "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 4714,
+                      "duration": 3930,
                       "errors": [],
                       "stdout": [
                         {
@@ -2799,15 +2808,12 @@
                           "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
-                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
-                        },
-                        {
                           "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:40.776Z",
+                      "startTime": "2026-05-26T11:34:41.276Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -2842,7 +2848,7 @@
                       "workerIndex": 6,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1827,
+                      "duration": 1809,
                       "errors": [],
                       "stdout": [
                         {
@@ -2867,9 +2873,6 @@
                           "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
-                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
-                        },
-                        {
                           "text": "✅ UI Login Success: alice@nexus.sync\n"
                         },
                         {
@@ -2878,7 +2881,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:50.126Z",
+                      "startTime": "2026-05-26T11:34:48.406Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -2910,10 +2913,10 @@
                   "projectName": "mobile",
                   "results": [
                     {
-                      "workerIndex": 7,
-                      "parallelIndex": 3,
+                      "workerIndex": 5,
+                      "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 2398,
+                      "duration": 1844,
                       "errors": [],
                       "stdout": [
                         {
@@ -2946,7 +2949,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:50.430Z",
+                      "startTime": "2026-05-26T11:34:48.756Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -2978,10 +2981,10 @@
                   "projectName": "mobile",
                   "results": [
                     {
-                      "workerIndex": 5,
-                      "parallelIndex": 2,
+                      "workerIndex": 7,
+                      "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 2453,
+                      "duration": 2440,
                       "errors": [],
                       "stdout": [
                         {
@@ -3006,9 +3009,6 @@
                           "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
-                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
-                        },
-                        {
                           "text": "✅ UI Login Success: alice@nexus.sync\n"
                         },
                         {
@@ -3017,7 +3017,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:51.760Z",
+                      "startTime": "2026-05-26T11:34:49.579Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -3049,10 +3049,10 @@
                   "projectName": "mobile",
                   "results": [
                     {
-                      "workerIndex": 6,
-                      "parallelIndex": 0,
+                      "workerIndex": 4,
+                      "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 2722,
+                      "duration": 2721,
                       "errors": [],
                       "stdout": [
                         {
@@ -3085,7 +3085,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:30:51.961Z",
+                      "startTime": "2026-05-26T11:34:50.091Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -3117,10 +3117,10 @@
                   "projectName": "firefox",
                   "results": [
                     {
-                      "workerIndex": 10,
+                      "workerIndex": 9,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 3016,
+                      "duration": 3402,
                       "errors": [],
                       "stdout": [
                         {
@@ -3150,7 +3150,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:31:02.861Z",
+                      "startTime": "2026-05-26T11:35:00.197Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -3182,10 +3182,10 @@
                   "projectName": "firefox",
                   "results": [
                     {
-                      "workerIndex": 11,
-                      "parallelIndex": 0,
+                      "workerIndex": 10,
+                      "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 3035,
+                      "duration": 3558,
                       "errors": [],
                       "stdout": [
                         {
@@ -3210,15 +3210,12 @@
                           "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
-                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
-                        },
-                        {
                           "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:31:03.262Z",
+                      "startTime": "2026-05-26T11:35:00.800Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -3250,10 +3247,10 @@
                   "projectName": "firefox",
                   "results": [
                     {
-                      "workerIndex": 9,
-                      "parallelIndex": 3,
+                      "workerIndex": 8,
+                      "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 4203,
+                      "duration": 4387,
                       "errors": [],
                       "stdout": [
                         {
@@ -3283,7 +3280,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:31:04.469Z",
+                      "startTime": "2026-05-26T11:35:02.883Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -3315,10 +3312,10 @@
                   "projectName": "firefox",
                   "results": [
                     {
-                      "workerIndex": 8,
+                      "workerIndex": 11,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 4219,
+                      "duration": 3652,
                       "errors": [],
                       "stdout": [
                         {
@@ -3343,15 +3340,12 @@
                           "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
-                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
-                        },
-                        {
                           "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:31:04.653Z",
+                      "startTime": "2026-05-26T11:35:03.285Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -3383,10 +3377,10 @@
                   "projectName": "webkit",
                   "results": [
                     {
-                      "workerIndex": 14,
+                      "workerIndex": 13,
                       "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 3044,
+                      "duration": 3032,
                       "errors": [],
                       "stdout": [
                         {
@@ -3413,7 +3407,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:31:16.470Z",
+                      "startTime": "2026-05-26T11:35:13.317Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -3445,10 +3439,10 @@
                   "projectName": "webkit",
                   "results": [
                     {
-                      "workerIndex": 15,
+                      "workerIndex": 14,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 2367,
+                      "duration": 3113,
                       "errors": [],
                       "stdout": [
                         {
@@ -3475,7 +3469,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:31:16.498Z",
+                      "startTime": "2026-05-26T11:35:13.894Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -3507,10 +3501,10 @@
                   "projectName": "webkit",
                   "results": [
                     {
-                      "workerIndex": 13,
-                      "parallelIndex": 0,
+                      "workerIndex": 12,
+                      "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 3653,
+                      "duration": 3349,
                       "errors": [],
                       "stdout": [
                         {
@@ -3537,7 +3531,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:31:18.263Z",
+                      "startTime": "2026-05-26T11:35:14.349Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -3569,10 +3563,10 @@
                   "projectName": "webkit",
                   "results": [
                     {
-                      "workerIndex": 12,
-                      "parallelIndex": 2,
+                      "workerIndex": 15,
+                      "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2726,
+                      "duration": 3812,
                       "errors": [],
                       "stdout": [
                         {
@@ -3594,12 +3588,15 @@
                           "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
                           "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-05-26T11:31:18.611Z",
+                      "startTime": "2026-05-26T11:35:15.631Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -3625,8 +3622,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-05-26T11:30:24.160Z",
-    "duration": 57795.557,
+    "startTime": "2026-05-26T11:34:23.386Z",
+    "duration": 56092.325000000004,
     "expected": 52,
     "skipped": 0,
     "unexpected": 0,
