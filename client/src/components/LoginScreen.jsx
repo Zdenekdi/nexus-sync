@@ -64,7 +64,7 @@ const PrimaryButton = ({ children, loading, ...props }) => (
 // --- Sub-Views ---
 
 const LoginView = ({ isCz, onSwitch }) => {
-  const { onLogin, showToast } = useNexus();
+  const { onLogin, showToast, t } = useNexus();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -75,7 +75,7 @@ const LoginView = ({ isCz, onSwitch }) => {
     setLoading(true);
     try {
       const res = await onLogin(email, password);
-      if (res && !res.success) showToast(res.error, 'error');
+      if (res && !res.success) showToast(t(res.error || res._err), 'error');
     } finally { setLoading(false); }
   };
 
@@ -134,7 +134,7 @@ const LoginView = ({ isCz, onSwitch }) => {
 };
 
 const RegisterAgencyView = ({ isCz, onSwitch }) => {
-  const { onRegisterAgency, showToast } = useNexus();
+  const { onRegisterAgency, showToast, t } = useNexus();
   const [formData, setFormData] = useState({ agencyName: '', fullName: '', email: '', password: '', confirmPassword: '' });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -154,7 +154,7 @@ const RegisterAgencyView = ({ isCz, onSwitch }) => {
         password: formData.password 
       });
       if (res?.success) setInviteCode(res.inviteCode);
-      else if (res?.error) showToast(res.error, 'error');
+      else if (res?.error || res?._err) showToast(t(res.error || res._err), 'error');
     } finally { setLoading(false); }
   };
 
@@ -230,7 +230,7 @@ const RegisterAgencyView = ({ isCz, onSwitch }) => {
 };
 
 const JoinAgencyView = ({ isCz, onSwitch }) => {
-  const { onRegisterUser, showToast } = useNexus();
+  const { onRegisterUser, showToast, t } = useNexus();
   const [formData, setFormData] = useState({ inviteCode: '', fullName: '', email: '', password: '', confirmPassword: '' });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -247,7 +247,7 @@ const JoinAgencyView = ({ isCz, onSwitch }) => {
       if (res?.success) {
         showToast(isCz ? 'Registrace úspěšná!' : 'Registration successful!', 'success');
         onSwitch('login');
-      } else if (res?.error) showToast(res.error, 'error');
+      } else if (res?.error || res?._err) showToast(t(res.error || res._err), 'error');
     } finally { setLoading(false); }
   };
 
