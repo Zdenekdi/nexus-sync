@@ -18,8 +18,10 @@ const ViewRouter = lazyWithRetry(() => import('./components/Navigation/ViewRoute
 const LandingPage = lazyWithRetry(() => import('./components/LandingPage'));
 const Onboarding = lazyWithRetry(() => import('./components/Onboarding'));
 const LoginScreen = lazyWithRetry(() => import('./components/LoginScreen'));
+const LogoutScreen = lazyWithRetry(() => import('./components/LogoutScreen'));
 const SystemBanners = lazyWithRetry(() => import('./components/UI/SystemBanners'));
 const GlobalModalContainer = lazyWithRetry(() => import('./components/Modals/GlobalModalContainer'));
+const NotificationSystem = lazyWithRetry(() => import('./components/Notifications/NotificationSystem'));
 
 function AppContent() {
   const nexus = useNexus();
@@ -67,6 +69,21 @@ function AppContent() {
   const isSyncing = isLoggedIn && isDataLoading && !hasHydrated;
 
   // 2. Navigation Logic
+  const isLogoutPage = typeof window !== 'undefined' && 
+    window.location.pathname.replace(/^\/(en|cz)/, '') === '/logout';
+
+  if (isLogoutPage) {
+    return (
+      <Suspense fallback={
+        <div style={{ height: '100dvh', background: '#040507', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="nexus-loading-pulse" style={{ width: '64px', height: '64px', background: 'var(--accent-color)', borderRadius: '14px' }} />
+        </div>
+      }>
+        <LogoutScreen />
+      </Suspense>
+    );
+  }
+
   const shouldShowLanding = showLanding && !isNativeApp;
 
   if (shouldShowLanding) {
@@ -89,6 +106,7 @@ function AppContent() {
           <div className="nexus-loading-pulse" style={{ width: '64px', height: '64px', background: 'var(--accent-color)', borderRadius: '14px' }} />
         </div>
       }>
+        <NotificationSystem />
         <LoginScreen />
       </Suspense>
     );
@@ -172,6 +190,7 @@ function AppContent() {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flex: 1, minWidth: 0 }}>
                 <button 
+                  data-testid="sidebar-hamburger"
                   onClick={() => setIsSidebarOpen(true)}
                   style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', width: '42px', height: '42px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0 }}
                 >
