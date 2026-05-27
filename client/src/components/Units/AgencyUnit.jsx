@@ -9,8 +9,10 @@ import InventoryView from '../Views/InventoryView';
 import AuditLogsView from '../Views/AuditLogsView';
 import PayoutsView from '../Views/PayoutsView';
 import SafetyView from '../Views/SafetyView';
-import SafetyGuardView from '../Views/SafetyGuardView';
 import ApiSettingsView from '../Views/ApiSettingsView';
+
+const SafetyGuardView = React.lazy(() => import('../Views/SafetyGuardView'));
+
 
 /**
  * Agency Unit: Management hub for agencies and global activity.
@@ -48,7 +50,15 @@ const AgencyUnit = () => {
     case 'payouts':
       return <PayoutsView />;
     case 'safety-guard':
-      return <SafetyGuardView />;
+      return (
+        <React.Suspense fallback={
+          <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <div className="loader-dots"><span></span><span></span><span></span></div>
+          </div>
+        }>
+          <SafetyGuardView />
+        </React.Suspense>
+      );
     case 'developer':
       return <ApiSettingsView />;
     default:

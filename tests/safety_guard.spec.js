@@ -7,6 +7,8 @@ import { doLogin as loginToApp } from './helpers/auth.js';
 
 test.describe('Safety Guard™ E2E Tests', () => {
   test.beforeEach(async ({ page }) => {
+    page.on('console', msg => console.log(`[Browser Console] ${msg.type().toUpperCase()}: ${msg.text()}`));
+    page.on('pageerror', err => console.log(`[Browser PageError] ${err.stack || err.message}`));
     await setupApiMocks(page);
     // Senior Operator (Alice) has access to Safety Guard
     await loginToApp(page, TEST_USERS.seniorOp.email, TEST_USERS.seniorOp.password);

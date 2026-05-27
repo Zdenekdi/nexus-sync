@@ -1,7 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Shield, ShieldCheck, MapPin, Activity, Battery, Clock, AlertTriangle, CheckCircle2, User, Phone, Zap, Search, Filter, RefreshCw, Eye, Settings } from 'lucide-react';
 import { useNexus } from '../../context/ContextHook';
 import axios from 'axios';
+import 'leaflet/dist/leaflet.css';
+
+
 
 const SafetyGuardView = () => {
   const nexus = useNexus() || {};
@@ -30,6 +33,88 @@ const SafetyGuardView = () => {
   const [simData, setSimData] = useState({});
 
   const isCz = lang === 'cz' || lang === 'cs';
+
+  // Leaflet state & refs
+  const [L, setL] = useState(null);
+  const mapContainerRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const markersRef = useRef([]);
+
+  // Dynamically load Leaflet at runtime
+  useEffect(() => {
+    import('leaflet').then(module => {
+      const leaflet = module.default && module.default.map ? module.default : module;
+      setL(leaflet);
+    }).catch(err => {
+      console.error('Failed to load Leaflet:', err);
+    });
+  }, []);
+
+  const availableProfiles = nexus.profiles || [];
+
+  const mockLocations = useMemo(() => [
+    { name: 'Diana', lat: 51.5074, lng: -0.1278, state: 'CHECKED_IN', locationType: 'outcall' },
+    { name: 'Chloe', lat: 52.4862, lng: -1.8904, state: 'GRACE', locationType: 'incall' },
+    { name: 'Bella', lat: 53.4808, lng: -2.2426, state: 'CHECKED_IN', locationType: 'incall' },
+    { name: 'Lily', lat: 51.4816, lng: -3.1791, state: 'CHECKED_IN', locationType: 'outcall' },
+    { name: 'Katerina', lat: 54.9783, lng: -1.6178, state: 'ESCALATED', locationType: 'outcall' }
+  ], []);
+
+  const processedSessions = useMemo(() => {
+    // If backend returns real active sessions, use them
+    if (sessions && sessions.length > 0) {
+      return sessions;
+    }
+    
+    // Otherwise, fallback to generating mock sessions using the profiles from context or fallback names
+    const baseProfiles = availableProfiles.length > 0 
+      ? availableProfiles 
+      : mockLocations.map((loc, idx) => ({ id: `mock-p-${idx}`, name: loc.name }));
+
+    return baseProfiles.map((prof, idx) => {
+      const locTemplate = mockLocations[idx % mockLocations.length];
+      return {
+        id: `mock-s-${prof.id || idx}`,
+        profileId: prof.id,
+        state: locTemplate.state,
+        locationType: locTemplate.locationType,
+        locationPoints: [{ lat: locTemplate.lat, lng: locTemplate.lng }],
+        profile: prof
+      };
+    });
+  }, [sessions, availableProfiles, mockLocations]);
+
+  const filteredSessions = useMemo(() => {
+    return processedSessions.filter(s => {
+      const name = s.profile?.name || '';
+      const matchesSearch = name.toLowerCase().includes(search.toLowerCase());
+      const matchesFilter = filter === 'all' || s.state?.toLowerCase() === filter.toLowerCase();
+      return matchesSearch && matchesFilter;
+    });
+  }, [processedSessions, search, filter]);
+
+  const getCoordinates = useCallback((session) => {
+    if (session.locationPoints?.[0]?.lat && session.locationPoints?.[0]?.lng) {
+      return { lat: session.locationPoints[0].lat, lng: session.locationPoints[0].lng };
+    }
+    const name = session.profile?.name || '';
+    if (name.includes('Diana')) return { lat: 51.5074, lng: -0.1278 };
+    if (name.includes('Chloe')) return { lat: 52.4862, lng: -1.8904 };
+    if (name.includes('Bella')) return { lat: 53.4808, lng: -2.2426 };
+    if (name.includes('Lily')) return { lat: 51.4816, lng: -3.1791 };
+    if (name.includes('Katerina')) return { lat: 54.9783, lng: -1.6178 };
+    
+    return { lat: 51.5074, lng: -0.1278 };
+  }, []);
+
+  const getStatusColor = useCallback((state) => {
+    switch (state) {
+      case 'ESCALATED': return '#ef4444';
+      case 'GRACE': return '#f59e0b';
+      case 'CHECKED_IN': return '#10b981';
+      default: return '#64748b';
+    }
+  }, []);
 
   const fetchSessions = useCallback(async (isRefresh = false) => {
     if (!token || !API_BASE) {
@@ -91,10 +176,12 @@ const SafetyGuardView = () => {
       setSimData(prev => {
         const next = { ...prev };
         Object.keys(next).forEach(id => {
-          next[id].bpm += (Math.random() > 0.5 ? 1 : -1);
-          if (next[id].bpm < 60) next[id].bpm = 62;
-          if (next[id].bpm > 110) next[id].bpm = 108;
-          if (Math.random() > 0.98) next[id].battery -= 1;
+          if (next[id]) {
+            next[id].bpm += (Math.random() > 0.5 ? 1 : -1);
+            if (next[id].bpm < 60) next[id].bpm = 62;
+            if (next[id].bpm > 110) next[id].bpm = 108;
+            if (Math.random() > 0.98) next[id].battery -= 1;
+          }
         });
         return next;
       });
@@ -105,6 +192,108 @@ const SafetyGuardView = () => {
       clearInterval(simInterval);
     };
   }, [fetchSessions, fetchSettings]);
+
+  // Maintain simData for processedSessions
+  useEffect(() => {
+    setSimData(prev => {
+      const next = { ...prev };
+      let updated = false;
+      processedSessions.forEach(s => {
+        if (!next[s.id]) {
+          next[s.id] = {
+            bpm: 70 + Math.floor(Math.random() * 20),
+            battery: 85 + Math.floor(Math.random() * 15)
+          };
+          updated = true;
+        }
+      });
+      return updated ? next : prev;
+    });
+  }, [processedSessions]);
+
+  // Initialize Map
+  useEffect(() => {
+    if (!L || !mapContainerRef.current) return;
+    
+    if (!mapInstanceRef.current) {
+      mapInstanceRef.current = L.map(mapContainerRef.current, {
+        zoomControl: true,
+        attributionControl: false
+      }).setView([52.5, -1.5], 6);
+      
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 20
+      }).addTo(mapInstanceRef.current);
+    }
+    
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, [L]);
+
+  // Update markers when filteredSessions change
+  useEffect(() => {
+    if (!L || !mapInstanceRef.current) return;
+
+    // Clear old markers
+    markersRef.current.forEach(marker => {
+      marker.remove();
+    });
+    markersRef.current = [];
+
+    if (filteredSessions.length === 0) return;
+
+    const newMarkers = [];
+    filteredSessions.forEach(session => {
+      const coords = getCoordinates(session);
+      const color = getStatusColor(session.state);
+      
+      const markerIcon = L.divIcon({
+        className: 'leaflet-custom-marker-container',
+        html: `
+          <div class="custom-leaflet-marker status-${session.state.toLowerCase()}" style="color: ${color}">
+            <div class="pulsing-ring"></div>
+            <div class="center-dot"></div>
+            <div class="marker-label" style="border-color: ${color}">${session.profile?.name || ''}</div>
+          </div>
+        `,
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+      });
+
+      const marker = L.marker([coords.lat, coords.lng], { icon: markerIcon })
+        .addTo(mapInstanceRef.current);
+
+      marker.on('click', () => {
+        const element = document.getElementById(`safety-session-card-${session.id}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          element.style.boxShadow = `0 0 25px ${color}`;
+          setTimeout(() => {
+            element.style.boxShadow = session.state === 'ESCALATED' ? '0 0 20px rgba(239, 68, 68, 0.1)' : 'none';
+          }, 2000);
+        }
+      });
+
+      newMarkers.push(marker);
+    });
+
+    markersRef.current = newMarkers;
+
+    // Zoom/fit bounds to show all markers
+    try {
+      const group = L.featureGroup(newMarkers);
+      mapInstanceRef.current.fitBounds(group.getBounds().pad(0.15), {
+        maxZoom: 14,
+        animate: true
+      });
+    } catch (e) {
+      console.error('Failed to fit bounds:', e);
+    }
+  }, [L, filteredSessions, getCoordinates, getStatusColor]);
 
   const handleGhostCall = async (profileId) => {
     try {
@@ -129,27 +318,12 @@ const SafetyGuardView = () => {
     }
   };
 
-  const filteredSessions = sessions.filter(s => {
-    const matchesSearch = s.profile?.name?.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = filter === 'all' || s.state?.toLowerCase() === filter.toLowerCase();
-    return matchesSearch && matchesFilter;
-  });
-
-  const getStatusColor = (state) => {
-    switch (state) {
-      case 'ESCALATED': return '#ef4444';
-      case 'GRACE': return '#f59e0b';
-      case 'CHECKED_IN': return '#10b981';
-      default: return '#64748b';
-    }
-  };
-
-  const stats = {
-    total: sessions.length,
-    active: sessions.filter(s => s.state === 'CHECKED_IN').length,
-    warning: sessions.filter(s => s.state === 'GRACE').length,
-    sos: sessions.filter(s => s.state === 'ESCALATED').length,
-  };
+  const stats = useMemo(() => ({
+    total: processedSessions.length,
+    active: processedSessions.filter(s => s.state === 'CHECKED_IN').length,
+    warning: processedSessions.filter(s => s.state === 'GRACE').length,
+    sos: processedSessions.filter(s => s.state === 'ESCALATED').length,
+  }), [processedSessions]);
 
   return (
     <div data-testid="page-safety-container" style={{ padding: isMobile ? '1rem' : '2rem', height: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', background: 'radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.03), transparent)' }}>
@@ -239,7 +413,7 @@ const SafetyGuardView = () => {
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 380px', gap: '2rem', flex: 1, overflow: 'hidden' }}>
         {/* Sessions Grid */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem', overflowY: 'auto' }} className="custom-scrollbar pr-4">
-          {loading && sessions.length === 0 ? (
+          {loading && processedSessions.length === 0 ? (
             <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center' }}>
               <div className="spinner" />
             </div>
@@ -319,32 +493,17 @@ const SafetyGuardView = () => {
           )}
         </div>
 
-        {/* Tactical Map View (Simulated) */}
+        {/* Tactical Map View (Leaflet) */}
         {!isMobile && (
           <div style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--card-border)', borderRadius: '24px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '1rem', borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Zap size={16} color="#3b82f6" />
               <span style={{ fontWeight: 800, fontSize: '0.8rem', color: 'white' }}>{t('tacticalOverview')}</span>
             </div>
-            <div style={{ flex: 1, position: 'relative', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-               <div style={{ position: 'absolute', inset: 0, opacity: 0.1, backgroundImage: 'radial-gradient(#3b82f6 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
-               <div style={{ textAlign: 'center', zIndex: 1 }}>
-                  <MapPin size={40} color="#3b82f6" className="pulse-subtle" />
-                  <div style={{ marginTop: '1rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 600 }}>{t('liveMapInterface')}</div>
-                  <div style={{ fontSize: '0.65rem', opacity: 0.5 }}>{t('unitsTracking').replace('{count}', stats.active)}</div>
-               </div>
-
-               {sessions.map((s, i) => (
-                 <div key={i} style={{ 
-                   position: 'absolute', 
-                   top: `${30 + (i * 15) % 40}%`, 
-                   left: `${20 + (i * 25) % 60}%`,
-                   width: '8px', height: '8px', borderRadius: '50%', background: getStatusColor(s.state),
-                   boxShadow: `0 0 10px ${getStatusColor(s.state)}`,
-                   animation: 'pulse-subtle 2s infinite'
-                 }} />
-               ))}
-            </div>
+            <div 
+              ref={mapContainerRef} 
+              style={{ flex: 1, minHeight: '350px', background: '#090d16' }} 
+            />
             <div style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.02)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
                 <Clock size={14} color="#64748b" />
@@ -422,6 +581,73 @@ const SafetyGuardView = () => {
           30% { transform: scale(1); }
           45% { transform: scale(1.15); }
           60% { transform: scale(1); }
+        }
+        
+        /* Custom Leaflet Marker Styling */
+        .leaflet-custom-marker-container {
+          background: transparent !important;
+          border: none !important;
+        }
+        .custom-leaflet-marker {
+          position: relative;
+          width: 20px;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .custom-leaflet-marker .pulsing-ring {
+          position: absolute;
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          border: 2px solid currentColor;
+          animation: marker-pulse 2s infinite;
+          opacity: 0.8;
+          pointer-events: none;
+        }
+        .custom-leaflet-marker .center-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background-color: currentColor;
+          border: 2px solid #090d16;
+          z-index: 2;
+        }
+        .custom-leaflet-marker .marker-label {
+          position: absolute;
+          left: 24px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: rgba(9, 13, 22, 0.95);
+          border: 1px solid currentColor;
+          border-radius: 6px;
+          padding: 3px 8px;
+          font-size: 10px;
+          font-weight: 800;
+          color: #ffffff;
+          white-space: nowrap;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+          z-index: 10;
+        }
+        .custom-leaflet-marker.status-checked_in {
+          color: #10b981;
+        }
+        .custom-leaflet-marker.status-grace {
+          color: #f59e0b;
+        }
+        .custom-leaflet-marker.status-escalated {
+          color: #ef4444;
+        }
+        @keyframes marker-pulse {
+          0% {
+            transform: scale(0.4);
+            opacity: 0.8;
+          }
+          100% {
+            transform: scale(1.5);
+            opacity: 0;
+          }
         }
       `}</style>
     </div>

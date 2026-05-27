@@ -136,9 +136,14 @@ const ProfilesView = () => {
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(360px, 1fr))', 
+        gap: '1.5rem' 
+      }}>
         {(allAgencyProfiles || []).length === 0 && (
           <div style={{ 
+            gridColumn: '1 / -1',
             padding: '3rem', 
             textAlign: 'center', 
             background: 'var(--card-bg)', 
@@ -160,38 +165,56 @@ const ProfilesView = () => {
           const canManage = activeRole === 'app_owner' || activeRole === 'agency_manager' || activeRole === 'agency_admin' || activeRole === 'manager' || activeRole === 'senior_operator' || activeOperator?.isManager || activeOperator?.isSeniorOperator;
 
           return (
-            <div key={i} id={`profile-card-${profile.id}`} data-testid={`profile-card-${profile.id}`} className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2rem', display: 'flex', gap: isMobile ? '1.5rem' : '2.5rem', borderColor: isMyProfile ? 'rgba(59, 130, 246, 0.4)' : 'var(--card-border)', flexDirection: isMobile ? 'column' : 'row' }}>
-              <div style={{ flex: isMobile ? '1 1 auto' : '0 0 250px' }}>
-                <div style={{ fontSize: '1.75rem', fontWeight: '900', marginBottom: '0.5rem' }}>{profile.name}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.5rem' }}>
-                  <div style={{ 
-                    padding: '0.3rem 0.8rem', 
-                    borderRadius: '8px', 
-                    background: isOnline ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.05)', 
-                    color: isOnline ? '#34d399' : 'var(--text-secondary)', 
-                    fontSize: '0.75rem', 
-                    fontWeight: '900', 
-                    border: '1px solid',
-                    borderColor: isOnline ? 'rgba(34, 197, 94, 0.3)' : 'rgba(255, 255, 255, 0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    boxShadow: isOnline ? '0 0 20px rgba(52, 211, 153, 0.15)' : 'none'
-                  }}>
-                    <span style={{ 
-                      width: '8px', 
-                      height: '8px', 
-                      borderRadius: '50%', 
-                      background: isOnline ? '#34d399' : 'rgba(255,255,255,0.2)',
-                      animation: isOnline ? 'pulse-green 2s infinite' : 'none'
-                    }} />
-                    {isOnline ? (lang === 'cz' ? 'ONLINE / AKTIVNÍ' : 'LIVE / ACTIVE') : (lang === 'cz' ? 'OFFLINE / BEZ POKRYTÍ' : 'OFFLINE / NO COVERAGE')}
-                  </div>
-                  {profile.lastOnline && (
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
-                      {lang === 'cz' ? 'Naposledy online:' : 'Last online:'} {new Date(profile.lastOnline).toLocaleString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+            <div 
+              key={i} 
+              id={`profile-card-${profile.id}`} 
+              data-testid={`profile-card-${profile.id}`} 
+              className="glass-card profile-card-hover" 
+              style={{ 
+                padding: '1.5rem', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: '1.25rem', 
+                borderColor: isMyProfile ? 'rgba(59, 130, 246, 0.4)' : 'var(--card-border)',
+                justifyContent: 'space-between',
+                height: '100%'
+              }}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '0.5rem', color: 'white' }}>{profile.name}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex' }}>
+                      <div style={{ 
+                        padding: '0.3rem 0.8rem', 
+                        borderRadius: '8px', 
+                        background: isOnline ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.05)', 
+                        color: isOnline ? '#34d399' : 'var(--text-secondary)', 
+                        fontSize: '0.75rem', 
+                        fontWeight: '900', 
+                        border: '1px solid',
+                        borderColor: isOnline ? 'rgba(34, 197, 94, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        boxShadow: isOnline ? '0 0 20px rgba(52, 211, 153, 0.15)' : 'none'
+                      }}>
+                        <span style={{ 
+                          width: '8px', 
+                          height: '8px', 
+                          borderRadius: '50%', 
+                          background: isOnline ? '#34d399' : 'rgba(255,255,255,0.2)',
+                          animation: isOnline ? 'pulse-green 2s infinite' : 'none'
+                        }} />
+                        {isOnline ? (lang === 'cz' ? 'ONLINE / AKTIVNÍ' : 'LIVE / ACTIVE') : (lang === 'cz' ? 'OFFLINE / BEZ POKRYTÍ' : 'OFFLINE / NO COVERAGE')}
+                      </div>
                     </div>
-                  )}
+                    {profile.lastOnline && (
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
+                        {lang === 'cz' ? 'Naposledy online:' : 'Last online:'} {new Date(profile.lastOnline).toLocaleString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -210,6 +233,17 @@ const ProfilesView = () => {
                     }}
                   >
                     {isMyProfile ? t('uvolnitMisto') || 'Uvolnit moje místo' : t('activateMySeat')}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveProfileId(profile.id);
+                      setActiveTab('inbox');
+                    }}
+                    data-testid={`profile-open-button-${profile.id}`}
+                    style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--card-border)', background: 'transparent', color: 'white', fontWeight: '700', cursor: 'pointer' }}
+                  >
+                    {t('openContext')}
                   </button>
 
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -233,18 +267,14 @@ const ProfilesView = () => {
                     )}
                   </div>
 
-                  <button
-                    onClick={() => {
-                      setActiveProfileId(profile.id);
-                      setActiveTab('inbox');
-                    }}
-                    data-testid={`profile-open-button-${profile.id}`}
-                    style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--card-border)', background: 'transparent', color: 'white', fontWeight: '700', cursor: 'pointer' }}
-                  >
-                    {t('openContext')}
-                  </button>
-
-                  <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '14px', border: '1px solid var(--card-border)' }}>
+                  <div style={{ 
+                    marginTop: '0.5rem', 
+                    padding: '1rem', 
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)', 
+                    borderRadius: '14px', 
+                    border: '1px solid var(--card-border)',
+                    borderLeft: '3px solid var(--accent-color)'
+                  }}>
                     <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{lang === 'cz' ? 'STATISTIKY PROFILU' : 'PROFILE STATS'}</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                       <div>
@@ -260,30 +290,30 @@ const ProfilesView = () => {
                 </div>
               </div>
 
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.05em' }}>{t('assignedTeam') || 'PROTECTIVE TEAM / ASSIGNEES'}</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.25rem', borderTop: '1px solid var(--card-border)', paddingTop: '1.25rem' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{t('assignedTeam') || 'PROTECTIVE TEAM / ASSIGNEES'}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {(profile.assignees || profile.operators || []).map(profileOp => {
                     const opData = (operators || []).find(o => o.id === profileOp.id);
                     const displayName = opData?.name || profileOp.name || profileOp.id;
                     const displayRole = (opData?.role?.name || opData?.role || '');
                     return (
-                      <div key={profileOp.id} style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <div style={{ width: '32px', height: '32px', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-color)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: '900' }}>{(opData?.avatar) || displayName.substring(0,2).toUpperCase()}</div>
+                      <div key={profileOp.id} style={{ padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.01)', borderRadius: '10px', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div style={{ width: '28px', height: '28px', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-color)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: '900' }}>{(opData?.avatar) || displayName.substring(0,2).toUpperCase()}</div>
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>{displayName}</div>
-                          {displayRole && <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{displayRole}</div>}
+                          <div style={{ fontSize: '0.8rem', fontWeight: '700', color: 'white' }}>{displayName}</div>
+                          {displayRole && <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{displayRole}</div>}
                         </div>
-                        <ShieldCheck size={16} color="var(--accent-color)" />
+                        <ShieldCheck size={14} color="var(--accent-color)" />
                       </div>
                     );
                   })}
                   {canManage && (
                     <div 
                       onClick={() => setCurrentAssigningProfile(profile)}
-                      style={{ padding: '1rem', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '15px', border: '1px solid var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--accent-color)', borderStyle: 'solid' }}
+                      style={{ padding: '0.55rem', background: 'rgba(59, 130, 246, 0.03)', borderRadius: '10px', border: '1px dashed var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--accent-color)', fontSize: '0.75rem', fontWeight: '800' }}
                     >
-                       <UserPlus size={16} /> <span style={{ fontSize: '0.8rem', fontWeight: '800' }}>{t('manageTeam')}</span>
+                       <UserPlus size={14} /> <span>{t('manageTeam') || 'SPRÁVA TÝMU'}</span>
                      </div>
                   )}
                 </div>
@@ -291,13 +321,13 @@ const ProfilesView = () => {
 
               {/* Quick Replies for this profile */}
               {(profile.quickReplies || []).length > 0 && (
-                <div style={{ marginTop: isMobile ? '1.5rem' : 0, flex: '0 0 auto', minWidth: isMobile ? '100%' : '220px' }}>
+                <div style={{ marginTop: '1.25rem', borderTop: '1px solid var(--card-border)', paddingTop: '1.25rem' }}>
                   <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#10b981', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>RYCHLÉ ODPOVĚDI</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {(profile.quickReplies || []).map(reply => (
-                      <div key={reply.id} style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: '8px', padding: '0.5rem 0.75rem' }}>
-                        <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#10b981' }}>{reply.label}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>{reply.text}</div>
+                      <div key={reply.id} style={{ background: 'rgba(16,185,129,0.02)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: '8px', padding: '0.5rem 0.75rem' }}>
+                        <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#10b981', marginBottom: '0.15rem' }}>{reply.label}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: '1.3' }}>{reply.text}</div>
                       </div>
                     ))}
                   </div>
@@ -411,6 +441,22 @@ const ProfilesView = () => {
           );
         })}
       </div>
+      
+      {/* Styles for grid card design */}
+      <style>{`
+        .profile-card-hover {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .profile-card-hover:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 30px rgba(59, 130, 246, 0.12) !important;
+          border-color: rgba(59, 130, 246, 0.35) !important;
+        }
+        @keyframes pulse-green {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.2); opacity: 0.5; }
+        }
+      `}</style>
     </div>
   );
 };

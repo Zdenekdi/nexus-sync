@@ -218,6 +218,12 @@ export const NexusProvider = ({ children }) => {
   const [_inlinePanelTab, _setInlinePanelTab] = useState('notes');
   const [calViewDate, setCalViewDate] = useState(new Date());
 
+  const availableServers = useMemo(() => [
+    { id: 'main-hub', name: 'Main Hub', ip: '45.76.115.89' },
+    { id: 'ai-node', name: 'AI Node (Hetzner)', ip: '135.181.85.220' }
+  ], []);
+  const [selectedServerId, setSelectedServerId] = useState('main-hub');
+
   const chatScrollRef = useRef(null);
   const isUserScrolled = useRef(false);
 
@@ -264,7 +270,7 @@ export const NexusProvider = ({ children }) => {
   useEffect(() => {
     if (!isLoggedIn) {
       const clean = pathname.replace(/^\/(en|cz)/, '') || '/';
-      if (clean !== '/' && clean !== '/guide' && clean !== '/login' && clean !== '/register') {
+      if (clean !== '/' && clean !== '/guide' && clean !== '/login' && clean !== '/register' && clean !== '/logout') {
         navigate('/login', 'login');
       }
     }
@@ -363,6 +369,14 @@ export const NexusProvider = ({ children }) => {
 
   const navigateStable = useCallback((path, tab) => navigate(path, tab), [navigate]);
 
+  const daysLeft = useMemo(() => {
+    const activeSub = nexusData?.activeSubscription;
+    if (!activeSub) return 0;
+    const now = new Date();
+    const expiresAt = new Date(activeSub.expiresAt);
+    return Math.max(0, Math.ceil((expiresAt - now) / 86400000));
+  }, [nexusData?.activeSubscription]);
+
   const value = useMemo(() => ({
     t, lang, setLang, activeTab, setActiveTab, activeMarket, 
     pathname, navigate: navigateStable, authInitialTab, setAuthInitialTab,
@@ -378,6 +392,7 @@ export const NexusProvider = ({ children }) => {
     agencyDetailModalData, setAgencyDetailModalData,
     calViewDate, setCalViewDate, showPanicConfirm, setShowPanicConfirm,
     chatScrollRef, isUserScrolled, showToast, _toasts,
+    availableServers, selectedServerId, setSelectedServerId,
     isAllowed, activeRole: normalizedRole,
     isAppOwner: activeOperator?.isAppOwner,
     activeProfile, activeProfileId, setActiveProfileId, 
@@ -386,6 +401,9 @@ export const NexusProvider = ({ children }) => {
     agencies: nexusData.agencies,
     onlineOnly, setOnlineOnly,
     totalUnread: messages.filter(m => m.status === 'unread').length,
+    activeSubscription: nexusData.activeSubscription,
+    subscriptionHistory: nexusData.subscriptionHistory,
+    daysLeft,
     // Chat Logic
     chatMessages, isHistoryLoading, fetchChatMessages, handleSendMessage,
     handleSaveNote, handleDeleteNote, handleTranslate, clientNotes, internalNote, setInternalNote,
@@ -398,8 +416,10 @@ export const NexusProvider = ({ children }) => {
     showLanding, hasSeenOnboarding, showOnboarding, isMobile, isNativeApp, isSidebarOpen, isSidebarCollapsed,
     messages, selectedChatId, messageValue, isEditProfileOpen, isAddAgencyOpen,
     isAddUserOpen, isBugReportOpen, agencyDetailModalData, editingProfileData, calViewDate, showPanicConfirm, _toasts,
+    availableServers, selectedServerId, setSelectedServerId,
     isAllowed, normalizedRole, activeProfile, activeProfileId, myProfiles, nexusData.profiles, 
     nexusData.operators, nexusData.agencies, onlineOnly,
+    nexusData.activeSubscription, nexusData.subscriptionHistory, daysLeft,
     // Chat Logic Deps
     chatMessages, isHistoryLoading, fetchChatMessages, handleSendMessage,
     handleSaveNote, handleDeleteNote, handleTranslate, clientNotes, internalNote, setInternalNote,

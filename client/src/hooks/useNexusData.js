@@ -228,7 +228,7 @@ export function useNexusData({
       setIsBackgroundLoading(true);
 
       // PHASE 2: HEAVY DATA (Background hydration)
-      const [chatRes, bindingRes, statsRes, agencyRes, analyticsRes, bookingRes, featuresRes, globalSettingsRes] = await Promise.all([
+      const [chatRes, bindingRes, statsRes, agencyRes, analyticsRes, bookingRes, featuresRes, globalSettingsRes, subCurrentRes, subHistoryRes] = await Promise.all([
         axiosWithTiming(`${API_BASE}/chats`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/device/bindings`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/agency/stats`, { headers: { Authorization: `Bearer ${token}` } }),
@@ -236,11 +236,15 @@ export function useNexusData({
         axiosWithTiming(`${API_BASE}/analytics/summary?days=7`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
         axiosWithTiming(`${API_BASE}/bookings`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
         axiosWithTiming(`${API_BASE}/admin/features`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] })),
-        axiosWithTiming(`${API_BASE}/admin/settings`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] }))
+        axiosWithTiming(`${API_BASE}/admin/settings`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] })),
+        axiosWithTiming(`${API_BASE}/subscriptions/current`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
+        axiosWithTiming(`${API_BASE}/subscriptions/history`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null)
       ]);
 
       if (Array.isArray(featuresRes?.data)) setGlobalFeatures(featuresRes.data);
       if (Array.isArray(globalSettingsRes?.data)) setGlobalSettings(globalSettingsRes.data);
+      if (subCurrentRes?.data) _setActiveSubscription(subCurrentRes.data);
+      if (Array.isArray(subHistoryRes?.data)) _setSubscriptionHistory(subHistoryRes.data);
 
       // ------------------------------------------------------------
       // SECONDARY DATA PROCESSING
