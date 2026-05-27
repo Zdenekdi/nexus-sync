@@ -391,7 +391,7 @@ export const NexusProvider = ({ children }) => {
     handleEditProfile: (profile) => { setEditingProfileData(profile); setIsEditProfileOpen(true); },
     agencyDetailModalData, setAgencyDetailModalData,
     calViewDate, setCalViewDate, showPanicConfirm, setShowPanicConfirm,
-    chatScrollRef, isUserScrolled, showToast, _toasts,
+    chatScrollRef, isUserScrolled, showToast, _toasts, toasts: _toasts, setToasts: _setToasts,
     availableServers, selectedServerId, setSelectedServerId,
     isAllowed, activeRole: normalizedRole,
     isAppOwner: activeOperator?.isAppOwner,
