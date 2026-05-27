@@ -6,11 +6,23 @@ import { useNexus } from '../../context/ContextHook';
 const NotificationSystem = () => {
   const nexus = useNexus();
   const { 
-    toasts, notifications, notificationPanelOpen, setNotificationPanelOpen, 
-    setNotifications, setToasts, activeOperator, t, isMobile, 
-    isSimulating, setIsSimulating, handleNotificationClick, 
-    markNotificationRead, hasNotificationTarget 
+    toasts, 
+    setToasts, 
+    activeOperator, 
+    t, 
+    isMobile 
   } = nexus;
+
+  // Safe fallbacks for missing properties in Context to prevent rendering crashes
+  const notifications = nexus.notifications || [];
+  const notificationPanelOpen = nexus.notificationPanelOpen || false;
+  const setNotificationPanelOpen = nexus.setNotificationPanelOpen || (() => {});
+  const setNotifications = nexus.setNotifications || (() => {});
+  const isSimulating = nexus.isSimulating || false;
+  const setIsSimulating = nexus.setIsSimulating || (() => {});
+  const handleNotificationClick = nexus.handleNotificationClick || (() => {});
+  const markNotificationRead = nexus.markNotificationRead || (() => {});
+  const hasNotificationTarget = nexus.hasNotificationTarget || (() => false);
   
   const renderToasts = () => (
     <div style={{ position: 'fixed', top: '24px', right: '24px', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: '12px', pointerEvents: 'none' }}>
