@@ -10,6 +10,7 @@ class BillingController {
    * Internal plan mapping to decouple frontend IDs from database tiers
    */
   PLAN_MAP = {
+    'starter_monthly': { type: 'plan', targetValue: 'Starter', price: 290, currency: 'CZK' },
     'pro_monthly': { type: 'plan', targetValue: 'Professional', price: 990, currency: 'CZK' },
     'agency_monthly': { type: 'plan', targetValue: 'Agency', price: 2490, currency: 'CZK' },
     'ai_module': { type: 'addon', targetValue: 'ai_features', price: 490, currency: 'CZK' },

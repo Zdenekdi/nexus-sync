@@ -358,15 +358,26 @@ const Sidebar = () => {
                   <div style={{ padding: '0.5rem 0.65rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.2)' }}>{t('noAssignedGirls')}</div>
                 ) : (
                   <>
-                    {myProfiles.filter(p => !onlineOnly || isProfileOnline(p)).map(p => {
-                      const isActive = activeProfile?.id === p.id;
-                      return (
-                        <button key={p.id} onClick={() => { setActiveProfileId(p.id); setActiveTab('inbox'); if(isMobile) setIsSidebarOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.6rem 0.65rem', borderRadius: '12px', cursor: 'pointer', textAlign: 'left', background: isActive ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none' }}>
-                          <div style={{ width: '6px', height: '6px', background: isProfileOnline(p) ? 'var(--success-color)' : 'rgba(255,255,255,0.1)', borderRadius: '50%' }} />
-                          <div style={{ flex: 1, minWidth: 0, fontSize: '0.85rem', fontWeight: isActive ? '800' : '600', color: isActive ? 'white' : 'rgba(255,255,255,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-                        </button>
-                      );
-                    })}
+                    {(() => {
+                      const filtered = myProfiles.filter(p => !onlineOnly || isProfileOnline(p));
+                      // Count how many profiles share the same base name (before parenthesis)
+                      const baseCounts = {};
+                      filtered.forEach(p => {
+                        const base = p.name.replace(/\s*\(.*?\)\s*$/, '').trim();
+                        baseCounts[base] = (baseCounts[base] || 0) + 1;
+                      });
+                      return filtered.map(p => {
+                        const isActive = activeProfile?.id === p.id;
+                        const base = p.name.replace(/\s*\(.*?\)\s*$/, '').trim();
+                        const displayName = baseCounts[base] > 1 ? p.name : base;
+                        return (
+                          <button key={p.id} data-testid={`assigned-profile-item-${p.id}`} onClick={() => { setActiveProfileId(p.id); setActiveTab('inbox'); if(isMobile) setIsSidebarOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.6rem 0.65rem', borderRadius: '12px', cursor: 'pointer', textAlign: 'left', background: isActive ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none' }}>
+                            <div style={{ width: '6px', height: '6px', background: isProfileOnline(p) ? 'var(--success-color)' : 'rgba(255,255,255,0.1)', borderRadius: '50%' }} />
+                            <div style={{ flex: 1, minWidth: 0, fontSize: '0.85rem', fontWeight: isActive ? '800' : '600', color: isActive ? 'white' : 'rgba(255,255,255,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</div>
+                          </button>
+                        );
+                      });
+                    })()}
                   </>
                 )}
               </div>

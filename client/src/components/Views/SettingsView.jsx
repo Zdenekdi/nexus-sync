@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
   Activity, Building2, Smartphone, ShieldCheck, Lock, 
-  DollarSign, Sparkles, TrendingUp, Terminal, CheckCircle2 
+  DollarSign, Sparkles, TrendingUp, Terminal, CheckCircle2, CalendarClock, AlertTriangle
 } from 'lucide-react';
 
 import { useNexus } from '../../context/ContextHook';
@@ -29,10 +29,20 @@ const SettingsView = () => {
     setGlobalAnnouncement = () => {},
     isAllowed = () => false,
     showToast = () => {},
-    setLang = () => {}
+    setLang = () => {},
+    activeSubscription = null,
+    daysLeft = 0
   } = nexus || {};
 
   const activeClient = (agencies || [])[0] || null;
+  const seatsLimit = (() => {
+    const planClean = String(activeClient?.plan || 'Enterprise').toLowerCase();
+    if (planClean === 'enterprise') return lang === 'cz' ? 'Neomezeně' : 'Unlimited';
+    if (planClean === 'agency') return '20';
+    if (planClean === 'professional' || planClean === 'pro') return '10';
+    if (planClean === 'starter') return '5';
+    return lang === 'cz' ? 'Neomezeně' : 'Unlimited';
+  })();
   const [bankInstructions, setBankInstructions] = React.useState(null);
 
   const handleUpgrade = async (planId, method = 'card') => {
@@ -66,10 +76,14 @@ const SettingsView = () => {
 
   return (
     <div data-testid="page-settings-container" style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto' }} className="fade-in custom-scrollbar">
-      <h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t('controlCenter')}</h2>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem' }}>{t('configSubtitle')}</p>
+      <h2 style={{ fontSize: '2rem', fontWeight: '800' }}>
+        {activeRole === 'app_owner' ? t('controlCenter') : t('agencyControlCenter')}
+      </h2>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem' }}>
+        {activeRole === 'app_owner' ? t('configSubtitle') : t('agencyConfigSubtitle')}
+      </p>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem', maxWidth: '800px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
         {activeRole === 'app_owner' && (
           <div className="settings-section">
             <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -99,110 +113,317 @@ const SettingsView = () => {
           </h3>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {/* Current Plan Overview */}
-            <div className="glass-card" style={{ padding: '1.5rem', background: 'linear-gradient(135deg, rgba(251,191,36,0.05) 0%, rgba(255,255,255,0.02) 100%)', border: '1px solid rgba(251,191,36,0.2)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            {/* Current Plan Overview - two column layout */}
+            <div className="glass-card" style={{
+              padding: isMobile ? '1.5rem' : '2rem',
+              background: 'linear-gradient(135deg, rgba(251,191,36,0.06) 0%, rgba(255,255,255,0.02) 100%)',
+              border: '1px solid rgba(251,191,36,0.2)'
+            }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+                gap: isMobile ? '2rem' : '3rem',
+                alignItems: 'start'
+              }}>
+
+                {/* LEFT: Plan info + validity */}
                 <div>
-                  <div style={{ fontSize: '0.65rem', fontWeight: '800', color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                    {lang === 'cz' ? 'AKTUÁLNÍ TARIF' : 'CURRENT PLAN'}
-                  </div>
-                  <div style={{ fontSize: '1.75rem', fontWeight: '950', marginTop: '0.25rem' }}>
-                    {activeClient?.plan || 'Starter'}
-                  </div>
-                </div>
-                <div style={{ padding: '0.5rem 1rem', background: 'rgba(251,191,36,0.1)', color: '#fbbf24', borderRadius: '12px', fontSize: '0.75rem', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <CheckCircle2 size={16} /> {lang === 'cz' ? 'AKTIVNÍ' : 'ACTIVE'}
-                </div>
-              </div>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1rem' }}>
-                {/* Analytics Module */}
-                <div style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid var(--card-border)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                    <TrendingUp size={18} color="#3b82f6" />
-                    <span style={{ fontWeight: '800', fontSize: '0.85rem' }}>Analytics</span>
-                  </div>
-                  {(activeClient?.plan === 'Professional' || activeClient?.plan === 'Agency' || activeClient?.extraFeatures?.analytics) ? (
-                    <div style={{ fontSize: '0.7rem', color: 'var(--success-color)', fontWeight: '900' }}>✓ {lang === 'cz' ? 'AKTIVOVÁNO' : 'ACTIVATED'}</div>
-                  ) : (
-                    <button 
-                      onClick={() => handleUpgrade('pro_monthly')}
-                      className="premium-btn-sm"
-                      style={{ width: '100%', padding: '0.5rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '900', cursor: 'pointer' }}
-                    >
-                      {lang === 'cz' ? 'AKTIVOVAT' : 'ACTIVATE'}
-                    </button>
-                  )}
-                </div>
-
-                {/* AI Module */}
-                <div style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid var(--card-border)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                    <Sparkles size={18} color="#a78bfa" />
-                    <span style={{ fontWeight: '800', fontSize: '0.85rem' }}>AI Features</span>
-                  </div>
-                  {(activeClient?.plan === 'Professional' || activeClient?.plan === 'Agency' || activeClient?.extraFeatures?.ai_features) ? (
-                    <div style={{ fontSize: '0.7rem', color: 'var(--success-color)', fontWeight: '900' }}>✓ {lang === 'cz' ? 'AKTIVOVÁNO' : 'ACTIVATED'}</div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      <button 
-                        onClick={() => handleUpgrade('ai_module', 'card')}
-                        className="premium-btn-sm"
-                        style={{ width: '100%', padding: '0.5rem', background: '#a78bfa', color: 'black', border: 'none', borderRadius: '8px', fontSize: '0.65rem', fontWeight: '900', cursor: 'pointer' }}
-                      >
-                        {lang === 'cz' ? 'KARTOU (Hned)' : 'BY CARD (Instant)'}
-                      </button>
-                      <button 
-                        onClick={() => handleUpgrade('ai_module', 'transfer')}
-                        style={{ width: '100%', padding: '0.4rem', background: 'transparent', color: 'var(--text-secondary)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '0.6rem', fontWeight: '700', cursor: 'pointer' }}
-                      >
-                        {lang === 'cz' ? 'PŘEVODEM' : 'TRANSFER'}
-                      </button>
+                  {/* Plan header */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+                    <div>
+                      <div style={{ fontSize: '0.65rem', fontWeight: '800', color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '0.4rem' }}>
+                        {lang === 'cz' ? 'AKTUÁLNÍ TARIF' : 'CURRENT PLAN'}
+                      </div>
+                      <div style={{ fontSize: '2.25rem', fontWeight: '950', lineHeight: 1.1 }}>
+                        {activeClient?.plan || 'Enterprise'}
+                      </div>
                     </div>
-                  )}
+                    <div style={{ padding: '0.5rem 1rem', background: 'rgba(16,185,129,0.1)', color: '#10b981', borderRadius: '12px', fontSize: '0.75rem', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0, border: '1px solid rgba(16,185,129,0.2)' }}>
+                      <CheckCircle2 size={15} /> {lang === 'cz' ? 'AKTIVNÍ' : 'ACTIVE'}
+                    </div>
+                  </div>
+
+                  {/* Validity bar */}
+                  {(() => {
+                    let expiry = activeSubscription?.expiresAt
+                      ? new Date(activeSubscription.expiresAt)
+                      : activeClient?.planExpiresAt
+                        ? new Date(activeClient.planExpiresAt)
+                        : null;
+                    if (!expiry) {
+                      expiry = new Date();
+                      expiry.setDate(expiry.getDate() + 30);
+                    }
+                    const now = new Date();
+                    const totalDays = 365;
+                    const remaining = Math.max(0, Math.ceil((expiry - now) / 86400000));
+                    const usedFraction = Math.min(1, Math.max(0, 1 - remaining / totalDays));
+                    const barColor = remaining <= 7 ? '#ef4444' : remaining <= 30 ? '#f59e0b' : '#10b981';
+                    const barPct = Math.max(2, Math.round((1 - usedFraction) * 100));
+
+                    return (
+                      <div>
+                        {remaining <= 7 && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 0.85rem', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: '10px', marginBottom: '1rem', fontSize: '0.8rem', color: '#f87171', fontWeight: '700' }}>
+                            <AlertTriangle size={15} />
+                            {lang === 'cz'
+                              ? `Tarif vyprší za ${remaining} ${remaining === 1 ? 'den' : remaining < 5 ? 'dny' : 'dní'}! Obnovte předplatné.`
+                              : `Subscription expires in ${remaining} day${remaining !== 1 ? 's' : ''}! Please renew.`}
+                          </div>
+                        )}
+
+                        {/* Days remaining big display */}
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                          <span style={{ fontSize: '3rem', fontWeight: '900', color: barColor, lineHeight: 1 }}>{remaining}</span>
+                          <span style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text-secondary)' }}>
+                            {lang === 'cz' ? (remaining === 1 ? 'den' : remaining < 5 ? 'dny' : 'dní') : `day${remaining !== 1 ? 's' : ''}`} {lang === 'cz' ? 'zbývá' : 'remaining'}
+                          </span>
+                        </div>
+
+                        {/* Expiry date */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: '600', marginBottom: '0.85rem' }}>
+                          <CalendarClock size={14} color="#fbbf24" />
+                          {lang === 'cz' ? 'Platnost do:' : 'Valid until:'}
+                          <span style={{ color: 'white', fontWeight: '800' }}>
+                            {expiry.toLocaleDateString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                          </span>
+                        </div>
+
+                        {/* Progress bar */}
+                        <div style={{ height: '8px', background: 'rgba(255,255,255,0.07)', borderRadius: '99px', overflow: 'hidden' }}>
+                          <div style={{
+                            height: '100%',
+                            width: `${barPct}%`,
+                            background: `linear-gradient(90deg, ${barColor}88, ${barColor})`,
+                            borderRadius: '99px',
+                            transition: 'width 0.5s ease'
+                          }} />
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>
+                          <span>{lang === 'cz' ? 'Začátek' : 'Start'}</span>
+                          <span>{lang === 'cz' ? 'Konec' : 'End'}</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
-                {/* API Module */}
-                <div style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid var(--card-border)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                    <Terminal size={18} color="#10b981" />
-                    <span style={{ fontWeight: '800', fontSize: '0.85rem' }}>API Access</span>
+                {/* RIGHT: Module cards */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.25rem' }}>
+                    {lang === 'cz' ? 'DOSTUPNÉ MODULY' : 'AVAILABLE MODULES'}
                   </div>
-                  {(activeClient?.plan === 'Agency' || activeClient?.extraFeatures?.api_access) ? (
-                    <div style={{ fontSize: '0.7rem', color: 'var(--success-color)', fontWeight: '900' }}>✓ {lang === 'cz' ? 'AKTIVOVÁNO' : 'ACTIVATED'}</div>
-                  ) : (
-                    <button 
-                      onClick={() => handleUpgrade('api_access')}
-                      className="premium-btn-sm"
-                      style={{ width: '100%', padding: '0.5rem', background: '#10b981', color: 'black', border: 'none', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '900', cursor: 'pointer' }}
-                    >
-                      {lang === 'cz' ? 'AKTIVOVAT' : 'ACTIVATE'}
-                    </button>
-                  )}
+
+                  {/* Analytics Module */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', background: 'rgba(59,130,246,0.05)', borderRadius: '14px', border: '1px solid rgba(59,130,246,0.15)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <TrendingUp size={18} color="#3b82f6" />
+                      <span style={{ fontWeight: '800', fontSize: '0.9rem' }}>Analytics</span>
+                    </div>
+                    {(activeClient?.plan === 'Professional' || activeClient?.plan === 'Agency' || activeClient?.plan === 'Enterprise' || activeClient?.extraFeatures?.analytics) ? (
+                      <div style={{ fontSize: '0.7rem', color: 'var(--success-color)', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <CheckCircle2 size={14} /> {lang === 'cz' ? 'AKTIVOVÁNO' : 'ACTIVE'}
+                      </div>
+                    ) : (
+                      <button onClick={() => handleUpgrade('pro_monthly')} style={{ padding: '0.4rem 1rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '900', cursor: 'pointer' }}>
+                        {lang === 'cz' ? 'AKTIVOVAT' : 'ACTIVATE'}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* AI Module */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', background: 'rgba(167,139,250,0.05)', borderRadius: '14px', border: '1px solid rgba(167,139,250,0.15)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <Sparkles size={18} color="#a78bfa" />
+                      <span style={{ fontWeight: '800', fontSize: '0.9rem' }}>AI Features</span>
+                    </div>
+                    {(activeClient?.plan === 'Professional' || activeClient?.plan === 'Agency' || activeClient?.plan === 'Enterprise' || activeClient?.extraFeatures?.ai_features) ? (
+                      <div style={{ fontSize: '0.7rem', color: 'var(--success-color)', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <CheckCircle2 size={14} /> {lang === 'cz' ? 'AKTIVOVÁNO' : 'ACTIVE'}
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', gap: '0.4rem' }}>
+                        <button onClick={() => handleUpgrade('ai_module', 'card')} style={{ padding: '0.4rem 0.75rem', background: '#a78bfa', color: 'black', border: 'none', borderRadius: '8px', fontSize: '0.65rem', fontWeight: '900', cursor: 'pointer' }}>
+                          {lang === 'cz' ? 'KARTOU' : 'CARD'}
+                        </button>
+                        <button onClick={() => handleUpgrade('ai_module', 'transfer')} style={{ padding: '0.4rem 0.75rem', background: 'transparent', color: 'var(--text-secondary)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '0.65rem', fontWeight: '700', cursor: 'pointer' }}>
+                          {lang === 'cz' ? 'PŘEVODEM' : 'TRANSFER'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* API Module */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', background: 'rgba(16,185,129,0.05)', borderRadius: '14px', border: '1px solid rgba(16,185,129,0.15)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <Terminal size={18} color="#10b981" />
+                      <span style={{ fontWeight: '800', fontSize: '0.9rem' }}>API Access</span>
+                    </div>
+                    {(activeClient?.plan === 'Agency' || activeClient?.plan === 'Enterprise' || activeClient?.extraFeatures?.api_access) ? (
+                      <div style={{ fontSize: '0.7rem', color: 'var(--success-color)', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <CheckCircle2 size={14} /> {lang === 'cz' ? 'AKTIVOVÁNO' : 'ACTIVE'}
+                      </div>
+                    ) : (
+                      <button onClick={() => handleUpgrade('api_access')} style={{ padding: '0.4rem 1rem', background: '#10b981', color: 'black', border: 'none', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '900', cursor: 'pointer' }}>
+                        {lang === 'cz' ? 'AKTIVOVAT' : 'ACTIVATE'}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
             
-            {/* Promo Banner for Professional */}
-            {activeClient?.plan === 'Starter' && (
-              <div className="glass-card" style={{ padding: '1.25rem', background: 'linear-gradient(to right, rgba(59,130,246,0.1), rgba(167,139,250,0.1))', border: '1px dashed rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <div style={{ width: '40px', height: '40px', background: 'white', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <TrendingUp size={20} color="#3b82f6" />
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: '800', fontSize: '0.9rem' }}>{lang === 'cz' ? 'Chcete vše najednou?' : 'Want everything at once?'}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{lang === 'cz' ? 'Přejděte na tarif Professional a získejte všechny moduly v jedné ceně.' : 'Switch to Professional and get all modules in one package.'}</div>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => handleUpgrade('pro_monthly')}
-                  style={{ padding: '0.6rem 1.25rem', background: 'white', color: 'black', border: 'none', borderRadius: '10px', fontWeight: '900', fontSize: '0.75rem', cursor: 'pointer' }}
-                >
-                  {lang === 'cz' ? 'ZJISTIT VÍCE' : 'LEARN MORE'}
-                </button>
+            {/* Tariff Comparison Grid */}
+            <div style={{ marginTop: '2rem' }}>
+              <div style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1.25rem' }}>
+                {lang === 'cz' ? 'SROVNÁNÍ A ZMĚNA TARIFŮ' : 'PLAN COMPARISON & UPGRADES'}
               </div>
-            )}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1.25rem' }}>
+                
+                {/* Starter Plan Card */}
+                <div className="glass-card" style={{ 
+                  padding: '1.5rem', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '1rem',
+                  border: activeClient?.plan === 'Starter' ? '1px solid var(--accent-color)' : '1px solid var(--card-border)',
+                  background: activeClient?.plan === 'Starter' ? 'rgba(59,130,246,0.02)' : 'transparent'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontWeight: '900', fontSize: '1.25rem' }}>Starter</div>
+                    {activeClient?.plan === 'Starter' && (
+                      <span style={{ fontSize: '0.65rem', padding: '3px 8px', background: 'rgba(59,130,246,0.15)', color: 'var(--accent-color)', borderRadius: '20px', fontWeight: '800' }}>
+                        {lang === 'cz' ? 'AKTUÁLNÍ' : 'CURRENT'}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '1.75rem', fontWeight: '950', color: 'white' }}>
+                    {lang === 'cz' ? '290 Kč' : '12 EUR'} <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-secondary)' }}>/ {lang === 'cz' ? 'měsíc' : 'mo'}</span>
+                  </div>
+                  <div style={{ fontSize: '0.72rem', fontWeight: '800', color: '#fbbf24' }}>
+                    {lang === 'cz' ? 'První měsíc ZDARMA (Trial)' : 'First month FREE (Trial)'}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--accent-color)' }}>
+                    {lang === 'cz' ? 'Limit: až 5 profilů' : 'Limit: up to 5 profiles'}
+                  </div>
+                  <ul style={{ paddingLeft: '1.25rem', margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: 1 }}>
+                    <li>{lang === 'cz' ? 'Základní správa profilů' : 'Basic profile management'}</li>
+                    <li>{lang === 'cz' ? 'SOS Emergency alerty' : 'Emergency SOS alerts'}</li>
+                    <li>{lang === 'cz' ? 'Manuální směrování SMS' : 'Manual SMS routing'}</li>
+                  </ul>
+                  {activeClient?.plan === 'Starter' ? (
+                    <button disabled style={{ padding: '0.75rem', borderRadius: '10px', border: 'none', background: 'rgba(16,185,129,0.1)', color: '#10b981', fontSize: '0.8rem', fontWeight: '800', cursor: 'default', width: '100%' }}>
+                      {lang === 'cz' ? 'AKTIVNÍ TARIF' : 'ACTIVE PLAN'}
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => handleUpgrade('starter_monthly')} 
+                      style={{ padding: '0.75rem', borderRadius: '10px', border: 'none', background: 'var(--accent-color)', color: 'white', fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer', width: '100%', transition: 'opacity 0.2s' }}
+                      onMouseOver={(e) => e.currentTarget.style.opacity = 0.85}
+                      onMouseOut={(e) => e.currentTarget.style.opacity = 1}
+                    >
+                      {lang === 'cz' ? 'AKTIVOVAT STARTER' : 'ACTIVATE STARTER'}
+                    </button>
+                  )}
+                </div>
+
+                {/* Professional Plan Card */}
+                <div className="glass-card" style={{ 
+                  padding: '1.5rem', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '1rem',
+                  border: (activeClient?.plan === 'Professional' || activeClient?.plan === 'Pro') ? '1px solid var(--accent-color)' : '1px solid var(--card-border)',
+                  background: (activeClient?.plan === 'Professional' || activeClient?.plan === 'Pro') ? 'rgba(59,130,246,0.02)' : 'transparent',
+                  position: 'relative'
+                }}>
+                  <div style={{ position: 'absolute', top: '-10px', right: '15px', background: 'var(--accent-color)', color: 'white', padding: '2px 8px', borderRadius: '20px', fontSize: '0.6rem', fontWeight: '900', textTransform: 'uppercase' }}>
+                    {lang === 'cz' ? 'POPULÁRNÍ' : 'POPULAR'}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontWeight: '900', fontSize: '1.25rem' }}>Professional</div>
+                    {(activeClient?.plan === 'Professional' || activeClient?.plan === 'Pro') && (
+                      <span style={{ fontSize: '0.65rem', padding: '3px 8px', background: 'rgba(59,130,246,0.15)', color: 'var(--accent-color)', borderRadius: '20px', fontWeight: '800' }}>
+                        {lang === 'cz' ? 'AKTUÁLNÍ' : 'CURRENT'}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '1.75rem', fontWeight: '950', color: 'white' }}>
+                    990 Kč <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-secondary)' }}>/ {lang === 'cz' ? 'měsíc' : 'mo'}</span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--accent-color)' }}>
+                    {lang === 'cz' ? 'Limit: až 10 profilů' : 'Limit: up to 10 profiles'}
+                  </div>
+                  <ul style={{ paddingLeft: '1.25rem', margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: 1 }}>
+                    <li><strong>{lang === 'cz' ? 'Vše v Starter' : 'Everything in Starter'}</strong></li>
+                    <li>{lang === 'cz' ? 'Analytics modul v ceně' : 'Analytics module included'}</li>
+                    <li>{lang === 'cz' ? 'AI chatové návrhy a překladač' : 'AI suggestions & translator'}</li>
+                    <li>{lang === 'cz' ? 'Automatické topování (Organic Boost)' : 'Organic boost automation'}</li>
+                  </ul>
+                  {(activeClient?.plan === 'Professional' || activeClient?.plan === 'Pro') ? (
+                    <button disabled style={{ padding: '0.75rem', borderRadius: '10px', border: 'none', background: 'rgba(16,185,129,0.1)', color: '#10b981', fontSize: '0.8rem', fontWeight: '800', cursor: 'default', width: '100%' }}>
+                      {lang === 'cz' ? 'AKTIVNÍ TARIF' : 'ACTIVE PLAN'}
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => handleUpgrade('pro_monthly')} 
+                      style={{ padding: '0.75rem', borderRadius: '10px', border: 'none', background: 'var(--accent-color)', color: 'white', fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer', width: '100%', transition: 'opacity 0.2s' }}
+                      onMouseOver={(e) => e.currentTarget.style.opacity = 0.85}
+                      onMouseOut={(e) => e.currentTarget.style.opacity = 1}
+                    >
+                      {lang === 'cz' ? 'AKTIVOVAT PROFESSIONAL' : 'ACTIVATE PROFESSIONAL'}
+                    </button>
+                  )}
+                </div>
+
+                {/* Agency Plan Card */}
+                <div className="glass-card" style={{ 
+                  padding: '1.5rem', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '1rem',
+                  border: (activeClient?.plan === 'Agency' || activeClient?.plan === 'Enterprise') ? '1px solid var(--accent-color)' : '1px solid var(--card-border)',
+                  background: (activeClient?.plan === 'Agency' || activeClient?.plan === 'Enterprise') ? 'rgba(59,130,246,0.02)' : 'transparent'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontWeight: '900', fontSize: '1.25rem' }}>Agency / Enterprise</div>
+                    {(activeClient?.plan === 'Agency' || activeClient?.plan === 'Enterprise') && (
+                      <span style={{ fontSize: '0.65rem', padding: '3px 8px', background: 'rgba(59,130,246,0.15)', color: 'var(--accent-color)', borderRadius: '20px', fontWeight: '800' }}>
+                        {lang === 'cz' ? 'AKTUÁLNÍ' : 'CURRENT'}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '1.75rem', fontWeight: '950', color: 'white' }}>
+                    2 490 Kč <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-secondary)' }}>/ {lang === 'cz' ? 'měsíc' : 'mo'}</span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--accent-color)' }}>
+                    {lang === 'cz' ? 'Limit: až 20 profilů' : 'Limit: up to 20 profiles'}
+                  </div>
+                  <ul style={{ paddingLeft: '1.25rem', margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: 1 }}>
+                    <li><strong>{lang === 'cz' ? 'Vše v Professional' : 'Everything in Professional'}</strong></li>
+                    <li>{lang === 'cz' ? 'Developer API přístup' : 'Developer API access'}</li>
+                    <li>{lang === 'cz' ? 'PM2 auditní logy a historie' : 'Audit logs & tracking'}</li>
+                    <li>{lang === 'cz' ? 'Nejvyšší priorita podpory' : 'Priority support'}</li>
+                  </ul>
+                  {(activeClient?.plan === 'Agency' || activeClient?.plan === 'Enterprise') ? (
+                    <button disabled style={{ padding: '0.75rem', borderRadius: '10px', border: 'none', background: 'rgba(16,185,129,0.1)', color: '#10b981', fontSize: '0.8rem', fontWeight: '800', cursor: 'default', width: '100%' }}>
+                      {lang === 'cz' ? 'AKTIVNÍ TARIF' : 'ACTIVE PLAN'}
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => handleUpgrade('agency_monthly')} 
+                      style={{ padding: '0.75rem', borderRadius: '10px', border: 'none', background: 'var(--accent-color)', color: 'white', fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer', width: '100%', transition: 'opacity 0.2s' }}
+                      onMouseOver={(e) => e.currentTarget.style.opacity = 0.85}
+                      onMouseOut={(e) => e.currentTarget.style.opacity = 1}
+                    >
+                      {lang === 'cz' ? 'AKTIVOVAT AGENCY' : 'ACTIVATE AGENCY'}
+                    </button>
+                  )}
+                </div>
+
+              </div>
+            </div>
+
           </div>
           
           {/* Bank Instructions Modal Overlay */}
@@ -235,23 +456,28 @@ const SettingsView = () => {
 
         <div className="settings-section">
           <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Activity size={20} color="var(--accent-color)" /> Osobní předvolby / Personal Preferences
+            <Activity size={20} color="var(--accent-color)" /> {lang === 'cz' ? 'Osobní předvolby' : 'Personal Preferences'}
           </h3>
-          <div className="glass-card" style={{ padding: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontWeight: '700' }}>{lang === 'cz' ? 'Jazyk aplikace' : 'Application Language'}</div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{lang === 'cz' ? 'Vyberte preferovaný jazyk uživatelského rozhraní.' : 'Select your preferred user interface language.'}</div>
+          <div className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1.5rem' }}>
+              {/* Language */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: '14px', border: '1px solid var(--card-border)' }}>
+                <div>
+                  <div style={{ fontWeight: '700', marginBottom: '0.25rem' }}>{lang === 'cz' ? 'Jazyk aplikace' : 'Application Language'}</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{lang === 'cz' ? 'Jazyk uživatelského rozhraní' : 'UI display language'}</div>
+                </div>
+                <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', padding: '3px', borderRadius: '12px', border: '1px solid var(--card-border)', flexShrink: 0 }}>
+                  <button onClick={() => setLang('cz')} style={{ padding: '8px 18px', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '9px', fontSize: '0.75rem', fontWeight: '900', cursor: 'pointer', transition: 'all 0.2s' }}>CZ</button>
+                  <button onClick={() => setLang('en')} style={{ padding: '8px 18px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '9px', fontSize: '0.75rem', fontWeight: '900', cursor: 'pointer', transition: 'all 0.2s' }}>EN</button>
+                </div>
               </div>
-              <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', padding: '3px', borderRadius: '12px', border: '1px solid var(--card-border)', width: '120px' }}>
-                <button 
-                  onClick={() => setLang('cz')} 
-                  style={{ flex: 1, padding: '8px 0', border: 'none', background: lang === 'cz' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '9px', fontSize: '0.75rem', fontWeight: '900', cursor: 'pointer', transition: 'all 0.2s' }}
-                >CZ</button>
-                <button 
-                  onClick={() => setLang('en')} 
-                  style={{ flex: 1, padding: '8px 0', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '9px', fontSize: '0.75rem', fontWeight: '900', cursor: 'pointer', transition: 'all 0.2s' }}
-                >EN</button>
+              {/* Timezone placeholder */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: '14px', border: '1px solid var(--card-border)' }}>
+                <div>
+                  <div style={{ fontWeight: '700', marginBottom: '0.25rem' }}>{lang === 'cz' ? 'Časové pásmo' : 'Timezone'}</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Europe/Prague (UTC+2)</div>
+                </div>
+                <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', padding: '0.4rem 0.85rem', background: 'rgba(255,255,255,0.04)', borderRadius: '10px', border: '1px solid var(--card-border)' }}>AUTO</div>
               </div>
             </div>
           </div>
@@ -261,83 +487,81 @@ const SettingsView = () => {
           <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Lock size={20} color="#a78bfa" /> {lang === 'cz' ? 'Bezpečnostní PIN' : 'Security PIN'}
           </h3>
-          <div className="glass-card" style={{ padding: '1.5rem' }}>
-             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
-                  {lang === 'cz' 
-                    ? 'Nastavte si 4-místný PIN pro ochranu citlivých operací (mazání, finanční reporty).' 
-                    : 'Set a 4-digit PIN to protect sensitive operations (deletion, financial reports).'}
+          <div className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '2rem', alignItems: 'start' }}>
+              <div>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: '0 0 1.5rem' }}>
+                  {lang === 'cz'
+                    ? 'Nastavte 4-místný PIN pro ochranu citlivých operací — mazání, finanční reporty, export dat.'
+                    : 'Set a 4-digit PIN to protect sensitive operations: deletions, financial reports, data exports.'}
                 </p>
-                
-                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                   <div style={{ flex: 1, minWidth: '200px' }}>
-                      <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>NOVÝ PIN (4 ČÍSLICE)</label>
-                      <input 
-                        type="password" 
-                        maxLength={4} 
-                        placeholder="****"
-                        id="new-security-pin"
-                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.75rem', borderRadius: '10px', color: 'white', letterSpacing: '0.5em', textAlign: 'center', fontSize: '1.2rem', fontWeight: '900' }} 
-                      />
-                   </div>
-                   <div style={{ flex: 1, minWidth: '200px' }}>
-                      <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>POTVRZENÍ HESLEM</label>
-                      <input 
-                        type="password" 
-                        placeholder="Vaše heslo k účtu"
-                        id="pin-auth-password"
-                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.75rem', borderRadius: '10px', color: 'white' }} 
-                      />
-                   </div>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {['🔒', '🗑️', '💰', '📤'].map((icon, i) => (
+                    <div key={i} style={{ padding: '0.4rem 0.75rem', background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)', borderRadius: '8px', fontSize: '0.75rem', color: '#a78bfa', fontWeight: '700' }}>
+                      {icon} {[lang === 'cz' ? 'Ochrana' : 'PIN lock', lang === 'cz' ? 'Mazání' : 'Deletion', lang === 'cz' ? 'Finance' : 'Finance', lang === 'cz' ? 'Export' : 'Export'][i]}
+                    </div>
+                  ))}
                 </div>
-                
-                <button 
-                  onClick={async () => {
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem', letterSpacing: '0.08em' }}>{lang === 'cz' ? 'NOVÝ PIN (4 ČÍSLICE)' : 'NEW PIN (4 DIGITS)'}</label>
+                  <input type="password" maxLength={4} placeholder="••••" id="new-security-pin"
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white', letterSpacing: '0.5em', textAlign: 'center', fontSize: '1.5rem', fontWeight: '900', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '0.5rem', letterSpacing: '0.08em' }}>{lang === 'cz' ? 'POTVRZENÍ HESLEM' : 'CONFIRM WITH PASSWORD'}</label>
+                  <input type="password" placeholder={lang === 'cz' ? 'Vaše heslo k účtu' : 'Your account password'} id="pin-auth-password"
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', padding: '0.85rem', borderRadius: '12px', color: 'white', boxSizing: 'border-box' }} />
+                </div>
+                <button onClick={async () => {
                     const pin = document.getElementById('new-security-pin').value;
                     const password = document.getElementById('pin-auth-password').value;
-                    if (!pin || pin.length < 4 || !password) {
-                      return showToast(lang === 'cz' ? 'Vyplňte 4-místný PIN a heslo.' : 'Enter 4-digit PIN and password.', 'error');
-                    }
+                    if (!pin || pin.length < 4 || !password) return showToast(lang === 'cz' ? 'Vyplněte 4-místný PIN a heslo.' : 'Enter 4-digit PIN and password.', 'error');
                     try {
                       const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api'}/auth/security-pin`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${nexus.token}` },
+                        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${nexus.token}` },
                         body: JSON.stringify({ pin, password })
                       });
-                      if (res.ok) {
-                        showToast(lang === 'cz' ? 'PIN úspěšně nastaven.' : 'PIN set successfully.', 'success');
-                        document.getElementById('new-security-pin').value = '';
-                        document.getElementById('pin-auth-password').value = '';
-                      } else {
-                        const data = await res.json();
-                        showToast(data.message || 'Error', 'error');
-                      }
-                    } catch {
-                      showToast('Network _err', 'error');
-                    }
+                      if (res.ok) { showToast(lang === 'cz' ? 'PIN úspěšně nastaven.' : 'PIN set successfully.', 'success'); document.getElementById('new-security-pin').value = ''; document.getElementById('pin-auth-password').value = ''; }
+                      else { const data = await res.json(); showToast(data.message || 'Error', 'error'); }
+                    } catch { showToast('Network error', 'error'); }
                   }}
-                  className="action-btn" 
-                  style={{ width: 'fit-content', padding: '0.75rem 2rem', background: '#a78bfa', marginTop: '0.5rem' }}
-                >
+                  style={{ padding: '0.85rem', background: 'linear-gradient(135deg, #a78bfa, #7c3aed)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '900', fontSize: '0.85rem', cursor: 'pointer', letterSpacing: '0.05em' }}>
                   {lang === 'cz' ? 'ULOŽIT PIN' : 'SAVE PIN'}
                 </button>
-             </div>
+              </div>
+            </div>
           </div>
         </div>
 
         <div className="settings-section">
           <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Building2 size={20} color="var(--accent-color)" /> 
-            {activeRole === 'app_owner' ? 'Agency Information' : t('agencyInsight')}: {activeClient?.name || t('global')}
+            <Building2 size={20} color="var(--accent-color)" />
+            {activeRole === 'app_owner' ? 'Agency Information' : t('agencyInsight')}: <span style={{ color: 'var(--accent-color)' }}>{activeClient?.name || t('global')}</span>
           </h3>
-          <div className="grid" style={{ gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1.5rem' }}>
-            <div className="glass-card" style={{ padding: '1.5rem' }}>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('teamSeats')}</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{(availableOperators || []).length} / 10</div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '1rem' }}>
+            <div className="glass-card" style={{ padding: '1.5rem', textAlign: 'center' }}>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.65rem', fontWeight: '800', marginBottom: '0.75rem', letterSpacing: '0.08em' }}>{t('teamSeats') || 'TÝM'}</div>
+              <div style={{ fontSize: '2rem', fontWeight: '900', color: 'var(--accent-color)' }}>{(availableOperators || []).length}</div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                / {seatsLimit} {['Neomezeně', 'Unlimited'].includes(seatsLimit) ? '' : (lang === 'cz' ? 'míst' : 'seats')}
+              </div>
             </div>
-            <div className="glass-card" style={{ padding: '1.5rem' }}>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('regionalReach')}</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{activeClient?.region || t('global')}</div>
+            <div className="glass-card" style={{ padding: '1.5rem', textAlign: 'center' }}>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.65rem', fontWeight: '800', marginBottom: '0.75rem', letterSpacing: '0.08em' }}>{lang === 'cz' ? 'PROFILY' : 'PROFILES'}</div>
+              <div style={{ fontSize: '2rem', fontWeight: '900', color: '#10b981' }}>{(profiles || []).length}</div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>{lang === 'cz' ? 'aktivních' : 'active'}</div>
+            </div>
+            <div className="glass-card" style={{ padding: '1.5rem', textAlign: 'center' }}>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.65rem', fontWeight: '800', marginBottom: '0.75rem', letterSpacing: '0.08em' }}>{t('regionalReach') || 'REGION'}</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: '900' }}>{activeClient?.region || 'UK'}</div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>{lang === 'cz' ? 'trh' : 'market'}</div>
+            </div>
+            <div className="glass-card" style={{ padding: '1.5rem', textAlign: 'center' }}>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.65rem', fontWeight: '800', marginBottom: '0.75rem', letterSpacing: '0.08em' }}>{lang === 'cz' ? 'AGENTURY' : 'AGENCIES'}</div>
+              <div style={{ fontSize: '2rem', fontWeight: '900', color: '#f59e0b' }}>{(agencies || []).length}</div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>{lang === 'cz' ? 'celkem' : 'total'}</div>
             </div>
           </div>
         </div>

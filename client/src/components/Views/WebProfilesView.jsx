@@ -103,7 +103,7 @@ const WebProfilesView = () => {
 
   const onSaveAutomation = async () => {
     if (!platformUser || !platformPass) {
-      showToast(lang === 'cz' ? 'Zadejte uživatelské jméno a heslo.' : 'Enter username and password.', 'warning');
+      showToast(t('enterUserPass'), 'warning');
       return;
     }
 
@@ -148,7 +148,7 @@ const WebProfilesView = () => {
       await axios.post(`${API_BASE}/profiles/${activeProfileId}/boost`, { platform: 'adultwork' }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      showToast(lang === 'cz' ? 'Organické topování spuštěno!' : 'Organic boost started!', 'success');
+      showToast(t('boostStarted'), 'success');
     } catch {
       showToast(t('error'), 'error');
     }
@@ -181,7 +181,7 @@ const WebProfilesView = () => {
           {/* SEKCE AUTOMATIZACE A PŘIHLAŠOVACÍ ÚDAJE */}
           <div className="glass-card" style={{ padding: '2rem', border: '1px solid var(--accent-color)', boxShadow: '0 0 15px rgba(59, 130, 246, 0.1)' }}>
             <h3 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.6rem', marginBottom: '1.5rem', color: 'var(--accent-color)' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}><RefreshCw size={20} /> Nastavení automatizace (Local Bridge)</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}><RefreshCw size={20} /> {t('automationSettings')}</span>
               <span style={{ 
                 fontSize: '0.7rem', 
                 padding: '4px 10px', 
@@ -191,13 +191,13 @@ const WebProfilesView = () => {
                 border: `1px solid ${relayOnline ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
                 fontWeight: '800'
               }}>
-                {relayOnline ? 'AGENT ONLINE' : 'AGENT OFFLINE'}
+                {relayOnline ? t('agentOnline') : t('agentOffline')}
               </span>
             </h3>
             
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1rem' }}>
               <div className="input-group-premium">
-                <label className="input-label-premium">Platforma</label>
+                <label className="input-label-premium">{t('platform')}</label>
                 <select 
                   className="note-input" 
                   style={{ background: 'rgba(255,255,255,0.05)' }}
@@ -214,7 +214,7 @@ const WebProfilesView = () => {
                 <input 
                   type="text" 
                   className="note-input" 
-                  placeholder="např. j8f2k9l" 
+                  placeholder={lang === 'cz' ? "např. j8f2k9l" : "e.g. j8f2k9l"} 
                   value={adsPowerId}
                   onChange={(_err) => setAdsPowerId(_err.target.value)}
                 />
@@ -223,17 +223,17 @@ const WebProfilesView = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
               <div className="input-group-premium">
-                <label className="input-label-premium">Uživatelské jméno / Email</label>
+                <label className="input-label-premium">{t('usernameOrEmail')}</label>
                 <input 
                   type="text" 
                   className="note-input" 
-                  placeholder="Login k webu" 
+                  placeholder={lang === 'cz' ? "Login k webu" : "Website login"} 
                   value={platformUser}
                   onChange={(_err) => setPlatformUser(_err.target.value)}
                 />
               </div>
               <div className="input-group-premium">
-                <label className="input-label-premium">Heslo</label>
+                <label className="input-label-premium">{t('password')}</label>
                 <input 
                   type="password" 
                   className="note-input" 
@@ -245,7 +245,7 @@ const WebProfilesView = () => {
             </div>
 
             <div className="input-group-premium" style={{ marginTop: '1rem' }}>
-              <label className="input-label-premium">Proxy server (volitelné)</label>
+              <label className="input-label-premium">{t('proxyServerOptional')}</label>
               <input 
                 type="text" 
                 className="note-input" 
@@ -256,30 +256,30 @@ const WebProfilesView = () => {
             </div>
 
             <button onClick={onSaveAutomation} className="action-btn" style={{ marginTop: '1.5rem', width: '100%' }}>
-              Uložit a ověřit spojení
+              {t('saveAndVerifyConnection')}
             </button>
 
             {automationPlatform === 'adultwork' && (
               <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '15px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
                 <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: 'var(--accent-color)', fontWeight: '900' }}>
-                  🚀 AdultWork Organic Boost (Nová strategie)
+                  {t('organicBoostStrategy')}
                 </h4>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '0.8rem' }}>Automaticky "Available Today"</span>
+                    <span style={{ fontSize: '0.8rem' }}>{t('autoAvailableToday')}</span>
                     <input type="checkbox" checked={awAutoAvailable} onChange={(e) => onToggleAWAutomation('autoAvailable', e.target.checked)} />
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '0.8rem' }}>Rotace hlavní fotky (organická změna)</span>
+                    <span style={{ fontSize: '0.8rem' }}>{t('rotateMainPhoto')}</span>
                     <input type="checkbox" checked={awRotatePhotos} onChange={(e) => onToggleAWAutomation('rotatePhotos', e.target.checked)} />
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '0.8rem' }}>Drobné úpravy Summary (signál aktivity)</span>
+                    <span style={{ fontSize: '0.8rem' }}>{t('tweakSummary')}</span>
                     <input type="checkbox" checked={awTweakSummary} onChange={(e) => onToggleAWAutomation('tweakSummary', e.target.checked)} />
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '0.8rem' }}>Udržovat online (Auto-Login)</span>
+                    <span style={{ fontSize: '0.8rem' }}>{t('keepOnline')}</span>
                     <input type="checkbox" checked={awAutoLogin} onChange={(e) => onToggleAWAutomation('autoLogin', e.target.checked)} />
                   </div>
                 </div>
@@ -294,10 +294,10 @@ const WebProfilesView = () => {
                     fontWeight: '900'
                   }}
                 >
-                  SPUSTIT ORGANICKÝ BOOST TEĎ
+                  {t('runOrganicBoostNow')}
                 </button>
                 <p style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', marginTop: '0.75rem', textAlign: 'center', lineHeight: '1.4' }}>
-                  Tato funkce využívá reálné aktivity k posunu profilu v algoritmu bez rizika detekce.
+                  {t('organicBoostExplanation')}
                 </p>
               </div>
             )}

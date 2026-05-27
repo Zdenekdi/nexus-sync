@@ -67,8 +67,13 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, _setSelectedChatId, _set
 
   const handleLogoutInternal = useCallback(() => {
     if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+    const lang = localStorage.getItem('nexus_lang') || 'cz';
     localStorage.clear(); // Nuclear option to ensure no stale data remains
-    window.location.href = '/';
+    if (lang && lang !== 'cz') {
+      window.location.href = `/${lang}/logout`;
+    } else {
+      window.location.href = '/logout';
+    }
   }, []);
 
   const handleLogout = useCallback(() => {
