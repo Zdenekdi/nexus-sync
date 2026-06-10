@@ -203,13 +203,14 @@ router.post("/upload-apk", apkUpload.single("apk"), async (req, res) => {
   }
 });
 
-router.get("/latest-version", (req, res) => {
+router.get("/latest-version", async (req, res) => {
   const metaPath = path.join(DOWNLOADS_DIR, "nexus-relay.meta.json");
   if (!fs.existsSync(metaPath)) {
     return res.status(404).json({ message: "No version info available" });
   }
   try {
-    const meta = JSON.parse(fs.readFileSync(metaPath, "utf8"));
+    const fileContent = await fs.promises.readFile(metaPath, "utf8");
+    const meta = JSON.parse(fileContent);
     res.json(meta);
   } catch (err) {
     res.status(500).json({ message: "Error reading version info" });
@@ -224,35 +225,41 @@ const otaUpload = multer({
   limits: { fileSize: 100 * 1024 * 1024 }
 });
 
-router.post("/upload-ota", otaUpload.single("ota"), (req, res) => {
+router.post("/upload-ota", otaUpload.single("ota"), async (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No OTA file provided' });
   const version = req.body.version || "1.0";
   const metaPath = path.join(DOWNLOADS_DIR, "nexus-relay.meta.json");
   
   let meta = {};
   if (fs.existsSync(metaPath)) {
-    try { meta = JSON.parse(fs.readFileSync(metaPath, "utf8")); } catch {}
+    try {
+      const fileContent = await fs.promises.readFile(metaPath, "utf8");
+      meta = JSON.parse(fileContent);
+    } catch {}
   }
 
   meta.version = version;
   meta.uploadedAt = new Date().toISOString();
   meta.otaUrl = `${process.env.API_BASE_URL || "https://nexus-api.myvnc.com"}/downloads/nexus-relay.zip`;
 
-  fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
+  await fs.promises.writeFile(metaPath, JSON.stringify(meta, null, 2));
   logger.info(`[OTA] New web bundle v${version} uploaded`);
   res.json({ ok: true, version });
 });
 
-router.get("/apk-info", (req, res) => {
+router.get("/apk-info", async (req, res) => {
   const apkPath = path.join(DOWNLOADS_DIR, "nexus-relay.apk");
   const metaPath = path.join(DOWNLOADS_DIR, "nexus-relay.meta.json");
   if (!fs.existsSync(apkPath)) {
     return res.json({ available: false });
   }
-  const stat = fs.statSync(apkPath);
+  const stat = await fs.promises.stat(apkPath);
   let meta = {};
   if (fs.existsSync(metaPath)) {
-    try { meta = JSON.parse(fs.readFileSync(metaPath, "utf8")); } catch {}
+    try {
+      const fileContent = await fs.promises.readFile(metaPath, "utf8");
+      meta = JSON.parse(fileContent);
+    } catch {}
   }
   res.json({
     available: true,

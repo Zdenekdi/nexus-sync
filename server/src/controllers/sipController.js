@@ -71,7 +71,7 @@ exports.getMyConfig = async (req, res) => {
         where: { id: binding.id },
         data: {
           sipUser,
-          sipPassword: encrypt(sipPassword),
+          sipPassword: await encrypt(sipPassword),
           sipServer,
           sipPort,
         },
@@ -134,7 +134,7 @@ exports.setConfig = async (req, res) => {
     const binding = await prisma.deviceBinding.findFirst({ where, select: { id: true } });
     if (!binding) return res.status(404).json({ message: 'Device binding not found' });
 
-    const encrypted = encrypt(sipPassword);
+    const encrypted = await encrypt(sipPassword);
 
     await prisma.deviceBinding.update({
       where: { id: bindingId },
@@ -149,13 +149,14 @@ exports.setConfig = async (req, res) => {
     console.log(`[SIP] Config nastaven pro binding ${bindingId}: ${sipUser}@${sipServer}`);
 
     // Auto-regenerace Asterisk konfigurace z DB + SSH deploy
-    regenerateAsteriskConfig({ agencyId, decrypt }).then(result => {
+    try {
+      const result = await regenerateAsteriskConfig({ agencyId, decrypt });
       if (result.ok) {
         console.log('[Asterisk] Config úspěšně obnoven:', result.dryRun ? '(dry-run)' : 'nasazen na VPS');
       }
-    }).catch(err => {
+    } catch (err) {
       console.error('[Asterisk] Regenerace selhala (SIP credentials uloženy OK):', err.message);
-    });
+    }
 
     return res.json({ ok: true, message: 'SIP configuration saved' });
   } catch (err) {
@@ -184,9 +185,11 @@ exports.deleteConfig = async (req, res) => {
     sipStatusMap.delete(bindingId);
 
     // Auto-regenerace po smazání
-    regenerateAsteriskConfig({ agencyId, decrypt }).catch(err => {
+    try {
+      await regenerateAsteriskConfig({ agencyId, decrypt });
+    } catch (err) {
       console.error('[Asterisk] Regenerace po delete selhala:', err.message);
-    });
+    }
 
     return res.json({ ok: true });
   } catch (err) {
