@@ -167,7 +167,7 @@ steps:
           npm install -g firebase-tools
           
           # Deploy a uložení výstupu do JSONu
-          DEPLOY_OUT=$$(firebase hosting:channel:deploy pr-$_PR_NUMBER --token $$FIREBASE_TOKEN --json)
+          DEPLOY_OUT=$$(firebase hosting:channel:deploy pr-$_PR_NUMBER --project=$PROJECT_ID --token $$FIREBASE_TOKEN --json)
           export PREVIEW_URL=$$(echo "$$DEPLOY_OUT" | node -e "
             const fs = require('fs');
             const data = JSON.parse(fs.readFileSync(0, 'utf-8'));
@@ -206,7 +206,7 @@ steps:
         elif [ "$BRANCH_NAME" = "master" ] || [ "$BRANCH_NAME" = "main" ]; then
           echo "Deploying production to Firebase Hosting..."
           npm install -g firebase-tools
-          firebase deploy --only hosting --token $$FIREBASE_TOKEN
+          firebase deploy --only hosting --project=$PROJECT_ID --token $$FIREBASE_TOKEN
         else
           echo "Skipping Firebase deploy for branch $BRANCH_NAME"
         fi
