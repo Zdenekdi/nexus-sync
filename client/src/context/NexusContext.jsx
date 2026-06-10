@@ -32,6 +32,9 @@ export const NexusProvider = ({ children }) => {
     catch { return fallback; }
   };
 
+  const [pathname, setPathname] = useState(typeof window !== 'undefined' ? window.location.pathname : '/');
+  const [authInitialTab, setAuthInitialTab] = useState('login');
+
   const [lang, setLangState] = useState(() => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
@@ -45,7 +48,8 @@ export const NexusProvider = ({ children }) => {
     setLangState(newLang);
     try {
       localStorage.setItem('nexus_lang', newLang);
-    } catch (_err) {}
+    } catch (_err) { /* ignore */ }
+
 
     if (typeof window !== 'undefined') {
       const currentPath = window.location.pathname;
@@ -66,8 +70,6 @@ export const NexusProvider = ({ children }) => {
   const [activeMarket, _setActiveMarket] = useState(() => getSafeStorage('nexus_active_market', 'UK'));
   
   // Auth & Routing States (Moved up to prevent hoisting errors)
-  const [authInitialTab, setAuthInitialTab] = useState('login');
-  const [pathname, setPathname] = useState(typeof window !== 'undefined' ? window.location.pathname : '/');
 
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -138,37 +140,40 @@ export const NexusProvider = ({ children }) => {
   }, [lang]);
 
   // Sync showLanding and activeTab with pathname
-  /* eslint-disable react-hooks/set-state-in-effect */
+
   useEffect(() => {
     const p = pathname.replace(/^\/(en|cz)/, '') || '/';
     if (p === '/' || p === '/guide') {
-      setShowLanding(true);
-      if (p === '/guide') setActiveTab('guide');
-      else setActiveTab('dashboard');
+      setTimeout(() => {
+        setShowLanding(true);
+        if (p === '/guide') setActiveTab('guide');
+        else setActiveTab('dashboard');
+      }, 0);
     } else {
-      setShowLanding(false);
-      // Extract tab ID from path (e.g. /hierarchy -> hierarchy)
-      const tab = p.split('/')[1] || p.substring(1);
-      
-      // Handle special auth routes
-      if (tab === 'register') {
-        setAuthInitialTab('register-agency');
-      } else if (tab === 'login') {
-        setAuthInitialTab('login');
-      }
-      
-      if (tab && tab !== 'login' && tab !== 'register') {
-        setActiveTab(tab);
-      }
+      setTimeout(() => {
+        setShowLanding(false);
+        const tab = p.split('/')[1] || p.substring(1);
+        if (tab && tab !== '' && tab !== 'dashboard' && tab !== 'login' && tab !== 'register') {
+          setActiveTab(tab);
+        }
+        // Handle special auth routes
+        if (tab === 'register') {
+          setAuthInitialTab('register-agency');
+        } else if (tab === 'login') {
+          setAuthInitialTab('login');
+        }
+      }, 0);
     }
     
-    if (pathname.startsWith('/en')) setLangState('en');
-    else if (pathname.startsWith('/cz')) setLangState('cz');
+    setTimeout(() => {
+      if (pathname.startsWith('/en')) setLangState('en');
+      else if (pathname.startsWith('/cz')) setLangState('cz');
+    }, 0);
     
     // Save to localStorage for persistence
     localStorage.setItem('nexus_active_tab', p.split('/')[1] || p.substring(1) || 'dashboard');
   }, [pathname]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+
 
   // Handle browser back/forward buttons
   useEffect(() => {
@@ -271,7 +276,7 @@ export const NexusProvider = ({ children }) => {
     if (!isLoggedIn) {
       const clean = pathname.replace(/^\/(en|cz)/, '') || '/';
       if (clean !== '/' && clean !== '/guide' && clean !== '/login' && clean !== '/register' && clean !== '/logout') {
-        navigate('/login', 'login');
+        setTimeout(() => navigate('/login', 'login'), 0);
       }
     }
   }, [isLoggedIn, pathname, navigate]);
@@ -375,7 +380,7 @@ export const NexusProvider = ({ children }) => {
     const now = new Date();
     const expiresAt = new Date(activeSub.expiresAt);
     return Math.max(0, Math.ceil((expiresAt - now) / 86400000));
-  }, [nexusData?.activeSubscription]);
+  }, [nexusData]);
 
   const value = useMemo(() => ({
     t, lang, setLang, activeTab, setActiveTab, activeMarket, 
@@ -383,7 +388,8 @@ export const NexusProvider = ({ children }) => {
     loading: nexusData.isDataLoading, activeOperator, isLoggedIn, token,
     logout, onLogin: handleLogin, onRegisterAgency: auth.handleRegisterAgency, onRegisterUser: auth.handleRegisterUser,
     API_BASE, showLanding, setShowLanding, hasSeenOnboarding, setHasSeenOnboarding, showOnboarding, setShowOnboarding,
-    isMobile, isNativeApp, isSidebarOpen, setIsSidebarOpen, isSidebarCollapsed, setIsSidebarCollapsed,
+    isMobile, isNativeApp, isSidebarOpen, setIsSidebarOpen,
+    isSidebarCollapsed, setIsSidebarCollapsed,
     messages, selectedChatId, setSelectedChatId, messageValue, setMessageValue,
     isEditProfileOpen, setIsEditProfileOpen, isAddAgencyOpen, setIsAddAgencyOpen,
     isAddUserOpen, setIsAddUserOpen, isBugReportOpen, setIsBugReportOpen,
@@ -410,7 +416,7 @@ export const NexusProvider = ({ children }) => {
     filteredMessages, setActiveContactId, selectedChat, typingProfiles,
     handleSyncChatHistory: nexusData.handleSyncChatHistory
   }), [
-    t, lang, activeTab, setActiveTab, activeMarket, pathname, navigateStable, authInitialTab, 
+    t, lang, setLang, activeTab, setActiveTab, activeMarket, pathname, navigateStable, authInitialTab,
     nexusData.isDataLoading, activeOperator, isLoggedIn, token, logout, handleLogin,
     auth.handleRegisterAgency, auth.handleRegisterUser, showToast,
     showLanding, hasSeenOnboarding, showOnboarding, isMobile, isNativeApp, isSidebarOpen, isSidebarCollapsed,

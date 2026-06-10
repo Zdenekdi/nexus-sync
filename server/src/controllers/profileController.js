@@ -122,7 +122,7 @@ exports.updateCredentials = async (req, res) => {
   try {
     const { id } = req.params;
     const { credentials } = req.body;
-    const encrypted = encrypt(JSON.stringify(credentials));
+    const encrypted = await encrypt(JSON.stringify(credentials));
     await prisma.profile.update({ where: { id }, data: { credentials: encrypted } });
     res.json({ ok: true });
   } catch (error) {
@@ -140,7 +140,7 @@ exports.syncProfile = async (req, res) => {
     await prisma.profile.update({ where: { id }, data: { ...(bio && { bio }), ...(name && { name }) } });
     let decryptedCredentials = null;
     if (profile.credentials) {
-      const decryptedString = decrypt(profile.credentials);
+      const decryptedString = await decrypt(profile.credentials);
       if (decryptedString) decryptedCredentials = JSON.parse(decryptedString);
     }
     const io = getIO();
@@ -170,7 +170,7 @@ exports.getCredentials = async (req, res) => {
 
     let decrypted = null;
     if (profile.credentials) {
-      const decryptedString = decrypt(profile.credentials);
+      const decryptedString = await decrypt(profile.credentials);
       if (decryptedString) {
         try {
           decrypted = JSON.parse(decryptedString);
@@ -197,7 +197,7 @@ exports.boostProfile = async (req, res) => {
 
     let decryptedCredentials = null;
     if (profile.credentials) {
-      const decryptedString = decrypt(profile.credentials);
+      const decryptedString = await decrypt(profile.credentials);
       if (decryptedString) decryptedCredentials = JSON.parse(decryptedString);
     }
 
