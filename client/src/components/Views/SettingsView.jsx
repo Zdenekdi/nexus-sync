@@ -31,7 +31,7 @@ const SettingsView = () => {
     showToast = () => {},
     setLang = () => {},
     activeSubscription = null,
-    daysLeft = 0
+    _daysLeft = 0
   } = nexus || {};
 
   const activeClient = (agencies || [])[0] || null;
