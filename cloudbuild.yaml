@@ -154,7 +154,7 @@ steps:
     waitFor: ['build-android-apk']
 
   # ------------------------------------------------------------------------------
-  # KROK 8: Deploy frontendu na Firebase Hosting (Staging / PR Preview)
+  # KROK 8: Deploy frontendu na Firebase Hosting (Staging / PR Preview / Production)
   # ------------------------------------------------------------------------------
   - name: 'node:22'
     id: 'deploy-firebase'
@@ -162,7 +162,15 @@ steps:
     args:
       - '-c'
       - |
-        if [ -n "$_PR_NUMBER" ]; then
+        if [ -n "$TAG_NAME" ]; then
+          echo "Deploying Production frontend to Firebase Hosting (nexus-systems-web-zd)..."
+          npm install -g firebase-tools
+          
+          # Vybrat aktivní Firebase projekt
+          firebase use nexus-systems-web-zd --token $$FIREBASE_TOKEN
+          
+          firebase deploy --only hosting --project=nexus-systems-web-zd --token $$FIREBASE_TOKEN
+        elif [ -n "$_PR_NUMBER" ]; then
           echo "Deploying preview channel for PR #$_PR_NUMBER..."
           npm install -g firebase-tools
           
@@ -207,7 +215,7 @@ steps:
             echo "Žádný GITHUB_TOKEN v Secret Manageru, přeskakuji odeslání statusu."
           fi
         elif [ "$BRANCH_NAME" = "master" ] || [ "$BRANCH_NAME" = "main" ]; then
-          echo "Deploying production to Firebase Hosting..."
+          echo "Deploying Staging frontend to Firebase Hosting ($PROJECT_ID)..."
           npm install -g firebase-tools
           
           # Vybrat aktivní Firebase projekt
@@ -224,7 +232,7 @@ steps:
     waitFor: ['build-client', 'get-github-token']
 
   # ------------------------------------------------------------------------------
-  # KROK 9: Sestavení Docker image backendu a nahrání do Artifact Registry (Pouze Push)
+  # KROK 9: Sestavení Docker image backendu (Staging / Production)
   # ------------------------------------------------------------------------------
   - name: 'gcr.io/cloud-builders/docker'
     id: 'docker-build'
@@ -232,14 +240,19 @@ steps:
     args:
       - '-c'
       - |
-        if [ "$BRANCH_NAME" = "master" ] || [ "$BRANCH_NAME" = "main" ]; then
+        if [ -n "$TAG_NAME" ]; then
+          echo "Building Production Docker image (nexus-systems-web-zd)..."
+          docker build -t europe-west3-docker.pkg.dev/nexus-systems-web-zd/nexus-repo/nexus-backend:$TAG_NAME -f server/Dockerfile server/
+          docker push europe-west3-docker.pkg.dev/nexus-systems-web-zd/nexus-repo/nexus-backend:$TAG_NAME
+        elif [ "$BRANCH_NAME" = "master" ] || [ "$BRANCH_NAME" = "main" ]; then
+          echo "Building Staging Docker image ($PROJECT_ID)..."
           docker build -t europe-west3-docker.pkg.dev/$PROJECT_ID/nexus-repo/nexus-backend:$COMMIT_SHA -f server/Dockerfile server/
           docker push europe-west3-docker.pkg.dev/$PROJECT_ID/nexus-repo/nexus-backend:$COMMIT_SHA
         fi
     waitFor: ['run-server-tests']
 
   # ------------------------------------------------------------------------------
-  # KROK 10: Nasazení backendu na Cloud Run (Pouze Push)
+  # KROK 10: Nasazení backendu na Cloud Run (Staging / Production)
   # ------------------------------------------------------------------------------
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'deploy-cloud-run'
@@ -247,11 +260,23 @@ steps:
     args:
       - '-c'
       - |
-        if [ "$BRANCH_NAME" = "master" ] || [ "$BRANCH_NAME" = "main" ]; then
+        if [ -n "$TAG_NAME" ]; then
+          echo "Deploying Production backend to Cloud Run (nexus-systems-web-zd)..."
+          gcloud run deploy nexus-backend \
+            --image europe-west3-docker.pkg.dev/nexus-systems-web-zd/nexus-repo/nexus-backend:$TAG_NAME \
+            --region europe-west3 \
+            --platform managed \
+            --project nexus-systems-web-zd \
+            --set-env-vars=NODE_ENV=production \
+            --set-secrets=DATABASE_URL=DATABASE_URL:latest,DEVICE_SECRET=DEVICE_SECRET:latest \
+            --allow-unauthenticated
+        elif [ "$BRANCH_NAME" = "master" ] || [ "$BRANCH_NAME" = "main" ]; then
+          echo "Deploying Staging backend to Cloud Run ($PROJECT_ID)..."
           gcloud run deploy nexus-backend \
             --image europe-west3-docker.pkg.dev/$PROJECT_ID/nexus-repo/nexus-backend:$COMMIT_SHA \
             --region europe-west3 \
             --platform managed \
+            --project $PROJECT_ID \
             --set-env-vars=NODE_ENV=production \
             --set-secrets=DATABASE_URL=DATABASE_URL:latest,DEVICE_SECRET=DEVICE_SECRET:latest \
             --allow-unauthenticated
@@ -267,7 +292,9 @@ steps:
     args:
       - '-c'
       - |
-        if [ "$BRANCH_NAME" = "master" ] || [ "$BRANCH_NAME" = "main" ]; then
+        if [ -n "$TAG_NAME" ]; then
+          echo "Skipping Staging E2E tests for Production Tag deployment."
+        elif [ "$BRANCH_NAME" = "master" ] || [ "$BRANCH_NAME" = "main" ]; then
           echo "Spouštím Playwright testy nad Staging prostředím..."
           npm run test:smoke
         else
