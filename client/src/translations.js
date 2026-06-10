@@ -789,7 +789,7 @@ export const TRANSLATIONS = {
             backup: {
                 title: '💾 Database Management - Backup',
                 description: 'Backups are stored in /var/backups/. Manual backup command:',
-                command: 'PGPASSWORD="nexus_prod_2024!" pg_dump -h localhost -U nexus -d nexus_prod > /var/backups/backup_$(date +%Y%m%d_%H%M%S).sql'
+                command: 'PGPASSWORD="$DB_PASSWORD" pg_dump -h localhost -U nexus -d nexus_prod > /var/backups/backup_$(date +%Y%m%d_%H%M%S).sql'
             },
             migration: {
                 title: '⚙️ Database Management - Schema Migration',
@@ -1658,7 +1658,7 @@ export const TRANSLATIONS = {
             backup: {
                 title: '💾 Správa Databáze - Zálohování',
                 description: 'Zálohy se ukládají do /var/backups/. Ruční záloha se provede příkazem:',
-                command: 'PGPASSWORD="nexus_prod_2024!" pg_dump -h localhost -U nexus -d nexus_prod > /var/backups/backup_$(date +%Y%m%d_%H%M%S).sql'
+                command: 'PGPASSWORD="$DB_PASSWORD" pg_dump -h localhost -U nexus -d nexus_prod > /var/backups/backup_$(date +%Y%m%d_%H%M%S).sql'
             },
             migration: {
                 title: '⚙️ Správa Databáze - Migrace Schématu',

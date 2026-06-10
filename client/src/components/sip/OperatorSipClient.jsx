@@ -5,7 +5,7 @@
  *   <OperatorSipClient
  *     wsUrl="wss://78.141.202.139:8089"
  *     username="op1"
- *     password="heslo"
+ *     password="***"
  *     onIncoming={(session) => ...}
  *     onEnded={() => ...}
  *   />
