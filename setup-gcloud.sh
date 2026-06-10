@@ -61,37 +61,42 @@ for SECRET in "${SECRETS[@]}"; do
   fi
 done
 
-# 5. Konfigurace IAM Oprávnění pro Cloud Build Service Account
-echo "🛡️ [4/5] Nastavuji oprávnění pro Cloud Build servisní účet..."
+# 5. Konfigurace IAM Oprávnění pro Cloud Build a Compute Service Accounts
+echo "🛡️ [4/5] Nastavuji oprávnění pro servisní účty..."
 CB_SA="${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com"
+COMPUTE_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
 
-# A. Oprávnění číst tajné údaje z Secret Manageru
-echo "   - Přidávám roli Secret Manager Secret Accessor..."
-gcloud projects add-iam-policy-binding "$PROJECT_ID" \
-  --member="serviceAccount:$CB_SA" \
-  --role="roles/secretmanager.secretAccessor" \
-  --quiet
+for SA in "$CB_SA" "$COMPUTE_SA"; do
+  echo "👤 Nastavuji oprávnění pro: $SA"
+  
+  # A. Oprávnění číst tajné údaje z Secret Manageru
+  echo "   - Přidávám roli Secret Manager Secret Accessor..."
+  gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+    --member="serviceAccount:$SA" \
+    --role="roles/secretmanager.secretAccessor" \
+    --quiet
 
-# B. Oprávnění nasazovat na Cloud Run
-echo "   - Přidávám roli Cloud Run Developer..."
-gcloud projects add-iam-policy-binding "$PROJECT_ID" \
-  --member="serviceAccount:$CB_SA" \
-  --role="roles/run.developer" \
-  --quiet
+  # B. Oprávnění nasazovat na Cloud Run
+  echo "   - Přidávám roli Cloud Run Developer..."
+  gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+    --member="serviceAccount:$SA" \
+    --role="roles/run.developer" \
+    --quiet
 
-# C. Oprávnění spouštět akce pod identitou servisního účtu
-echo "   - Přidávám roli Service Account User..."
-gcloud projects add-iam-policy-binding "$PROJECT_ID" \
-  --member="serviceAccount:$CB_SA" \
-  --role="roles/iam.serviceAccountUser" \
-  --quiet
+  # C. Oprávnění spouštět akce pod identitou servisního účtu
+  echo "   - Přidávám roli Service Account User..."
+  gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+    --member="serviceAccount:$SA" \
+    --role="roles/iam.serviceAccountUser" \
+    --quiet
 
-# D. Oprávnění spouštět testy ve Firebase Test Lab
-echo "   - Přidávám roli Firebase Test Lab Admin..."
-gcloud projects add-iam-policy-binding "$PROJECT_ID" \
-  --member="serviceAccount:$CB_SA" \
-  --role="roles/cloudtestservice.testAdmin" \
-  --quiet
+  # D. Oprávnění spouštět testy ve Firebase Test Lab
+  echo "   - Přidávám roli Firebase Test Lab Admin..."
+  gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+    --member="serviceAccount:$SA" \
+    --role="roles/cloudtestservice.testAdmin" \
+    --quiet
+done
 
 
 # 6. Shrnutí a další kroky
