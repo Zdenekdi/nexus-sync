@@ -15,7 +15,8 @@ export const getResponsiveGap = (isMobile) => {
   return isMobile ? '0.75rem' : '1.5rem';
 };
 
-export const getResponsiveFontSize = (type = 'heading', isMobile) => {
+export const getResponsiveFontSize = (type, isMobile) => {
+  const effectiveType = type || 'body';
   const sizes = {
     heading: isMobile ? '1.5rem' : '2.5rem',
     subheading: isMobile ? '1.25rem' : '1.75rem',
@@ -23,7 +24,7 @@ export const getResponsiveFontSize = (type = 'heading', isMobile) => {
     small: isMobile ? '0.75rem' : '0.85rem',
     tiny: isMobile ? '0.65rem' : '0.75rem'
   };
-  return sizes[type] || sizes.body;
+  return sizes[effectiveType] || sizes.body;
 };
 
 export const getResponsiveGridColumns = (isMobile, defaultColumns = 3) => {
