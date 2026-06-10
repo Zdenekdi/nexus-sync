@@ -25,6 +25,7 @@ steps:
     waitFor: ['-']
 
   # ------------------------------------------------------------------------------
+  # ------------------------------------------------------------------------------
   # KROK 1: Clean Install závislostí
   # ------------------------------------------------------------------------------
   # A. Klientská část (React)
@@ -39,6 +40,13 @@ steps:
   - name: 'node:22'
     id: 'install-server'
     dir: 'server'
+    entrypoint: 'npm'
+    args: ['ci']
+    waitFor: ['restore-cache']
+
+  # C. Kořenový adresář (pro Playwright)
+  - name: 'node:22'
+    id: 'install-root'
     entrypoint: 'npm'
     args: ['ci']
     waitFor: ['restore-cache']
@@ -85,7 +93,19 @@ steps:
     waitFor: ['install-client', 'lint-client']
 
   # ------------------------------------------------------------------------------
-  # KROK 5: Sestavení Android APK (Capacitor)
+  # KROK 5: Příprava tajných klíčů pro odesílání commit statusů
+  # ------------------------------------------------------------------------------
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'get-github-token'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud secrets versions access latest --secret="GITHUB_TOKEN" > /workspace/github_token.txt 2>/dev/null || echo "" > /workspace/github_token.txt
+    waitFor: ['-']
+
+  # ------------------------------------------------------------------------------
+  # KROK 6: Sestavení Android APK (Capacitor)
   # ------------------------------------------------------------------------------
   # A. Synchronizace Capacitor aktiv do nativního Android projektu
   - name: 'node:22'
@@ -104,7 +124,7 @@ steps:
     waitFor: ['capacitor-sync']
 
   # ------------------------------------------------------------------------------
-  # KROK 6: Firebase Test Lab (Robo QA testování na reálném zařízení)
+  # KROK 7: Firebase Test Lab (Robo QA testování na reálném zařízení)
   # ------------------------------------------------------------------------------
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'firebase-test-lab'
@@ -121,45 +141,71 @@ steps:
     waitFor: ['build-android-apk']
 
   # ------------------------------------------------------------------------------
-  # KROK 7: Uložení aktualizované cache závislostí
+  # KROK 8: Deploy frontendu na Firebase Hosting (Staging / PR Preview)
   # ------------------------------------------------------------------------------
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    id: 'save-cache'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        if [ ! -z "${_CACHE_BUCKET}" ]; then
-          echo "Saving cache to gs://${_CACHE_BUCKET}..."
-          tar -czf node_modules_cache.tar.gz client/node_modules server/node_modules
-          gsutil cp node_modules_cache.tar.gz gs://${_CACHE_BUCKET}/cache/node_modules_cache.tar.gz
-        else
-          echo "Cache bucket not defined, skipping save."
-        fi
-    waitFor: ['run-server-tests', 'firebase-test-lab']
-
-  # ------------------------------------------------------------------------------
-  # KROK 8: Podmíněný produkční deploy (Firebase Hosting + Cloud Run)
-  # Spouští se pouze z větve "master" nebo "main"
-  # ------------------------------------------------------------------------------
-  # A. Deploy frontendu na Firebase Hosting
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  - name: 'node:22'
     id: 'deploy-firebase'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        if [ "$BRANCH_NAME" = "master" ] || [ "$BRANCH_NAME" = "main" ]; then
-          echo "Deploying to Firebase Hosting..."
+        if [ -n "$_PR_NUMBER" ]; then
+          echo "Deploying preview channel for PR #$_PR_NUMBER..."
+          npm install -g firebase-tools
+          
+          # Deploy a uložení výstupu do JSONu
+          DEPLOY_OUT=$$(firebase hosting:channel:deploy pr-$_PR_NUMBER --token $$FIREBASE_TOKEN --json)
+          export PREVIEW_URL=$$(echo "$$DEPLOY_OUT" | node -e "
+            const fs = require('fs');
+            const data = JSON.parse(fs.readFileSync(0, 'utf-8'));
+            console.log(Object.values(data.result)[0].url);
+          ")
+          echo "Preview URL: $$PREVIEW_URL"
+          
+          # Zápis statusu do GitHubu
+          export GITHUB_TOKEN=$$(cat /workspace/github_token.txt)
+          if [ -n "$$GITHUB_TOKEN" ]; then
+            echo "Odesílám commit status na GitHub..."
+            node -e "
+              const token = process.env.GITHUB_TOKEN;
+              const url = 'https://api.github.com/repos/' + process.env.REPO_FULL_NAME + '/statuses/' + process.env.COMMIT_SHA;
+              fetch(url, {
+                method: 'POST',
+                headers: {
+                  'Authorization': 'token ' + token,
+                  'Accept': 'application.vnd.github.v3+json',
+                  'Content-Type': 'application/json',
+                  'User-Agent': 'Google-Cloud-Build'
+                },
+                body: JSON.stringify({
+                  state: 'success',
+                  target_url: process.env.PREVIEW_URL,
+                  description: 'Firebase Hosting Preview deployed!',
+                  context: 'deploy/firebase-preview'
+                })
+              }).then(res => {
+                if (!res.ok) console.error('Chyba GitHub API status:', res.status);
+              }).catch(console.error);
+            "
+          else
+            echo "Žádný GITHUB_TOKEN v Secret Manageru, přeskakuji odeslání statusu."
+          fi
+        elif [ "$BRANCH_NAME" = "master" ] || [ "$BRANCH_NAME" = "main" ]; then
+          echo "Deploying production to Firebase Hosting..."
           npm install -g firebase-tools
           firebase deploy --only hosting --token $$FIREBASE_TOKEN
         else
           echo "Skipping Firebase deploy for branch $BRANCH_NAME"
         fi
+    env:
+      - 'REPO_FULL_NAME=$REPO_FULL_NAME'
+      - 'COMMIT_SHA=$COMMIT_SHA'
     secretEnv: ['FIREBASE_TOKEN']
-    waitFor: ['build-client', 'firebase-test-lab']
+    waitFor: ['build-client', 'get-github-token']
 
-  # B. Build a push Docker image backendu do Artifact Registry & deploy na Cloud Run
+  # ------------------------------------------------------------------------------
+  # KROK 9: Sestavení Docker image backendu a nahrání do Artifact Registry (Pouze Push)
+  # ------------------------------------------------------------------------------
   - name: 'gcr.io/cloud-builders/docker'
     id: 'docker-build'
     entrypoint: 'bash'
@@ -170,8 +216,11 @@ steps:
           docker build -t europe-west3-docker.pkg.dev/$PROJECT_ID/nexus-repo/nexus-backend:$COMMIT_SHA -f server/Dockerfile server/
           docker push europe-west3-docker.pkg.dev/$PROJECT_ID/nexus-repo/nexus-backend:$COMMIT_SHA
         fi
-    waitFor: ['run-server-tests', 'firebase-test-lab']
+    waitFor: ['run-server-tests']
 
+  # ------------------------------------------------------------------------------
+  # KROK 10: Nasazení backendu na Cloud Run (Pouze Push)
+  # ------------------------------------------------------------------------------
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'deploy-cloud-run'
     entrypoint: 'bash'
@@ -188,6 +237,44 @@ steps:
             --allow-unauthenticated
         fi
     waitFor: ['docker-build']
+
+  # ------------------------------------------------------------------------------
+  # KROK 11: Spuštění Playwright E2E testů nad Staging prostředím (Pouze Push)
+  # ------------------------------------------------------------------------------
+  - name: 'mcr.microsoft.com/playwright:v1.49.0-noble'
+    id: 'run-playwright-tests'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [ "$BRANCH_NAME" = "master" ] || [ "$BRANCH_NAME" = "main" ]; then
+          echo "Spouštím Playwright testy nad Staging prostředím..."
+          npm run test:smoke
+        else
+          echo "Skipping Playwright tests for branch $BRANCH_NAME"
+        fi
+    env:
+      - 'FRONTEND_URL=https://nexus-sync-8d50b.web.app'
+      - 'CI=true'
+    waitFor: ['install-root', 'deploy-firebase', 'deploy-cloud-run']
+
+  # ------------------------------------------------------------------------------
+  # KROK 12: Uložení aktualizované cache závislostí
+  # ------------------------------------------------------------------------------
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'save-cache'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [ ! -z "${_CACHE_BUCKET}" ]; then
+          echo "Saving cache to gs://${_CACHE_BUCKET}..."
+          tar -czf node_modules_cache.tar.gz client/node_modules server/node_modules node_modules
+          gsutil cp node_modules_cache.tar.gz gs://${_CACHE_BUCKET}/cache/node_modules_cache.tar.gz
+        else
+          echo "Cache bucket not defined, skipping save."
+        fi
+    waitFor: ['run-server-tests', 'firebase-test-lab', 'run-playwright-tests']
 
 # ------------------------------------------------------------------------------
 # Konfigurace a Integrace Secret Manageru
