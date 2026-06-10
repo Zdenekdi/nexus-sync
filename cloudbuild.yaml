@@ -105,6 +105,19 @@ steps:
     waitFor: ['-']
 
   # ------------------------------------------------------------------------------
+  # KROK 5.5: Odstranění jcenter() ze všech build.gradle v node_modules (pro Gradle 9+)
+  # ------------------------------------------------------------------------------
+  - name: 'node:22'
+    id: 'patch-jcenter'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "Patching jcenter() to mavenCentral() in node_modules build.gradle files..."
+        find client/node_modules -name "build.gradle" -exec sed -i 's/jcenter()/mavenCentral()/g' {} +
+    waitFor: ['install-client']
+
+  # ------------------------------------------------------------------------------
   # KROK 6: Sestavení Android APK (Capacitor)
   # ------------------------------------------------------------------------------
   # A. Synchronizace Capacitor aktiv do nativního Android projektu
@@ -121,7 +134,7 @@ steps:
     dir: 'client/android'
     entrypoint: './gradlew'
     args: ['assembleNexusRelayDebug']
-    waitFor: ['capacitor-sync']
+    waitFor: ['capacitor-sync', 'patch-jcenter']
 
   # ------------------------------------------------------------------------------
   # KROK 7: Firebase Test Lab (Robo QA testování na reálném zařízení)
