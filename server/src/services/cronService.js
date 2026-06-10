@@ -119,7 +119,7 @@ class CronService {
 
         let decryptedCredentials = null;
         if (profile.credentials) {
-          const decryptedString = decrypt(profile.credentials);
+          const decryptedString = await decrypt(profile.credentials);
           if (decryptedString) decryptedCredentials = JSON.parse(decryptedString);
         }
 
