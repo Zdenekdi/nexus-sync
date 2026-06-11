@@ -268,7 +268,7 @@ steps:
             --platform managed \
             --project nexus-systems-web-zd \
             --set-env-vars=NODE_ENV=production \
-            --set-secrets=DATABASE_URL=DATABASE_URL:latest,DEVICE_SECRET=DEVICE_SECRET:latest \
+            --set-secrets=DATABASE_URL=DATABASE_URL:latest,DEVICE_SECRET=DEVICE_SECRET:latest,JWT_SECRET=JWT_SECRET:latest,ENCRYPTION_KEY=ENCRYPTION_KEY:latest \
             --allow-unauthenticated
         elif [ "$BRANCH_NAME" = "master" ] || [ "$BRANCH_NAME" = "main" ]; then
           echo "Deploying Staging backend to Cloud Run ($PROJECT_ID)..."
@@ -278,7 +278,7 @@ steps:
             --platform managed \
             --project $PROJECT_ID \
             --set-env-vars=NODE_ENV=production \
-            --set-secrets=DATABASE_URL=DATABASE_URL:latest,DEVICE_SECRET=DEVICE_SECRET:latest \
+            --set-secrets=DATABASE_URL=DATABASE_URL:latest,DEVICE_SECRET=DEVICE_SECRET:latest,JWT_SECRET=JWT_SECRET:latest,ENCRYPTION_KEY=ENCRYPTION_KEY:latest \
             --allow-unauthenticated
         fi
     waitFor: ['docker-build']

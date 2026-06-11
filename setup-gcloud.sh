@@ -51,7 +51,7 @@ fi
 
 # 4. Příprava slotů v Secret Manageru
 echo "🔑 [3/5] Příprava slotů v Secret Manageru..."
-SECRETS=("DATABASE_URL" "DEVICE_SECRET" "FIREBASE_TOKEN" "GITHUB_TOKEN")
+SECRETS=("DATABASE_URL" "DEVICE_SECRET" "FIREBASE_TOKEN" "GITHUB_TOKEN" "JWT_SECRET" "ENCRYPTION_KEY")
 for SECRET in "${SECRETS[@]}"; do
   if gcloud secrets describe "$SECRET" &>/dev/null; then
     echo "✓ Secret '$SECRET' již existuje."
