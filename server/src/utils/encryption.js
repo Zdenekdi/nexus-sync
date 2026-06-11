@@ -8,9 +8,8 @@ const IV_LENGTH = 12; // Standard pro GCM
 const SALT_LENGTH = 64;
 const TAG_LENGTH = 16;
 
-// V produkci musí být ENCRYPTION_KEY v .env!
-// Pro vývoj použijeme fallback, ale v .env by mělo být 32 bajtů v hexu.
-const SECRET = process.env.ENCRYPTION_KEY || '6f9b1c7a8e2d4f5a3b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a';
+// V produkci musí být ENCRYPTION_KEY v .env! (min 32 bajtů v hexu)
+const SECRET = process.env.ENCRYPTION_KEY;
 
 async function encrypt(text) {
     if (!text) return null;

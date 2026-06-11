@@ -15,6 +15,10 @@ if (!process.env.DEVICE_SECRET || process.env.DEVICE_SECRET.length < 16) {
   console.error('[FATAL] DEVICE_SECRET is missing or too short (min 16 chars). Refusing to start.');
   process.exit(1);
 }
+if (!process.env.ENCRYPTION_KEY || process.env.ENCRYPTION_KEY.length < 32) {
+  console.error('[FATAL] ENCRYPTION_KEY is missing or too short (min 32 chars). Refusing to start.');
+  process.exit(1);
+}
 
 // Route imports
 const authRoutes = require('./routes/authRoutes');

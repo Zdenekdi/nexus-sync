@@ -329,7 +329,7 @@ exports.resetPasswordRequest = async (req, res) => {
       // Generate a JWT reset token (1 hour expiry)
       const resetToken = jwt.sign(
         { userId: user.id, type: 'password_reset' },
-        process.env.JWT_SECRET || 'nexus-secret',
+        process.env.JWT_SECRET,
         { expiresIn: '1h' }
       );
       console.log(`[RESET] Password reset requested for ${email}`);
@@ -356,7 +356,7 @@ exports.resetPasswordConfirm = async (req, res) => {
 
     let decoded;
     try {
-      decoded = jwt.verify(resetToken, process.env.JWT_SECRET || 'nexus-secret');
+      decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
     } catch {
       return res.status(400).json({ message: 'Invalid or expired reset token' });
     }
