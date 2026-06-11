@@ -130,6 +130,41 @@ steps:
             }
           }
         "
+        echo "Patching capacitor-geolocation jvmToolchain to force Temurin JDK 17 (avoid IBM Semeru)..."
+        node -e "
+          const fs = require('fs');
+          const path = 'client/node_modules/@capacitor/geolocation/android/build.gradle';
+          if (fs.existsSync(path)) {
+            let content = fs.readFileSync(path, 'utf8');
+            // Replace jvmToolchain(21) with explicit Temurin vendor to avoid IBM Semeru selection
+            content = content.replace(
+              /kotlin\s*\{\s*jvmToolchain\(\d+\)\s*\}/g,
+              'kotlin {\n    jvmToolchain {\n        languageVersion = JavaLanguageVersion.of(17)\n        vendor = JvmVendorSpec.ADOPTIUM\n    }\n}'
+            );
+            // Also downgrade Java 21 compileOptions to 17 (available in the CI image)
+            content = content.replace(/sourceCompatibility JavaVersion\.VERSION_21/g, 'sourceCompatibility JavaVersion.VERSION_17');
+            content = content.replace(/targetCompatibility JavaVersion\.VERSION_21/g, 'targetCompatibility JavaVersion.VERSION_17');
+            fs.writeFileSync(path, content, 'utf8');
+            console.log('Patched capacitor-geolocation: jvmToolchain -> Temurin 17, compileOptions -> VERSION_17');
+          } else {
+            console.log('capacitor-geolocation build.gradle not found, skipping');
+          }
+        "
+        echo "Patching ALL node_modules kotlin jvmToolchain(21) to Temurin 17..."
+        find client/node_modules -name "build.gradle" | xargs grep -l "jvmToolchain(21)" 2>/dev/null | while read f; do
+          node -e "
+            const fs = require('fs');
+            let content = fs.readFileSync('$f', 'utf8');
+            content = content.replace(
+              /kotlin\s*\{\s*jvmToolchain\(\d+\)\s*\}/g,
+              'kotlin {\n    jvmToolchain {\n        languageVersion = JavaLanguageVersion.of(17)\n        vendor = JvmVendorSpec.ADOPTIUM\n    }\n}'
+            );
+            content = content.replace(/sourceCompatibility JavaVersion\.VERSION_21/g, 'sourceCompatibility JavaVersion.VERSION_17');
+            content = content.replace(/targetCompatibility JavaVersion\.VERSION_21/g, 'targetCompatibility JavaVersion.VERSION_17');
+            fs.writeFileSync('$f', content, 'utf8');
+          "
+          echo "Patched: $f"
+        done
     waitFor: ['install-client']
 
   # ------------------------------------------------------------------------------
@@ -147,8 +182,26 @@ steps:
   - name: 'mobiledevops/android-sdk-image:34.0.1'
     id: 'build-android-apk'
     dir: 'client/android'
-    entrypoint: './gradlew'
-    args: ['assembleNexusRelayDebug']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        # Najdeme Temurin/OpenJDK 17 a vynutíme ho jako JAVA_HOME
+        # aby Foojay Resolver nepoužil IBM Semeru
+        TEMURIN_HOME=$(find /usr/lib/jvm -maxdepth 1 -name 'java-17-openjdk*' -o -name 'temurin*' -o -name 'adoptopenjdk*' 2>/dev/null | head -n1)
+        if [ -z "$TEMURIN_HOME" ]; then
+          # Fallback: použijeme JAVA_HOME z image nebo první dostupný JDK
+          TEMURIN_HOME=$(dirname $(dirname $(readlink -f $(which java))))
+        fi
+        export JAVA_HOME="$TEMURIN_HOME"
+        echo "Using JAVA_HOME: $JAVA_HOME"
+        echo "Java version:"
+        $JAVA_HOME/bin/java -version
+        ./gradlew assembleNexusRelayDebug \
+          -Dorg.gradle.java.home="$JAVA_HOME" \
+          -Dorg.gradle.jvmargs="-Xmx4g -XX:+UseParallelGC" \
+          --no-daemon \
+          --stacktrace
     waitFor: ['capacitor-sync', 'patch-gradle-compat']
 
   # ------------------------------------------------------------------------------
