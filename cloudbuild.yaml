@@ -162,6 +162,22 @@ steps:
     args: ['cap', 'sync', 'android']
     waitFor: ['build-client']
 
+  # A2. Patch capacitor.build.gradle PO cap sync
+  # cap sync PŘEGENERUJE capacitor.build.gradle s VERSION_21 - musíme patchovat AŽ PO něm!
+  - name: 'node:22'
+    id: 'patch-capacitor-build-gradle'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        CAPBUILD="client/android/app/capacitor.build.gradle"
+        echo "=== Obsah pred patchem ==="
+        cat "$$CAPBUILD"
+        sed -i 's/JavaVersion\.VERSION_21/JavaVersion.VERSION_17/g' "$$CAPBUILD"
+        echo "=== Obsah po patchem ==="
+        cat "$$CAPBUILD"
+    waitFor: ['capacitor-sync']
+
   # B. Kompilace debug APK pomocí Gradle v Android SDK prostředí
   # cap sync (Step 10) již zkopíroval web aktiva do android/app/src/main/assets/public
   # Přeskakujeme npm tasky (-x) - Android SDK image nemá npm ani node
@@ -179,7 +195,7 @@ steps:
       - '--stacktrace'
     env:
       - 'JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64'
-    waitFor: ['capacitor-sync', 'patch-gradle-compat']
+    waitFor: ['patch-capacitor-build-gradle', 'patch-gradle-compat']
 
   # ------------------------------------------------------------------------------
   # KROK 7: Firebase Test Lab (Robo QA testování na reálném zařízení)
