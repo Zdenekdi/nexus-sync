@@ -151,19 +151,18 @@ steps:
           }
         "
         echo "Patching ALL node_modules kotlin jvmToolchain(21) to Temurin 17..."
-        find client/node_modules -name "build.gradle" | xargs grep -l "jvmToolchain(21)" 2>/dev/null | while read f; do
-          node -e "
-            const fs = require('fs');
-            let content = fs.readFileSync('$f', 'utf8');
-            content = content.replace(
-              /kotlin\s*\{\s*jvmToolchain\(\d+\)\s*\}/g,
-              'kotlin {\n    jvmToolchain {\n        languageVersion = JavaLanguageVersion.of(17)\n        vendor = JvmVendorSpec.ADOPTIUM\n    }\n}'
-            );
-            content = content.replace(/sourceCompatibility JavaVersion\.VERSION_21/g, 'sourceCompatibility JavaVersion.VERSION_17');
-            content = content.replace(/targetCompatibility JavaVersion\.VERSION_21/g, 'targetCompatibility JavaVersion.VERSION_17');
-            fs.writeFileSync('$f', content, 'utf8');
-          "
-          echo "Patched: $f"
+        find client/node_modules -name "build.gradle" -exec grep -l "jvmToolchain(21)" {} + 2>/dev/null | while IFS= read -r GRADLE_FILE; do
+          sed -i \
+            -e 's/kotlin {$/kotlin_BLOCK_START {/g' \
+            "$$GRADLE_FILE" || true
+          # Nahradit jvmToolchain(21) za blok s Temurin 17
+          perl -i -0pe \
+            's/kotlin\s*\{\s*jvmToolchain\(21\)\s*\}/kotlin {\n    jvmToolchain {\n        languageVersion = JavaLanguageVersion.of(17)\n        vendor = JvmVendorSpec.ADOPTIUM\n    }\n}/gs' \
+            "$$GRADLE_FILE" || true
+          sed -i 's/kotlin_BLOCK_START {/kotlin {/g' "$$GRADLE_FILE" || true
+          sed -i 's/sourceCompatibility JavaVersion\.VERSION_21/sourceCompatibility JavaVersion.VERSION_17/g' "$$GRADLE_FILE" || true
+          sed -i 's/targetCompatibility JavaVersion\.VERSION_21/targetCompatibility JavaVersion.VERSION_17/g' "$$GRADLE_FILE" || true
+          echo "Patched: $$GRADLE_FILE"
         done
     waitFor: ['install-client']
 
@@ -188,17 +187,16 @@ steps:
       - |
         # Najdeme Temurin/OpenJDK 17 a vynutíme ho jako JAVA_HOME
         # aby Foojay Resolver nepoužil IBM Semeru
-        TEMURIN_HOME=$(find /usr/lib/jvm -maxdepth 1 -name 'java-17-openjdk*' -o -name 'temurin*' -o -name 'adoptopenjdk*' 2>/dev/null | head -n1)
-        if [ -z "$TEMURIN_HOME" ]; then
-          # Fallback: použijeme JAVA_HOME z image nebo první dostupný JDK
-          TEMURIN_HOME=$(dirname $(dirname $(readlink -f $(which java))))
+        # Pozn: $$ je escapování v Cloud Build (výsledek = $)
+        DETECTED_JDK=$$(find /usr/lib/jvm -maxdepth 1 -name 'java-17-openjdk*' -o -name 'temurin*' -o -name 'adoptopenjdk*' 2>/dev/null | head -n1)
+        if [ -z "$$DETECTED_JDK" ]; then
+          DETECTED_JDK=$$(dirname $$(dirname $$(readlink -f $$(which java))))
         fi
-        export JAVA_HOME="$TEMURIN_HOME"
-        echo "Using JAVA_HOME: $JAVA_HOME"
-        echo "Java version:"
-        $JAVA_HOME/bin/java -version
+        export JAVA_HOME="$$DETECTED_JDK"
+        echo "Using JAVA_HOME: $$JAVA_HOME"
+        $$JAVA_HOME/bin/java -version
         ./gradlew assembleNexusRelayDebug \
-          -Dorg.gradle.java.home="$JAVA_HOME" \
+          -Dorg.gradle.java.home="$$JAVA_HOME" \
           -Dorg.gradle.jvmargs="-Xmx4g -XX:+UseParallelGC" \
           --no-daemon \
           --stacktrace
