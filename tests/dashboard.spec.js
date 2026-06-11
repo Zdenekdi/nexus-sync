@@ -1,29 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { TEST_USERS } from './helpers/api.js';
-
-async function loginToApp(page, email, password) {
-  console.log(`🔑 Logging in as ${email}...`);
-  await page.goto('/');
-  await page.waitForLoadState('networkidle');
-
-  const enterBtn = page.getByRole('button', { name: /vstoupit|enter application/i }).first();
-  if (await enterBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-    await enterBtn.click();
-  }
-
-  await page.getByTestId('login-email').waitFor({ state: 'visible', timeout: 15000 });
-  await page.getByTestId('login-email').fill(email);
-  await page.getByTestId('login-password').fill(password);
-  await page.getByTestId('login-submit').click();
-
-  // Confirm login by waiting for login form to disappear
-  await expect(page.getByTestId('login-email')).not.toBeVisible({ timeout: 30000 });
-  await page.locator('nav').waitFor({ state: 'visible', timeout: 20000 });
-  console.log(`✅ Logged in: ${email}`);
-}
+import { doLogin } from './helpers/auth.js';
 
 test.describe('App Owner Dashboard', () => {
-  test.beforeEach(async ({ page }) => { await loginToApp(page, TEST_USERS.appOwner.email, TEST_USERS.appOwner.password); });
+  test.beforeEach(async ({ page }) => { await doLogin(page, TEST_USERS.appOwner.email, TEST_USERS.appOwner.password); });
   test('renders dashboard successfully without crash', async ({ page }) => {
     await expect(page.locator('#dashboard-welcome-title')).toBeVisible({ timeout: 15000 });
     await expect(page.locator('text="Kritická chyba renderu"')).not.toBeVisible();
@@ -34,7 +14,7 @@ test.describe('App Owner Dashboard', () => {
 });
 
 test.describe('Agency Admin Dashboard', () => {
-  test.beforeEach(async ({ page }) => { await loginToApp(page, 'mark@nexus.sync', 'password123'); });
+  test.beforeEach(async ({ page }) => { await doLogin(page, TEST_USERS.agencyAdmin.email, TEST_USERS.agencyAdmin.password); });
   test('renders dashboard successfully without crash', async ({ page }) => {
     await expect(page.locator('#dashboard-welcome-title')).toBeVisible({ timeout: 15000 });
     await expect(page.locator('text="Kritická chyba renderu"')).not.toBeVisible();
@@ -49,7 +29,7 @@ test.describe('Agency Admin Dashboard', () => {
 });
 
 test.describe('Manager Dashboard', () => {
-  test.beforeEach(async ({ page }) => { await loginToApp(page, 'alice@nexus.sync', 'password123'); });
+  test.beforeEach(async ({ page }) => { await doLogin(page, TEST_USERS.manager.email, TEST_USERS.manager.password); });
   test('renders dashboard successfully without crash', async ({ page }) => {
     await expect(page.locator('#dashboard-welcome-title')).toBeVisible({ timeout: 15000 });
     await expect(page.locator('text="Kritická chyba renderu"')).not.toBeVisible();
@@ -60,7 +40,7 @@ test.describe('Manager Dashboard', () => {
 });
 
 test.describe('Model Dashboard', () => {
-  test.beforeEach(async ({ page }) => { await loginToApp(page, 'diana@nexus.sync', 'password123'); });
+  test.beforeEach(async ({ page }) => { await doLogin(page, TEST_USERS.model.email, TEST_USERS.model.password); });
   test('renders dashboard successfully without crash', async ({ page }) => {
     await expect(page.locator('#dashboard-welcome-title')).toBeVisible({ timeout: 15000 });
     await expect(page.locator('text="Kritická chyba renderu"')).not.toBeVisible();
