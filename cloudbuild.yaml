@@ -130,13 +130,16 @@ steps:
             }
           }
         "
-        echo "Removing kotlin jvmToolchain blocks from node_modules (causes toolchain resolver errors)..."
-        # Kdyz jvmToolchain chybi, Gradle pouzije JAVA_HOME primo - zadny resolver!
-        find client/node_modules -name "build.gradle" -exec grep -l "jvmToolchain" {} + 2>/dev/null | while IFS= read -r GRADLE_FILE; do
-          perl -i -0pe 's/kotlin\s*\{\s*jvmToolchain[^}]*\}\s*\}//gs' "$$GRADLE_FILE" || true
+        echo "Patching jvmToolchain version 21->17 in all node_modules build.gradle files..."
+        # Jednoducha nahrada cisla verze - zadne mazani bloku, zadny slozity regex
+        # gradle.properties uz ma paths=/usr/lib/jvm/java-17-openjdk-amd64
+        find client/node_modules -name "build.gradle" -exec grep -l "jvmToolchain\|VERSION_21" {} + 2>/dev/null | while IFS= read -r GRADLE_FILE; do
+          sed -i 's/jvmToolchain(\s*21\s*)/jvmToolchain(17)/g' "$$GRADLE_FILE" || true
+          sed -i 's/jvmToolchain(\s*21\s*)/jvmToolchain(17)/g' "$$GRADLE_FILE" || true
+          sed -i 's/languageVersion = JavaLanguageVersion\.of(21)/languageVersion = JavaLanguageVersion.of(17)/g' "$$GRADLE_FILE" || true
           sed -i 's/sourceCompatibility JavaVersion\.VERSION_21/sourceCompatibility JavaVersion.VERSION_17/g' "$$GRADLE_FILE" || true
           sed -i 's/targetCompatibility JavaVersion\.VERSION_21/targetCompatibility JavaVersion.VERSION_17/g' "$$GRADLE_FILE" || true
-          echo "Patched (removed jvmToolchain): $$GRADLE_FILE"
+          echo "Patched versions 21->17: $$GRADLE_FILE"
         done
     waitFor: ['install-client']
 
