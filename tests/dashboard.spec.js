@@ -24,6 +24,10 @@ async function loginToApp(page, email, password) {
 
 test.describe('App Owner Dashboard', () => {
   test.beforeEach(async ({ page }) => { await loginToApp(page, TEST_USERS.appOwner.email, TEST_USERS.appOwner.password); });
+  test('renders dashboard successfully without crash', async ({ page }) => {
+    await expect(page.locator('#dashboard-welcome-title')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('text="Kritická chyba renderu"')).not.toBeVisible();
+  });
   test('shows system management', async ({ page }) => {
     await expect(page.getByTestId('nav-link-agencies')).toBeVisible({ timeout: 15000 });
   });
@@ -31,6 +35,10 @@ test.describe('App Owner Dashboard', () => {
 
 test.describe('Agency Admin Dashboard', () => {
   test.beforeEach(async ({ page }) => { await loginToApp(page, 'mark@nexus.sync', 'password123'); });
+  test('renders dashboard successfully without crash', async ({ page }) => {
+    await expect(page.locator('#dashboard-welcome-title')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('text="Kritická chyba renderu"')).not.toBeVisible();
+  });
   test('messaging accessible', async ({ page }) => {
     await expect(page.locator('nav')).toBeVisible({ timeout: 15000 });
     const inboxBtn = page.getByTestId('nav-link-inbox');
@@ -42,6 +50,10 @@ test.describe('Agency Admin Dashboard', () => {
 
 test.describe('Manager Dashboard', () => {
   test.beforeEach(async ({ page }) => { await loginToApp(page, 'alice@nexus.sync', 'password123'); });
+  test('renders dashboard successfully without crash', async ({ page }) => {
+    await expect(page.locator('#dashboard-welcome-title')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('text="Kritická chyba renderu"')).not.toBeVisible();
+  });
   test('Schedule ARE visible', async ({ page }) => {
     await expect(page.getByTestId('nav-link-calendar')).toBeVisible({ timeout: 15000 });
   });
@@ -49,6 +61,10 @@ test.describe('Manager Dashboard', () => {
 
 test.describe('Model Dashboard', () => {
   test.beforeEach(async ({ page }) => { await loginToApp(page, 'diana@nexus.sync', 'password123'); });
+  test('renders dashboard successfully without crash', async ({ page }) => {
+    await expect(page.locator('#dashboard-welcome-title')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('text="Kritická chyba renderu"')).not.toBeVisible();
+  });
   test('shows profile section', async ({ page }) => {
     await expect(page.locator('nav')).toBeVisible({ timeout: 15000 });
     await expect(page.getByTestId('login-email')).not.toBeVisible();
