@@ -1,19 +1,27 @@
-# ================================================================================
-# gcp-trigger.yaml — GitHub Actions Workflow to trigger Google Cloud Build
-# ================================================================================
+<<<<<<< SEARCH
+jobs:
+  trigger-gcb:
+    name: Trigger GCB Pipeline
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }} # Vyžaduje Service Account Key uložený v GitHub Secrets
 
-name: Trigger Google Cloud Build
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
 
-on:
-  push:
-    branches:
-      - master
-      - main
-  pull_request:
-    branches:
-      - master
-      - main
+      - name: Trigger Cloud Build
+        run: |
+          # Spustí definovaný trigger v GCP na základě názvu větve
+          BRANCH_NAME="${{ github.ref_name || github.head_ref }}"
+          echo "Triggering Google Cloud Build for branch: $BRANCH_NAME..."
 
+          gcloud builds triggers run deploy-on-push \
+            --branch="$BRANCH_NAME" \
+            --region="europe-west3"
+=======
 jobs:
   trigger-gcb:
     name: Trigger GCB Pipeline
@@ -37,7 +45,8 @@ jobs:
           # Spustí definovaný trigger v GCP na základě názvu větve
           BRANCH_NAME="${{ github.ref_name || github.head_ref }}"
           echo "Triggering Google Cloud Build for branch: $BRANCH_NAME..."
-          
+
           gcloud builds triggers run deploy-on-push \
             --branch="$BRANCH_NAME" \
             --region="europe-west3"
+>>>>>>> REPLACE
