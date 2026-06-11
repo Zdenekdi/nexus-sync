@@ -1,6 +1,5 @@
-plugins {
-    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
-}
+// Foojay resolver odstraněn - incompatibilní s Gradle 9.x (NoSuchFieldError: IBM_SEMERU)
+// JDK auto-provisioning zakázáno v gradle.properties, CI image má JDK 17 nativně
 
 include ':app'
 include ':capacitor-cordova-android-plugins'

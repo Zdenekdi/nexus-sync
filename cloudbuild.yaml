@@ -181,25 +181,13 @@ steps:
   - name: 'mobiledevops/android-sdk-image:34.0.1'
     id: 'build-android-apk'
     dir: 'client/android'
-    entrypoint: 'bash'
+    entrypoint: './gradlew'
     args:
-      - '-c'
-      - |
-        # Najdeme Temurin/OpenJDK 17 a vynutíme ho jako JAVA_HOME
-        # aby Foojay Resolver nepoužil IBM Semeru
-        # Pozn: $$ je escapování v Cloud Build (výsledek = $)
-        DETECTED_JDK=$$(find /usr/lib/jvm -maxdepth 1 -name 'java-17-openjdk*' -o -name 'temurin*' -o -name 'adoptopenjdk*' 2>/dev/null | head -n1)
-        if [ -z "$$DETECTED_JDK" ]; then
-          DETECTED_JDK=$$(dirname $$(dirname $$(readlink -f $$(which java))))
-        fi
-        export JAVA_HOME="$$DETECTED_JDK"
-        echo "Using JAVA_HOME: $$JAVA_HOME"
-        $$JAVA_HOME/bin/java -version
-        ./gradlew assembleNexusRelayDebug \
-          -Dorg.gradle.java.home="$$JAVA_HOME" \
-          -Dorg.gradle.jvmargs="-Xmx4g -XX:+UseParallelGC" \
-          --no-daemon \
-          --stacktrace
+      - 'assembleNexusRelayDebug'
+      - '--no-daemon'
+      - '--stacktrace'
+    env:
+      - 'JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64'
     waitFor: ['capacitor-sync', 'patch-gradle-compat']
 
   # ------------------------------------------------------------------------------
