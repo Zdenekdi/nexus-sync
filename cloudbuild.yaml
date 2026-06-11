@@ -195,9 +195,17 @@ steps:
       - '-c'
       - |
         echo "Starting Firebase Test Lab Robo test..."
+        # APK je pojmenován Nexus-Relay-v{version}-debug.apk (vlastni pojmenovani v app/build.gradle)
+        APK_PATH=$(find client/android/app/build/outputs/apk/nexusRelay/debug/ -name "*.apk" | head -1)
+        if [ -z "$APK_PATH" ]; then
+          echo "ERROR: APK nenalezen v build/outputs/apk/nexusRelay/debug/"
+          find client/android/app/build/outputs/ -name "*.apk" 2>/dev/null || echo "Zadny APK nenalezen"
+          exit 1
+        fi
+        echo "Nalezeny APK: $APK_PATH"
         gcloud firebase test android run \
           --type robo \
-          --app client/android/app/build/outputs/apk/nexusRelay/debug/app-nexusRelay-debug.apk \
+          --app "$APK_PATH" \
           --device model=redfin,version=30,locale=cs,orientation=portrait \
           --timeout 3m
     waitFor: ['build-android-apk']
