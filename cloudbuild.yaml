@@ -155,12 +155,16 @@ steps:
     waitFor: ['build-client']
 
   # B. Kompilace debug APK pomocí Gradle v Android SDK prostředí
+  # Frontend je již sestaven v kroku build-client, přeskakujeme buildFrontendWeb (-x)
+  # Android SDK image nemá npm, takže task buildFrontendWeb by selhal
   - name: 'mobiledevops/android-sdk-image:34.0.1'
     id: 'build-android-apk'
     dir: 'client/android'
     entrypoint: './gradlew'
     args:
       - 'assembleNexusRelayDebug'
+      - '-x'
+      - 'buildFrontendWeb'
       - '--no-daemon'
       - '--stacktrace'
     env:
