@@ -162,40 +162,28 @@ steps:
     args: ['cap', 'sync', 'android']
     waitFor: ['build-client']
 
-  # A2. Patch capacitor.build.gradle PO cap sync
-  # cap sync PŘEGENERUJE capacitor.build.gradle s VERSION_21 - musíme patchovat AŽ PO něm!
-  - name: 'node:22'
-    id: 'patch-capacitor-build-gradle'
+  # B. Kompilace debug APK pomocí Gradle v Android SDK prostředí
+  # DŮLEŽITÉ: capacitor.build.gradle je generován Capacitorem s VERSION_21.
+  # Patchujeme ho INLINE těsně před gradlew - stejný kontejner, žádné race conditions.
+  - name: 'mobiledevops/android-sdk-image:34.0.1'
+    id: 'build-android-apk'
+    dir: 'client/android'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        CAPBUILD="client/android/app/capacitor.build.gradle"
-        echo "=== Obsah pred patchem ==="
-        cat "$$CAPBUILD"
-        sed -i 's/JavaVersion\.VERSION_21/JavaVersion.VERSION_17/g' "$$CAPBUILD"
-        echo "=== Obsah po patchem ==="
-        cat "$$CAPBUILD"
-    waitFor: ['capacitor-sync']
-
-  # B. Kompilace debug APK pomocí Gradle v Android SDK prostředí
-  # cap sync (Step 10) již zkopíroval web aktiva do android/app/src/main/assets/public
-  # Přeskakujeme npm tasky (-x) - Android SDK image nemá npm ani node
-  - name: 'mobiledevops/android-sdk-image:34.0.1'
-    id: 'build-android-apk'
-    dir: 'client/android'
-    entrypoint: './gradlew'
-    args:
-      - 'assembleNexusRelayDebug'
-      - '-x'
-      - 'buildFrontendWeb'
-      - '-x'
-      - 'syncFrontendToAndroid'
-      - '--no-daemon'
-      - '--stacktrace'
-    env:
-      - 'JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64'
-    waitFor: ['patch-capacitor-build-gradle', 'patch-gradle-compat']
+        echo "=== Patching capacitor.build.gradle (VERSION_21 -> VERSION_17) ==="
+        sed -i 's/JavaVersion\.VERSION_21/JavaVersion.VERSION_17/g' app/capacitor.build.gradle
+        echo "--- Obsah po patchem ---"
+        cat app/capacitor.build.gradle
+        echo "--- Spoustim Gradle build ---"
+        export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+        ./gradlew assembleNexusRelayDebug \
+          -x buildFrontendWeb \
+          -x syncFrontendToAndroid \
+          --no-daemon \
+          --stacktrace
+    waitFor: ['capacitor-sync', 'patch-gradle-compat']
 
   # ------------------------------------------------------------------------------
   # KROK 7: Firebase Test Lab (Robo QA testování na reálném zařízení)
