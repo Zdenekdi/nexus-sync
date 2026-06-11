@@ -87,7 +87,7 @@ const DashboardHome = () => {
     return cur === 'CZK' ? `${parseInt(numStr)} ${sym}` : `${sym}${numStr}`;
   };
 
-  const isCz = lang === 'cz' || lang === 'cs';
+  const _isCz = lang === 'cz' || lang === 'cs';
   const isManager = activeRole === 'agency_admin' || activeRole === 'manager';
   const isModel = activeRole === 'model';
 
@@ -338,7 +338,7 @@ const DashboardHome = () => {
       </div>
 
       <div style={{ marginBottom: '3rem' }}>
-        <QuickBlacklistSection isCz={isCz} API_BASE={API_BASE} token={token} showToast={showToast} />
+        <QuickBlacklistSection API_BASE={API_BASE} token={token} showToast={showToast} t={t} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '2rem', marginBottom: '3rem' }}>
