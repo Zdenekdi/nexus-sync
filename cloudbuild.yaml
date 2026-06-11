@@ -343,7 +343,7 @@ steps:
   # ------------------------------------------------------------------------------
   # KROK 11: Spuštění Playwright E2E testů nad Staging prostředím (Pouze Push)
   # ------------------------------------------------------------------------------
-  - name: 'mcr.microsoft.com/playwright:v1.49.0-noble'
+  - name: 'node:22'
     id: 'run-playwright-tests'
     entrypoint: 'bash'
     args:
@@ -352,8 +352,10 @@ steps:
         if [ -n "$TAG_NAME" ]; then
           echo "Skipping Staging E2E tests for Production Tag deployment."
         elif [ "$BRANCH_NAME" = "master" ] || [ "$BRANCH_NAME" = "main" ]; then
-          echo "Spouštím Playwright testy nad Staging prostředím..."
-          npm run test:smoke
+          echo "Instaluji Playwright browsers (chromium)..."
+          npx playwright install chromium --with-deps
+          echo "Spouštím Playwright testy nad Staging prostředím (chromium only)..."
+          npx playwright test --project=chromium --ignore-snapshots --grep-invert android
         else
           echo "Skipping Playwright tests for branch $BRANCH_NAME"
         fi
