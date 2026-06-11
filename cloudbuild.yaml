@@ -105,16 +105,18 @@ steps:
     waitFor: ['-']
 
   # ------------------------------------------------------------------------------
-  # KROK 5.5: Odstranění jcenter() ze všech build.gradle v node_modules (pro Gradle 9+)
+  # KROK 5.5: Úpravy build.gradle v node_modules pro kompatibilitu s Gradle 9+
   # ------------------------------------------------------------------------------
   - name: 'node:22'
-    id: 'patch-jcenter'
+    id: 'patch-gradle-compat'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
         echo "Patching jcenter() to mavenCentral() in node_modules build.gradle files..."
         find client/node_modules -name "build.gradle" -exec sed -i 's/jcenter()/mavenCentral()/g' {} +
+        echo "Patching proguard-android.txt to proguard-android-optimize.txt..."
+        find client/node_modules -name "build.gradle" -exec sed -i 's/proguard-android.txt/proguard-android-optimize.txt/g' {} +
     waitFor: ['install-client']
 
   # ------------------------------------------------------------------------------
@@ -134,7 +136,7 @@ steps:
     dir: 'client/android'
     entrypoint: './gradlew'
     args: ['assembleNexusRelayDebug']
-    waitFor: ['capacitor-sync', 'patch-jcenter']
+    waitFor: ['capacitor-sync', 'patch-gradle-compat']
 
   # ------------------------------------------------------------------------------
   # KROK 7: Firebase Test Lab (Robo QA testování na reálném zařízení)
