@@ -117,6 +117,19 @@ steps:
         find client/node_modules -name "build.gradle" -exec sed -i 's/jcenter()/mavenCentral()/g' {} +
         echo "Patching proguard-android.txt to proguard-android-optimize.txt..."
         find client/node_modules -name "build.gradle" -exec sed -i 's/proguard-android.txt/proguard-android-optimize.txt/g' {} +
+        echo "Injecting namespace into capacitor-updater build.gradle..."
+        node -e "
+          const fs = require('fs');
+          const path = 'client/node_modules/capacitor-updater/android/build.gradle';
+          if (fs.existsSync(path)) {
+            let content = fs.readFileSync(path, 'utf8');
+            if (!content.includes('namespace')) {
+              content = content.replace('android {', 'android {\n    namespace \"ee.forgr.capacitor_updater\"');
+              fs.writeFileSync(path, content, 'utf8');
+              console.log('Successfully injected namespace');
+            }
+          }
+        "
     waitFor: ['install-client']
 
   # ------------------------------------------------------------------------------
