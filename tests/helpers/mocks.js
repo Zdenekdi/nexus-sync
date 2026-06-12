@@ -354,6 +354,59 @@ export async function setupApiMocks(page) {
     });
   });
 
+  // Salon Keys mock
+  await context.route('**/salon-keys', async route => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: 'key-001',
+            label: 'Klíče od salonu',
+            holderId: null,
+            holder: null,
+            takenAt: null,
+            note: null,
+            agencyId: 'agency-001'
+          },
+          {
+            id: 'key-002',
+            label: 'Klíče – zadní vchod',
+            holderId: 'alice-001',
+            holder: { id: 'alice-001', name: 'Alice (Senior Op)', email: 'alice@nexus.sync' },
+            takenAt: new Date(Date.now() - 3600000).toISOString(),
+            note: 'Jsem v salonu do 18:00',
+            agencyId: 'agency-001'
+          }
+        ])
+      });
+    } else {
+      await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id: 'key-new', label: 'Nové klíče', holderId: null, holder: null, takenAt: null, note: null }) });
+    }
+  });
+
+  await context.route('**/salon-keys/*/take', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'key-001', label: 'Klíče od salonu', holderId: 'owner-001', holder: { id: 'owner-001', name: 'Owner (App Owner)' }, takenAt: new Date().toISOString(), note: null }) });
+  });
+
+  await context.route('**/salon-keys/*/return', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'key-001', label: 'Klíče od salonu', holderId: null, holder: null, takenAt: null, note: null }) });
+  });
+
+  await context.route('**/salon-keys/*/history', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        { id: 'log-1', action: 'RETURNED', userId: 'alice-001', user: { id: 'alice-001', name: 'Alice (Senior Op)' }, note: null, createdAt: new Date(Date.now() - 7200000).toISOString() },
+        { id: 'log-2', action: 'TAKEN', userId: 'alice-001', user: { id: 'alice-001', name: 'Alice (Senior Op)' }, note: 'Otevírám salon', createdAt: new Date(Date.now() - 10800000).toISOString() }
+      ])
+    });
+  });
+
+
+
   await context.route('**/admin/features', async route => {
     await route.fulfill({
       status: 200,

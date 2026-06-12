@@ -9,6 +9,7 @@ import SafetyView from '../Views/SafetyView';
 import QAView from '../QAView';
 import RelayControlCenter from '../RelayControlCenter';
 import RelayModeView from '../Views/RelayModeView';
+import SalonKeysView from '../Views/SalonKeysView';
 
 import { useNexus } from '../../context/ContextHook';
 
@@ -50,6 +51,8 @@ const OperationsUnit = () => {
       return <ReferralsView />;
     case 'safety':
       return <SafetyView />;
+    case 'salon-keys':
+      return <SalonKeysView />;
     default:
       return null;
   }
