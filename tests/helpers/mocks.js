@@ -21,7 +21,7 @@ export async function setupApiMocks(page) {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ message: 'Mocked Response' })
+        body: JSON.stringify([])  // Empty array is safer than object for list-based views
       });
     }
   );
@@ -105,6 +105,141 @@ export async function setupApiMocks(page) {
       contentType: 'application/json',
       body: JSON.stringify(user)
     });
+  });
+
+  // Analytics — structured response prevents crashes in AnalyticsView
+  await context.route('**/analytics/**', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        totalRevenue: 0,
+        currency: 'CZK',
+        profileCount: 0,
+        messageCount: 0,
+        revenueByProfile: [],
+        revenueByDay: [],
+        topProfiles: [],
+        summary: { total: 0, change: 0 }
+      })
+    });
+  });
+
+  // Activity feed
+  await context.route('**/activity/**', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([])
+    });
+  });
+
+  // Hierarchy (org chart)
+  await context.route('**/hierarchy/**', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([])
+    });
+  });
+
+  // Audit logs
+  await context.route('**/audit-logs/**', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ logs: [], total: 0, page: 1, pageSize: 20 })
+    });
+  });
+  await context.route('**/audit/**', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ logs: [], total: 0 })
+    });
+  });
+
+  // CRM
+  await context.route('**/crm/**', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([])
+    });
+  });
+
+  // QA Hub
+  await context.route('**/qa/**', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([])
+    });
+  });
+
+  // Payouts
+  await context.route('**/payouts/**', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ payouts: [], total: 0 })
+    });
+  });
+
+  // Referrals
+  await context.route('**/referrals/**', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([])
+    });
+  });
+
+  // Web profiles / platforms
+  await context.route('**/web-profiles/**', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([])
+    });
+  });
+  await context.route('**/platforms/**', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([])
+    });
+  });
+
+  // Settings (object not array)
+  await context.route(url => {
+    const s = url.toString();
+    return s.includes('/settings') && !s.includes('/safety/settings') && !s.includes('/admin/settings');
+  }, async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({})
+    });
+  });
+
+  // Notifications
+  await context.route('**/notifications/**', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([])
+    });
+  });
+
+  // Device relay endpoints — auth required so return proper error
+  await context.route(url => url.toString().includes('/device/relay'), async route => {
+    const authHeader = route.request().headers()['authorization'] || '';
+    if (!authHeader) {
+      await route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: 'Unauthorized' }) });
+    } else {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) });
+    }
   });
 
   await context.route('**/inventory/**', async route => {

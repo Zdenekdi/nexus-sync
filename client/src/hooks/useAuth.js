@@ -69,6 +69,9 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, _setSelectedChatId, _set
     if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
     const lang = localStorage.getItem('nexus_lang') || 'cz';
     localStorage.clear(); // Nuclear option to ensure no stale data remains
+    // Preserve onboarding state so returning users don't see onboarding again after logout
+    localStorage.setItem('nexus_hasSeenOnboarding', 'true');
+    localStorage.setItem('nexus_onboarding_seen', 'true');
     if (lang && lang !== 'cz') {
       window.location.href = `/${lang}/logout`;
     } else {

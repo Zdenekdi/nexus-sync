@@ -24,8 +24,8 @@ let seededInstallationId;
 
 test.beforeAll(async () => {
   // Login as Senior Operator (Alice) who has permission to register devices
-  const { token } = await loginAs(TEST_USERS.manager);
-  managerToken = token;
+  const loginResult = await loginAs(TEST_USERS.manager);
+  managerToken = loginResult?.token || null;
 
   // Register a test device binding for relay tests
   const client = authClient(managerToken);

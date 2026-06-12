@@ -184,8 +184,14 @@ export const NexusProvider = ({ children }) => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(() => localStorage.getItem('nexus_hasSeenOnboarding') === 'true');
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(() => 
+    localStorage.getItem('nexus_hasSeenOnboarding') === 'true' || 
+    localStorage.getItem('nexus_onboarding_seen') === 'true'
+  );
+  const [showOnboarding, setShowOnboarding] = useState(() => 
+    localStorage.getItem('nexus_hasSeenOnboarding') !== 'true' && 
+    localStorage.getItem('nexus_onboarding_seen') !== 'true'
+  );
 
   // --- 3. CORE IDENTITY & AUTH ---
   const [activeOperatorState, setActiveOperatorState] = useState(null);
