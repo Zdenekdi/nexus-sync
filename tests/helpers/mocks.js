@@ -459,7 +459,19 @@ export async function setupApiMocks(page) {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ count: 0 }) });
   });
 
+  // Calendar / events mocks
+  await context.route('**/events**', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
+  });
+  await context.route('**/calendar**', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
+  });
+  await context.route('**/bookings**', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
+  });
+
   await context.route('**/admin/features', async route => {
+
 
     await route.fulfill({
       status: 200,
