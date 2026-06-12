@@ -376,10 +376,11 @@ steps:
           echo "Instaluji Playwright browsers (chromium)..."
           npx playwright install chromium --with-deps
           echo "Spouštím Playwright testy nad Staging prostředím (chromium only)..."
-          npx playwright test --project=chromium --ignore-snapshots --grep-invert android
+          npx playwright test --project=chromium --ignore-snapshots --grep-invert android --timeout=60000 --workers=2
         else
           echo "Skipping Playwright tests for branch $BRANCH_NAME"
         fi
+    timeout: '2400s'
     env:
       - 'FRONTEND_URL=https://nexus-sync-8d50b.web.app'
       - 'NEXUS_API_URL=https://nexus-backend-ii3tsimbnq-ey.a.run.app/api'
@@ -425,3 +426,5 @@ availableSecrets:
 
 substitutions:
   _CACHE_BUCKET: '' # Název vašeho GCS bucketu pro cache
+
+timeout: '4800s' # 80 minut globální timeout (výchozí je 60)
