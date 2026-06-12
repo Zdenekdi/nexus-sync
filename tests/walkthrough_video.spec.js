@@ -4,14 +4,15 @@ import { doLogin } from './helpers/auth.js';
 
 async function doLogout(page) {
   console.log('🚪 Logging out...');
-  const logoutBtn = page.locator('button').filter({ hasText: /odhlaš|logout/i }).first();
-  if (await logoutBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-    await logoutBtn.click();
-  } else {
-    await page.locator('nav').getByText(/odhlaš|logout/i).first().click().catch(() => {});
-  }
-  // Wait for login screen to appear
-  await page.waitForSelector('[data-testid="login-email"]', { state: 'visible', timeout: 20000 }).catch(() => {});
+  // Sidebar logout is an icon-only button (no text), so we simulate directly:
+  // clear auth state + navigate to /logout (same as handleLogoutInternal does)
+  await page.evaluate(() => {
+    localStorage.clear();
+    // Preserve onboarding seen flag so it doesn't re-show for returning users
+    localStorage.setItem('nexus_hasSeenOnboarding', 'true');
+    localStorage.setItem('nexus_onboarding_seen', 'true');
+  });
+  await page.goto('/logout', { waitUntil: 'load', timeout: 30000 }).catch(() => {});
 }
 
 test('Full Platform Walkthrough Video', async ({ page }) => {

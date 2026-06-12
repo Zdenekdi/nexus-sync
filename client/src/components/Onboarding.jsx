@@ -102,11 +102,13 @@ const Onboarding = () => {
 
   const handleComplete = useCallback(() => {
     localStorage.setItem(STORAGE_KEY, 'true');
+    localStorage.setItem('nexus_hasSeenOnboarding', 'true');
     onComplete();
   }, [onComplete]);
 
   const handleSkip = useCallback(() => {
     localStorage.setItem(STORAGE_KEY, 'true');
+    localStorage.setItem('nexus_hasSeenOnboarding', 'true');
     setShowLanding(false);
     onComplete();
   }, [onComplete, setShowLanding]);

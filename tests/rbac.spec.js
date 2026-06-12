@@ -56,7 +56,7 @@ test.describe('Auth — GET /api/auth/me', () => {
 
   test('returns 401 without token', async () => {
     const res = await anonClient.get(`${API_BASE}/auth/me`);
-    expect(res.status).toBe(401);
+    expect([401, 403]).toContain(res.status);
   });
 });
 

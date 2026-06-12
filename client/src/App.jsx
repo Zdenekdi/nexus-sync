@@ -259,7 +259,7 @@ function AppContent() {
               <ViewRouter />
             </ErrorBoundary>
             <ErrorBoundary name="MobileNav">
-              {isNativeApp && <MobileBottomNav />}
+              {(isNativeApp || isMobile) && <MobileBottomNav />}
             </ErrorBoundary>
           </div>
         </main>
