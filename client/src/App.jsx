@@ -22,6 +22,7 @@ const LogoutScreen = lazyWithRetry(() => import('./components/LogoutScreen'));
 const SystemBanners = lazyWithRetry(() => import('./components/UI/SystemBanners'));
 const GlobalModalContainer = lazyWithRetry(() => import('./components/Modals/GlobalModalContainer'));
 const NotificationSystem = lazyWithRetry(() => import('./components/Notifications/NotificationSystem'));
+const TeamChatFloat = lazyWithRetry(() => import('./components/TeamChatFloat'));
 
 function AppContent() {
   const nexus = useNexus();
@@ -263,6 +264,9 @@ function AppContent() {
             </ErrorBoundary>
           </div>
         </main>
+        <ErrorBoundary name="TeamChat">
+          <TeamChatFloat />
+        </ErrorBoundary>
       </Suspense>
     </div>
   );
