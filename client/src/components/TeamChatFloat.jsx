@@ -28,14 +28,14 @@ export default function TeamChatFloat() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setUnread(r.data?.count || 0);
-    } catch (_) {}
+    } catch (_err) { /* silent */ }
   }, [token, API_BASE, open]);
 
   useEffect(() => {
     if (!isLoggedIn) return;
-    checkUnread();
+    const t = setTimeout(checkUnread, 0);
     pollRef.current = setInterval(checkUnread, 15000);
-    return () => clearInterval(pollRef.current);
+    return () => { clearTimeout(t); clearInterval(pollRef.current); };
   }, [checkUnread, isLoggedIn]);
 
   // Socket.io: live unread bump when chat is closed

@@ -434,8 +434,8 @@ function AddKeyModal({ token, API_BASE, onClose, onAdded }) {
       });
       onAdded(r.data);
       onClose();
-    } catch (err) {
-      setError(err.response?.data?.error || 'Chyba při vytváření');
+    } catch (_err) {
+      setError(_err?.response?.data?.error || 'Chyba při vytváření');
     } finally {
       setLoading(false);
     }
@@ -516,7 +516,7 @@ export default function SalonKeysView() {
       });
       setKeys(Array.isArray(r.data) ? r.data : []);
       setError('');
-    } catch (err) {
+    } catch (_err) {
       setError('Nepodařilo se načíst klíče');
     } finally {
       setLoading(false);
@@ -536,8 +536,8 @@ export default function SalonKeysView() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setKeys(prev => prev.map(k => k.id === id ? r.data : k));
-    } catch (err) {
-      alert(err.response?.data?.error || 'Chyba při převzetí');
+    } catch (_err) {
+      alert(_err?.response?.data?.error || 'Chyba při převzetí');
     }
   };
 
@@ -547,8 +547,8 @@ export default function SalonKeysView() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setKeys(prev => prev.map(k => k.id === id ? r.data : k));
-    } catch (err) {
-      alert(err.response?.data?.error || 'Chyba při vrácení');
+    } catch (_err) {
+      alert(_err?.response?.data?.error || 'Chyba při vrácení');
     }
   };
 
@@ -559,7 +559,7 @@ export default function SalonKeysView() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setKeys(prev => prev.filter(k => k.id !== id));
-    } catch (err) {
+    } catch (_err) {
       alert('Chyba při mazání');
     }
   };
