@@ -142,6 +142,12 @@ router.post("/command", validate(sshCommand), async (req, res) => {
 
 router.post("/git-pull", validate(gitPull), async (req, res) => {
   const { path: repoPath } = req.body;
+
+  // Prevent path traversal and command injection
+  if (/[$;|&\n`]|\.\./.test(repoPath)) {
+    return res.status(403).json({ message: 'Invalid path — traversal and command injection not allowed' });
+  }
+
   try {
     const ssh = await getSSHConnection();
     const result = await ssh.execCommand(`cd ${repoPath} && git pull origin master`);
