@@ -156,7 +156,7 @@ function DateSeparator({ dateStr }) {
 }
 
 // ─── Main TeamChatPanel ───────────────────────────────────────────────────────
-export default function TeamChatPanel({ onClose, onMinimize, initialUnread = 0 }) {
+export default function TeamChatPanel({ onClose, onMinimize }) {
   const { token, API_BASE, activeOperator } = useNexus();
   const currentUserId = activeOperator?.id;
   const isManager = !!(activeOperator?.isManager || activeOperator?.isAdmin || activeOperator?.isAppOwner);
@@ -190,7 +190,7 @@ export default function TeamChatPanel({ onClose, onMinimize, initialUnread = 0 }
         return newMsgs;
       });
       setError('');
-    } catch (err) {
+    } catch (_err) {
       if (!silent) setError('Chyba při načítání zpráv');
     } finally {
       setLoading(false);
@@ -202,6 +202,7 @@ export default function TeamChatPanel({ onClose, onMinimize, initialUnread = 0 }
     setMessages([]);
     setLoading(true);
     loadMessages().then(() => scrollToBottom(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeRoom]);
 
   // Poll every 5s
@@ -240,6 +241,7 @@ export default function TeamChatPanel({ onClose, onMinimize, initialUnread = 0 }
     if (!loading && messages.length > 0) {
       scrollToBottom(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
 
   const sendMessage = async () => {
@@ -261,7 +263,7 @@ export default function TeamChatPanel({ onClose, onMinimize, initialUnread = 0 }
         headers: { Authorization: `Bearer ${token}` }
       });
       setMessages(prev => prev.map(m => m.id === optimisticMsg.id ? r.data : m));
-    } catch {
+    } catch (_err) {
       setMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
       setText(optimisticMsg.text);
       setError('Zpráva nebyla odeslána');
