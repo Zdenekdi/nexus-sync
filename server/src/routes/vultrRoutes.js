@@ -145,9 +145,9 @@ router.post("/command", validate(sshCommand), async (req, res) => {
 router.post("/git-pull", validate(gitPull), async (req, res) => {
   const { path: repoPath } = req.body;
   
-  // Prevent path traversal
-  if (repoPath.includes('..') || repoPath.includes(';') || repoPath.includes('|') || repoPath.includes('&')) {
-    return res.status(403).json({ message: 'Invalid path — traversal not allowed' });
+  // Prevent path traversal and command injection
+  if (/[$;|&\n`]|\.\./.test(repoPath)) {
+    return res.status(403).json({ message: 'Invalid path — traversal and command injection not allowed' });
   }
   
   try {
