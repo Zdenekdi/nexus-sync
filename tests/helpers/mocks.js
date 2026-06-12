@@ -405,9 +405,62 @@ export async function setupApiMocks(page) {
     });
   });
 
+  // Team Chat mocks
+  await context.route('**/team-chat/messages**', async route => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: 'msg-001',
+            room: 'general',
+            text: 'Ahoj všichni, nový den!',
+            author: { id: 'jan-001', name: 'Jan (Manager)', email: 'jan@nexus.sync' },
+            authorId: 'jan-001',
+            createdAt: new Date(Date.now() - 3600000).toISOString(),
+            deletedAt: null
+          },
+          {
+            id: 'msg-002',
+            room: 'general',
+            text: 'Dobré ráno! ☀️',
+            author: { id: 'alice-001', name: 'Alice (Senior Op)', email: 'alice@nexus.sync' },
+            authorId: 'alice-001',
+            createdAt: new Date(Date.now() - 1800000).toISOString(),
+            deletedAt: null
+          }
+        ])
+      });
+    } else {
+      // POST
+      const body = route.request().postDataJSON() || {};
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: `msg-new-${Date.now()}`,
+          room: body.room || 'general',
+          text: body.text || '',
+          author: { id: 'owner-001', name: 'Owner (App Owner)', email: 'owner@nexus.sync' },
+          authorId: 'owner-001',
+          createdAt: new Date().toISOString(),
+          deletedAt: null
+        })
+      });
+    }
+  });
 
+  await context.route('**/team-chat/messages/*', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) });
+  });
+
+  await context.route('**/team-chat/unread**', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ count: 0 }) });
+  });
 
   await context.route('**/admin/features', async route => {
+
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
