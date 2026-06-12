@@ -11,7 +11,13 @@ export async function doLogin(page, email, password) {
   // Setup local offline routing and mocks before any navigation
   await setupOfflineMocks(page);
 
-  // Navigate to root
+  // Navigate to root - but first ensure onboarding won't block the login form
+  // by pre-seeding localStorage flags that NexusContext checks on load
+  await page.addInitScript(() => {
+    localStorage.setItem('nexus_hasSeenOnboarding', 'true');
+    localStorage.setItem('nexus_onboarding_seen', 'true');
+  });
+
   await page.goto('/login', { waitUntil: 'load', timeout: 60000 }).catch(() => page.goto('/', { waitUntil: 'load' }));
 
   // Wait for either the login form or the onboarding screen
