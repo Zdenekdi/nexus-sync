@@ -49,6 +49,7 @@ const clientRoutes = require('./routes/clientRoutes');
 const payoutRoutes = require('./routes/payoutRoutes');
 const hetznerRoutes = require('./routes/hetznerRoutes');
 const apiKeyRoutes = require('./routes/apiKeyRoutes');
+const salonKeyRoutes = require('./routes/salonKeyRoutes');
 const publicApiRoutes = require('./routes/api/v1/publicApiRoutes');
 
 const app = express();
@@ -228,6 +229,7 @@ app.use('/api/billing', require('./routes/billingRoutes'));
 app.use('/api/webhooks', require('./routes/webhookRoutes'));
 app.use('/api/clients', clientRoutes);
 app.use('/api/developer/keys', apiKeyRoutes);
+app.use('/api/salon-keys', salonKeyRoutes);
 app.use('/api/v1/public', publicApiRoutes);
 
 // Health check with system status

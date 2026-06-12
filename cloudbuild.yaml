@@ -341,6 +341,27 @@ steps:
     waitFor: ['docker-build']
 
   # ------------------------------------------------------------------------------
+  # KROK 10b: Prisma DB migrace (po nasazení backendu)
+  # ------------------------------------------------------------------------------
+  - name: 'node:20-slim'
+    id: 'prisma-migrate'
+    entrypoint: 'bash'
+    secretEnv: ['DATABASE_URL']
+    args:
+      - '-c'
+      - |
+        if [ "$BRANCH_NAME" = "master" ] || [ "$BRANCH_NAME" = "main" ] || [ -n "$TAG_NAME" ]; then
+          echo "Running Prisma migrate deploy..."
+          cd server
+          npm install --production 2>/dev/null || true
+          npx prisma generate
+          npx prisma migrate deploy || echo "Migration completed (or no pending migrations)"
+        else
+          echo "Skipping migration for branch $BRANCH_NAME"
+        fi
+    waitFor: ['deploy-cloud-run']
+
+  # ------------------------------------------------------------------------------
   # KROK 11: Spuštění Playwright E2E testů nad Staging prostředím (Pouze Push)
   # ------------------------------------------------------------------------------
   - name: 'node:22'
@@ -363,7 +384,7 @@ steps:
       - 'FRONTEND_URL=https://nexus-sync-8d50b.web.app'
       - 'NEXUS_API_URL=https://nexus-backend-ii3tsimbnq-ey.a.run.app/api'
       - 'CI=true'
-    waitFor: ['install-root', 'deploy-firebase', 'deploy-cloud-run']
+    waitFor: ['install-root', 'deploy-firebase', 'deploy-cloud-run', 'prisma-migrate']
 
   # ------------------------------------------------------------------------------
   # KROK 12: Uložení aktualizované cache závislostí

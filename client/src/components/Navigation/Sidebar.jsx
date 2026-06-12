@@ -4,7 +4,7 @@ import {
   Settings, Activity, Radio, Globe, Smartphone, FileSearch, 
   Shield, ShieldCheck, Building2, HardDrive, CreditCard, Zap, UserCheck,
   LogOut, Menu, X, Circle, Package as PackageIcon, Gift, Wallet,
-  ChevronDown, ChevronRight, BookOpen, Terminal, GitGraph
+  ChevronDown, ChevronRight, BookOpen, Terminal, GitGraph, KeyRound
 } from 'lucide-react';
 import { useNexus } from '../../context/ContextHook';
 
@@ -449,6 +449,7 @@ const Sidebar = () => {
                         { id: 'hierarchy', icon: GitGraph, label: t('hierarchy'), perm: 'hierarchy' },
                         { id: 'qa', icon: FileSearch, label: t('qa'), perm: 'qa_hub' },
                         { id: 'web-profiles', icon: Globe, label: t('webProfiles'), perm: 'web_profiles' },
+                        { id: 'salon-keys', icon: KeyRound, label: t('salonKeys') || 'Klíče od salonu' },
                       ].filter(item => !item.perm || isAllowed(item.perm)).map(item => (
                         <TooltipItem key={item.id} label={capitalize(item.label)} isMobile={isMobile} isSidebarCollapsed={isSidebarCollapsed}>
                           <button onClick={() => handleNavigation(item.id)} data-testid={`nav-link-${item.id}`} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
