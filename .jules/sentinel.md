@@ -6,3 +6,8 @@
 **Vulnerability:** The /api/hetzner/git-pull and /api/vultr/git-pull endpoints took a user-supplied path from the request body and injected it directly into an SSH command without sufficient sanitization. This allowed an attacker to execute arbitrary OS commands via command chaining or substitution.
 **Learning:** Even internal or admin-only API routes that execute OS or SSH commands must strictly validate user-provided input. Simple blocklists for path traversal or basic chaining often miss alternate execution vectors like newlines or command substitution blocks.
 **Prevention:** Always validate parameters interpolated into shell strings using robust regexes that block dangerous characters like backticks, newlines, semicolons, dollar signs, and ampersands.
+
+## 2026-06-13 - [CRITICAL] Prevent Weak PRNG for Sensitive Tokens
+**Vulnerability:** Weak pseudo-random number generator `Math.random()` was used for generating SIP passwords and Agency Invite Codes.
+**Learning:** Using predictable randomness can allow attackers to predict sensitive security tokens.
+**Prevention:** Use cryptographically secure pseudorandom number generator (CSPRNG) like `crypto.randomBytes()` or `crypto.randomInt()` for any sensitive tokens.
