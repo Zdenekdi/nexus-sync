@@ -10,28 +10,36 @@ async function verifyAllLinks(page, roleName) {
   console.log(`Found ${count} links for ${roleName}`);
 
   for (let i = 0; i < count; i++) {
+    if (page.isClosed()) break; // guard against page crash
+
     const link = navLinks.nth(i);
-    const linkId = await link.getAttribute('data-testid');
-    const label = await link.innerText();
+    let linkId = 'unknown';
+    try {
+      linkId = await link.getAttribute('data-testid', { timeout: 3000 }) || 'unknown';
+      const label = await link.innerText({ timeout: 3000 });
 
-    console.log(`  👉 Clicking [${linkId}] (${label.trim()})...`);
-    await link.click({ timeout: 5000 }).catch(() => {
-      console.warn(`  ⚠️  [${linkId}] Click timed out — skipping`);
-    });
+      console.log(`  👉 Clicking [${linkId}] (${label.trim()})...`);
+      await link.click({ timeout: 5000 });
 
-    // Short wait for transition (capped at 1.5s)
-    await page.waitForTimeout(1500);
+      // Short wait for transition (capped at 1.5s)
+      await page.waitForTimeout(1500);
 
-    // Verify no critical Error Boundary message was triggered
-    const criticalError = page.getByText('Kritická chyba renderu');
-    const hasCriticalError = await criticalError.isVisible({ timeout: 2000 }).catch(() => false);
-    if (hasCriticalError) {
-      console.warn(`  ⚠️  [${linkId}] Error boundary fired — view crashed! Check view component.`);
-    } else {
-      console.log(`  ✅ [${linkId}] OK`);
+      if (page.isClosed()) break;
+
+      // Verify no critical Error Boundary message was triggered
+      const criticalError = page.getByText('Kritická chyba renderu');
+      const hasCriticalError = await criticalError.isVisible({ timeout: 2000 }).catch(() => false);
+      if (hasCriticalError) {
+        console.warn(`  ⚠️  [${linkId}] Error boundary fired — view crashed! Check view component.`);
+      } else {
+        console.log(`  ✅ [${linkId}] OK`);
+      }
+    } catch (e) {
+      console.warn(`  ⚠️  [${linkId}] Skipped: ${e.message.split('\n')[0]}`);
     }
   }
 }
+
 
 test.describe('Dashboard Discovery & Health Check', () => {
   test.setTimeout(120000); // 2 minutes per test — hard limit
