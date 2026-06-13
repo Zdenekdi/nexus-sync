@@ -18,7 +18,14 @@ async function doLogout(page) {
 test('Full Platform Walkthrough Video', async ({ page }) => {
   test.setTimeout(180000); // 3 minutes for the whole video
 
-  // --- 1. AGENCY ADMIN (Mark T.) ---
+  // This test uses LIVE staging login — skip in CI if staging auth is unavailable
+  const { loginAs, TEST_USERS: TU } = await import('./helpers/api.js');
+  const probe = await loginAs(TEST_USERS.agencyAdmin).catch(() => null);
+  if (!probe?.token) {
+    test.skip(true, 'Staging auth unavailable — skipping walkthrough video test');
+    return;
+  }
+
   await doLogin(page, TEST_USERS.agencyAdmin.email, TEST_USERS.agencyAdmin.password);
 
   console.log('📊 Showing Dashboard...');
