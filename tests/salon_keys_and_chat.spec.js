@@ -96,8 +96,8 @@ test.describe('Sledování klíčů od salonu', () => {
     await expect(page.locator('h1').filter({ hasText: /klíče od salonu/i })).toBeVisible({ timeout: 15000 });
     await page.getByRole('button', { name: /přidat klíče/i }).click();
 
-    // Modal se otevřel — hledáme input s placeholder
-    await expect(page.getByPlaceholder(/název|lokace/i)).toBeVisible({ timeout: 5000 });
+    // Modal se otevřel — hledáme input (placeholder: např. "Klíče – Praha 1")
+    await expect(page.getByPlaceholder(/klíče|vchod|např/i)).toBeVisible({ timeout: 5000 });
   });
 
   test('Historie klíčů se otevře v modalu', async ({ page }) => {
