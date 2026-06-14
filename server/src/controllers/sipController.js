@@ -12,6 +12,7 @@
 
 const prisma         = require('../services/db');
 const { encrypt, decrypt } = require('../services/sipEncryption');
+const crypto         = require('crypto');
 const { getIO }      = require('../services/socket');
 const { regenerateAsteriskConfig } = require('../services/asteriskConfigGenerator');
 
@@ -25,7 +26,7 @@ const callMetaMap  = new Map();
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function generateSipPassword(len = 20) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789@#$!';
-  return Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  return Array.from({ length: len }, () => chars[crypto.randomInt(chars.length)]).join('');
 }
 
 // ─── GET /api/sip/config ─────────────────────────────────────────────────────
