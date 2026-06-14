@@ -143,7 +143,7 @@ exports.createAgency = async (req, res) => {
     const { role } = req.user;
     if (!role?.isAppOwner && String(role?.name || '').toUpperCase() !== 'APP OWNER') return res.status(403).json({ message: 'Access denied' });
     const { name, region, tier } = req.body;
-    const inviteCode = `NEXUS-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    const inviteCode = `NEXUS-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
     const agency = await prisma.agency.create({ data: { name, region, tier: tier || 'Professional', plan: tier || 'Professional', inviteCode } });
     res.status(201).json(agency);
   } catch (error) {
