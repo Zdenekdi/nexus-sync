@@ -189,6 +189,7 @@ export const NexusProvider = ({ children }) => {
     localStorage.getItem('nexus_onboarding_seen') === 'true'
   );
   const [showOnboarding, setShowOnboarding] = useState(() => 
+    isNativeApp &&
     localStorage.getItem('nexus_hasSeenOnboarding') !== 'true' && 
     localStorage.getItem('nexus_onboarding_seen') !== 'true'
   );
