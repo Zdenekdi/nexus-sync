@@ -6,3 +6,7 @@
 **Vulnerability:** The /api/hetzner/git-pull and /api/vultr/git-pull endpoints took a user-supplied path from the request body and injected it directly into an SSH command without sufficient sanitization. This allowed an attacker to execute arbitrary OS commands via command chaining or substitution.
 **Learning:** Even internal or admin-only API routes that execute OS or SSH commands must strictly validate user-provided input. Simple blocklists for path traversal or basic chaining often miss alternate execution vectors like newlines or command substitution blocks.
 **Prevention:** Always validate parameters interpolated into shell strings using robust regexes that block dangerous characters like backticks, newlines, semicolons, dollar signs, and ampersands.
+## 2026-06-15 - [CRITICAL] Fix Weak Authorization Checks By Validating Secret
+**Vulnerability:** Weak authorization check (`secret === process.env.DEVICE_SECRET`) could bypass authentication if `DEVICE_SECRET` is unset, making `process.env.DEVICE_SECRET` `undefined`. An attacker sending a request with `undefined` secret would gain unauthorized access.
+**Learning:** Checking strict equality `===` against environment variables without checking their existence or validity type is dangerous, especially for authentication logic.
+**Prevention:** Always add a length check and typeof validation (`typeof secret === 'string' && secret.length > 0 && secret === process.env.DEVICE_SECRET`) to ensure authentication doesn't fail open.
