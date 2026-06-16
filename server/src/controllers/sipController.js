@@ -14,6 +14,7 @@ const prisma         = require('../services/db');
 const { encrypt, decrypt } = require('../services/sipEncryption');
 const { getIO }      = require('../services/socket');
 const { regenerateAsteriskConfig } = require('../services/asteriskConfigGenerator');
+const crypto = require('crypto');
 
 // ─── In-memory SIP status ping table ────────────────────────────────────────
 // installationId → { registeredAt, lastPingAt, sipUser, profileName, agencyId }
@@ -25,7 +26,11 @@ const callMetaMap  = new Map();
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function generateSipPassword(len = 20) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789@#$!';
-  return Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  let password = '';
+  for (let i = 0; i < len; i++) {
+    password += chars[crypto.randomInt(0, chars.length)];
+  }
+  return password;
 }
 
 // ─── GET /api/sip/config ─────────────────────────────────────────────────────
