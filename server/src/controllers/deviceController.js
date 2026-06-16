@@ -208,7 +208,7 @@ exports.handleRelay = async (req, res) => {
     if (!messageTransport) return res.status(400).json({ ok: false, message: 'Invalid transport' });
 
     const reqUserId = String(deviceId || userId || '');
-    let isAuthorized = (secret === process.env.DEVICE_SECRET);
+    let isAuthorized = (typeof secret === 'string' && secret.length > 0 && secret === process.env.DEVICE_SECRET);
     const binding = await prisma.deviceBinding.findUnique({ 
       where: { installationId: installationId || 'none' }, 
       include: { profile: { select: { id: true, name: true, agencyId: true } } } 
@@ -269,7 +269,7 @@ exports.handleMobileSms = async (req, res) => {
   try {
     const { from, to, text, secret } = req.body;
     if (!from || !to || !text) return res.status(400).json({ ok: false, message: 'Missing fields' });
-    if (secret !== process.env.DEVICE_SECRET) return res.status(401).json({ message: 'Unauthorized' });
+    if (typeof secret !== 'string' || secret.length === 0 || secret !== process.env.DEVICE_SECRET) return res.status(401).json({ message: 'Unauthorized' });
     const profile = await prisma.profile.findFirst({ where: { phoneNumber: to } });
     if (!profile) return res.status(404).json({ message: 'Profile not found' });
 
@@ -287,7 +287,7 @@ exports.handleMobileCall = async (req, res) => {
   try {
     const { from, to, state, secret } = req.body;
     if (!from || !to || !state) return res.status(400).json({ ok: false, message: 'Missing fields' });
-    if (secret !== process.env.DEVICE_SECRET) return res.status(401).json({ message: 'Unauthorized' });
+    if (typeof secret !== 'string' || secret.length === 0 || secret !== process.env.DEVICE_SECRET) return res.status(401).json({ message: 'Unauthorized' });
     const profile = await prisma.profile.findFirst({ where: { phoneNumber: to } });
     if (!profile) return res.status(404).json({ message: 'Profile not found' });
 
