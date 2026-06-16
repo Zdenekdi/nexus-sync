@@ -6,3 +6,7 @@
 **Vulnerability:** The /api/hetzner/git-pull and /api/vultr/git-pull endpoints took a user-supplied path from the request body and injected it directly into an SSH command without sufficient sanitization. This allowed an attacker to execute arbitrary OS commands via command chaining or substitution.
 **Learning:** Even internal or admin-only API routes that execute OS or SSH commands must strictly validate user-provided input. Simple blocklists for path traversal or basic chaining often miss alternate execution vectors like newlines or command substitution blocks.
 **Prevention:** Always validate parameters interpolated into shell strings using robust regexes that block dangerous characters like backticks, newlines, semicolons, dollar signs, and ampersands.
+## 2026-06-16 - [Security] Fix weak random number generation
+**Vulnerability:** Weak random number generation using Math.random() in SIP password generation and agency invite code creation.
+**Learning:** Math.random() is predictable and unsuitable for security contexts, such as generating credentials or access tokens.
+**Prevention:** Always use the Node.js native crypto module (e.g., crypto.randomInt() or crypto.randomBytes()) when generating secrets, tokens, or identifiers intended for security or authorization.
