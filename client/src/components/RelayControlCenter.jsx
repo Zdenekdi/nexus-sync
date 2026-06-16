@@ -1,5 +1,5 @@
 import React from 'react';
-import { Smartphone, Signal, Info, Globe, ShieldCheck, MapPin, X, Radio, Server, Lock } from 'lucide-react';
+import { Smartphone, Info, Globe, ShieldCheck, MapPin, X, Radio, Server, Lock } from 'lucide-react';
 
 import { useNexus } from '../context/ContextHook';
 

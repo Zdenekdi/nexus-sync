@@ -323,6 +323,7 @@ const mobileMessage = z.object({
 const mobileCall = z.object({
   secret: z.string().min(1).max(256),
   from: z.string().min(1).max(64),
+  to: z.string().min(1).max(64).optional(),
   state: z.string().max(32).optional(),
   duration: z.number().int().min(0).optional()
 });
