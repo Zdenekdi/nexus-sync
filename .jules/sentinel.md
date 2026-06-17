@@ -7,3 +7,7 @@
 **Vulnerability:** Weak pseudo-random number generator `Math.random()` was used for generating SIP passwords and Agency Invite Codes.
 **Learning:** Using predictable randomness can allow attackers to predict sensitive security tokens.
 **Prevention:** Use cryptographically secure pseudorandom number generator (CSPRNG) like `crypto.randomBytes()` or `crypto.randomInt()` for any sensitive tokens.
+## 2024-05-28 - Missing Authentication on Unauthenticated SMS Endpoint
+**Vulnerability:** The `/api/device/goip/sms` endpoint (handled by `handleGoIP` in `server/src/controllers/deviceController.js`) allowed incoming SMS messages to be created in the database and broadcast via WebSockets without any authentication or authorization checks.
+**Learning:** Even specialized hardware endpoints (like GoIP receivers) need to be authenticated. In a multi-tenant system, unauthenticated endpoints can allow attackers to spoof messages or perform a denial of service.
+**Prevention:** Always ensure every API endpoint, especially those that write data, requires and validates a secret key (like `DEVICE_SECRET` or an API token), and that it is consistently applied across all endpoints in the controller.

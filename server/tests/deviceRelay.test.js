@@ -350,7 +350,7 @@ describe('POST /api/device/goip/sms', () => {
     const res = await request(app)
       .post('/api/device/goip/sms')
       .set('Content-Type', 'application/x-www-form-urlencoded')
-      .send(`src=${encodeURIComponent('+420900111333')}&dst=${encodeURIComponent(PROFILE_PHONE)}&msg=${encodeURIComponent('GoIP test message')}`);
+      .send(`secret=${process.env.DEVICE_SECRET}&src=${encodeURIComponent('+420900111333')}&dst=${encodeURIComponent(PROFILE_PHONE)}&msg=${encodeURIComponent('GoIP test message')}`);
 
     expect(res.status).toBe(200);
     expect(res.text).toContain('RECEIVE OK');
@@ -362,7 +362,7 @@ describe('POST /api/device/goip/sms', () => {
     const res = await request(app)
       .post('/api/device/goip/sms')
       .set('Content-Type', 'application/x-www-form-urlencoded')
-      .send(`src=${encodeURIComponent('+420900111333')}&dst=${encodeURIComponent('+999000000000')}&msg=test`);
+      .send(`secret=${process.env.DEVICE_SECRET}&src=${encodeURIComponent('+420900111333')}&dst=${encodeURIComponent('+999000000000')}&msg=test`);
 
     expect(res.status).toBe(404);
   });
@@ -371,8 +371,17 @@ describe('POST /api/device/goip/sms', () => {
     const res = await request(app)
       .post('/api/device/goip/sms')
       .set('Content-Type', 'application/x-www-form-urlencoded')
-      .send(`src=${encodeURIComponent('+420900111333')}`); // dst and msg missing
+      .send(`secret=${process.env.DEVICE_SECRET}&src=${encodeURIComponent('+420900111333')}`); // dst and msg missing
 
     expect(res.status).toBe(400);
+  });
+
+  it('missing secret → 401', async () => {
+    const res = await request(app)
+      .post('/api/device/goip/sms')
+      .set('Content-Type', 'application/x-www-form-urlencoded')
+      .send(`src=${encodeURIComponent('+420900111333')}&dst=${encodeURIComponent(PROFILE_PHONE)}&msg=${encodeURIComponent('GoIP test message')}`);
+
+    expect(res.status).toBe(401);
   });
 });
