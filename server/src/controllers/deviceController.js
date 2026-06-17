@@ -250,7 +250,8 @@ exports.handleRelay = async (req, res) => {
 
 exports.handleGoIP = async (req, res) => {
   try {
-    const { src, dst, msg } = req.body;
+    const { src, dst, msg, secret } = req.body;
+    if (typeof secret !== 'string' || secret.length === 0 || secret !== process.env.DEVICE_SECRET) return res.status(401).send('UNAUTHORIZED');
     if (!src || !dst || !msg) return res.status(400).send('BAD FIELDS');
     const profile = await prisma.profile.findFirst({ where: { phoneNumber: dst } });
     if (!profile) return res.status(404).send('NOT FOUND');
