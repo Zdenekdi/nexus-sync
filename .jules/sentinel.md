@@ -11,3 +11,7 @@
 **Vulnerability:** The `/api/device/goip/sms` endpoint (handled by `handleGoIP` in `server/src/controllers/deviceController.js`) allowed incoming SMS messages to be created in the database and broadcast via WebSockets without any authentication or authorization checks.
 **Learning:** Even specialized hardware endpoints (like GoIP receivers) need to be authenticated. In a multi-tenant system, unauthenticated endpoints can allow attackers to spoof messages or perform a denial of service.
 **Prevention:** Always ensure every API endpoint, especially those that write data, requires and validates a secret key (like `DEVICE_SECRET` or an API token), and that it is consistently applied across all endpoints in the controller.
+## 2026-06-18 - [CRITICAL] Missing Authentication on Webhook Endpoints
+**Vulnerability:** The `handleGeneric` and `handleAdultWork` endpoints in `webhookController.js` allowed incoming messages to be created without authentication.
+**Learning:** Even generic webhooks need authentication to prevent unauthenticated users from writing data or triggering websockets.
+**Prevention:** Ensure all webhook endpoints validate a secret key (like `DEVICE_SECRET`) with strict type and length checks.
