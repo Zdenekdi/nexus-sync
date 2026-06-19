@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import axios from "axios";
 import { useVultr } from "../hooks/useVultr";
 import { useHetzner } from "../hooks/useHetzner";
 import { 
@@ -56,6 +57,35 @@ function InfraTab() {
   const [apkVersion, _setApkVersion] = useState("1.0");
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
+
+  // ── CI/CD Token ────────────────────────────────────────────────────────────
+  const [ciToken, setCiToken] = useState(null);
+  const [ciTokenLoading, setCiTokenLoading] = useState(false);
+  const [ciTokenCopied, setCiTokenCopied] = useState(false);
+
+  const handleGenerateCiToken = async () => {
+    setCiTokenLoading(true);
+    setCiToken(null);
+    try {
+      const stored = localStorage.getItem('nexus_token');
+      const { data } = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL || ''}/api/auth/relay-token`,
+        { headers: { Authorization: `Bearer ${stored}` } }
+      );
+      setCiToken(data.token);
+    } catch (e) {
+      showToast(e.response?.data?.message || 'Chyba při generování tokenu', 'error');
+    } finally {
+      setCiTokenLoading(false);
+    }
+  };
+
+  const handleCopyCiToken = () => {
+    if (!ciToken) return;
+    navigator.clipboard.writeText(ciToken);
+    setCiTokenCopied(true);
+    setTimeout(() => setCiTokenCopied(false), 2500);
+  };
 
   const handleApkFile = async (file) => {
     if (!file) return;
@@ -398,6 +428,80 @@ function InfraTab() {
             {apkSuccess && <div style={{ fontSize: '0.72rem', color: 'var(--success-color)', marginTop: '0.5rem' }}>{t('apk_uploaded_success')}</div>}
           </div>
         </div>
+
+        {/* ── CI/CD Token ── */}
+        <div className="glass-card" style={{ padding: '1.5rem', borderRadius: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+            <Github size={18} color="var(--text-secondary)" />
+            <h3 style={{ fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>
+              {lang === 'cz' ? 'CI/CD DEPLOY TOKEN' : 'CI/CD DEPLOY TOKEN'}
+            </h3>
+          </div>
+
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.6 }}>
+            {lang === 'cz'
+              ? 'Token pro GitHub Actions secret DEPLOY_API_TOKEN. Platnost 30 dní.'
+              : 'Token for GitHub Actions secret DEPLOY_API_TOKEN. Valid for 30 days.'}
+          </div>
+
+          {ciToken ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <div style={{
+                background: 'rgba(0,0,0,0.4)', borderRadius: '10px', padding: '0.75rem',
+                fontFamily: 'monospace', fontSize: '0.62rem', color: '#a5b4fc',
+                wordBreak: 'break-all', lineHeight: 1.6, userSelect: 'all'
+              }}>
+                {ciToken}
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button
+                  onClick={handleCopyCiToken}
+                  style={{
+                    flex: 1, padding: '0.5rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                    background: ciTokenCopied ? 'rgba(16,185,129,0.15)' : 'rgba(99,102,241,0.15)',
+                    color: ciTokenCopied ? 'var(--success-color)' : '#a5b4fc',
+                    fontSize: '0.72rem', fontWeight: '800', transition: 'all 0.2s'
+                  }}
+                >
+                  {ciTokenCopied ? '✓ Zkopírováno!' : '📋 Kopírovat'}
+                </button>
+                <button
+                  onClick={() => setCiToken(null)}
+                  style={{
+                    padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)',
+                    cursor: 'pointer', background: 'transparent',
+                    color: 'var(--text-secondary)', fontSize: '0.72rem', fontWeight: '800'
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+              <div style={{ fontSize: '0.65rem', color: 'rgba(255,200,0,0.7)', marginTop: '0.25rem' }}>
+                ⚠️ {lang === 'cz' ? 'Uložte token okamžitě — po zavření se nezobrazí znovu.' : 'Save the token now — it won\'t be shown again after closing.'}
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={handleGenerateCiToken}
+              disabled={ciTokenLoading}
+              style={{
+                width: '100%', padding: '0.65rem', borderRadius: '10px', border: 'none',
+                cursor: ciTokenLoading ? 'not-allowed' : 'pointer',
+                background: ciTokenLoading ? 'rgba(99,102,241,0.1)' : 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2))',
+                border: '1px solid rgba(99,102,241,0.3)',
+                color: '#a5b4fc', fontSize: '0.78rem', fontWeight: '800',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                opacity: ciTokenLoading ? 0.6 : 1, transition: 'all 0.2s'
+              }}
+            >
+              <Github size={14} />
+              {ciTokenLoading
+                ? (lang === 'cz' ? 'Generuji...' : 'Generating...')
+                : (lang === 'cz' ? 'Vygenerovat CI/CD Token (30 dní)' : 'Generate CI/CD Token (30 days)')}
+            </button>
+          )}
+        </div>
+
       </div>
     </div>
   );
