@@ -174,6 +174,126 @@ class CallController {
       res.status(500).json({ message: 'Failed to fetch operator metrics' });
     }
   }
+
+  // ─── WebRTC Signaling (InCallService bridge) ──────────────────────────────
+  //
+  // Relay telefon zachytí GSM hovor → pošle SDP offer → server přepošle operátorovi
+  // Operátor odpoví SDP answer → server přepošle telefonu
+  // Oba si vymění ICE kandidáty přes server → přímé WebRTC spojení
+
+  /**
+   * POST /api/calls/webrtc/offer
+   * Relay telefon odesílá SDP offer na server.
+   * Server ho přepošle přes Socket.IO všem operátorům dané agentury.
+   */
+  async webrtcOffer(req, res) {
+    try {
+      const { sdp, callerId, agencyId, installationId } = req.body;
+      if (!sdp || !agencyId) {
+        return res.status(400).json({ message: 'sdp a agencyId jsou povinné' });
+      }
+
+      const { getIO } = require('../services/socket');
+      const io = getIO();
+
+      // Přepošli offer všem operátorům v dané agentuře
+      io.to(`agency:${agencyId}`).emit('call:incoming-gsm', {
+        sdp,
+        callerId,
+        agencyId,
+        installationId,
+        timestamp: new Date().toISOString(),
+      });
+
+      logger.info(`[WebRTC] Offer přijat od relay ${installationId}, přeposlán do agency:${agencyId}`);
+      res.json({ ok: true });
+    } catch (err) {
+      logger.error('webrtcOffer error:', err);
+      res.status(500).json({ message: 'Failed to relay WebRTC offer' });
+    }
+  }
+
+  /**
+   * POST /api/calls/webrtc/answer
+   * Operátor (prohlížeč) odesílá SDP answer.
+   * Server ho přepošle relay telefonu.
+   */
+  async webrtcAnswer(req, res) {
+    try {
+      const { sdp, callerId, installationId } = req.body;
+      if (!sdp || !installationId) {
+        return res.status(400).json({ message: 'sdp a installationId jsou povinné' });
+      }
+
+      const { getIO } = require('../services/socket');
+      const io = getIO();
+
+      // Přepošli answer relay telefonu (identifikovanému přes installationId room)
+      io.to(`relay:${installationId}`).emit('call:webrtc-answer', { sdp, callerId });
+
+      logger.info(`[WebRTC] Answer přeposlán na relay ${installationId}`);
+      res.json({ ok: true });
+    } catch (err) {
+      logger.error('webrtcAnswer error:', err);
+      res.status(500).json({ message: 'Failed to relay WebRTC answer' });
+    }
+  }
+
+  /**
+   * POST /api/calls/webrtc/ice
+   * ICE kandidát — přeposílá se oběma stranám (phone ↔ browser).
+   * Parametr `direction`: 'phone-to-browser' nebo 'browser-to-phone'
+   */
+  async webrtcIce(req, res) {
+    try {
+      const { sdpMid, sdpMLineIndex, candidate, direction, agencyId, installationId } = req.body;
+
+      const { getIO } = require('../services/socket');
+      const io = getIO();
+
+      if (direction === 'phone-to-browser') {
+        // ICE z telefonu → operátor
+        io.to(`agency:${agencyId}`).emit('call:ice-candidate', {
+          sdpMid, sdpMLineIndex, candidate, from: 'phone',
+        });
+      } else {
+        // ICE z prohlížeče → telefon
+        io.to(`relay:${installationId}`).emit('call:ice-candidate', {
+          sdpMid, sdpMLineIndex, candidate, from: 'browser',
+        });
+      }
+
+      res.json({ ok: true });
+    } catch (err) {
+      logger.error('webrtcIce error:', err);
+      res.status(500).json({ message: 'Failed to relay ICE candidate' });
+    }
+  }
+
+  /**
+   * POST /api/calls/webrtc/hangup
+   * Ukončení hovoru — notifikuje druhou stranu.
+   */
+  async webrtcHangup(req, res) {
+    try {
+      const { agencyId, installationId, initiator } = req.body;
+
+      const { getIO } = require('../services/socket');
+      const io = getIO();
+
+      if (initiator === 'browser') {
+        io.to(`relay:${installationId}`).emit('call:hangup', { initiator: 'browser' });
+      } else {
+        io.to(`agency:${agencyId}`).emit('call:hangup', { initiator: 'phone' });
+      }
+
+      res.json({ ok: true });
+    } catch (err) {
+      logger.error('webrtcHangup error:', err);
+      res.status(500).json({ message: 'Failed to relay hangup' });
+    }
+  }
 }
 
 module.exports = new CallController();
+

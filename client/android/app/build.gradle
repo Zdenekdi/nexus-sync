@@ -258,6 +258,8 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-process:2.8.7"
     implementation "com.google.firebase:firebase-messaging:24.1.0"
     implementation project(':capacitor-android')
+    // WebRTC — pro InCallService audio bridge (GSM hovor → prohlížeč)
+    implementation 'io.github.webrtc-sdk:android:104.5112.09'
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
