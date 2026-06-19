@@ -19,9 +19,12 @@ import {
   X
 } from 'lucide-react';
 import { useSipCall } from '../plugins/NexusSip';
+import { useInCallService, isInCallAvailable } from '../plugins/NexusInCall';
 import IncomingCallScreen from './sip/IncomingCallScreen';
 import ActiveCallScreen from './sip/ActiveCallScreen';
+import IncomingCallModal from './IncomingCallModal';
 import axios from 'axios';
+
 
 import { useNexus } from '../context/ContextHook';
 
@@ -205,7 +208,27 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     onEnded: handleSipCallEnded,
   });
 
+  // ── InCallService (GSM hovory bez SIP Trunk) ──────────────────────────────
+  // Funguje pouze pokud je Nexus nastaven jako výchozí telefonní aplikace.
+  const {
+    incomingCall: gsmIncomingCall,
+    callState:    gsmCallState,
+    callDuration: gsmCallDuration,
+    isDefaultDialer,
+    answer:       gsmAnswer,
+    reject:       gsmReject,
+    hangup:       gsmHangup,
+    setMuted:     gsmSetMuted,
+    setSpeaker:   gsmSetSpeaker,
+    requestDefaultDialer,
+  } = useInCallService({
+    onIncoming: (call) => addLocalLog('call', call.callerId, 'GSM hovor (příchozí)', 'inbound', 'ringing'),
+    onAnswered: ()     => addLocalLog('call', 'GSM', 'Hovor přijat operátorem', 'inbound', 'answered'),
+    onEnded:    ()     => addLocalLog('call', 'GSM', 'Hovor ukončen', 'inbound', 'completed'),
+  });
+
   // Persist logs to localStorage whenever they change
+
   useEffect(() => {
     try { localStorage.setItem('nexus_relay_logs', JSON.stringify(logs.slice(0, 20))); } catch { /* ignore */ }
   }, [logs]);
@@ -732,7 +755,22 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
 
   return (
     <>
+      {/* IncomingCallModal: GSM hovor zachycený přes InCallService (bez SIP Trunk) */}
+      {isInCallAvailable() && (gsmCallState === 'ringing' || gsmCallState === 'active') && (
+        <IncomingCallModal
+          incomingCall={gsmIncomingCall}
+          callState={gsmCallState}
+          callDuration={gsmCallDuration}
+          onAnswer={gsmAnswer}
+          onReject={gsmReject}
+          onHangup={gsmHangup}
+          onMute={gsmSetMuted}
+          onSpeaker={gsmSetSpeaker}
+        />
+      )}
+
       {/* In-app Test SMS confirm dialog (window.confirm crashes Android WebView) */}
+
       {showTestSmsConfirm && (
         <div
           onClick={() => setShowTestSmsConfirm(false)}
@@ -1063,36 +1101,214 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
         )}
       </div>
 
-      {/* Call Forwarding Setup */}
+      {/* ═══ Manuál: Přijímání hovorů v prohlížeči ═══ */}
       <div className="glass-card" style={{ padding: '1.5rem', borderRadius: '20px', background: 'rgba(168, 85, 247, 0.05)', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
           <Phone size={20} color="#c084fc" />
-          <span style={{ fontWeight: '800', color: '#e9d5ff' }}>{t('callForwardingTitle') || 'Nastavení přesměrování hovorů'}</span>
+          <span style={{ fontWeight: '800', color: '#e9d5ff', fontSize: '0.95rem' }}>
+            {lang === 'cz' ? 'Přijímání hovorů v prohlížeči' : 'Browser Call Answering'}
+          </span>
+          <span style={{ marginLeft: 'auto', fontSize: '0.65rem', fontWeight: '900', letterSpacing: '0.1em', color: '#c084fc', background: 'rgba(192,132,252,0.15)', padding: '0.2rem 0.6rem', borderRadius: '20px' }}>
+            MANUÁL
+          </span>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <span style={{ fontWeight: '900', color: '#c084fc' }}>1.</span>
-            <span>{t('callForwardingStep1') || '1. Otevřete Telefon -> Nastavení -> Přesměrování hovorů.'}</span>
+
+        {/* ── Volba metody ── */}
+        <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem' }}>
+          {[
+            { id: 'incall', label: lang === 'cz' ? '📱 Nexus jako telefon' : '📱 Nexus as Dialer', desc: lang === 'cz' ? 'Bez SIP čísla' : 'No SIP number', recommended: true },
+            { id: 'sip',    label: lang === 'cz' ? '🔗 Přes SIP Trunk' : '🔗 Via SIP Trunk',   desc: lang === 'cz' ? 'S virtuálním číslem' : 'With virtual number', recommended: false },
+          ].map(method => {
+            const [activeMethod, setActiveMethod] = typeof window.__relayCallMethod !== 'undefined'
+              ? [window.__relayCallMethod, (v) => { window.__relayCallMethod = v; }]
+              : ['incall', () => {}];
+            return (
+              <div
+                key={method.id}
+                style={{
+                  flex: 1, padding: '0.85rem', borderRadius: '14px', cursor: 'pointer',
+                  border: `1px solid ${activeMethod === method.id ? 'rgba(192,132,252,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                  background: activeMethod === method.id ? 'rgba(192,132,252,0.1)' : 'rgba(255,255,255,0.03)',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <div style={{ fontWeight: '800', fontSize: '0.8rem', color: activeMethod === method.id ? '#e9d5ff' : 'var(--text-secondary)', marginBottom: '0.25rem' }}>{method.label}</div>
+                <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>{method.desc}</div>
+                {method.recommended && <div style={{ fontSize: '0.6rem', color: '#c084fc', fontWeight: '900', marginTop: '0.25rem' }}>★ DOPORUČENO</div>}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ── METODA 1: InCallService (bez SIP Trunk) ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+          {/* Banner: stav výchozí aplikace */}
+          <div style={{
+            padding: '0.85rem 1rem',
+            borderRadius: '12px',
+            background: isDefaultDialer ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)',
+            border: `1px solid ${isDefaultDialer ? 'rgba(34,197,94,0.3)' : 'rgba(245,158,11,0.3)'}`,
+            display: 'flex', alignItems: 'center', gap: '0.75rem',
+          }}>
+            <span style={{ fontSize: '1.2rem' }}>{isDefaultDialer ? '✅' : '⚠️'}</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: '800', fontSize: '0.8rem', color: isDefaultDialer ? '#22c55e' : '#f59e0b' }}>
+                {isDefaultDialer
+                  ? (lang === 'cz' ? 'Nexus je výchozí telefonní aplikace' : 'Nexus is default phone app')
+                  : (lang === 'cz' ? 'Nexus NENÍ nastaven jako výchozí telefonní aplikace' : 'Nexus is NOT set as default phone app')}
+              </div>
+              <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', marginTop: '0.2rem' }}>
+                {isDefaultDialer
+                  ? (lang === 'cz' ? 'Příchozí hovory budou zachyceny automaticky.' : 'Incoming calls will be intercepted automatically.')
+                  : (lang === 'cz' ? 'Klikněte na tlačítko níže a nastavte Nexus jako výchozí.' : 'Click the button below to set Nexus as default.')}
+              </div>
+            </div>
+            {!isDefaultDialer && (
+              <button
+                onClick={requestDefaultDialer}
+                style={{
+                  padding: '0.5rem 1rem', borderRadius: '10px', border: 'none', cursor: 'pointer',
+                  background: 'linear-gradient(135deg, #c084fc, #a855f7)',
+                  color: 'white', fontWeight: '900', fontSize: '0.75rem', whiteSpace: 'nowrap',
+                }}
+              >
+                {lang === 'cz' ? 'Nastavit' : 'Set Now'}
+              </button>
+            )}
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <span style={{ fontWeight: '900', color: '#c084fc' }}>2.</span>
-            <span>{t('callForwardingStep2') || '2. Nastavte "Přesměrovat při obsazení/nepřijetí" na vaše virtuální SIP číslo.'}</span>
+
+          {/* Kroky nastavení */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            {[
+              {
+                n: '1',
+                icon: '📲',
+                title: lang === 'cz' ? 'Nainstalujte aktuální verzi Nexus Relay' : 'Install latest Nexus Relay',
+                desc:  lang === 'cz'
+                  ? 'Funkce vyžaduje verzi s podporou InCallService. Zkontrolujte aktualizaci.'
+                  : 'Feature requires InCallService support. Check for updates.',
+              },
+              {
+                n: '2',
+                icon: '📞',
+                title: lang === 'cz' ? 'Nastavte Nexus jako výchozí telefonní aplikaci' : 'Set Nexus as default phone app',
+                desc:  lang === 'cz'
+                  ? 'Nastavení → Aplikace → Výchozí aplikace → Telefonní aplikace → Nexus Relay. Nebo použijte tlačítko "Nastavit" výše.'
+                  : 'Settings → Apps → Default apps → Phone app → Nexus Relay. Or use the "Set Now" button above.',
+              },
+              {
+                n: '3',
+                icon: '🎤',
+                title: lang === 'cz' ? 'Povolte oprávnění k mikrofonu' : 'Grant microphone permission',
+                desc:  lang === 'cz'
+                  ? 'Při prvním hovoru vás Android požádá o povolení mikrofonu. Potvrďte "Vždy povolit".'
+                  : 'On first call Android will ask for microphone permission. Select "Always allow".',
+              },
+              {
+                n: '4',
+                icon: '🌐',
+                title: lang === 'cz' ? 'Operátor otevře Nexus v prohlížeči' : 'Operator opens Nexus in browser',
+                desc:  lang === 'cz'
+                  ? 'Jakmile někdo zavolá, v prohlížeči operátora se automaticky zobrazí popup s tlačítky Přijmout / Odmítnout.'
+                  : 'When someone calls, a popup with Answer / Reject buttons will appear in the operator\'s browser.',
+              },
+            ].map(step => (
+              <div key={step.n} style={{
+                display: 'flex', gap: '0.75rem', alignItems: 'flex-start',
+                padding: '0.85rem', borderRadius: '12px',
+                background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+              }}>
+                <div style={{
+                  width: '28px', height: '28px', borderRadius: '50%', flexShrink: 0,
+                  background: 'rgba(192,132,252,0.15)', border: '1px solid rgba(192,132,252,0.3)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: '900', fontSize: '0.8rem', color: '#c084fc',
+                }}>{step.n}</div>
+                <div>
+                  <div style={{ fontWeight: '800', fontSize: '0.82rem', color: 'white', marginBottom: '0.2rem' }}>
+                    {step.icon} {step.title}
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>{step.desc}</div>
+                </div>
+              </div>
+            ))}
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem', background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '10px', marginTop: '0.5rem', alignItems: 'center' }}>
-             <Server size={16} color="var(--text-secondary)" />
-             <span>{lang === 'cz' ? 'Vaše SIP klapka:' : 'Your SIP extension:'} </span>
-             <code style={{ background: 'rgba(0,0,0,0.3)', padding: '0.2rem 0.5rem', borderRadius: '6px', color: 'white', fontWeight: '900', marginLeft: 'auto' }}>{operator?.sipUser || 'N/A'}</code>
+
+          {/* Divider */}
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1rem', marginTop: '0.25rem' }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: '900', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.3)', marginBottom: '0.75rem' }}>
+              {lang === 'cz' ? 'ALTERNATIVA: PŘESMĚROVÁNÍ PŘES SIP TRUNK' : 'ALTERNATIVE: SIP TRUNK FORWARDING'}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <span style={{ fontWeight: '900', color: '#c084fc', flexShrink: 0 }}>A.</span>
+                <span>
+                  {lang === 'cz'
+                    ? 'Zřiďte virtuální SIP číslo u poskytovatele (Odorik.cz, Twilio, Fayn...).'
+                    : 'Get a virtual SIP number from a provider (Odorik.cz, Twilio, Fayn...).'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <span style={{ fontWeight: '900', color: '#c084fc', flexShrink: 0 }}>B.</span>
+                <span>
+                  {lang === 'cz'
+                    ? 'V Nastavení Androidu nastavte přesměrování hovorů vytočením USSD kódu:'
+                    : 'In Android settings enable call forwarding by dialing USSD code:'}
+                </span>
+              </div>
+
+              {/* USSD kódy */}
+              <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '10px', padding: '0.85rem', marginTop: '0.25rem', fontFamily: 'monospace', fontSize: '0.78rem' }}>
+                <div style={{ color: 'rgba(255,255,255,0.4)', marginBottom: '0.5rem', fontSize: '0.65rem', fontFamily: 'inherit' }}>
+                  {lang === 'cz' ? '# Bezpodmínečné přesměrování (vše ihned):' : '# Unconditional forwarding (everything):'}
+                </div>
+                <div style={{ color: '#c084fc', fontWeight: '700' }}>**21*+420910XXXXXX#</div>
+                <div style={{ color: 'rgba(255,255,255,0.4)', margin: '0.5rem 0', fontSize: '0.65rem', fontFamily: 'inherit' }}>
+                  {lang === 'cz' ? '# Jen když nedvíháte:' : '# Only when not answered:'}
+                </div>
+                <div style={{ color: '#c084fc', fontWeight: '700' }}>**61*+420910XXXXXX#</div>
+                <div style={{ color: 'rgba(255,255,255,0.4)', margin: '0.5rem 0 0', fontSize: '0.65rem', fontFamily: 'inherit' }}>
+                  {lang === 'cz' ? '# Zrušení přesměrování:' : '# Cancel forwarding:'}
+                </div>
+                <div style={{ color: '#86efac', fontWeight: '700' }}>##21#</div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <span style={{ fontWeight: '900', color: '#c084fc', flexShrink: 0 }}>C.</span>
+                <span>
+                  {lang === 'cz'
+                    ? 'V administraci agentury (Nastavení → Agentura → Telekomunikace) zadejte SIP Provider a přihlašovací údaje.'
+                    : 'In agency settings (Settings → Agency → Telecommunications) enter SIP Provider and credentials.'}
+                </span>
+              </div>
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-            <span style={{ fontWeight: '900', color: '#c084fc' }}>3.</span>
-            <span>{t('callForwardingStep3') || '3. Povolte přístup k hovorům pro detekci stavu linky (Permissions).'}</span>
+
+          {/* SIP klapka */}
+          <div style={{ display: 'flex', gap: '0.5rem', background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '10px', alignItems: 'center' }}>
+            <Server size={16} color="var(--text-secondary)" />
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+              {lang === 'cz' ? 'Vaše SIP klapka:' : 'Your SIP extension:'}
+            </span>
+            <code style={{ background: 'rgba(0,0,0,0.3)', padding: '0.2rem 0.5rem', borderRadius: '6px', color: 'white', fontWeight: '900', marginLeft: 'auto', fontSize: '0.8rem' }}>
+              {operator?.sipUser || 'N/A'}
+            </code>
           </div>
-          <div style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: 'var(--accent-color)', fontWeight: '700', padding: '0.75rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '10px', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <Info size={16} />
-            <span>{t('callForwardingNote') || 'Poznámka: Pro reálné zvednutí hovoru v prohlížeči je vyžadován modul AI Voice Relay (SIP).'}</span>
+
+          {/* Info note */}
+          <div style={{ fontSize: '0.7rem', color: 'var(--accent-color)', fontWeight: '700', padding: '0.75rem', background: 'rgba(59, 130, 246, 0.08)', borderRadius: '10px', display: 'flex', gap: '0.5rem', alignItems: 'flex-start', lineHeight: 1.5 }}>
+            <span style={{ flexShrink: 0, marginTop: '0.1rem' }}>ℹ️</span>
+            <span>
+              {lang === 'cz'
+                ? 'Metoda "Nexus jako telefon" (InCallService) nevyžaduje žádný SIP Trunk. Zvuk jde přímo z GSM sítě přes telefon na server a do prohlížeče přes WebRTC. Doporučujeme ji pro nejjednodušší nasazení.'
+                : '"Nexus as Dialer" (InCallService) requires no SIP Trunk. Audio flows from GSM via the phone to the server and into the browser via WebRTC. Recommended for simplest deployment.'}
+            </span>
           </div>
         </div>
       </div>
+
 
       {/* Forwarding Logs */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>

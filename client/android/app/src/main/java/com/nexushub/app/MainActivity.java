@@ -11,6 +11,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(NexusRelayPlugin.class);
         registerPlugin(NexusSipPlugin.class);
+        registerPlugin(NexusInCallPlugin.class);
         
         try {
             // Inicializace Firebase, pokud už není inicializována (např. chybějícím google-services.json)
