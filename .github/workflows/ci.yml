@@ -5,6 +5,7 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
+  workflow_dispatch:  # Umožní ruční spuštění z GitHub UI nebo CLI
 
 # Cancel any in-progress run for the same branch when a new push arrives
 concurrency:
