@@ -280,6 +280,45 @@ public class NexusRelayPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void isDefaultSmsApp(PluginCall call) {
+        Context ctx = getContext();
+        String def;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            android.app.role.RoleManager rm =
+                (android.app.role.RoleManager) ctx.getSystemService(android.app.role.RoleManager.class);
+            boolean held = rm != null && rm.isRoleHeld(android.app.role.RoleManager.ROLE_SMS);
+            JSObject result = new JSObject();
+            result.put("isDefault", held);
+            call.resolve(result);
+        } else {
+            def = android.provider.Telephony.Sms.getDefaultSmsPackage(ctx);
+            JSObject result = new JSObject();
+            result.put("isDefault", ctx.getPackageName().equals(def));
+            call.resolve(result);
+        }
+    }
+
+    @PluginMethod
+    public void requestDefaultSmsApp(PluginCall call) {
+        Context ctx = getContext();
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            android.app.role.RoleManager rm =
+                (android.app.role.RoleManager) ctx.getSystemService(android.app.role.RoleManager.class);
+            if (rm != null && !rm.isRoleHeld(android.app.role.RoleManager.ROLE_SMS)) {
+                android.content.Intent intent = rm.createRequestRoleIntent(android.app.role.RoleManager.ROLE_SMS);
+                getActivity().startActivityForResult(intent, 0);
+            }
+        } else {
+            android.content.Intent intent = new android.content.Intent(
+                android.provider.Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT);
+            intent.putExtra(android.provider.Telephony.Sms.Intents.EXTRA_PACKAGE_NAME,
+                ctx.getPackageName());
+            getActivity().startActivity(intent);
+        }
+        call.resolve();
+    }
+
+    @PluginMethod
     public void sendSms(PluginCall call) {
         String to = call.getString("to");
         String text = call.getString("text");

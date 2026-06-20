@@ -17,7 +17,7 @@ const DashboardHome = () => {
     isMobile, isBackgroundLoading,
     setLinkedSessionId, linkedSessionId,
     pendingNotifications, setPendingNotifications, onDelayBooking,
-    isLoggedIn, showToast, API_BASE, token
+    isLoggedIn, showToast, API_BASE, token, totalUnread, setActiveTab
   } = nexus;
   
   const vultr = useVultr();
@@ -165,9 +165,18 @@ const DashboardHome = () => {
           <div className="glass-card" style={{ padding: '1.5rem', marginTop: '1.5rem' }}>
             <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1rem' }}>{t('quickStats')}</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', textAlign: 'center' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('messages').toUpperCase()}</div>
+              <div 
+                data-testid="dashboard-messages-card"
+                onClick={() => setActiveTab('inbox')}
+                style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', textAlign: 'center', cursor: 'pointer', position: 'relative' }}
+              >
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('totalMessages', 'TOTAL MESSAGES').toUpperCase()}</div>
                 <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{(stats || {}).totalMessages || 0}</div>
+                {totalUnread > 0 && (
+                  <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'var(--_err-color)', color: 'white', borderRadius: '10px', padding: '0 6px', fontSize: '0.65rem', fontWeight: 'bold' }}>
+                    {totalUnread}
+                  </div>
+                )}
               </div>
               <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', textAlign: 'center' }}>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('calls').toUpperCase()}</div>
@@ -525,14 +534,29 @@ const DashboardHome = () => {
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 2fr) 380px', gap: isMobile ? '1rem' : '2rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '1rem' : '1.5rem', minWidth: 0 }}>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '1rem' : '1.5rem' }}>
-            <div className="glass-card" id="dashboard-stats-messages" style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center', background: 'rgba(255,255,255,0.02)' }}>
-               <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>{t('messages').toUpperCase()}</div>
+            <div 
+              className="glass-card" 
+              id="dashboard-stats-messages" 
+              data-testid="dashboard-messages-card"
+              onClick={() => setActiveTab('inbox')}
+              style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center', background: 'rgba(255,255,255,0.02)', cursor: 'pointer', position: 'relative' }}
+            >
+               <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>{t('totalMessages', 'TOTAL MESSAGES').toUpperCase()}</div>
                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
                  <div style={{ fontSize: isMobile ? '1.5rem' : '2.2rem', fontWeight: '900' }}>{stats?.totalMessages || 0}</div>
                  <MessageSquare size={18} color="var(--text-secondary)" style={{ opacity: 0.3 }} />
                </div>
+               {totalUnread > 0 && (
+                 <div style={{ position: 'absolute', top: '15px', right: '15px', background: 'var(--_err-color)', color: 'white', borderRadius: '12px', padding: '2px 8px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                   {totalUnread}
+                 </div>
+               )}
             </div>
-            <div className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center', border: '1px solid rgba(59, 130, 246, 0.2)', background: 'rgba(59, 130, 246, 0.03)' }}>
+            <div 
+              className="glass-card" 
+              onClick={() => setActiveTab('calendar')}
+              style={{ padding: isMobile ? '1rem' : '1.5rem', textAlign: 'center', border: '1px solid rgba(59, 130, 246, 0.2)', background: 'rgba(59, 130, 246, 0.03)', cursor: 'pointer' }}
+            >
                <div style={{ color: 'var(--accent-color)', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>{t('totalBookings').toUpperCase()}</div>
                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
                  <div style={{ fontSize: isMobile ? '1.5rem' : '2.2rem', fontWeight: '900', color: 'var(--accent-color)' }}>{stats?.totalBookings || 0}</div>

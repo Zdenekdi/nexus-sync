@@ -8,7 +8,7 @@
 
 import { test, expect } from '@playwright/test';
 import { loginAs, authClient, anonClient, TEST_USERS, API_BASE } from './helpers/api.js';
-
+import { doLogin as loginToApp } from './helpers/auth.js';
 // ─── Token cache (login once per role) ────────────────────────────────────
 let tokens = {};
 
@@ -325,5 +325,28 @@ test.describe('RBAC — Device Management (Restricted)', () => {
     test.skip(!tokens.appOwner, 'App Owner login failed');
     const res = await client('appOwner').post('/device/verify', { installationId: 'test' });
     expect(res.status).toBe(403);
+  });
+});
+
+test.describe('UI RBAC — QAView (Inbox)', () => {
+  test('Model role should NOT see profile selector in Inbox', async ({ page }) => {
+    await loginToApp(page, TEST_USERS.model.email, TEST_USERS.model.password);
+    // Go to Inbox
+    const navLink = page.getByTestId('nav-link-inbox');
+    if (!(await navLink.isVisible())) {
+      const mobileNavInbox = page.getByTestId('nav-mobile-inbox');
+      if (await mobileNavInbox.isVisible()) {
+        await mobileNavInbox.click();
+      } else {
+        await page.locator('.lucide-menu').first().click();
+        await expect(navLink).toBeVisible({ timeout: 5000 });
+        await navLink.click();
+      }
+    } else {
+      await navLink.click();
+    }
+    await page.waitForTimeout(1000);
+    // Ensure selector is hidden
+    await expect(page.locator('text="All Operators"').first()).not.toBeVisible();
   });
 });

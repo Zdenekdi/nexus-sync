@@ -203,7 +203,7 @@ const QAView = () => {
           </h2>
 
           {/* Role-based Filter Visibility */}
-          {activeRole !== 'model' && (
+          {String(activeRole).toLowerCase() !== 'model' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '1rem' }}>
               <div style={{ position: 'relative' }}>
                 <PremiumSelector
