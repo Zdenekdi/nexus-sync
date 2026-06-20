@@ -1,6 +1,7 @@
 const prisma = require('../services/db');
 const { getIO } = require('../services/socket');
 const { sendChatPush } = require('../services/pushService');
+const { secureCompare } = require('../utils/security');
 
 /**
  * Telegram Bot Webhook — receives incoming messages from Telegram
@@ -144,7 +145,7 @@ exports.handleWhatsApp = async (req, res) => {
  */
 exports.handleGeneric = async (req, res) => {
   try {
-    if (typeof req.body.secret !== 'string' || req.body.secret.length === 0 || req.body.secret !== process.env.DEVICE_SECRET) return res.status(401).json({ message: 'Unauthorized' });
+    if (!secureCompare(req.body.secret, process.env.DEVICE_SECRET)) return res.status(401).json({ message: 'Unauthorized' });
     const { source, externalId, senderName, text } = req.body;
     if (!source || !externalId || !text) {
       return res.status(400).json({ message: 'source, externalId, and text are required' });
@@ -192,7 +193,7 @@ exports.handleGeneric = async (req, res) => {
  */
 exports.handleAdultWork = async (req, res) => {
   try {
-    if (typeof req.body.secret !== 'string' || req.body.secret.length === 0 || req.body.secret !== process.env.DEVICE_SECRET) return res.status(401).send('UNAUTHORIZED');
+    if (!secureCompare(req.body.secret, process.env.DEVICE_SECRET)) return res.status(401).send('UNAUTHORIZED');
     const { sender_id, profile_id, body } = req.body;
     if (!sender_id || !body) return res.sendStatus(200);
 
