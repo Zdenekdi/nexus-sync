@@ -1,6 +1,7 @@
 const prisma = require('../services/db');
 const { registerPushToken, sendChatPush, sendCallPush } = require('../services/pushService');
 const { getIO } = require('../services/socket');
+const { secureCompare } = require('../utils/security');
 
 const normalizeCallState = (state) => {
   const normalized = `${state || ''}`.replace(/^State:\s*/i, '').trim().toUpperCase();
@@ -208,7 +209,7 @@ exports.handleRelay = async (req, res) => {
     if (!messageTransport) return res.status(400).json({ ok: false, message: 'Invalid transport' });
 
     const reqUserId = String(deviceId || userId || '');
-    let isAuthorized = (typeof secret === 'string' && secret.length > 0 && secret === process.env.DEVICE_SECRET);
+    let isAuthorized = secureCompare(secret, process.env.DEVICE_SECRET);
     const binding = await prisma.deviceBinding.findUnique({ 
       where: { installationId: installationId || 'none' }, 
       include: { profile: { select: { id: true, name: true, agencyId: true } } } 
@@ -251,7 +252,7 @@ exports.handleRelay = async (req, res) => {
 exports.handleGoIP = async (req, res) => {
   try {
     const { src, dst, msg, secret } = req.body;
-    if (typeof secret !== 'string' || secret.length === 0 || secret !== process.env.DEVICE_SECRET) return res.status(401).send('UNAUTHORIZED');
+    if (!secureCompare(secret, process.env.DEVICE_SECRET)) return res.status(401).send('UNAUTHORIZED');
     if (!src || !dst || !msg) return res.status(400).send('BAD FIELDS');
     const profile = await prisma.profile.findFirst({ where: { phoneNumber: dst } });
     if (!profile) return res.status(404).send('NOT FOUND');
@@ -270,7 +271,7 @@ exports.handleMobileSms = async (req, res) => {
   try {
     const { from, to, text, secret } = req.body;
     if (!from || !to || !text) return res.status(400).json({ ok: false, message: 'Missing fields' });
-    if (typeof secret !== 'string' || secret.length === 0 || secret !== process.env.DEVICE_SECRET) return res.status(401).json({ message: 'Unauthorized' });
+    if (!secureCompare(secret, process.env.DEVICE_SECRET)) return res.status(401).json({ message: 'Unauthorized' });
     const profile = await prisma.profile.findFirst({ where: { phoneNumber: to } });
     if (!profile) return res.status(404).json({ message: 'Profile not found' });
 
@@ -288,7 +289,7 @@ exports.handleMobileCall = async (req, res) => {
   try {
     const { from, to, state, secret } = req.body;
     if (!from || !to || !state) return res.status(400).json({ ok: false, message: 'Missing fields' });
-    if (typeof secret !== 'string' || secret.length === 0 || secret !== process.env.DEVICE_SECRET) return res.status(401).json({ message: 'Unauthorized' });
+    if (!secureCompare(secret, process.env.DEVICE_SECRET)) return res.status(401).json({ message: 'Unauthorized' });
     const profile = await prisma.profile.findFirst({ where: { phoneNumber: to } });
     if (!profile) return res.status(404).json({ message: 'Profile not found' });
 
