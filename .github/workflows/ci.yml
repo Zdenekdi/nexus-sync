@@ -131,6 +131,9 @@ jobs:
       - name: Install client dependencies
         run: cd client && npm install --legacy-peer-deps
 
+      - name: Build client assets
+        run: cd client && npm run build
+
       - name: Capacitor sync (kopíruje web assets do Android)
         run: cd client && npx cap sync android
 
