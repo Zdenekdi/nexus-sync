@@ -2,6 +2,7 @@ import React, {
   useState, useEffect, useCallback, useMemo, useRef 
 } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 import { useAuth } from '../hooks/useAuth';
 import { useNexusData } from '../hooks/useNexusData';
 import { AgencyDataGateway } from '../services/agency/AgencyDataGateway';
@@ -343,6 +344,29 @@ export const NexusProvider = ({ children }) => {
     handleSaveNote, handleDeleteNote, handleTranslate, clientNotes, internalNote, setInternalNote,
     filteredMessages, setActiveContactId, selectedChat, typingProfiles
   } = chatLogic;
+
+  // --- Capacitor Connection Recovery ---
+  useEffect(() => {
+    if (isNativeApp && Capacitor.isPluginAvailable('App')) {
+      const listener = CapacitorApp.addListener('appStateChange', (state) => {
+        if (state.isActive) {
+          console.log('[NexusContext] App resumed. Reconnecting socket and fetching messages.');
+          if (window._nexusSocket) {
+            window._nexusSocket.disconnect();
+            setTimeout(() => {
+              if (window._nexusSocket) window._nexusSocket.connect();
+            }, 500);
+          }
+          if (selectedChatId) {
+            fetchChatMessages(selectedChatId);
+          }
+        }
+      });
+      return () => {
+        listener.then(l => l.remove());
+      };
+    }
+  }, [isNativeApp, selectedChatId, fetchChatMessages]);
 
   // --- 5. PERMISSIONS & PROFILES ---
   const { isAllowed, activeRole: normalizedRole } = usePermissions(activeOperator, activeOperator?.permissions);

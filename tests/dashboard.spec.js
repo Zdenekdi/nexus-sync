@@ -26,6 +26,16 @@ test.describe('Agency Admin Dashboard', () => {
       await inboxBtn.click();
     }
   });
+  test('dashboard stats cards are clickable and redirect', async ({ page }) => {
+    // Wait for the dashboard to render the stats cards
+    await expect(page.getByTestId('dashboard-messages-card')).toBeVisible({ timeout: 15000 });
+    
+    // Click on the messages card
+    await page.getByTestId('dashboard-messages-card').click();
+    
+    // Verify it redirects to inbox
+    await expect(page.locator('text="Inbox"').first()).toBeVisible({ timeout: 10000 });
+  });
 });
 
 test.describe('Manager Dashboard', () => {

@@ -1,0 +1,357 @@
+{
+  "config": {
+    "configFile": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/playwright.config.js",
+    "rootDir": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 2
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 180000
+      },
+      {
+        "outputDir": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "mobile",
+        "name": "mobile",
+        "testDir": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 180000
+      },
+      {
+        "outputDir": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 180000
+      },
+      {
+        "outputDir": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 180000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 4,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "dashboard.spec.js",
+      "file": "dashboard.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Agency Admin Dashboard",
+          "file": "dashboard.spec.js",
+          "line": 16,
+          "column": 6,
+          "specs": [
+            {
+              "title": "dashboard stats cards are clickable and redirect",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 17358,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('dashboard-messages-card')\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('dashboard-messages-card')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('dashboard-messages-card')\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('dashboard-messages-card')\u001b[22m\n\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/dashboard.spec.js:31:63",
+                        "location": {
+                          "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/dashboard.spec.js",
+                          "column": 63,
+                          "line": 31
+                        },
+                        "snippet": "  29 |   test('dashboard stats cards are clickable and redirect', async ({ page }) => {\n  30 |     // Wait for the dashboard to render the stats cards\n> 31 |     await expect(page.getByTestId('dashboard-messages-card')).toBeVisible({ timeout: 15000 });\n     |                                                               ^\n  32 |     \n  33 |     // Click on the messages card\n  34 |     await page.getByTestId('dashboard-messages-card').click();"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/dashboard.spec.js",
+                            "column": 63,
+                            "line": 31
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('dashboard-messages-card')\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('dashboard-messages-card')\u001b[22m\n\n\n  29 |   test('dashboard stats cards are clickable and redirect', async ({ page }) => {\n  30 |     // Wait for the dashboard to render the stats cards\n> 31 |     await expect(page.getByTestId('dashboard-messages-card')).toBeVisible({ timeout: 15000 });\n     |                                                               ^\n  32 |     \n  33 |     // Click on the messages card\n  34 |     await page.getByTestId('dashboard-messages-card').click();\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/dashboard.spec.js:31:63"
+                        }
+                      ],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: mark@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"mark@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Agency Admin\" with token: \"mock-token-admin\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-admin\". Returning: \"Agency Admin\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-admin\". Returning: \"Agency Admin\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: mark@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-18T10:30:54.617Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/dashboard-Agency-Admin-Das-231e6--are-clickable-and-redirect-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/dashboard-Agency-Admin-Das-231e6--are-clickable-and-redirect-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/dashboard-Agency-Admin-Das-231e6--are-clickable-and-redirect-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/dashboard.spec.js",
+                        "column": 63,
+                        "line": 31
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "a1bb41a2bd6df77ed2f7-8d7f1919a81a3ab2ced8",
+              "file": "dashboard.spec.js",
+              "line": 29,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "rbac.spec.js",
+      "file": "rbac.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "UI RBAC — QAView (Inbox)",
+          "file": "rbac.spec.js",
+          "line": 331,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Model role should NOT see profile selector in Inbox",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 3183,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "\n🔑 Logging in all roles against http://localhost:3000/api...\n"
+                        },
+                        {
+                          "text": "🔑 UI Login: diana@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"diana@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Model\" with token: \"mock-token-model\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-model\". Returning: \"Model\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-model\". Returning: \"Model\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: diana@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [
+                        {
+                          "text": "[auth] Login ERROR for owner@nexus.sync: \n"
+                        },
+                        {
+                          "text": "  ❌ appOwner (owner@nexus.sync): login FAILED — tests for this role will be skipped\n"
+                        },
+                        {
+                          "text": "[auth] Login ERROR for mark@nexus.sync: \n"
+                        },
+                        {
+                          "text": "  ❌ agencyAdmin (mark@nexus.sync): login FAILED — tests for this role will be skipped\n"
+                        },
+                        {
+                          "text": "[auth] Login ERROR for jan@nexus.sync: \n"
+                        },
+                        {
+                          "text": "  ❌ manager (jan@nexus.sync): login FAILED — tests for this role will be skipped\n"
+                        },
+                        {
+                          "text": "[auth] Login ERROR for alice@nexus.sync: \n"
+                        },
+                        {
+                          "text": "  ❌ seniorOp (alice@nexus.sync): login FAILED — tests for this role will be skipped\n"
+                        },
+                        {
+                          "text": "[auth] Login ERROR for sarah@nexus.sync: \n"
+                        },
+                        {
+                          "text": "  ❌ operator (sarah@nexus.sync): login FAILED — tests for this role will be skipped\n"
+                        },
+                        {
+                          "text": "[auth] Login ERROR for diana@nexus.sync: \n"
+                        },
+                        {
+                          "text": "  ❌ model (diana@nexus.sync): login FAILED — tests for this role will be skipped\n"
+                        }
+                      ],
+                      "retry": 0,
+                      "startTime": "2026-06-18T10:30:54.621Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/rbac-UI-RBAC-—-QAView-Inbo-6a81e-e-profile-selector-in-Inbox-chromium/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3daf85f29322dc9acb0f-342a77d8b711f03c5540",
+              "file": "rbac.spec.js",
+              "line": 332,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-06-18T10:30:54.149Z",
+    "duration": 18215.466,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

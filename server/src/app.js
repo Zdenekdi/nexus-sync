@@ -51,6 +51,7 @@ const hetznerRoutes = require('./routes/hetznerRoutes');
 const apiKeyRoutes = require('./routes/apiKeyRoutes');
 const salonKeyRoutes = require('./routes/salonKeyRoutes');
 const teamChatRoutes = require('./routes/teamChatRoutes');
+const smsRoutes = require('./routes/smsRoutes');
 const publicApiRoutes = require('./routes/api/v1/publicApiRoutes');
 
 const app = express();
@@ -216,6 +217,7 @@ app.use('/api/notes', notesRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/sip', sipRoutes);
+app.use('/api/sms', smsRoutes);
 app.use('/api/blacklist', blacklistRoutes);
 app.use('/api/sos', sosRoutes);
 app.use('/api/analytics', analyticsRoutes);

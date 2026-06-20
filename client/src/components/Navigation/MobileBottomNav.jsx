@@ -36,6 +36,17 @@ const MobileBottomNav = () => {
   ];
 
   const tabs = allTabs.filter(tab => {
+    const isRelayApp = window.__APP_VARIANT__ === 'relay';
+
+    // V Relay variantě zobrazujeme primárně Relay nastavení a dashboard.
+    // Zprávy, kalendář nebo klienty zde nepotřebujeme
+    if (isRelayApp) {
+      if (tab.id !== 'dashboard' && tab.id !== 'relay') return false;
+    } else {
+      // V klasické (Full) variantě schováme technický Relay tab pro modelky.
+      if (tab.id === 'relay') return false;
+    }
+
     // Explicitly hide sensitive tabs for pure admin roles on mobile as well
     const role = activeOperator;
     if (role?.isAppOwner || role?.isAdmin) {
@@ -60,7 +71,7 @@ const MobileBottomNav = () => {
         display: 'flex',
         justifyContent: 'space-around',
         alignItems: 'center',
-        paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)',
+        paddingBottom: 'calc(max(env(safe-area-inset-bottom), 16px) + 8px)',
         zIndex: 5000,
         boxShadow: '0 -10px 30px rgba(0, 0, 0, 0.5)'
       }}

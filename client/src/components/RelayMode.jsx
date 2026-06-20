@@ -20,9 +20,11 @@ import {
 } from 'lucide-react';
 import { useSipCall } from '../plugins/NexusSip';
 import { useInCallService, isInCallAvailable } from '../plugins/NexusInCall';
+import { useSmsRelay } from '../plugins/NexusSms';
 import IncomingCallScreen from './sip/IncomingCallScreen';
 import ActiveCallScreen from './sip/ActiveCallScreen';
 import IncomingCallModal from './IncomingCallModal';
+import IncomingSmsModal from './IncomingSmsModal';
 import axios from 'axios';
 
 
@@ -225,6 +227,11 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     onIncoming: (call) => addLocalLog('call', call.callerId, 'GSM hovor (příchozí)', 'inbound', 'ringing'),
     onAnswered: ()     => addLocalLog('call', 'GSM', 'Hovor přijat operátorem', 'inbound', 'answered'),
     onEnded:    ()     => addLocalLog('call', 'GSM', 'Hovor ukončen', 'inbound', 'completed'),
+  });
+
+  const { isDefaultSmsApp, requestDefaultSmsApp, incomingSms, clearIncomingSms, sendSms } = useSmsRelay({
+    onIncoming: (sms) => addLocalLog('sms', sms.from, 'Příchozí SMS (GSM)', 'inbound', 'completed'),
+    socket: nexus.socket
   });
 
   // Persist logs to localStorage whenever they change
@@ -766,8 +773,17 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
           onHangup={gsmHangup}
           onMute={gsmSetMuted}
           onSpeaker={gsmSetSpeaker}
+          lang={lang}
         />
       )}
+
+      {/* IncomingSmsModal: příchozí SMS */}
+      <IncomingSmsModal
+        sms={incomingSms}
+        onClose={clearIncomingSms}
+        onReply={(text) => sendSms(incomingSms.from, text)}
+        lang={lang}
+      />
 
       {/* In-app Test SMS confirm dialog (window.confirm crashes Android WebView) */}
 
@@ -1305,6 +1321,53 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
                 ? 'Metoda "Nexus jako telefon" (InCallService) nevyžaduje žádný SIP Trunk. Zvuk jde přímo z GSM sítě přes telefon na server a do prohlížeče přes WebRTC. Doporučujeme ji pro nejjednodušší nasazení.'
                 : '"Nexus as Dialer" (InCallService) requires no SIP Trunk. Audio flows from GSM via the phone to the server and into the browser via WebRTC. Recommended for simplest deployment.'}
             </span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── METODA 2: SMS Relay ── */}
+      <div style={{ background: 'rgba(30,30,40,0.8)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', marginTop: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+          <MessageSquare size={22} color="#c084fc" />
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '800', color: 'white' }}>
+            {lang === 'cz' ? 'ZACHYTÁVÁNÍ SMS' : 'SMS INTERCEPTOR'}
+          </h3>
+        </div>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {/* Banner: stav výchozí aplikace */}
+          <div style={{
+            padding: '0.85rem 1rem',
+            borderRadius: '12px',
+            background: isDefaultSmsApp ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)',
+            border: `1px solid ${isDefaultSmsApp ? 'rgba(34,197,94,0.3)' : 'rgba(245,158,11,0.3)'}`,
+            display: 'flex', alignItems: 'center', gap: '0.75rem',
+          }}>
+            <span style={{ fontSize: '1.2rem' }}>{isDefaultSmsApp ? '✅' : '⚠️'}</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: '800', fontSize: '0.8rem', color: isDefaultSmsApp ? '#22c55e' : '#f59e0b' }}>
+                {isDefaultSmsApp
+                  ? (lang === 'cz' ? 'Nexus je výchozí SMS aplikace' : 'Nexus is default SMS app')
+                  : (lang === 'cz' ? 'Nexus NENÍ nastaven jako výchozí SMS aplikace' : 'Nexus is NOT set as default SMS app')}
+              </div>
+              <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', marginTop: '0.2rem' }}>
+                {isDefaultSmsApp
+                  ? (lang === 'cz' ? 'Příchozí SMS budou zachyceny automaticky.' : 'Incoming SMS will be intercepted automatically.')
+                  : (lang === 'cz' ? 'Klikněte na tlačítko níže a nastavte Nexus jako výchozí.' : 'Click the button below to set Nexus as default.')}
+              </div>
+            </div>
+            {!isDefaultSmsApp && (
+              <button
+                onClick={requestDefaultSmsApp}
+                style={{
+                  padding: '0.5rem 1rem', borderRadius: '10px', border: 'none', cursor: 'pointer',
+                  background: 'linear-gradient(135deg, #c084fc, #a855f7)',
+                  color: 'white', fontWeight: '900', fontSize: '0.75rem', whiteSpace: 'nowrap',
+                }}
+              >
+                {lang === 'cz' ? 'Nastavit' : 'Set Now'}
+              </button>
+            )}
           </div>
         </div>
       </div>

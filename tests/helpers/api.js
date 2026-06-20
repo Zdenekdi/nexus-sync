@@ -6,7 +6,7 @@
 import axios from 'axios';
 
 export const API_BASE = process.env.NEXUS_API_URL || 'http://localhost:3000/api';
-export const DEVICE_SECRET = process.env.NEXUS_DEVICE_SECRET || '0321f04b30c9fd5dd501bc6b5b9247867ddd7b26d265faca48a79dd5271e6929';
+export const DEVICE_SECRET = process.env.NEXUS_DEVICE_SECRET || 'devicesecret12345';
 
 /**
  * Test user credentials (seeded in production DB).

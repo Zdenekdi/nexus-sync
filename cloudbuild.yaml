@@ -384,6 +384,7 @@ steps:
     env:
       - 'FRONTEND_URL=https://nexus-sync-8d50b.web.app'
       - 'NEXUS_API_URL=https://nexus-backend-ii3tsimbnq-ey.a.run.app/api'
+      - 'NEXUS_DEVICE_SECRET=devicesecret12345'
       - 'CI=true'
     waitFor: ['install-root', 'deploy-firebase', 'deploy-cloud-run', 'prisma-migrate']
 

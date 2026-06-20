@@ -132,7 +132,7 @@ jobs:
         run: cd client && npm install --legacy-peer-deps
 
       - name: Capacitor sync (kopíruje web assets do Android)
-        run: cd client && npx cap sync android --no-build
+        run: cd client && npx cap sync android
 
       - name: Fix deprecated jcenter in capacitor-updater
         run: |
@@ -141,23 +141,27 @@ jobs:
           sed -i "s/getDefaultProguardFile('proguard-android.txt')/getDefaultProguardFile('proguard-android-optimize.txt')/g" \
             client/node_modules/capacitor-updater/android/build.gradle
 
-      - name: Build debug APK
+      - name: Build debug APKs
         run: |
           cd client/android
           chmod +x gradlew
-          ./gradlew assembleNexusFullDebug --no-daemon
+          ./gradlew assembleNexusFullDebug assembleNexusRelayDebug --no-daemon
 
-      - name: Rename APK
+      - name: Rename APKs
         run: |
-          APK_PATH=$(find client/android/app/build/outputs/apk -name "*.apk" | head -1)
-          echo "APK_PATH=$APK_PATH" >> $GITHUB_ENV
-          cp "$APK_PATH" nexus-relay-latest.apk
+          FULL_APK_PATH=$(find client/android/app/build/outputs/apk/nexusFull/debug -name "*.apk" | head -1)
+          RELAY_APK_PATH=$(find client/android/app/build/outputs/apk/nexusRelay/debug -name "*.apk" | head -1)
+          
+          cp "$FULL_APK_PATH" nexus-full-latest.apk
+          cp "$RELAY_APK_PATH" nexus-relay-latest.apk
 
-      - name: Upload APK jako artifact (pro ruční stažení)
+      - name: Upload APKs jako artifacts (pro ruční stažení)
         uses: actions/upload-artifact@v4
         with:
-          name: nexus-relay-apk
-          path: nexus-relay-latest.apk
+          name: nexus-apks
+          path: |
+            nexus-full-latest.apk
+            nexus-relay-latest.apk
           retention-days: 30
 
   # ── Deploy APK na VPS ───────────────────────────────────────────────────────
@@ -168,21 +172,33 @@ jobs:
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
 
     steps:
-      - name: Download APK artifact
+      - name: Download APK artifacts
         uses: actions/download-artifact@v4
         with:
-          name: nexus-relay-apk
+          name: nexus-apks
 
-      - name: Upload APK na VPS přes API
+      - name: Upload Relay APK na VPS přes API
         run: |
           curl -f -X POST \
             "${{ secrets.API_BASE_URL }}/api/vultr/upload-apk" \
             -H "Authorization: Bearer ${{ secrets.DEPLOY_API_TOKEN }}" \
             -F "apk=@nexus-relay-latest.apk" \
             --max-time 120 \
-            -o response.json \
+            -o response_relay.json \
             -w "\nHTTP Status: %{http_code}\n"
-          cat response.json
+          cat response_relay.json
+
+      - name: Upload Full APK na VPS přes API
+        run: |
+          # Pokud endpoint ukládá soubor jen jako jedno hardcodované jméno, přemaže to, ale i tak pošleme
+          curl -f -X POST \
+            "${{ secrets.API_BASE_URL }}/api/vultr/upload-apk" \
+            -H "Authorization: Bearer ${{ secrets.DEPLOY_API_TOKEN }}" \
+            -F "apk=@nexus-full-latest.apk" \
+            --max-time 120 \
+            -o response_full.json \
+            -w "\nHTTP Status: %{http_code}\n"
+          cat response_full.json
 
   sync-backend:
     name: Sync Server to Backend Repo
