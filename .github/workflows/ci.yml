@@ -139,7 +139,7 @@ jobs:
 
       - name: Fix deprecated jcenter in capacitor-updater
         run: |
-          sed -i 's/jcenter()//g' \
+          sed -i 's/jcenter()/mavenCentral()/g' \
             client/node_modules/capacitor-updater/android/build.gradle
           sed -i "s/getDefaultProguardFile('proguard-android.txt')/getDefaultProguardFile('proguard-android-optimize.txt')/g" \
             client/node_modules/capacitor-updater/android/build.gradle
