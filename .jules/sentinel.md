@@ -15,3 +15,7 @@
 **Vulnerability:** The `handleGeneric` and `handleAdultWork` endpoints in `webhookController.js` allowed incoming messages to be created without authentication.
 **Learning:** Even generic webhooks need authentication to prevent unauthenticated users from writing data or triggering websockets.
 **Prevention:** Ensure all webhook endpoints validate a secret key (like `DEVICE_SECRET`) with strict type and length checks.
+## YYYY-MM-DD - [Timing Attack in Webhook Verification]
+**Vulnerability:** Timing attack via strict equality operator (`===`) checking user input against `VERIFY_TOKEN` in WhatsApp webhook validation in `server/src/controllers/webhookController.js`.
+**Learning:** Checking tokens with `===` character by character reveals timing differences, making the token vulnerable to brute-force determination.
+**Prevention:** Use `secureCompare` (or `crypto.timingSafeEqual`) from `../utils/security` instead of standard equality operators for tokens, passwords, and verification secrets. Ensure strict type checking before comparison to prevent errors.
