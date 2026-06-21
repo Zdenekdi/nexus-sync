@@ -74,7 +74,7 @@ exports.verifyWhatsApp = (req, res) => {
   const challenge = req.query['hub.challenge'];
   const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || 'nexus-whatsapp-verify';
 
-  if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+  if (mode === 'subscribe' && typeof token === 'string' && secureCompare(token, VERIFY_TOKEN)) {
     return res.status(200).send(challenge);
   }
   res.sendStatus(403);
