@@ -173,7 +173,7 @@ jobs:
   deploy-apk:
     name: Deploy APK to VPS
     runs-on: ubuntu-latest
-    needs: [build-android, test]
+    needs: [build-android, deploy-backend]
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
 
     steps:
