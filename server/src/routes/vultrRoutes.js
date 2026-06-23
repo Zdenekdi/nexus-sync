@@ -30,7 +30,10 @@ if (!fs.existsSync(DOWNLOADS_DIR)) fs.mkdirSync(DOWNLOADS_DIR, { recursive: true
 
 const apkStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, DOWNLOADS_DIR),
-  filename: (req, file, cb) => cb(null, "nexus-relay.apk")
+  filename: (req, file, cb) => {
+    const isFull = file.originalname && file.originalname.includes('full');
+    cb(null, isFull ? "nexus-full-latest.apk" : "nexus-relay.apk");
+  }
 });
 const apkUpload = multer({ 
   storage: apkStorage,
@@ -172,30 +175,39 @@ router.post("/upload-apk", apkUpload.single("apk"), async (req, res) => {
     let version = "1.0";
     let versionCode = 0;
     let packageName = "";
+    
+    const baseName = req.file.filename; // nexus-full-latest.apk or nexus-relay.apk
+    const isFull = baseName.includes('full');
 
-    try {
-      const reader = await ApkReader.open(req.file.path);
-      const manifest = await reader.readManifest();
-      version = manifest.versionName || "1.0";
-      versionCode = manifest.versionCode || 0;
-      packageName = manifest.package || "";
-      logger.info(`[APK] Parsed metadata: ${packageName} v${version} (${versionCode})`);
-    } catch (parseErr) {
-      logger.warn("[APK] Failed to parse APK metadata, using defaults:", parseErr.message);
+    // Prevent OOM by skipping ApkReader for large files (> 30MB)
+    if (stat.size < 30 * 1024 * 1024) {
+      try {
+        const reader = await ApkReader.open(req.file.path);
+        const manifest = await reader.readManifest();
+        version = manifest.versionName || "1.0";
+        versionCode = manifest.versionCode || 0;
+        packageName = manifest.package || "";
+        logger.info(`[APK] Parsed metadata: ${packageName} v${version} (${versionCode})`);
+      } catch (parseErr) {
+        logger.warn("[APK] Failed to parse APK metadata, using defaults:", parseErr.message);
+      }
+    } else {
+      logger.info(`[APK] Skipping parsing for large file: ${stat.size} bytes`);
     }
 
     const meta = {
       version,
       versionCode,
       packageName,
-      filename: "nexus-relay.apk",
+      filename: baseName,
       size: stat.size,
       uploadedAt: new Date().toISOString(),
-      downloadUrl: `${process.env.API_BASE_URL || "https://nexus-api.myvnc.com"}/downloads/nexus-relay.apk`
+      downloadUrl: `${process.env.API_BASE_URL || "https://nexus-api.myvnc.com"}/downloads/${baseName}`
     };
 
-    fs.writeFileSync(path.join(DOWNLOADS_DIR, "nexus-relay.meta.json"), JSON.stringify(meta, null, 2));
-    logger.info(`[APK] New relay APK v${version} uploaded: ${stat.size} bytes`);
+    const metaFile = isFull ? "nexus-full.meta.json" : "nexus-relay.meta.json";
+    fs.writeFileSync(path.join(DOWNLOADS_DIR, metaFile), JSON.stringify(meta, null, 2));
+    logger.info(`[APK] New APK uploaded (${baseName}): ${stat.size} bytes`);
     res.json({ ok: true, ...meta });
   } catch (err) {
     logger.error("[APK] Upload processing error:", err.message);
