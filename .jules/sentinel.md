@@ -19,3 +19,8 @@
 **Vulnerability:** Timing attack via strict equality operator (`===`) checking user input against `VERIFY_TOKEN` in WhatsApp webhook validation in `server/src/controllers/webhookController.js`.
 **Learning:** Checking tokens with `===` character by character reveals timing differences, making the token vulnerable to brute-force determination.
 **Prevention:** Use `secureCompare` (or `crypto.timingSafeEqual`) from `../utils/security` instead of standard equality operators for tokens, passwords, and verification secrets. Ensure strict type checking before comparison to prevent errors.
+
+## 2026-06-23 - [MEDIUM] Error Message Information Exposure
+**Vulnerability:** API endpoints returned internal error messages (e.g., `res.status(500).json({ error: error.message });`) directly to clients.
+**Learning:** Sending raw internal error messages exposes implementation details, potential stack traces, or database structures which attackers can use to gather intelligence about the system.
+**Prevention:** Catch blocks should log the detailed error internally using `console.error` or a logging library, and return a safe, generic message like "Internal server error" to the client.
