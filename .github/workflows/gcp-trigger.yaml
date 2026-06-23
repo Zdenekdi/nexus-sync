@@ -2,7 +2,7 @@
 # gcp-trigger.yaml — GitHub Actions Workflow to trigger Google Cloud Build
 # ================================================================================
 
-name: Trigger Google Cloud Build
+name: "☁️ Pipeline: GCP Cloud Build"
 
 on:
   push:
