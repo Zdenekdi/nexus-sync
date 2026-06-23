@@ -11,6 +11,10 @@ function secureCompare(a, b) {
     return false;
   }
 
+  if (a.length === 0 || b.length === 0) {
+    return false;
+  }
+
   const aBuffer = Buffer.from(a, 'utf8');
   const bBuffer = Buffer.from(b, 'utf8');
 

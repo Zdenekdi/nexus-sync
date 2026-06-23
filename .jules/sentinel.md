@@ -19,3 +19,12 @@
 **Vulnerability:** Timing attack via strict equality operator (`===`) checking user input against `VERIFY_TOKEN` in WhatsApp webhook validation in `server/src/controllers/webhookController.js`.
 **Learning:** Checking tokens with `===` character by character reveals timing differences, making the token vulnerable to brute-force determination.
 **Prevention:** Use `secureCompare` (or `crypto.timingSafeEqual`) from `../utils/security` instead of standard equality operators for tokens, passwords, and verification secrets. Ensure strict type checking before comparison to prevent errors.
+## 2024-06-25 - [CRITICAL] Webhook Fallback Secret Must Not Be Hardcoded
+**Vulnerability:** A fallback token for the WhatsApp webhook verification (`'nexus-whatsapp-verify'`) was hardcoded, allowing an attacker to bypass authentication if the intended environment variable was unconfigured.
+**Learning:** Hardcoded fallback values can inadvertently act as universally known backdoors.
+**Prevention:** If an environment-provided security token is missing, use an unguessable runtime fallback (e.g., `crypto.randomBytes(32).toString('hex')`) to ensure validation safely fails rather than accepting a known fallback.
+
+## 2024-06-25 - [CRITICAL] Constant-Time Comparison Must Reject Zero-Length Inputs
+**Vulnerability:** `crypto.timingSafeEqual` could be bypassed or behave unexpectedly when comparing empty buffers if one or both inputs have zero length.
+**Learning:** `timingSafeEqual` alone doesn't handle all edge cases when length matching fails or when comparing empty structures.
+**Prevention:** Explicitly enforce a length validation (e.g., `a.length > 0 && b.length > 0`) before continuing with secure comparison.
