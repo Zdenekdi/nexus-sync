@@ -2,6 +2,7 @@ const prisma = require('../services/db');
 const { getIO } = require('../services/socket');
 const { sendChatPush } = require('../services/pushService');
 const { secureCompare } = require('../utils/security');
+const crypto = require('crypto');
 
 /**
  * Telegram Bot Webhook — receives incoming messages from Telegram
@@ -72,7 +73,9 @@ exports.verifyWhatsApp = (req, res) => {
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
-  const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || 'nexus-whatsapp-verify';
+  // Provide a random fallback string so that if the verify token is missing,
+  // it safely rejects all requests without using a hardcoded secret.
+  const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || crypto.randomBytes(32).toString('hex');
 
   if (mode === 'subscribe' && typeof token === 'string' && secureCompare(token, VERIFY_TOKEN)) {
     return res.status(200).send(challenge);
