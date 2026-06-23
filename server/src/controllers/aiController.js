@@ -85,7 +85,8 @@ exports.testAI = async (req, res) => {
     const response = await aiService.generateResponse(prompt, system);
     res.json({ response });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("[AI Security] Error:", error.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -98,6 +99,7 @@ exports.translate = async (req, res) => {
     const response = await aiService.translateText(text, target);
     res.json({ translated: response });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("[AI Security] Error:", error.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
