@@ -42,7 +42,8 @@ router.get('/messages', async (req, res) => {
 
     res.json(messages.reverse()); // chronological order
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[TeamChat Security] Error:", err.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -70,7 +71,8 @@ router.post('/messages', async (req, res) => {
 
     res.status(201).json(msg);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[TeamChat Security] Error:", err.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -95,7 +97,8 @@ router.delete('/messages/:id', async (req, res) => {
 
     res.json({ ok: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[TeamChat Security] Error:", err.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 

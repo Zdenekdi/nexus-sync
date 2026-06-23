@@ -20,7 +20,8 @@ router.get('/', async (req, res) => {
     });
     res.json(keys);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[SalonKey Security] Error:", err.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -35,7 +36,8 @@ router.post('/', async (req, res) => {
     });
     res.status(201).json(key);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[SalonKey Security] Error:", err.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -63,7 +65,8 @@ router.post('/:id/take', async (req, res) => {
     ]);
     res.json(key);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[SalonKey Security] Error:", err.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -97,7 +100,8 @@ router.post('/:id/return', async (req, res) => {
     ]);
     res.json(key);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[SalonKey Security] Error:", err.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -118,7 +122,8 @@ router.get('/:id/history', async (req, res) => {
     });
     res.json(logs);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[SalonKey Security] Error:", err.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -130,7 +135,8 @@ router.delete('/:id', async (req, res) => {
     await prisma.salonKey.deleteMany({ where: { id, agencyId } });
     res.json({ ok: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("[SalonKey Security] Error:", err.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
