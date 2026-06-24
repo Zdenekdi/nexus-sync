@@ -84,7 +84,7 @@ const DownloadsView = () => {
             {t.fullDesc}
           </p>
           
-          <a href={`${API_BASE}/downloads/nexus-full-latest.apk`} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', width: '100%' }}>
+          <a href={`${API_BASE}/api/vultr/download-full.apk`} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', width: '100%' }}>
             <button style={{ width: '100%', padding: '1rem', borderRadius: '16px', border: 'none', background: '#3b82f6', color: 'white', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: 'pointer', transition: 'background 0.2s' }}>
               <Download size={20} />
               {t.downloadBtn}
