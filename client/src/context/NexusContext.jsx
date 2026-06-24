@@ -16,6 +16,7 @@ import { TRANSLATIONS } from '../translations';
 import { NexusContext } from './ContextObject';
 import { usePermissions } from '../hooks/usePermissions';
 import { useChatLogic } from '../hooks/useChatLogic';
+import { initPushNotifications } from '../services/pushService';
 
 // API Configuration
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -288,6 +289,16 @@ export const NexusProvider = ({ children }) => {
       }
     }
   }, [isLoggedIn, pathname, navigate]);
+
+  // Inicializovat push notifikace po přihlášení
+  useEffect(() => {
+    if (isLoggedIn && token && isNativeApp) {
+      initPushNotifications(API_BASE, token, (notification, isAction) => {
+        console.log('[NexusContext] Push Notification:', notification, 'isAction:', isAction);
+        // Můžeme sem případně přidat logika na otevření chatu (isAction = kliknutí na notifikaci)
+      });
+    }
+  }, [isLoggedIn, token, isNativeApp]);
 
   const memoizedSetActiveOperator = useCallback((op) => setActiveOperatorState(op), []);
   const memoizedSetMessages = useCallback((msgs) => setMessages(msgs), []);
