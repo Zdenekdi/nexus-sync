@@ -24,7 +24,9 @@ import {
   Send,
   CreditCard,
   Phone,
-  Database
+  Database,
+  Menu,
+  X
 } from 'lucide-react';
 
 import { useNexus } from '../context/ContextHook';
@@ -166,6 +168,8 @@ const VideoCard = ({ src, title, desc, features, reverse, poster }) => {
 
 const LandingPage = () => {
   const { setActiveTab, lang, setLang, isMobile, activeTab, navigate } = useNexus();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
   const viewingManual = activeTab === 'guide';
   const viewingDownloads = activeTab === 'downloads';
 
@@ -313,8 +317,30 @@ const LandingPage = () => {
               {t.hero.cta1}
             </button>
           )}
+          {isMobile && (
+            <button onClick={() => setMobileMenuOpen(true)} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: '4px' }}>
+              <Menu size={24} />
+            </button>
+          )}
         </div>
       </div>
+
+      {/* MOBILE MENU OVERLAY */}
+      {isMobile && mobileMenuOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(4,5,7,0.95)', zIndex: 2000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' }}>
+          <button onClick={() => setMobileMenuOpen(false)} style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: '4px' }}>
+            <X size={28} />
+          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', alignItems: 'center' }}>
+            <button onClick={() => { setMobileMenuOpen(false); document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' }); }} style={{ background: 'transparent', border: 'none', color: 'white', fontWeight: '800', fontSize: '1.5rem', cursor: 'pointer' }}>{lang === 'cz' ? 'Ceník' : 'Pricing'}</button>
+            <button onClick={() => { setMobileMenuOpen(false); setActiveTab('guide'); }} style={{ background: 'transparent', border: 'none', color: 'white', fontWeight: '800', fontSize: '1.5rem', cursor: 'pointer' }}>{lang === 'cz' ? 'Průvodce' : 'Guide'}</button>
+            <button onClick={() => { setMobileMenuOpen(false); navigate('/downloads', 'downloads'); }} style={{ background: 'transparent', border: 'none', color: 'white', fontWeight: '800', fontSize: '1.5rem', cursor: 'pointer' }}>{lang === 'cz' ? 'Ke stažení' : 'Downloads'}</button>
+            <button onClick={() => { setMobileMenuOpen(false); navigate('/login', 'login'); }} style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '15px 30px', borderRadius: '15px', fontWeight: '900', fontSize: '1.2rem', cursor: 'pointer', marginTop: '1rem' }}>
+              {t.hero.cta1}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* HERO SECTION */}
       <section style={{ padding: isMobile ? '8rem 5% 4rem' : '14rem 5% 6rem', textAlign: 'center', position: 'relative', zIndex: 1 }}>
