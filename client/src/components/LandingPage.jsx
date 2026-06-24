@@ -300,7 +300,7 @@ const LandingPage = () => {
             <div style={{ display: 'flex', gap: '1.5rem', marginRight: '1rem' }}>
               <button onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.6)', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', transition: 'color 0.2s' }}>{lang === 'cz' ? 'Ceník' : 'Pricing'}</button>
               <button onClick={() => setActiveTab('guide')} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.6)', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', transition: 'color 0.2s' }}>{lang === 'cz' ? 'Průvodce' : 'Guide'}</button>
-              <button onClick={() => setActiveTab('downloads')} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.6)', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', transition: 'color 0.2s' }}>{lang === 'cz' ? 'Ke stažení' : 'Downloads'}</button>
+              <button onClick={() => navigate('/downloads', 'downloads')} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.6)', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', transition: 'color 0.2s' }}>{lang === 'cz' ? 'Ke stažení' : 'Downloads'}</button>
             </div>
           )}
           <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '3px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -332,7 +332,7 @@ const LandingPage = () => {
             <button onClick={() => navigate('/login', 'login')} style={{ padding: '1.25rem 3.5rem', borderRadius: '20px', border: 'none', background: '#3b82f6', color: 'white', fontWeight: '900', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 20px 40px -10px rgba(59, 130, 246, 0.5)', transition: 'all 0.3s ease' }}>
               {t.hero.cta1}
             </button>
-            <button onClick={() => setActiveTab('downloads')} style={{ padding: '1.25rem 3rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: 'white', fontWeight: '800', fontSize: '1.1rem', cursor: 'pointer', backdropFilter: 'blur(10px)', transition: 'all 0.3s ease' }}>
+            <button onClick={() => navigate('/downloads', 'downloads')} style={{ padding: '1.25rem 3rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: 'white', fontWeight: '800', fontSize: '1.1rem', cursor: 'pointer', backdropFilter: 'blur(10px)', transition: 'all 0.3s ease' }}>
               {t.hero.cta3}
             </button>
           </div>

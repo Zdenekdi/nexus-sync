@@ -145,10 +145,11 @@ export const NexusProvider = ({ children }) => {
 
   useEffect(() => {
     const p = pathname.replace(/^\/(en|cz)/, '') || '/';
-    if (p === '/' || p === '/guide') {
+    if (p === '/' || p === '/guide' || p === '/downloads') {
       setTimeout(() => {
         setShowLanding(true);
         if (p === '/guide') setActiveTab('guide');
+        else if (p === '/downloads') setActiveTab('downloads');
         else setActiveTab('dashboard');
       }, 0);
     } else {
