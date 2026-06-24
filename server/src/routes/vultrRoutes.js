@@ -25,7 +25,7 @@ const headers = () => ({
 });
 
 // ── APK Upload (multer) ───────────────────────────────────────────────────────
-const DOWNLOADS_DIR = path.join(__dirname, "../../downloads");
+const DOWNLOADS_DIR = path.join(__dirname, "../../public/downloads");
 if (!fs.existsSync(DOWNLOADS_DIR)) fs.mkdirSync(DOWNLOADS_DIR, { recursive: true });
 
 const apkStorage = multer.diskStorage({

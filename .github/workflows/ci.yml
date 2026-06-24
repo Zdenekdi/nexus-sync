@@ -251,7 +251,9 @@ jobs:
             # Zajištění oprávnění pro Nginx (www-data) číst z /root složky (403 Forbidden Fix)
             chmod o+x /root || true
             chmod o+x /root/nexus-backend || true
-            chmod -R o+rx /root/nexus-backend/downloads || true
+            chmod o+x /root/nexus-backend/server || true
+            chmod o+x /root/nexus-backend/server/public || true
+            chmod -R o+rx /root/nexus-backend/server/public/downloads || true
 
   deploy-frontend:
     name: Deploy Frontend (Firebase)
