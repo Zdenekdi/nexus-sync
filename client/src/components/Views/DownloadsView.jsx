@@ -12,15 +12,15 @@ const DownloadsView = () => {
     const fetchApkInfo = async () => {
       try {
         const [relayRes, fullRes] = await Promise.all([
-          axios.get(`${API_BASE}/api/vultr/apk-info`),
+          axios.get(`${API_BASE}/vultr/apk-info`),
           // We don't have a specific endpoint for full apk info yet, but we can just use the download link directly
           // We will mock the full APK data for now since we know the URL format
-          Promise.resolve({ data: { available: true, downloadUrl: `${API_BASE}/api/vultr/download-full.apk`, version: '1.0' } })
+          Promise.resolve({ data: { available: true, downloadUrl: `${API_BASE}/vultr/download-full.apk`, version: '1.0' } })
         ]);
         
         setApkInfo({
           relay: relayRes.data.available ? relayRes.data : null,
-          full: { available: true, downloadUrl: `${API_BASE}/api/vultr/download-full.apk` }
+          full: { available: true, downloadUrl: `${API_BASE}/vultr/download-full.apk` }
         });
       } catch (err) {
         console.error('Failed to fetch APK info', err);
@@ -84,7 +84,7 @@ const DownloadsView = () => {
             {t.fullDesc}
           </p>
           
-          <a href={`${API_BASE}/api/vultr/download-full.apk`} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', width: '100%' }}>
+          <a href={`${API_BASE}/vultr/download-full.apk`} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', width: '100%' }}>
             <button style={{ width: '100%', padding: '1rem', borderRadius: '16px', border: 'none', background: '#3b82f6', color: 'white', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: 'pointer', transition: 'background 0.2s' }}>
               <Download size={20} />
               {t.downloadBtn}
