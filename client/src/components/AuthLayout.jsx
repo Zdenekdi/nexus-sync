@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { 
-  Shield, BarChart3, Globe, ChevronLeft, Zap
+  Shield, BarChart3, Globe, ChevronLeft, Zap, ArrowLeft
 } from 'lucide-react';
 import { useNexus } from '../context/ContextHook';
 
@@ -122,6 +122,11 @@ const AuthLayout = ({ children, title: _title, subtitle }) => {
         <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem' }}>
           <LanguageSwitcher lang={lang} setLang={setLang} />
         </div>
+        <div style={{ position: 'absolute', top: '1.5rem', left: '1.5rem' }}>
+          <button onClick={() => navigate('/')} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', padding: '8px 15px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <ArrowLeft size={18} /> {isCz ? 'Zpět' : 'Back'}
+          </button>
+        </div>
         <div style={{ padding: '2.5rem 1.5rem', textAlign: 'center' }}>
           <img src="/nexus_icon.png" alt="Nexus" style={{ width: '56px', borderRadius: '14px', marginBottom: '1.5rem', boxShadow: '0 10px 30px rgba(59, 130, 246, 0.3)' }} />
           <h1 style={{ color: 'white', fontSize: '1.75rem', fontWeight: '950', margin: 0, letterSpacing: '-0.02em' }}>Nexus Hub</h1>
@@ -147,6 +152,11 @@ const AuthLayout = ({ children, title: _title, subtitle }) => {
       `}</style>
 
       <div style={{ ...STYLES.leftSide, background: '#040507' }}>
+        <div style={{ position: 'absolute', top: '2rem', left: '2rem', zIndex: 50 }}>
+          <button onClick={() => navigate('/')} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', padding: '8px 15px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <ArrowLeft size={18} /> {isCz ? 'Zpět' : 'Back'}
+          </button>
+        </div>
         <div style={{ ...STYLES.glow, top: '-10%', left: '-10%' }} />
         
         <div style={{ position: 'relative', zIndex: 10, maxWidth: '600px' }}>
