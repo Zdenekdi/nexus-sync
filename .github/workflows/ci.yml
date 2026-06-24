@@ -184,7 +184,9 @@ jobs:
 
       - name: Upload Relay APK na VPS přes API
         run: |
-          curl -f -X POST \
+          echo "Waiting 15s for backend to fully stabilize after PM2 restart..."
+          sleep 15
+          curl --retry 5 --retry-delay 5 -f -X POST \
             "${{ secrets.API_BASE_URL }}/api/vultr/upload-apk" \
             -H "Authorization: Bearer ${{ secrets.DEPLOY_API_TOKEN }}" \
             -F "apk=@nexus-relay-latest.apk" \
@@ -196,7 +198,7 @@ jobs:
       - name: Upload Full APK na VPS přes API
         run: |
           # Pokud endpoint ukládá soubor jen jako jedno hardcodované jméno, přemaže to, ale i tak pošleme
-          curl -f -X POST \
+          curl --retry 5 --retry-delay 5 -f -X POST \
             "${{ secrets.API_BASE_URL }}/api/vultr/upload-apk" \
             -H "Authorization: Bearer ${{ secrets.DEPLOY_API_TOKEN }}" \
             -F "apk=@nexus-full-latest.apk" \
