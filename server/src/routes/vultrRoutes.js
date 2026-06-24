@@ -32,7 +32,7 @@ const apkStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, DOWNLOADS_DIR),
   filename: (req, file, cb) => {
     const isFull = file.originalname && file.originalname.includes('full');
-    cb(null, isFull ? "nexus-full-latest.apk" : "nexus-relay.apk");
+    cb(null, isFull ? "nexus-full-latest.apk" : "nexus-relay-latest.apk");
   }
 });
 const apkUpload = multer({ 
@@ -260,7 +260,7 @@ router.post("/upload-ota", otaUpload.single("ota"), async (req, res) => {
 });
 
 router.get("/apk-info", async (req, res) => {
-  const apkPath = path.join(DOWNLOADS_DIR, "nexus-relay.apk");
+  const apkPath = path.join(DOWNLOADS_DIR, "nexus-relay-latest.apk");
   const metaPath = path.join(DOWNLOADS_DIR, "nexus-relay.meta.json");
   if (!fs.existsSync(apkPath)) {
     return res.json({ available: false });
@@ -275,11 +275,11 @@ router.get("/apk-info", async (req, res) => {
   }
   res.json({
     available: true,
-    filename: "nexus-relay.apk",
+    filename: "nexus-relay-latest.apk",
     version: meta.version || "1.0",
     size: stat.size,
     uploadedAt: meta.uploadedAt || stat.mtime.toISOString(),
-    downloadUrl: meta.downloadUrl || `${process.env.API_BASE_URL || "https://nexus-api.myvnc.com"}/downloads/nexus-relay.apk`
+    downloadUrl: meta.downloadUrl || `${process.env.API_BASE_URL || "https://nexus-api.myvnc.com"}/downloads/nexus-relay-latest.apk`
   });
 });
 

@@ -248,6 +248,10 @@ jobs:
             pm2 restart nexus-backend-final || pm2 start server.js --name nexus-backend-final
             sleep 3
             pm2 status nexus-backend-final | grep -q online && echo "Deploy OK" || exit 1
+            # Zajištění oprávnění pro Nginx (www-data) číst z /root složky (403 Forbidden Fix)
+            chmod o+x /root || true
+            chmod o+x /root/nexus-backend || true
+            chmod -R o+rx /root/nexus-backend/downloads || true
 
   deploy-frontend:
     name: Deploy Frontend (Firebase)
