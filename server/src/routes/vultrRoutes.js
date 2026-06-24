@@ -202,7 +202,7 @@ router.post("/upload-apk", apkUpload.single("apk"), async (req, res) => {
       filename: baseName,
       size: stat.size,
       uploadedAt: new Date().toISOString(),
-      downloadUrl: `${process.env.API_BASE_URL || "https://nexus-api.myvnc.com"}/downloads/${baseName}`
+      downloadUrl: `${process.env.API_BASE_URL || "https://nexus-api.myvnc.com"}/api/vultr/download-relay.apk`
     };
 
     const metaFile = isFull ? "nexus-full.meta.json" : "nexus-relay.meta.json";
@@ -279,8 +279,17 @@ router.get("/apk-info", async (req, res) => {
     version: meta.version || "1.0",
     size: stat.size,
     uploadedAt: meta.uploadedAt || stat.mtime.toISOString(),
-    downloadUrl: meta.downloadUrl || `${process.env.API_BASE_URL || "https://nexus-api.myvnc.com"}/downloads/nexus-relay-latest.apk`
+    downloadUrl: `${process.env.API_BASE_URL || "https://nexus-api.myvnc.com"}/api/vultr/download-relay.apk`
   });
+});
+
+router.get("/download-relay.apk", (req, res) => {
+  const apkPath = path.join(DOWNLOADS_DIR, "nexus-relay-latest.apk");
+  if (fs.existsSync(apkPath)) {
+    res.download(apkPath, "nexus-relay-latest.apk");
+  } else {
+    res.status(404).send("APK not found");
+  }
 });
 
 module.exports = router;
