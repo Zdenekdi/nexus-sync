@@ -85,6 +85,15 @@ router.get("/download-relay.apk", (req, res) => {
   }
 });
 
+router.get("/download-full.apk", (req, res) => {
+  const apkPath = path.join(DOWNLOADS_DIR, "nexus-full-latest.apk");
+  if (fs.existsSync(apkPath)) {
+    res.download(apkPath, "nexus-full-latest.apk");
+  } else {
+    res.status(404).send("APK not found");
+  }
+});
+
 // Apply auth to all OTHER vultr routes
 router.use(authMiddleware);
 
