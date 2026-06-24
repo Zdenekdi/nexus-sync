@@ -558,6 +558,16 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     // Also wake up the server so it knows this device is active today.
     if (isActive) {
       void syncRelayToServer();
+      
+      // Automaticky vyžádat vypnutí optimalizace baterie, aby Android neuspával službu
+      if (window.Capacitor?.Plugins?.NexusRelay) {
+        window.Capacitor.Plugins.NexusRelay.checkBatteryOptimization().then(res => {
+          if (res?.optimized) {
+            console.log('[Relay] Requesting to ignore battery optimizations...');
+            window.Capacitor.Plugins.NexusRelay.requestIgnoreBatteryOptimization().catch(console.error);
+          }
+        }).catch(console.error);
+      }
     }
   }, [isActive, syncRelayToServer]);
 
