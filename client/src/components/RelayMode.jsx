@@ -601,7 +601,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({
                   installationId,
-                  secret: '0321f04b30c9fd5dd501bc6b5b9247867ddd7b26d265faca48a79dd5271e6929',
+                  secret: import.meta.env.VITE_DEVICE_SECRET || '',
                   from: data.from,
                   content: data.body,
                   type: 'SMS_RECEIVED',

@@ -24,3 +24,7 @@
 **Vulnerability:** API endpoints returned internal error messages (e.g., `res.status(500).json({ error: error.message });`) directly to clients.
 **Learning:** Sending raw internal error messages exposes implementation details, potential stack traces, or database structures which attackers can use to gather intelligence about the system.
 **Prevention:** Catch blocks should log the detailed error internally using `console.error` or a logging library, and return a safe, generic message like "Internal server error" to the client.
+## 2026-06-24 - [CRITICAL] Hardcoded Secret in Client RelayMode
+**Vulnerability:** A hardcoded API secret was found in the `client/src/components/RelayMode.jsx` file, being sent in the payload for `/api/device/relay`.
+**Learning:** Hardcoded credentials on the client-side expose sensitive access tokens or secrets to anyone who can inspect the frontend code bundle, which can lead to unauthorized access to backend services.
+**Prevention:** Always use environment variables injected during the build process (like `import.meta.env.VITE_DEVICE_SECRET`) rather than hardcoding secrets directly into the source code.
