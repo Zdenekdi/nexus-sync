@@ -224,7 +224,6 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/qa', qaRoutes);
 app.use('/api/calls', callRoutes);
 app.use('/api/emergencies', emergencyRoutes);
-app.use('/api/ai', aiRoutes);
 app.use('/api/referrals', referralRoutes);
 app.use('/api/audit-logs', auditRoutes);
 app.use('/api/payouts', require('./routes/payoutRoutes'));
