@@ -62,7 +62,7 @@ app.set('trust proxy', 1);
 app.use('/downloads', (req, res, next) => {
   console.log(`[Static] Request for: ${req.url}`);
   next();
-}, express.static(path.join(__dirname, '..', 'public', 'downloads')));
+}, express.static(path.join(__dirname, '..', 'downloads')));
 
 // Rate limiting: global 5000 req/15min
 const limiter = rateLimit({
