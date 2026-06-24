@@ -29,6 +29,7 @@ import {
 
 import { useNexus } from '../context/ContextHook';
 import ManualView from './Views/ManualView';
+import DownloadsView from './Views/DownloadsView';
 
 // Scroll-reveal hook
 const useScrollReveal = () => {
@@ -166,8 +167,9 @@ const VideoCard = ({ src, title, desc, features, reverse, poster }) => {
 const LandingPage = () => {
   const { setActiveTab, lang, setLang, isMobile, activeTab, navigate } = useNexus();
   const viewingManual = activeTab === 'guide';
+  const viewingDownloads = activeTab === 'downloads';
 
-  useEffect(() => { window.scrollTo(0, 0); }, [viewingManual]);
+  useEffect(() => { window.scrollTo(0, 0); }, [viewingManual, viewingDownloads]);
 
   const t = {
     cz: {
@@ -176,7 +178,8 @@ const LandingPage = () => {
         title: "Absolutní kontrola.\nNekonečný růst.",
         desc: "Nexus Hub je inteligentní ekosystém pro moderní adult agentury. Kombinujeme pokročilou AI, real-time bezpečnost a analytiku, kterou jinde nenajdete.",
         cta1: "Otevřít Nexus",
-        cta2: "Průvodce startem"
+        cta2: "Průvodce startem",
+        cta3: "Ke stažení"
       },
       stats: [
         { val: '25+', label: 'Aktivních agentur' },
@@ -218,7 +221,8 @@ const LandingPage = () => {
         title: "Absolute Control.\nInfinite Growth.",
         desc: "Nexus Hub is an intelligent ecosystem for modern adult agencies. We combine advanced AI, real-time safety, and analytics you won't find anywhere else.",
         cta1: "Open Nexus",
-        cta2: "Start Guide"
+        cta2: "Start Guide",
+        cta3: "Downloads"
       },
       stats: [
         { label: "Active Agencies", val: "50+" },
@@ -256,12 +260,12 @@ const LandingPage = () => {
     }
   }[lang];
 
-  if (viewingManual) {
+  if (viewingManual || viewingDownloads) {
     return (
       <div style={{ background: '#040507', minHeight: '100vh', color: 'white', fontFamily: 'Inter, sans-serif' }}>
         <nav style={{ padding: '1.5rem 2rem', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, background: 'rgba(4,5,7,0.8)', backdropFilter: 'blur(10px)', zIndex: 100 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-             <button onClick={() => navigate('/')} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', padding: '8px 15px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+             <button onClick={() => { setActiveTab('dashboard'); navigate('/'); }} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', padding: '8px 15px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <ArrowLeft size={18} /> {lang === 'cz' ? 'Zpět' : 'Back'}
             </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -273,7 +277,7 @@ const LandingPage = () => {
             {lang === 'cz' ? 'Vstoupit do aplikace' : 'Enter App'}
           </button>
         </nav>
-        <ManualView />
+        {viewingManual ? <ManualView /> : <DownloadsView />}
       </div>
     );
   }
@@ -296,6 +300,7 @@ const LandingPage = () => {
             <div style={{ display: 'flex', gap: '1.5rem', marginRight: '1rem' }}>
               <button onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.6)', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', transition: 'color 0.2s' }}>{lang === 'cz' ? 'Ceník' : 'Pricing'}</button>
               <button onClick={() => setActiveTab('guide')} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.6)', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', transition: 'color 0.2s' }}>{lang === 'cz' ? 'Průvodce' : 'Guide'}</button>
+              <button onClick={() => setActiveTab('downloads')} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.6)', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', transition: 'color 0.2s' }}>{lang === 'cz' ? 'Ke stažení' : 'Downloads'}</button>
             </div>
           )}
           <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '3px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -327,8 +332,8 @@ const LandingPage = () => {
             <button onClick={() => navigate('/login', 'login')} style={{ padding: '1.25rem 3.5rem', borderRadius: '20px', border: 'none', background: '#3b82f6', color: 'white', fontWeight: '900', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 20px 40px -10px rgba(59, 130, 246, 0.5)', transition: 'all 0.3s ease' }}>
               {t.hero.cta1}
             </button>
-            <button onClick={() => setActiveTab('guide')} style={{ padding: '1.25rem 3rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: 'white', fontWeight: '800', fontSize: '1.1rem', cursor: 'pointer', backdropFilter: 'blur(10px)', transition: 'all 0.3s ease' }}>
-              {t.hero.cta2}
+            <button onClick={() => setActiveTab('downloads')} style={{ padding: '1.25rem 3rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: 'white', fontWeight: '800', fontSize: '1.1rem', cursor: 'pointer', backdropFilter: 'blur(10px)', transition: 'all 0.3s ease' }}>
+              {t.hero.cta3}
             </button>
           </div>
         </ScrollReveal>
