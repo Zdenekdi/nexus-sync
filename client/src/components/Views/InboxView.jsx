@@ -263,40 +263,44 @@ const InboxView = () => {
                 <button onClick={() => refreshData()} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', width: '36px', height: '36px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <RefreshCw size={18} className={isBackgroundLoading ? 'rotate' : ''} />
                 </button>
-                <div style={{ position: 'relative', width: '140px' }}>
-                  <PremiumSelector
-                    options={assignedProfiles}
-                    value={activeProfileId}
-                    onChange={(val) => {
-                      setActiveProfileId(val);
-                      setSelectedChatId(null); 
-                    }}
-                    showAllOption={true}
-                    allLabel={lang === 'cz' ? 'Všechny' : 'All'}
-                    placeholder={t('selectProfile')}
-                  />
-                </div>
+                {!activeOperator?.isModel && (
+                  <div style={{ position: 'relative', width: '140px' }}>
+                    <PremiumSelector
+                      options={assignedProfiles}
+                      value={activeProfileId}
+                      onChange={(val) => {
+                        setActiveProfileId(val);
+                        setSelectedChatId(null); 
+                      }}
+                      showAllOption={true}
+                      allLabel={lang === 'cz' ? 'Všechny' : 'All'}
+                      placeholder={t('selectProfile')}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}
 
-          {!isMobile && !activeOperator?.isModel && (
+          {!isMobile && (
             <div style={{ padding: '2rem 1.5rem', borderBottom: '1px solid var(--card-border)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', gap: '1rem', flexWrap: 'wrap' }}>
                 <h2 data-testid="page-inbox-title" style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0 }}>{t('inbox')}</h2>
-                <div style={{ position: 'relative', width: '180px' }} className="premium-selector-fix">
-                  <PremiumSelector
-                    options={assignedProfiles}
-                    value={activeProfileId}
-                    onChange={(val) => {
-                      setActiveProfileId(val);
-                      setSelectedChatId(null); 
-                    }}
-                    showAllOption={true}
-                    allLabel={lang === 'cz' ? 'Všechny profily' : 'All Profiles'}
-                    placeholder={t('selectProfile')}
-                  />
-                </div>
+                {!activeOperator?.isModel && (
+                  <div style={{ position: 'relative', width: '180px' }} className="premium-selector-fix">
+                    <PremiumSelector
+                      options={assignedProfiles}
+                      value={activeProfileId}
+                      onChange={(val) => {
+                        setActiveProfileId(val);
+                        setSelectedChatId(null); 
+                      }}
+                      showAllOption={true}
+                      allLabel={lang === 'cz' ? 'Všechny profily' : 'All Profiles'}
+                      placeholder={t('selectProfile')}
+                    />
+                  </div>
+                )}
               </div>
               <div style={{ position: 'relative', marginTop: '0.5rem' }}>
                 <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', zIndex: 2 }} />
