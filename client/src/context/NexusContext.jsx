@@ -108,7 +108,7 @@ export const NexusProvider = ({ children }) => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
       const cleanPath = path.replace(/^\/(en|cz)/, '') || '/';
-      return cleanPath === '/' || cleanPath === '/guide';
+      return cleanPath === '/' || cleanPath === '/guide' || cleanPath === '/downloads';
     }
     return true;
   });
@@ -131,9 +131,9 @@ export const NexusProvider = ({ children }) => {
       targetPath = `/${lang}${path === '/' ? '' : path}`;
     }
     
-    if (clean !== '/' && clean !== '/guide') {
+    if (clean !== '/' && clean !== '/guide' && clean !== '/downloads') {
       setShowLanding(false);
-    } else if (clean === '/guide') {
+    } else if (clean === '/guide' || clean === '/downloads') {
       setShowLanding(true);
     }
 
@@ -285,7 +285,7 @@ export const NexusProvider = ({ children }) => {
   useEffect(() => {
     if (!isLoggedIn) {
       const clean = pathname.replace(/^\/(en|cz)/, '') || '/';
-      if (clean !== '/' && clean !== '/guide' && clean !== '/login' && clean !== '/register' && clean !== '/logout') {
+      if (clean !== '/' && clean !== '/guide' && clean !== '/downloads' && clean !== '/login' && clean !== '/register' && clean !== '/logout') {
         setTimeout(() => navigate('/login', 'login'), 0);
       }
     }
