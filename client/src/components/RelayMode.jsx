@@ -536,7 +536,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
         deviceName = info.name;
       }
 
-      await axios.post(`${RELAY_API_BASE}/api/device/verify`, {
+      await axios.post(`${RELAY_API_BASE}/device/verify`, {
         installationId,
         profileId: operator?.profileId,
         platform,
@@ -606,7 +606,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
           const token = localStorage.getItem('nexus_token');
           if (installationId && token) {
             try {
-              const res = await fetch(`${RELAY_API_BASE}/api/device/relay`, {
+              const res = await fetch(`${RELAY_API_BASE}/device/relay`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({
@@ -696,7 +696,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 6000);
       
-      const response = await fetch(`${RELAY_API_BASE}/api/device/logs?installationId=${encodeURIComponent(installationId)}&limit=50`, {
+      const response = await fetch(`${RELAY_API_BASE}/device/logs?installationId=${encodeURIComponent(installationId)}&limit=50`, {
         method: 'GET',
         cache: 'no-store',
         headers: {
@@ -1605,7 +1605,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, overflowY: 'auto' }}>
                 {[
-                { id: 'apiGateway', label: t('relayApiGateway') || 'API Gateway', sub: `${RELAY_API_BASE}/api/device/relay • ${currentConnectionUi.label}`, icon: currentConnectionUi.icon, iconColor: currentConnectionUi.color, toggle: undefined, onToggle: reconnectServer },
+                { id: 'apiGateway', label: t('relayApiGateway') || 'API Gateway', sub: `${RELAY_API_BASE}/device/relay • ${currentConnectionUi.label}`, icon: currentConnectionUi.icon, iconColor: currentConnectionUi.color, toggle: undefined, onToggle: reconnectServer },
                 { id: 'syncHistory', label: lang === 'cz' ? 'Synchronizovat historii' : 'Synchronize History', sub: lang === 'cz' ? 'Stáhnout chybějící SMS z telefonu' : 'Pull missing SMS from phone', icon: History, onToggle: async () => { if (typeof syncSmsHistory === 'function') { showRelayNotice(lang === 'cz' ? 'Synchronizace historie spuštěna...' : 'Syncing history...', 'info'); await syncSmsHistory(); showRelayNotice(lang === 'cz' ? 'Synchronizace dokončena' : 'Sync completed', 'success'); } } },
                 { id: 'batteryWarning', label: t('relayBatteryWarning') || 'Battery Warning', sub: t('relayBatteryWarningSub') || 'Alert at 15%', icon: Battery, toggle: settingsBatteryWarning, onToggle: () => setSettingsBatteryWarning(v => !v) },
                 { id: 'trafficProxy', label: t('relayTrafficProxy') || 'Traffic Proxy', sub: t('relayTrafficProxySub') || 'Routing through SIM', icon: Wifi, toggle: settingsTrafficProxy, onToggle: () => setSettingsTrafficProxy(v => !v) },
