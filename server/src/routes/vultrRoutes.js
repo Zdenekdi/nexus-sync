@@ -51,7 +51,41 @@ async function getSSHConnection() {
   return ssh;
 }
 
-// Apply auth to all vultr routes
+// -- Public APK download routes --
+router.get("/apk-info", async (req, res) => {
+  const apkPath = path.join(DOWNLOADS_DIR, "nexus-relay-latest.apk");
+  const metaPath = path.join(DOWNLOADS_DIR, "nexus-relay.meta.json");
+  if (!fs.existsSync(apkPath)) {
+    return res.json({ available: false });
+  }
+  const stat = await fs.promises.stat(apkPath);
+  let meta = {};
+  if (fs.existsSync(metaPath)) {
+    try {
+      const fileContent = await fs.promises.readFile(metaPath, "utf8");
+      meta = JSON.parse(fileContent);
+    } catch {}
+  }
+  res.json({
+    available: true,
+    filename: "nexus-relay-latest.apk",
+    version: meta.version || "1.0",
+    size: stat.size,
+    uploadedAt: meta.uploadedAt || stat.mtime.toISOString(),
+    downloadUrl: `${process.env.API_BASE_URL || "https://nexus-api.myvnc.com"}/api/vultr/download-relay.apk`
+  });
+});
+
+router.get("/download-relay.apk", (req, res) => {
+  const apkPath = path.join(DOWNLOADS_DIR, "nexus-relay-latest.apk");
+  if (fs.existsSync(apkPath)) {
+    res.download(apkPath, "nexus-relay-latest.apk");
+  } else {
+    res.status(404).send("APK not found");
+  }
+});
+
+// Apply auth to all OTHER vultr routes
 router.use(authMiddleware);
 
 // Restrict all vultr operations to App Owner / Agency Admin
@@ -257,39 +291,6 @@ router.post("/upload-ota", otaUpload.single("ota"), async (req, res) => {
   await fs.promises.writeFile(metaPath, JSON.stringify(meta, null, 2));
   logger.info(`[OTA] New web bundle v${version} uploaded`);
   res.json({ ok: true, version });
-});
-
-router.get("/apk-info", async (req, res) => {
-  const apkPath = path.join(DOWNLOADS_DIR, "nexus-relay-latest.apk");
-  const metaPath = path.join(DOWNLOADS_DIR, "nexus-relay.meta.json");
-  if (!fs.existsSync(apkPath)) {
-    return res.json({ available: false });
-  }
-  const stat = await fs.promises.stat(apkPath);
-  let meta = {};
-  if (fs.existsSync(metaPath)) {
-    try {
-      const fileContent = await fs.promises.readFile(metaPath, "utf8");
-      meta = JSON.parse(fileContent);
-    } catch {}
-  }
-  res.json({
-    available: true,
-    filename: "nexus-relay-latest.apk",
-    version: meta.version || "1.0",
-    size: stat.size,
-    uploadedAt: meta.uploadedAt || stat.mtime.toISOString(),
-    downloadUrl: `${process.env.API_BASE_URL || "https://nexus-api.myvnc.com"}/api/vultr/download-relay.apk`
-  });
-});
-
-router.get("/download-relay.apk", (req, res) => {
-  const apkPath = path.join(DOWNLOADS_DIR, "nexus-relay-latest.apk");
-  if (fs.existsSync(apkPath)) {
-    res.download(apkPath, "nexus-relay-latest.apk");
-  } else {
-    res.status(404).send("APK not found");
-  }
 });
 
 module.exports = router;
