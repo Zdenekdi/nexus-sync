@@ -127,6 +127,7 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
 // Capacitor Android/iOS WebView always uses these origins — must be unconditionally allowed.
 const CAPACITOR_ORIGINS = [
   'https://localhost',
+  'http://localhost',
   'capacitor://localhost'
 ];
 
