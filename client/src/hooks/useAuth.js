@@ -300,6 +300,9 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, _setSelectedChatId, _set
         return { success: true };
       } else {
         const errorData = await res.json().catch(() => ({}));
+        if (res.status >= 500) {
+          return { success: false, _err: 'serverError' };
+        }
         return { success: false, _err: errorData.message || 'loginError' };
       }
     } catch (_err) {

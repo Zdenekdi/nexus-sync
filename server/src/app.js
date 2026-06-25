@@ -143,7 +143,9 @@ app.use(cors({
     // Exact allowlist for Firebase domains
     const FIREBASE_ORIGINS = [
       'https://nexus-hub.firebaseapp.com',
-      'https://nexus-hub.web.app'
+      'https://nexus-hub.web.app',
+      'https://nexus-sync-8d50b.firebaseapp.com',
+      'https://nexus-sync-8d50b.web.app'
     ];
     
     // Always allow known patterns
