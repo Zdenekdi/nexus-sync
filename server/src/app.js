@@ -236,7 +236,7 @@ app.use('/api/team-chat', teamChatRoutes);
 app.use('/api/v1/public', publicApiRoutes);
 
 // Health check with system status
-app.get('/health', async (req, res) => {
+const healthCheckHandler = async (req, res) => {
   const health = {
     status: 'ok',
     timestamp: new Date().toISOString(),
@@ -256,7 +256,11 @@ app.get('/health', async (req, res) => {
 
   const statusCode = health.status === 'ok' ? 200 : 503;
   res.status(statusCode).json(health);
-});
+};
+
+app.get('/health', healthCheckHandler);
+app.get('/api/health', healthCheckHandler);
+app.get('/api/admin/health', healthCheckHandler);
 
 // Swagger API documentation (disabled in production for security)
 if (process.env.NODE_ENV !== 'production') {
