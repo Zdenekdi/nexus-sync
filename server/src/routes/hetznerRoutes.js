@@ -48,7 +48,10 @@ router.use(requireAdmin);
 
 router.get("/status", async (req, res) => {
   try {
-    const serverId = process.env.HETZNER_SERVER_ID || "128335266";
+    const serverId = process.env.HETZNER_SERVER_ID;
+    if (!serverId) {
+      return res.status(400).json({ message: "HETZNER_SERVER_ID is not configured" });
+    }
     const { data } = await axios.get(`${HETZNER_API}/servers/${serverId}`, { headers: headers() });
     
     // Map Hetzner status to our common format
@@ -78,7 +81,10 @@ router.get("/status", async (req, res) => {
 
 router.post("/start", async (req, res) => {
   try {
-    const serverId = process.env.HETZNER_SERVER_ID || "128335266";
+    const serverId = process.env.HETZNER_SERVER_ID;
+    if (!serverId) {
+      return res.status(400).json({ message: "HETZNER_SERVER_ID is not configured" });
+    }
     await axios.post(`${HETZNER_API}/servers/${serverId}/actions/poweron`, {}, { headers: headers() });
     res.json({ ok: true });
   } catch (err) {
@@ -89,7 +95,10 @@ router.post("/start", async (req, res) => {
 
 router.post("/stop", async (req, res) => {
   try {
-    const serverId = process.env.HETZNER_SERVER_ID || "128335266";
+    const serverId = process.env.HETZNER_SERVER_ID;
+    if (!serverId) {
+      return res.status(400).json({ message: "HETZNER_SERVER_ID is not configured" });
+    }
     // Using shutdown (soft) or poweroff (hard)
     await axios.post(`${HETZNER_API}/servers/${serverId}/actions/shutdown`, {}, { headers: headers() });
     res.json({ ok: true });
@@ -101,7 +110,10 @@ router.post("/stop", async (req, res) => {
 
 router.post("/restart", async (req, res) => {
   try {
-    const serverId = process.env.HETZNER_SERVER_ID || "128335266";
+    const serverId = process.env.HETZNER_SERVER_ID;
+    if (!serverId) {
+      return res.status(400).json({ message: "HETZNER_SERVER_ID is not configured" });
+    }
     await axios.post(`${HETZNER_API}/servers/${serverId}/actions/reboot`, {}, { headers: headers() });
     res.json({ ok: true });
   } catch (err) {
@@ -161,7 +173,10 @@ router.post("/git-pull", validate(gitPull), async (req, res) => {
 
 router.get("/metrics", async (req, res) => {
   try {
-    const serverId = process.env.HETZNER_SERVER_ID || "128335266";
+    const serverId = process.env.HETZNER_SERVER_ID;
+    if (!serverId) {
+      return res.status(400).json({ message: "HETZNER_SERVER_ID is not configured" });
+    }
     // Fetch metrics for last 30 minutes
     const end = new Date().toISOString();
     const start = new Date(Date.now() - 30 * 60 * 1000).toISOString();
