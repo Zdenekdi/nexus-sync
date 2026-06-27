@@ -25,19 +25,32 @@ const AddUserModal = ({ isOpen, onClose, t }) => {
     }
   }, [isOpen]);
   
+  const getSecureRandomInt = (max) => {
+    const array = new Uint32Array(1);
+    window.crypto.getRandomValues(array);
+    return array[0] % max;
+  };
+
   const generatePassword = () => {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
     let pass = '';
     // Ensure at least one uppercase, one lowercase, one number
-    pass += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)];
-    pass += '0123456789'[Math.floor(Math.random() * 10)];
-    pass += '!@#$%'[Math.floor(Math.random() * 5)];
+    pass += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[getSecureRandomInt(26)];
+    pass += '0123456789'[getSecureRandomInt(10)];
+    pass += '!@#$%'[getSecureRandomInt(5)];
     
     for (let i = 0; i < 9; i++) {
-      pass += chars[Math.floor(Math.random() * chars.length)];
+      pass += chars[getSecureRandomInt(chars.length)];
     }
-    // Shuffle
-    pass = pass.split('').sort(() => 0.5 - Math.random()).join('');
+
+    // Secure shuffle
+    const passArray = pass.split('');
+    for (let i = passArray.length - 1; i > 0; i--) {
+      const j = getSecureRandomInt(i + 1);
+      [passArray[i], passArray[j]] = [passArray[j], passArray[i]];
+    }
+    pass = passArray.join('');
+
     setData({ ...data, password: pass });
   };
 
