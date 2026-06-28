@@ -32,3 +32,8 @@
 **Vulnerability:** A hardcoded fallback server ID (`"128335266"`) was found in `server/src/routes/hetznerRoutes.js` for API operations (`status`, `start`, `stop`, `restart`, `metrics`) when the environment variable `HETZNER_SERVER_ID` was unset.
 **Learning:** Hardcoding server identifiers can lead to unintended actions on specific production or testing infrastructure and leaks internal infrastructure details. If the variable is unset, the application might unintentionally modify or interact with the hardcoded instance.
 **Prevention:** If required environment variables are unset, fail securely (e.g., return a `400 Bad Request` or refuse to start) rather than providing arbitrary fallbacks.
+
+## 2024-06-27 - [Fix] Insecure Password Generation
+**Vulnerability:** Weak random number generation using `Math.random()` for password generation in client code.
+**Learning:** `Math.random()` is not cryptographically secure and predictable, additionally the sort trick `(() => 0.5 - Math.random())` for shuffling creates non-uniform distributions.
+**Prevention:** Always use `window.crypto.getRandomValues()` for security-sensitive random number generation in the frontend, and apply a proper Fisher-Yates shuffle instead of `.sort` based shuffling.
