@@ -162,7 +162,7 @@ router.get("/bandwidth", async (req, res) => {
 const COMMAND_ALLOWLIST = [
   /^(ls|cat|head|tail|grep|wc|df|du|free|uptime|whoami|date|pwd|echo|pm2\s|systemctl\s|docker\s|nginx\s|git\s|npm\s|node\s|npx\s|pg_dump|psql|crontab)/,
 ];
-const COMMAND_BLOCKLIST = /rm\s+-rf|mkfs|dd\s+if=|:\(\)\{|>\s*\/dev\/|chmod\s+777|curl\s+.*\|\s*(ba)?sh|wget\s+.*\|\s*(ba)?sh|eval\s|exec\s/i;
+const COMMAND_BLOCKLIST = /rm\s+-rf|mkfs|dd\s+if=|:\(\)\{|>\s*\/dev\/|chmod\s+777|curl\s+.*\|\s*(ba)?sh|wget\s+.*\|\s*(ba)?sh|eval\s|exec\s|[;|&$\n`<>\\]/i;
 
 router.post("/command", validate(sshCommand), async (req, res) => {
   const { command } = req.body;

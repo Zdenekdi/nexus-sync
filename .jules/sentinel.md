@@ -32,3 +32,8 @@
 **Vulnerability:** A hardcoded fallback server ID (`"128335266"`) was found in `server/src/routes/hetznerRoutes.js` for API operations (`status`, `start`, `stop`, `restart`, `metrics`) when the environment variable `HETZNER_SERVER_ID` was unset.
 **Learning:** Hardcoding server identifiers can lead to unintended actions on specific production or testing infrastructure and leaks internal infrastructure details. If the variable is unset, the application might unintentionally modify or interact with the hardcoded instance.
 **Prevention:** If required environment variables are unset, fail securely (e.g., return a `400 Bad Request` or refuse to start) rather than providing arbitrary fallbacks.
+
+## 2026-06-28 - [CRITICAL] Command Injection Prevention in SSH API
+**Vulnerability:** Command Injection via `/api/vultr/command` and `/api/hetzner/command` endpoints. An attacker could chain malicious commands because the allowlist regex only verified the beginning of the string (e.g., `/^(ls|cat...)/`) and the blocklist didn't include command chaining operators.
+**Learning:** Checking only the beginning of a string for an allowlist when executing shell commands is insufficient, as it allows appending malicious commands (e.g. `ls; rm -rf /`).
+**Prevention:** In addition to strict allowlists, include strict character-level blocklists (or ideally allowlists for characters) that forbid shell metacharacters such as `;`, `|`, `&`, `$`, `` ` ``, `<`, `>`, and `\n` to prevent command chaining and redirection.
