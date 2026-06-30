@@ -157,6 +157,7 @@ jobs:
         run: |
           cd client
           npm run build
+          cp dist/index.relay.html dist/index.html
           npx cap sync android
           cd android
           chmod +x gradlew
