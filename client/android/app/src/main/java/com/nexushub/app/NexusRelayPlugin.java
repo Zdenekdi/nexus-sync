@@ -525,6 +525,19 @@ public class NexusRelayPlugin extends Plugin {
         }
     }
 
+    @PluginMethod
+    public void openAppSettings(PluginCall call) {
+        try {
+            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+            intent.setData(Uri.parse("package:" + getContext().getPackageName()));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(intent);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("Could not open app settings: " + e.getMessage());
+        }
+    }
+
     @ActivityCallback
     private void requestIgnoreBatteryOptimizationCallback(PluginCall call, ActivityResult result) {
         JSObject ret = new JSObject();
