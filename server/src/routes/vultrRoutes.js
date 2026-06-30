@@ -31,7 +31,16 @@ if (!fs.existsSync(DOWNLOADS_DIR)) fs.mkdirSync(DOWNLOADS_DIR, { recursive: true
 const apkStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, DOWNLOADS_DIR),
   filename: (req, file, cb) => {
-    const isFull = file.originalname && file.originalname.includes('full');
+    const type = req.body.type;
+    let isFull = false;
+    if (type === 'full') {
+      isFull = true;
+    } else if (type === 'relay') {
+      isFull = false;
+    } else {
+      // Fallback
+      isFull = file.originalname && file.originalname.includes('full');
+    }
     cb(null, isFull ? "nexus-full-latest.apk" : "nexus-relay-latest.apk");
   }
 });

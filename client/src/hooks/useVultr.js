@@ -106,8 +106,9 @@ export function useVultr() {
 
   const clearCmdOutput = () => setCmdOutput("");
 
-  const uploadApk = async (file) => {
+  const uploadApk = async (file, apkVersion, type = 'relay') => {
     const formData = new FormData();
+    formData.append("type", type);
     formData.append("apk", file);
     setUploadProgress(0);
     try {
