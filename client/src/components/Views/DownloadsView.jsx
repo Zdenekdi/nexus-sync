@@ -86,7 +86,7 @@ const DownloadsView = () => {
             <a href={apkInfo.full.downloadUrl} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', width: '100%' }}>
               <button style={{ width: '100%', padding: '1rem', borderRadius: '16px', border: 'none', background: '#3b82f6', color: 'white', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: 'pointer', transition: 'background 0.2s' }}>
                 <Download size={20} />
-                {t.downloadBtn} {apkInfo.full.version && apkInfo.full.version !== '1.0' ? `(v${apkInfo.full.version})` : ''}
+                {t.downloadBtn} {apkInfo.full.version ? `(v${apkInfo.full.version})` : ''}
               </button>
             </a>
           ) : (
