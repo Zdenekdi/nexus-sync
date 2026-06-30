@@ -43,6 +43,11 @@ function InfraTab() {
 
   // Choose which hook to use based on selected server
   const server = isMainHub ? vultr : (isAiNode ? hetzner : vultr);
+  
+  const [ciToken, setCiToken] = useState(null);
+  const [ciTokenCopied, setCiTokenCopied] = useState(false);
+  const [apkUploadType, setApkUploadType] = useState('relay');
+
   const { status, bandwidth, stats, loading, cmdOutput, clearCmdOutput, _err, serverAction, runCommand, gitPull, apkInfo, uploadApk, uploadProgress } = server;
 
   const handleServerChange = (id) => {
@@ -91,7 +96,7 @@ function InfraTab() {
     if (!file) return;
     if (!file.name.endsWith('.apk')) { setApkError(t('only_apk_allowed')); return; }
     setApkError(null); setApkSuccess(false);
-    try { await uploadApk(file, apkVersion); setApkSuccess(true); setTimeout(() => setApkSuccess(false), 4000); }
+    try { await uploadApk(file, apkVersion, apkUploadType); setApkSuccess(true); setTimeout(() => setApkSuccess(false), 4000); }
     catch (_err) { setApkError(_err.response?.data?.error || _err.message); }
   };
 
@@ -379,6 +384,18 @@ function InfraTab() {
                 e.target.value = '';
               }}
             />
+
+            {/* Upload Type Selector */}
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                <input type="radio" name="apkType" value="relay" checked={apkUploadType === 'relay'} onChange={(e) => setApkUploadType(e.target.value)} />
+                {lang === 'cz' ? 'Relay Aplikace' : 'Relay App'}
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                <input type="radio" name="apkType" value="full" checked={apkUploadType === 'full'} onChange={(e) => setApkUploadType(e.target.value)} />
+                {lang === 'cz' ? 'Klientská Aplikace (Full)' : 'Client App (Full)'}
+              </label>
+            </div>
 
             {/* Drag-and-drop zone */}
             <div
