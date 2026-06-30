@@ -930,6 +930,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
       paddingTop: '3rem',
       paddingLeft: '1.5rem',
       paddingRight: '1.5rem',
+      paddingBottom: '3rem',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -980,7 +981,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
           </div>
        </div>
 
-       <div style={{ marginTop: 'auto', paddingTop: '3rem', width: '100%', maxWidth: '320px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+       <div style={{ width: '100%', maxWidth: '320px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <button 
             onClick={toggleRelayActive}
             style={{ padding: '1rem', borderRadius: '14px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'white', fontWeight: '900', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer' }}>
