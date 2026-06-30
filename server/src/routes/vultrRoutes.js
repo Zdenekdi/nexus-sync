@@ -62,11 +62,17 @@ async function getSSHConnection() {
 
 // -- Public APK download routes --
 router.get("/apk-info", async (req, res) => {
-  const apkPath = path.join(DOWNLOADS_DIR, "nexus-relay-latest.apk");
-  const metaPath = path.join(DOWNLOADS_DIR, "nexus-relay.meta.json");
+  const type = req.query.type === 'full' ? 'full' : 'relay';
+  const apkFileName = type === 'full' ? "nexus-full-latest.apk" : "nexus-relay-latest.apk";
+  const metaFileName = type === 'full' ? "nexus-full.meta.json" : "nexus-relay.meta.json";
+  
+  const apkPath = path.join(DOWNLOADS_DIR, apkFileName);
+  const metaPath = path.join(DOWNLOADS_DIR, metaFileName);
+  
   if (!fs.existsSync(apkPath)) {
     return res.json({ available: false });
   }
+  
   const stat = await fs.promises.stat(apkPath);
   let meta = {};
   if (fs.existsSync(metaPath)) {
@@ -75,13 +81,14 @@ router.get("/apk-info", async (req, res) => {
       meta = JSON.parse(fileContent);
     } catch {}
   }
+  
   res.json({
     available: true,
-    filename: "nexus-relay-latest.apk",
+    filename: apkFileName,
     version: meta.version || "1.0",
     size: stat.size,
     uploadedAt: meta.uploadedAt || stat.mtime.toISOString(),
-    downloadUrl: `${process.env.API_BASE_URL || "https://nexus-api.myvnc.com"}/api/vultr/download-relay.apk`
+    downloadUrl: `${process.env.API_BASE_URL || "https://nexus-api.myvnc.com"}/api/vultr/download-${type}.apk`
   });
 });
 
