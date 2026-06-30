@@ -24,6 +24,7 @@ const GlobalModalContainer = lazyWithRetry(() => import('./components/Modals/Glo
 const NotificationSystem = lazyWithRetry(() => import('./components/Notifications/NotificationSystem'));
 const TeamChatFloat = lazyWithRetry(() => import('./components/TeamChatFloat'));
 const RelayModeView = lazyWithRetry(() => import('./components/Views/RelayModeView'));
+const PrivacyPolicy = lazyWithRetry(() => import('./components/PrivacyPolicy'));
 
 // ── Relay-only minimal login ──────────────────────────────────────────────────
 const RelayLoginScreen = () => {
@@ -138,6 +139,21 @@ function AppContent() {
     developer: { label: 'Developer API', icon: Terminal },
     settings: { label: t('settings'), icon: Settings }
   };
+
+  const isPrivacyPage = typeof window !== 'undefined' && 
+    window.location.pathname.replace(/^\/(en|cz)/, '') === '/privacy';
+
+  if (isPrivacyPage) {
+    return (
+      <Suspense fallback={
+        <div style={{ height: '100dvh', background: '#040507', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="nexus-loading-pulse" style={{ width: '64px', height: '64px', background: 'var(--accent-color)', borderRadius: '14px' }} />
+        </div>
+      }>
+        <PrivacyPolicy />
+      </Suspense>
+    );
+  }
 
   // ── RELAY APP: completely separate flow ─────────────────────────────────────
   const isRelayApp = typeof __APP_VARIANT__ !== 'undefined' && __APP_VARIANT__ === 'relay';
