@@ -159,15 +159,21 @@ android {
     if (keystorePropsFile.exists()) {
         keystoreProps.load(new FileInputStream(keystorePropsFile))
     }
+    
+    def localPropsFileGlobal = rootProject.file("local.properties")
+    def localPropsGlobal = new Properties()
+    if (localPropsFileGlobal.exists()) {
+        localPropsGlobal.load(new FileInputStream(localPropsFileGlobal))
+    }
 
     signingConfigs {
         release {
-            // First check local.properties (localProps is already loaded above for DEVICE_SECRET)
-            if (localProps.getProperty("KEYSTORE_FILE") != null) {
-                storeFile file(localProps.getProperty("KEYSTORE_FILE"))
-                storePassword localProps.getProperty("KEYSTORE_PASSWORD")
-                keyAlias localProps.getProperty("KEY_ALIAS")
-                keyPassword localProps.getProperty("KEY_PASSWORD")
+            // First check local.properties (localPropsGlobal)
+            if (localPropsGlobal.getProperty("KEYSTORE_FILE") != null) {
+                storeFile file(localPropsGlobal.getProperty("KEYSTORE_FILE"))
+                storePassword localPropsGlobal.getProperty("KEYSTORE_PASSWORD")
+                keyAlias localPropsGlobal.getProperty("KEY_ALIAS")
+                keyPassword localPropsGlobal.getProperty("KEY_PASSWORD")
             } else if (keystorePropsFile.exists()) {
                 storeFile file(keystoreProps['storeFile'])
                 storePassword keystoreProps['storePassword']
