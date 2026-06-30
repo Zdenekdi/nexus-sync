@@ -153,7 +153,7 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
-    // Signing config - čte se ze souboru keystore.properties (není v gitu)
+    // Signing config - čte se z local.properties nebo keystore.properties (nejsou v gitu)
     def keystorePropsFile = rootProject.file("keystore.properties")
     def keystoreProps = new Properties()
     if (keystorePropsFile.exists()) {
@@ -162,7 +162,13 @@ android {
 
     signingConfigs {
         release {
-            if (keystorePropsFile.exists()) {
+            // First check local.properties (localProps is already loaded above for DEVICE_SECRET)
+            if (localProps.getProperty("KEYSTORE_FILE") != null) {
+                storeFile file(localProps.getProperty("KEYSTORE_FILE"))
+                storePassword localProps.getProperty("KEYSTORE_PASSWORD")
+                keyAlias localProps.getProperty("KEY_ALIAS")
+                keyPassword localProps.getProperty("KEY_PASSWORD")
+            } else if (keystorePropsFile.exists()) {
                 storeFile file(keystoreProps['storeFile'])
                 storePassword keystoreProps['storePassword']
                 keyAlias keystoreProps['keyAlias']

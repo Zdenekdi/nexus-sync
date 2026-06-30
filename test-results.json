@@ -11,7 +11,7 @@
     "grepInvert": null,
     "maxFailures": 0,
     "metadata": {
-      "actualWorkers": 2
+      "actualWorkers": 3
     },
     "preserveOutput": "always",
     "projects": [
@@ -20,7 +20,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 2
+          "actualWorkers": 3
         },
         "id": "chromium",
         "name": "chromium",
@@ -36,7 +36,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 2
+          "actualWorkers": 3
         },
         "id": "mobile",
         "name": "mobile",
@@ -52,7 +52,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 2
+          "actualWorkers": 3
         },
         "id": "firefox",
         "name": "firefox",
@@ -68,7 +68,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 2
+          "actualWorkers": 3
         },
         "id": "webkit",
         "name": "webkit",
@@ -107,21 +107,21 @@
   },
   "suites": [
     {
-      "title": "dashboard.spec.js",
-      "file": "dashboard.spec.js",
+      "title": "operator_chat.spec.js",
+      "file": "operator_chat.spec.js",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Agency Admin Dashboard",
-          "file": "dashboard.spec.js",
-          "line": 16,
+          "title": "Operator Inbox & Chat E2E",
+          "file": "operator_chat.spec.js",
+          "line": 8,
           "column": 6,
           "specs": [
             {
-              "title": "dashboard stats cards are clickable and redirect",
-              "ok": false,
+              "title": "should load chat list or empty state",
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -134,109 +134,58 @@
                     {
                       "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 17358,
-                      "error": {
-                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('dashboard-messages-card')\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('dashboard-messages-card')\u001b[22m\n",
-                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('dashboard-messages-card')\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('dashboard-messages-card')\u001b[22m\n\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/dashboard.spec.js:31:63",
-                        "location": {
-                          "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/dashboard.spec.js",
-                          "column": 63,
-                          "line": 31
-                        },
-                        "snippet": "  29 |   test('dashboard stats cards are clickable and redirect', async ({ page }) => {\n  30 |     // Wait for the dashboard to render the stats cards\n> 31 |     await expect(page.getByTestId('dashboard-messages-card')).toBeVisible({ timeout: 15000 });\n     |                                                               ^\n  32 |     \n  33 |     // Click on the messages card\n  34 |     await page.getByTestId('dashboard-messages-card').click();"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/dashboard.spec.js",
-                            "column": 63,
-                            "line": 31
-                          },
-                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('dashboard-messages-card')\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('dashboard-messages-card')\u001b[22m\n\n\n  29 |   test('dashboard stats cards are clickable and redirect', async ({ page }) => {\n  30 |     // Wait for the dashboard to render the stats cards\n> 31 |     await expect(page.getByTestId('dashboard-messages-card')).toBeVisible({ timeout: 15000 });\n     |                                                               ^\n  32 |     \n  33 |     // Click on the messages card\n  34 |     await page.getByTestId('dashboard-messages-card').click();\n    at /Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/dashboard.spec.js:31:63"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 3074,
+                      "errors": [],
                       "stdout": [
                         {
-                          "text": "🔑 UI Login: mark@nexus.sync...\n"
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
                         },
                         {
                           "text": "📧 Entering credentials...\n"
                         },
                         {
-                          "text": "📡 [Mock API] Login request intercepted for email: \"mark@nexus.sync\"\n"
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
                         },
                         {
-                          "text": "🛰️ [Mock API] Returning user role: \"Agency Admin\" with token: \"mock-token-admin\"\n"
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
                         },
                         {
                           "text": "🛰️ Verifying dashboard access...\n"
                         },
                         {
-                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-admin\". Returning: \"Agency Admin\"\n"
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
-                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-admin\". Returning: \"Agency Admin\"\n"
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
-                          "text": "✅ UI Login Success: mark@nexus.sync\n"
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-18T10:30:54.617Z",
+                      "startTime": "2026-06-30T08:55:02.233Z",
                       "annotations": [],
                       "attachments": [
                         {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/dashboard-Agency-Admin-Das-231e6--are-clickable-and-redirect-chromium/test-failed-1.png"
-                        },
-                        {
                           "name": "video",
                           "contentType": "video/webm",
-                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/dashboard-Agency-Admin-Das-231e6--are-clickable-and-redirect-chromium/video.webm"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/dashboard-Agency-Admin-Das-231e6--are-clickable-and-redirect-chromium/error-context.md"
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/operator_chat-Operator-Inb-c7f46-ad-chat-list-or-empty-state-chromium/video.webm"
                         }
-                      ],
-                      "errorLocation": {
-                        "file": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/tests/dashboard.spec.js",
-                        "column": 63,
-                        "line": 31
-                      }
+                      ]
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
-              "id": "a1bb41a2bd6df77ed2f7-8d7f1919a81a3ab2ced8",
-              "file": "dashboard.spec.js",
-              "line": 29,
+              "id": "3479b88ca20cdedb5dc5-a7adf669b11aa1ba1dbb",
+              "file": "operator_chat.spec.js",
+              "line": 34,
               "column": 7
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "title": "rbac.spec.js",
-      "file": "rbac.spec.js",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "UI RBAC — QAView (Inbox)",
-          "file": "rbac.spec.js",
-          "line": 331,
-          "column": 6,
-          "specs": [
+            },
             {
-              "title": "Model role should NOT see profile selector in Inbox",
+              "title": "should be able to type a message if chat exists",
               "ok": true,
               "tags": [],
               "tests": [
@@ -251,83 +200,49 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 3183,
+                      "duration": 2651,
                       "errors": [],
                       "stdout": [
                         {
-                          "text": "\n🔑 Logging in all roles against http://localhost:3000/api...\n"
-                        },
-                        {
-                          "text": "🔑 UI Login: diana@nexus.sync...\n"
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
                         },
                         {
                           "text": "📧 Entering credentials...\n"
                         },
                         {
-                          "text": "📡 [Mock API] Login request intercepted for email: \"diana@nexus.sync\"\n"
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
                         },
                         {
-                          "text": "🛰️ [Mock API] Returning user role: \"Model\" with token: \"mock-token-model\"\n"
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
                         },
                         {
                           "text": "🛰️ Verifying dashboard access...\n"
                         },
                         {
-                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-model\". Returning: \"Model\"\n"
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
-                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-model\". Returning: \"Model\"\n"
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
                         },
                         {
-                          "text": "✅ UI Login Success: diana@nexus.sync\n"
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        },
+                        {
+                          "text": "Skipping message typing: No active chats found for Alice.\n"
                         }
                       ],
-                      "stderr": [
-                        {
-                          "text": "[auth] Login ERROR for owner@nexus.sync: \n"
-                        },
-                        {
-                          "text": "  ❌ appOwner (owner@nexus.sync): login FAILED — tests for this role will be skipped\n"
-                        },
-                        {
-                          "text": "[auth] Login ERROR for mark@nexus.sync: \n"
-                        },
-                        {
-                          "text": "  ❌ agencyAdmin (mark@nexus.sync): login FAILED — tests for this role will be skipped\n"
-                        },
-                        {
-                          "text": "[auth] Login ERROR for jan@nexus.sync: \n"
-                        },
-                        {
-                          "text": "  ❌ manager (jan@nexus.sync): login FAILED — tests for this role will be skipped\n"
-                        },
-                        {
-                          "text": "[auth] Login ERROR for alice@nexus.sync: \n"
-                        },
-                        {
-                          "text": "  ❌ seniorOp (alice@nexus.sync): login FAILED — tests for this role will be skipped\n"
-                        },
-                        {
-                          "text": "[auth] Login ERROR for sarah@nexus.sync: \n"
-                        },
-                        {
-                          "text": "  ❌ operator (sarah@nexus.sync): login FAILED — tests for this role will be skipped\n"
-                        },
-                        {
-                          "text": "[auth] Login ERROR for diana@nexus.sync: \n"
-                        },
-                        {
-                          "text": "  ❌ model (diana@nexus.sync): login FAILED — tests for this role will be skipped\n"
-                        }
-                      ],
+                      "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-18T10:30:54.621Z",
+                      "startTime": "2026-06-30T08:55:02.233Z",
                       "annotations": [],
                       "attachments": [
                         {
                           "name": "video",
                           "contentType": "video/webm",
-                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/rbac-UI-RBAC-—-QAView-Inbo-6a81e-e-profile-selector-in-Inbox-chromium/video.webm"
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/operator_chat-Operator-Inb-7543d-pe-a-message-if-chat-exists-chromium/video.webm"
                         }
                       ]
                     }
@@ -335,9 +250,77 @@
                   "status": "expected"
                 }
               ],
-              "id": "3daf85f29322dc9acb0f-342a77d8b711f03c5540",
-              "file": "rbac.spec.js",
-              "line": 332,
+              "id": "3479b88ca20cdedb5dc5-288346bfeb0177e0012c",
+              "file": "operator_chat.spec.js",
+              "line": 48,
+              "column": 7
+            },
+            {
+              "title": "should show panic and sync buttons in chat header if chat exists",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 2670,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔑 UI Login: alice@nexus.sync...\n"
+                        },
+                        {
+                          "text": "📧 Entering credentials...\n"
+                        },
+                        {
+                          "text": "📡 [Mock API] Login request intercepted for email: \"alice@nexus.sync\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Returning user role: \"Senior Operator\" with token: \"mock-token-senior\"\n"
+                        },
+                        {
+                          "text": "🛰️ Verifying dashboard access...\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "🛰️ [Mock API] Me request intercepted. Header: \"Bearer mock-token-senior\". Returning: \"Senior Operator\"\n"
+                        },
+                        {
+                          "text": "✅ UI Login Success: alice@nexus.sync\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-30T08:55:02.231Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/zdenekdias/.gemini/antigravity/scratch/nexus-hub/test-results/operator_chat-Operator-Inb-2d8c6--chat-header-if-chat-exists-chromium/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3479b88ca20cdedb5dc5-a01e1491c5c9042da409",
+              "file": "operator_chat.spec.js",
+              "line": 60,
               "column": 7
             }
           ]
@@ -347,11 +330,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-06-18T10:30:54.149Z",
-    "duration": 18215.466,
-    "expected": 1,
+    "startTime": "2026-06-30T08:55:01.847Z",
+    "duration": 4107.437,
+    "expected": 3,
     "skipped": 0,
-    "unexpected": 1,
+    "unexpected": 0,
     "flaky": 0
   }
 }
