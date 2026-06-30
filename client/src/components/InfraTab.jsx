@@ -44,8 +44,6 @@ function InfraTab() {
   // Choose which hook to use based on selected server
   const server = isMainHub ? vultr : (isAiNode ? hetzner : vultr);
   
-  const [ciToken, setCiToken] = useState(null);
-  const [ciTokenCopied, setCiTokenCopied] = useState(false);
   const [apkUploadType, setApkUploadType] = useState('relay');
 
   const { status, bandwidth, stats, loading, cmdOutput, clearCmdOutput, _err, serverAction, runCommand, gitPull, apkInfo, uploadApk, uploadProgress } = server;
