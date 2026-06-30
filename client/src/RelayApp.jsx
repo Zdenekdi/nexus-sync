@@ -4,7 +4,7 @@
  * No Sidebar, no ViewRouter, no calendar, no inbox, no analytics.
  */
 import React, { useState, Suspense, lazy, useCallback } from 'react';
-import { Loader2, Lock, Mail, Eye, EyeOff, Smartphone, Battery, Server, ShieldCheck, Pause, Play } from 'lucide-react';
+import { Loader2, Lock, Mail, Eye, EyeOff, Smartphone, Battery, Server, ShieldCheck, Pause, Play, Settings } from 'lucide-react';
 import { useRelay } from './context/RelayContext';
 import GlobalAppStyles from './styles/GlobalAppStyles';
 import { useSipCall } from './plugins/NexusSip';
@@ -92,6 +92,7 @@ const RelayDashboard = () => {
   const [permDialer, setPermDialer] = useState(false);
   const [isBatOpt, setIsBatOpt] = useState(false);
   const [setupRunning, setSetupRunning] = useState(false);
+  const [setupFailedCount, setSetupFailedCount] = useState(0);
 
   // Battery info via native API
   React.useEffect(() => {
@@ -173,7 +174,12 @@ const RelayDashboard = () => {
         await new Promise(r => setTimeout(r, 1000));
       }
 
-      await checkAllStatus();
+      const status = await checkAllStatus();
+      if (!status.smsOk || !status.dialerOk || !status.batOk) {
+        setSetupFailedCount(prev => prev + 1);
+      } else {
+        setSetupFailedCount(0);
+      }
     } finally {
       setSetupRunning(false);
     }
@@ -334,6 +340,35 @@ const RelayDashboard = () => {
             </span>
           </div>
         </div>
+
+        {/* Permission Fix Button */}
+        {!allSetupOk && setupFailedCount > 0 && (
+          <div style={{ width: '100%', maxWidth: '340px', marginTop: '1rem', animation: 'fadeIn 0.5s ease-out' }}>
+            <button
+              onClick={() => {
+                const relay = window.Capacitor?.Plugins?.NexusRelay;
+                if (relay?.openAppSettings) relay.openAppSettings();
+              }}
+              style={{
+                width: '100%', padding: '1rem', borderRadius: '16px',
+                background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)',
+                color: '#f59e0b', fontWeight: '600', fontSize: '0.9rem',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem',
+                cursor: 'pointer', transition: 'all 0.2s'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Settings size={18} />
+                <span>{lang === 'cz' ? 'Otevřít nastavení aplikace' : 'Open App Settings'}</span>
+              </div>
+              <span style={{ fontSize: '0.75rem', opacity: 0.8, textAlign: 'center', fontWeight: 'normal', marginTop: '0.2rem' }}>
+                {lang === 'cz' 
+                  ? 'Pokud systém blokuje oprávnění, otevřete nastavení, klikněte na tři tečky nahoře a zvolte "Povolit omezená nastavení".' 
+                  : 'If permissions are blocked, open settings, tap the three dots menu and choose "Allow restricted settings".'}
+              </span>
+            </button>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div style={{ width: '100%', maxWidth: '340px', display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '3rem', animation: 'fadeIn 0.9s ease-out' }}>
