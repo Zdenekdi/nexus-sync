@@ -52,7 +52,7 @@ const InboxView = () => {
   const sendMessage = React.useCallback(async (content) => {
     if (!content || !content.trim() || !selectedChat) return;
 
-    const channel = selectedChat.channel || selectedChat.transport || 'sms';
+    const channel = (selectedChat.channel || selectedChat.transport || 'sms').toLowerCase();
     
     if (channel !== 'sms' && channel !== 'relay') {
       try {
@@ -86,11 +86,17 @@ const InboxView = () => {
 
     // Merge and sort
     const combined = [...chatMessages, ...omniMatch];
-    return combined.sort((a, b) => {
-      const dateA = new Date(a.createdAt || a.timestamp || 0);
-      const dateB = new Date(b.createdAt || b.timestamp || 0);
-      return dateA - dateB;
+    
+    // Pre-calculate timestamps to avoid O(N log N) Date allocations which cause UI freezes
+    const withTime = combined.map(m => {
+      const ts = m.createdAt || m.timestamp || 0;
+      const timeVal = typeof ts === 'number' ? ts : (new Date(ts).getTime() || 0);
+      return { msg: m, timeVal };
     });
+    
+    withTime.sort((a, b) => a.timeVal - b.timeVal);
+    
+    return withTime.map(item => item.msg);
   }, [chatMessages, omnichannelMessages, selectedChatId]);
 
   const [clientCrmData, setClientCrmData] = React.useState(null);
@@ -503,8 +509,8 @@ const InboxView = () => {
                           let finalMsgText = msg.text || '';
                           let rawDate = msg.createdAt || msg.timestamp || msg.time;
                           
-                          // Extract embedded timestamp from test scripts (e.g. "Test SMS 2026-06-15 14:41:13")
-                          const embeddedTimeMatch = finalMsgText.match(/\s?(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})$/);
+                          // Extract embedded timestamp from test scripts (e.g. "Test SMS 2026-06-15 14:41:13" or full ISO)
+                          const embeddedTimeMatch = finalMsgText.match(/\s?(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?)$/);
                           if (embeddedTimeMatch) {
                             if (!rawDate) rawDate = new Date(embeddedTimeMatch[1]).toISOString();
                             const strippedText = finalMsgText.replace(embeddedTimeMatch[0], '');

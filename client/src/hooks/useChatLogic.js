@@ -194,7 +194,7 @@ export function useChatLogic({
         chatId: targetChatId,
         text: text.trim(),
         direction: 'OUTBOUND',
-        transport: 'sms'
+        transport: 'SMS'
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });

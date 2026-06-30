@@ -16,6 +16,7 @@ import { TRANSLATIONS } from '../translations';
 import { NexusContext } from './ContextObject';
 import { usePermissions } from '../hooks/usePermissions';
 import { useChatLogic } from '../hooks/useChatLogic';
+import { useSocket } from '../hooks/useSocket';
 import { initPushNotifications } from '../services/pushService';
 
 // API Configuration
@@ -383,6 +384,18 @@ export const NexusProvider = ({ children }) => {
     handleSaveNote, handleDeleteNote, handleTranslate, clientNotes, internalNote, setInternalNote,
     filteredMessages, setActiveContactId, selectedChat, typingProfiles, handleRefreshMessages
   } = chatLogic;
+
+  // --- Socket.io Integration ---
+  useSocket(
+    token,
+    (d) => d?.message && chatLogic.upsertIncomingMessage(d.message),
+    (d) => d?.message && setMessages(p => p.map(m => m.id === d.message.id ? { ...m, ...d.message } : m)),
+    () => {}, // handleIncomingCall (TODO if needed)
+    () => {}, // handleEmergencyAlert (TODO if needed)
+    () => {}, // handleSipIncomingCall (TODO if needed)
+    () => {}, // handleRelayCommand
+    (d) => d?.type === 'SYNC_COMPLETED' && showToast(lang === 'cz' ? '✅ Synchronizace dokončena' : '✅ Sync completed', 'success')
+  );
 
   // --- Capacitor Connection Recovery ---
   useEffect(() => {
