@@ -238,8 +238,8 @@ router.post("/upload-apk", apkUpload.single("apk"), async (req, res) => {
     const baseName = req.file.filename; // nexus-full-latest.apk or nexus-relay.apk
     const isFull = baseName.includes('full');
 
-    // Prevent OOM by skipping ApkReader for large files (> 30MB)
-    if (stat.size < 30 * 1024 * 1024) {
+    // Prevent OOM by skipping ApkReader for large files (> 100MB)
+    if (stat.size < 100 * 1024 * 1024) {
       try {
         const reader = await ApkReader.open(req.file.path);
         const manifest = await reader.readManifest();
