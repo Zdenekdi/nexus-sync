@@ -253,6 +253,7 @@ const RelayDashboard = () => {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
+        justifyContent: 'center',
         padding: '3.5rem 1.5rem',
         boxSizing: 'border-box'
       }}>
@@ -311,7 +312,7 @@ const RelayDashboard = () => {
         {/* System Indicators */}
         <div style={{
           display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem',
-          width: '100%', maxWidth: '340px', marginBottom: 'auto',
+          width: '100%', maxWidth: '340px',
           animation: 'fadeIn 0.8s ease-out'
         }}>
           {/* Battery */}
@@ -371,7 +372,7 @@ const RelayDashboard = () => {
         )}
 
         {/* Action Buttons */}
-        <div style={{ width: '100%', maxWidth: '340px', display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '3rem', animation: 'fadeIn 0.9s ease-out' }}>
+        <div style={{ width: '100%', maxWidth: '340px', display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.5rem', animation: 'fadeIn 0.9s ease-out' }}>
           <button
             onClick={() => setIsActive(v => !v)}
             style={{
