@@ -306,15 +306,22 @@ public class NexusRelayPlugin extends Plugin {
                 (android.app.role.RoleManager) ctx.getSystemService(android.app.role.RoleManager.class);
             if (rm != null && !rm.isRoleHeld(android.app.role.RoleManager.ROLE_SMS)) {
                 android.content.Intent intent = rm.createRequestRoleIntent(android.app.role.RoleManager.ROLE_SMS);
-                getActivity().startActivityForResult(intent, 0);
+                startActivityForResult(call, intent, "requestDefaultSmsAppCallback");
+                return;
             }
         } else {
             android.content.Intent intent = new android.content.Intent(
                 android.provider.Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT);
             intent.putExtra(android.provider.Telephony.Sms.Intents.EXTRA_PACKAGE_NAME,
                 ctx.getPackageName());
-            getActivity().startActivity(intent);
+            startActivityForResult(call, intent, "requestDefaultSmsAppCallback");
+            return;
         }
+        call.resolve();
+    }
+
+    @ActivityCallback
+    private void requestDefaultSmsAppCallback(PluginCall call, ActivityResult result) {
         call.resolve();
     }
 
@@ -506,12 +513,8 @@ public class NexusRelayPlugin extends Plugin {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
             intent.setData(Uri.parse("package:" + getContext().getPackageName()));
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             try {
-                getContext().startActivity(intent);
-                JSObject ret = new JSObject();
-                ret.put("requested", true);
-                call.resolve(ret);
+                startActivityForResult(call, intent, "requestIgnoreBatteryOptimizationCallback");
             } catch (Exception e) {
                 call.reject("Could not open battery optimization settings: " + e.getMessage());
             }
@@ -520,6 +523,13 @@ public class NexusRelayPlugin extends Plugin {
             ret.put("requested", false);
             call.resolve(ret);
         }
+    }
+
+    @ActivityCallback
+    private void requestIgnoreBatteryOptimizationCallback(PluginCall call, ActivityResult result) {
+        JSObject ret = new JSObject();
+        ret.put("requested", true);
+        call.resolve(ret);
     }
 
     @ActivityCallback

@@ -19,9 +19,13 @@ import { useChatLogic } from '../hooks/useChatLogic';
 import { initPushNotifications } from '../services/pushService';
 
 // API Configuration
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:5000'
-  : 'https://nexus-api.myvnc.com/api';
+// IMPORTANT: Capacitor WebView ALWAYS reports hostname as 'localhost' even on a real device,
+// so we MUST use Capacitor.isNativePlatform() to distinguish native apps from web dev.
+const API_BASE = Capacitor.isNativePlatform()
+  ? 'https://nexus-api.myvnc.com/api'
+  : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:5000'
+    : 'https://nexus-api.myvnc.com/api');
 
 /**
  * Main Provider for Nexus Hub.
@@ -215,6 +219,29 @@ export const NexusProvider = ({ children }) => {
     } catch { return []; }
   });
   const [_isRelayActive, setIsRelayActive] = useState(() => localStorage.getItem('nexus_relay_active') === 'true');
+  const [isRelayMode, setIsRelayMode] = useState(() => localStorage.getItem('nexus_relay_active') === 'true');
+
+  // Voice Guardian & Audio Sentinel
+  const [voiceGuardianActive, setVoiceGuardianActive] = useState(false);
+  const [audioSentinelActive, setAudioSentinelActive] = useState(false);
+  const handleToggleVoiceGuardian = useCallback(async () => {
+    const next = !voiceGuardianActive;
+    setVoiceGuardianActive(next);
+    if (next) {
+      try {
+        const stream = await navigator.mediaDevices?.getUserMedia({ audio: true });
+        window._voiceGuardianStream = stream;
+      } catch (_err) {
+        console.warn('[VoiceGuardian] Mic permission denied', _err);
+        setVoiceGuardianActive(false);
+      }
+    } else {
+      if (window._voiceGuardianStream) {
+        window._voiceGuardianStream.getTracks().forEach(t => t.stop());
+        window._voiceGuardianStream = null;
+      }
+    }
+  }, [voiceGuardianActive]);
 
   const [_sosActive, _setSosActive] = useState(false);
   const [showPanicConfirm, setShowPanicConfirm] = useState(false);
@@ -354,7 +381,7 @@ export const NexusProvider = ({ children }) => {
   const { 
     chatMessages, fetchChatMessages, handleSendMessage,
     handleSaveNote, handleDeleteNote, handleTranslate, clientNotes, internalNote, setInternalNote,
-    filteredMessages, setActiveContactId, selectedChat, typingProfiles
+    filteredMessages, setActiveContactId, selectedChat, typingProfiles, handleRefreshMessages
   } = chatLogic;
 
   // --- Capacitor Connection Recovery ---
@@ -453,10 +480,15 @@ export const NexusProvider = ({ children }) => {
     activeSubscription: nexusData.activeSubscription,
     subscriptionHistory: nexusData.subscriptionHistory,
     daysLeft,
+    // Safety - Voice Guardian & Audio Sentinel
+    voiceGuardianActive, handleToggleVoiceGuardian,
+    audioSentinelActive, setAudioSentinelActive,
+    // Relay mode
+    isRelayMode, setIsRelayMode,
     // Chat Logic
     chatMessages, isHistoryLoading, fetchChatMessages, handleSendMessage,
     handleSaveNote, handleDeleteNote, handleTranslate, clientNotes, internalNote, setInternalNote,
-    filteredMessages, setActiveContactId, selectedChat, typingProfiles,
+    filteredMessages, setActiveContactId, selectedChat, typingProfiles, handleRefreshMessages,
     handleSyncChatHistory: nexusData.handleSyncChatHistory
   }), [
     t, lang, setLang, activeTab, setActiveTab, activeMarket, pathname, navigateStable, authInitialTab,
@@ -469,6 +501,8 @@ export const NexusProvider = ({ children }) => {
     isAllowed, normalizedRole, activeProfile, activeProfileId, myProfiles, nexusData.profiles, 
     nexusData.operators, nexusData.agencies, onlineOnly,
     nexusData.activeSubscription, nexusData.subscriptionHistory, daysLeft,
+    voiceGuardianActive, handleToggleVoiceGuardian, audioSentinelActive,
+    isRelayMode,
     // Chat Logic Deps
     chatMessages, isHistoryLoading, fetchChatMessages, handleSendMessage,
     handleSaveNote, handleDeleteNote, handleTranslate, clientNotes, internalNote, setInternalNote,

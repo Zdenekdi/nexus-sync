@@ -75,13 +75,15 @@ export const useOmnichannel = (config = {}) => {
     return () => {
       // Cleanup
       if (commServiceRef.current) {
-        Object.keys(channels).forEach(channelName => {
+        // We use config to know which adapters were registered instead of channels state
+        // to avoid infinite loops from stale closures
+        Object.keys(configRef.current || {}).forEach(channelName => {
           const adapter = commServiceRef.current.getAdapter(channelName);
           adapter?.disconnect?.();
         });
       }
     };
-  }, [channels]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount to prevent infinite loops
 
   /**
    * Send message through specific channel

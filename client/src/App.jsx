@@ -1,8 +1,8 @@
-import React, { Suspense } from "react";
+import React, { Suspense, useState } from "react";
 import { 
   Loader2, Menu, LayoutDashboard, MessageSquare, Calendar, 
   Shield, Users, Globe, Smartphone, FileSearch, BarChart3, 
-  Activity, Settings, UserCheck, Terminal 
+  Activity, Settings, UserCheck, Terminal, Lock, Mail, Eye, EyeOff
 } from 'lucide-react';
 import { useNexus } from './context/ContextHook';
 import GlobalAppStyles from './styles/GlobalAppStyles';
@@ -23,6 +23,88 @@ const SystemBanners = lazyWithRetry(() => import('./components/UI/SystemBanners'
 const GlobalModalContainer = lazyWithRetry(() => import('./components/Modals/GlobalModalContainer'));
 const NotificationSystem = lazyWithRetry(() => import('./components/Notifications/NotificationSystem'));
 const TeamChatFloat = lazyWithRetry(() => import('./components/TeamChatFloat'));
+const RelayModeView = lazyWithRetry(() => import('./components/Views/RelayModeView'));
+
+// ── Relay-only minimal login ──────────────────────────────────────────────────
+const RelayLoginScreen = () => {
+  const { onLogin, showToast } = useNexus();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!email || !password) return;
+    setLoading(true);
+    try {
+      const res = await onLogin(email, password);
+      if (res && !res.success) showToast(res.error || 'Login failed', 'error');
+    } catch (err) {
+      showToast('Login failed', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{
+      minHeight: '100dvh', background: '#07080a', display: 'flex',
+      flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      padding: '2rem', boxSizing: 'border-box', color: 'white'
+    }}>
+      <div style={{ width: '64px', height: '64px', borderRadius: '18px', background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
+        <img src="/nexus_icon.png" style={{ width: '40px', height: '40px', borderRadius: '10px' }} alt="Nexus" onError={e => { e.target.style.display='none'; }} />
+      </div>
+      <h2 style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '0.05em', marginBottom: '0.4rem' }}>NEXUS RELAY</h2>
+      <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)', marginBottom: '2.5rem' }}>Přihlaste se pro spárování zařízení</p>
+
+      <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: '340px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div style={{ position: 'relative' }}>
+          <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
+          <input
+            type="email" value={email} onChange={e => setEmail(e.target.value)}
+            placeholder="E-mail"
+            autoComplete="username"
+            style={{
+              width: '100%', padding: '1rem 1rem 1rem 3rem', boxSizing: 'border-box',
+              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '14px', color: 'white', fontSize: '1rem', outline: 'none'
+            }}
+          />
+        </div>
+        <div style={{ position: 'relative' }}>
+          <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
+          <input
+            type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+            placeholder="Heslo"
+            autoComplete="current-password"
+            style={{
+              width: '100%', padding: '1rem 3rem 1rem 3rem', boxSizing: 'border-box',
+              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '14px', color: 'white', fontSize: '1rem', outline: 'none'
+            }}
+          />
+          <button type="button" onClick={() => setShowPw(v => !v)} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: 0 }}>
+            {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
+        <button
+          type="submit" disabled={loading || !email || !password}
+          style={{
+            padding: '1.1rem', borderRadius: '14px', border: 'none',
+            background: loading ? 'rgba(59,130,246,0.5)' : 'rgba(59,130,246,0.9)',
+            color: 'white', fontWeight: '900', fontSize: '1rem', cursor: loading ? 'not-allowed' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+          }}
+        >
+          {loading ? <Loader2 size={20} className="animate-spin" /> : <Lock size={18} />}
+          {loading ? 'Přihlašování...' : 'Přihlásit se'}
+        </button>
+      </form>
+    </div>
+  );
+};
 
 function AppContent() {
   const nexus = useNexus();
@@ -56,6 +138,40 @@ function AppContent() {
     developer: { label: 'Developer API', icon: Terminal },
     settings: { label: t('settings'), icon: Settings }
   };
+
+  // ── RELAY APP: completely separate flow ─────────────────────────────────────
+  const isRelayApp = typeof __APP_VARIANT__ !== 'undefined' && __APP_VARIANT__ === 'relay';
+
+  if (isRelayApp) {
+    // If not yet logged in → show relay-specific minimal login
+    if (!isLoggedIn) {
+      return (
+        <>
+          <GlobalAppStyles />
+          <RelayLoginScreen />
+        </>
+      );
+    }
+    // If logged in → show relay UI directly
+    return (
+      <div className="nexus-shell" style={{ background: '#080a0f', color: '#e2e8f0', height: '100dvh', display: 'flex', overflow: 'hidden', position: 'relative' }}>
+        <GlobalAppStyles />
+        <Suspense fallback={
+          <div style={{ flex: 1, height: '100%', background: '#080a0f', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+            <Loader2 className="animate-spin" size={32} color="var(--accent-color)" />
+          </div>
+        }>
+          <SystemBanners />
+          <GlobalModalContainer />
+          <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+            <RelayModeView />
+          </div>
+        </Suspense>
+      </div>
+    );
+  }
+
+  // ── STANDARD APP flow below ──────────────────────────────────────────────────
 
   // 1. Walkthrough / Onboarding
   if (showOnboarding) {
@@ -151,6 +267,7 @@ function AppContent() {
   }
 
   // 3. Main Application Shell (Authenticated & Hydrated)
+
   return (
     <div className="nexus-shell" style={{ 
       background: '#080a0f', 

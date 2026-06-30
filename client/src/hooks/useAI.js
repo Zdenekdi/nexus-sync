@@ -10,7 +10,7 @@ export const useAI = () => {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiError, setAiError] = useState(null);
 
-  const askAi = async (prompt, system) => {
+  const askAi = React.useCallback(async (prompt, system) => {
     try {
       setIsAiLoading(true);
       setAiError(null);
@@ -33,9 +33,9 @@ export const useAI = () => {
     } finally {
       setIsAiLoading(false);
     }
-  };
+  }, [API_BASE, token, lang]);
 
-  const getSuggestion = async (messages, profileId) => {
+  const getSuggestion = React.useCallback(async (messages, profileId) => {
     try {
       setIsAiLoading(true);
       setAiError(null);
@@ -58,7 +58,7 @@ export const useAI = () => {
     } finally {
       setIsAiLoading(false);
     }
-  };
+  }, [API_BASE, token, lang]);
 
   return { askAi, getSuggestion, isAiLoading, aiError };
 };

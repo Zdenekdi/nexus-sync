@@ -1,0 +1,387 @@
+/**
+ * RelayApp – the entire UI for the Nexus Relay variant.
+ * Intentionally minimal: login screen → relay dashboard.
+ * No Sidebar, no ViewRouter, no calendar, no inbox, no analytics.
+ */
+import React, { useState, Suspense, lazy, useCallback } from 'react';
+import { Loader2, Lock, Mail, Eye, EyeOff, Smartphone, Battery, Server, ShieldCheck, Pause, Play } from 'lucide-react';
+import { useRelay } from './context/RelayContext';
+import GlobalAppStyles from './styles/GlobalAppStyles';
+import { useSipCall } from './plugins/NexusSip';
+import { useInCallService, isInCallAvailable } from './plugins/NexusInCall';
+import { useSmsRelay } from './plugins/NexusSms';
+
+const IncomingCallScreen = lazy(() => import('./components/sip/IncomingCallScreen'));
+const ActiveCallScreen = lazy(() => import('./components/sip/ActiveCallScreen'));
+const IncomingCallModal = lazy(() => import('./components/IncomingCallModal'));
+const IncomingSmsModal = lazy(() => import('./components/IncomingSmsModal'));
+
+// ── Login screen ─────────────────────────────────────────────────────────────
+const RelayLoginScreen = () => {
+  const { onLogin, showToast } = useRelay();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!email || !password) return;
+    setLoading(true);
+    try {
+      const res = await onLogin(email, password);
+      if (res && !res.success) showToast(res.error || 'Přihlášení selhalo', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{
+      minHeight: '100dvh', background: '#07080a', display: 'flex',
+      flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      padding: '2rem', boxSizing: 'border-box', color: 'white'
+    }}>
+      <div style={{ width: '72px', height: '72px', borderRadius: '20px', background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
+        <img src="./nexus_icon.png" style={{ width: '44px', height: '44px', borderRadius: '12px' }} alt="Nexus" onError={e => { e.target.style.display = 'none'; }} />
+      </div>
+      <h2 style={{ fontSize: '1.5rem', fontWeight: '900', letterSpacing: '0.08em', marginBottom: '0.4rem' }}>NEXUS RELAY</h2>
+      <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)', marginBottom: '2.5rem' }}>
+        Přihlaste se pro spárování zařízení
+      </p>
+
+      <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: '340px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div style={{ position: 'relative' }}>
+          <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)', pointerEvents: 'none' }} />
+          <input
+            type="email" value={email} onChange={e => setEmail(e.target.value)}
+            placeholder="E-mail" autoComplete="username"
+            style={{ width: '100%', padding: '1rem 1rem 1rem 3rem', boxSizing: 'border-box', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', color: 'white', fontSize: '1rem', outline: 'none' }}
+          />
+        </div>
+        <div style={{ position: 'relative' }}>
+          <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)', pointerEvents: 'none' }} />
+          <input
+            type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+            placeholder="Heslo" autoComplete="current-password"
+            style={{ width: '100%', padding: '1rem 3rem 1rem 3rem', boxSizing: 'border-box', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', color: 'white', fontSize: '1rem', outline: 'none' }}
+          />
+          <button type="button" onClick={() => setShowPw(v => !v)} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: 0 }}>
+            {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
+        <button
+          type="submit" disabled={loading || !email || !password}
+          style={{ padding: '1.1rem', borderRadius: '14px', border: 'none', background: (loading || !email || !password) ? 'rgba(59,130,246,0.4)' : 'rgba(59,130,246,0.9)', color: 'white', fontWeight: '900', fontSize: '1rem', cursor: (loading || !email || !password) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+        >
+          {loading ? <Loader2 size={20} className="animate-spin" /> : <Lock size={18} />}
+          {loading ? 'Přihlašování...' : 'Přihlásit se'}
+        </button>
+      </form>
+    </div>
+  );
+};
+
+// ── Main relay dashboard (minimal) ───────────────────────────────────────────
+const RelayDashboard = () => {
+  const { operator, onLogout, lang, isNativeApp, API_BASE } = useRelay();
+  const [isActive, setIsActive] = useState(true);
+  const [batteryLevel, setBatteryLevel] = useState(100);
+  const [isCharging, setIsCharging] = useState(false);
+  const [permSms, setPermSms] = useState(false);
+  const [permDialer, setPermDialer] = useState(false);
+  const [isBatOpt, setIsBatOpt] = useState(false);
+  const [setupRunning, setSetupRunning] = useState(false);
+
+  // Battery info via native API
+  React.useEffect(() => {
+    if (typeof navigator?.getBattery === 'function') {
+      navigator.getBattery().then(bat => {
+        setBatteryLevel(Math.round(bat.level * 100));
+        setIsCharging(bat.charging);
+        bat.addEventListener('levelchange', () => setBatteryLevel(Math.round(bat.level * 100)));
+        bat.addEventListener('chargingchange', () => setIsCharging(bat.charging));
+      }).catch(() => {});
+    }
+  }, []);
+
+  const checkAllStatus = useCallback(async () => {
+    const relay = window.Capacitor?.Plugins?.NexusRelay;
+    const incall = window.Capacitor?.Plugins?.NexusInCall;
+    
+    let smsOk = false;
+    let dialerOk = false;
+    let batOk = false;
+
+    if (relay) {
+      const s = await relay.checkStatus?.().catch(() => null);
+      if (s) {
+        smsOk = Boolean(s.smsMonitoring);
+        setPermSms(smsOk);
+      }
+      const bat = await relay.checkBatteryOptimization?.().catch(() => null);
+      if (bat) {
+        batOk = Boolean(!bat.optimized);
+        setIsBatOpt(batOk);
+      }
+    }
+    
+    if (incall) {
+      const d = await incall.isDefaultDialer?.().catch(() => null);
+      if (d) {
+        dialerOk = Boolean(d.isDefault);
+        setPermDialer(dialerOk);
+      }
+    }
+    
+    return { smsOk, dialerOk, batOk };
+  }, []);
+
+  const runSetupWizard = useCallback(async () => {
+    if (setupRunning) return;
+    setSetupRunning(true);
+    try {
+      const relay = window.Capacitor?.Plugins?.NexusRelay;
+      const incall = window.Capacitor?.Plugins?.NexusInCall;
+      if (!relay) return;
+
+      // 1. Standard Permissions (SMS, Location, Phone)
+      let s = await relay.ensureReady?.().catch(() => null);
+      
+      // 2. Default SMS App
+      if (s && !s.smsMonitoring) {
+        const defRes = await relay.isDefaultSmsApp?.().catch(() => null);
+        if (defRes && !defRes.isDefault) {
+          await relay.requestDefaultSmsApp?.().catch(() => null);
+          await new Promise(r => setTimeout(r, 1000));
+        }
+      }
+
+      // 3. Default Dialer
+      if (incall) {
+        const d = await incall.isDefaultDialer?.().catch(() => null);
+        if (d && !d.isDefault) {
+          await incall.requestDefaultDialer?.().catch(() => null);
+          await new Promise(r => setTimeout(r, 1000));
+        }
+      }
+
+      // 4. Battery Optimization
+      const bat = await relay.checkBatteryOptimization?.().catch(() => null);
+      if (bat && bat.optimized) {
+        await relay.requestIgnoreBatteryOptimization?.().catch(() => null);
+        await new Promise(r => setTimeout(r, 1000));
+      }
+
+      await checkAllStatus();
+    } finally {
+      setSetupRunning(false);
+    }
+  }, [checkAllStatus, setupRunning]);
+
+  // Initial check and auto-prompt on mount
+  React.useEffect(() => {
+    checkAllStatus().then((status) => {
+      // If any of the essential setup is missing, wait 1.5s then prompt
+      if (!status.smsOk || !status.dialerOk || !status.batOk) {
+        setTimeout(() => {
+           runSetupWizard();
+        }, 1500);
+      }
+    });
+  }, [checkAllStatus, runSetupWizard]);
+
+  // SIP calls
+  const { sipState, sipIncomingCall, answer: sipAnswer, reject: sipReject, hangup: sipHangup } = useSipCall({
+    operator, isActive, API_BASE, isNativeApp,
+  });
+
+  // GSM calls via InCallService
+  const {
+    callState: gsmCallState, incomingCall: gsmIncomingCall, callDuration: gsmCallDuration,
+    answer: gsmAnswer, reject: gsmReject, hangup: gsmHangup,
+    setMuted: gsmSetMuted, setSpeaker: gsmSetSpeaker,
+  } = useInCallService({ operator, isActive, isNativeApp });
+
+  // SMS relay
+  const { incomingSms, clearIncomingSms, sendSms } = useSmsRelay({ operator, isActive, isNativeApp, API_BASE });
+
+  const allSetupOk = permSms && permDialer && isBatOpt;
+
+  return (
+    <>
+      {/* Incoming call modals */}
+      <Suspense fallback={null}>
+        {isInCallAvailable() && (gsmCallState === 'ringing' || gsmCallState === 'active') && (
+          <IncomingCallModal
+            incomingCall={gsmIncomingCall} callState={gsmCallState} callDuration={gsmCallDuration}
+            onAnswer={gsmAnswer} onReject={gsmReject} onHangup={gsmHangup}
+            onMute={gsmSetMuted} onSpeaker={gsmSetSpeaker} lang={lang}
+          />
+        )}
+        <IncomingSmsModal sms={incomingSms} onClose={clearIncomingSms} onReply={text => sendSms(incomingSms.from, text)} lang={lang} />
+        {sipState === 'ringing' && sipIncomingCall && (
+          <IncomingCallScreen caller={sipIncomingCall.caller || sipIncomingCall.callerId} profileName={sipIncomingCall.callerName} onAnswer={sipAnswer} onReject={sipReject} />
+        )}
+        {sipState === 'in_call' && (
+          <ActiveCallScreen caller={sipIncomingCall?.caller || 'SIP'} profileName={sipIncomingCall?.callerName} onEnd={sipHangup} />
+        )}
+      </Suspense>
+
+      {/* Main UI */}
+      <style>{`
+        @keyframes pulseIndicator {
+          0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.4); }
+          70% { box-shadow: 0 0 0 15px rgba(74, 222, 128, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+      <div style={{
+        minHeight: '100dvh',
+        background: 'linear-gradient(180deg, #0f172a 0%, #020617 100%)',
+        color: 'white',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: '3.5rem 1.5rem',
+        boxSizing: 'border-box'
+      }}>
+        
+        {/* Header/Identity */}
+        <div style={{ textAlign: 'center', marginBottom: '3rem', animation: 'fadeIn 0.6s ease-out' }}>
+          <div style={{
+             width: '88px', height: '88px', borderRadius: '50%',
+             background: 'linear-gradient(135deg, rgba(59,130,246,0.15) 0%, rgba(37,99,235,0.05) 100%)',
+             border: '1px solid rgba(59,130,246,0.3)',
+             boxShadow: '0 8px 32px rgba(59,130,246,0.15)',
+             display: 'flex', alignItems: 'center', justifyContent: 'center',
+             margin: '0 auto 1.5rem', color: '#60a5fa'
+          }}>
+            <Smartphone size={40} strokeWidth={1.5} />
+          </div>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: '800', letterSpacing: '-0.02em', margin: '0 0 0.5rem 0' }}>Nexus Relay</h2>
+          <div style={{ fontSize: '0.95rem', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+            {lang === 'cz' ? 'Profil:' : 'Profile:'}
+            <span style={{ color: '#f8fafc', fontWeight: '600', padding: '0.25rem 0.75rem', background: 'rgba(255,255,255,0.08)', borderRadius: '20px', letterSpacing: '0.02em' }}>
+              {operator?.name || operator?.email || 'Modelka'}
+            </span>
+          </div>
+        </div>
+
+        {/* Main Status Card */}
+        <div style={{
+          width: '100%', maxWidth: '340px',
+          padding: '2rem 1.5rem', borderRadius: '24px',
+          background: isActive ? 'linear-gradient(145deg, rgba(34,197,94,0.1) 0%, rgba(21,128,61,0.02) 100%)' : 'linear-gradient(145deg, rgba(239,68,68,0.1) 0%, rgba(185,28,28,0.02) 100%)',
+          border: `1px solid ${isActive ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`,
+          boxShadow: `0 8px 32px ${isActive ? 'rgba(34,197,94,0.05)' : 'rgba(239,68,68,0.05)'}`,
+          backdropFilter: 'blur(10px)',
+          textAlign: 'center',
+          marginBottom: '2rem',
+          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+          animation: 'fadeIn 0.7s ease-out'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+            <div style={{
+              width: '12px', height: '12px', borderRadius: '50%',
+              background: isActive ? '#4ade80' : '#f87171',
+              animation: isActive ? 'pulseIndicator 2s infinite' : 'none'
+            }} />
+            <span style={{ fontWeight: '700', fontSize: '1.15rem', color: isActive ? '#4ade80' : '#f87171', letterSpacing: '0.05em' }}>
+              {isActive ? (lang === 'cz' ? 'AKTIVNÍ' : 'ACTIVE') : (lang === 'cz' ? 'POZASTAVENO' : 'PAUSED')}
+            </span>
+          </div>
+          <p style={{ fontSize: '0.9rem', color: '#cbd5e1', margin: 0, lineHeight: 1.6 }}>
+            {lang === 'cz'
+              ? 'Telefon automaticky přeposílá SMS zprávy a hovory do systému Nexus.'
+              : 'This phone is automatically forwarding SMS and calls to the Nexus system.'}
+          </p>
+        </div>
+
+        {/* System Indicators */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem',
+          width: '100%', maxWidth: '340px', marginBottom: 'auto',
+          animation: 'fadeIn 0.8s ease-out'
+        }}>
+          {/* Battery */}
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem',
+            padding: '1.25rem 1rem', borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)'
+          }}>
+            <Battery size={26} color={batteryLevel > 20 ? '#4ade80' : '#f87171'} strokeWidth={1.5} />
+            <span style={{ fontSize: '0.85rem', color: '#cbd5e1', fontWeight: '500' }}>{batteryLevel}% {isCharging && '⚡'}</span>
+          </div>
+
+          {/* Setup / Config */}
+          <div
+            onClick={runSetupWizard}
+            style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem',
+              padding: '1.25rem 1rem', borderRadius: '20px',
+              background: allSetupOk ? 'rgba(34,197,94,0.05)' : 'rgba(239,68,68,0.08)',
+              border: `1px solid ${allSetupOk ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.3)'}`,
+              cursor: 'pointer', transition: 'all 0.2s'
+            }}
+          >
+            <ShieldCheck size={26} color={allSetupOk ? '#4ade80' : '#f87171'} strokeWidth={1.5} />
+            <span style={{ fontSize: '0.85rem', color: allSetupOk ? '#4ade80' : '#f87171', fontWeight: '600', textAlign: 'center' }}>
+              {allSetupOk ? 'Oprávnění OK' : (setupRunning ? 'Nastavuji...' : 'Chyba v nastavení')}
+            </span>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div style={{ width: '100%', maxWidth: '340px', display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '3rem', animation: 'fadeIn 0.9s ease-out' }}>
+          <button
+            onClick={() => setIsActive(v => !v)}
+            style={{
+              padding: '1.15rem', borderRadius: '18px',
+              background: isActive ? 'rgba(255,255,255,0.05)' : '#3b82f6',
+              border: isActive ? '1px solid rgba(255,255,255,0.1)' : 'none',
+              color: 'white', fontWeight: '600', fontSize: '1rem',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem',
+              cursor: 'pointer', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              boxShadow: isActive ? 'none' : '0 8px 25px rgba(59,130,246,0.4)'
+            }}
+          >
+            {isActive ? <Pause size={20} strokeWidth={2.5} /> : <Play size={20} strokeWidth={2.5} />}
+            {isActive ? (lang === 'cz' ? 'Pozastavit Relay' : 'Pause Relay') : (lang === 'cz' ? 'Spustit Relay' : 'Start Relay')}
+          </button>
+
+          <button
+            onClick={onLogout}
+            style={{
+              padding: '1.15rem', borderRadius: '18px',
+              background: 'transparent',
+              border: '1px solid rgba(239,68,68,0.3)',
+              color: '#f87171', fontWeight: '600', fontSize: '1rem',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', transition: 'all 0.2s',
+              opacity: 0.8
+            }}
+          >
+            {lang === 'cz' ? 'Odhlásit zařízení' : 'Logout device'}
+          </button>
+        </div>
+      </div>
+</>
+  );
+}
+// ── Root ─────────────────────────────────────────────────────────────────────
+const RelayApp = () => {
+  const { isLoggedIn } = useRelay();
+
+  return (
+    <>
+      <GlobalAppStyles />
+      {isLoggedIn ? <RelayDashboard /> : <RelayLoginScreen />}
+    </>
+  );
+};
+
+export default RelayApp;
