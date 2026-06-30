@@ -12,15 +12,13 @@ const DownloadsView = () => {
     const fetchApkInfo = async () => {
       try {
         const [relayRes, fullRes] = await Promise.all([
-          axios.get(`${API_BASE}/vultr/apk-info`),
-          // We don't have a specific endpoint for full apk info yet, but we can just use the download link directly
-          // We will mock the full APK data for now since we know the URL format
-          Promise.resolve({ data: { available: true, downloadUrl: `${API_BASE}/vultr/download-full.apk`, version: '1.0' } })
+          axios.get(`${API_BASE}/vultr/apk-info?type=relay`),
+          axios.get(`${API_BASE}/vultr/apk-info?type=full`)
         ]);
         
         setApkInfo({
           relay: relayRes.data.available ? relayRes.data : null,
-          full: { available: true, downloadUrl: `${API_BASE}/vultr/download-full.apk` }
+          full: fullRes.data.available ? fullRes.data : { available: true, downloadUrl: `${API_BASE}/vultr/download-full.apk`, version: '' }
         });
       } catch (err) {
         console.error('Failed to fetch APK info', err);
@@ -84,12 +82,18 @@ const DownloadsView = () => {
             {t.fullDesc}
           </p>
           
-          <a href={`${API_BASE}/vultr/download-full.apk`} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', width: '100%' }}>
-            <button style={{ width: '100%', padding: '1rem', borderRadius: '16px', border: 'none', background: '#3b82f6', color: 'white', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: 'pointer', transition: 'background 0.2s' }}>
-              <Download size={20} />
-              {t.downloadBtn}
+          {apkInfo.full ? (
+            <a href={apkInfo.full.downloadUrl} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', width: '100%' }}>
+              <button style={{ width: '100%', padding: '1rem', borderRadius: '16px', border: 'none', background: '#3b82f6', color: 'white', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: 'pointer', transition: 'background 0.2s' }}>
+                <Download size={20} />
+                {t.downloadBtn} {apkInfo.full.version && apkInfo.full.version !== '1.0' ? `(v${apkInfo.full.version})` : ''}
+              </button>
+            </a>
+          ) : (
+            <button disabled style={{ width: '100%', padding: '1rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: 'not-allowed' }}>
+              {t.notAvailable}
             </button>
-          </a>
+          )}
         </div>
 
         {/* Relay App Card */}
