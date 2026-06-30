@@ -20,7 +20,8 @@ const InputGroup = ({ label, icon: Icon, children }) => (
     <div style={{ position: 'relative' }}>
       <Icon size={20} style={{ 
         position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', 
-        color: 'rgba(255,255,255,0.25)', transition: 'color 0.3s' 
+        color: 'rgba(255,255,255,0.25)', transition: 'color 0.3s',
+        zIndex: 10, pointerEvents: 'none'
       }} />
       {children}
     </div>
