@@ -94,9 +94,9 @@ tasks.register("syncReleaseArtifacts", Sync) {
     into(legacyReleaseOutputDir)
 }
 
-tasks.matching { it.name == "preBuild" }.configureEach {
-    dependsOn("syncFrontendToAndroid")
-}
+// Tasks are intentionally NOT hooked into preBuild automatically.
+// The NPM scripts (e.g. npm run build:android:apk) handle the Vite build and cap sync
+// BEFORE invoking ./gradlew to ensure correct environment variables (like VITE_APP_VARIANT) are used.
 
 android {
     namespace = "com.nexushub.app"

@@ -107,6 +107,12 @@ const Sidebar = () => {
     isSidebarOpen, setIsSidebarOpen
   } = nexus;
 
+  // Detect MODEL role — they get a simplified sidebar
+  const roleUpper = String(activeOperator?.role || activeRole || '').toUpperCase().replace(/\s+/g, '_');
+  const isModel = roleUpper === 'MODEL';
+  // Relay APK (built with VITE_APP_VARIANT=relay) shows only relay navigation
+  const isRelayApp = typeof __APP_VARIANT__ !== 'undefined' && __APP_VARIANT__ === 'relay';
+
   // Use activeOperator.id for personalized persistence
   const storageKey = activeOperator?.id 
     ? `nexus_sidebar_sections_${activeOperator.id}` 
@@ -423,7 +429,26 @@ const Sidebar = () => {
                     </SidebarSection>
                   )}
                 </div>
+            ) : isRelayApp ? (
+                // ── RELAY APK: pouze relay navigace ───────────────────────
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0rem' }}>
+                  <SidebarSection id="system" label={t('relay') || 'Relay'} isOpen={sectionsOpen.system} onToggle={toggleSection} isSidebarCollapsed={isSidebarCollapsed}>
+                    {[
+                      { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard') },
+                      { id: 'relay',     icon: Radio,            label: t('relay') || 'Relay' },
+                      { id: 'settings', icon: Settings, label: t('settings') },
+                    ].map(item => (
+                      <TooltipItem key={item.id} label={capitalize(item.label)} isMobile={isMobile} isSidebarCollapsed={isSidebarCollapsed}>
+                        <button onClick={() => handleNavigation(item.id)} data-testid={`nav-link-${item.id}`} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
+                          <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
+                          {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(item.label)}</span>}
+                        </button>
+                      </TooltipItem>
+                    ))}
+                  </SidebarSection>
+                </div>
             ) : (
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0rem' }}>
                     <SidebarSection id="overview" label={t('navSections.overview')} isOpen={sectionsOpen.overview} onToggle={toggleSection} isSidebarCollapsed={isSidebarCollapsed}>
                       {[

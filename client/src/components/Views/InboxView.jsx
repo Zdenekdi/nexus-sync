@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 import { 
   Search, MessageSquare, Phone, Clock, Link, Globe, Shield, Check, 
   Zap, Calendar, ChevronDown, ChevronLeft, ChevronRight, PlusCircle, 
@@ -32,7 +32,7 @@ const InboxView = () => {
     handleDeleteNote = () => {}, startCall = () => {}, showToast = () => {}, handleSyncChatHistory = () => {},
     loading: isInitialLoading = false,
     initData: refreshData = () => {}, isBackgroundLoading = false, fetchClientByPhone = () => {},
-    setActiveTab = () => {}, agencies = []
+    setActiveTab = () => {}, agencies = [], handleRefreshMessages = () => {}
   } = nexus;
 
   const omnichannel = useOmnichannel({
@@ -196,6 +196,14 @@ const InboxView = () => {
     }
   }, [selectedChatId, inlinePanelTab, lastMsgId, hasAiAccess, chatMessages.length, loadAiSuggestions]);
 
+  // Auto-refresh messages every 10 seconds for web users without push notifications
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      // Refresh messages silently in the background
+      handleRefreshMessages();
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [handleRefreshMessages]);
 
   // Pull to refresh logic
   const [pullDistance, setPullDistance] = React.useState(0);
@@ -360,14 +368,34 @@ const InboxView = () => {
                         <span style={{ fontSize: '0.6rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(59,130,246,0.1)', color: 'var(--accent-color)', border: '1px solid rgba(59,130,246,0.2)' }}>{msg.profileName}</span>
                       )}
                     </span>
-                    <span style={{ fontSize: '0.72rem', color: isUnread ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: isUnread ? '800' : '400' }}>{msg.time}</span>
+                    <span style={{ fontSize: '0.72rem', color: isUnread ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: isUnread ? '800' : '400' }}>
+                      {(() => {
+                        if (msg.time) return msg.time;
+                        const embeddedTimeMatch = (msg.text || '').match(/\s?(\d{4}-\d{2}-\d{2}\s(\d{2}:\d{2}):\d{2})$/);
+                        if (embeddedTimeMatch) return embeddedTimeMatch[2]; // just HH:mm
+                        
+                        const rawDate = msg.createdAt || msg.timestamp;
+                        if (rawDate) {
+                          const validDate = new Date(rawDate);
+                          if (!isNaN(validDate.getTime())) {
+                            return validDate.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' });
+                          }
+                        }
+                        return '';
+                      })()}
+                    </span>
                   </div>
                   <div className="truncate-text" style={{ 
                     opacity: isSelected ? 1 : (isUnread ? 0.9 : 0.6),
                     color: isUnread ? 'white' : 'var(--text-secondary)',
                     fontWeight: isUnread ? '600' : '400',
                     fontSize: '0.85rem'
-                  }}>{msg.text}</div>
+                  }}>
+                    {(() => {
+                      const stripped = (msg.text || '').replace(/\s?(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})$/, '').trim();
+                      return stripped === '' ? 'Zpráva' : stripped;
+                    })()}
+                  </div>
                 </div>
               );
             }) : (
@@ -403,7 +431,7 @@ const InboxView = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     {isMobile && <button onClick={() => setMobileView('list')} style={{ background: 'none', border: 'none', color: 'white' }}><ChevronLeft size={24} /></button>}
                     <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.9rem' }}>
-                      {(clientNames[selectedChat.from] || selectedChat.from).slice(-2)}
+                      {(clientNames[selectedChat?.from] || selectedChat?.from || '??').slice(-2)}
                     </div>
                     <div>
                       <div style={{ fontWeight: '800', fontSize: '1.2rem' }}>{clientNames[selectedChat.from] || selectedChat.from}</div>
@@ -469,25 +497,75 @@ const InboxView = () => {
                      </div>
                    )}
                    {allMessages.length > 0 ? (
-                     allMessages.map((msg, i) => {
-                       const rawDate = msg.createdAt || msg.timestamp || msg.time || new Date();
-                       const msgDate = new Date(rawDate);
-                       const validDate = isNaN(msgDate.getTime()) ? new Date() : msgDate;
-                       
-                       return (
-                         <div key={msg.id || i} className={msg.direction === 'OUTBOUND' ? 'message-bubble-out' : 'message-bubble-in'} style={{ alignSelf: msg.direction === 'OUTBOUND' ? 'flex-end' : 'flex-start', marginBottom: isMobile ? '0.35rem' : '0.6rem' }}>
-                           <div style={{ fontSize: isMobile ? '0.88rem' : '0.95rem' }}>{msg.text}</div>
-                           <div style={{ fontSize: '0.62rem', opacity: 0.6, marginTop: '4px', display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
-                             <span style={{ fontWeight: '800', color: msg.direction === 'OUTBOUND' ? 'rgba(255,255,255,0.7)' : 'inherit' }}>
-                               {msg.senderName ? `[${msg.senderName}]` : ''}
-                             </span>
-                             <span>
-                               {validDate.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' })}
-                             </span>
-                           </div>
-                         </div>
-                       );
-                     })
+                      (() => {
+                        let lastDateStr = null;
+                        return allMessages.map((msg, i) => {
+                          let finalMsgText = msg.text || '';
+                          let rawDate = msg.createdAt || msg.timestamp || msg.time;
+                          
+                          // Extract embedded timestamp from test scripts (e.g. "Test SMS 2026-06-15 14:41:13")
+                          const embeddedTimeMatch = finalMsgText.match(/\s?(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})$/);
+                          if (embeddedTimeMatch) {
+                            if (!rawDate) rawDate = new Date(embeddedTimeMatch[1]).toISOString();
+                            const strippedText = finalMsgText.replace(embeddedTimeMatch[0], '');
+                            finalMsgText = strippedText.trim() === '' ? 'Zpráva' : strippedText;
+                          }
+                          
+                          if (!rawDate) rawDate = new Date();
+                          const msgDate = new Date(rawDate);
+                          const validDate = isNaN(msgDate.getTime()) ? new Date() : msgDate;
+                          
+                          // Format date for separator
+                          const dateObj = new Date(validDate);
+                          dateObj.setHours(0, 0, 0, 0);
+                          const currentDateStr = dateObj.toISOString();
+                          
+                          let showDateSeparator = false;
+                          if (currentDateStr !== lastDateStr) {
+                            showDateSeparator = true;
+                            lastDateStr = currentDateStr;
+                          }
+                          
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          const yesterday = new Date(today);
+                          yesterday.setDate(yesterday.getDate() - 1);
+                          
+                          let displayDateStr = '';
+                          if (dateObj.getTime() === today.getTime()) {
+                            displayDateStr = lang === 'cz' ? 'Dnes' : 'Today';
+                          } else if (dateObj.getTime() === yesterday.getTime()) {
+                            displayDateStr = lang === 'cz' ? 'Včera' : 'Yesterday';
+                          } else {
+                            displayDateStr = validDate.toLocaleDateString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+                          }
+                          
+                          return (
+                            <Fragment key={msg.id || i}>
+                              {showDateSeparator && (
+                                <div style={{ textAlign: 'center', margin: '1rem 0 0.5rem 0' }}>
+                                  <span style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.7rem', fontWeight: '800' }}>
+                                    {displayDateStr}
+                                  </span>
+                                </div>
+                              )}
+                              <div className={msg.direction === 'OUTBOUND' ? 'message-bubble-out' : 'message-bubble-in'} style={{ alignSelf: msg.direction === 'OUTBOUND' ? 'flex-end' : 'flex-start', marginBottom: isMobile ? '0.35rem' : '0.6rem' }}>
+                                <div style={{ fontSize: isMobile ? '0.88rem' : '0.95rem' }}>{finalMsgText}</div>
+                                <div style={{ fontSize: '0.65rem', opacity: 0.6, marginTop: '4px', display: 'flex', justifyContent: 'flex-end', gap: '10px', alignItems: 'center' }}>
+                                  {msg.senderName && msg.direction === 'OUTBOUND' && (
+                                    <span style={{ fontWeight: '800', marginRight: 'auto', color: 'rgba(255,255,255,0.7)' }}>
+                                      {`[${msg.senderName}]`}
+                                    </span>
+                                  )}
+                                  <span>
+                                    {validDate.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' })}
+                                  </span>
+                                </div>
+                              </div>
+                            </Fragment>
+                          );
+                        });
+                      })()
                    ) : (
                      <div className="message-bubble-in" style={{ marginBottom: '1rem' }}>{selectedChat.text}</div>
                    )}

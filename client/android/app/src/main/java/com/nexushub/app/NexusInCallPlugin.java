@@ -15,6 +15,8 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
+import androidx.activity.result.ActivityResult;
+import com.getcapacitor.annotation.ActivityCallback;
 
 /**
  * NexusInCallPlugin — Capacitor plugin
@@ -78,7 +80,17 @@ public class NexusInCallPlugin extends Plugin {
      */
     @PluginMethod
     public void requestDefaultDialer(PluginCall call) {
-        NexusInCallService.requestDefaultDialer(getContext());
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            call.resolve();
+            return;
+        }
+        android.content.Intent intent = new android.content.Intent(android.telecom.TelecomManager.ACTION_CHANGE_DEFAULT_DIALER);
+        intent.putExtra(android.telecom.TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, getContext().getPackageName());
+        startActivityForResult(call, intent, "requestDefaultDialerCallback");
+    }
+
+    @ActivityCallback
+    private void requestDefaultDialerCallback(PluginCall call, ActivityResult result) {
         call.resolve();
     }
 
