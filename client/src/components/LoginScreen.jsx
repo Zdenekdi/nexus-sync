@@ -83,6 +83,14 @@ const LoginView = ({ isCz, onSwitch }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       <header>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src="/nexus_icon.png" style={{ width: '32px', height: '32px', borderRadius: '8px' }} alt="Nexus Hub" onError={e => { e.target.style.display = 'none'; }} />
+          </div>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: '900', color: '#60a5fa', margin: 0, letterSpacing: '0.05em' }}>
+            NEXUS HUB
+          </h2>
+        </div>
         <h3 style={{ fontSize: '2rem', fontWeight: '950', color: 'white', margin: 0, letterSpacing: '-0.02em' }}>
           {isCz ? 'Vítejte zpět' : 'Welcome back'}
         </h3>
