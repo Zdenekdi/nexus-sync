@@ -9,7 +9,7 @@ import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
 import { TRANSLATIONS } from '../translations';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://nexus-api.myvnc.com/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
 
 const RelayContext = createContext(null);
 
