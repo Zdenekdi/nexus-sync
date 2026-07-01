@@ -409,7 +409,6 @@ const RelayDashboard = () => {
             {lang === 'cz' ? 'Odhlásit zařízení' : 'Logout device'}
           </button>
         </div>
-        </div>
 
         {/* Dummy features for Google Play compliance */}
         <div style={{ width: '100%', maxWidth: '340px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1.5rem', animation: 'fadeIn 1s ease-out' }}>
