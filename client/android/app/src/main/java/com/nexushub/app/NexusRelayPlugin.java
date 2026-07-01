@@ -349,6 +349,9 @@ public class NexusRelayPlugin extends Plugin {
             } else {
                 smsManager.sendTextMessage(to, null, text, null, null);
             }
+            
+            // If we are the default SMS app, we must write sent messages to the provider
+            insertSentSms(getContext(), to, text);
 
             // Emit event to JS for real-time logging in UI
             JSObject relayEvent = new JSObject();
@@ -456,6 +459,10 @@ public class NexusRelayPlugin extends Plugin {
                 } else {
                     smsManager.sendTextMessage(to, null, content, null, null);
                 }
+                
+                // If we are the default SMS app, we must write sent messages to the provider
+                insertSentSms(context, to, content);
+                
                 android.util.Log.d("NexusRelay", "sendSmsFromData: SMS sent to " + to);
                 finalStatus = "sent";
             }
@@ -491,6 +498,20 @@ public class NexusRelayPlugin extends Plugin {
                     android.util.Log.w("NexusRelay", "sendSmsFromData: failed to report status", ex);
                 }
             }).start();
+        }
+    }
+    
+    private static void insertSentSms(Context context, String to, String text) {
+        try {
+            android.content.ContentValues values = new android.content.ContentValues();
+            values.put(android.provider.Telephony.Sms.ADDRESS, to);
+            values.put(android.provider.Telephony.Sms.BODY, text);
+            values.put(android.provider.Telephony.Sms.DATE, System.currentTimeMillis());
+            values.put(android.provider.Telephony.Sms.TYPE, android.provider.Telephony.Sms.MESSAGE_TYPE_SENT);
+            values.put(android.provider.Telephony.Sms.READ, 1);
+            context.getContentResolver().insert(android.provider.Telephony.Sms.Sent.CONTENT_URI, values);
+        } catch (Exception e) {
+            android.util.Log.e("NexusRelay", "Failed to insert sent SMS into system provider", e);
         }
     }
 
