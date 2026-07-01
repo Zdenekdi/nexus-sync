@@ -215,7 +215,19 @@ const RelayDashboard = () => {
   } = useInCallService({ operator, isActive, isNativeApp });
 
   // SMS relay
-  const { incomingSms, clearIncomingSms, sendSms } = useSmsRelay({ operator, isActive, isNativeApp, API_BASE });
+  const { incomingSms, clearIncomingSms, sendSms, configureRelay } = useSmsRelay({ operator, isActive, isNativeApp, API_BASE });
+
+  React.useEffect(() => {
+    if (isNativeApp && API_BASE && configureRelay) {
+      configureRelay({
+        baseUrl: `${API_BASE}/api/device/relay`,
+        deviceId: operator?.id || 'RELAY-DEVICE',
+        installationId: localStorage.getItem('nexus_installation_id') || '',
+        isActive: isActive,
+        profileId: operator?.id || ''
+      }).catch(console.error);
+    }
+  }, [isNativeApp, API_BASE, isActive, operator, configureRelay]);
 
   const allSetupOk = permSms && permDialer && isBatOpt;
 

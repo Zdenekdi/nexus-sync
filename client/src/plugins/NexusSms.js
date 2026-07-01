@@ -15,6 +15,7 @@ const NexusRelayPlugin = registerPlugin('NexusRelay', {
     requestDefaultSmsApp: async () => ({}),
     isDefaultDialer:     async () => ({ isDefault: false }),
     requestDefaultDialer: async () => ({}),
+    configureRelay:      async () => ({}),
   },
 });
 
@@ -37,8 +38,9 @@ export const isRelayVariant = APP_VARIANT === 'relay';
  * @param {Object} options
  * @param {Function} options.onIncoming - callback (sms: {from, body, timestamp})
  * @param {Object} options.socket - Socket.IO instance (pro nexusFull)
+ * @param {String} options.API_BASE - Base URL for API requests
  */
-export function useSmsRelay({ onIncoming, socket } = {}) {
+export function useSmsRelay({ onIncoming, socket, API_BASE } = {}) {
   const [isDefaultSmsApp, setIsDefaultSmsApp] = useState(false);
   const [incomingSms, setIncomingSms]         = useState(null);
   const onIncomingRef = useRef(onIncoming);
@@ -66,11 +68,12 @@ export function useSmsRelay({ onIncoming, socket } = {}) {
       onIncomingRef.current?.(sms);
 
       // Přepošleme to na server, aby to viděli operátoři
-      axios.post('/api/sms/incoming', sms).catch(console.error);
+      const url = API_BASE ? `${API_BASE}/api/sms/incoming` : '/api/sms/incoming';
+      axios.post(url, sms).catch(console.error);
     }).then(l => { listener = l; });
 
     return () => { listener?.remove?.(); };
-  }, []);
+  }, [API_BASE]);
 
   // ── nexusFull varianta: přeposlané SMS ze serveru přes Socket.IO ──────────
   useEffect(() => {
@@ -98,7 +101,8 @@ export function useSmsRelay({ onIncoming, socket } = {}) {
       }
       return Promise.reject(new Error('Plugin sendSms method missing'));
     } else {
-      return axios.post('/api/sms/send', { to, text });
+      const url = API_BASE ? `${API_BASE}/api/sms/send` : '/api/sms/send';
+      return axios.post(url, { to, text });
     }
   };
 
@@ -107,6 +111,7 @@ export function useSmsRelay({ onIncoming, socket } = {}) {
     incomingSms,
     clearIncomingSms:     () => setIncomingSms(null),
     sendSms,
+    configureRelay:       (config) => NexusRelayPlugin.configureRelay ? NexusRelayPlugin.configureRelay(config) : Promise.resolve(),
     requestDefaultSmsApp: () => NexusRelayPlugin.requestDefaultSmsApp().then(() =>
       NexusRelayPlugin.isDefaultSmsApp().then(r => setIsDefaultSmsApp(!!r?.isDefault))
     ),
