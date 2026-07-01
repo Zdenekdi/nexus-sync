@@ -80,13 +80,20 @@ public class NexusInCallPlugin extends Plugin {
      */
     @PluginMethod
     public void requestDefaultDialer(PluginCall call) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            call.resolve();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            android.app.role.RoleManager rm = getContext().getSystemService(android.app.role.RoleManager.class);
+            if (rm != null && !rm.isRoleHeld(android.app.role.RoleManager.ROLE_DIALER)) {
+                android.content.Intent intent = rm.createRequestRoleIntent(android.app.role.RoleManager.ROLE_DIALER);
+                startActivityForResult(call, intent, "requestDefaultDialerCallback");
+                return;
+            }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            android.content.Intent intent = new android.content.Intent(android.telecom.TelecomManager.ACTION_CHANGE_DEFAULT_DIALER);
+            intent.putExtra(android.telecom.TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, getContext().getPackageName());
+            startActivityForResult(call, intent, "requestDefaultDialerCallback");
             return;
         }
-        android.content.Intent intent = new android.content.Intent(android.telecom.TelecomManager.ACTION_CHANGE_DEFAULT_DIALER);
-        intent.putExtra(android.telecom.TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, getContext().getPackageName());
-        startActivityForResult(call, intent, "requestDefaultDialerCallback");
+        call.resolve();
     }
 
     @ActivityCallback
