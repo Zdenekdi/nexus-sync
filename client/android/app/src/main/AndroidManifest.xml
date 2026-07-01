@@ -70,6 +70,13 @@
                 <action android:name="android.provider.Telephony.SMS_DELIVER" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
+        </receiver>
+
+        <!-- MMS Receiver — výchozí SMS aplikace -->
+        <receiver
+            android:name=".NexusMmsReceiver"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_WAP_PUSH">
             <intent-filter>
                 <action android:name="android.provider.Telephony.WAP_PUSH_DELIVER" />
                 <data android:mimeType="application/vnd.wap.mms-message" />
