@@ -10,7 +10,10 @@ import android.telephony.SmsMessage;
 public class NexusSmsReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (intent == null || !Telephony.Sms.Intents.SMS_RECEIVED_ACTION.equals(intent.getAction())) {
+        if (intent == null) return;
+        String action = intent.getAction();
+        if (!Telephony.Sms.Intents.SMS_RECEIVED_ACTION.equals(action) &&
+            !Telephony.Sms.Intents.SMS_DELIVER_ACTION.equals(action)) {
             return;
         }
 
