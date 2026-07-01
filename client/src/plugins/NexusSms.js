@@ -56,7 +56,7 @@ export function useSmsRelay({ onIncoming, socket } = {}) {
     if (!isRelayVariant) return;
 
     let listener;
-    NexusRelayPlugin.addListener('smsReceived', (data) => {
+    NexusRelayPlugin.addListener('onSmsReceived', (data) => {
       const sms = {
         from:      data.sender  || data.from || 'Neznámé číslo',
         body:      data.body    || data.message || '',
