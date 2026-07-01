@@ -40,9 +40,7 @@ const RelayLoginScreen = () => {
     setLoading(true);
     try {
       const res = await onLogin(email, password);
-      if (res && !res.success) showToast(res.error || 'Login failed', 'error');
-    } catch (err) {
-      showToast('Login failed', 'error');
+      if (res && !res.success) showToast(res.error || 'Přihlášení selhalo', 'error');
     } finally {
       setLoading(false);
     }
@@ -50,57 +48,60 @@ const RelayLoginScreen = () => {
 
   return (
     <div style={{
-      minHeight: '100dvh', background: '#07080a', display: 'flex',
+      minHeight: '100dvh', background: '#000000', display: 'flex',
       flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       padding: '2rem', boxSizing: 'border-box', color: 'white'
     }}>
-      <div style={{ width: '64px', height: '64px', borderRadius: '18px', background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
-        <img src="/nexus_icon.png" style={{ width: '40px', height: '40px', borderRadius: '10px' }} alt="Nexus" onError={e => { e.target.style.display='none'; }} />
+      <div style={{ width: '72px', height: '72px', borderRadius: '20px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
+        <img src="/nexus_relay_icon.png" style={{ width: '56px', height: '56px', borderRadius: '14px' }} alt="Nexus Relay" onError={e => { e.target.style.display='none'; }} />
       </div>
-      <h2 style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '0.05em', marginBottom: '0.4rem' }}>NEXUS RELAY</h2>
-      <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)', marginBottom: '2.5rem' }}>Přihlaste se pro spárování zařízení</p>
+      <h2 style={{ fontSize: '1.8rem', fontWeight: '900', letterSpacing: '0.05em', marginBottom: '0.5rem', color: '#60a5fa' }}>NEXUS RELAY</h2>
+      <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.5)', marginBottom: '2.5rem', textAlign: 'center' }}>
+        Systémové relé pro Nexus Hub<br/>Zadejte své přihlašovací údaje
+      </p>
 
-      <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: '340px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <div style={{ position: 'relative' }}>
-          <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
+      <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: '320px', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <Mail size={20} style={{ position: 'absolute', left: '1.2rem', color: '#60a5fa', zIndex: 10, pointerEvents: 'none' }} />
           <input
             type="email" value={email} onChange={e => setEmail(e.target.value)}
             placeholder="E-mail"
             autoComplete="username"
             style={{
-              width: '100%', padding: '1rem 1rem 1rem 3rem', boxSizing: 'border-box',
-              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '14px', color: 'white', fontSize: '1rem', outline: 'none'
+              width: '100%', padding: '1.2rem 1.2rem 1.2rem 3.5rem', boxSizing: 'border-box',
+              background: 'rgba(255,255,255,0.08)', border: 'none',
+              borderRadius: '16px', color: 'white', fontSize: '1.05rem', outline: 'none', zIndex: 1
             }}
           />
         </div>
-        <div style={{ position: 'relative' }}>
-          <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <Lock size={20} style={{ position: 'absolute', left: '1.2rem', color: '#60a5fa', zIndex: 10, pointerEvents: 'none' }} />
           <input
             type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
             placeholder="Heslo"
             autoComplete="current-password"
             style={{
-              width: '100%', padding: '1rem 3rem 1rem 3rem', boxSizing: 'border-box',
-              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '14px', color: 'white', fontSize: '1rem', outline: 'none'
+              width: '100%', padding: '1.2rem 3.5rem 1.2rem 3.5rem', boxSizing: 'border-box',
+              background: 'rgba(255,255,255,0.08)', border: 'none',
+              borderRadius: '16px', color: 'white', fontSize: '1.05rem', outline: 'none', zIndex: 1
             }}
           />
-          <button type="button" onClick={() => setShowPw(v => !v)} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: 0 }}>
-            {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+          <button type="button" onClick={() => setShowPw(v => !v)} style={{ position: 'absolute', right: '1rem', background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: '0.5rem', zIndex: 10, display: 'flex' }}>
+            {showPw ? <EyeOff size={20} /> : <Eye size={20} />}
           </button>
         </div>
         <button
           type="submit" disabled={loading || !email || !password}
           style={{
-            padding: '1.1rem', borderRadius: '14px', border: 'none',
-            background: loading ? 'rgba(59,130,246,0.5)' : 'rgba(59,130,246,0.9)',
-            color: 'white', fontWeight: '900', fontSize: '1rem', cursor: loading ? 'not-allowed' : 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+            marginTop: '0.5rem', padding: '1.2rem', borderRadius: '16px', border: 'none',
+            background: (loading || !email || !password) ? 'rgba(96, 165, 250, 0.4)' : '#3b82f6',
+            color: 'white', fontWeight: '800', fontSize: '1.05rem',
+            cursor: (loading || !email || !password) ? 'not-allowed' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', transition: 'all 0.2s'
           }}
         >
-          {loading ? <Loader2 size={20} className="animate-spin" /> : <Lock size={18} />}
-          {loading ? 'Přihlašování...' : 'Přihlásit se'}
+          {loading ? <Loader2 size={22} className="animate-spin" /> : <Lock size={20} />}
+          {loading ? 'Ověřování...' : 'Spustit Relay'}
         </button>
       </form>
     </div>
