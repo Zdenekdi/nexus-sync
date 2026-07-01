@@ -90,6 +90,11 @@
                 <data android:scheme="mmsto" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
         </activity>
 
         <!-- Service pro MMS (povinná pro DEFAULT SMS APP) -->
@@ -102,6 +107,20 @@
             </intent-filter>
         </service>
 
+        <!-- Service pro odeslání rychlé zprávy (povinná pro DEFAULT SMS APP) -->
+        <service
+            android:name=".NexusHeadlessSmsSendService"
+            android:permission="android.permission.SEND_RESPOND_VIA_MESSAGE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.RESPOND_VIA_MESSAGE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="sms" />
+                <data android:scheme="smsto" />
+                <data android:scheme="mms" />
+                <data android:scheme="mmsto" />
+            </intent-filter>
+        </service>
 
         <receiver android:name=".NexusCallReceiver" android:exported="true">
             <intent-filter android:priority="999">
