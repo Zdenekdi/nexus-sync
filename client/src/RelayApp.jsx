@@ -26,6 +26,22 @@ const RelayLoginScreen = () => {
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [insets, setInsets] = useState({ top: 0, bottom: 0 });
+
+  useEffect(() => {
+    const measure = () => {
+      const navBar = Math.max(0, window.screen.height - window.innerHeight);
+      // Horní status bar: screen.height - availHeight - navBar
+      const statusBar = Math.max(0, window.screen.availHeight - window.innerHeight);
+      setInsets({
+        top: statusBar > 0 && statusBar < 120 ? statusBar : 0,
+        bottom: navBar > 0 && navBar < 200 ? navBar : 0,
+      });
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,7 +59,10 @@ const RelayLoginScreen = () => {
     <div style={{
       minHeight: '100dvh', background: '#000000', display: 'flex',
       flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: '2rem', boxSizing: 'border-box', color: 'white'
+      paddingLeft: '2rem', paddingRight: '2rem',
+      paddingTop: `max(2rem, ${insets.top}px)`,
+      paddingBottom: `max(2rem, ${insets.bottom}px)`,
+      boxSizing: 'border-box', color: 'white'
     }}>
       <div style={{ width: '72px', height: '72px', borderRadius: '20px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
         <img src="/nexus_relay_icon.png" style={{ width: '56px', height: '56px', borderRadius: '14px' }} alt="Nexus Relay" onError={e => { e.target.style.display = 'none'; }} />
@@ -220,7 +239,7 @@ const RelayDashboard = () => {
   React.useEffect(() => {
     if (isNativeApp && API_BASE && configureRelay) {
       configureRelay({
-        baseUrl: `${API_BASE}/api/device/relay`,
+        baseUrl: `${API_BASE.replace(/\/api$/, '')}/api/device/relay`,
         deviceId: operator?.id || 'RELAY-DEVICE',
         installationId: localStorage.getItem('nexus_installation_id') || '',
         isActive: isActive,

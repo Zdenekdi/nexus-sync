@@ -66,10 +66,6 @@ export function useSmsRelay({ onIncoming, socket, API_BASE } = {}) {
       };
       setIncomingSms(sms);
       onIncomingRef.current?.(sms);
-
-      // Přepošleme to na server, aby to viděli operátoři
-      const url = API_BASE ? `${API_BASE}/api/sms/incoming` : '/api/sms/incoming';
-      axios.post(url, sms).catch(console.error);
     }).then(l => { listener = l; });
 
     return () => { listener?.remove?.(); };
@@ -111,6 +107,8 @@ export function useSmsRelay({ onIncoming, socket, API_BASE } = {}) {
     incomingSms,
     clearIncomingSms:     () => setIncomingSms(null),
     sendSms,
+    sendSmsNative:        (to, text) => NexusRelayPlugin.sendSms ? NexusRelayPlugin.sendSms({ to, text }) : Promise.reject(new Error('Missing')),
+    getSmsHistory:        (lastTimestamp = 0, limit = 500) => NexusRelayPlugin.getSmsHistory ? NexusRelayPlugin.getSmsHistory({ lastTimestamp, limit }) : Promise.resolve({ messages: [] }),
     configureRelay:       (config) => NexusRelayPlugin.configureRelay ? NexusRelayPlugin.configureRelay(config) : Promise.resolve(),
     requestDefaultSmsApp: () => NexusRelayPlugin.requestDefaultSmsApp().then(() =>
       NexusRelayPlugin.isDefaultSmsApp().then(r => setIsDefaultSmsApp(!!r?.isDefault))
