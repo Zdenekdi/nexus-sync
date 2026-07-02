@@ -155,7 +155,7 @@ const RelaySmsModal = ({ isOpen, onClose }) => {
   };
 
   const renderThreadList = () => (
-    <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem', color: '#64748b' }}>
           <Loader2 className="animate-spin" size={24} />
@@ -229,7 +229,7 @@ const RelaySmsModal = ({ isOpen, onClose }) => {
   );
 
   const renderChat = () => (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#0f172a' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#0f172a', minHeight: 0 }}>
       <div style={{ flex: 1, padding: '1rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {currentThreadData?.messages.map((msg, i) => {
           const isOutbound = msg.type === 'outbound';
@@ -291,7 +291,7 @@ const RelaySmsModal = ({ isOpen, onClose }) => {
   );
 
   const renderNewMessage = () => (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
         <input 
           type="tel"

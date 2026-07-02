@@ -381,7 +381,7 @@ public class NexusRelayPlugin extends Plugin {
             String[] projection = new String[] { "_id", "address", "body", "date", "type" };
             String selection = "date > ?";
             String[] selectionArgs = new String[] { String.valueOf(lastTimestamp) };
-            String sortOrder = "date ASC LIMIT " + limit;
+            String sortOrder = "date DESC LIMIT " + limit;
 
             Cursor cursor = getContext().getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
 
