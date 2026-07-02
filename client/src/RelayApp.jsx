@@ -11,6 +11,7 @@ import { useSipCall } from './plugins/NexusSip';
 import { useInCallService, isInCallAvailable } from './plugins/NexusInCall';
 import { useSmsRelay } from './plugins/NexusSms';
 import { App as CapacitorApp } from '@capacitor/app';
+import axios from 'axios';
 
 const IncomingCallScreen = lazy(() => import('./components/sip/IncomingCallScreen'));
 const ActiveCallScreen = lazy(() => import('./components/sip/ActiveCallScreen'));
@@ -258,6 +259,25 @@ const RelayDashboard = () => {
       }).catch(console.error);
     }
   }, [isNativeApp, API_BASE, isActive, operator, configureRelay]);
+
+  // Bind device with backend so SMS endpoints authorize this installationId
+  React.useEffect(() => {
+    const verifyDevice = async () => {
+      try {
+        const url = API_BASE ? `${API_BASE.replace(/\/api$/, '')}/api/device/verify` : '/api/device/verify';
+        await axios.post(url, {
+          installationId: localStorage.getItem('nexus_installation_id'),
+          profileId: operator?.id || operator?.profileId,
+          platform: isNativeApp ? 'android' : 'web',
+          model: 'RelayApp',
+          deviceName: 'Nexus Relay'
+        });
+      } catch (err) {
+        console.error('Device binding failed:', err);
+      }
+    };
+    if (isActive) verifyDevice();
+  }, [API_BASE, operator, isActive, isNativeApp]);
 
   React.useEffect(() => {
     let listener;
