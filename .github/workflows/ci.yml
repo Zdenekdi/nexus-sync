@@ -57,7 +57,10 @@ jobs:
         run: cd client && npm install --legacy-peer-deps
 
       - name: Build client
-        run: cd client && npx vite build
+        run: |
+          cd client
+          export VITE_APP_VERSION="v$(node -p "require('./package.json').version")-b${{ github.run_number }}"
+          npx vite build
 
   e2e-tests:
     name: Playwright E2E Tests
@@ -145,6 +148,7 @@ jobs:
           VITE_APP_VARIANT: full
         run: |
           cd client
+          export VITE_APP_VERSION="v$(node -p "require('./package.json').version")-b${{ github.run_number }}"
           npm run build
           npx cap sync android
           cd android
@@ -156,6 +160,7 @@ jobs:
           VITE_APP_VARIANT: relay
         run: |
           cd client
+          export VITE_APP_VERSION="v$(node -p "require('./package.json').version")-b${{ github.run_number }}"
           npm run build
           cp dist/index.relay.html dist/index.html
           npx cap sync android
@@ -282,6 +287,7 @@ jobs:
         run: |
           cd client
           npm install --legacy-peer-deps
+          export VITE_APP_VERSION="v$(node -p "require('./package.json').version")-b${{ github.run_number }}"
           npm run build
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
