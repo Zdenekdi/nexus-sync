@@ -35,6 +35,13 @@ if (isReleaseBuild && !skipVersionIncrement) {
 
 def appVersionName = "${majorVersion}.${minorVersion}"
 def appVersionCode = (majorVersion * 10000) + minorVersion
+
+def githubRunNumber = System.getenv("GITHUB_RUN_NUMBER")
+if (githubRunNumber != null && !githubRunNumber.isEmpty()) {
+    appVersionName = "${majorVersion}.${minorVersion}-b${githubRunNumber}"
+    // Make sure we don't overflow the versionCode (max 2147483647). runNumber usually starts at 1 and goes up.
+    appVersionCode = appVersionCode + githubRunNumber.toInteger()
+}
 def artifactBaseName = "Nexus-Relay"
 def canonicalReleaseOutputDir = layout.buildDirectory.dir("outputs/apk/release")
 // Keep mirrored artifacts outside app/release to avoid colliding with AGP-owned outputs.
