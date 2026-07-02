@@ -69,8 +69,18 @@ const RelaySmsModal = ({ isOpen, onClose }) => {
         // Group by address
         const groups = {};
         res.messages.forEach(msg => {
-          const addr = msg.address;
+          let addr = msg.address;
           if (!addr) return;
+          
+          // Normalize number to prevent splitting threads for the same contact
+          addr = addr.replace(/[\\s\\-\\(\\)]/g, '');
+          if (addr.startsWith('00')) addr = '+' + addr.substring(2);
+          if (addr.length === 9 && !addr.startsWith('+')) {
+            addr = '+420' + addr; // Default to CZ prefix if 9 digits
+          }
+          // Assign normalized address back for consistent display
+          msg.normalizedAddress = addr;
+          
           if (!groups[addr]) {
             groups[addr] = {
               address: addr,
