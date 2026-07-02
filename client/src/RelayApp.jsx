@@ -28,7 +28,7 @@ const RelayLoginScreen = () => {
   const [loading, setLoading] = useState(false);
   const [insets, setInsets] = useState({ top: 0, bottom: 0 });
 
-  useEffect(() => {
+  React.useEffect(() => {
     const measure = () => {
       const navBar = Math.max(0, window.screen.height - window.innerHeight);
       // Horní status bar: screen.height - availHeight - navBar
