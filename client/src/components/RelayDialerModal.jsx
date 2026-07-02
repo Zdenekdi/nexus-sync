@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
 import { Phone, X, Delete } from 'lucide-react';
+import { App } from '@capacitor/app';
 
 const RelayDialerModal = ({ isOpen, onClose }) => {
   const [number, setNumber] = useState('');
 
   if (!isOpen) return null;
 
-  const handleDial = () => {
+  const handleDial = async () => {
     if (number.trim()) {
-      // In a real dialer we would use Android Intents or Sip
-      // For Google Play review, firing a tel: intent is enough to prove it's a dialer
-      window.location.href = `tel:${number}`;
+      try {
+        await App.openUrl({ url: `tel:${number}` });
+      } catch {
+        // Fallback for web/dev
+        window.location.href = `tel:${number}`;
+      }
     }
   };
 
