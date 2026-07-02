@@ -10,6 +10,7 @@ import GlobalAppStyles from './styles/GlobalAppStyles';
 import { useSipCall } from './plugins/NexusSip';
 import { useInCallService, isInCallAvailable } from './plugins/NexusInCall';
 import { useSmsRelay } from './plugins/NexusSms';
+import { App as CapacitorApp } from '@capacitor/app';
 
 const IncomingCallScreen = lazy(() => import('./components/sip/IncomingCallScreen'));
 const ActiveCallScreen = lazy(() => import('./components/sip/ActiveCallScreen'));
@@ -41,6 +42,16 @@ const RelayLoginScreen = () => {
     measure();
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
+  }, []);
+
+  React.useEffect(() => {
+    let listener;
+    CapacitorApp.addListener('backButton', () => {
+      CapacitorApp.exitApp();
+    }).then(l => listener = l);
+    return () => {
+      if (listener) listener.remove();
+    };
   }, []);
 
   const handleSubmit = async (e) => {
@@ -247,6 +258,22 @@ const RelayDashboard = () => {
       }).catch(console.error);
     }
   }, [isNativeApp, API_BASE, isActive, operator, configureRelay]);
+
+  React.useEffect(() => {
+    let listener;
+    CapacitorApp.addListener('backButton', () => {
+      if (showDialer) {
+        setShowDialer(false);
+      } else if (showSms) {
+        setShowSms(false);
+      } else {
+        CapacitorApp.exitApp();
+      }
+    }).then(l => listener = l);
+    return () => {
+      if (listener) listener.remove();
+    };
+  }, [showDialer, showSms]);
 
   const allSetupOk = permSms && permDialer && isBatOpt;
 
