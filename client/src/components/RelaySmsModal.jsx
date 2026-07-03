@@ -1,32 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, X, Send, ArrowLeft, Plus, User, Loader2, AlertCircle } from 'lucide-react';
 import { useSmsRelay } from '../plugins/NexusSms';
 import { registerPlugin } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 
 const NexusRelayPlugin = registerPlugin('NexusRelay', { web: {} });
-
-// Spolehlivá detekce výšky dolní navigační lišty v Android WebView
-function useNavBarHeight() {
-  const [navH, setNavH] = useState(0);
-  useEffect(() => {
-    const update = () => {
-      const vvh = window.visualViewport?.height ?? window.innerHeight;
-      const diff = window.innerHeight - vvh;
-      // diff je výška klávesnice nebo 0; skutečná nav bar = innerHeight - screen.availHeight
-      // Bezpečnější: porovnat s window.screen.height
-      const navBar = Math.max(0, window.screen.height - window.innerHeight);
-      setNavH(navBar > 0 && navBar < 200 ? navBar : 0);
-    };
-    update();
-    window.addEventListener('resize', update);
-    window.visualViewport?.addEventListener('resize', update);
-    return () => {
-      window.removeEventListener('resize', update);
-      window.visualViewport?.removeEventListener('resize', update);
-    };
-  }, []);
-  return navH;
-}
 
 const RelaySmsModal = ({ isOpen, onClose }) => {
   const [threads, setThreads] = useState([]);
@@ -39,8 +17,22 @@ const RelaySmsModal = ({ isOpen, onClose }) => {
   
   const { sendSmsNative, incomingSms } = useSmsRelay();
   const chatEndRef = useRef(null);
-  const navBarHeight = useNavBarHeight();
-  const safeBottom = navBarHeight > 0 ? `${navBarHeight}px` : 'env(safe-area-inset-bottom, 16px)';
+
+  // Handle hardware back button: chat → list → close modal
+  useEffect(() => {
+    if (!isOpen) return;
+    let listener;
+    CapacitorApp.addListener('backButton', () => {
+      if (activeThread || isNewMsg) {
+        setActiveThread(null);
+        setIsNewMsg(false);
+      } else {
+        onClose();
+      }
+    }).then(l => listener = l);
+    return () => { if (listener) listener.remove(); };
+  }, [isOpen, activeThread, isNewMsg, onClose]);
+
 
   useEffect(() => {
     if (isOpen) {
@@ -241,7 +233,7 @@ const RelaySmsModal = ({ isOpen, onClose }) => {
   );
 
   const renderChat = () => (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#0f172a', minHeight: 0 }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#0f172a', minHeight: 0, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       <div style={{ flex: 1, padding: '1rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {currentThreadData?.messages.map((msg, i) => {
           const isOutbound = msg.type === 'outbound';
@@ -272,7 +264,7 @@ const RelaySmsModal = ({ isOpen, onClose }) => {
       <div style={{ 
         padding: '1rem', background: '#1e293b', borderTop: '1px solid rgba(255,255,255,0.1)',
         display: 'flex', gap: '0.5rem', alignItems: 'flex-end',
-        paddingBottom: `calc(1rem + ${safeBottom})`
+        paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))'
       }}>
         <textarea 
           placeholder="Nová zpráva..."
@@ -303,7 +295,7 @@ const RelaySmsModal = ({ isOpen, onClose }) => {
   );
 
   const renderNewMessage = () => (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
         <input 
           type="tel"
@@ -328,7 +320,7 @@ const RelaySmsModal = ({ isOpen, onClose }) => {
       <div style={{ 
         padding: '1rem', background: '#1e293b', borderTop: '1px solid rgba(255,255,255,0.1)',
         display: 'flex', gap: '0.5rem', alignItems: 'flex-end',
-        paddingBottom: `calc(1rem + ${safeBottom})`
+        paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))'
       }}>
         <textarea 
           placeholder="Zpráva..."

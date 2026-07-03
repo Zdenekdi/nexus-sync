@@ -282,10 +282,12 @@ const RelayDashboard = () => {
   React.useEffect(() => {
     let listener;
     CapacitorApp.addListener('backButton', () => {
+      if (showSms) {
+        // RelaySmsModal has its own back handler that manages chat→list→close
+        return;
+      }
       if (showDialer) {
         setShowDialer(false);
-      } else if (showSms) {
-        setShowSms(false);
       } else {
         CapacitorApp.exitApp();
       }
