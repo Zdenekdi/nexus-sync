@@ -64,7 +64,9 @@ const RelaySmsModal = ({ isOpen, onClose }) => {
     try {
       setLoading(true);
       setLoadError(null);
-      const res = await NexusRelayPlugin.getSmsHistory({ lastTimestamp: 0, limit: 2000 });
+      // Only load last 90 days to avoid old messages crowding out new ones
+      const ninetyDaysAgo = Date.now() - (90 * 24 * 60 * 60 * 1000);
+      const res = await NexusRelayPlugin.getSmsHistory({ lastTimestamp: ninetyDaysAgo, limit: 5000 });
       if (res && res.messages) {
         // Group by address
         const groups = {};
