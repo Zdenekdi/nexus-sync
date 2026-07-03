@@ -131,6 +131,23 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
+      - name: Bump VERSION_MINOR and commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          PROPS="client/android/version.properties"
+          CURRENT=$(grep "^VERSION_MINOR=" "$PROPS" | cut -d= -f2)
+          NEW=$((CURRENT + 1))
+          sed -i "s/^VERSION_MINOR=${CURRENT}$/VERSION_MINOR=${NEW}/" "$PROPS"
+          MAJOR=$(grep "^VERSION_MAJOR=" "$PROPS" | cut -d= -f2)
+
+          echo "Bumped VERSION_MINOR: ${CURRENT} → ${NEW} (v${MAJOR}.${NEW})"
+
+          git add "$PROPS"
+          git commit -m "chore: bump Android version to ${MAJOR}.${NEW} [skip ci]"
+          git push
+
       - name: Install client dependencies
         run: cd client && npm install --legacy-peer-deps
 
