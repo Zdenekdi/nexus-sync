@@ -220,7 +220,7 @@ const RelaySmsModal = ({ isOpen, onClose }) => {
           onClick={() => setIsNewMsg(true)}
           style={{
             position: 'absolute', right: '2rem',
-            bottom: `calc(2rem + ${safeBottom})`,
+            bottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))',
             width: '56px', height: '56px', borderRadius: '50%', background: '#3b82f6',
             border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)', cursor: 'pointer', zIndex: 10
