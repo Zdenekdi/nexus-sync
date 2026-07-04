@@ -23,11 +23,12 @@ const RelaySmsModal = lazy(() => import('./components/RelaySmsModal'));
 
 // ── Login screen ─────────────────────────────────────────────────────────────
 const RelayLoginScreen = () => {
-  const { onLogin, showToast } = useRelay();
+  const { onLogin } = useRelay();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
   const [insets, setInsets] = useState({ top: 0, bottom: 0 });
 
   React.useEffect(() => {
@@ -59,9 +60,14 @@ const RelayLoginScreen = () => {
     e.preventDefault();
     if (!email || !password) return;
     setLoading(true);
+    setLoginError('');
     try {
       const res = await onLogin(email, password);
-      if (res && !res.success) showToast(res.error || 'Přihlášení selhalo', 'error');
+      if (res && !res.success) {
+        setLoginError(res.error || 'Přihlášení selhalo. Zkontrolujte e-mail a heslo.');
+      }
+    } catch {
+      setLoginError('Chyba připojení. Zkuste to znovu.');
     } finally {
       setLoading(false);
     }
@@ -104,6 +110,20 @@ const RelayLoginScreen = () => {
             {showPw ? <EyeOff size={20} /> : <Eye size={20} />}
           </button>
         </div>
+        {loginError && (
+          <div style={{
+            background: 'rgba(239, 68, 68, 0.15)',
+            border: '1px solid rgba(239, 68, 68, 0.4)',
+            borderRadius: '12px',
+            padding: '0.9rem 1.2rem',
+            color: '#f87171',
+            fontSize: '0.95rem',
+            textAlign: 'center',
+            lineHeight: '1.4'
+          }}>
+            {loginError}
+          </div>
+        )}
         <button
           type="submit" disabled={loading || !email || !password}
           style={{ marginTop: '0.5rem', padding: '1.2rem', borderRadius: '16px', border: 'none', background: (loading || !email || !password) ? 'rgba(96, 165, 250, 0.4)' : '#3b82f6', color: 'white', fontWeight: '800', fontSize: '1.05rem', cursor: (loading || !email || !password) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', transition: 'all 0.2s' }}
@@ -529,6 +549,39 @@ const RelayDashboard = () => {
     </>
   );
 }
+// ── Toast renderer ────────────────────────────────────────────────────────────
+const RelayToasts = () => {
+  const { toasts } = useRelay();
+  if (!toasts || toasts.length === 0) return null;
+  return (
+    <div style={{
+      position: 'fixed', top: 'calc(1rem + env(safe-area-inset-top, 0px))',
+      left: '50%', transform: 'translateX(-50%)',
+      zIndex: 999999, display: 'flex', flexDirection: 'column', gap: '0.5rem',
+      width: 'calc(100% - 2rem)', maxWidth: '360px', pointerEvents: 'none'
+    }}>
+      {toasts.map(t => (
+        <div key={t.id} style={{
+          padding: '0.9rem 1.2rem',
+          borderRadius: '14px',
+          background: t.type === 'error' ? 'rgba(239,68,68,0.92)'
+            : t.type === 'success' ? 'rgba(34,197,94,0.92)'
+            : 'rgba(30,41,59,0.95)',
+          color: 'white',
+          fontSize: '0.95rem',
+          fontWeight: '600',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+          backdropFilter: 'blur(10px)',
+          textAlign: 'center',
+          animation: 'fadeIn 0.2s ease-out'
+        }}>
+          {t.message}
+        </div>
+      ))}
+    </div>
+  );
+};
+
 // ── Root ─────────────────────────────────────────────────────────────────────
 const RelayApp = () => {
   const { isLoggedIn } = useRelay();
@@ -536,6 +589,7 @@ const RelayApp = () => {
   return (
     <>
       <GlobalAppStyles />
+      <RelayToasts />
       {isLoggedIn ? <RelayDashboard /> : <RelayLoginScreen />}
     </>
   );
