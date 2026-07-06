@@ -174,9 +174,9 @@ const RelaySmsModal = ({ isOpen, onClose }) => {
 
   // ── Thread list ──────────────────────────────────────────────────────────────
   const renderList = () => (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
-      {/* Search bar */}
-      <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+      {/* Search bar — pinned, never scrolls */}
+      <div style={{ flexShrink: 0, padding: '0.75rem 1rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', background: 'rgba(255,255,255,0.07)', borderRadius: '24px', padding: '0.55rem 1rem' }}>
           <Search size={16} color="#94a3b8" />
           <input
@@ -189,66 +189,70 @@ const RelaySmsModal = ({ isOpen, onClose }) => {
         </div>
       </div>
 
-      {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, color: '#64748b' }}>
-          <Loader2 className="animate-spin" size={28} />
-        </div>
-      ) : loadError ? (
-        <div style={{ padding: '2rem', textAlign: 'center', color: '#ef4444', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-          <AlertCircle size={32} />
-          <div style={{ fontSize: '0.9rem', lineHeight: '1.5' }}>{loadError}</div>
-          <button onClick={loadHistory} style={{ padding: '0.5rem 1.25rem', background: '#1a73e8', border: 'none', borderRadius: '20px', color: 'white', cursor: 'pointer', fontWeight: '600' }}>Zkusit znovu</button>
-        </div>
-      ) : filteredThreads.length === 0 ? (
-        <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b', fontSize: '0.95rem' }}>
-          {search ? 'Žádné výsledky.' : 'Žádné zprávy.'}
-        </div>
-      ) : filteredThreads.map(thread => {
-        const lastMsg = thread.messages[thread.messages.length - 1];
-        const isUnread = lastMsg?.type === 'inbound' && !lastMsg.read;
-        const color = avatarColor(thread.address);
-        return (
-          <div
-            key={thread.address}
-            onClick={() => setActiveThread({ address: thread.address })}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', padding: '0.875rem 1rem', cursor: 'pointer', transition: 'background 0.15s', position: 'relative' }}
-            onTouchStart={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
-            onTouchEnd={e => e.currentTarget.style.background = ''}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-            onMouseLeave={e => e.currentTarget.style.background = ''}
-          >
-            {/* Avatar */}
-            <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: color, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', fontSize: '1rem', letterSpacing: '0.5px' }}>
-              {getInitials(thread.address)}
-            </div>
-            {/* Content */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-                <span style={{ color: 'white', fontWeight: isUnread ? '700' : '500', fontSize: '0.975rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>
-                  {thread.address}
-                </span>
-                <span style={{ color: isUnread ? '#8ab4f8' : '#64748b', fontSize: '0.78rem', whiteSpace: 'nowrap', marginLeft: '0.5rem' }}>
-                  {formatThreadTime(thread.lastDate)}
-                </span>
-              </div>
-              <div style={{ color: isUnread ? '#e2e8f0' : '#64748b', fontSize: '0.875rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {lastMsg?.type === 'outbound' && <span style={{ color: '#94a3b8', marginRight: '3px' }}>Vy:</span>}
-                {lastMsg?.body || ''}
-              </div>
-            </div>
-            {isUnread && (
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#8ab4f8', flexShrink: 0 }} />
-            )}
+
+      {/* Scrollable list */}
+      <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', position: 'relative', paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
+        {loading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '4rem 0', color: '#64748b' }}>
+            <Loader2 className="animate-spin" size={28} />
           </div>
-        );
-      })}
+        ) : loadError ? (
+          <div style={{ padding: '2rem', textAlign: 'center', color: '#ef4444', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+            <AlertCircle size={32} />
+            <div style={{ fontSize: '0.9rem', lineHeight: '1.5' }}>{loadError}</div>
+            <button onClick={loadHistory} style={{ padding: '0.5rem 1.25rem', background: '#1a73e8', border: 'none', borderRadius: '20px', color: 'white', cursor: 'pointer', fontWeight: '600' }}>Zkusit znovu</button>
+          </div>
+        ) : filteredThreads.length === 0 ? (
+          <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b', fontSize: '0.95rem' }}>
+            {search ? 'Žádné výsledky.' : 'Žádné zprávy.'}
+          </div>
+        ) : filteredThreads.map(thread => {
+          const lastMsg = thread.messages[thread.messages.length - 1];
+          const isUnread = lastMsg?.type === 'inbound' && !lastMsg.read;
+          const color = avatarColor(thread.address);
+          return (
+            <div
+              key={thread.address}
+              onClick={() => setActiveThread({ address: thread.address })}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', padding: '0.875rem 1rem', cursor: 'pointer', transition: 'background 0.15s', position: 'relative' }}
+              onTouchStart={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+              onTouchEnd={e => e.currentTarget.style.background = ''}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+              onMouseLeave={e => e.currentTarget.style.background = ''}
+            >
+              {/* Avatar */}
+              <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: color, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', fontSize: '1rem', letterSpacing: '0.5px' }}>
+                {getInitials(thread.address)}
+              </div>
+              {/* Content */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                  <span style={{ color: 'white', fontWeight: isUnread ? '700' : '500', fontSize: '0.975rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>
+                    {thread.address}
+                  </span>
+                  <span style={{ color: isUnread ? '#8ab4f8' : '#64748b', fontSize: '0.78rem', whiteSpace: 'nowrap', marginLeft: '0.5rem' }}>
+                    {formatThreadTime(thread.lastDate)}
+                  </span>
+                </div>
+                <div style={{ color: isUnread ? '#e2e8f0' : '#64748b', fontSize: '0.875rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {lastMsg?.type === 'outbound' && <span style={{ color: '#94a3b8', marginRight: '3px' }}>Vy:</span>}
+                  {lastMsg?.body || ''}
+                </div>
+              </div>
+              {isUnread && (
+                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#8ab4f8', flexShrink: 0 }} />
+              )}
+            </div>
+          );
+        })}
+      </div>
 
       {/* FAB - new message */}
       {!loading && (
         <button
           onClick={() => setIsNewMsg(true)}
           style={{
-            position: 'fixed', right: '1.25rem',
+            position: 'absolute', right: '1.25rem',
             bottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))',
             width: '56px', height: '56px', borderRadius: '16px',
             background: '#1a73e8', border: 'none', color: 'white',
