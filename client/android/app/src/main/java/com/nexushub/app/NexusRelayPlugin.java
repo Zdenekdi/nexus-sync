@@ -373,19 +373,23 @@ public class NexusRelayPlugin extends Plugin {
     @PluginMethod
     public void getSmsHistory(PluginCall call) {
         long lastTimestamp = call.getLong("lastTimestamp", 0L);
-        int limit = call.getInt("limit", 500);
+        int limit = call.getInt("limit", 5000);
         JSArray messages = new JSArray();
 
         try {
             Uri uri = Uri.parse("content://sms/");
             String[] projection = new String[] { "_id", "address", "body", "date", "type" };
+            // Filter: only messages newer than lastTimestamp
             String selection = "date > ?";
             String[] selectionArgs = new String[] { String.valueOf(lastTimestamp) };
-            String sortOrder = "date DESC LIMIT " + limit;
+            // Sort newest first — do NOT put LIMIT here, it's not reliable on all Android versions
+            String sortOrder = "date DESC";
 
-            Cursor cursor = getContext().getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
+            Cursor cursor = getContext().getContentResolver().query(
+                uri, projection, selection, selectionArgs, sortOrder);
 
             if (cursor != null) {
+                int count = 0;
                 if (cursor.moveToFirst()) {
                     do {
                         JSObject msg = new JSObject();
@@ -397,6 +401,8 @@ public class NexusRelayPlugin extends Plugin {
                         // 1 = MESSAGE_TYPE_INBOX, 2 = MESSAGE_TYPE_SENT
                         msg.put("type", type == 1 ? "inbound" : "outbound");
                         messages.put(msg);
+                        count++;
+                        if (count >= limit) break; // manual limit
                     } while (cursor.moveToNext());
                 }
                 cursor.close();
