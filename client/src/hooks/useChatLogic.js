@@ -146,19 +146,20 @@ export function useChatLogic({
     return normalizedMessage;
   }, [selectedChatId, activeOperator?.profileId, activeProfileId, normalizeProfileId, setMessages, setChatMessages]);
 
-  const fetchChatMessages = useCallback(async (chatId) => {
+  const fetchChatMessages = useCallback(async (chatId, options = {}) => {
     if (!token || !chatId) return;
+    const silent = options.silent === true;
     try {
-      setIsHistoryLoading(true);
+      if (!silent) setIsHistoryLoading(true);
       const res = await axios.get(`${API_BASE}/messages/${chatId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setChatMessages(res.data || []);
     } catch (_err) {
       console.error('Failed to fetch chat messages:', _err);
-      if (_showToast) _showToast(t?.('fetchMessagesError') || 'Failed to load messages', 'error');
+      if (!silent && _showToast) _showToast(t?.('fetchMessagesError') || 'Failed to load messages', 'error');
     } finally {
-      setIsHistoryLoading(false);
+      if (!silent) setIsHistoryLoading(false);
     }
   }, [token, API_BASE, _showToast, t, setIsHistoryLoading]);
 
@@ -215,13 +216,38 @@ export function useChatLogic({
   const handleRefreshMessages = useCallback(async () => {
     if (!token) return;
     try {
-      const res = await axios.get(`${API_BASE}/messages`, {
+      const res = await axios.get(`${API_BASE}/chats`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setMessages(res.data || []);
+      if (Array.isArray(res.data)) {
+        const mappedMessages = res.data.map(chat => {
+          if (!chat) return null;
+          const latest = chat.messages?.[0] || {};
+          return {
+            id: chat.id,
+            chatId: chat.id,
+            profileId: normalizeProfileId(chat.profileId),
+            profileName: chat.profile?.name || null,
+            from: chat.externalId || 'Unknown',
+            text: latest.text || 'No messages',
+            senderName: latest.sender?.name || null,
+            timestamp: chat.lastMessageAt || latest.createdAt || new Date().toISOString(),
+            messages: chat.messages || [],
+            status: latest.status || 'read',
+            direction: latest.direction || 'INBOUND',
+            transport: latest.transport || 'sms',
+            client: chat.client || null
+          };
+        }).filter(Boolean);
+        setMessages(mappedMessages);
+      }
+      if (selectedChatId) {
+        await fetchChatMessages(selectedChatId, { silent: true });
+      }
     } catch (_err) {
       console.error('Failed to refresh messages:', _err);
-    }  }, [token, API_BASE, setMessages]);
+    }
+  }, [token, API_BASE, setMessages, selectedChatId, fetchChatMessages, normalizeProfileId]);
 
   const handleSaveNote = useCallback(async () => {
     if (!internalNote.trim() || !activeContactId || !activeProfileId) return;

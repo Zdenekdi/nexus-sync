@@ -388,8 +388,19 @@ export const NexusProvider = ({ children }) => {
   // --- Socket.io Integration ---
   useSocket(
     token,
-    (d) => d?.message && chatLogic.upsertIncomingMessage(d.message),
-    (d) => d?.message && setMessages(p => p.map(m => m.id === d.message.id ? { ...m, ...d.message } : m)),
+    (d) => {
+      const message = d?.message || d;
+      if (message) chatLogic.upsertIncomingMessage(message);
+    },
+    (d) => {
+      const message = d?.message || d;
+      if (!message) return;
+      setMessages(p => p.map(m => {
+        const sameMessage = m.id === message.id;
+        const sameChat = message.chatId && (m.id === message.chatId || m.chatId === message.chatId);
+        return sameMessage || sameChat ? { ...m, ...message, id: m.id, chatId: m.chatId || message.chatId } : m;
+      }));
+    },
     () => {}, // handleIncomingCall (TODO if needed)
     () => {}, // handleEmergencyAlert (TODO if needed)
     () => {}, // handleSipIncomingCall (TODO if needed)
@@ -488,6 +499,8 @@ export const NexusProvider = ({ children }) => {
     myProfiles, profiles: nexusData.profiles, _profiles: nexusData.profiles,
     operators: nexusData.operators,
     agencies: nexusData.agencies,
+    sessions: nexusData.sessions,
+    handleRevokeBinding: nexusData.handleRevokeBinding,
     onlineOnly, setOnlineOnly,
     totalUnread: messages.filter(m => m.status === 'unread').length,
     activeSubscription: nexusData.activeSubscription,
@@ -512,7 +525,7 @@ export const NexusProvider = ({ children }) => {
     isAddUserOpen, isBugReportOpen, agencyDetailModalData, editingProfileData, calViewDate, showPanicConfirm, _toasts,
     availableServers, selectedServerId, setSelectedServerId,
     isAllowed, normalizedRole, activeProfile, activeProfileId, myProfiles, nexusData.profiles, 
-    nexusData.operators, nexusData.agencies, onlineOnly,
+    nexusData.operators, nexusData.agencies, nexusData.sessions, nexusData.handleRevokeBinding, onlineOnly,
     nexusData.activeSubscription, nexusData.subscriptionHistory, daysLeft,
     voiceGuardianActive, handleToggleVoiceGuardian, audioSentinelActive,
     isRelayMode,

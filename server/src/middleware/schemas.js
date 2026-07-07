@@ -270,12 +270,16 @@ const registerPushToken = z.object({
 
 const verifyDeviceBinding = z.object({
   installationId: z.string().min(1).max(256),
+  profileId: z.string().min(1).max(128).optional().nullable(),
+  platform: z.enum(['android', 'ios', 'web']).optional().default('android'),
+  model: z.string().max(200).optional().nullable(),
+  deviceName: z.string().max(200).optional().nullable(),
   deviceModel: z.string().max(200).optional().nullable(),
   osVersion: z.string().max(50).optional().nullable()
 });
 
 const revokeDeviceBinding = z.object({
-  bindingId: cuid
+  installationId: z.string().min(1).max(256)
 });
 
 // ── SIP ──────────────────────────────────────────────────────────────────────
@@ -300,6 +304,8 @@ const updateGlobalSetting = z.object({
 const relayMessage = z.object({
   installationId: z.string().min(1).max(256),
   deviceId: z.string().max(128).optional(),
+  userId: z.string().max(128).optional(),
+  profileId: z.string().max(128).optional(),
   secret: z.string().max(256).optional(),
   type: z.string().max(32).optional(),
   from: z.string().max(64).optional(),
@@ -308,7 +314,7 @@ const relayMessage = z.object({
   text: z.string().max(5000).optional(),
   content: z.string().max(5000).optional(),
   transport: z.string().max(16).optional(),
-  timestamp: z.number().optional()
+  timestamp: z.union([z.number(), z.string().max(64)]).optional()
 });
 
 const mobileMessage = z.object({
