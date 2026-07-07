@@ -4,11 +4,14 @@ const pushService = require('../services/pushService');
 
 exports.incomingSms = async (req, res) => {
   try {
-    const { from, body, timestamp, installationId } = req.body;
+    const { from, body, content, timestamp, installationId } = req.body;
     const agencyId = req.user.agencyId; // Z relay JWT
 
-    if (!from || !body) {
-      return res.status(400).json({ error: 'Missing from or body' });
+    // Android plugin forwards as 'content', frontend/web might use 'body'
+    const smsText = body || content;
+
+    if (!from || !smsText) {
+      return res.status(400).json({ error: 'Missing from or body/content' });
     }
 
     const io = getIO();
@@ -16,7 +19,7 @@ exports.incomingSms = async (req, res) => {
     // Přepošli všem operátorům v agentuře do prohlížeče
     io.to(`agency_${agencyId}`).emit('sms:incoming', {
       from,
-      body,
+      body: smsText,
       timestamp: timestamp || Date.now(),
       installationId
     });
