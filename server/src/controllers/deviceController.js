@@ -2,6 +2,7 @@ const prisma = require('../services/db');
 const { registerPushToken, sendChatPush, sendCallPush } = require('../services/pushService');
 const { getIO } = require('../services/socket');
 const { secureCompare } = require('../utils/security');
+const { getPhoneLookupValues, normalizePhoneNumber } = require('../utils/phoneNumber');
 
 const normalizeCallState = (state) => {
   const normalized = `${state || ''}`.replace(/^State:\s*/i, '').trim().toUpperCase();
@@ -14,6 +15,29 @@ const normalizeTransport = (value) => {
     return normalized;
   }
   return null;
+};
+
+const findOrCreateSmsChat = async ({ externalId, profileId, agencyId, referenceNumber }) => {
+  const normalizedExternalId = normalizePhoneNumber(externalId, { referenceNumber });
+  const lookupValues = getPhoneLookupValues(externalId, { referenceNumber });
+
+  const chat = await prisma.chat.findFirst({
+    where: {
+      profileId,
+      externalId: { in: lookupValues.length ? lookupValues : [normalizedExternalId] }
+    },
+    orderBy: { lastMessageAt: 'desc' }
+  });
+
+  if (chat) return chat;
+
+  return prisma.chat.create({
+    data: {
+      externalId: normalizedExternalId || externalId,
+      profileId,
+      agencyId
+    }
+  });
 };
 
 // --- AUTHENTICATED ENDPOINTS (RBAC) ---
@@ -218,7 +242,7 @@ exports.handleRelay = async (req, res) => {
 
     const binding = await prisma.deviceBinding.findUnique({ 
       where: { installationId: installationId || 'none' }, 
-      include: { profile: { select: { id: true, name: true, agencyId: true } } } 
+      include: { profile: { select: { id: true, name: true, agencyId: true, phoneNumber: true } } }
     });
 
     if (!binding) return res.status(404).json({ ok: false, message: 'Source device not found' });
@@ -234,8 +258,12 @@ exports.handleRelay = async (req, res) => {
 
     if (binding && (messageTransport === 'sms' || messageTransport === 'rcs')) {
       const direction = (type === 'SMS_SENT' || type === 'OUTBOUND') ? 'OUTBOUND' : 'INBOUND';
-      let chat = await prisma.chat.findFirst({ where: { externalId: from, profileId: binding.profileId } });
-      if (!chat) chat = await prisma.chat.create({ data: { externalId: from, profileId: binding.profileId, agencyId: binding.agencyId } });
+      const chat = await findOrCreateSmsChat({
+        externalId: from,
+        profileId: binding.profileId,
+        agencyId: binding.agencyId,
+        referenceNumber: binding.profile?.phoneNumber
+      });
       
       const createdMessage = await prisma.message.create({ data: { chatId: chat.id, text: eventContent, transport: messageTransport, direction, status: 'delivered', createdAt } });
       await prisma.chat.update({ where: { id: chat.id }, data: { lastMessageAt: createdAt } });
@@ -243,7 +271,7 @@ exports.handleRelay = async (req, res) => {
         id: createdMessage.id,
         profileId: binding.profileId,
         chatId: chat.id,
-        from,
+        from: chat.externalId,
         text: eventContent,
         transport: messageTransport,
         direction,
@@ -252,7 +280,7 @@ exports.handleRelay = async (req, res) => {
         timestamp: createdMessage.createdAt
       });
       
-      try { await sendChatPush({ agencyId: binding.agencyId, profileId: binding.profileId, chatId: chat.id, from, messagePreview: eventContent, profileName: binding.profile.name }); } catch { /* skip */ }
+      try { await sendChatPush({ agencyId: binding.agencyId, profileId: binding.profileId, chatId: chat.id, from: chat.externalId, messagePreview: eventContent, profileName: binding.profile.name }); } catch { /* skip */ }
     } else if (binding && messageTransport === 'call') {
       const callState = normalizeCallState(eventContent);
       await prisma.callLog.create({ data: { profileId: binding.profileId, from: from || 'UNKNOWN', status: callState } });
@@ -273,10 +301,14 @@ exports.handleGoIP = async (req, res) => {
     const profile = await prisma.profile.findFirst({ where: { phoneNumber: dst } });
     if (!profile) return res.status(404).send('NOT FOUND');
 
-    let chat = await prisma.chat.findUnique({ where: { externalId_profileId: { externalId: src, profileId: profile.id } } });
-    if (!chat) chat = await prisma.chat.create({ data: { externalId: src, profileId: profile.id, agencyId: profile.agencyId } });
+    const chat = await findOrCreateSmsChat({
+      externalId: src,
+      profileId: profile.id,
+      agencyId: profile.agencyId,
+      referenceNumber: profile.phoneNumber
+    });
     await prisma.message.create({ data: { chatId: chat.id, text: msg, transport: 'sms', direction: 'INBOUND', status: 'delivered' } });
-    getIO().to(`agency_${profile.agencyId}`).emit('new_message', { id: Date.now(), from: src, text: msg, transport: 'sms' });
+    getIO().to(`agency_${profile.agencyId}`).emit('new_message', { id: Date.now(), chatId: chat.id, profileId: profile.id, from: chat.externalId, text: msg, transport: 'sms' });
     return res.status(200).send('RECEIVE OK');
   } catch (error) {
     return res.status(500).send('ERROR');
@@ -291,10 +323,14 @@ exports.handleMobileSms = async (req, res) => {
     const profile = await prisma.profile.findFirst({ where: { phoneNumber: to } });
     if (!profile) return res.status(404).json({ message: 'Profile not found' });
 
-    let chat = await prisma.chat.findFirst({ where: { externalId: from, profileId: profile.id } });
-    if (!chat) chat = await prisma.chat.create({ data: { externalId: from, profileId: profile.id, agencyId: profile.agencyId } });
+    const chat = await findOrCreateSmsChat({
+      externalId: from,
+      profileId: profile.id,
+      agencyId: profile.agencyId,
+      referenceNumber: profile.phoneNumber
+    });
     await prisma.message.create({ data: { chatId: chat.id, text, transport: 'sms', direction: 'INBOUND', status: 'delivered' } });
-    getIO().to(`agency_${profile.agencyId}`).emit('new_message', { from, text, transport: 'sms' });
+    getIO().to(`agency_${profile.agencyId}`).emit('new_message', { chatId: chat.id, profileId: profile.id, from: chat.externalId, text, transport: 'sms' });
     return res.json({ status: 'success' });
   } catch (error) {
     return res.status(500).json({ message: 'Error' });

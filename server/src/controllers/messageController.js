@@ -1,16 +1,36 @@
 const prisma = require('../services/db');
 const { getIO } = require('../services/socket');
 const { sendChatPush, sendRelaySmsPush } = require('../services/pushService');
+const { getPhoneLookupValues, normalizePhoneNumber } = require('../utils/phoneNumber');
 
 exports.getMessages = async (req, res) => {
   try {
     const { chatId } = req.params;
     const { role, agencyId } = req.user;
-    const chat = await prisma.chat.findUnique({ where: { id: chatId } });
+    const chat = await prisma.chat.findUnique({
+      where: { id: chatId },
+      include: { profile: { select: { phoneNumber: true } } }
+    });
     if (!chat) return res.status(404).json({ message: 'Chat not found' });
     if (chat.agencyId !== agencyId) return res.status(403).json({ message: 'Access denied' });
+
+    const phoneVariants = getPhoneLookupValues(chat.externalId, { referenceNumber: chat.profile?.phoneNumber });
+    let chatIds = [chat.id];
+
+    if (phoneVariants.length > 1) {
+      const siblingChats = await prisma.chat.findMany({
+        where: {
+          agencyId,
+          profileId: chat.profileId,
+          externalId: { in: phoneVariants }
+        },
+        select: { id: true }
+      });
+      chatIds = [...new Set([...chatIds, ...siblingChats.map((sibling) => sibling.id)])];
+    }
+
     const messages = await prisma.message.findMany({
-      where: { chatId },
+      where: { chatId: { in: chatIds } },
       include: { 
         sender: { select: { id: true, name: true } },
         chat: { include: { client: true } }
@@ -109,22 +129,30 @@ exports.simulateInbound = async (req, res) => {
     const profile = await prisma.profile.findUnique({ where: { id: profileId } });
     if (!profile) return res.status(404).json({ message: 'Profile not found' });
     if (profile.agencyId !== agencyId) return res.status(403).json({ message: 'Access denied' });
-    let chat = await prisma.chat.findUnique({ where: { externalId_profileId: { externalId, profileId } } });
+    const normalizedExternalId = normalizePhoneNumber(externalId, { referenceNumber: profile.phoneNumber });
+    const phoneVariants = getPhoneLookupValues(externalId, { referenceNumber: profile.phoneNumber });
+    let chat = await prisma.chat.findFirst({
+      where: {
+        profileId,
+        externalId: { in: phoneVariants.length ? phoneVariants : [normalizedExternalId] }
+      },
+      orderBy: { lastMessageAt: 'desc' }
+    });
     
     // Auto-link to CRM Client
     let clientId = null;
-    if (externalId) {
+    if (normalizedExternalId) {
       const client = await prisma.client.upsert({
         where: {
           agencyId_phone: {
             agencyId: String(agencyId),
-            phone: String(externalId)
+            phone: String(normalizedExternalId)
           }
         },
         update: {}, // Just find it if it exists
         create: {
           agencyId: String(agencyId),
-          phone: String(externalId),
+          phone: String(normalizedExternalId),
           name: 'Lead',
           totalSpent: 0
         }
@@ -135,7 +163,7 @@ exports.simulateInbound = async (req, res) => {
     if (!chat) {
       chat = await prisma.chat.create({ 
         data: { 
-          externalId, 
+          externalId: normalizedExternalId,
           profileId, 
           agencyId: profile.agencyId,
           clientId
@@ -156,7 +184,7 @@ exports.simulateInbound = async (req, res) => {
         ...message,
         chatId: chat.id,
         profileId: profile.id,
-        from: externalId
+        from: chat.externalId
       }); 
     } catch (e) { /* Socket may not be ready */ }
     
@@ -165,7 +193,7 @@ exports.simulateInbound = async (req, res) => {
         agencyId: profile.agencyId,
         profileId,
         chatId: message.id,
-        from: externalId,
+        from: chat.externalId,
         messagePreview: text,
         profileName: profile.name
       });
@@ -301,4 +329,3 @@ exports.getRelayHistory = async (req, res) => {
     res.status(500).json({ message: 'Error fetching relay history' });
   }
 };
-
