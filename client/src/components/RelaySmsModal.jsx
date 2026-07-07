@@ -98,6 +98,28 @@ const RelaySmsModal = ({ isOpen, onClose }) => {
     }
   }, [activeThread, threads]);
 
+  // Mark thread as read when opened
+  useEffect(() => {
+    if (activeThread && activeThread.address) {
+      // 1. Update native side
+      NexusRelayPlugin.markSmsAsRead({ address: activeThread.address }).catch(e => console.warn('Failed to mark read', e));
+      
+      // 2. Update local state immediately for fast UI
+      setThreads(prev => prev.map(t => {
+        if (t.address === activeThread.address) {
+          const hasUnread = t.messages.some(m => m.type === 'inbound' && !m.read);
+          if (hasUnread) {
+            return {
+              ...t,
+              messages: t.messages.map(m => m.type === 'inbound' ? { ...m, read: true } : m)
+            };
+          }
+        }
+        return t;
+      }));
+    }
+  }, [activeThread]);
+
   const loadHistory = async () => {
     try {
       setLoading(true);

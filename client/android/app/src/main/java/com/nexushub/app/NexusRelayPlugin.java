@@ -371,6 +371,36 @@ public class NexusRelayPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void markSmsAsRead(PluginCall call) {
+        String address = call.getString("address");
+        if (address == null || address.isEmpty()) {
+            call.reject("Address is required");
+            return;
+        }
+        
+        try {
+            Uri uri = Uri.parse("content://sms/");
+            android.content.ContentValues values = new android.content.ContentValues();
+            values.put("read", 1);
+            
+            // Note: address in DB might not perfectly match provided address due to formatting,
+            // but SMS provider handles basic matching. For exact matching, it's better to 
+            // query by thread_id if available, but filtering by address and unread is a start.
+            String selection = "address = ? AND read = 0";
+            String[] selectionArgs = new String[] { address };
+            
+            int updatedRows = getContext().getContentResolver().update(uri, values, selection, selectionArgs);
+            
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            ret.put("updated", updatedRows);
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("Failed to mark SMS as read: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
     public void getSmsHistory(PluginCall call) {
         long lastTimestamp = call.getLong("lastTimestamp", 0L);
         int limit = call.getInt("limit", 5000);
@@ -378,7 +408,7 @@ public class NexusRelayPlugin extends Plugin {
 
         try {
             Uri uri = Uri.parse("content://sms/");
-            String[] projection = new String[] { "_id", "address", "body", "date", "type" };
+            String[] projection = new String[] { "_id", "address", "body", "date", "type", "read" };
             // Filter: only messages newer than lastTimestamp
             String selection = "date > ?";
             String[] selectionArgs = new String[] { String.valueOf(lastTimestamp) };
@@ -398,8 +428,10 @@ public class NexusRelayPlugin extends Plugin {
                         msg.put("body", cursor.getString(cursor.getColumnIndexOrThrow("body")));
                         msg.put("date", cursor.getLong(cursor.getColumnIndexOrThrow("date")));
                         int type = cursor.getInt(cursor.getColumnIndexOrThrow("type"));
+                        int read = cursor.getInt(cursor.getColumnIndexOrThrow("read"));
                         // 1 = MESSAGE_TYPE_INBOX, 2 = MESSAGE_TYPE_SENT
                         msg.put("type", type == 1 ? "inbound" : "outbound");
+                        msg.put("read", read == 1);
                         messages.put(msg);
                         count++;
                         if (count >= limit) break; // manual limit
