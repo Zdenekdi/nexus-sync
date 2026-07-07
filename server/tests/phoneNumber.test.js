@@ -5,6 +5,8 @@ describe('phone number utilities', () => {
     expect(normalizePhoneNumber('739 777 718', { referenceNumber: '+420 773 227 907' })).toBe('+420739777718');
     expect(normalizePhoneNumber('739777718', { referenceNumber: '+420773227907' })).toBe('+420739777718');
     expect(normalizePhoneNumber('420739777718', { referenceNumber: '+420773227907' })).toBe('+420739777718');
+    expect(normalizePhoneNumber('0420739777718', { referenceNumber: '+420773227907' })).toBe('+420739777718');
+    expect(normalizePhoneNumber('00420739777718', { referenceNumber: '+420773227907' })).toBe('+420739777718');
   });
 
   it('builds lookup variants for already-split chat external ids', () => {
@@ -14,7 +16,9 @@ describe('phone number utilities', () => {
       '739 777 718',
       '739777718',
       '+420739777718',
-      '420739777718'
+      '420739777718',
+      '0420739777718',
+      '00420739777718'
     ]));
   });
 });
