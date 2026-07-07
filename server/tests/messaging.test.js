@@ -43,6 +43,35 @@ describe('GET /api/chats', () => {
   });
 });
 
+describe('GET /api/messages/:chatId', () => {
+  it('includes sibling chats with the same normalized phone number', async () => {
+    prismaMock.chat.findUnique.mockResolvedValue({
+      id: 'old-chat',
+      agencyId: 'agency-1',
+      profileId: 'profile-1',
+      externalId: '739 777 718',
+      profile: { phoneNumber: '+420 773 227 907' },
+    });
+    prismaMock.chat.findMany.mockResolvedValue([{ id: 'old-chat' }, { id: 'new-chat' }]);
+    prismaMock.message.findMany.mockResolvedValue([]);
+
+    const res = await request(app)
+      .get('/api/messages/old-chat')
+      .set('Authorization', `Bearer ${makeToken()}`);
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.message.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          chatId: {
+            in: expect.arrayContaining(['old-chat', 'new-chat']),
+          },
+        },
+      })
+    );
+  });
+});
+
 describe('POST /api/messages', () => {
   it('creates a message', async () => {
     prismaMock.chat.findUnique.mockResolvedValue({ id: 'c1', agencyId: 'agency-1' });

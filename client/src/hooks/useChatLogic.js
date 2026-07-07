@@ -157,6 +157,7 @@ export function useChatLogic({
       setChatMessages(res.data || []);
     } catch (_err) {
       console.error('Failed to fetch chat messages:', _err);
+      if (!silent) setChatMessages([]);
       if (!silent && _showToast) _showToast(t?.('fetchMessagesError') || 'Failed to load messages', 'error');
     } finally {
       if (!silent) setIsHistoryLoading(false);
@@ -180,7 +181,7 @@ export function useChatLogic({
 
   const selectedChat = useMemo(() => {
     if (!selectedChatId) return filteredMessages[0] || null;
-    return filteredMessages.find(m => String(m.id) === String(selectedChatId)) || filteredMessages[0] || null;
+    return filteredMessages.find(m => String(m.id) === String(selectedChatId)) || null;
   }, [filteredMessages, selectedChatId]);
 
   const handleSendMessage = async (text) => {
@@ -282,7 +283,17 @@ export function useChatLogic({
 
   // --- Effects ---
   useEffect(() => {
+    if (!selectedChatId) return;
+    const exists = filteredMessages.some(m => String(m.id) === String(selectedChatId));
+    if (!exists) {
+      setSelectedChatId(null);
+      setChatMessages([]);
+    }
+  }, [filteredMessages, selectedChatId, setSelectedChatId]);
+
+  useEffect(() => {
     if (selectedChatId) {
+      setChatMessages([]);
       fetchChatMessages(selectedChatId);
       localStorage.setItem('nexus_lastSelectedChatId', String(selectedChatId));
     } else {

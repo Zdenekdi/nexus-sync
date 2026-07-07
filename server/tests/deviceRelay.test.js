@@ -260,6 +260,51 @@ describe('POST /api/device/relay', () => {
     expect(mockEmit).toHaveBeenCalledWith('new_message', expect.objectContaining({ transport: 'sms' }));
   });
 
+  it('normalizes local Czech caller numbers before creating a relay chat', async () => {
+    prismaMock.deviceBinding.findUnique.mockResolvedValue({
+      ...mockBinding,
+      profile: { ...mockBinding.profile, phoneNumber: '+420 773 227 907' },
+    });
+    prismaMock.chat.findFirst.mockResolvedValue(null);
+    prismaMock.chat.create.mockResolvedValue({
+      ...mockChat,
+      externalId: '+420739777718',
+    });
+    prismaMock.message.create.mockResolvedValue({
+      ...mockMessage,
+      chatId: mockChat.id,
+      createdAt: new Date(),
+    });
+    prismaMock.chat.update.mockResolvedValue({});
+
+    const res = await request(app)
+      .post('/api/device/relay')
+      .send({
+        installationId: INSTALLATION_ID,
+        from: '739 777 718',
+        content: 'July message',
+        transport: 'sms',
+        secret: DEVICE_SECRET,
+      });
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.chat.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          externalId: {
+            in: expect.arrayContaining(['739777718', '+420739777718', '420739777718']),
+          },
+        }),
+      })
+    );
+    expect(prismaMock.chat.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ externalId: '+420739777718' }),
+      })
+    );
+    expect(mockEmit).toHaveBeenCalledWith('new_message', expect.objectContaining({ from: '+420739777718' }));
+  });
+
   it('active binding without DEVICE_SECRET → 401', async () => {
     prismaMock.deviceBinding.findUnique.mockResolvedValue(mockBinding);
 
