@@ -305,6 +305,34 @@ describe('POST /api/device/relay', () => {
     expect(mockEmit).toHaveBeenCalledWith('new_message', expect.objectContaining({ from: '+420739777718' }));
   });
 
+  it('deduplicates relay SMS resent by Android broadcast and inbox fallback', async () => {
+    const duplicateMessage = {
+      ...mockMessage,
+      id: 'msg-duplicate',
+      text: 'Relay SMS text',
+      createdAt: new Date('2026-07-07T09:18:52.000Z'),
+    };
+    prismaMock.deviceBinding.findUnique.mockResolvedValue(mockBinding);
+    prismaMock.chat.findFirst.mockResolvedValue(mockChat);
+    prismaMock.message.findFirst.mockResolvedValue(duplicateMessage);
+
+    const res = await request(app)
+      .post('/api/device/relay')
+      .send({
+        installationId: INSTALLATION_ID,
+        from: CALLER_PHONE,
+        content: 'Relay SMS text',
+        transport: 'sms',
+        timestamp: '2026-07-07T09:18:53.000Z',
+        secret: DEVICE_SECRET,
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ ok: true, duplicate: true, messageId: 'msg-duplicate' });
+    expect(prismaMock.message.create).not.toHaveBeenCalled();
+    expect(mockEmit).not.toHaveBeenCalledWith('new_message', expect.anything());
+  });
+
   it('active binding without DEVICE_SECRET → 401', async () => {
     prismaMock.deviceBinding.findUnique.mockResolvedValue(mockBinding);
 

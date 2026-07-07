@@ -4,6 +4,8 @@ const { getIO } = require('../services/socket');
 const { secureCompare } = require('../utils/security');
 const { getPhoneLookupValues, normalizePhoneNumber } = require('../utils/phoneNumber');
 
+const RELAY_SMS_DUPLICATE_WINDOW_MS = 2 * 60 * 1000;
+
 const normalizeCallState = (state) => {
   const normalized = `${state || ''}`.replace(/^State:\s*/i, '').trim().toUpperCase();
   return normalized || 'RINGING';
@@ -265,6 +267,26 @@ exports.handleRelay = async (req, res) => {
         referenceNumber: binding.profile?.phoneNumber
       });
       
+      const duplicateWindowStart = new Date(createdAt.getTime() - RELAY_SMS_DUPLICATE_WINDOW_MS);
+      const duplicateWindowEnd = new Date(createdAt.getTime() + RELAY_SMS_DUPLICATE_WINDOW_MS);
+      const duplicateMessage = await prisma.message.findFirst({
+        where: {
+          chatId: chat.id,
+          text: eventContent,
+          transport: messageTransport,
+          direction,
+          createdAt: {
+            gte: duplicateWindowStart,
+            lte: duplicateWindowEnd
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      if (duplicateMessage) {
+        return res.json({ ok: true, duplicate: true, chatId: chat.id, messageId: duplicateMessage.id });
+      }
+
       const createdMessage = await prisma.message.create({ data: { chatId: chat.id, text: eventContent, transport: messageTransport, direction, status: 'delivered', createdAt } });
       await prisma.chat.update({ where: { id: chat.id }, data: { lastMessageAt: createdAt } });
       getIO().to(`agency_${binding.agencyId}`).emit('new_message', {

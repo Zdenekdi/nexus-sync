@@ -39,7 +39,9 @@ const RelayModeView = () => {
   const syncSmsHistory = useCallback(async () => {
     const plugin = window.Capacitor?.Plugins?.NexusRelay;
     if (!plugin) return;
-    try { await plugin.syncHistory(); } catch { /* ignore */ }
+    try {
+      await plugin.syncHistory?.({ limit: 500, lookbackMs: 31 * 24 * 60 * 60 * 1000 });
+    } catch { /* ignore */ }
   }, []);
 
   if (loading) {
