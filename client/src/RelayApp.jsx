@@ -139,6 +139,7 @@ const RelayLoginScreen = () => {
 // ── Main relay dashboard (minimal) ───────────────────────────────────────────
 const RelayDashboard = () => {
   const { operator, onLogout, lang, isNativeApp, API_BASE } = useRelay();
+  const relayProfileId = operator?.profileId || operator?.activeProfileId || null;
   const [isActive, setIsActive] = useState(true);
   const [batteryLevel, setBatteryLevel] = useState(100);
   const [isCharging, setIsCharging] = useState(false);
@@ -275,10 +276,10 @@ const RelayDashboard = () => {
         deviceId: operator?.id || 'RELAY-DEVICE',
         installationId: localStorage.getItem('nexus_installation_id') || '',
         isActive: isActive,
-        profileId: operator?.id || ''
+        profileId: relayProfileId || ''
       }).catch(console.error);
     }
-  }, [isNativeApp, API_BASE, isActive, operator, configureRelay]);
+  }, [isNativeApp, API_BASE, isActive, operator, relayProfileId, configureRelay]);
 
   // Bind device with backend so SMS endpoints authorize this installationId
   React.useEffect(() => {
@@ -287,7 +288,7 @@ const RelayDashboard = () => {
         const url = API_BASE ? `${API_BASE.replace(/\/api$/, '')}/api/device/verify` : '/api/device/verify';
         await axios.post(url, {
           installationId: localStorage.getItem('nexus_installation_id'),
-          profileId: operator?.id || operator?.profileId,
+          profileId: relayProfileId,
           platform: isNativeApp ? 'android' : 'web',
           model: 'RelayApp',
           deviceName: 'Nexus Relay'
@@ -297,7 +298,7 @@ const RelayDashboard = () => {
       }
     };
     if (isActive) verifyDevice();
-  }, [API_BASE, operator, isActive, isNativeApp]);
+  }, [API_BASE, operator, relayProfileId, isActive, isNativeApp]);
 
   React.useEffect(() => {
     let listener;

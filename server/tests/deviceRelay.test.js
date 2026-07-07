@@ -251,12 +251,29 @@ describe('POST /api/device/relay', () => {
         from: CALLER_PHONE,
         content: 'Relay SMS text',
         transport: 'sms',
+        secret: DEVICE_SECRET,
       });
 
     expect(res.status).toBe(200);
     expect(prismaMock.message.create).toHaveBeenCalledTimes(1);
     expect(mockTo).toHaveBeenCalledWith('agency_agency-1');
     expect(mockEmit).toHaveBeenCalledWith('new_message', expect.objectContaining({ transport: 'sms' }));
+  });
+
+  it('active binding without DEVICE_SECRET → 401', async () => {
+    prismaMock.deviceBinding.findUnique.mockResolvedValue(mockBinding);
+
+    const res = await request(app)
+      .post('/api/device/relay')
+      .send({
+        installationId: INSTALLATION_ID,
+        from: CALLER_PHONE,
+        content: 'Relay SMS text',
+        transport: 'sms',
+      });
+
+    expect(res.status).toBe(401);
+    expect(prismaMock.message.create).not.toHaveBeenCalled();
   });
 
   it('active binding + transport call → 200, CallLog created, incoming_call emitted', async () => {
@@ -270,6 +287,7 @@ describe('POST /api/device/relay', () => {
         from: CALLER_PHONE,
         content: 'RINGING',
         transport: 'call',
+        secret: DEVICE_SECRET,
       });
 
     expect(res.status).toBe(200);
@@ -325,6 +343,7 @@ describe('POST /api/device/relay', () => {
         content: 'Sent SMS',
         transport: 'sms',
         type: 'SMS_SENT',
+        secret: DEVICE_SECRET,
       });
 
     expect(res.status).toBe(200);

@@ -44,7 +44,7 @@ exports.verifyDeviceBinding = async (req, res) => {
     
     const roleName = (typeof userRole === 'string' ? userRole : userRole?.name) || '';
     const internalRole = roleName.toUpperCase();
-    const { installationId, profileId, platform, model, deviceName } = req.body;
+    const { installationId, profileId, platform, model, deviceModel, deviceName } = req.body;
 
     // RBAC: RESTRICTED for Modelka (they shouldn't be binding new devices usually, but let's be more permissive than the current block)
     // The previous block was way too aggressive, blocking even admins.
@@ -59,7 +59,9 @@ exports.verifyDeviceBinding = async (req, res) => {
       return res.status(400).json({ ok: false, message: 'Missing installationId' });
     }
 
-    console.info(`[Device Binding] Attempting: installationId=${installationId}, userId=${userId}, role=${internalRole}, model=${model}`);
+    const resolvedModel = model || deviceModel || null;
+
+    console.info(`[Device Binding] Attempting: installationId=${installationId}, userId=${userId}, role=${internalRole}, model=${resolvedModel}`);
 
     let resolvedProfileId = null;
     if (profileId) {
@@ -77,8 +79,8 @@ exports.verifyDeviceBinding = async (req, res) => {
 
     await prisma.deviceBinding.upsert({
       where: { installationId },
-      update: { userId: String(userId), agencyId: String(agencyId), profileId: String(resolvedProfileId), platform: String(platform || 'android'), active: true, model, deviceName, lastSeenAt: new Date() },
-      create: { installationId, userId: String(userId), agencyId: String(agencyId), profileId: String(resolvedProfileId), platform: String(platform || 'android'), active: true, model, deviceName, lastSeenAt: new Date() },
+      update: { userId: String(userId), agencyId: String(agencyId), profileId: String(resolvedProfileId), platform: String(platform || 'android'), active: true, model: resolvedModel, deviceName, lastSeenAt: new Date() },
+      create: { installationId, userId: String(userId), agencyId: String(agencyId), profileId: String(resolvedProfileId), platform: String(platform || 'android'), active: true, model: resolvedModel, deviceName, lastSeenAt: new Date() },
     });
 
     // Deactivate redundant bindings for this profile instead of deleting them
@@ -202,43 +204,57 @@ exports.sendTestPush = async (req, res) => {
 
 exports.handleRelay = async (req, res) => {
   try {
-    const { installationId, type, transport, from, content, secret, deviceId, userId } = req.body;
-    if (!from || !content) return res.status(400).json({ ok: false, message: 'Missing from or content' });
+    const { installationId, type, transport, from, content, body, text, secret, deviceId, userId, timestamp } = req.body;
+    const eventContent = content || body || text;
+    if (!from || !eventContent) return res.status(400).json({ ok: false, message: 'Missing from or content' });
     
     const messageTransport = normalizeTransport(transport || type);
     if (!messageTransport) return res.status(400).json({ ok: false, message: 'Invalid transport' });
 
     const reqUserId = String(deviceId || userId || '');
-    let isAuthorized = secureCompare(secret, process.env.DEVICE_SECRET);
+    if (!secureCompare(secret, process.env.DEVICE_SECRET)) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
     const binding = await prisma.deviceBinding.findUnique({ 
       where: { installationId: installationId || 'none' }, 
       include: { profile: { select: { id: true, name: true, agencyId: true } } } 
     });
 
-    if (binding && binding.active) {
-      // If we find a binding by installationId, we MUST ensure it belongs to the same user
-      // if a deviceId/userId was provided in the request (extra security layer).
-      if (reqUserId && String(binding.userId) !== reqUserId) {
-        return res.status(401).json({ message: 'Unauthorized: Device ID mismatch' });
-      }
-      isAuthorized = true;
-    }
-    
-    if (!isAuthorized) return res.status(401).json({ message: 'Unauthorized' });
     if (!binding) return res.status(404).json({ ok: false, message: 'Source device not found' });
+    if (!binding.active) return res.status(401).json({ message: 'Unauthorized: Device binding inactive' });
+    // If we find a binding by installationId, ensure it belongs to the same user
+    // if a deviceId/userId was provided in the request (extra security layer).
+    if (reqUserId && String(binding.userId) !== reqUserId) {
+      return res.status(401).json({ message: 'Unauthorized: Device ID mismatch' });
+    }
+
+    const eventDate = timestamp ? new Date(timestamp) : new Date();
+    const createdAt = Number.isNaN(eventDate.getTime()) ? new Date() : eventDate;
 
     if (binding && (messageTransport === 'sms' || messageTransport === 'rcs')) {
       const direction = (type === 'SMS_SENT' || type === 'OUTBOUND') ? 'OUTBOUND' : 'INBOUND';
       let chat = await prisma.chat.findFirst({ where: { externalId: from, profileId: binding.profileId } });
       if (!chat) chat = await prisma.chat.create({ data: { externalId: from, profileId: binding.profileId, agencyId: binding.agencyId } });
       
-      const createdMessage = await prisma.message.create({ data: { chatId: chat.id, text: content, transport: messageTransport, direction, status: 'delivered', createdAt: new Date() } });
-      await prisma.chat.update({ where: { id: chat.id }, data: { lastMessageAt: new Date() } });
-      getIO().to(`agency_${binding.agencyId}`).emit('new_message', { id: createdMessage.id, profileId: binding.profileId, chatId: chat.id, from, text: content, transport: messageTransport, direction: direction.toLowerCase() });
+      const createdMessage = await prisma.message.create({ data: { chatId: chat.id, text: eventContent, transport: messageTransport, direction, status: 'delivered', createdAt } });
+      await prisma.chat.update({ where: { id: chat.id }, data: { lastMessageAt: createdAt } });
+      getIO().to(`agency_${binding.agencyId}`).emit('new_message', {
+        id: createdMessage.id,
+        profileId: binding.profileId,
+        chatId: chat.id,
+        from,
+        text: eventContent,
+        transport: messageTransport,
+        direction,
+        status: createdMessage.status,
+        createdAt: createdMessage.createdAt,
+        timestamp: createdMessage.createdAt
+      });
       
-      try { await sendChatPush({ agencyId: binding.agencyId, profileId: binding.profileId, chatId: chat.id, from, messagePreview: content, profileName: binding.profile.name }); } catch { /* skip */ }
+      try { await sendChatPush({ agencyId: binding.agencyId, profileId: binding.profileId, chatId: chat.id, from, messagePreview: eventContent, profileName: binding.profile.name }); } catch { /* skip */ }
     } else if (binding && messageTransport === 'call') {
-      const callState = normalizeCallState(content);
+      const callState = normalizeCallState(eventContent);
       await prisma.callLog.create({ data: { profileId: binding.profileId, from: from || 'UNKNOWN', status: callState } });
       getIO().to(`agency_${binding.agencyId}`).emit('incoming_call', { profileId: binding.profileId, from, profileName: binding.profile.name, state: callState });
       try { await sendCallPush({ agencyId: binding.agencyId, profileId: binding.profileId, from, caller: from, profileName: binding.profile.name, callState }); } catch { /* skip */ }

@@ -271,7 +271,15 @@ export function useNexusData({
       // Bindings
       if (bindingRes?.data?.ok && Array.isArray(bindingRes?.data?.bindings)) {
         setSessions(bindingRes.data.bindings.map(b => ({
-          id: b.id, device: b.model || 'Android', status: b.active ? 'Active' : 'Disabled'
+          id: b.id,
+          installationId: b.installationId,
+          profileId: b.profileId,
+          profileName: b.profile?.name || null,
+          device: b.deviceName || b.model || 'Android',
+          model: b.model || null,
+          platform: b.platform || 'android',
+          lastSeenAt: b.lastSeenAt,
+          status: b.active ? 'Active' : 'Disabled'
         })));
       }
 
@@ -660,6 +668,24 @@ export function useNexusData({
     }
   }, [token, API_BASE, showToast, lang]);
 
+  const handleRevokeBinding = useCallback(async (installationId) => {
+    if (!installationId || !token) return;
+    try {
+      await axios.post(`${API_BASE}/device/revoke-binding`, { installationId }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSessions(prev => prev.map(session =>
+        session.installationId === installationId
+          ? { ...session, status: 'Disabled' }
+          : session
+      ));
+      if (showToast) showToast(lang === 'cz' ? 'Relay zařízení bylo odpojeno.' : 'Relay device revoked.', 'success');
+    } catch (_err) {
+      console.error('Failed to revoke relay binding:', _err);
+      if (showToast) showToast(lang === 'cz' ? 'Odpojení relay zařízení selhalo.' : 'Failed to revoke relay device.', 'error');
+    }
+  }, [token, API_BASE, showToast, lang]);
+
   return useMemo(() => ({
     profiles, agencies, agencySettings: _agencySettings, operators, sessions, stats, activeSubscription: _activeSubscription,
     subscriptionHistory: _subscriptionHistory, globalFeatures, handleFeatureToggle,
@@ -669,7 +695,7 @@ export function useNexusData({
     calendar, isCalendarSyncOpen, setIsCalendarSyncOpen, calendarSyncUrl, setCalendarSyncUrl,
     isBookingModalOpen, setIsBookingModalOpen, selectedScheduleEvent, setSelectedScheduleEvent,
     newBookingForm, setNewBookingForm, bioText, setBioText, isSyncing, syncStatus: _syncStatus, syncProgress: _syncProgress,
-    relayOnline, handleSaveBio, handleSyncAll, handleSyncChatHistory, handleSaveCredentials, handleQuickSaveMeeting, handleDelayBooking, initData,
+    relayOnline, handleSaveBio, handleSyncAll, handleSyncChatHistory, handleRevokeBinding, handleSaveCredentials, handleQuickSaveMeeting, handleDelayBooking, initData,
     handleExportICS, handleSaveCalendarSync, handleSaveBooking, fetchClientByPhone,
     setProfiles, toggleOperatorStatus, handleSaveAssignees,
     rolePermissions
@@ -681,6 +707,6 @@ export function useNexusData({
     isSyncing, _syncStatus, _syncProgress, relayOnline, handleSaveBio, handleSyncAll, handleSyncChatHistory, 
     handleSaveCredentials, handleQuickSaveMeeting, handleDelayBooking, initData, handleExportICS, 
     handleSaveCalendarSync, handleSaveBooking, fetchClientByPhone, toggleOperatorStatus, handleSaveAssignees, 
-    rolePermissions
+    handleRevokeBinding, rolePermissions
   ]);
 }

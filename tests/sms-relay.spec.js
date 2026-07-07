@@ -194,6 +194,7 @@ test.describe('GoIP — POST /api/device/goip/sms', () => {
       src: '+420900000002',
       dst: TEST_PROFILE_PHONE,
       msg: uniqueMsg,
+      secret: DEVICE_SECRET,
     });
 
     const res = await anonRelay.post(`${API_BASE}/device/goip/sms`, qs.toString(), {
@@ -210,6 +211,7 @@ test.describe('GoIP — POST /api/device/goip/sms', () => {
       src: '+420900000002',
       dst: '+420000099999', // Unknown to any profile
       msg: 'Test unknown dst',
+      secret: DEVICE_SECRET,
     });
 
     const res = await anonRelay.post(`${API_BASE}/device/goip/sms`, qs.toString(), {
@@ -237,6 +239,7 @@ test.describe('Relay — installationId binding', () => {
       transport: 'sms',
       from: '+420777000001',
       content: `Relay binding test ${Date.now()}`,
+      secret: DEVICE_SECRET,
     });
 
     // 200 = success, 409 = no profile bound (binding exists but profile not set)
@@ -257,6 +260,7 @@ test.describe('Relay — installationId binding', () => {
       transport: 'sms',
       from: '+420777000002',
       content: 'Hijack attempt',
+      secret: DEVICE_SECRET,
     });
 
     // Should fail — either no binding match or binding mismatch
