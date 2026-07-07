@@ -35,6 +35,10 @@ const normalizePhoneNumber = (value, options = {}) => {
   const countryCode = inferCountryCode(options.referenceNumber, options.defaultCountryCode);
   const countryDigits = countryCode.replace(/\D/g, '');
 
+  if (countryDigits && digits.startsWith(`0${countryDigits}`) && digits.length > countryDigits.length + 6) {
+    return `+${digits.slice(1)}`;
+  }
+
   if (countryDigits && digits.startsWith(countryDigits) && digits.length > countryDigits.length + 5) {
     return `+${digits}`;
   }
@@ -65,6 +69,8 @@ const getPhoneLookupValues = (value, options = {}) => {
   if (normalized.startsWith('+')) {
     const normalizedDigits = normalized.slice(1);
     values.push(normalizedDigits);
+    values.push(`0${normalizedDigits}`);
+    values.push(`00${normalizedDigits}`);
 
     const countryCode = inferCountryCode(options.referenceNumber, options.defaultCountryCode).replace(/\D/g, '');
     if (countryCode && normalizedDigits.startsWith(countryCode)) {
