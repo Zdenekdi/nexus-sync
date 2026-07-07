@@ -153,6 +153,11 @@ public class NexusRelayForegroundService extends Service {
             return;
         }
 
+        NexusRelayPlugin.SmsSyncResult syncResult = NexusRelayPlugin.syncSmsHistoryNative(this, 25, 10 * 60_000L);
+        if (syncResult.synced > 0 || syncResult.failed > 0) {
+            Log.d(TAG, "pollOutboxNative: SMS inbox fallback synced=" + syncResult.synced + ", failed=" + syncResult.failed);
+        }
+
         // ── WakeLock: keep CPU awake while doing network I/O (screen-off safe) ──
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
         PowerManager.WakeLock wakeLock = pm.newWakeLock(

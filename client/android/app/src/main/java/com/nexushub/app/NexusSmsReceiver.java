@@ -37,13 +37,30 @@ public class NexusSmsReceiver extends BroadcastReceiver {
         final PendingResult result = goAsync();
 
         try {
+            String sender = null;
+            long timestamp = 0L;
+            StringBuilder bodyBuilder = new StringBuilder();
+
             for (SmsMessage smsMessage : messages) {
                 if (smsMessage == null) {
                     continue;
                 }
-                String sender = smsMessage.getDisplayOriginatingAddress();
-                String body = smsMessage.getDisplayMessageBody();
-                NexusRelayPlugin.onMessageReceived(context, sender, body);
+                if (sender == null || sender.isEmpty()) {
+                    sender = smsMessage.getDisplayOriginatingAddress();
+                }
+                if (timestamp == 0L) {
+                    timestamp = smsMessage.getTimestampMillis();
+                }
+                String bodyPart = smsMessage.getDisplayMessageBody();
+                if (bodyPart != null) {
+                    bodyBuilder.append(bodyPart);
+                }
+            }
+
+            if (bodyBuilder.length() > 0) {
+                NexusRelayPlugin.onMessageReceived(context, sender, bodyBuilder.toString(), timestamp);
+            } else {
+                NexusRelayPlugin.syncSmsHistoryNative(context, 25, 10 * 60_000L);
             }
         } finally {
             result.finish();

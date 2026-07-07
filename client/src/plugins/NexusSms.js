@@ -16,6 +16,7 @@ const NexusRelayPlugin = registerPlugin('NexusRelay', {
     isDefaultDialer:     async () => ({ isDefault: false }),
     requestDefaultDialer: async () => ({}),
     configureRelay:      async () => ({}),
+    syncHistory:         async () => ({ synced: 0, failed: 0, skipped: 0 }),
   },
 });
 
@@ -109,6 +110,7 @@ export function useSmsRelay({ onIncoming, socket, API_BASE } = {}) {
     sendSms,
     sendSmsNative:        (to, text) => NexusRelayPlugin.sendSms ? NexusRelayPlugin.sendSms({ to, text }) : Promise.reject(new Error('Missing')),
     getSmsHistory:        (lastTimestamp = 0, limit = 500) => NexusRelayPlugin.getSmsHistory ? NexusRelayPlugin.getSmsHistory({ lastTimestamp, limit }) : Promise.resolve({ messages: [] }),
+    syncHistory:          (options = {}) => NexusRelayPlugin.syncHistory ? NexusRelayPlugin.syncHistory(options) : Promise.resolve({ synced: 0, failed: 0, skipped: 0 }),
     configureRelay:       (config) => NexusRelayPlugin.configureRelay ? NexusRelayPlugin.configureRelay(config) : Promise.resolve(),
     requestDefaultSmsApp: () => NexusRelayPlugin.requestDefaultSmsApp().then(() =>
       NexusRelayPlugin.isDefaultSmsApp().then(r => setIsDefaultSmsApp(!!r?.isDefault))

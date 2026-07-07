@@ -44,12 +44,15 @@ public class NexusRelayPlugin extends Plugin {
     static final String KEY_INSTALLATION_ID = "installationId";
     static final String KEY_IS_ACTIVE = "isActive";
     static final String KEY_PROFILE_ID = "profileId";
+    static final String KEY_LAST_SMS_HISTORY_SYNC_AT = "lastSmsHistorySyncAt";
 
     static final String SMS_PERMISSION_ALIAS = "sms";
     static final String PHONE_PERMISSION_ALIAS = "phone";
     static final String LOCATION_PERMISSION_ALIAS = "location";
     private static final String[] SUPPORTED_RCS_PACKAGES = { "com.google.android.apps.messaging" };
     private static final long SMS_DEDUP_WINDOW_MS = 8000L;
+    private static final long DEFAULT_SMS_SYNC_LOOKBACK_MS = 31L * 24L * 60L * 60L * 1000L;
+    private static final long BACKGROUND_SMS_SYNC_LOOKBACK_MS = 10L * 60L * 1000L;
 
     public static NexusRelayPlugin instance;
     private NexusPhoneListener phoneListener;
@@ -448,6 +451,130 @@ public class NexusRelayPlugin extends Plugin {
         }
     }
 
+    @PluginMethod
+    public void syncHistory(PluginCall call) {
+        int limit = call.getInt("limit", 500);
+        long lookbackMs = call.getLong("lookbackMs", DEFAULT_SMS_SYNC_LOOKBACK_MS);
+        Context context = getContext().getApplicationContext();
+
+        new Thread(() -> {
+            SmsSyncResult result = syncSmsHistoryNative(context, limit, lookbackMs);
+            JSObject ret = new JSObject();
+            ret.put("synced", result.synced);
+            ret.put("failed", result.failed);
+            ret.put("skipped", result.skipped);
+            ret.put("lastSyncedAt", result.lastSyncedAt);
+            call.resolve(ret);
+        }).start();
+    }
+
+    static SmsSyncResult syncSmsHistoryNative(Context context, int limit, long fallbackLookbackMs) {
+        SmsSyncResult result = new SmsSyncResult();
+        if (context == null) return result;
+
+        android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        boolean isActive = prefs.getBoolean(KEY_IS_ACTIVE, false);
+        String baseUrl = prefs.getString(KEY_BASE_URL, null);
+        String deviceId = prefs.getString(KEY_DEVICE_ID, "RELAY-DEVICE");
+        String installationId = prefs.getString(KEY_INSTALLATION_ID, null);
+
+        if (!isActive || baseUrl == null || baseUrl.isEmpty()) {
+            result.skipped++;
+            return result;
+        }
+
+        long now = System.currentTimeMillis();
+        long lastSyncAt = prefs.getLong(KEY_LAST_SMS_HISTORY_SYNC_AT, 0L);
+        long lookback = fallbackLookbackMs > 0 ? fallbackLookbackMs : BACKGROUND_SMS_SYNC_LOOKBACK_MS;
+        long since = lastSyncAt > 0 ? lastSyncAt : Math.max(0L, now - lookback);
+        int maxRows = Math.max(1, Math.min(limit, 5000));
+
+        PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+        PowerManager.WakeLock wakeLock = pm != null
+            ? pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "NexusHub:SmsHistorySync")
+            : null;
+        if (wakeLock != null) {
+            wakeLock.acquire(30_000L);
+        }
+
+        Cursor cursor = null;
+        long lastSuccessfulDate = lastSyncAt;
+        try {
+            Uri uri = android.provider.Telephony.Sms.Inbox.CONTENT_URI;
+            String[] projection = new String[] { "_id", "address", "body", "date" };
+            String selection = "date > ?";
+            String[] selectionArgs = new String[] { String.valueOf(since) };
+            cursor = context.getContentResolver().query(
+                uri,
+                projection,
+                selection,
+                selectionArgs,
+                "date ASC"
+            );
+
+            if (cursor == null) {
+                result.skipped++;
+                return result;
+            }
+
+            int count = 0;
+            while (cursor.moveToNext() && count < maxRows) {
+                count++;
+                String address = cursor.getString(cursor.getColumnIndexOrThrow("address"));
+                String body = cursor.getString(cursor.getColumnIndexOrThrow("body"));
+                long date = cursor.getLong(cursor.getColumnIndexOrThrow("date"));
+
+                if (address == null || address.isEmpty() || body == null || body.isEmpty()) {
+                    result.skipped++;
+                    continue;
+                }
+
+                boolean forwarded = forwardDataNativeBlocking(
+                    context,
+                    baseUrl,
+                    deviceId,
+                    installationId,
+                    "sms",
+                    address,
+                    body,
+                    date > 0 ? date : now
+                );
+
+                if (!forwarded) {
+                    result.failed++;
+                    break;
+                }
+
+                result.synced++;
+                if (date > lastSuccessfulDate) {
+                    lastSuccessfulDate = date;
+                }
+            }
+
+            if (lastSuccessfulDate > lastSyncAt) {
+                prefs.edit().putLong(KEY_LAST_SMS_HISTORY_SYNC_AT, lastSuccessfulDate).apply();
+                result.lastSyncedAt = lastSuccessfulDate;
+            } else {
+                result.lastSyncedAt = lastSyncAt;
+            }
+        } catch (SecurityException e) {
+            android.util.Log.w("NexusRelay", "syncSmsHistoryNative: missing SMS permission", e);
+            result.failed++;
+        } catch (Exception e) {
+            android.util.Log.e("NexusRelay", "syncSmsHistoryNative: failed", e);
+            result.failed++;
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+            if (wakeLock != null && wakeLock.isHeld()) {
+                wakeLock.release();
+            }
+        }
+
+        return result;
+    }
+
     // ── Static send_sms entry point (called natively from NexusFcmService) ─────
     // Sends an SMS using data from a FCM data-only payload without needing
     // the JS / Capacitor layer to be running (works when screen is off / killed).
@@ -613,14 +740,18 @@ public class NexusRelayPlugin extends Plugin {
     }
 
     public static void onMessageReceived(Context context, String from, String body) {
-        onTransportMessageReceived(context, "sms", from, body, null);
+        onMessageReceived(context, from, body, System.currentTimeMillis());
+    }
+
+    public static void onMessageReceived(Context context, String from, String body, long timestamp) {
+        onTransportMessageReceived(context, "sms", from, body, null, timestamp);
     }
 
     public static void onRcsMessageReceived(Context context, String from, String body, String sourcePackage) {
-        onTransportMessageReceived(context, "rcs", from, body, sourcePackage);
+        onTransportMessageReceived(context, "rcs", from, body, sourcePackage, System.currentTimeMillis());
     }
 
-    private static void onTransportMessageReceived(Context context, String transport, String from, String body, String sourcePackage) {
+    private static void onTransportMessageReceived(Context context, String transport, String from, String body, String sourcePackage, long timestamp) {
         android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         boolean isActive = prefs.getBoolean(KEY_IS_ACTIVE, false);
         String baseUrl = prefs.getString(KEY_BASE_URL, null);
@@ -655,7 +786,7 @@ public class NexusRelayPlugin extends Plugin {
 
         // 2. Native Background Forwarding
         if (isActive && baseUrl != null) {
-            forwardDataNative(context, baseUrl, deviceId, installationId, safeTransport, safeFrom, safeBody);
+            forwardDataNative(context, baseUrl, deviceId, installationId, safeTransport, safeFrom, safeBody, timestamp);
         }
     }
 
@@ -687,11 +818,11 @@ public class NexusRelayPlugin extends Plugin {
 
         // 2. Native Background Forwarding
         if (isActive && baseUrl != null) {
-            forwardDataNative(context, baseUrl, deviceId, installationId, "call", from, "State: " + state);
+            forwardDataNative(context, baseUrl, deviceId, installationId, "call", from, "State: " + state, System.currentTimeMillis());
         }
     }
 
-    private static void forwardDataNative(final Context context, final String baseUrl, final String deviceId, final String installationId, final String type, final String from, final String content) {
+    private static void forwardDataNative(final Context context, final String baseUrl, final String deviceId, final String installationId, final String type, final String from, final String content, final long timestamp) {
         // Acquire WakeLock to keep CPU alive during native forward (screen-off safe)
         android.os.PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
         final PowerManager.WakeLock wakeLock = pm != null
@@ -701,58 +832,30 @@ public class NexusRelayPlugin extends Plugin {
             wakeLock.acquire(15_000L); // 15s max (HTTP timeout is 12s)
         }
 
-        android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        final String profileId = prefs.getString(KEY_PROFILE_ID, null);
-
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    java.net.URL url = new java.net.URL(baseUrl);
-                    java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
-                    conn.setRequestMethod("POST");
-                    conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-                    conn.setRequestProperty("Accept", "application/json");
-                    conn.setDoOutput(true);
-                    conn.setConnectTimeout(12000);
-                    conn.setReadTimeout(12000);
-
-                    org.json.JSONObject jsonParam = new org.json.JSONObject();
-                    jsonParam.put("deviceId", deviceId);
-                    if (installationId != null && !installationId.isEmpty()) {
-                        jsonParam.put("installationId", installationId);
-                    }
-                    if (profileId != null && !profileId.isEmpty()) {
-                        jsonParam.put("profileId", profileId);
-                    }
-                    jsonParam.put("transport", type);
-                    jsonParam.put("type", type);
-                    jsonParam.put("from", from);
-                    jsonParam.put("content", content);
-                    jsonParam.put("secret", com.nexushub.app.BuildConfig.DEVICE_SECRET);
-                    jsonParam.put("timestamp", new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).format(new java.util.Date()));
-
-                    try(java.io.OutputStream os = conn.getOutputStream()) {
-                        byte[] input = jsonParam.toString().getBytes(StandardCharsets.UTF_8);
-                        os.write(input, 0, input.length);			
-                    }
-
-                    int code = conn.getResponseCode();
-                    android.util.Log.d("NexusRelay", "Native Forward Response Code: " + code);
-                    if (code >= 400) {
-                        java.io.InputStream errorStream = conn.getErrorStream();
-                        if (errorStream != null) {
-                            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(errorStream, StandardCharsets.UTF_8));
-                            StringBuilder responseBuilder = new StringBuilder();
-                            String line;
-                            while ((line = reader.readLine()) != null) {
-                                responseBuilder.append(line);
-                            }
-                            reader.close();
-                            android.util.Log.e("NexusRelay", "Native Forward Error Body: " + responseBuilder);
+                    boolean forwarded = forwardDataNativeBlocking(
+                        context,
+                        baseUrl,
+                        deviceId,
+                        installationId,
+                        type,
+                        from,
+                        content,
+                        timestamp
+                    );
+                    if (forwarded && "sms".equals(normalizeTransport(type))) {
+                        long currentLastSync = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                            .getLong(KEY_LAST_SMS_HISTORY_SYNC_AT, 0L);
+                        if (timestamp > currentLastSync) {
+                            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                                .edit()
+                                .putLong(KEY_LAST_SMS_HISTORY_SYNC_AT, timestamp)
+                                .apply();
                         }
                     }
-                    conn.disconnect();
                 } catch (Exception e) {
                     android.util.Log.e("NexusRelay", "Native Forward Error", e);
                 } finally {
@@ -762,6 +865,83 @@ public class NexusRelayPlugin extends Plugin {
                 }
             }
         }).start();
+    }
+
+    private static boolean forwardDataNativeBlocking(
+        final Context context,
+        final String baseUrl,
+        final String deviceId,
+        final String installationId,
+        final String type,
+        final String from,
+        final String content,
+        final long timestamp
+    ) {
+        java.net.HttpURLConnection conn = null;
+        try {
+            android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            String profileId = prefs.getString(KEY_PROFILE_ID, null);
+
+            java.net.URL url = new java.net.URL(baseUrl);
+            conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setDoOutput(true);
+            conn.setConnectTimeout(12000);
+            conn.setReadTimeout(12000);
+
+            org.json.JSONObject jsonParam = new org.json.JSONObject();
+            jsonParam.put("deviceId", deviceId);
+            if (installationId != null && !installationId.isEmpty()) {
+                jsonParam.put("installationId", installationId);
+            }
+            if (profileId != null && !profileId.isEmpty()) {
+                jsonParam.put("profileId", profileId);
+            }
+            jsonParam.put("transport", normalizeTransport(type));
+            jsonParam.put("type", normalizeTransport(type));
+            jsonParam.put("from", from);
+            jsonParam.put("content", content);
+            jsonParam.put("secret", com.nexushub.app.BuildConfig.DEVICE_SECRET);
+            jsonParam.put("timestamp", formatIsoUtc(timestamp > 0 ? timestamp : System.currentTimeMillis()));
+
+            try(java.io.OutputStream os = conn.getOutputStream()) {
+                byte[] input = jsonParam.toString().getBytes(StandardCharsets.UTF_8);
+                os.write(input, 0, input.length);
+            }
+
+            int code = conn.getResponseCode();
+            android.util.Log.d("NexusRelay", "Native Forward Response Code: " + code);
+            if (code >= 400) {
+                java.io.InputStream errorStream = conn.getErrorStream();
+                if (errorStream != null) {
+                    java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(errorStream, StandardCharsets.UTF_8));
+                    StringBuilder responseBuilder = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        responseBuilder.append(line);
+                    }
+                    reader.close();
+                    android.util.Log.e("NexusRelay", "Native Forward Error Body: " + responseBuilder);
+                }
+                return false;
+            }
+            return true;
+        } catch (Exception e) {
+            android.util.Log.e("NexusRelay", "Native Forward Error", e);
+            return false;
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
+    }
+
+    private static String formatIsoUtc(long timestamp) {
+        java.text.SimpleDateFormat format = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US);
+        format.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+        return format.format(new java.util.Date(timestamp));
     }
 
     public static void onFcmTokenRefreshed(String token) {
@@ -837,6 +1017,13 @@ public class NexusRelayPlugin extends Plugin {
 
     private boolean isRelayActiveInPrefs() {
         return getContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getBoolean(KEY_IS_ACTIVE, false);
+    }
+
+    static class SmsSyncResult {
+        int synced = 0;
+        int failed = 0;
+        int skipped = 0;
+        long lastSyncedAt = 0L;
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
