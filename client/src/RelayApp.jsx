@@ -268,6 +268,7 @@ const RelayDashboard = () => {
 
   // SMS relay
   const { incomingSms, clearIncomingSms, sendSms, configureRelay } = useSmsRelay({ operator, isActive, isNativeApp, API_BASE });
+  const relayAuthToken = operator?.token || localStorage.getItem('nexus_token') || '';
 
   React.useEffect(() => {
     if (isNativeApp && API_BASE && configureRelay) {
@@ -276,15 +277,17 @@ const RelayDashboard = () => {
         deviceId: operator?.id || 'RELAY-DEVICE',
         installationId: localStorage.getItem('nexus_installation_id') || '',
         isActive: isActive,
-        profileId: relayProfileId || ''
+        profileId: relayProfileId || '',
+        authToken: relayAuthToken
       }).catch(console.error);
     }
-  }, [isNativeApp, API_BASE, isActive, operator, relayProfileId, configureRelay]);
+  }, [isNativeApp, API_BASE, isActive, operator, relayProfileId, relayAuthToken, configureRelay]);
 
   // Bind device with backend so SMS endpoints authorize this installationId
   React.useEffect(() => {
     const verifyDevice = async () => {
       try {
+        if (!relayAuthToken) return;
         const url = API_BASE ? `${API_BASE.replace(/\/api$/, '')}/api/device/verify` : '/api/device/verify';
         await axios.post(url, {
           installationId: localStorage.getItem('nexus_installation_id'),
@@ -292,13 +295,15 @@ const RelayDashboard = () => {
           platform: isNativeApp ? 'android' : 'web',
           model: 'RelayApp',
           deviceName: 'Nexus Relay'
+        }, {
+          headers: { Authorization: `Bearer ${relayAuthToken}` }
         });
       } catch (err) {
         console.error('Device binding failed:', err);
       }
     };
     if (isActive) verifyDevice();
-  }, [API_BASE, operator, relayProfileId, isActive, isNativeApp]);
+  }, [API_BASE, relayAuthToken, relayProfileId, isActive, isNativeApp]);
 
   React.useEffect(() => {
     let listener;

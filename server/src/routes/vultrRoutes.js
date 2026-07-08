@@ -7,6 +7,7 @@ const path = require("path");
 const fs = require("fs");
 const logger = require("../services/logger");
 const authMiddleware = require("../middleware/authMiddleware");
+const { requireAppOwner } = require("../utils/authz");
 const { z } = require("zod");
 const { validate } = require("../middleware/validate");
 
@@ -113,15 +114,8 @@ router.get("/download-full.apk", (req, res) => {
 // Apply auth to all OTHER vultr routes
 router.use(authMiddleware);
 
-// Restrict all vultr operations to App Owner / Agency Admin
-const requireAdmin = (req, res, next) => {
-  const role = req.user?.role;
-  if (!role?.isAppOwner && !role?.isManager) {
-    return res.status(403).json({ message: 'Insufficient permissions — admin access required' });
-  }
-  next();
-};
-router.use(requireAdmin);
+// Infrastructure operations can read secrets or control servers; keep them owner-only.
+router.use(requireAppOwner);
 
 // ── Vultr API ─────────────────────────────────────────────────────────────────
 router.get("/status", async (req, res) => {
@@ -176,7 +170,11 @@ router.get("/bandwidth", async (req, res) => {
 
 // ── SSH Terminal ──────────────────────────────────────────────────────────────
 const COMMAND_ALLOWLIST = [
-  /^(ls|cat|head|tail|grep|wc|df|du|free|uptime|whoami|date|pwd|echo|pm2\s|systemctl\s|docker\s|nginx\s|git\s|npm\s|node\s|npx\s|pg_dump|psql|crontab)/,
+  /^(ls|head|tail|grep|wc|df|du|free|uptime|whoami|date|pwd)(\s|$)/,
+  /^pm2\s+(list|status|logs)(\s|$)/,
+  /^systemctl\s+status(\s|$)/,
+  /^nginx\s+-t(\s|$)/,
+  /^git\s+status(\s|$)/,
 ];
 const COMMAND_BLOCKLIST = /rm\s+-rf|mkfs|dd\s+if=|:\(\)\{|>\s*\/dev\/|chmod\s+777|curl\s+.*\|\s*(ba)?sh|wget\s+.*\|\s*(ba)?sh|eval\s|exec\s/i;
 
@@ -190,7 +188,7 @@ router.post("/command", validate(sshCommand), async (req, res) => {
 
   const isAllowed = COMMAND_ALLOWLIST.some(rx => rx.test(trimmed));
   if (!isAllowed) {
-    return res.status(403).json({ message: 'Command not in allowlist. Allowed: ls, cat, head, tail, grep, pm2, systemctl, docker, git, npm, node, pg_dump, psql' });
+    return res.status(403).json({ message: 'Command not in allowlist. Allowed: read-only status commands only.' });
   }
 
   try {

@@ -44,6 +44,7 @@ public class NexusRelayPlugin extends Plugin {
     static final String KEY_INSTALLATION_ID = "installationId";
     static final String KEY_IS_ACTIVE = "isActive";
     static final String KEY_PROFILE_ID = "profileId";
+    static final String KEY_AUTH_TOKEN = "authToken";
     static final String KEY_LAST_SMS_HISTORY_SYNC_AT = "lastSmsHistorySyncAt";
 
     static final String SMS_PERMISSION_ALIAS = "sms";
@@ -228,6 +229,8 @@ public class NexusRelayPlugin extends Plugin {
         String baseUrl = call.getString("baseUrl");
         String deviceId = call.getString("deviceId");
         String installationId = call.getString("installationId");
+        String authToken = call.getString("authToken");
+        if (authToken == null) authToken = call.getString("token");
         Boolean isActive = call.getBoolean("isActive", false);
 
         Context context = getContext();
@@ -237,6 +240,13 @@ public class NexusRelayPlugin extends Plugin {
         if (baseUrl != null) editor.putString(KEY_BASE_URL, baseUrl);
         if (deviceId != null) editor.putString(KEY_DEVICE_ID, deviceId);
         if (installationId != null) editor.putString(KEY_INSTALLATION_ID, installationId);
+        if (authToken != null) {
+            if (authToken.isEmpty()) {
+                editor.remove(KEY_AUTH_TOKEN);
+            } else {
+                editor.putString(KEY_AUTH_TOKEN, authToken);
+            }
+        }
         String profileId = call.getString("profileId");
         if (profileId != null) editor.putString(KEY_PROFILE_ID, profileId);
         boolean relayActive = isActive != null && isActive;
@@ -592,8 +602,9 @@ public class NexusRelayPlugin extends Plugin {
         String to        = data.get("to");
         String content   = data.get("content");
         String messageId = data.get("messageId");
-        String baseUrl   = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                               .getString(KEY_BASE_URL, null);
+        android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        String baseUrl = prefs.getString(KEY_BASE_URL, null);
+        String authToken = prefs.getString(KEY_AUTH_TOKEN, null);
 
         if (to == null || to.isEmpty() || content == null || content.isEmpty()) {
             android.util.Log.w("NexusRelay", "sendSmsFromData: missing to/content");
@@ -649,6 +660,9 @@ public class NexusRelayPlugin extends Plugin {
                     java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("PATCH");
                     conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                    if (authToken != null && !authToken.isEmpty()) {
+                        conn.setRequestProperty("Authorization", "Bearer " + authToken);
+                    }
                     conn.setDoOutput(true);
                     conn.setConnectTimeout(8000);
                     conn.setReadTimeout(8000);
@@ -881,12 +895,18 @@ public class NexusRelayPlugin extends Plugin {
         try {
             android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
             String profileId = prefs.getString(KEY_PROFILE_ID, null);
+            String authToken = prefs.getString(KEY_AUTH_TOKEN, null);
+            if (authToken == null || authToken.isEmpty()) {
+                android.util.Log.w("NexusRelay", "Native Forward skipped: missing auth token");
+                return false;
+            }
 
             java.net.URL url = new java.net.URL(baseUrl);
             conn = (java.net.HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
             conn.setRequestProperty("Accept", "application/json");
+            conn.setRequestProperty("Authorization", "Bearer " + authToken);
             conn.setDoOutput(true);
             conn.setConnectTimeout(12000);
             conn.setReadTimeout(12000);
@@ -903,7 +923,6 @@ public class NexusRelayPlugin extends Plugin {
             jsonParam.put("type", normalizeTransport(type));
             jsonParam.put("from", from);
             jsonParam.put("content", content);
-            jsonParam.put("secret", com.nexushub.app.BuildConfig.DEVICE_SECRET);
             jsonParam.put("timestamp", formatIsoUtc(timestamp > 0 ? timestamp : System.currentTimeMillis()));
 
             try(java.io.OutputStream os = conn.getOutputStream()) {

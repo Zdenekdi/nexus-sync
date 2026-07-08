@@ -15,6 +15,7 @@ const { encrypt, decrypt } = require('../services/sipEncryption');
 const { getIO }      = require('../services/socket');
 const { regenerateAsteriskConfig } = require('../services/asteriskConfigGenerator');
 const crypto = require('crypto');
+const { isAppOwnerRole, isManagerRole } = require('../utils/authz');
 
 // ─── In-memory SIP status ping table ────────────────────────────────────────
 // installationId → { registeredAt, lastPingAt, sipUser, profileName, agencyId }
@@ -31,6 +32,14 @@ function generateSipPassword(len = 20) {
     password += chars[crypto.randomInt(0, chars.length)];
   }
   return password;
+}
+
+function requireSipAdmin(req, res) {
+  if (!isManagerRole(req.user?.role)) {
+    res.status(403).json({ message: 'Insufficient permissions' });
+    return false;
+  }
+  return true;
 }
 
 // ─── GET /api/sip/config ─────────────────────────────────────────────────────
@@ -123,6 +132,7 @@ exports.getMyConfig = async (req, res) => {
 // Admin nastaví SIP credentials pro konkrétní DeviceBinding
 exports.setConfig = async (req, res) => {
   try {
+    if (!requireSipAdmin(req, res)) return;
     const { bindingId } = req.params;
     const { sipUser, sipPassword, sipServer, sipPort } = req.body || {};
 
@@ -134,7 +144,7 @@ exports.setConfig = async (req, res) => {
     const agencyId = req.user?.agencyId;
     const role     = req.user?.role;
     const where    = { id: bindingId };
-    if (role !== 'App Owner' && agencyId) where.agencyId = agencyId;
+    if (!isAppOwnerRole(role) && agencyId) where.agencyId = agencyId;
 
     const binding = await prisma.deviceBinding.findFirst({ where, select: { id: true } });
     if (!binding) return res.status(404).json({ message: 'Device binding not found' });
@@ -173,11 +183,12 @@ exports.setConfig = async (req, res) => {
 // ─── DELETE /api/sip/config/:bindingId ───────────────────────────────────────
 exports.deleteConfig = async (req, res) => {
   try {
+    if (!requireSipAdmin(req, res)) return;
     const { bindingId } = req.params;
     const agencyId = req.user?.agencyId;
     const role     = req.user?.role;
     const where    = { id: bindingId };
-    if (role !== 'App Owner' && agencyId) where.agencyId = agencyId;
+    if (!isAppOwnerRole(role) && agencyId) where.agencyId = agencyId;
 
     const binding = await prisma.deviceBinding.findFirst({ where, select: { id: true } });
     if (!binding) return res.status(404).json({ message: 'Device binding not found' });
@@ -208,11 +219,12 @@ exports.deleteConfig = async (req, res) => {
 // Určeno pro adminy nebo selbytnou resetovací akci v dashboardu.
 exports.resetConfig = async (req, res) => {
   try {
+    if (!requireSipAdmin(req, res)) return;
     const { bindingId } = req.params;
     const agencyId = req.user?.agencyId;
     const role     = req.user?.role;
     const where    = { id: bindingId };
-    if (role !== 'App Owner' && agencyId) where.agencyId = agencyId;
+    if (!isAppOwnerRole(role) && agencyId) where.agencyId = agencyId;
 
     const binding = await prisma.deviceBinding.findFirst({ where, select: { id: true, agencyId: true } });
     if (!binding) return res.status(404).json({ message: 'Device binding not found' });
@@ -314,6 +326,9 @@ exports.getCallMeta = async (req, res) => {
     for (const [k, v] of callMetaMap) { if (v.ts < cutoff) callMetaMap.delete(k); }
 
     const meta = callMetaMap.get(from);
+    if (meta && !isAppOwnerRole(req.user?.role) && String(meta.agencyId) !== String(req.user?.agencyId)) {
+      return res.status(403).json({ ok: false, message: 'Access denied' });
+    }
     return res.json({ ok: true, meta: meta || null });
   } catch (err) {
     return res.status(500).json({ ok: false });
@@ -331,7 +346,7 @@ exports.getStatus = async (req, res) => {
       where: {
         active:   true,
         sipUser:  { not: null },
-        ...(role !== 'App Owner' && agencyId ? { agencyId } : {}),
+        ...(!isAppOwnerRole(role) && agencyId ? { agencyId } : {}),
       },
       select: {
         id:             true,
@@ -378,15 +393,12 @@ exports.reloadAsterisk = async (req, res) => {
     const role     = req.user?.role;
     const agencyId = req.user?.agencyId;
 
-    // Pouze App Owner nebo Manager
-    if (!['App Owner', 'Manager', 'Admin'].includes(role)) {
-      return res.status(403).json({ message: 'Insufficient permissions' });
-    }
+    if (!requireSipAdmin(req, res)) return;
 
     console.log(`[Asterisk] Manuální reload spuštěn uživatelem ${req.user?.userId} (${role})`);
 
     const result = await regenerateAsteriskConfig({
-      agencyId: role === 'App Owner' ? null : agencyId, // App Owner vidí vše
+      agencyId: isAppOwnerRole(role) ? null : agencyId, // App Owner vidi vse
       decrypt,
     });
 
@@ -409,4 +421,3 @@ exports.reloadAsterisk = async (req, res) => {
     return res.status(500).json({ message: 'Asterisk reload failed. Please try again.' });
   }
 };
-

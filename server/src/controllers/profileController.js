@@ -1,6 +1,7 @@
 const prisma = require('../services/db');
 const { encrypt, decrypt } = require('../utils/encryption');
 const { getIO } = require('../services/socket');
+const { isAppOwnerRole, isManagerRole } = require('../utils/authz');
 
 function parseData(raw) {
   if (!raw) return {};
@@ -9,6 +10,23 @@ function parseData(raw) {
 }
 
 const logger = require('../services/logger');
+
+const getScopedProfile = async (profileId, req) => {
+  const profile = await prisma.profile.findUnique({ where: { id: String(profileId) } });
+  if (!profile) return null;
+  if (!isAppOwnerRole(req.user?.role) && profile.agencyId !== String(req.user?.agencyId)) {
+    return null;
+  }
+  return profile;
+};
+
+const requireProfileManager = (req, res) => {
+  if (!isManagerRole(req.user?.role)) {
+    res.status(403).json({ message: 'Forbidden' });
+    return false;
+  }
+  return true;
+};
 
 exports.getProfiles = async (req, res) => {
   try {
@@ -99,6 +117,23 @@ exports.assignUsersToProfile = async (req, res) => {
   try {
     const { id } = req.params;
     const { userIds } = req.body;
+    if (!requireProfileManager(req, res)) return;
+
+    const existing = await getScopedProfile(id, req);
+    if (!existing) return res.status(404).json({ message: 'Profile not found' });
+
+    if (userIds.length > 0) {
+      const sameAgencyUsers = await prisma.user.count({
+        where: {
+          id: { in: userIds.map(String) },
+          agencyId: String(existing.agencyId)
+        }
+      });
+      if (sameAgencyUsers !== userIds.length) {
+        return res.status(400).json({ message: 'All assignees must belong to the profile agency' });
+      }
+    }
+
     const profile = await prisma.profile.update({ where: { id }, data: { assignees: { set: userIds.map(userId => ({ id: userId })) } }, include: { assignees: { select: { id: true, name: true } } } });
     res.json(profile);
   } catch (error) {
@@ -122,6 +157,11 @@ exports.updateCredentials = async (req, res) => {
   try {
     const { id } = req.params;
     const { credentials } = req.body;
+    if (!requireProfileManager(req, res)) return;
+
+    const profile = await getScopedProfile(id, req);
+    if (!profile) return res.status(404).json({ message: 'Profile not found' });
+
     const encrypted = await encrypt(JSON.stringify(credentials));
     await prisma.profile.update({ where: { id }, data: { credentials: encrypted } });
     res.json({ ok: true });
@@ -133,9 +173,10 @@ exports.updateCredentials = async (req, res) => {
 exports.syncProfile = async (req, res) => {
   try {
     const { id } = req.params;
-    const { agencyId } = req.user;
     const { bio, name } = req.body;
-    const profile = await prisma.profile.findUnique({ where: { id } });
+    if (!requireProfileManager(req, res)) return;
+
+    const profile = await getScopedProfile(id, req);
     if (!profile) return res.status(404).json({ message: 'Not found' });
     await prisma.profile.update({ where: { id }, data: { ...(bio && { bio }), ...(name && { name }) } });
     let decryptedCredentials = null;
@@ -144,7 +185,7 @@ exports.syncProfile = async (req, res) => {
       if (decryptedString) decryptedCredentials = JSON.parse(decryptedString);
     }
     const io = getIO();
-    io.to(`agency_${agencyId}`).emit('relay_command', { type: 'SYNC_WEB_PROFILE', profileId: id, payload: { name: name || profile.name, bio: bio || profile.bio, credentials: decryptedCredentials, platforms: ['adultwork', 'amateri', 'onlyfans'] } });
+    io.to(`agency_${profile.agencyId}`).emit('relay_command', { type: 'SYNC_WEB_PROFILE', profileId: id, payload: { name: name || profile.name, bio: bio || profile.bio, credentials: decryptedCredentials, platforms: ['adultwork', 'amateri', 'onlyfans'] } });
     res.json({ ok: true });
   } catch (error) {
     res.status(500).json({ message: 'Failed' });
@@ -189,10 +230,10 @@ exports.getCredentials = async (req, res) => {
 exports.boostProfile = async (req, res) => {
   try {
     const { id } = req.params;
-    const { agencyId } = req.user;
     const { platform } = req.body;
+    if (!requireProfileManager(req, res)) return;
 
-    const profile = await prisma.profile.findUnique({ where: { id } });
+    const profile = await getScopedProfile(id, req);
     if (!profile) return res.status(404).json({ message: 'Not found' });
 
     let decryptedCredentials = null;
@@ -205,16 +246,16 @@ exports.boostProfile = async (req, res) => {
     const automationSettings = data.awAutomation || {};
 
     const io = getIO();
-    io.to(`agency_${agencyId}`).emit('relay_command', { 
-      type: 'BOOST_WEB_PROFILE', 
-      profileId: id, 
-      payload: { 
-        name: profile.name, 
-        credentials: decryptedCredentials, 
+    io.to(`agency_${profile.agencyId}`).emit('relay_command', {
+      type: 'BOOST_WEB_PROFILE',
+      profileId: id,
+      payload: {
+        name: profile.name,
+        credentials: decryptedCredentials,
         platform,
         settings: automationSettings,
         adsPowerId: decryptedCredentials?.adsPowerId || profile.adsPowerId
-      } 
+      }
     });
 
     res.json({ ok: true, message: 'Boost command sent to local agent' });

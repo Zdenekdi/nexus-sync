@@ -13,6 +13,7 @@
     "prisma:migrate": "prisma migrate dev",
     "lint": "eslint src",
     "test": "jest --forceExit --detectOpenHandles",
+    "test:security": "jest tests/deviceRelay.test.js tests/authzRelaySecurity.test.js --runInBand --forceExit",
     "test:ci": "jest --forceExit --detectOpenHandles --ci --coverage"
   },
   "jest": {

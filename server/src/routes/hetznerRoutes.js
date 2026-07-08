@@ -3,6 +3,7 @@ const router = express.Router();
 const axios = require("axios");
 const logger = require("../services/logger");
 const authMiddleware = require("../middleware/authMiddleware");
+const { requireAppOwner } = require("../utils/authz");
 const { NodeSSH } = require("node-ssh");
 const { z } = require("zod");
 const { validate } = require("../middleware/validate");
@@ -33,16 +34,9 @@ async function getSSHConnection() {
   return ssh;
 }
 
-// Apply auth and admin check
+// Apply auth and owner check
 router.use(authMiddleware);
-const requireAdmin = (req, res, next) => {
-  const role = req.user?.role;
-  if (!role?.isAppOwner && !role?.isManager) {
-    return res.status(403).json({ message: 'Insufficient permissions' });
-  }
-  next();
-};
-router.use(requireAdmin);
+router.use(requireAppOwner);
 
 // ── Hetzner API ───────────────────────────────────────────────────────────────
 
@@ -124,7 +118,11 @@ router.post("/restart", async (req, res) => {
 
 // ── SSH Terminal for Hetzner ──────────────────────────────────────────────────
 const COMMAND_ALLOWLIST = [
-  /^(ls|cat|head|tail|grep|wc|df|du|free|uptime|whoami|date|pwd|echo|pm2\s|systemctl\s|docker\s|nginx\s|git\s|npm\s|node\s|npx\s|pg_dump|psql|crontab)/,
+  /^(ls|head|tail|grep|wc|df|du|free|uptime|whoami|date|pwd)(\s|$)/,
+  /^pm2\s+(list|status|logs)(\s|$)/,
+  /^systemctl\s+status(\s|$)/,
+  /^nginx\s+-t(\s|$)/,
+  /^git\s+status(\s|$)/,
 ];
 const COMMAND_BLOCKLIST = /rm\s+-rf|mkfs|dd\s+if=|:\(\)\{|>\s*\/dev\/|chmod\s+777|curl\s+.*\|\s*(ba)?sh|wget\s+.*\|\s*(ba)?sh|eval\s|exec\s/i;
 
@@ -138,7 +136,7 @@ router.post("/command", validate(sshCommand), async (req, res) => {
 
   const isAllowed = COMMAND_ALLOWLIST.some(rx => rx.test(trimmed));
   if (!isAllowed) {
-    return res.status(403).json({ message: 'Command not in allowlist' });
+    return res.status(403).json({ message: 'Command not in allowlist. Allowed: read-only status commands only.' });
   }
 
   try {

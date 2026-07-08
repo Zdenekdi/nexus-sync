@@ -211,12 +211,12 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, _setSelectedChatId, _set
         localStorage.setItem('nexus_installation_id', installationId);
       }
 
-      await axios.post(`${API_BASE}/device/bind`, {
-        deviceId,
+      await axios.post(`${API_BASE}/device/verify`, {
         installationId,
+        profileId: operator.profileId || operator.activeProfileId || null,
         model: info.model,
         platform: info.platform,
-        operatorId: operator.id
+        deviceName: info.name || deviceId || 'Nexus Relay'
       }, {
         headers: { Authorization: `Bearer ${authToken}` }
       });

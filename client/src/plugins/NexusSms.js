@@ -4,7 +4,7 @@
  * V nexusFull variantě se plugin ignoruje — SMS přicházejí přes Socket.IO ze serveru.
  */
 import { registerPlugin } from '@capacitor/core';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 
 // Registrace Capacitor pluginu (funguje jen v Android nexusRelay APK)
@@ -103,6 +103,10 @@ export function useSmsRelay({ onIncoming, socket, API_BASE } = {}) {
     }
   };
 
+  const configureRelay = useCallback((config) =>
+    NexusRelayPlugin.configureRelay ? NexusRelayPlugin.configureRelay(config) : Promise.resolve(),
+  []);
+
   return {
     isDefaultSmsApp,
     incomingSms,
@@ -111,7 +115,7 @@ export function useSmsRelay({ onIncoming, socket, API_BASE } = {}) {
     sendSmsNative:        (to, text) => NexusRelayPlugin.sendSms ? NexusRelayPlugin.sendSms({ to, text }) : Promise.reject(new Error('Missing')),
     getSmsHistory:        (lastTimestamp = 0, limit = 500) => NexusRelayPlugin.getSmsHistory ? NexusRelayPlugin.getSmsHistory({ lastTimestamp, limit }) : Promise.resolve({ messages: [] }),
     syncHistory:          (options = {}) => NexusRelayPlugin.syncHistory ? NexusRelayPlugin.syncHistory(options) : Promise.resolve({ synced: 0, failed: 0, skipped: 0 }),
-    configureRelay:       (config) => NexusRelayPlugin.configureRelay ? NexusRelayPlugin.configureRelay(config) : Promise.resolve(),
+    configureRelay,
     requestDefaultSmsApp: () => NexusRelayPlugin.requestDefaultSmsApp().then(() =>
       NexusRelayPlugin.isDefaultSmsApp().then(r => setIsDefaultSmsApp(!!r?.isDefault))
     ),

@@ -36,6 +36,9 @@ jobs:
       - name: Lint server
         run: cd server && npm run lint -- --quiet
 
+      - name: Run Relay auth/security regression tests
+        run: cd server && npm run test:security
+
       - name: Run server tests
         run: cd server && npm test
 
@@ -314,4 +317,3 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_NEXUS_SYNC_8D50B }}'
           channelId: live
           projectId: nexus-sync-8d50b
-
