@@ -22,6 +22,7 @@ beforeEach(() => {
   socketMock.getIO.mockReturnValue({ to: mockTo });
   pushMock.sendChatPush.mockResolvedValue({ sent: 1, failed: 0 });
   pushMock.sendCallPush.mockResolvedValue({ sent: 1, failed: 0 });
+  prismaMock.message.findFirst.mockResolvedValue(null);
 });
 
 afterEach(() => jest.clearAllMocks());
@@ -301,7 +302,7 @@ describe('POST /api/device/relay', () => {
       expect.objectContaining({
         where: expect.objectContaining({
           externalId: {
-            in: expect.arrayContaining(['739777718', '+420739777718', '420739777718']),
+            in: expect.arrayContaining(['739777718', '0739777718', '+420739777718', '420739777718', '0420739777718']),
           },
         }),
       })
