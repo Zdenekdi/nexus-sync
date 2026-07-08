@@ -42,6 +42,8 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     setRelayLogs: setLogs,
     addRelayLog: addLocalLog,
     API_BASE,
+    token: nexusToken,
+    activeProfileId,
     lang,
     setLang
   } = nexus || {};
@@ -231,10 +233,24 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     onEnded:    ()     => addLocalLog('call', 'GSM', 'Hovor ukončen', 'inbound', 'completed'),
   });
 
-  const { isDefaultSmsApp, requestDefaultSmsApp, incomingSms, clearIncomingSms, sendSms } = useSmsRelay({
+  const { isDefaultSmsApp, requestDefaultSmsApp, incomingSms, clearIncomingSms, sendSms, configureRelay } = useSmsRelay({
     onIncoming: (sms) => addLocalLog('sms', sms.from, 'Příchozí SMS (GSM)', 'inbound', 'completed'),
     socket: nexus.socket
   });
+
+  useEffect(() => {
+    const relayAuthToken = operator?.token || nexusToken || localStorage.getItem('nexus_token') || '';
+    const relayProfileId = operator?.profileId || (activeProfileId && activeProfileId !== 'all' ? activeProfileId : '');
+
+    configureRelay({
+      baseUrl: `${RELAY_API_BASE}/api/device/relay`,
+      deviceId: operator?.id || 'RELAY-DEVICE',
+      installationId: localStorage.getItem('nexus_installation_id') || operator?.installationId || '',
+      isActive,
+      profileId: relayProfileId || '',
+      authToken: relayAuthToken
+    }).catch((err) => console.warn('[Relay] Failed to configure native relay', err));
+  }, [activeProfileId, configureRelay, isActive, nexusToken, operator?.id, operator?.installationId, operator?.profileId, operator?.token, RELAY_API_BASE]);
 
   // Persist logs to localStorage whenever they change
 
@@ -615,7 +631,6 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({
                   installationId,
-                  secret: import.meta.env.VITE_DEVICE_SECRET || '',
                   from: data.from,
                   content: data.body,
                   type: 'SMS_RECEIVED',

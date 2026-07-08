@@ -4,6 +4,50 @@ const { sendChatPush } = require('../services/pushService');
 const { secureCompare } = require('../utils/security');
 const crypto = require('crypto');
 
+function getWebhookSecret(req) {
+  return req.headers['x-webhook-secret'] ||
+    req.headers['x-nexus-secret'] ||
+    req.headers['x-telegram-bot-api-secret-token'] ||
+    req.query?.secret ||
+    req.body?.secret;
+}
+
+function verifySharedWebhookSecret(req, res, provider, fallbackSecret) {
+  const configuredSecret =
+    process.env[`${provider.toUpperCase()}_WEBHOOK_SECRET`] ||
+    process.env.WEBHOOK_SECRET ||
+    fallbackSecret;
+
+  if (!configuredSecret) {
+    res.status(503).json({ message: `${provider} webhook secret is not configured` });
+    return false;
+  }
+
+  if (!secureCompare(String(getWebhookSecret(req) || ''), configuredSecret)) {
+    res.status(401).json({ message: 'Unauthorized' });
+    return false;
+  }
+
+  return true;
+}
+
+function getWebhookRouting(req, overrides = {}) {
+  return {
+    profileId: overrides.profileId ||
+      req.body?.profileId ||
+      req.body?.profile_id ||
+      req.query?.profileId ||
+      req.headers['x-profile-id'] ||
+      null,
+    agencyId: overrides.agencyId ||
+      req.body?.agencyId ||
+      req.body?.agency_id ||
+      req.query?.agencyId ||
+      req.headers['x-agency-id'] ||
+      null
+  };
+}
+
 /**
  * Telegram Bot Webhook — receives incoming messages from Telegram
  * POST /api/webhooks/telegram
@@ -11,6 +55,7 @@ const crypto = require('crypto');
  */
 exports.handleTelegram = async (req, res) => {
   try {
+    if (!verifySharedWebhookSecret(req, res, 'telegram')) return;
     const msg = req.body?.message;
     if (!msg?.text || !msg?.chat?.id) {
       return res.sendStatus(200); // Telegram expects 200 even on skip
@@ -22,7 +67,7 @@ exports.handleTelegram = async (req, res) => {
 
     // Find or create chat by externalId (telegram:<chatId>)
     const externalId = `telegram:${telegramChatId}`;
-    const chat = await findOrCreateChat(externalId, senderName, 'telegram');
+    const chat = await findOrCreateChat(externalId, senderName, 'telegram', getWebhookRouting(req));
     if (!chat) return res.sendStatus(200);
 
     const message = await prisma.message.create({
@@ -85,6 +130,7 @@ exports.verifyWhatsApp = (req, res) => {
 
 exports.handleWhatsApp = async (req, res) => {
   try {
+    if (!verifySharedWebhookSecret(req, res, 'whatsapp')) return;
     const entry = req.body?.entry?.[0];
     const change = entry?.changes?.[0];
     const value = change?.value;
@@ -99,7 +145,7 @@ exports.handleWhatsApp = async (req, res) => {
     const contactName = value?.contacts?.[0]?.profile?.name || waNumber;
 
     const externalId = `whatsapp:${waNumber}`;
-    const chat = await findOrCreateChat(externalId, contactName, 'whatsapp');
+    const chat = await findOrCreateChat(externalId, contactName, 'whatsapp', getWebhookRouting(req));
     if (!chat) return res.sendStatus(200);
 
     const message = await prisma.message.create({
@@ -148,14 +194,14 @@ exports.handleWhatsApp = async (req, res) => {
  */
 exports.handleGeneric = async (req, res) => {
   try {
-    if (!secureCompare(req.body.secret, process.env.DEVICE_SECRET)) return res.status(401).json({ message: 'Unauthorized' });
-    const { source, externalId, senderName, text } = req.body;
+    if (!verifySharedWebhookSecret(req, res, 'generic', process.env.DEVICE_SECRET)) return;
+    const { source, externalId, senderName, text, profileId, agencyId } = req.body;
     if (!source || !externalId || !text) {
       return res.status(400).json({ message: 'source, externalId, and text are required' });
     }
 
     const fullExternalId = `${source}:${externalId}`;
-    const chat = await findOrCreateChat(fullExternalId, senderName || 'Unknown', source);
+    const chat = await findOrCreateChat(fullExternalId, senderName || 'Unknown', source, getWebhookRouting(req, { profileId, agencyId }));
     if (!chat) return res.status(404).json({ message: 'No matching profile found' });
 
     const message = await prisma.message.create({
@@ -196,14 +242,14 @@ exports.handleGeneric = async (req, res) => {
  */
 exports.handleAdultWork = async (req, res) => {
   try {
-    if (!secureCompare(req.body.secret, process.env.DEVICE_SECRET)) return res.status(401).send('UNAUTHORIZED');
+    if (!verifySharedWebhookSecret(req, res, 'adultwork', process.env.DEVICE_SECRET)) return;
     const { sender_id, profile_id, body } = req.body;
     if (!sender_id || !body) return res.sendStatus(200);
 
     const externalId = `aw:${sender_id}`;
     // Find chat specifically for this AW profile mapping if needed, 
     // or use generic findOrCreateChat
-    const chat = await findOrCreateChat(externalId, `AW User ${sender_id}`, 'adultwork');
+    const chat = await findOrCreateChat(externalId, `AW User ${sender_id}`, 'adultwork', getWebhookRouting(req, { profileId: profile_id }));
     if (!chat) return res.sendStatus(200);
 
     const message = await prisma.message.create({
@@ -237,36 +283,55 @@ exports.handleAdultWork = async (req, res) => {
 };
 
 // --- Helper: Find or create a chat for an external contact ---
-async function findOrCreateChat(externalId, clientName, transport) {
-  // Look for existing chat with this externalId
+async function resolveWebhookProfile({ profileId, agencyId } = {}) {
+  if (profileId) {
+    const profile = await prisma.profile.findUnique({
+      where: { id: String(profileId) },
+      select: { id: true, agencyId: true, status: true }
+    });
+    if (!profile) return null;
+    if (agencyId && String(profile.agencyId) !== String(agencyId)) return null;
+    return profile;
+  }
+
+  if (!agencyId) return null;
+
+  return prisma.profile.findFirst({
+    where: { agencyId: String(agencyId), status: { not: 'ARCHIVED' } },
+    select: { id: true, agencyId: true, status: true },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+async function findOrCreateChat(externalId, clientName, transport, routing = {}) {
+  const profile = await resolveWebhookProfile(routing);
+  if (!profile) {
+    console.warn(`[Webhook] No routed profile found for external contact ${externalId}`);
+    return null;
+  }
+
+  // Look for existing chat with this externalId within the routed profile.
   let chat = await prisma.chat.findFirst({
-    where: { externalId },
+    where: {
+      externalId,
+      profileId: profile.id,
+      agencyId: profile.agencyId
+    },
   });
 
   if (chat) return chat;
-
-  // Try to find a profile to associate with (first active profile in any agency)
-  const profile = await prisma.profile.findFirst({
-    where: { status: { not: 'ARCHIVED' } },
-    include: { agency: true },
-    orderBy: { createdAt: 'desc' },
-  });
-
-  if (!profile) {
-    console.warn(`[Webhook] No profile found for external contact ${externalId}`);
-    return null;
-  }
 
   chat = await prisma.chat.create({
     data: {
       profileId: profile.id,
       agencyId: profile.agencyId,
-      clientName,
       externalId,
-      transport: transport || 'external',
       lastMessageAt: new Date(),
     },
   });
+
+  chat.clientName = clientName;
+  chat.transport = transport || 'external';
 
   return chat;
 }

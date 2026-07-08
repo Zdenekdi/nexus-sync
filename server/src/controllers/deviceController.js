@@ -1,10 +1,38 @@
 const prisma = require('../services/db');
+const jwt = require('jsonwebtoken');
 const { registerPushToken, sendChatPush, sendCallPush } = require('../services/pushService');
 const { getIO } = require('../services/socket');
 const { secureCompare } = require('../utils/security');
 const { getPhoneLookupValues, normalizePhoneNumber } = require('../utils/phoneNumber');
+const { isAppOwnerRole, isManagerRole } = require('../utils/authz');
 
 const RELAY_SMS_DUPLICATE_WINDOW_MS = 2 * 60 * 1000;
+
+const isLegacyDeviceEndpointEnabled = () =>
+  process.env.ALLOW_LEGACY_DEVICE_ENDPOINTS === 'true' || process.env.NODE_ENV === 'test';
+
+const rejectDisabledLegacyEndpoint = (res) =>
+  res.status(410).json({ ok: false, message: 'Legacy device endpoint disabled. Use /api/device/relay.' });
+
+const decodeBearerToken = (req) => {
+  const authHeader = req.headers.authorization || '';
+  if (!authHeader.startsWith('Bearer ')) return null;
+
+  try {
+    const token = authHeader.slice('Bearer '.length).trim();
+    if (!token) return null;
+    return jwt.verify(token, process.env.JWT_SECRET);
+  } catch {
+    return null;
+  }
+};
+
+const isRelayBearerAuthorized = (decoded, binding) => {
+  if (!decoded || !binding) return false;
+  const tokenUserId = String(decoded.userId || decoded.id || decoded.sub || '');
+  const tokenAgencyId = String(decoded.agencyId || '');
+  return tokenUserId === String(binding.userId) && tokenAgencyId === String(binding.agencyId);
+};
 
 const normalizeCallState = (state) => {
   const normalized = `${state || ''}`.replace(/^State:\s*/i, '').trim().toUpperCase();
@@ -189,14 +217,19 @@ exports.revokeDeviceBinding = async (req, res) => {
   try {
     const userId = String(req.user?.userId || req.user?.id || '');
     const userRole = req.user?.role;
+    const agencyId = req.user?.agencyId;
     const { installationId } = req.body;
 
-    const roleName = (typeof userRole === 'string' ? userRole : userRole?.name) || '';
-    const isAgencyLevel = ['APP OWNER', 'AGENCY ADMIN', 'MANAGER'].includes(roleName.toUpperCase());
+    const isOwner = isAppOwnerRole(userRole);
+    const isAgencyLevel = isOwner || isManagerRole(userRole);
 
     const binding = await prisma.deviceBinding.findUnique({ where: { installationId } });
     if (!binding) return res.status(404).json({ ok: false, message: 'Binding not found' });
     
+    if (isAgencyLevel && !isOwner && String(binding.agencyId) !== String(agencyId)) {
+      return res.status(403).json({ ok: false, message: 'Unauthorized' });
+    }
+
     if (!isAgencyLevel && binding.userId !== userId) {
       return res.status(403).json({ ok: false, message: 'Unauthorized' });
     }
@@ -238,17 +271,20 @@ exports.handleRelay = async (req, res) => {
     if (!messageTransport) return res.status(400).json({ ok: false, message: 'Invalid transport' });
 
     const reqUserId = String(deviceId || userId || '');
-    if (!secureCompare(secret, process.env.DEVICE_SECRET)) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-
-    const binding = await prisma.deviceBinding.findUnique({ 
-      where: { installationId: installationId || 'none' }, 
+    const binding = await prisma.deviceBinding.findUnique({
+      where: { installationId: installationId || 'none' },
       include: { profile: { select: { id: true, name: true, agencyId: true, phoneNumber: true } } }
     });
 
     if (!binding) return res.status(404).json({ ok: false, message: 'Source device not found' });
     if (!binding.active) return res.status(401).json({ message: 'Unauthorized: Device binding inactive' });
+
+    const secretAuthorized = secureCompare(secret, process.env.DEVICE_SECRET);
+    const bearerAuthorized = !secretAuthorized && isRelayBearerAuthorized(decodeBearerToken(req), binding);
+    if (!secretAuthorized && !bearerAuthorized) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
     // If we find a binding by installationId, ensure it belongs to the same user
     // if a deviceId/userId was provided in the request (extra security layer).
     if (reqUserId && String(binding.userId) !== reqUserId) {
@@ -317,6 +353,7 @@ exports.handleRelay = async (req, res) => {
 
 exports.handleGoIP = async (req, res) => {
   try {
+    if (!isLegacyDeviceEndpointEnabled()) return res.status(410).send('LEGACY ENDPOINT DISABLED');
     const { src, dst, msg, secret } = req.body;
     if (!secureCompare(secret, process.env.DEVICE_SECRET)) return res.status(401).send('UNAUTHORIZED');
     if (!src || !dst || !msg) return res.status(400).send('BAD FIELDS');
@@ -339,6 +376,7 @@ exports.handleGoIP = async (req, res) => {
 
 exports.handleMobileSms = async (req, res) => {
   try {
+    if (!isLegacyDeviceEndpointEnabled()) return rejectDisabledLegacyEndpoint(res);
     const { from, to, text, secret } = req.body;
     if (!from || !to || !text) return res.status(400).json({ ok: false, message: 'Missing fields' });
     if (!secureCompare(secret, process.env.DEVICE_SECRET)) return res.status(401).json({ message: 'Unauthorized' });
@@ -361,6 +399,7 @@ exports.handleMobileSms = async (req, res) => {
 
 exports.handleMobileCall = async (req, res) => {
   try {
+    if (!isLegacyDeviceEndpointEnabled()) return rejectDisabledLegacyEndpoint(res);
     const { from, to, state, secret } = req.body;
     if (!from || !to || !state) return res.status(400).json({ ok: false, message: 'Missing fields' });
     if (!secureCompare(secret, process.env.DEVICE_SECRET)) return res.status(401).json({ message: 'Unauthorized' });

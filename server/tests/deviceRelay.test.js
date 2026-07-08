@@ -1,4 +1,5 @@
 const request = require('supertest');
+const jwt = require('jsonwebtoken');
 
 // Mock all external services BEFORE requiring app
 jest.mock('../src/services/db');
@@ -30,6 +31,14 @@ const DEVICE_SECRET = process.env.DEVICE_SECRET; // 'test-device-secret-16chars'
 const PROFILE_PHONE = '+420773227907';
 const CALLER_PHONE = '+420900111222';
 const INSTALLATION_ID = 'test-installation-abc123';
+
+const makeRelayToken = (overrides = {}) => jwt.sign({
+  userId: 'user-relay-1',
+  agencyId: 'agency-1',
+  role: { name: 'Relay', isManager: false, isAppOwner: false },
+  type: 'relay',
+  ...overrides,
+}, process.env.JWT_SECRET, { expiresIn: '1h' });
 
 const mockProfile = {
   id: 'profile-1',
@@ -342,6 +351,45 @@ describe('POST /api/device/relay', () => {
         installationId: INSTALLATION_ID,
         from: CALLER_PHONE,
         content: 'Relay SMS text',
+        transport: 'sms',
+      });
+
+    expect(res.status).toBe(401);
+    expect(prismaMock.message.create).not.toHaveBeenCalled();
+  });
+
+  it('active binding + matching Bearer token without DEVICE_SECRET → 200', async () => {
+    prismaMock.deviceBinding.findUnique.mockResolvedValue(mockBinding);
+    prismaMock.chat.findFirst.mockResolvedValue(null);
+    prismaMock.chat.create.mockResolvedValue(mockChat);
+    prismaMock.message.create.mockResolvedValue(mockMessage);
+    prismaMock.chat.update.mockResolvedValue({});
+
+    const res = await request(app)
+      .post('/api/device/relay')
+      .set('Authorization', `Bearer ${makeRelayToken()}`)
+      .send({
+        installationId: INSTALLATION_ID,
+        from: CALLER_PHONE,
+        content: 'Relay SMS via bearer',
+        transport: 'sms',
+      });
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.message.create).toHaveBeenCalledTimes(1);
+    expect(mockEmit).toHaveBeenCalledWith('new_message', expect.objectContaining({ transport: 'sms' }));
+  });
+
+  it('active binding + Bearer token for another agency → 401', async () => {
+    prismaMock.deviceBinding.findUnique.mockResolvedValue(mockBinding);
+
+    const res = await request(app)
+      .post('/api/device/relay')
+      .set('Authorization', `Bearer ${makeRelayToken({ agencyId: 'agency-2' })}`)
+      .send({
+        installationId: INSTALLATION_ID,
+        from: CALLER_PHONE,
+        content: 'Cross-agency relay SMS',
         transport: 'sms',
       });
 

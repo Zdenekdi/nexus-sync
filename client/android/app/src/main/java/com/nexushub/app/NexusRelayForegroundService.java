@@ -147,10 +147,20 @@ public class NexusRelayForegroundService extends Service {
         String baseUrl       = prefs.getString(NexusRelayPlugin.KEY_BASE_URL, null);
         String profileId     = prefs.getString(NexusRelayPlugin.KEY_PROFILE_ID, null);
         String installationId = prefs.getString(NexusRelayPlugin.KEY_INSTALLATION_ID, null);
+        String authToken     = prefs.getString(NexusRelayPlugin.KEY_AUTH_TOKEN, null);
 
         if (baseUrl == null || profileId == null) {
             Log.w(TAG, "pollOutboxNative: missing baseUrl or profileId");
             return;
+        }
+        if (authToken == null || authToken.isEmpty()) {
+            Log.w(TAG, "pollOutboxNative: missing auth token");
+            return;
+        }
+
+        NexusRelayPlugin.SmsSyncResult syncResult = NexusRelayPlugin.syncSmsHistoryNative(this, 25, 10 * 60_000L);
+        if (syncResult.synced > 0 || syncResult.failed > 0) {
+            Log.d(TAG, "pollOutboxNative: SMS inbox fallback synced=" + syncResult.synced + ", failed=" + syncResult.failed);
         }
 
         NexusRelayPlugin.SmsSyncResult syncResult = NexusRelayPlugin.syncSmsHistoryNative(this, 25, 10 * 60_000L);
@@ -178,6 +188,7 @@ public class NexusRelayForegroundService extends Service {
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
             conn.setRequestProperty("Accept", "application/json");
+            conn.setRequestProperty("Authorization", "Bearer " + authToken);
             conn.setConnectTimeout(10000);
             conn.setReadTimeout(10000);
 
@@ -226,10 +237,10 @@ public class NexusRelayForegroundService extends Service {
                         smsManager.sendTextMessage(to, null, text, null, null);
                     }
                     Log.d(TAG, "pollOutboxNative: SMS sent to " + to + " (msg=" + messageId + ")");
-                    updateMessageStatus(apiBase, messageId, "sent");
+                    updateMessageStatus(apiBase, messageId, "sent", authToken);
                 } catch (Exception smsEx) {
                     Log.e(TAG, "pollOutboxNative: SMS send failed for " + messageId, smsEx);
-                    updateMessageStatus(apiBase, messageId, "failed");
+                    updateMessageStatus(apiBase, messageId, "failed", authToken);
                 }
             }
 
@@ -243,13 +254,16 @@ public class NexusRelayForegroundService extends Service {
     /**
      * PATCH /api/messages/{id}/status — marks message as sent or failed.
      */
-    private void updateMessageStatus(String apiBase, String messageId, String status) {
+    private void updateMessageStatus(String apiBase, String messageId, String status, String authToken) {
         if (messageId == null || messageId.isEmpty()) return;
         try {
             URL url = new URL(apiBase + "/api/messages/" + messageId + "/status");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("PATCH");
             conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+            if (authToken != null && !authToken.isEmpty()) {
+                conn.setRequestProperty("Authorization", "Bearer " + authToken);
+            }
             conn.setDoOutput(true);
             conn.setConnectTimeout(8000);
             conn.setReadTimeout(8000);
