@@ -4,7 +4,7 @@ import { CreditCard, Users, Check, FileEdit, CheckCheck, Zap, RefreshCw, AlertCi
 import { useNexus } from '../context/ContextHook';
 
 const PlansDashboard = () => {
-  const { t, activeOperator, activeRole, subscriptionPlans, fetchPlans, updatePlans, isPlansLoading, activeMarket, setActiveMarket, agencies, isMobile, showToast, lang } = useNexus();
+  const { t, activeOperator, activeRole, subscriptionPlans, fetchPlans, updatePlans, isPlansLoading, isStartingSubscription, startCheckout, activeMarket, setActiveMarket, agencies, isMobile, showToast, lang } = useNexus();
   const currentAgency = agencies[0];
   const [editingPlan, setEditingPlan] = useState(null);
   
@@ -173,14 +173,17 @@ const PlansDashboard = () => {
                 </button>
               ) : isActive ? null : (
                 <button
+                  onClick={() => startCheckout({ planId: plan.id, market: activeMarket })}
+                  disabled={isStartingSubscription}
                   style={{ 
                     width: '100%', padding: '0.8rem', 
                     background: 'var(--accent-color)', 
                     border: 'none', 
                     borderRadius: '10px', color: 'white', fontWeight: '800', 
-                    cursor: 'pointer', display: 'flex', alignItems: 'center', 
+                    cursor: isStartingSubscription ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', 
                     justifyContent: 'center', gap: '0.5rem',
-                    boxShadow: '0 10px 20px var(--accent-glow)'
+                    boxShadow: '0 10px 20px var(--accent-glow)',
+                    opacity: isStartingSubscription ? 0.7 : 1
                   }}
                 >
                   <Zap size={16} fill="white" /> {t('upgradeNow')}
@@ -216,12 +219,14 @@ const PlansDashboard = () => {
                   {addon.prices[activeMarket.toLowerCase()]} {getCurrencySymbol(activeMarket)}
                 </span>
                 <button 
-                  onClick={() => activeRole === 'app_owner' ? setEditingPlan({ ...addon, isAddon: true }) : showToast(lang === 'cz' ? 'Platba bude integrována přes GoPay.' : 'Payment will be integrated via GoPay.', 'info')}
+                  onClick={() => activeRole === 'app_owner' ? setEditingPlan({ ...addon, isAddon: true }) : startCheckout({ planId: addon.id, market: activeMarket })}
+                  disabled={isStartingSubscription}
                   style={{ 
                     padding: '0.5rem 1rem', 
                     background: activeRole === 'app_owner' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(59, 130, 246, 0.1)', 
                     border: activeRole === 'app_owner' ? '1px solid #fbbf24' : '1px solid var(--accent-color)', 
-                    borderRadius: '8px', color: 'white', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer' 
+                    borderRadius: '8px', color: 'white', fontSize: '0.75rem', fontWeight: '700', cursor: isStartingSubscription ? 'wait' : 'pointer',
+                    opacity: isStartingSubscription ? 0.7 : 1
                   }}>
                   {activeRole === 'app_owner' ? 'NASTAVIT' : 'AKTIVOVAT'}
                 </button>
