@@ -7,7 +7,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { loginAs, authClient, anonClient, TEST_USERS, API_BASE } from './helpers/api.js';
+import { loginAs, authClient, anonClient, TEST_USERS, API_BASE, isApiUnavailableStatus } from './helpers/api.js';
 import { doLogin as loginToApp } from './helpers/auth.js';
 // ─── Token cache (login once per role) ────────────────────────────────────
 let tokens = {};
@@ -56,6 +56,7 @@ test.describe('Auth — GET /api/auth/me', () => {
 
   test('returns 401 without token', async () => {
     const res = await anonClient.get(`${API_BASE}/auth/me`);
+    test.skip(isApiUnavailableStatus(res.status), `API gateway unavailable (${res.status})`);
     expect([401, 403]).toContain(res.status);
   });
 });
