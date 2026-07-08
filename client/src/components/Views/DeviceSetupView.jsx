@@ -8,10 +8,43 @@ const DeviceSetupView = () => {
   const {
     isMobile,
     t,
-    relayApkInfo,
-    setRelayApkInfo,
-    API_BASE
+    API_BASE,
+    lang = 'cz'
   } = nexus;
+  const [relayApkInfo, setRelayApkInfo] = React.useState(null);
+  const [isApkInfoLoading, setIsApkInfoLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const fetchRelayApkInfo = async () => {
+      try {
+        setIsApkInfoLoading(true);
+        const token = localStorage.getItem('nexus_token');
+        const r = await fetch(`${API_BASE}/vultr/apk-info?type=relay`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        const d = await r.json();
+        if (!cancelled) setRelayApkInfo(d?.available ? d : null);
+      } catch {
+        if (!cancelled) setRelayApkInfo(null);
+      } finally {
+        if (!cancelled) setIsApkInfoLoading(false);
+      }
+    };
+
+    if (API_BASE) fetchRelayApkInfo();
+    return () => {
+      cancelled = true;
+    };
+  }, [API_BASE]);
+
+  const relayDownloadUrl = relayApkInfo?.downloadUrl || `${API_BASE}/vultr/download-relay.apk`;
+  const relayVersionLabel = relayApkInfo?.version
+    ? ` (v${relayApkInfo.version})`
+    : isApkInfoLoading
+      ? ` (${lang === 'cz' ? 'ověřuji verzi...' : 'checking version...'})`
+      : '';
+
   return (
     <div data-testid="page-device-setup-container" style={{ padding: isMobile ? '1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMobile ? '1.5rem' : '2.5rem' }}>
@@ -38,7 +71,7 @@ const DeviceSetupView = () => {
             </div>
             
             <a 
-              href={relayApkInfo?.available ? relayApkInfo.downloadUrl : `${API_BASE.replace(/\/api$/, '')}/downloads/nexus-relay.apk`} 
+              href={relayDownloadUrl} 
               target="_blank"
               rel="noreferrer"
               className="action-btn" 
@@ -57,18 +90,8 @@ const DeviceSetupView = () => {
                 width: isMobile ? '100%' : 'auto',
                 justifyContent: 'center'
               }}
-              onClick={async (_e) => {
-                if (!relayApkInfo) {
-                  try {
-                    const token = localStorage.getItem('nexus_token');
-                    const r = await fetch(`${API_BASE}/vultr/apk-info`, { headers: { Authorization: `Bearer ${token}` } });
-                    const d = await r.json();
-                    setRelayApkInfo(d);
-                  } catch { /* ignore */ }
-                }
-              }}
             >
-              <Download size={20} /> {t('downloadApp')} (v{relayApkInfo?.version || '0.1'})
+              <Download size={20} /> {t('downloadApp')}{relayVersionLabel}
             </a>
           </div>
 

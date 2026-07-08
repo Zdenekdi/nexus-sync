@@ -10,6 +10,7 @@ const authMiddleware = require("../middleware/authMiddleware");
 const { requireAppOwner } = require("../utils/authz");
 const { z } = require("zod");
 const { validate } = require("../middleware/validate");
+const ApkReader = require("adbkit-apkreader");
 
 const sshCommand = z.object({
   command: z.string().min(1).max(2000)
@@ -28,6 +29,23 @@ const headers = () => ({
 // ── APK Upload (multer) ───────────────────────────────────────────────────────
 const DOWNLOADS_DIR = path.join(__dirname, "../../public/downloads");
 if (!fs.existsSync(DOWNLOADS_DIR)) fs.mkdirSync(DOWNLOADS_DIR, { recursive: true });
+
+async function readApkManifestMetadata(apkPath, stat) {
+  if (!stat || stat.size >= 100 * 1024 * 1024) return null;
+
+  try {
+    const reader = await ApkReader.open(apkPath);
+    const manifest = await reader.readManifest();
+    return {
+      version: manifest.versionName || null,
+      versionCode: manifest.versionCode || 0,
+      packageName: manifest.package || ""
+    };
+  } catch (err) {
+    logger.warn("[APK] Failed to parse APK metadata:", err.message);
+    return null;
+  }
+}
 
 const apkStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, DOWNLOADS_DIR),
@@ -82,12 +100,26 @@ router.get("/apk-info", async (req, res) => {
       meta = JSON.parse(fileContent);
     } catch {}
   }
+
+  if (!meta.version || meta.version === "1.0" || !meta.versionCode) {
+    const parsedMeta = await readApkManifestMetadata(apkPath, stat);
+    if (parsedMeta?.version) {
+      meta = { ...meta, ...parsedMeta, filename: apkFileName, size: stat.size, uploadedAt: meta.uploadedAt || stat.mtime.toISOString() };
+      try {
+        await fs.promises.writeFile(metaPath, JSON.stringify(meta, null, 2));
+      } catch (err) {
+        logger.warn("[APK] Failed to refresh APK metadata file:", err.message);
+      }
+    }
+  }
   
   res.json({
     available: true,
     filename: apkFileName,
-    version: meta.version || "1.0",
-    size: stat.size,
+    version: meta.version || null,
+    versionCode: meta.versionCode || 0,
+    packageName: meta.packageName || "",
+    size: meta.size || stat.size,
     uploadedAt: meta.uploadedAt || stat.mtime.toISOString(),
     downloadUrl: `${process.env.API_BASE_URL || "https://nexus-api.myvnc.com"}/api/vultr/download-${type}.apk`
   });
@@ -221,9 +253,6 @@ router.post("/git-pull", validate(gitPull), async (req, res) => {
   }
 });
 
-// ── APK Management ────────────────────────────────────────────────────────────
-const ApkReader = require("adbkit-apkreader");
-
 router.post("/upload-apk", apkUpload.single("apk"), async (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No APK file provided' });
   
@@ -237,19 +266,14 @@ router.post("/upload-apk", apkUpload.single("apk"), async (req, res) => {
     const isFull = baseName.includes('full');
 
     // Prevent OOM by skipping ApkReader for large files (> 100MB)
-    if (stat.size < 100 * 1024 * 1024) {
-      try {
-        const reader = await ApkReader.open(req.file.path);
-        const manifest = await reader.readManifest();
-        version = manifest.versionName || "1.0";
-        versionCode = manifest.versionCode || 0;
-        packageName = manifest.package || "";
-        logger.info(`[APK] Parsed metadata: ${packageName} v${version} (${versionCode})`);
-      } catch (parseErr) {
-        logger.warn("[APK] Failed to parse APK metadata, using defaults:", parseErr.message);
-      }
+    const parsedMeta = await readApkManifestMetadata(req.file.path, stat);
+    if (parsedMeta?.version) {
+      version = parsedMeta.version;
+      versionCode = parsedMeta.versionCode;
+      packageName = parsedMeta.packageName;
+      logger.info(`[APK] Parsed metadata: ${packageName} v${version} (${versionCode})`);
     } else {
-      logger.info(`[APK] Skipping parsing for large file: ${stat.size} bytes`);
+      logger.info(`[APK] Using fallback metadata for ${req.file.filename} (${stat.size} bytes)`);
     }
 
     const meta = {

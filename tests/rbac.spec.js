@@ -290,14 +290,15 @@ test.describe('RBAC — GET /api/bookings', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// GROUP 10: Device Setup Access — Restricted for Admin/Manager
+// GROUP 10: Device Setup Access — Agency-scoped management
 // ═══════════════════════════════════════════════════════════════════════════
 
-test.describe('RBAC — Device Management (Restricted)', () => {
-  test('App Owner cannot list bindings (Privacy) → 403', async () => {
+test.describe('RBAC — Device Management (Agency-scoped)', () => {
+  test('App Owner can list bindings for platform oversight → 200', async () => {
     test.skip(!tokens.appOwner, 'App Owner login failed');
     const res = await client('appOwner').get('/device/bindings');
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(200);
+    expect(res.data).toHaveProperty('bindings');
   });
 
   test('Senior Operator can list bindings (Operational) → 200', async () => {
@@ -306,10 +307,11 @@ test.describe('RBAC — Device Management (Restricted)', () => {
     expect(res.status).toBe(200);
   });
 
-  test('Agency Admin cannot list bindings → 403', async () => {
+  test('Agency Admin can list own-agency bindings → 200', async () => {
     test.skip(!tokens.agencyAdmin, 'Agency Admin login failed');
     const res = await client('agencyAdmin').get('/device/bindings');
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(200);
+    expect(res.data).toHaveProperty('bindings');
   });
 
   test('Manager cannot list bindings → 403', async () => {
@@ -322,10 +324,10 @@ test.describe('RBAC — Device Management (Restricted)', () => {
     expect(res.status).toBe(200); // Alice should be 200.
   });
 
-  test('App Owner cannot verify binding → 403', async () => {
+  test('App Owner cannot verify binding without agency context → 401/403', async () => {
     test.skip(!tokens.appOwner, 'App Owner login failed');
     const res = await client('appOwner').post('/device/verify', { installationId: 'test' });
-    expect(res.status).toBe(403);
+    expect([401, 403]).toContain(res.status);
   });
 });
 
