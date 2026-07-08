@@ -10,6 +10,7 @@ export function useNexusData({
   isLoggedIn, 
   API_BASE, 
   activeProfileId,
+  activeMarket,
   setActiveOperator,
   normalizeProfileId,
   setMessages,
@@ -136,6 +137,10 @@ export function useNexusData({
   const [_syncStatus, _setSyncStatus] = useState({ aw: 'synced', ege: 'synced', tpb: 'warning' });
   const [_syncProgress, _setSyncProgress] = useState(0);
   const [relayOnline, setRelayOnline] = useState(false);
+  const [isPlansLoading, setIsPlansLoading] = useState(false);
+  const [isStartingSubscription, setIsStartingSubscription] = useState(false);
+
+  const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51TquE62QtVKkRmFpedHm41mwHBeYPld9A9GnO2zNgoxBP7mGkL1j4tLsc1CUgWjWu114zIsm57y3MI35zM2MEotJ00O9Oh0g3t';
 
   const checkRelayStatus = useCallback(async () => {
     if (!isLoggedIn || !token) return;
@@ -158,6 +163,112 @@ export function useNexusData({
   }, [isLoggedIn, checkRelayStatus]);
 
   const [_plans, _setPlans] = useState([]);
+
+  const fetchPlans = useCallback(async () => {
+    try {
+      setIsPlansLoading(true);
+      const res = await axios.get(`${API_BASE}/subscriptions/plans`);
+      const plans = Array.isArray(res.data) ? res.data : [];
+      _setPlans(plans);
+      return plans;
+    } catch (_err) {
+      console.error('Failed to fetch subscription plans:', _err);
+      if (showToast) showToast(lang === 'cz' ? 'Nepodařilo se načíst tarify.' : 'Failed to load plans.', 'error');
+      return [];
+    } finally {
+      setIsPlansLoading(false);
+    }
+  }, [API_BASE, showToast, lang]);
+
+  const updatePlans = useCallback(async (plans) => {
+    if (!token) return { success: false };
+    try {
+      await axios.post(`${API_BASE}/subscriptions/config`, { plans }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      _setPlans(Array.isArray(plans) ? plans : []);
+      return { success: true };
+    } catch (_err) {
+      console.error('Failed to update subscription plans:', _err);
+      return { success: false, error: _err };
+    }
+  }, [API_BASE, token]);
+
+  const loadStripeJs = useCallback(() => new Promise((resolve, reject) => {
+    if (typeof window === 'undefined') return reject(new Error('Stripe checkout requires a browser'));
+    if (window.Stripe) return resolve(window.Stripe);
+
+    const existing = document.querySelector('script[src="https://js.stripe.com/v3/"]');
+    if (existing) {
+      existing.addEventListener('load', () => resolve(window.Stripe));
+      existing.addEventListener('error', reject);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://js.stripe.com/v3/';
+    script.async = true;
+    script.onload = () => resolve(window.Stripe);
+    script.onerror = () => reject(new Error('Failed to load Stripe.js'));
+    document.head.appendChild(script);
+  }), []);
+
+  const redirectToCheckout = useCallback(async (checkout) => {
+    if (checkout?.url) {
+      window.location.href = checkout.url;
+      return;
+    }
+
+    if (!checkout?.id) {
+      throw new Error('Checkout session was not returned by the server.');
+    }
+
+    const Stripe = await loadStripeJs();
+    const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+    const result = await stripe.redirectToCheckout({ sessionId: checkout.id });
+    if (result?.error) throw result.error;
+  }, [STRIPE_PUBLISHABLE_KEY, loadStripeJs]);
+
+  const startCheckout = useCallback(async ({
+    planId,
+    paymentMethod = 'card',
+    market = activeMarket,
+    successUrl,
+    cancelUrl
+  }) => {
+    if (!token || !planId) return null;
+
+    const currentUrl = typeof window !== 'undefined'
+      ? `${window.location.origin}${window.location.pathname}`
+      : undefined;
+
+    try {
+      setIsStartingSubscription(true);
+      const { data } = await axios.post(`${API_BASE}/billing/checkout`, {
+        planId,
+        paymentMethod,
+        market,
+        successUrl: successUrl || currentUrl,
+        cancelUrl: cancelUrl || currentUrl
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (paymentMethod === 'card') {
+        if (showToast) showToast(lang === 'cz' ? 'Přesměrování na Stripe Checkout...' : 'Redirecting to Stripe Checkout...', 'info');
+        await redirectToCheckout(data);
+      }
+
+      return data;
+    } catch (_err) {
+      console.error('Checkout failed:', _err);
+      const message = _err.response?.data?.message || (lang === 'cz' ? 'Chyba při inicializaci platby.' : 'Error initializing payment.');
+      if (showToast) showToast(message, 'error');
+      return null;
+    } finally {
+      setIsStartingSubscription(false);
+    }
+  }, [API_BASE, activeMarket, token, redirectToCheckout, showToast, lang]);
   
   useEffect(() => {
     localStorage.setItem('nexus_client_names', JSON.stringify(clientNames));
@@ -686,9 +797,32 @@ export function useNexusData({
     }
   }, [token, API_BASE, showToast, lang]);
 
+  const onStartSubscription = useCallback(async (planId, options = {}) => {
+    return startCheckout({ planId, ...options });
+  }, [startCheckout]);
+
+  const onCancelSubscription = useCallback(async () => {
+    if (!token) return;
+    try {
+      await axios.post(`${API_BASE}/subscriptions/cancel`, {
+        note: 'Cancelled from subscription tab'
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      _setActiveSubscription(null);
+      if (showToast) showToast(lang === 'cz' ? 'Předplatné bylo zrušeno.' : 'Subscription cancelled.', 'success');
+      initData();
+    } catch (_err) {
+      console.error('Failed to cancel subscription:', _err);
+      if (showToast) showToast(lang === 'cz' ? 'Zrušení předplatného selhalo.' : 'Failed to cancel subscription.', 'error');
+    }
+  }, [API_BASE, token, showToast, lang, initData]);
+
   return useMemo(() => ({
     profiles, agencies, agencySettings: _agencySettings, operators, sessions, stats, activeSubscription: _activeSubscription,
     subscriptionHistory: _subscriptionHistory, globalFeatures, handleFeatureToggle,
+    subscriptionPlans: _plans, fetchPlans, updatePlans, isPlansLoading,
+    isStartingSubscription, onStartSubscription, onCancelSubscription, startCheckout,
     globalSettings, handleUpdateGlobalSetting,
     isTraining, trainingProgress, onStartTraining, onResetTraining,
     auditLogs: [], isDataLoading, isBackgroundLoading, hasHydrated, clientNames,
@@ -701,7 +835,8 @@ export function useNexusData({
     rolePermissions
   }), [
     profiles, agencies, _agencySettings, operators, sessions, stats, _activeSubscription, _subscriptionHistory, 
-    globalFeatures, handleFeatureToggle, globalSettings, handleUpdateGlobalSetting, isTraining, trainingProgress, 
+    globalFeatures, handleFeatureToggle, _plans, fetchPlans, updatePlans, isPlansLoading, isStartingSubscription, onStartSubscription, onCancelSubscription, startCheckout,
+    globalSettings, handleUpdateGlobalSetting, isTraining, trainingProgress, 
     onStartTraining, onResetTraining, isDataLoading, isBackgroundLoading, hasHydrated, clientNames, calendar, 
     isCalendarSyncOpen, calendarSyncUrl, isBookingModalOpen, selectedScheduleEvent, newBookingForm, bioText, 
     isSyncing, _syncStatus, _syncProgress, relayOnline, handleSaveBio, handleSyncAll, handleSyncChatHistory, 

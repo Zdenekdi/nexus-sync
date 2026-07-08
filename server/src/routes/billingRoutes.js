@@ -10,12 +10,6 @@ const authenticateToken = require('../middleware/authMiddleware');
 router.post('/checkout', authenticateToken, (req, res) => billingController.createCheckoutSession(req, res));
 
 /**
- * @route POST /api/billing/webhook
- * @desc Automated endpoint for payment confirmation (No auth - called by provider)
- */
-router.post('/webhook', (req, res) => billingController.handleWebhook(req, res));
-
-/**
  * @route POST /api/billing/simulate-success
  * @desc Helper to manually trigger automation for a session
  */

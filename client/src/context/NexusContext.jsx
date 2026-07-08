@@ -75,6 +75,10 @@ export const NexusProvider = ({ children }) => {
   }, []);
   
   const [activeMarket, _setActiveMarket] = useState(() => getSafeStorage('nexus_active_market', 'UK'));
+  const setActiveMarket = useCallback((market) => {
+    _setActiveMarket(market);
+    try { localStorage.setItem('nexus_active_market', market); } catch { /* ignore */ }
+  }, []);
   
   // Auth & Routing States (Moved up to prevent hoisting errors)
 
@@ -336,6 +340,7 @@ export const NexusProvider = ({ children }) => {
 
   const nexusData = useNexusData({
     token, isLoggedIn, API_BASE, activeProfileId,
+    activeMarket,
     setActiveOperator: memoizedSetActiveOperator,
     normalizeProfileId: memoizedNormalizeProfileId,
     setMessages: memoizedSetMessages,
@@ -477,7 +482,7 @@ export const NexusProvider = ({ children }) => {
   }, [nexusData]);
 
   const value = useMemo(() => ({
-    t, lang, setLang, activeTab, setActiveTab, activeMarket, 
+    t, lang, setLang, activeTab, setActiveTab, activeMarket, setActiveMarket,
     pathname, navigate: navigateStable, authInitialTab, setAuthInitialTab,
     loading: nexusData.isDataLoading, activeOperator, isLoggedIn, token,
     logout, onLogin: handleLogin, onRegisterAgency: auth.handleRegisterAgency, onRegisterUser: auth.handleRegisterUser,
@@ -505,6 +510,14 @@ export const NexusProvider = ({ children }) => {
     totalUnread: messages.filter(m => m.status === 'unread').length,
     activeSubscription: nexusData.activeSubscription,
     subscriptionHistory: nexusData.subscriptionHistory,
+    subscriptionPlans: nexusData.subscriptionPlans,
+    fetchPlans: nexusData.fetchPlans,
+    updatePlans: nexusData.updatePlans,
+    isPlansLoading: nexusData.isPlansLoading,
+    isStartingSubscription: nexusData.isStartingSubscription,
+    onStartSubscription: nexusData.onStartSubscription,
+    onCancelSubscription: nexusData.onCancelSubscription,
+    startCheckout: nexusData.startCheckout,
     daysLeft,
     // Safety - Voice Guardian & Audio Sentinel
     voiceGuardianActive, handleToggleVoiceGuardian,
@@ -517,7 +530,7 @@ export const NexusProvider = ({ children }) => {
     filteredMessages, setActiveContactId, selectedChat, typingProfiles, handleRefreshMessages,
     handleSyncChatHistory: nexusData.handleSyncChatHistory
   }), [
-    t, lang, setLang, activeTab, setActiveTab, activeMarket, pathname, navigateStable, authInitialTab,
+    t, lang, setLang, activeTab, setActiveTab, activeMarket, setActiveMarket, pathname, navigateStable, authInitialTab,
     nexusData.isDataLoading, activeOperator, isLoggedIn, token, logout, handleLogin,
     auth.handleRegisterAgency, auth.handleRegisterUser, showToast,
     showLanding, hasSeenOnboarding, showOnboarding, isMobile, isNativeApp, isSidebarOpen, isSidebarCollapsed,
@@ -526,7 +539,9 @@ export const NexusProvider = ({ children }) => {
     availableServers, selectedServerId, setSelectedServerId,
     isAllowed, normalizedRole, activeProfile, activeProfileId, myProfiles, nexusData.profiles, 
     nexusData.operators, nexusData.agencies, nexusData.sessions, nexusData.handleRevokeBinding, onlineOnly,
-    nexusData.activeSubscription, nexusData.subscriptionHistory, daysLeft,
+    nexusData.activeSubscription, nexusData.subscriptionHistory, nexusData.subscriptionPlans, nexusData.fetchPlans,
+    nexusData.updatePlans, nexusData.isPlansLoading, nexusData.isStartingSubscription, nexusData.onStartSubscription,
+    nexusData.onCancelSubscription, nexusData.startCheckout, daysLeft,
     voiceGuardianActive, handleToggleVoiceGuardian, audioSentinelActive,
     isRelayMode,
     // Chat Logic Deps

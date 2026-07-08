@@ -5,6 +5,7 @@ const path = require('path');
 const rateLimit = require('express-rate-limit');
 const logger = require('./services/logger');
 const { sendAlert } = require('./services/alertService');
+const billingController = require('./controllers/billingController');
 
 // ── Startup: enforce required secrets ────────────────────────────────────────
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
@@ -171,6 +172,8 @@ app.use((req, res, next) => {
   }
   next();
 });
+
+app.post('/api/billing/webhook', express.raw({ type: 'application/json' }), (req, res) => billingController.handleWebhook(req, res));
 
 app.use(express.json({ limit: '64kb' }));
 
