@@ -31,6 +31,9 @@ const SettingsView = () => {
     showToast = () => {},
     setLang = () => {},
     activeSubscription = null,
+    activeMarket = 'cz',
+    startCheckout = null,
+    isStartingSubscription = false,
     _daysLeft = 0
   } = nexus || {};
 
@@ -44,10 +47,38 @@ const SettingsView = () => {
     return lang === 'cz' ? 'Neomezeně' : 'Unlimited';
   })();
   const [bankInstructions, setBankInstructions] = React.useState(null);
+  const loadingText = lang === 'cz' ? 'NAČÍTÁM...' : 'LOADING...';
+  const activationButtonText = (label) => isStartingSubscription ? loadingText : label;
+  const activationButtonBaseStyle = {
+    transition: 'opacity 0.2s',
+    opacity: isStartingSubscription ? 0.65 : 1,
+    cursor: isStartingSubscription ? 'wait' : 'pointer'
+  };
 
   const handleUpgrade = async (planId, method = 'card') => {
+    if (isStartingSubscription) return;
+    if (!nexus?.token) {
+      showToast(lang === 'cz' ? 'Nejste přihlášený. Přihlaste se prosím znovu.' : 'You are not signed in. Please sign in again.', 'error');
+      return;
+    }
+
     try {
       setBankInstructions(null);
+      if (typeof startCheckout === 'function') {
+        const data = await startCheckout({
+          planId,
+          paymentMethod: method,
+          market: activeMarket,
+          successUrl: window.location.href,
+          cancelUrl: window.location.href
+        });
+
+        if (method === 'transfer' && data?.instructions) {
+          setBankInstructions(data.instructions);
+        }
+        return;
+      }
+
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api'}/billing/checkout`, {
         method: 'POST',
         headers: {
@@ -57,20 +88,26 @@ const SettingsView = () => {
         body: JSON.stringify({ 
           planId,
           paymentMethod: method,
+          market: activeMarket,
           successUrl: window.location.href,
           cancelUrl: window.location.href
         })
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.message || (lang === 'cz' ? 'Platební brána není dostupná.' : 'Payment gateway is not available.'));
+      }
       
       if (method === 'card' && data.url) {
         window.location.href = data.url;
       } else if (method === 'transfer' && data.instructions) {
         setBankInstructions(data.instructions);
+      } else if (method === 'card') {
+        throw new Error(data.message || (lang === 'cz' ? 'Platební brána nevrátila adresu pro přesměrování.' : 'Payment gateway did not return a redirect URL.'));
       }
     } catch (err) {
       console.error("Upgrade failed:", err);
-      showToast(lang === 'cz' ? 'Chyba při inicializaci platby.' : 'Error initializing payment.', 'error');
+      showToast(err.message || (lang === 'cz' ? 'Chyba při inicializaci platby.' : 'Error initializing payment.'), 'error');
     }
   };
 
@@ -225,8 +262,8 @@ const SettingsView = () => {
                         <CheckCircle2 size={14} /> {lang === 'cz' ? 'AKTIVOVÁNO' : 'ACTIVE'}
                       </div>
                     ) : (
-                      <button onClick={() => handleUpgrade('pro_monthly')} style={{ padding: '0.4rem 1rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '900', cursor: 'pointer' }}>
-                        {lang === 'cz' ? 'AKTIVOVAT' : 'ACTIVATE'}
+                      <button disabled={isStartingSubscription} onClick={() => handleUpgrade('pro_monthly')} style={{ padding: '0.4rem 1rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '900', ...activationButtonBaseStyle }}>
+                        {activationButtonText(lang === 'cz' ? 'AKTIVOVAT' : 'ACTIVATE')}
                       </button>
                     )}
                   </div>
@@ -243,11 +280,11 @@ const SettingsView = () => {
                       </div>
                     ) : (
                       <div style={{ display: 'flex', gap: '0.4rem' }}>
-                        <button onClick={() => handleUpgrade('ai_module', 'card')} style={{ padding: '0.4rem 0.75rem', background: '#a78bfa', color: 'black', border: 'none', borderRadius: '8px', fontSize: '0.65rem', fontWeight: '900', cursor: 'pointer' }}>
-                          {lang === 'cz' ? 'KARTOU' : 'CARD'}
+                        <button disabled={isStartingSubscription} onClick={() => handleUpgrade('ai_module', 'card')} style={{ padding: '0.4rem 0.75rem', background: '#a78bfa', color: 'black', border: 'none', borderRadius: '8px', fontSize: '0.65rem', fontWeight: '900', ...activationButtonBaseStyle }}>
+                          {activationButtonText(lang === 'cz' ? 'KARTOU' : 'CARD')}
                         </button>
-                        <button onClick={() => handleUpgrade('ai_module', 'transfer')} style={{ padding: '0.4rem 0.75rem', background: 'transparent', color: 'var(--text-secondary)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '0.65rem', fontWeight: '700', cursor: 'pointer' }}>
-                          {lang === 'cz' ? 'PŘEVODEM' : 'TRANSFER'}
+                        <button disabled={isStartingSubscription} onClick={() => handleUpgrade('ai_module', 'transfer')} style={{ padding: '0.4rem 0.75rem', background: 'transparent', color: 'var(--text-secondary)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '0.65rem', fontWeight: '700', ...activationButtonBaseStyle }}>
+                          {activationButtonText(lang === 'cz' ? 'PŘEVODEM' : 'TRANSFER')}
                         </button>
                       </div>
                     )}
@@ -264,8 +301,8 @@ const SettingsView = () => {
                         <CheckCircle2 size={14} /> {lang === 'cz' ? 'AKTIVOVÁNO' : 'ACTIVE'}
                       </div>
                     ) : (
-                      <button onClick={() => handleUpgrade('api_access')} style={{ padding: '0.4rem 1rem', background: '#10b981', color: 'black', border: 'none', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '900', cursor: 'pointer' }}>
-                        {lang === 'cz' ? 'AKTIVOVAT' : 'ACTIVATE'}
+                      <button disabled={isStartingSubscription} onClick={() => handleUpgrade('api_access')} style={{ padding: '0.4rem 1rem', background: '#10b981', color: 'black', border: 'none', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '900', ...activationButtonBaseStyle }}>
+                        {activationButtonText(lang === 'cz' ? 'AKTIVOVAT' : 'ACTIVATE')}
                       </button>
                     )}
                   </div>
@@ -317,12 +354,13 @@ const SettingsView = () => {
                     </button>
                   ) : (
                     <button 
+                      disabled={isStartingSubscription}
                       onClick={() => handleUpgrade('starter_monthly')} 
-                      style={{ padding: '0.75rem', borderRadius: '10px', border: 'none', background: 'var(--accent-color)', color: 'white', fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer', width: '100%', transition: 'opacity 0.2s' }}
-                      onMouseOver={(e) => e.currentTarget.style.opacity = 0.85}
-                      onMouseOut={(e) => e.currentTarget.style.opacity = 1}
+                      style={{ padding: '0.75rem', borderRadius: '10px', border: 'none', background: 'var(--accent-color)', color: 'white', fontSize: '0.8rem', fontWeight: '800', width: '100%', ...activationButtonBaseStyle }}
+                      onMouseOver={(e) => { if (!isStartingSubscription) e.currentTarget.style.opacity = 0.85; }}
+                      onMouseOut={(e) => { if (!isStartingSubscription) e.currentTarget.style.opacity = 1; }}
                     >
-                      {lang === 'cz' ? 'AKTIVOVAT STARTER' : 'ACTIVATE STARTER'}
+                      {activationButtonText(lang === 'cz' ? 'AKTIVOVAT STARTER' : 'ACTIVATE STARTER')}
                     </button>
                   )}
                 </div>
@@ -337,16 +375,18 @@ const SettingsView = () => {
                   background: (activeClient?.plan === 'Professional' || activeClient?.plan === 'Pro') ? 'rgba(59,130,246,0.02)' : 'transparent',
                   position: 'relative'
                 }}>
-                  <div style={{ position: 'absolute', top: '-10px', right: '15px', background: 'var(--accent-color)', color: 'white', padding: '2px 8px', borderRadius: '20px', fontSize: '0.6rem', fontWeight: '900', textTransform: 'uppercase' }}>
-                    {lang === 'cz' ? 'POPULÁRNÍ' : 'POPULAR'}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem' }}>
                     <div style={{ fontWeight: '900', fontSize: '1.25rem' }}>Professional</div>
-                    {(activeClient?.plan === 'Professional' || activeClient?.plan === 'Pro') && (
-                      <span style={{ fontSize: '0.65rem', padding: '3px 8px', background: 'rgba(59,130,246,0.15)', color: 'var(--accent-color)', borderRadius: '20px', fontWeight: '800' }}>
-                        {lang === 'cz' ? 'AKTUÁLNÍ' : 'CURRENT'}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.62rem', padding: '4px 10px', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', color: 'white', borderRadius: '20px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.04em', boxShadow: '0 6px 18px rgba(37,99,235,0.35)', border: '1px solid rgba(255,255,255,0.18)', lineHeight: 1 }}>
+                        {lang === 'cz' ? 'POPULÁRNÍ' : 'POPULAR'}
                       </span>
-                    )}
+                      {(activeClient?.plan === 'Professional' || activeClient?.plan === 'Pro') && (
+                        <span style={{ fontSize: '0.65rem', padding: '3px 8px', background: 'rgba(59,130,246,0.15)', color: 'var(--accent-color)', borderRadius: '20px', fontWeight: '800' }}>
+                          {lang === 'cz' ? 'AKTUÁLNÍ' : 'CURRENT'}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div style={{ fontSize: '1.75rem', fontWeight: '950', color: 'white' }}>
                     990 Kč <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-secondary)' }}>/ {lang === 'cz' ? 'měsíc' : 'mo'}</span>
@@ -366,12 +406,13 @@ const SettingsView = () => {
                     </button>
                   ) : (
                     <button 
+                      disabled={isStartingSubscription}
                       onClick={() => handleUpgrade('pro_monthly')} 
-                      style={{ padding: '0.75rem', borderRadius: '10px', border: 'none', background: 'var(--accent-color)', color: 'white', fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer', width: '100%', transition: 'opacity 0.2s' }}
-                      onMouseOver={(e) => e.currentTarget.style.opacity = 0.85}
-                      onMouseOut={(e) => e.currentTarget.style.opacity = 1}
+                      style={{ padding: '0.75rem', borderRadius: '10px', border: 'none', background: 'var(--accent-color)', color: 'white', fontSize: '0.8rem', fontWeight: '800', width: '100%', ...activationButtonBaseStyle }}
+                      onMouseOver={(e) => { if (!isStartingSubscription) e.currentTarget.style.opacity = 0.85; }}
+                      onMouseOut={(e) => { if (!isStartingSubscription) e.currentTarget.style.opacity = 1; }}
                     >
-                      {lang === 'cz' ? 'AKTIVOVAT PROFESSIONAL' : 'ACTIVATE PROFESSIONAL'}
+                      {activationButtonText(lang === 'cz' ? 'AKTIVOVAT PROFESSIONAL' : 'ACTIVATE PROFESSIONAL')}
                     </button>
                   )}
                 </div>
@@ -411,12 +452,13 @@ const SettingsView = () => {
                     </button>
                   ) : (
                     <button 
+                      disabled={isStartingSubscription}
                       onClick={() => handleUpgrade('agency_monthly')} 
-                      style={{ padding: '0.75rem', borderRadius: '10px', border: 'none', background: 'var(--accent-color)', color: 'white', fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer', width: '100%', transition: 'opacity 0.2s' }}
-                      onMouseOver={(e) => e.currentTarget.style.opacity = 0.85}
-                      onMouseOut={(e) => e.currentTarget.style.opacity = 1}
+                      style={{ padding: '0.75rem', borderRadius: '10px', border: 'none', background: 'var(--accent-color)', color: 'white', fontSize: '0.8rem', fontWeight: '800', width: '100%', ...activationButtonBaseStyle }}
+                      onMouseOver={(e) => { if (!isStartingSubscription) e.currentTarget.style.opacity = 0.85; }}
+                      onMouseOut={(e) => { if (!isStartingSubscription) e.currentTarget.style.opacity = 1; }}
                     >
-                      {lang === 'cz' ? 'AKTIVOVAT AGENCY' : 'ACTIVATE AGENCY'}
+                      {activationButtonText(lang === 'cz' ? 'AKTIVOVAT AGENCY' : 'ACTIVATE AGENCY')}
                     </button>
                   )}
                 </div>
