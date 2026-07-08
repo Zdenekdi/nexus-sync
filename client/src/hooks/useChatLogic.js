@@ -157,7 +157,6 @@ export function useChatLogic({
       setChatMessages(res.data || []);
     } catch (_err) {
       console.error('Failed to fetch chat messages:', _err);
-      if (!silent) setChatMessages([]);
       if (!silent && _showToast) _showToast(t?.('fetchMessagesError') || 'Failed to load messages', 'error');
     } finally {
       if (!silent) setIsHistoryLoading(false);

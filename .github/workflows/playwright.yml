@@ -23,6 +23,13 @@ jobs:
       run: npm install
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
+    - name: Run API relay/security tests
+      run: npm run test:api
+      env:
+        NEXUS_API_URL: ${{ secrets.NEXUS_API_URL || 'https://nexus-api.myvnc.com/api' }}
+        NEXUS_DEVICE_SECRET: ${{ secrets.NEXUS_DEVICE_SECRET }}
+        TEST_OWNER_EMAIL: ${{ secrets.TEST_OWNER_EMAIL }}
+        TEST_OWNER_PASSWORD: ${{ secrets.TEST_OWNER_PASSWORD }}
     - name: Run Playwright tests
       run: npm run test:all:e2e
       env:

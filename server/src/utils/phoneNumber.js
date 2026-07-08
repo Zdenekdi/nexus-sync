@@ -74,8 +74,9 @@ const getPhoneLookupValues = (value, options = {}) => {
 
     const countryCode = inferCountryCode(options.referenceNumber, options.defaultCountryCode).replace(/\D/g, '');
     if (countryCode && normalizedDigits.startsWith(countryCode)) {
-      values.push(normalizedDigits.slice(countryCode.length));
-      values.push(`0${normalizedDigits.slice(countryCode.length)}`);
+      const nationalDigits = normalizedDigits.slice(countryCode.length);
+      values.push(nationalDigits);
+      values.push(`0${nationalDigits}`);
     }
   }
 

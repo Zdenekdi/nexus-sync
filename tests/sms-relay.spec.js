@@ -11,7 +11,7 @@
 
 import { test, expect } from '@playwright/test';
 import axios from 'axios';
-import { loginAs, authClient, TEST_USERS, API_BASE, DEVICE_SECRET } from './helpers/api.js';
+import { loginAs, authClient, TEST_USERS, API_BASE, DEVICE_SECRET, HAS_DEVICE_SECRET } from './helpers/api.js';
 
 const anonRelay = axios.create({ baseURL: `${API_BASE}/device`, validateStatus: () => true });
 
@@ -141,6 +141,7 @@ test.describe('Mobile SMS — POST /api/device/mobile/sms', () => {
   test.beforeEach(async () => {
     // Skip entire group if staging login failed
     test.skip(!stagingAuthAvailable, 'Staging auth unavailable — skipping live-API SMS tests');
+    test.skip(!HAS_DEVICE_SECRET, 'NEXUS_DEVICE_SECRET unavailable — skipping live SMS ingestion tests');
   });
   test('inbound SMS recorded in DB', async () => {
     const uniqueContent = `Playwright SMS test ${Date.now()}`;
@@ -187,6 +188,7 @@ test.describe('Mobile SMS — POST /api/device/mobile/sms', () => {
 test.describe('GoIP — POST /api/device/goip/sms', () => {
   test.beforeEach(async () => {
     test.skip(!stagingAuthAvailable, 'Staging auth unavailable — skipping live-API GoIP tests');
+    test.skip(!HAS_DEVICE_SECRET, 'NEXUS_DEVICE_SECRET unavailable — skipping live GoIP ingestion tests');
   });
   test('GoIP inbound SMS returns "RECEIVE OK"', async () => {
     const uniqueMsg = `GoIP Playwright ${Date.now()}`;
@@ -227,6 +229,10 @@ test.describe('GoIP — POST /api/device/goip/sms', () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 test.describe('Relay — installationId binding', () => {
+  test.beforeEach(async () => {
+    test.skip(!HAS_DEVICE_SECRET, 'NEXUS_DEVICE_SECRET unavailable — skipping live relay binding tests');
+  });
+
   test('relay with valid installationId succeeds OR returns 409 if no profile', async () => {
     if (!seededInstallationId) {
       console.log('  ⏭️  Skipped: no device binding available for this manager');

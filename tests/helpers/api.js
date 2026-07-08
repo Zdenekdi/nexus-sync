@@ -5,8 +5,13 @@
 
 import axios from 'axios';
 
-export const API_BASE = process.env.NEXUS_API_URL || 'http://localhost:3000/api';
-export const DEVICE_SECRET = process.env.NEXUS_DEVICE_SECRET || 'devicesecret12345';
+const DEFAULT_API_BASE = process.env.CI
+  ? 'https://nexus-api.myvnc.com/api'
+  : 'http://localhost:3000/api';
+
+export const API_BASE = process.env.NEXUS_API_URL || DEFAULT_API_BASE;
+export const DEVICE_SECRET = process.env.NEXUS_DEVICE_SECRET || (process.env.CI ? '' : 'devicesecret12345');
+export const HAS_DEVICE_SECRET = Boolean(DEVICE_SECRET);
 
 /**
  * Test user credentials (seeded in production DB).
