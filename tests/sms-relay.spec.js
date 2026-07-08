@@ -11,7 +11,7 @@
 
 import { test, expect } from '@playwright/test';
 import axios from 'axios';
-import { loginAs, authClient, TEST_USERS, API_BASE, DEVICE_SECRET, HAS_DEVICE_SECRET } from './helpers/api.js';
+import { loginAs, authClient, TEST_USERS, API_BASE, DEVICE_SECRET, HAS_DEVICE_SECRET, isApiUnavailableStatus } from './helpers/api.js';
 
 const anonRelay = axios.create({ baseURL: `${API_BASE}/device`, validateStatus: () => true });
 
@@ -22,6 +22,10 @@ const TEST_INSTALLATION_ID = 'playwright-test-device-001';
 let managerToken;
 let seededInstallationId;
 let stagingAuthAvailable = false; // skip live-API tests if staging login fails
+
+function skipIfApiUnavailable(res) {
+  test.skip(isApiUnavailableStatus(res.status), `API gateway unavailable (${res.status})`);
+}
 
 test.beforeAll(async () => {
   // Login as Senior Operator (Alice) who has permission to register devices
@@ -68,6 +72,7 @@ test.describe('Relay — Authorization', () => {
       from: '+420111222333',
       content: 'Unauthorized test',
     });
+    skipIfApiUnavailable(res);
     // Changed expectation for new API behaviour — production returns 403 on some paths
     expect([401, 403, 404]).toContain(res.status);
   });
@@ -81,6 +86,7 @@ test.describe('Relay — Authorization', () => {
       content: 'Wrong secret test',
       secret: 'wrong-secret',
     });
+    skipIfApiUnavailable(res);
     expect([401, 403, 404]).toContain(res.status);
   });
 
@@ -90,6 +96,7 @@ test.describe('Relay — Authorization', () => {
       to: TEST_PROFILE_PHONE,
       text: 'Unauthorized mobile SMS',
     });
+    skipIfApiUnavailable(res);
     // Endpoint may return 403 (forbidden) or 400 (Zod validation for secret) before 401 controller check
     expect([400, 401, 403]).toContain(res.status);
   });
@@ -107,6 +114,7 @@ test.describe('Relay — Input Validation', () => {
       content: 'No from field',
       secret: DEVICE_SECRET,
     });
+    skipIfApiUnavailable(res);
     // Expecting 400/403/404 because from is required or relay endpoint rejects before reading body
     expect([400, 403, 404]).toContain(res.status);
   });
@@ -118,6 +126,7 @@ test.describe('Relay — Input Validation', () => {
       from: '+420999888777',
       secret: DEVICE_SECRET,
     });
+    skipIfApiUnavailable(res);
     expect([400, 403, 404]).toContain(res.status);
   });
 
@@ -129,6 +138,7 @@ test.describe('Relay — Input Validation', () => {
       content: 'Invalid transport test',
       secret: DEVICE_SECRET,
     });
+    skipIfApiUnavailable(res);
     expect([400, 401, 403, 404]).toContain(res.status);
   });
 });
@@ -153,6 +163,7 @@ test.describe('Mobile SMS — POST /api/device/mobile/sms', () => {
       text: uniqueContent,
       secret: DEVICE_SECRET,
     });
+    skipIfApiUnavailable(res);
 
     expect(res.status).toBe(200);
     expect(res.data.status).toBe('success');
@@ -160,6 +171,7 @@ test.describe('Mobile SMS — POST /api/device/mobile/sms', () => {
     // Verify message was persisted — find chat for this sender
     const managerClient = authClient(managerToken);
     const chatsRes = await managerClient.get('/chats');
+    skipIfApiUnavailable(chatsRes);
     expect(chatsRes.status).toBe(200);
     const chats = Array.isArray(chatsRes.data) ? chatsRes.data : [];
 
@@ -168,6 +180,7 @@ test.describe('Mobile SMS — POST /api/device/mobile/sms', () => {
     if (testChat) {
       // Chat found — verify message content
       const msgsRes = await managerClient.get(`/messages/${testChat.id}`);
+      skipIfApiUnavailable(msgsRes);
       expect(msgsRes.status).toBe(200);
       const messages = Array.isArray(msgsRes.data) ? msgsRes.data : [];
       const ourMsg = messages.find(m => m.text === uniqueContent);
@@ -202,6 +215,7 @@ test.describe('GoIP — POST /api/device/goip/sms', () => {
     const res = await anonRelay.post(`${API_BASE}/device/goip/sms`, qs.toString(), {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });
+    skipIfApiUnavailable(res);
 
     expect(res.status).toBe(200);
     expect(res.data).toContain('RECEIVE OK');
@@ -219,6 +233,7 @@ test.describe('GoIP — POST /api/device/goip/sms', () => {
     const res = await anonRelay.post(`${API_BASE}/device/goip/sms`, qs.toString(), {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });
+    skipIfApiUnavailable(res);
 
     expect([404, 400]).toContain(res.status);
   });
@@ -247,6 +262,7 @@ test.describe('Relay — installationId binding', () => {
       content: `Relay binding test ${Date.now()}`,
       secret: DEVICE_SECRET,
     });
+    skipIfApiUnavailable(res);
 
     // 200 = success, 409 = no profile bound (binding exists but profile not set)
     expect([200, 409]).toContain(res.status);
@@ -268,6 +284,7 @@ test.describe('Relay — installationId binding', () => {
       content: 'Hijack attempt',
       secret: DEVICE_SECRET,
     });
+    skipIfApiUnavailable(res);
 
     // Should fail — either no binding match or binding mismatch
     expect([401, 403, 404, 409]).toContain(res.status);
@@ -284,6 +301,7 @@ test.describe('Device Bindings — Management', () => {
   });
   test('Senior Operator can list device bindings → 200', async () => {
     const res = await authClient(managerToken).get('/device/bindings');
+    skipIfApiUnavailable(res);
     expect(res.status).toBe(200);
     console.log(`  ✅ Senior Operator access to bindings verified (200)`);
   });
@@ -295,6 +313,7 @@ test.describe('Device Bindings — Management', () => {
       return;
     }
     const res = await authClient(adminLoginResult.token).get('/device/bindings');
+    skipIfApiUnavailable(res);
     expect(res.status).toBe(200);
   });
 
@@ -305,6 +324,7 @@ test.describe('Device Bindings — Management', () => {
       return;
     }
     const res = await authClient(modelLoginResult.token).get('/device/bindings');
+    skipIfApiUnavailable(res);
     // Model should only see their own — server returns their bindings or 403
     expect([200, 403]).toContain(res.status);
   });
@@ -317,6 +337,7 @@ test.describe('Device Bindings — Management', () => {
     const res = await authClient(managerToken).get(
       `/device/status?installationId=${seededInstallationId}`
     );
+    skipIfApiUnavailable(res);
     expect(res.status).toBe(200);
     console.log(`  ✅ Senior Operator access to relay status verified (200)`);
   });

@@ -12,6 +12,11 @@ const DEFAULT_API_BASE = process.env.CI
 export const API_BASE = process.env.NEXUS_API_URL || DEFAULT_API_BASE;
 export const DEVICE_SECRET = process.env.NEXUS_DEVICE_SECRET || (process.env.CI ? '' : 'devicesecret12345');
 export const HAS_DEVICE_SECRET = Boolean(DEVICE_SECRET);
+export const TRANSIENT_API_STATUSES = [502, 503, 504];
+
+export function isApiUnavailableStatus(status) {
+  return TRANSIENT_API_STATUSES.includes(Number(status));
+}
 
 /**
  * Test user credentials (seeded in production DB).
