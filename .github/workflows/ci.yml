@@ -156,15 +156,6 @@ jobs:
       - name: Install client dependencies
         run: cd client && npm install --legacy-peer-deps
 
-      - name: Fix deprecated jcenter and AGP versions in capacitor-updater
-        run: |
-          sed -i 's/jcenter()/mavenCentral()/g' \
-            client/node_modules/capacitor-updater/android/build.gradle
-          sed -i "s/getDefaultProguardFile('proguard-android.txt')/getDefaultProguardFile('proguard-android-optimize.txt')/g" \
-            client/node_modules/capacitor-updater/android/build.gradle
-          sed -i 's/android {/android {\n    namespace "ee.forgr.capacitor_updater"/g' \
-            client/node_modules/capacitor-updater/android/build.gradle
-
       - name: Build and Package Full APK
         env:
           VITE_APP_VARIANT: full
