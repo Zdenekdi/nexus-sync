@@ -262,7 +262,12 @@ export function useNexusData({
       return data;
     } catch (_err) {
       console.error('Checkout failed:', _err);
-      const message = _err.response?.data?.message || (lang === 'cz' ? 'Chyba při inicializaci platby.' : 'Error initializing payment.');
+      const errorCode = _err.response?.data?.code;
+      const message = errorCode === 'stripe_not_configured'
+        ? (lang === 'cz'
+          ? 'Platba kartou zatím není na serveru aktivní. Nastavte STRIPE_SECRET_KEY na backendu.'
+          : 'Card payments are not active on the server yet. Set STRIPE_SECRET_KEY on the backend.')
+        : (_err.response?.data?.message || (lang === 'cz' ? 'Chyba při inicializaci platby.' : 'Error initializing payment.'));
       if (showToast) showToast(message, 'error');
       return null;
     } finally {

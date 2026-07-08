@@ -43,6 +43,29 @@ beforeEach(() => {
 });
 
 describe('billing checkout', () => {
+  it('does not create a pending card checkout when Stripe is missing in production', async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+
+    try {
+      const res = await request(app)
+        .post('/api/billing/checkout')
+        .set('Authorization', `Bearer ${makeToken()}`)
+        .send({
+          planId: 'pro',
+          market: 'cz',
+          successUrl: 'https://app.example.test/plans',
+          cancelUrl: 'https://app.example.test/plans'
+        });
+
+      expect(res.status).toBe(503);
+      expect(res.body).toMatchObject({ code: 'stripe_not_configured' });
+      expect(prismaMock.subscription.create).not.toHaveBeenCalled();
+    } finally {
+      process.env.NODE_ENV = originalNodeEnv;
+    }
+  });
+
   it('creates a pending dynamic plan checkout session without trusting client price', async () => {
     const res = await request(app)
       .post('/api/billing/checkout')
