@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Download, X, Sparkles, RefreshCw } from 'lucide-react';
 import axios from 'axios';
 import { APP_VERSION } from '../constants/config';
-import { CapacitorUpdater } from 'capacitor-updater';
+import { CapacitorUpdater } from '@capgo/capacitor-updater';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
 
