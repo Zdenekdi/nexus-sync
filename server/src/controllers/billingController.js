@@ -156,6 +156,14 @@ class BillingController {
         market: market || null
       };
 
+      const mockBillingAllowed = process.env.NODE_ENV === 'test' || process.env.ALLOW_MOCK_BILLING === 'true';
+      if (paymentMethod === 'card' && !this.stripe && !mockBillingAllowed) {
+        return res.status(503).json({
+          code: 'stripe_not_configured',
+          message: 'Stripe is not configured. Set STRIPE_SECRET_KEY on the backend.'
+        });
+      }
+
       // Create a pending subscription
       const subscription = await prisma.subscription.create({
         data: {
@@ -197,7 +205,7 @@ class BillingController {
       }
 
       if (!this.stripe) {
-        if (process.env.NODE_ENV === 'test' || process.env.ALLOW_MOCK_BILLING === 'true') {
+        if (mockBillingAllowed) {
           const mockUrl = `${successUrl || 'http://localhost:3000/success'}?session_id=${subscription.id}`;
           return res.json({
             paymentMethod: 'card',
@@ -207,10 +215,6 @@ class BillingController {
             message: 'Mock checkout session created'
           });
         }
-
-        return res.status(503).json({
-          message: 'Stripe is not configured. Set STRIPE_SECRET_KEY on the backend.'
-        });
       }
 
       const mode = type === 'plan' ? 'subscription' : 'payment';
