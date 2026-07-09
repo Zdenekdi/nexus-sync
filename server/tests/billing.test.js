@@ -283,7 +283,7 @@ describe('billing checkout', () => {
     expect(sessionPayload).toEqual(
       expect.objectContaining({
         mode: 'subscription',
-        ui_mode: 'embedded',
+        ui_mode: 'embedded_page',
         return_url: 'https://app.example.test/settings?checkout=success&session_id={CHECKOUT_SESSION_ID}',
         redirect_on_completion: 'if_required',
         metadata: expect.objectContaining({
