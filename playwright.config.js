@@ -22,7 +22,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: '50%', // Increased to 50% of CPU cores to speed up test execution
   timeout: 180_000,        // Increase timeout for long video recording
-  reporter: [['list'], ['json', { outputFile: 'test-results.json' }]],
+  reporter: [['list'], ['json', { outputFile: 'test-results/playwright-results.json' }]],
 
   use: {
     baseURL: process.env.FRONTEND_URL || 'https://nexus-sync-8d50b.web.app',

@@ -109,7 +109,7 @@ const Sidebar = () => {
 
   // Detect MODEL role — they get a simplified sidebar
   const roleUpper = String(activeOperator?.role || activeRole || '').toUpperCase().replace(/\s+/g, '_');
-  const isModel = roleUpper === 'MODEL';
+  const _isModel = roleUpper === 'MODEL';
   // Relay APK (built with VITE_APP_VARIANT=relay) shows only relay navigation
   const isRelayApp = typeof __APP_VARIANT__ !== 'undefined' && __APP_VARIANT__ === 'relay';
 

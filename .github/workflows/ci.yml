@@ -59,6 +59,9 @@ jobs:
       - name: Install client dependencies
         run: cd client && npm install --legacy-peer-deps
 
+      - name: Lint client
+        run: cd client && npm run lint
+
       - name: Build client
         run: |
           cd client
