@@ -260,8 +260,9 @@ test.describe('Stripe payment test-mode E2E', () => {
     );
     const selectedPlan = await clickFirstAvailablePlanButton(page);
     const checkoutResponse = await checkoutResponsePromise;
+    const checkoutRequestBody = checkoutResponse.request().postData();
     const checkoutBody = await checkoutResponse.text();
-    expect(checkoutResponse.status(), checkoutBody).toBe(200);
+    expect(checkoutResponse.status(), `${checkoutBody}\nRequest: ${checkoutRequestBody}`).toBe(200);
     const checkoutData = JSON.parse(checkoutBody);
 
     expect(checkoutData).toMatchObject({
