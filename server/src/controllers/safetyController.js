@@ -181,6 +181,10 @@ class SafetyController {
                     locationPoints: {
                         take: 1,
                         orderBy: { capturedAt: 'desc' }
+                    },
+                    trackerLocations: {
+                        take: 1,
+                        orderBy: { capturedAt: 'desc' }
                     }
                 },
                 orderBy: { updatedAt: 'desc' }

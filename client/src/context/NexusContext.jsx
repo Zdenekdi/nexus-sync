@@ -259,6 +259,9 @@ export const NexusProvider = ({ children }) => {
   const [incomingGhostCall, setIncomingGhostCall] = useState(false);
   const [ghostCallScheduledAt, setGhostCallScheduledAt] = useState(null);
   const [linkedSessionId, setLinkedSessionId] = useState(null);
+  const [incomingRelayCall, setIncomingRelayCall] = useState(null);
+  const [lastEmergencyAlert, setLastEmergencyAlert] = useState(null);
+  const [lastRelayCommand, setLastRelayCommand] = useState(null);
 
   // UI Modals
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
@@ -399,6 +402,45 @@ export const NexusProvider = ({ children }) => {
     filteredMessages, setActiveContactId, selectedChat, typingProfiles, handleRefreshMessages
   } = chatLogic;
 
+  const handleIncomingRelayCall = useCallback((data = {}) => {
+    const caller = data.from || data.caller || data.callerId || data.phone || (lang === 'cz' ? 'Neznámé číslo' : 'Unknown caller');
+    const profileName = data.profileName || data.profile?.name || data.name || '';
+    setIncomingRelayCall({
+      ...data,
+      caller,
+      profileName,
+      receivedAt: Date.now()
+    });
+    showToast(
+      lang === 'cz'
+        ? `Příchozí hovor${profileName ? ` pro ${profileName}` : ''}: ${caller}`
+        : `Incoming call${profileName ? ` for ${profileName}` : ''}: ${caller}`,
+      'info'
+    );
+  }, [lang, showToast]);
+
+  const handleEmergencySocketAlert = useCallback((data = {}) => {
+    setLastEmergencyAlert({ ...data, receivedAt: Date.now() });
+    _setSosActive(true);
+    const profileName = data.profileName || data.profile?.name || data.profileId || '';
+    showToast(
+      lang === 'cz'
+        ? `SOS alert${profileName ? `: ${profileName}` : ''}`
+        : `SOS alert${profileName ? `: ${profileName}` : ''}`,
+      'error'
+    );
+  }, [lang, showToast]);
+
+  const handleRelayCommandSocket = useCallback((data = {}) => {
+    setLastRelayCommand({ ...data, receivedAt: Date.now() });
+    if (['SYNC_WEB_PROFILE', 'BOOST_PROFILE'].includes(data.type)) {
+      showToast(
+        lang === 'cz' ? 'Relay příkaz byl odeslán do zařízení.' : 'Relay command was sent to the device.',
+        'info'
+      );
+    }
+  }, [lang, showToast]);
+
   // --- Socket.io Integration ---
   useSocket(
     token,
@@ -415,10 +457,10 @@ export const NexusProvider = ({ children }) => {
         return sameMessage || sameChat ? { ...m, ...message, id: m.id, chatId: m.chatId || message.chatId } : m;
       }));
     },
-    () => {}, // handleIncomingCall (TODO if needed)
-    () => {}, // handleEmergencyAlert (TODO if needed)
-    () => {}, // handleSipIncomingCall (TODO if needed)
-    () => {}, // handleRelayCommand
+    handleIncomingRelayCall,
+    handleEmergencySocketAlert,
+    handleIncomingRelayCall,
+    handleRelayCommandSocket,
     (d) => d?.type === 'SYNC_COMPLETED' && showToast(lang === 'cz' ? '✅ Synchronizace dokončena' : '✅ Sync completed', 'success'),
     (d) => nexusData.applyTrackerLocation?.(d)
   );
@@ -621,6 +663,7 @@ export const NexusProvider = ({ children }) => {
     batteryLevel: linkedTracker?.lastBattery ?? 100,
     incomingGhostCall, setIncomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity,
     heartRate, hrThreshold, setHrThreshold, isBluetoothConnected, setIsBluetoothConnected,
+    incomingRelayCall, setIncomingRelayCall, lastEmergencyAlert, lastRelayCommand,
     activeBioWarning: false,
     playBeep,
     // Relay mode
@@ -647,7 +690,8 @@ export const NexusProvider = ({ children }) => {
     linkedSessionId, checkinMinutes, checkinTimerEnd, checkinRemaining, startCheckinTimer, resetCheckinTimer, confirmDeparture,
     nexusData.handleDelayBooking, nexusData.trackers, linkedTracker, lastTrackerUpdate, nexusData.trackerProvisioning,
     nexusData.isPairingTracker, nexusData.handlePairTracker, nexusData.handleUnpairTracker, gpsHistory,
-    incomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity, heartRate, hrThreshold, isBluetoothConnected, playBeep,
+    incomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity, heartRate, hrThreshold, isBluetoothConnected,
+    incomingRelayCall, lastEmergencyAlert, lastRelayCommand, playBeep,
     isRelayMode,
     // Chat Logic Deps
     chatMessages, isHistoryLoading, fetchChatMessages, handleSendMessage,

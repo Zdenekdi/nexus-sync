@@ -39,7 +39,7 @@ export class WhatsAppAdapter extends ChannelAdapter {
     const formatted = this.formatOutgoing(message);
     
     try {
-      // Queu_err.message for sending
+      // Queue for sending. A production sender must replace the stubbed API call below.
       const messageId = `wa_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       this.messageQueue.push({
         id: messageId,
@@ -140,7 +140,7 @@ export class WhatsAppAdapter extends ChannelAdapter {
       return null;
     }
 
-    const msg = rawData.entry[0].changes[0].valu_err.messages[0];
+    const msg = rawData.entry[0].changes[0].value.messages[0];
     return {
       id: msg.id,
       from: msg.from,
