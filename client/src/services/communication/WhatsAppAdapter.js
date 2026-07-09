@@ -16,7 +16,9 @@ export class WhatsAppAdapter extends ChannelAdapter {
   async connect() {
     try {
       this.validateConfig();
-      // Initialize WhatsApp Business API client
+      if (!this.config.sendEndpoint && this.config.allowLocalQueue !== true) {
+        throw new Error('WhatsApp sender endpoint is not configured');
+      }
       this.isConnected = true;
       return { success: true, channel: 'whatsapp' };
     } catch (_err) {
@@ -39,24 +41,34 @@ export class WhatsAppAdapter extends ChannelAdapter {
     const formatted = this.formatOutgoing(message);
     
     try {
-      // Queue for sending. A production sender must replace the stubbed API call below.
-      const messageId = `wa_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      this.messageQueue.push({
-        id: messageId,
-        message: formatted,
-        status: 'pending'
+      if (!this.config.sendEndpoint) {
+        throw new Error('WhatsApp sender endpoint is not configured');
+      }
+
+      const response = await fetch(this.config.sendEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(this.config.authToken ? { Authorization: `Bearer ${this.config.authToken}` } : {})
+        },
+        body: JSON.stringify(formatted)
       });
 
-      // In production, send via WhatsApp Business API
-      // const response = await axios.post(
-      //   `https://graph.instagram.com/v18.0/${this.config.phoneNumberId}/messages`,
-      //   formatted,
-      //   { headers: { Authorization: `Bearer ${this.config.apiKey}` } }
-      // );
+      if (!response.ok) {
+        throw new Error(`WhatsApp send failed: HTTP ${response.status}`);
+      }
+
+      const result = await response.json().catch(() => ({}));
+      const messageId = `wa_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      this.messageQueue.push({
+        id: result.id || messageId,
+        message: formatted,
+        status: result.status || 'sent'
+      });
 
       return {
-        id: messageId,
-        status: 'queued',
+        id: result.id || messageId,
+        status: result.status || 'sent',
         timestamp: new Date(),
         channel: 'whatsapp'
       };

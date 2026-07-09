@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 jest.mock('../src/services/db');
 jest.mock('../src/services/logger');
 jest.mock('../src/services/alertService');
+jest.mock('stripe', () => jest.fn().mockImplementation(() => ({})), { virtual: true });
 
 const prismaMock = require('../src/services/db');
 const app = require('../src/app');
@@ -61,5 +62,66 @@ describe('POST /api/profiles', () => {
       .send({ name: 'New Profile', age: 25, nationality: 'CZ' });
 
     expect(res.status).toBe(201);
+  });
+});
+
+describe('PATCH /api/profiles/:id', () => {
+  it('persists phoneNumber and nested profile data', async () => {
+    prismaMock.profile.findUnique.mockResolvedValue({
+      id: 'p1',
+      name: 'Profile 1',
+      agencyId: 'agency-1',
+      data: JSON.stringify({ quickReplies: ['Old'] })
+    });
+    prismaMock.profile.update.mockResolvedValue({
+      id: 'p1',
+      name: 'Profile 1',
+      agencyId: 'agency-1',
+      phoneNumber: '+420739777718',
+      data: JSON.stringify({
+        quickReplies: ['Hello'],
+        webProfileText: { EN: { bio: 'Hello world' } }
+      }),
+      assignees: []
+    });
+
+    const res = await request(app)
+      .patch('/api/profiles/p1')
+      .set('Authorization', `Bearer ${makeToken()}`)
+      .send({
+        phoneNumber: '+420739777718',
+        quickReplies: ['Hello'],
+        data: {
+          webProfileText: { EN: { bio: 'Hello world' } }
+        }
+      });
+
+    expect(res.status).toBe(200);
+    const updatePayload = prismaMock.profile.update.mock.calls[0][0].data;
+    expect(updatePayload.phoneNumber).toBe('+420739777718');
+    expect(JSON.parse(updatePayload.data)).toMatchObject({
+      quickReplies: ['Hello'],
+      webProfileText: { EN: { bio: 'Hello world' } }
+    });
+  });
+});
+
+describe('GET /api/profiles/:id/gallery', () => {
+  it('returns stored gallery photos for a scoped profile', async () => {
+    prismaMock.profile.findUnique.mockResolvedValue({
+      id: 'p1',
+      name: 'Profile 1',
+      agencyId: 'agency-1',
+      gallery: JSON.stringify([{ id: 'photo-1', url: 'https://cdn.example.test/photo.jpg', visibility: 'public' }])
+    });
+
+    const res = await request(app)
+      .get('/api/profiles/p1/gallery')
+      .set('Authorization', `Bearer ${makeToken()}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.photos).toEqual([
+      expect.objectContaining({ id: 'photo-1', visibility: 'public' })
+    ]);
   });
 });

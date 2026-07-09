@@ -2,17 +2,18 @@ const express = require('express');
 const router = express.Router();
 const billingController = require('../controllers/billingController');
 const authenticateToken = require('../middleware/authMiddleware');
+const { requireAppOwner } = require('../utils/authz');
 
 /**
  * @route POST /api/billing/checkout
- * @desc Create a mock checkout session
+ * @desc Create Stripe Checkout session or bank-transfer instructions
  */
 router.post('/checkout', authenticateToken, (req, res) => billingController.createCheckoutSession(req, res));
 
 /**
  * @route POST /api/billing/simulate-success
- * @desc Helper to manually trigger automation for a session
+ * @desc Test/dev-only helper to manually trigger billing automation
  */
-router.post('/simulate-success', authenticateToken, (req, res) => billingController.simulateSuccess(req, res));
+router.post('/simulate-success', authenticateToken, requireAppOwner, (req, res) => billingController.simulateSuccess(req, res));
 
 module.exports = router;

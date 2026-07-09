@@ -73,6 +73,37 @@ const apkUpload = multer({
   limits: { fileSize: 150 * 1024 * 1024 } // 150 MB max
 });
 
+function resolveAgentDownload(platform) {
+  return AGENT_DOWNLOADS.find(item => item.id === String(platform || '').toLowerCase());
+}
+
+async function readJsonIfExists(filePath) {
+  if (!fs.existsSync(filePath)) return {};
+  try {
+    return JSON.parse(await fs.promises.readFile(filePath, "utf8"));
+  } catch {
+    return {};
+  }
+}
+
+const agentUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, DOWNLOADS_DIR),
+    filename: (req, file, cb) => {
+      const target = resolveAgentDownload(req.body.platform);
+      cb(null, target ? target.filename : "nexus-agent-upload.zip");
+    }
+  }),
+  limits: { fileSize: 250 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const isZip = file.mimetype === "application/zip" ||
+      file.mimetype === "application/x-zip-compressed" ||
+      /\.zip$/i.test(file.originalname || "");
+    if (!isZip) return cb(new Error("Only .zip agent packages are allowed"));
+    cb(null, true);
+  }
+});
+
 // Helper for SSH connection
 async function getSSHConnection() {
   const ssh = new NodeSSH();
@@ -152,15 +183,17 @@ router.get("/agent-downloads", async (req, res) => {
   const baseUrl = (process.env.API_BASE_URL || "https://nexus-api.myvnc.com").replace(/\/+$/, "");
   const downloads = await Promise.all(AGENT_DOWNLOADS.map(async (item) => {
     const filePath = path.join(DOWNLOADS_DIR, item.filename);
+    const meta = await readJsonIfExists(path.join(DOWNLOADS_DIR, `${item.id}.agent.meta.json`));
     if (!fs.existsSync(filePath)) {
-      return { ...item, available: false };
+      return { ...item, available: false, version: meta.version || null };
     }
     const stat = await fs.promises.stat(filePath);
     return {
       ...item,
       available: true,
+      version: meta.version || null,
       size: stat.size,
-      updatedAt: stat.mtime.toISOString(),
+      updatedAt: meta.uploadedAt || stat.mtime.toISOString(),
       downloadUrl: `${baseUrl}/downloads/${item.filename}`
     };
   }));
@@ -321,6 +354,42 @@ router.post("/upload-apk", apkUpload.single("apk"), async (req, res) => {
   } catch (err) {
     logger.error("[APK] Upload processing error:", err.message);
     res.status(500).json({ message: "Failed to process APK upload" });
+  }
+});
+
+router.post("/upload-agent", (req, res, next) => {
+  agentUpload.single("agent")(req, res, (err) => {
+    if (err) return res.status(400).json({ message: err.message });
+    next();
+  });
+}, async (req, res) => {
+  const target = resolveAgentDownload(req.body.platform);
+  if (!target) return res.status(400).json({ message: "Invalid platform. Use windows, macos or linux." });
+  if (!req.file) return res.status(400).json({ message: "No agent package provided" });
+
+  try {
+    const stat = await fs.promises.stat(req.file.path);
+    const baseUrl = (process.env.API_BASE_URL || "https://nexus-api.myvnc.com").replace(/\/+$/, "");
+    const meta = {
+      platform: target.id,
+      filename: target.filename,
+      label: target.label,
+      version: req.body.version || null,
+      size: stat.size,
+      uploadedAt: new Date().toISOString(),
+      downloadUrl: `${baseUrl}/downloads/${target.filename}`
+    };
+
+    await fs.promises.writeFile(
+      path.join(DOWNLOADS_DIR, `${target.id}.agent.meta.json`),
+      JSON.stringify(meta, null, 2)
+    );
+
+    logger.info(`[Agent] New ${target.id} package uploaded: ${stat.size} bytes`);
+    res.json({ ok: true, ...meta });
+  } catch (err) {
+    logger.error("[Agent] Upload processing error:", err.message);
+    res.status(500).json({ message: "Failed to process agent package" });
   }
 });
 

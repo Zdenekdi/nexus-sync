@@ -55,6 +55,10 @@ public class NexusInCallPlugin extends Plugin {
     private static NexusInCallPlugin instance;
     public static NexusInCallPlugin getInstance() { return instance; }
 
+    private boolean isGsmBridgeEnabled() {
+        return BuildConfig.ENABLE_GSM_CALL_BRIDGE;
+    }
+
     @Override
     public void load() {
         super.load();
@@ -69,9 +73,11 @@ public class NexusInCallPlugin extends Plugin {
      */
     @PluginMethod
     public void isDefaultDialer(PluginCall call) {
-        boolean isDefault = NexusInCallService.isDefaultDialer(getContext());
+        boolean enabled = isGsmBridgeEnabled();
+        boolean isDefault = enabled && NexusInCallService.isDefaultDialer(getContext());
         JSObject result = new JSObject();
         result.put("isDefault", isDefault);
+        result.put("featureEnabled", enabled);
         call.resolve(result);
     }
 
@@ -80,6 +86,10 @@ public class NexusInCallPlugin extends Plugin {
      */
     @PluginMethod
     public void requestDefaultDialer(PluginCall call) {
+        if (!isGsmBridgeEnabled()) {
+            call.reject("GSM call bridge is disabled for this build");
+            return;
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             android.app.role.RoleManager rm = getContext().getSystemService(android.app.role.RoleManager.class);
             if (rm != null && !rm.isRoleHeld(android.app.role.RoleManager.ROLE_DIALER)) {
@@ -106,6 +116,10 @@ public class NexusInCallPlugin extends Plugin {
      */
     @PluginMethod
     public void answer(PluginCall call) {
+        if (!isGsmBridgeEnabled()) {
+            call.reject("GSM call bridge is disabled for this build");
+            return;
+        }
         NexusInCallService service = NexusInCallService.getInstance();
         if (service == null) {
             call.reject("InCallService není aktivní");
@@ -120,6 +134,10 @@ public class NexusInCallPlugin extends Plugin {
      */
     @PluginMethod
     public void reject(PluginCall call) {
+        if (!isGsmBridgeEnabled()) {
+            call.reject("GSM call bridge is disabled for this build");
+            return;
+        }
         NexusInCallService service = NexusInCallService.getInstance();
         if (service == null) {
             call.reject("InCallService není aktivní");
@@ -134,6 +152,10 @@ public class NexusInCallPlugin extends Plugin {
      */
     @PluginMethod
     public void hangup(PluginCall call) {
+        if (!isGsmBridgeEnabled()) {
+            call.reject("GSM call bridge is disabled for this build");
+            return;
+        }
         NexusInCallService service = NexusInCallService.getInstance();
         if (service == null) {
             call.reject("InCallService není aktivní");

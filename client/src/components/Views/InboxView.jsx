@@ -106,6 +106,8 @@ const InboxView = () => {
   const [isCrmLoading, setIsCrmLoading] = React.useState(false);
   const [aiSuggestions, setAiSuggestions] = React.useState([]);
   const [isUpgrading, setIsUpgrading] = React.useState(false);
+  const [isChatMenuOpen, setIsChatMenuOpen] = React.useState(false);
+  const chatMenuRef = React.useRef(null);
   const { getSuggestion, isAiLoading, aiError } = useAI();
 
   const agency = agencies?.[0] || {};
@@ -213,6 +215,55 @@ const InboxView = () => {
     }, 10000);
     return () => clearInterval(interval);
   }, [handleRefreshMessages]);
+
+  React.useEffect(() => {
+    if (!isChatMenuOpen) return undefined;
+    const onPointerDown = (event) => {
+      if (chatMenuRef.current && !chatMenuRef.current.contains(event.target)) {
+        setIsChatMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, [isChatMenuOpen]);
+
+  const latestUnreadInbound = React.useMemo(() => (
+    [...allMessages].reverse().find(msg => String(msg.direction || '').toUpperCase() === 'INBOUND' && msg.status !== 'read')
+  ), [allMessages]);
+
+  const copySelectedPhone = React.useCallback(async () => {
+    if (!selectedChat?.from) return;
+    try {
+      await navigator.clipboard.writeText(selectedChat.from);
+      showToast(lang === 'cz' ? 'Číslo zkopírováno.' : 'Number copied.', 'success');
+    } catch {
+      showToast(selectedChat.from, 'info');
+    } finally {
+      setIsChatMenuOpen(false);
+    }
+  }, [selectedChat?.from, showToast, lang]);
+
+  const markLatestInboundRead = React.useCallback(async () => {
+    if (!latestUnreadInbound?.id) return;
+    try {
+      const response = await fetch(`${API_BASE}/messages/${latestUnreadInbound.id}/read`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      handleRefreshMessages();
+      showToast(lang === 'cz' ? 'Zpráva označena jako přečtená.' : 'Message marked as read.', 'success');
+    } catch {
+      showToast(lang === 'cz' ? 'Stav zprávy se nepovedlo uložit.' : 'Could not update message status.', 'error');
+    } finally {
+      setIsChatMenuOpen(false);
+    }
+  }, [API_BASE, token, latestUnreadInbound?.id, handleRefreshMessages, showToast, lang]);
+
+  const runChatMenuAction = React.useCallback((action) => {
+    setIsChatMenuOpen(false);
+    action?.();
+  }, []);
 
   // Pull to refresh logic
   const [pullDistance, setPullDistance] = React.useState(0);
@@ -473,7 +524,7 @@ const InboxView = () => {
                       <RefreshCw size={18} />
                     </button>
                     {(activeOperator?.isModel || (isMobile && activeOperator && !activeOperator?.isAppOwner && !activeOperator?.isAdmin && !activeOperator?.isManager)) && (
-                      <button 
+                      <button
                         onClick={() => setShowPanicConfirm(true)}
                         data-testid="chat-panic-button"
                         style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -481,12 +532,35 @@ const InboxView = () => {
                         <Shield size={20} />
                       </button>
                     )}
-                    <button 
-                      onClick={() => showToast(lang === 'cz' ? 'Brzy k dispozici' : 'Options coming soon', 'info')}
-                      style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                    >
-                      <MoreVertical size={22} />
-                    </button>
+                    <div ref={chatMenuRef} style={{ position: 'relative' }}>
+                      <button
+                        onClick={() => setIsChatMenuOpen(open => !open)}
+                        aria-haspopup="menu"
+                        aria-expanded={isChatMenuOpen}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                      >
+                        <MoreVertical size={22} />
+                      </button>
+                      {isChatMenuOpen && (
+                        <div role="menu" style={{ position: 'absolute', right: 0, top: '42px', width: '220px', background: 'rgba(15, 18, 26, 0.98)', border: '1px solid var(--card-border)', borderRadius: '12px', boxShadow: '0 18px 45px rgba(0,0,0,0.45)', padding: '0.4rem', zIndex: 30 }}>
+                          <button type="button" role="menuitem" onClick={() => runChatMenuAction(handleRefreshMessages)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.7rem', border: 'none', background: 'transparent', color: 'white', fontSize: '0.78rem', textAlign: 'left', borderRadius: '8px', cursor: 'pointer' }}>
+                            <RefreshCw size={15} /> {lang === 'cz' ? 'Obnovit zprávy' : 'Refresh messages'}
+                          </button>
+                          <button type="button" role="menuitem" onClick={() => runChatMenuAction(() => handleSyncChatHistory(selectedChatId))} disabled={!selectedChatId} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.7rem', border: 'none', background: 'transparent', color: 'white', fontSize: '0.78rem', textAlign: 'left', borderRadius: '8px', cursor: selectedChatId ? 'pointer' : 'not-allowed', opacity: selectedChatId ? 1 : 0.5 }}>
+                            <RefreshCw size={15} /> {lang === 'cz' ? 'Synchronizovat historii' : 'Sync history'}
+                          </button>
+                          <button type="button" role="menuitem" onClick={copySelectedPhone} disabled={!selectedChat?.from} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.7rem', border: 'none', background: 'transparent', color: 'white', fontSize: '0.78rem', textAlign: 'left', borderRadius: '8px', cursor: selectedChat?.from ? 'pointer' : 'not-allowed', opacity: selectedChat?.from ? 1 : 0.5 }}>
+                            <Link size={15} /> {lang === 'cz' ? 'Kopírovat číslo' : 'Copy number'}
+                          </button>
+                          <button type="button" role="menuitem" onClick={() => runChatMenuAction(() => { setActiveContextTab('crm'); loadClientCrm(selectedChat?.from); })} disabled={!selectedChat?.from} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.7rem', border: 'none', background: 'transparent', color: 'white', fontSize: '0.78rem', textAlign: 'left', borderRadius: '8px', cursor: selectedChat?.from ? 'pointer' : 'not-allowed', opacity: selectedChat?.from ? 1 : 0.5 }}>
+                            <UserCheck size={15} /> CRM
+                          </button>
+                          <button type="button" role="menuitem" onClick={markLatestInboundRead} disabled={!latestUnreadInbound?.id} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.7rem', border: 'none', background: 'transparent', color: 'white', fontSize: '0.78rem', textAlign: 'left', borderRadius: '8px', cursor: latestUnreadInbound?.id ? 'pointer' : 'not-allowed', opacity: latestUnreadInbound?.id ? 1 : 0.5 }}>
+                            <Check size={15} /> {lang === 'cz' ? 'Označit jako přečtené' : 'Mark as read'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div

@@ -146,11 +146,17 @@ const createProfile = z.object({
 const patchProfile = z.object({
   name: z.string().min(1).max(200).optional(),
   phone: phone,
+  phoneNumber: phone,
   bio: z.string().max(5000).optional().nullable(),
   description: z.string().max(10000).optional().nullable(),
   sampleMessages: z.string().max(20000).optional().nullable(),
   commission: z.number().min(0).max(100).optional(),
-  quickReplies: z.array(z.string().max(500)).max(50).optional()
+  quickReplies: z.array(z.string().max(500)).max(50).optional(),
+  gallery: z.union([
+    z.string().max(100000),
+    z.array(z.record(z.string(), z.any())).max(100)
+  ]).optional(),
+  data: z.record(z.string(), z.any()).optional()
 });
 
 const assignUsers = z.object({

@@ -35,6 +35,14 @@ if (isReleaseBuild && !skipVersionIncrement) {
 
 def appVersionName = "${majorVersion}.${minorVersion}"
 def appVersionCode = (majorVersion * 10000) + minorVersion
+def localBuildProps = new Properties()
+def localBuildPropsFile = rootProject.file("local.properties")
+if (localBuildPropsFile.exists()) localBuildProps.load(new FileInputStream(localBuildPropsFile))
+def enableGsmCallBridge = (
+    localBuildProps.getProperty("ENABLE_GSM_CALL_BRIDGE")
+        ?: System.getenv("ENABLE_GSM_CALL_BRIDGE")
+        ?: "false"
+).toBoolean()
 
 def githubRunNumber = System.getenv("GITHUB_RUN_NUMBER")
 if (githubRunNumber != null && !githubRunNumber.isEmpty()) {
@@ -122,7 +130,8 @@ android {
             buildConfigField "String", "APP_VARIANT", "\"full\""
             manifestPlaceholders = [
                 appName: "Nexus Hub",
-                appId: "com.nexushub.app"
+                appId: "com.nexushub.app",
+                enableGsmCallBridge: enableGsmCallBridge.toString()
             ]
         }
         nexusRelay {
@@ -132,7 +141,8 @@ android {
             buildConfigField "String", "APP_VARIANT", "\"relay\""
             manifestPlaceholders = [
                 appName: "Nexus Relay",
-                appId: "com.nexushub.relay"
+                appId: "com.nexushub.relay",
+                enableGsmCallBridge: enableGsmCallBridge.toString()
             ]
         }
     }
@@ -146,13 +156,11 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         // DEVICE_SECRET: load from local.properties or environment variable
-        def localProps = new Properties()
-        def localPropsFile = rootProject.file("local.properties")
-        if (localPropsFile.exists()) localProps.load(new FileInputStream(localPropsFile))
-        def deviceSecret = localProps.getProperty("DEVICE_SECRET")
+        def deviceSecret = localBuildProps.getProperty("DEVICE_SECRET")
             ?: System.getenv("DEVICE_SECRET")
             ?: ""
         buildConfigField "String", "DEVICE_SECRET", "\"${deviceSecret}\""
+        buildConfigField "boolean", "ENABLE_GSM_CALL_BRIDGE", enableGsmCallBridge.toString()
 
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
