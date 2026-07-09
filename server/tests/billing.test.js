@@ -403,6 +403,89 @@ describe('billing checkout', () => {
     );
   });
 
+  it('retries Stripe checkout without the linked customer when Stripe rejects the customer currency', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_configured';
+    process.env.STRIPE_PUBLISHABLE_KEY = 'pk_test_configured';
+    process.env.STRIPE_PRICE_AGENCY_MONTHLY_GBP = 'price_agency_monthly_gbp';
+
+    prismaMock.agency.findUnique.mockResolvedValue({
+      id: 'agency-1',
+      name: 'Test Agency',
+      email: 'billing@example.test',
+      stripeCustomerId: 'cus_existing_czk'
+    });
+
+    mockStripeCheckoutSessionCreate
+      .mockRejectedValueOnce(new Error('Customer currency czk does not match gbp'))
+      .mockRejectedValueOnce(new Error('Customer currency czk does not match gbp'))
+      .mockResolvedValueOnce({
+        id: 'cs_test_customer_email_gbp_123',
+        client_secret: 'cs_test_customer_email_gbp_123_secret_abc',
+        customer: 'cus_new_gbp',
+        url: null
+      });
+
+    const res = await request(app)
+      .post('/api/billing/checkout')
+      .set('Authorization', `Bearer ${makeToken()}`)
+      .send({
+        planId: 'agency_monthly',
+        checkoutMode: 'embedded',
+        market: 'uk',
+        successUrl: 'https://app.example.test/settings',
+        cancelUrl: 'https://app.example.test/settings'
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      provider: 'stripe',
+      checkoutMode: 'embedded',
+      id: 'cs_test_customer_email_gbp_123',
+      clientSecret: 'cs_test_customer_email_gbp_123_secret_abc',
+      url: null
+    });
+
+    expect(mockStripeCheckoutSessionCreate).toHaveBeenCalledTimes(3);
+    expect(mockStripeCheckoutSessionCreate.mock.calls[0][0]).toEqual(
+      expect.objectContaining({
+        customer: 'cus_existing_czk',
+        line_items: [
+          expect.objectContaining({ price: 'price_agency_monthly_gbp' })
+        ]
+      })
+    );
+    expect(mockStripeCheckoutSessionCreate.mock.calls[1][0]).toEqual(
+      expect.objectContaining({
+        customer: 'cus_existing_czk',
+        line_items: [
+          expect.objectContaining({
+            price_data: expect.objectContaining({ currency: 'gbp', unit_amount: 8500 })
+          })
+        ]
+      })
+    );
+    expect(mockStripeCheckoutSessionCreate.mock.calls[2][0]).toEqual(
+      expect.objectContaining({
+        customer_email: 'owner@example.test',
+        line_items: [
+          expect.objectContaining({
+            price_data: expect.objectContaining({ currency: 'gbp', unit_amount: 8500 })
+          })
+        ]
+      })
+    );
+    expect(mockStripeCheckoutSessionCreate.mock.calls[2][0]).not.toHaveProperty('customer');
+    expect(prismaMock.subscription.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          stripeCustomerId: 'cus_new_gbp',
+          stripePriceId: null,
+          note: expect.stringContaining('"stripeCustomerId":"cus_new_gbp"')
+        })
+      })
+    );
+  });
+
   it('rejects bank-transfer checkout by default', async () => {
     const res = await request(app)
       .post('/api/billing/checkout')

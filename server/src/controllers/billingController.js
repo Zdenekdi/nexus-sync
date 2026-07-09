@@ -371,6 +371,7 @@ class BillingController {
       }
 
       const { customerId } = await this.getOrCreateStripeCustomer(agencyId, req.user.email);
+      let checkoutCustomerId = customerId;
       let stripePriceId = await this.getOrCreateStripePrice(planId, currency, planConfig);
       const mode = type === 'plan' ? 'subscription' : 'payment';
       const metadata = {
@@ -401,45 +402,69 @@ class BillingController {
           }
         };
 
-      const lineItem = buildLineItem(stripePriceId);
+      const buildCustomerPayload = (linkedCustomerId) => linkedCustomerId
+        ? { customer: linkedCustomerId }
+        : { customer_email: req.user.email || undefined };
 
-      let sessionPayload = {
-        mode,
-        line_items: [lineItem],
-        client_reference_id: subscription.id,
-        metadata,
-        allow_promotion_codes: true,
-        ...(customerId ? { customer: customerId } : { customer_email: req.user.email || undefined })
+      const buildSessionPayload = (priceId, linkedCustomerId) => {
+        const payload = {
+          mode,
+          line_items: [buildLineItem(priceId)],
+          client_reference_id: subscription.id,
+          metadata,
+          allow_promotion_codes: true,
+          ...buildCustomerPayload(linkedCustomerId)
+        };
+
+        if (checkoutMode === 'embedded') {
+          payload.ui_mode = 'embedded_page';
+          payload.return_url = this.checkoutUrl(successUrl, 'success');
+          payload.redirect_on_completion = 'if_required';
+        } else {
+          payload.success_url = this.checkoutUrl(successUrl, 'success');
+          payload.cancel_url = this.checkoutUrl(cancelUrl || successUrl, 'cancel');
+        }
+
+        if (mode === 'subscription') {
+          payload.subscription_data = { metadata };
+        } else {
+          payload.payment_intent_data = { metadata };
+        }
+
+        return payload;
       };
 
-      if (checkoutMode === 'embedded') {
-        sessionPayload.ui_mode = 'embedded_page';
-        sessionPayload.return_url = this.checkoutUrl(successUrl, 'success');
-        sessionPayload.redirect_on_completion = 'if_required';
-      } else {
-        sessionPayload.success_url = this.checkoutUrl(successUrl, 'success');
-        sessionPayload.cancel_url = this.checkoutUrl(cancelUrl || successUrl, 'cancel');
-      }
+      const attempts = [];
+      const pushAttempt = (label, priceId, linkedCustomerId) => {
+        const exists = attempts.some(attempt => attempt.priceId === priceId && attempt.linkedCustomerId === linkedCustomerId);
+        if (!exists) attempts.push({ label, priceId, linkedCustomerId });
+      };
 
-      if (mode === 'subscription') {
-        sessionPayload.subscription_data = { metadata };
-      } else {
-        sessionPayload.payment_intent_data = { metadata };
-      }
+      pushAttempt(stripePriceId ? 'configured_price' : 'inline_price_data', stripePriceId, checkoutCustomerId);
+      if (stripePriceId) pushAttempt('inline_price_data', null, checkoutCustomerId);
+      if (checkoutCustomerId) pushAttempt('inline_price_data_customer_email', null, null);
 
       let session;
-      try {
-        session = await this.stripe.checkout.sessions.create(sessionPayload);
-      } catch (error) {
-        if (!stripePriceId) throw error;
-        logger.warn('[Billing] Stripe checkout with price id failed; retrying with inline price_data:', error.message);
-        stripePriceId = null;
-        sessionPayload = {
-          ...sessionPayload,
-          line_items: [buildLineItem(null)]
-        };
-        session = await this.stripe.checkout.sessions.create(sessionPayload);
+      let lastCheckoutError = null;
+      for (const attempt of attempts) {
+        const sessionPayload = buildSessionPayload(attempt.priceId, attempt.linkedCustomerId);
+        try {
+          session = await this.stripe.checkout.sessions.create(sessionPayload);
+          stripePriceId = attempt.priceId;
+          checkoutCustomerId = attempt.linkedCustomerId;
+          break;
+        } catch (error) {
+          lastCheckoutError = error;
+          logger.warn(`[Billing] Stripe checkout attempt failed (${attempt.label}); trying next fallback:`, error.message);
+        }
       }
+
+      if (!session) throw lastCheckoutError || new Error('Stripe checkout session was not created');
+
+      const sessionCustomerId = typeof session.customer === 'string'
+        ? session.customer
+        : session.customer?.id || checkoutCustomerId || null;
+
       await prisma.subscription.update({
         where: { id: subscription.id },
         data: {
@@ -447,9 +472,9 @@ class BillingController {
           provider: 'stripe',
           providerStatus: 'checkout_created',
           stripeCheckoutSessionId: session.id,
-          stripeCustomerId: customerId,
+          stripeCustomerId: sessionCustomerId,
           stripePriceId,
-          note: JSON.stringify({ ...note, stripeSessionId: session.id, stripeMode: mode, stripeCheckoutMode: checkoutMode, stripeCustomerId: customerId, stripePriceId })
+          note: JSON.stringify({ ...note, stripeSessionId: session.id, stripeMode: mode, stripeCheckoutMode: checkoutMode, stripeCustomerId: sessionCustomerId, stripePriceId })
         }
       });
 
