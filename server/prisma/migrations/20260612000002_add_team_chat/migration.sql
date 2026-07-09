@@ -15,8 +15,18 @@ CREATE TABLE IF NOT EXISTS "TeamMessage" (
 CREATE INDEX IF NOT EXISTS "TeamMessage_agencyId_room_createdAt_idx" ON "TeamMessage"("agencyId", "room", "createdAt");
 CREATE INDEX IF NOT EXISTS "TeamMessage_authorId_idx" ON "TeamMessage"("authorId");
 
-ALTER TABLE "TeamMessage" ADD CONSTRAINT IF NOT EXISTS "TeamMessage_agencyId_fkey"
-    FOREIGN KEY ("agencyId") REFERENCES "Agency"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'TeamMessage_agencyId_fkey') THEN
+        ALTER TABLE "TeamMessage" ADD CONSTRAINT "TeamMessage_agencyId_fkey"
+            FOREIGN KEY ("agencyId") REFERENCES "Agency"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END $$;
 
-ALTER TABLE "TeamMessage" ADD CONSTRAINT IF NOT EXISTS "TeamMessage_authorId_fkey"
-    FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'TeamMessage_authorId_fkey') THEN
+        ALTER TABLE "TeamMessage" ADD CONSTRAINT "TeamMessage_authorId_fkey"
+            FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+    END IF;
+END $$;

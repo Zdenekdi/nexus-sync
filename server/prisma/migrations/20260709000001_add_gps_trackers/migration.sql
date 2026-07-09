@@ -1,5 +1,5 @@
 -- External GPS tracker bindings and location history.
-CREATE TABLE "GpsTracker" (
+CREATE TABLE IF NOT EXISTS "GpsTracker" (
     "id" TEXT NOT NULL,
     "agencyId" TEXT NOT NULL,
     "profileId" TEXT,
@@ -21,7 +21,7 @@ CREATE TABLE "GpsTracker" (
     CONSTRAINT "GpsTracker_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "GpsTrackerLocation" (
+CREATE TABLE IF NOT EXISTS "GpsTrackerLocation" (
     "id" TEXT NOT NULL,
     "trackerId" TEXT NOT NULL,
     "agencyId" TEXT NOT NULL,
@@ -42,29 +42,54 @@ CREATE TABLE "GpsTrackerLocation" (
     CONSTRAINT "GpsTrackerLocation_pkey" PRIMARY KEY ("id")
 );
 
-CREATE UNIQUE INDEX "GpsTracker_imei_key" ON "GpsTracker"("imei");
-CREATE INDEX "GpsTracker_agencyId_idx" ON "GpsTracker"("agencyId");
-CREATE INDEX "GpsTracker_profileId_idx" ON "GpsTracker"("profileId");
-CREATE INDEX "GpsTracker_active_idx" ON "GpsTracker"("active");
+CREATE UNIQUE INDEX IF NOT EXISTS "GpsTracker_imei_key" ON "GpsTracker"("imei");
+CREATE INDEX IF NOT EXISTS "GpsTracker_agencyId_idx" ON "GpsTracker"("agencyId");
+CREATE INDEX IF NOT EXISTS "GpsTracker_profileId_idx" ON "GpsTracker"("profileId");
+CREATE INDEX IF NOT EXISTS "GpsTracker_active_idx" ON "GpsTracker"("active");
 
-CREATE INDEX "GpsTrackerLocation_trackerId_idx" ON "GpsTrackerLocation"("trackerId");
-CREATE INDEX "GpsTrackerLocation_agencyId_idx" ON "GpsTrackerLocation"("agencyId");
-CREATE INDEX "GpsTrackerLocation_profileId_idx" ON "GpsTrackerLocation"("profileId");
-CREATE INDEX "GpsTrackerLocation_safetySessionId_idx" ON "GpsTrackerLocation"("safetySessionId");
-CREATE INDEX "GpsTrackerLocation_sosAlertId_idx" ON "GpsTrackerLocation"("sosAlertId");
-CREATE INDEX "GpsTrackerLocation_capturedAt_idx" ON "GpsTrackerLocation"("capturedAt");
+CREATE INDEX IF NOT EXISTS "GpsTrackerLocation_trackerId_idx" ON "GpsTrackerLocation"("trackerId");
+CREATE INDEX IF NOT EXISTS "GpsTrackerLocation_agencyId_idx" ON "GpsTrackerLocation"("agencyId");
+CREATE INDEX IF NOT EXISTS "GpsTrackerLocation_profileId_idx" ON "GpsTrackerLocation"("profileId");
+CREATE INDEX IF NOT EXISTS "GpsTrackerLocation_safetySessionId_idx" ON "GpsTrackerLocation"("safetySessionId");
+CREATE INDEX IF NOT EXISTS "GpsTrackerLocation_sosAlertId_idx" ON "GpsTrackerLocation"("sosAlertId");
+CREATE INDEX IF NOT EXISTS "GpsTrackerLocation_capturedAt_idx" ON "GpsTrackerLocation"("capturedAt");
 
-ALTER TABLE "GpsTracker" ADD CONSTRAINT "GpsTracker_agencyId_fkey"
-    FOREIGN KEY ("agencyId") REFERENCES "Agency"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'GpsTracker_agencyId_fkey') THEN
+        ALTER TABLE "GpsTracker" ADD CONSTRAINT "GpsTracker_agencyId_fkey"
+            FOREIGN KEY ("agencyId") REFERENCES "Agency"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END $$;
 
-ALTER TABLE "GpsTracker" ADD CONSTRAINT "GpsTracker_profileId_fkey"
-    FOREIGN KEY ("profileId") REFERENCES "Profile"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'GpsTracker_profileId_fkey') THEN
+        ALTER TABLE "GpsTracker" ADD CONSTRAINT "GpsTracker_profileId_fkey"
+            FOREIGN KEY ("profileId") REFERENCES "Profile"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+    END IF;
+END $$;
 
-ALTER TABLE "GpsTrackerLocation" ADD CONSTRAINT "GpsTrackerLocation_trackerId_fkey"
-    FOREIGN KEY ("trackerId") REFERENCES "GpsTracker"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'GpsTrackerLocation_trackerId_fkey') THEN
+        ALTER TABLE "GpsTrackerLocation" ADD CONSTRAINT "GpsTrackerLocation_trackerId_fkey"
+            FOREIGN KEY ("trackerId") REFERENCES "GpsTracker"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END $$;
 
-ALTER TABLE "GpsTrackerLocation" ADD CONSTRAINT "GpsTrackerLocation_safetySessionId_fkey"
-    FOREIGN KEY ("safetySessionId") REFERENCES "SafetySession"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'GpsTrackerLocation_safetySessionId_fkey') THEN
+        ALTER TABLE "GpsTrackerLocation" ADD CONSTRAINT "GpsTrackerLocation_safetySessionId_fkey"
+            FOREIGN KEY ("safetySessionId") REFERENCES "SafetySession"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+    END IF;
+END $$;
 
-ALTER TABLE "GpsTrackerLocation" ADD CONSTRAINT "GpsTrackerLocation_sosAlertId_fkey"
-    FOREIGN KEY ("sosAlertId") REFERENCES "SOSAlert"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'GpsTrackerLocation_sosAlertId_fkey') THEN
+        ALTER TABLE "GpsTrackerLocation" ADD CONSTRAINT "GpsTrackerLocation_sosAlertId_fkey"
+            FOREIGN KEY ("sosAlertId") REFERENCES "SOSAlert"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+    END IF;
+END $$;
