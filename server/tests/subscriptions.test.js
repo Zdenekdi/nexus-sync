@@ -46,7 +46,7 @@ describe('subscription legacy route authorization', () => {
       const res = await request(app)
         .post('/api/subscriptions/start')
         .set('Authorization', `Bearer ${makeToken({ name: 'Agency Admin', isManager: true })}`)
-        .send({ plan: 'MONTHLY', paymentRef: 'manual-test' });
+        .send({ plan: 'Professional', paymentRef: 'manual-test' });
 
       expect(res.status).toBe(403);
       expect(prismaMock.subscription.updateMany).not.toHaveBeenCalled();

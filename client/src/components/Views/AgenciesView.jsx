@@ -75,7 +75,7 @@ const AgenciesView = () => {
               </thead>
               <tbody>
                 {agencies.map((agency, i) => {
-                  const sub = agency.subscription || { status: 'active', plan: 'Pro' };
+                  const sub = agency.subscription || { status: 'active', plan: 'Professional' };
                   return (
                     <tr key={agency.id} data-testid={`row-agency-${agency.id}`} style={{ borderBottom: i < agencies.length - 1 ? '1px solid var(--card-border)' : 'none' }}>
                       <td style={{ padding: '1.25rem 1.5rem' }}>

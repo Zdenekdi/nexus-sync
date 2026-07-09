@@ -14,6 +14,7 @@ model Agency {
   region    String
   plan      String   @default("Standard")
   tier      String   @default("Standard")
+  stripeCustomerId String? @unique
   inviteCode String?  @unique
   safetyAlertMode String @default("MANAGERS_AND_ASSIGNED") // MANAGERS_AND_ASSIGNED, ASSIGNED_ONLY
   extraFeatures String?  // JSON string for purchased add-ons or bonuses
@@ -49,20 +50,31 @@ model Subscription {
   id           String   @id @default(cuid())
   agencyId     String
   agency       Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  plan         String   // MONTHLY | SEMI_ANNUAL | ANNUAL
-  status       String   @default("ACTIVE") // ACTIVE | EXPIRED | CANCELLED | TRIAL
+  plan         String   // Starter | Professional | Agency
+  status       String   @default("ACTIVE") // ACTIVE | PENDING | PAST_DUE | EXPIRED | CANCELLED | TRIAL
   startedAt    DateTime @default(now())
   expiresAt    DateTime
   cancelledAt  DateTime?
   amountPaid   Float?
   currency     String   @default("CZK")
   paymentRef   String?  // external payment ID (GoPay, Stripe, etc.)
+  provider      String?
+  providerStatus String?
+  stripeCheckoutSessionId String? @unique
+  stripeSubscriptionId String?
+  stripeCustomerId String?
+  stripePriceId String?
+  currentPeriodStart DateTime?
+  currentPeriodEnd DateTime?
   note         String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   @@index([agencyId])
   @@index([status])
+  @@index([provider])
+  @@index([stripeSubscriptionId])
+  @@index([stripeCustomerId])
 }
 
 model Role {

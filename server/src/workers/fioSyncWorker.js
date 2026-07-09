@@ -4,7 +4,6 @@
  * Run this via cron every 5-15 minutes.
  */
 const axios = require('axios');
-const prisma = require('../services/db');
 const billingController = require('../controllers/billingController');
 const logger = require('../services/logger');
 
@@ -12,6 +11,11 @@ const FIO_TOKEN = process.env.FIO_API_TOKEN;
 const DAYS_BACK = 3; // How many days to check back for transactions
 
 async function syncFioTransactions() {
+  if (process.env.ALLOW_BANK_TRANSFER_BILLING !== 'true') {
+    logger.info('[FioWorker] Bank transfer billing is disabled, skipping sync.');
+    return;
+  }
+
   if (!FIO_TOKEN) {
     logger.warn('[FioWorker] FIO_API_TOKEN not set, skipping sync.');
     return;

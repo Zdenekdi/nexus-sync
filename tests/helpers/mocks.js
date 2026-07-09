@@ -320,7 +320,7 @@ export async function setupApiMocks(page) {
       contentType: 'application/json',
       body: JSON.stringify([
         { id: 'agency-1', name: 'Premium Sync Europe', region: 'EU', subscription: { status: 'active', plan: 'Enterprise' } },
-        { id: 'agency-2', name: 'Global Talents UK', region: 'UK', subscription: { status: 'active', plan: 'Pro' } }
+        { id: 'agency-2', name: 'Global Talents UK', region: 'UK', subscription: { status: 'active', plan: 'Professional' } }
       ])
     });
   });
@@ -345,10 +345,10 @@ export async function setupApiMocks(page) {
       body: JSON.stringify({
         activeSubscriptions: 20,
         revenueByCurrency: { CZK: 150000, EUR: 6000, GBP: 5000, USD: 7000 },
-        planDistribution: { TRIAL: 5, ANNUAL: 8, SEMI_ANNUAL: 4, MONTHLY: 3 },
+        planDistribution: { TRIAL: 5, Starter: 3, Professional: 12, Agency: 5 },
         recentTransactions: [
           { id: 'tx-1', agencyName: 'Premium Sync Europe', plan: 'Enterprise', amount: 6000, currency: 'EUR', status: 'ACTIVE' },
-          { id: 'tx-2', agencyName: 'Global Talents UK', plan: 'Pro', amount: 5000, currency: 'GBP', status: 'ACTIVE' }
+          { id: 'tx-2', agencyName: 'Global Talents UK', plan: 'Professional', amount: 5000, currency: 'GBP', status: 'ACTIVE' }
         ]
       })
     });

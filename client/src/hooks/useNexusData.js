@@ -282,6 +282,38 @@ export function useNexusData({
       setIsStartingSubscription(false);
     }
   }, [API_BASE, activeMarket, token, redirectToCheckout, showToast, lang]);
+
+  const startBillingPortal = useCallback(async ({ returnUrl } = {}) => {
+    if (!token) return null;
+
+    const currentUrl = typeof window !== 'undefined'
+      ? `${window.location.origin}${window.location.pathname}`
+      : undefined;
+
+    try {
+      setIsStartingSubscription(true);
+      const { data } = await axios.post(`${API_BASE}/billing/portal`, {
+        returnUrl: returnUrl || currentUrl
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (data?.url && typeof window !== 'undefined') {
+        window.location.href = data.url;
+      }
+
+      return data;
+    } catch (_err) {
+      console.error('Billing portal failed:', _err);
+      const message = _err.response?.data?.message || (lang === 'cz'
+        ? 'Nepodařilo se otevřít správu plateb.'
+        : 'Failed to open billing portal.');
+      if (showToast) showToast(message, 'error');
+      return null;
+    } finally {
+      setIsStartingSubscription(false);
+    }
+  }, [API_BASE, token, showToast, lang]);
   
   useEffect(() => {
     localStorage.setItem('nexus_client_names', JSON.stringify(clientNames));
@@ -920,7 +952,7 @@ export function useNexusData({
     profiles, agencies, agencySettings: _agencySettings, operators, sessions, stats, activeSubscription: _activeSubscription,
     subscriptionHistory: _subscriptionHistory, globalFeatures, handleFeatureToggle,
     subscriptionPlans: _plans, fetchPlans, updatePlans, isPlansLoading,
-    isStartingSubscription, onStartSubscription, onCancelSubscription, startCheckout,
+    isStartingSubscription, onStartSubscription, onCancelSubscription, startCheckout, startBillingPortal,
     globalSettings, handleUpdateGlobalSetting,
     isTraining, trainingProgress, onStartTraining, onResetTraining,
     auditLogs: [], isDataLoading, isBackgroundLoading, hasHydrated, clientNames,
@@ -935,7 +967,7 @@ export function useNexusData({
     rolePermissions
   }), [
     profiles, agencies, _agencySettings, operators, sessions, stats, _activeSubscription, _subscriptionHistory, 
-    globalFeatures, handleFeatureToggle, _plans, fetchPlans, updatePlans, isPlansLoading, isStartingSubscription, onStartSubscription, onCancelSubscription, startCheckout,
+    globalFeatures, handleFeatureToggle, _plans, fetchPlans, updatePlans, isPlansLoading, isStartingSubscription, onStartSubscription, onCancelSubscription, startCheckout, startBillingPortal,
     globalSettings, handleUpdateGlobalSetting, isTraining, trainingProgress, 
     onStartTraining, onResetTraining, isDataLoading, isBackgroundLoading, hasHydrated, clientNames, calendar, 
     isCalendarSyncOpen, calendarSyncUrl, isBookingModalOpen, selectedScheduleEvent, newBookingForm, bioText, 

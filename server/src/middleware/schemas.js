@@ -287,7 +287,7 @@ const addUser = z.object({
 
 // ── Subscriptions ────────────────────────────────────────────────────────────
 const startSubscription = z.object({
-  plan: z.enum(['MONTHLY', 'SEMI_ANNUAL', 'ANNUAL']),
+  plan: z.enum(['Starter', 'Professional', 'Agency']),
   paymentRef: z.string().max(256).optional().nullable(),
   amountPaid: z.number().min(0).optional().nullable(),
   currency: z.enum(['CZK', 'EUR', 'GBP', 'USD']).optional().default('CZK'),

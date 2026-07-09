@@ -644,6 +644,7 @@ export const NexusProvider = ({ children }) => {
     onStartSubscription: nexusData.onStartSubscription,
     onCancelSubscription: nexusData.onCancelSubscription,
     startCheckout: nexusData.startCheckout,
+    startBillingPortal: nexusData.startBillingPortal,
     daysLeft,
     // Safety - Voice Guardian & Audio Sentinel
     voiceGuardianActive, handleToggleVoiceGuardian,
@@ -685,7 +686,7 @@ export const NexusProvider = ({ children }) => {
     nexusData.operators, nexusData.agencies, nexusData.sessions, nexusData.handleRevokeBinding, onlineOnly,
     nexusData.activeSubscription, nexusData.subscriptionHistory, nexusData.subscriptionPlans, nexusData.fetchPlans,
     nexusData.updatePlans, nexusData.isPlansLoading, nexusData.isStartingSubscription, nexusData.onStartSubscription,
-    nexusData.onCancelSubscription, nexusData.startCheckout, daysLeft,
+    nexusData.onCancelSubscription, nexusData.startCheckout, nexusData.startBillingPortal, daysLeft,
     voiceGuardianActive, handleToggleVoiceGuardian, audioSentinelActive, _sosActive, triggerSOS, cancelSOS,
     linkedSessionId, checkinMinutes, checkinTimerEnd, checkinRemaining, startCheckinTimer, resetCheckinTimer, confirmDeparture,
     nexusData.handleDelayBooking, nexusData.trackers, linkedTracker, lastTrackerUpdate, nexusData.trackerProvisioning,

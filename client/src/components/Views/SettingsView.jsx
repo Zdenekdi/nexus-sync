@@ -33,6 +33,7 @@ const SettingsView = () => {
     activeSubscription = null,
     activeMarket = 'cz',
     startCheckout = null,
+    startBillingPortal = null,
     isStartingSubscription = false,
     _daysLeft = 0
   } = nexus || {};
@@ -46,7 +47,6 @@ const SettingsView = () => {
     if (planClean === 'starter') return '5';
     return lang === 'cz' ? 'Neomezeně' : 'Unlimited';
   })();
-  const [bankInstructions, setBankInstructions] = React.useState(null);
   const [timezoneLabel] = React.useState(() => {
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
     const offsetMinutes = -new Date().getTimezoneOffset();
@@ -72,19 +72,14 @@ const SettingsView = () => {
     }
 
     try {
-      setBankInstructions(null);
       if (typeof startCheckout === 'function') {
-        const data = await startCheckout({
+        await startCheckout({
           planId,
           paymentMethod: method,
           market: activeMarket,
           successUrl: window.location.href,
           cancelUrl: window.location.href
         });
-
-        if (method === 'transfer' && data?.instructions) {
-          setBankInstructions(data.instructions);
-        }
         return;
       }
 
@@ -109,8 +104,6 @@ const SettingsView = () => {
       
       if (method === 'card' && data.url) {
         window.location.href = data.url;
-      } else if (method === 'transfer' && data.instructions) {
-        setBankInstructions(data.instructions);
       } else if (method === 'card') {
         throw new Error(data.message || (lang === 'cz' ? 'Platební brána nevrátila adresu pro přesměrování.' : 'Payment gateway did not return a redirect URL.'));
       }
@@ -118,6 +111,15 @@ const SettingsView = () => {
       console.error("Upgrade failed:", err);
       showToast(err.message || (lang === 'cz' ? 'Chyba při inicializaci platby.' : 'Error initializing payment.'), 'error');
     }
+  };
+
+  const handleBillingPortal = async () => {
+    if (isStartingSubscription) return;
+    if (typeof startBillingPortal === 'function') {
+      await startBillingPortal({ returnUrl: window.location.href });
+      return;
+    }
+    showToast(lang === 'cz' ? 'Správa plateb není dostupná.' : 'Billing management is not available.', 'error');
   };
 
   return (
@@ -249,6 +251,24 @@ const SettingsView = () => {
                           <span>{lang === 'cz' ? 'Začátek' : 'Start'}</span>
                           <span>{lang === 'cz' ? 'Konec' : 'End'}</span>
                         </div>
+                        <button
+                          onClick={handleBillingPortal}
+                          disabled={isStartingSubscription}
+                          style={{
+                            marginTop: '1rem',
+                            padding: '0.75rem 1rem',
+                            borderRadius: '10px',
+                            border: '1px solid rgba(251,191,36,0.35)',
+                            background: 'rgba(251,191,36,0.1)',
+                            color: '#fbbf24',
+                            fontSize: '0.78rem',
+                            fontWeight: '900',
+                            cursor: isStartingSubscription ? 'wait' : 'pointer',
+                            width: isMobile ? '100%' : 'auto'
+                          }}
+                        >
+                          {activationButtonText(lang === 'cz' ? 'SPRAVOVAT PLATBY' : 'MANAGE BILLING')}
+                        </button>
                       </div>
                     );
                   })()}
@@ -288,14 +308,9 @@ const SettingsView = () => {
                         <CheckCircle2 size={14} /> {lang === 'cz' ? 'AKTIVOVÁNO' : 'ACTIVE'}
                       </div>
                     ) : (
-                      <div style={{ display: 'flex', gap: '0.4rem' }}>
-                        <button disabled={isStartingSubscription} onClick={() => handleUpgrade('ai_module', 'card')} style={{ padding: '0.4rem 0.75rem', background: '#a78bfa', color: 'black', border: 'none', borderRadius: '8px', fontSize: '0.65rem', fontWeight: '900', ...activationButtonBaseStyle }}>
-                          {activationButtonText(lang === 'cz' ? 'KARTOU' : 'CARD')}
-                        </button>
-                        <button disabled={isStartingSubscription} onClick={() => handleUpgrade('ai_module', 'transfer')} style={{ padding: '0.4rem 0.75rem', background: 'transparent', color: 'var(--text-secondary)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '0.65rem', fontWeight: '700', ...activationButtonBaseStyle }}>
-                          {activationButtonText(lang === 'cz' ? 'PŘEVODEM' : 'TRANSFER')}
-                        </button>
-                      </div>
+                      <button disabled={isStartingSubscription} onClick={() => handleUpgrade('ai_module', 'card')} style={{ padding: '0.4rem 0.9rem', background: '#a78bfa', color: 'black', border: 'none', borderRadius: '8px', fontSize: '0.65rem', fontWeight: '900', ...activationButtonBaseStyle }}>
+                        {activationButtonText(lang === 'cz' ? 'AKTIVOVAT' : 'ACTIVATE')}
+                      </button>
                     )}
                   </div>
 
@@ -480,32 +495,6 @@ const SettingsView = () => {
 
           </div>
           
-          {/* Bank Instructions Modal Overlay */}
-          {bankInstructions && (
-            <div className="fade-in" style={{ padding: '1.5rem', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: '16px', marginTop: '1.5rem' }}>
-               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <div style={{ fontWeight: '900', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Building2 size={18} /> {lang === 'cz' ? 'Platební údaje pro převod' : 'Bank Transfer Details'}
-                  </div>
-                  <button onClick={() => setBankInstructions(null)} style={{ background: 'none', border: 'none', color: '#fbbf24', cursor: 'pointer', fontWeight: '900' }}>✕</button>
-               </div>
-               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.8rem' }}>
-                  <div style={{ opacity: 0.7 }}>{lang === 'cz' ? 'Číslo účtu' : 'Account Number'}</div>
-                  <div style={{ fontWeight: '700' }}>{bankInstructions.accountNumber}</div>
-                  <div style={{ opacity: 0.7 }}>{lang === 'cz' ? 'Banka' : 'Bank'}</div>
-                  <div style={{ fontWeight: '700' }}>{bankInstructions.bankName}</div>
-                  <div style={{ opacity: 0.7 }}>{lang === 'cz' ? 'Variabilní symbol' : 'Variable Symbol'}</div>
-                  <div style={{ fontWeight: '900', color: '#fbbf24', fontSize: '1rem' }}>{bankInstructions.variableSymbol}</div>
-                  <div style={{ opacity: 0.7 }}>{lang === 'cz' ? 'Částka' : 'Amount'}</div>
-                  <div style={{ fontWeight: '900' }}>{bankInstructions.amount} {bankInstructions.currency}</div>
-               </div>
-               <p style={{ fontSize: '0.7rem', marginTop: '1rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                 {lang === 'cz' 
-                   ? '⚠️ Funkce bude automaticky aktivována jakmile platba dorazí do naší banky (obvykle v den zadání).' 
-                   : '⚠️ Features will be automatically activated as soon as the payment reaches our bank.'}
-               </p>
-            </div>
-          )}
         </div>
 
         <div className="settings-section">

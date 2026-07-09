@@ -19,9 +19,9 @@ const PlansView = () => {
   } = nexus;
   
   const PLANS = [
-    { id: 'MONTHLY',     label: t('monthly'),     priceFmt: '990 Kč',    days: 30 },
-    { id: 'SEMI_ANNUAL', label: t('semiAnnual'), priceFmt: '5 490 Kč',  days: 182 },
-    { id: 'ANNUAL',      label: t('annual'),      priceFmt: '9 990 Kč',  days: 365 },
+    { id: 'starter_monthly', label: 'Starter', priceFmt: '290 Kč', days: 30 },
+    { id: 'pro_monthly', label: 'Professional', priceFmt: '990 Kč', days: 30 },
+    { id: 'agency_monthly', label: 'Agency', priceFmt: '2 490 Kč', days: 30 },
   ];
 
   const statusColor = !activeSubscription ? '#6b7280' : activeSubscription.status === 'ACTIVE' ? '#10b981' : '#f59e0b';
