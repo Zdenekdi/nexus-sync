@@ -33,12 +33,13 @@ const prismaMock = require('../src/services/db');
 const billingController = require('../src/controllers/billingController');
 const app = require('../src/app');
 
-const makeToken = () => jwt.sign(
+const makeToken = (overrides = {}) => jwt.sign(
   {
     userId: 'user-1',
     email: 'owner@example.test',
     agencyId: 'agency-1',
-    role: { name: 'Agency Admin', isManager: true }
+    role: { name: 'Agency Admin', isManager: true },
+    ...overrides
   },
   process.env.JWT_SECRET,
   { expiresIn: '1h' }
@@ -86,6 +87,21 @@ beforeEach(() => {
 });
 
 describe('billing checkout', () => {
+  it('rejects checkout for users without an agency scope', async () => {
+    const res = await request(app)
+      .post('/api/billing/checkout')
+      .set('Authorization', `Bearer ${makeToken({ agencyId: null, role: { name: 'App Owner', isAppOwner: true } })}`)
+      .send({
+        planId: 'pro_monthly',
+        market: 'cz',
+        successUrl: 'https://app.example.test/plans'
+      });
+
+    expect(res.status).toBe(403);
+    expect(res.body).toMatchObject({ code: 'agency_required' });
+    expect(prismaMock.subscription.create).not.toHaveBeenCalled();
+  });
+
   it('does not create a pending card checkout when Stripe is missing in production', async () => {
     const originalNodeEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';

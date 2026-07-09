@@ -277,6 +277,13 @@ class BillingController {
   async createCheckoutSession(req, res) {
     try {
       const { agencyId } = req.user;
+      if (!agencyId) {
+        return res.status(403).json({
+          code: 'agency_required',
+          message: 'Billing checkout requires an agency-scoped user.'
+        });
+      }
+
       const {
         planId: requestedPlanId,
         paymentMethod = 'card',

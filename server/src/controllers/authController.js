@@ -7,6 +7,18 @@ const { sendPasswordReset, sendWelcomeEmail, sendAgencyRegistrationEmail } = req
 
 const ACCESS_TOKEN_EXPIRY = '1h';
 const REFRESH_TOKEN_DAYS = 7;
+const DUMMY_PASSWORD_HASH = '$2a$10$8DCENsW0fuhKRpdFa9GBa.NtIh1ZHWzPBWWcNU8ZTBfNxHyhaDK9W';
+
+async function comparePassword(password, hash) {
+  const candidateHash = typeof hash === 'string' && hash ? hash : DUMMY_PASSWORD_HASH;
+
+  try {
+    const matches = await bcrypt.compare(String(password || ''), candidateHash);
+    return typeof hash === 'string' && hash.length > 0 && matches;
+  } catch {
+    return false;
+  }
+}
 
 function validatePassword(password) {
   if (!password || typeof password !== 'string') {
@@ -94,7 +106,8 @@ exports.login = async (req, res) => {
       include: { role: true, agency: true, assignedProfiles: { take: 1, select: { id: true } } }
     });
 
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    const passwordMatches = await comparePassword(password, user?.password);
+    if (!user || !passwordMatches) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
@@ -427,7 +440,7 @@ exports.setSecurityPin = async (req, res) => {
     if (!user) return res.status(404).json({ message: 'User not found' });
     
     // Verify password for extra security when changing PIN
-    if (!(await bcrypt.compare(password, user.password))) {
+    if (!(await comparePassword(password, user.password))) {
       return res.status(401).json({ message: 'Invalid password' });
     }
     
@@ -459,4 +472,3 @@ exports.verifySecurityPin = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
-

@@ -62,6 +62,18 @@ describe('POST /api/auth/login', () => {
     expect(res.body.message).toBe('Invalid credentials');
   });
 
+  it('returns 401 instead of 500 when stored password hash is missing', async () => {
+    prismaMock.user.findUnique.mockResolvedValue({ ...TEST_USER, password: null });
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'test@agency.com', password: 'WrongPass1' });
+
+    expect(res.status).toBe(401);
+    expect(res.body.message).toBe('Invalid credentials');
+    expect(prismaMock.refreshToken.create).not.toHaveBeenCalled();
+  });
+
   it('returns 401 when user not found', async () => {
     prismaMock.user.findUnique.mockResolvedValue(null);
 

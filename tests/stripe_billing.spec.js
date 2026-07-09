@@ -3,6 +3,11 @@ import { TEST_USERS, authClient, loginAs } from './helpers/api.js';
 
 const RUN_STRIPE_TEST_MODE = process.env.RUN_STRIPE_TEST_MODE === 'true';
 const TEST_PLAN_ID = process.env.STRIPE_TEST_PLAN_ID || 'pro_monthly';
+const STRIPE_TEST_USER = {
+  email: process.env.STRIPE_TEST_EMAIL || TEST_USERS.agencyAdmin.email,
+  password: process.env.STRIPE_TEST_PASSWORD || TEST_USERS.agencyAdmin.password,
+  roleName: 'Stripe Billing Test User',
+};
 
 test.describe('Stripe billing test-mode smoke', () => {
   test.skip(!RUN_STRIPE_TEST_MODE, 'Set RUN_STRIPE_TEST_MODE=true to run against a Stripe test-mode backend.');
@@ -11,9 +16,9 @@ test.describe('Stripe billing test-mode smoke', () => {
   let loginFailure = null;
 
   test.beforeAll(async () => {
-    const login = await loginAs(TEST_USERS.agencyAdmin);
+    const login = await loginAs(STRIPE_TEST_USER);
     if (!login?.token) {
-      loginFailure = 'Could not login as agency admin for Stripe smoke test.';
+      loginFailure = `Could not login as ${STRIPE_TEST_USER.email} for Stripe smoke test. Set STRIPE_TEST_EMAIL and STRIPE_TEST_PASSWORD to a valid agency user.`;
       return;
     }
     client = authClient(login.token);
