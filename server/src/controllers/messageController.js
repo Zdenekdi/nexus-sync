@@ -235,12 +235,28 @@ exports.markAsRead = async (req, res) => {
 // ── Outbox Pull: for the relay app to fetch pending messages ──
 exports.getOutbox = async (req, res) => {
   try {
-    const { profileId } = req.query;
+    const { profileId, installationId } = req.query;
     const { agencyId } = req.user;
     if (!profileId) return res.status(400).json({ message: 'profileId required' });
 
     const profile = await prisma.profile.findUnique({ where: { id: profileId }, select: { agencyId: true } });
     if (!profile || profile.agencyId !== agencyId) return res.status(403).json({ message: 'Access denied' });
+
+    if (installationId) {
+      try {
+        await prisma.deviceBinding.updateMany({
+          where: {
+            installationId: String(installationId),
+            agencyId,
+            profileId,
+            active: true
+          },
+          data: { lastSeenAt: new Date() }
+        });
+      } catch {
+        // Heartbeat update must not block outbox polling.
+      }
+    }
 
     const pending = await prisma.message.findMany({
       where: {
@@ -295,7 +311,9 @@ exports.updateMessageStatus = async (req, res) => {
     try {
       const chat = await prisma.chat.findUnique({ where: { id: message.chatId } });
       getIO().to(`agency_${chat.agencyId}`).emit('message_updated', { chatId: message.chatId, message });
-    } catch (e) {}
+    } catch {
+      // Socket may not be ready.
+    }
 
     res.json({ ok: true });
   } catch (error) {

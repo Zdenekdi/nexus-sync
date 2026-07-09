@@ -1,6 +1,7 @@
 const cron = require('node-cron');
 const prisma = require('./db');
 const logger = require('./logger');
+const monitoringService = require('./monitoringService');
 
 /**
  * Scheduled jobs for the Nexus Hub server.
@@ -16,7 +17,10 @@ class CronService {
     // AdultWork Organic Boost every 30 minutes
     cron.schedule('*/30 * * * *', () => this.triggerOrganicBoosts());
 
-    logger.info('Cron service started (daily stats @ 01:00, subscription check @ 02:00)');
+    // Production health monitoring every 5 minutes
+    cron.schedule('*/5 * * * *', () => this.runOperationalMonitoring());
+
+    logger.info('Cron service started (daily stats @ 01:00, subscription check @ 02:00, monitoring every 5 min)');
   }
 
   async generateDailyStats() {
@@ -138,6 +142,14 @@ class CronService {
       }
     } catch (err) {
       logger.error('Failed to trigger organic boosts:', err);
+    }
+  }
+
+  async runOperationalMonitoring() {
+    try {
+      await monitoringService.runOperationalChecks();
+    } catch (err) {
+      logger.error('Failed to run operational monitoring:', err);
     }
   }
 }
