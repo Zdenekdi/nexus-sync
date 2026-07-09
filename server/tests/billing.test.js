@@ -70,6 +70,7 @@ beforeEach(() => {
   prismaMock.subscription.updateMany.mockResolvedValue({ count: 1 });
   mockStripeCheckoutSessionCreate.mockResolvedValue({
     id: 'cs_test_123',
+    client_secret: 'cs_test_123_secret_abc',
     url: 'https://checkout.stripe.test/session'
   });
   mockStripeCustomerCreate.mockResolvedValue({ id: 'cus_test_123' });
@@ -243,6 +244,56 @@ describe('billing checkout', () => {
         })
       })
     );
+  });
+
+  it('creates an embedded Stripe checkout session when requested by the UI', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_configured';
+    process.env.STRIPE_PUBLISHABLE_KEY = 'pk_test_configured';
+
+    mockStripeCheckoutSessionCreate.mockResolvedValueOnce({
+      id: 'cs_test_embedded_123',
+      client_secret: 'cs_test_embedded_123_secret_abc',
+      url: null
+    });
+
+    const res = await request(app)
+      .post('/api/billing/checkout')
+      .set('Authorization', `Bearer ${makeToken()}`)
+      .send({
+        planId: 'pro_monthly',
+        checkoutMode: 'embedded',
+        market: 'cz',
+        successUrl: 'https://app.example.test/settings',
+        cancelUrl: 'https://app.example.test/settings'
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      paymentMethod: 'card',
+      provider: 'stripe',
+      checkoutMode: 'embedded',
+      id: 'cs_test_embedded_123',
+      localSubscriptionId: 'sub_pending_1',
+      publishableKey: 'pk_test_configured',
+      clientSecret: 'cs_test_embedded_123_secret_abc',
+      url: null
+    });
+
+    const sessionPayload = mockStripeCheckoutSessionCreate.mock.calls[0][0];
+    expect(sessionPayload).toEqual(
+      expect.objectContaining({
+        mode: 'subscription',
+        ui_mode: 'embedded',
+        return_url: 'https://app.example.test/settings?checkout=success&session_id={CHECKOUT_SESSION_ID}',
+        redirect_on_completion: 'if_required',
+        metadata: expect.objectContaining({
+          localSubscriptionId: 'sub_pending_1',
+          planId: 'pro_monthly'
+        })
+      })
+    );
+    expect(sessionPayload).not.toHaveProperty('success_url');
+    expect(sessionPayload).not.toHaveProperty('cancel_url');
   });
 
   it('rejects bank-transfer checkout by default', async () => {

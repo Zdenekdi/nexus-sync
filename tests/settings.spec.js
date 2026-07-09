@@ -64,6 +64,27 @@ test.describe('Settings Role-Based Titles & Subtitles', () => {
   test('Agency Admin — Professional plan button starts card checkout with the correct plan id', async ({ page, isMobile }) => {
     await loginToApp(page, TEST_USERS.agencyAdmin.email, TEST_USERS.agencyAdmin.password);
 
+    await page.route('https://js.stripe.com/v3/', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/javascript',
+        body: `
+          window.Stripe = function () {
+            return {
+              initEmbeddedCheckout: async function ({ clientSecret }) {
+                return {
+                  mount: function (element) {
+                    element.setAttribute('data-mounted-client-secret', clientSecret);
+                    element.innerHTML = '<div data-testid="mock-stripe-embedded">Stripe embedded checkout</div>';
+                  },
+                  destroy: function () {}
+                };
+              }
+            };
+          };
+        `
+      });
+    });
     await page.route('**/billing/checkout', async route => {
       await route.fulfill({
         status: 200,
@@ -71,13 +92,14 @@ test.describe('Settings Role-Based Titles & Subtitles', () => {
         body: JSON.stringify({
           paymentMethod: 'card',
           provider: 'stripe',
+          checkoutMode: 'embedded',
           id: 'cs_ui_test',
-          url: 'https://checkout.stripe.test/session'
+          localSubscriptionId: 'sub_pending_ui',
+          publishableKey: 'pk_test_ui',
+          clientSecret: 'cs_ui_test_secret_123',
+          url: null
         })
       });
-    });
-    await page.route('https://checkout.stripe.test/**', async route => {
-      await route.fulfill({ status: 200, contentType: 'text/html', body: '<html><body>Stripe checkout</body></html>' });
     });
 
     await ensureSidebarOpen(page, isMobile);
@@ -100,7 +122,10 @@ test.describe('Settings Role-Based Titles & Subtitles', () => {
     expect(checkoutRequest.postDataJSON()).toMatchObject({
       planId: 'pro_monthly',
       paymentMethod: 'card',
+      checkoutMode: 'embedded',
       market: expect.any(String)
     });
+    await expect(page.getByTestId('stripe-embedded-modal')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId('mock-stripe-embedded')).toBeVisible({ timeout: 15000 });
   });
 });

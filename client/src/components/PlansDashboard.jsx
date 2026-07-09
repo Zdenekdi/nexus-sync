@@ -2,11 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { CreditCard, Users, Check, FileEdit, CheckCheck, Zap, RefreshCw, AlertCircle, Banknote, Package as PackageIcon } from 'lucide-react';
 
 import { useNexus } from '../context/ContextHook';
+import StripeEmbeddedCheckoutModal from './Billing/StripeEmbeddedCheckoutModal';
 
 const PlansDashboard = () => {
   const { t, activeOperator, activeRole, subscriptionPlans, fetchPlans, updatePlans, isPlansLoading, isStartingSubscription, startCheckout, activeMarket, setActiveMarket, agencies, isMobile, showToast, lang } = useNexus();
   const currentAgency = agencies[0];
   const [editingPlan, setEditingPlan] = useState(null);
+  const [embeddedCheckout, setEmbeddedCheckout] = useState(null);
+
+  const handleStartCheckout = async (planId) => {
+    const checkout = await startCheckout({
+      planId,
+      market: activeMarket,
+      checkoutMode: 'embedded',
+      successUrl: window.location.href,
+      cancelUrl: window.location.href
+    });
+    if (checkout?.clientSecret && checkout?.publishableKey) {
+      setEmbeddedCheckout(checkout);
+    } else if (checkout?.url) {
+      window.location.assign(checkout.url);
+    }
+  };
   
   const showInitialize = activeRole === 'app_owner' && (
     !subscriptionPlans || 
@@ -37,6 +54,13 @@ const PlansDashboard = () => {
 
   return (
     <div style={{ padding: isMobile ? 'calc(1rem + env(safe-area-inset-left)) 1rem calc(1rem + max(env(safe-area-inset-bottom), 1rem) + env(safe-area-inset-right))' : '2rem', flex: 1, overflowY: isMobile ? 'scroll' : 'auto', maxHeight: isMobile ? 'calc(100dvh - max(env(safe-area-inset-top), 1rem) - 3rem)' : '100%' }} className="fade-in custom-scrollbar">
+      <StripeEmbeddedCheckoutModal
+        checkout={embeddedCheckout}
+        lang={lang}
+        isMobile={isMobile}
+        onClose={() => setEmbeddedCheckout(null)}
+        onError={(message) => showToast(message, 'error')}
+      />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'flex-end', marginBottom: isMobile ? '2rem' : '3rem', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1rem' : 0 }}>
         <div>
           <h2 style={{ fontSize: isMobile ? '1.75rem' : '2.5rem', fontWeight: '900', marginBottom: '0.5rem', background: 'linear-gradient(to right, #6366f1, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('subscriptionPlansTitle')}</h2>
@@ -173,7 +197,7 @@ const PlansDashboard = () => {
                 </button>
               ) : isActive ? null : (
                 <button
-                  onClick={() => startCheckout({ planId: plan.id, market: activeMarket })}
+                  onClick={() => handleStartCheckout(plan.id)}
                   disabled={isStartingSubscription}
                   style={{ 
                     width: '100%', padding: '0.8rem', 
@@ -219,7 +243,7 @@ const PlansDashboard = () => {
                   {addon.prices[activeMarket.toLowerCase()]} {getCurrencySymbol(activeMarket)}
                 </span>
                 <button 
-                  onClick={() => activeRole === 'app_owner' ? setEditingPlan({ ...addon, isAddon: true }) : startCheckout({ planId: addon.id, market: activeMarket })}
+                  onClick={() => activeRole === 'app_owner' ? setEditingPlan({ ...addon, isAddon: true }) : handleStartCheckout(addon.id)}
                   disabled={isStartingSubscription}
                   style={{ 
                     padding: '0.5rem 1rem', 

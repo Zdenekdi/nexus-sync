@@ -240,6 +240,7 @@ export function useNexusData({
   const startCheckout = useCallback(async ({
     planId,
     paymentMethod = 'card',
+    checkoutMode = 'redirect',
     market = activeMarket,
     successUrl,
     cancelUrl
@@ -255,6 +256,7 @@ export function useNexusData({
       const { data } = await axios.post(`${API_BASE}/billing/checkout`, {
         planId,
         paymentMethod,
+        checkoutMode,
         market,
         successUrl: successUrl || currentUrl,
         cancelUrl: cancelUrl || currentUrl
@@ -262,7 +264,7 @@ export function useNexusData({
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      if (paymentMethod === 'card') {
+      if (paymentMethod === 'card' && checkoutMode !== 'embedded') {
         if (showToast) showToast(lang === 'cz' ? 'Přesměrování na Stripe Checkout...' : 'Redirecting to Stripe Checkout...', 'info');
         await redirectToCheckout(data);
       }

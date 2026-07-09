@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 
 import { useNexus } from '../../context/ContextHook';
+import StripeEmbeddedCheckoutModal from '../Billing/StripeEmbeddedCheckoutModal';
 
 const SettingsView = () => {
   const nexus = useNexus();
@@ -63,6 +64,7 @@ const SettingsView = () => {
     opacity: isStartingSubscription ? 0.65 : 1,
     cursor: isStartingSubscription ? 'wait' : 'pointer'
   };
+  const [embeddedCheckout, setEmbeddedCheckout] = React.useState(null);
 
   const handleUpgrade = async (planId, method = 'card') => {
     if (isStartingSubscription) return;
@@ -73,13 +75,19 @@ const SettingsView = () => {
 
     try {
       if (typeof startCheckout === 'function') {
-        await startCheckout({
+        const checkout = await startCheckout({
           planId,
           paymentMethod: method,
+          checkoutMode: 'embedded',
           market: activeMarket,
           successUrl: window.location.href,
           cancelUrl: window.location.href
         });
+        if (checkout?.clientSecret && checkout?.publishableKey) {
+          setEmbeddedCheckout(checkout);
+        } else if (checkout?.url) {
+          window.location.assign(checkout.url);
+        }
         return;
       }
 
@@ -92,6 +100,7 @@ const SettingsView = () => {
         body: JSON.stringify({ 
           planId,
           paymentMethod: method,
+          checkoutMode: 'embedded',
           market: activeMarket,
           successUrl: window.location.href,
           cancelUrl: window.location.href
@@ -102,8 +111,10 @@ const SettingsView = () => {
         throw new Error(data.message || (lang === 'cz' ? 'Platební brána není dostupná.' : 'Payment gateway is not available.'));
       }
       
-      if (method === 'card' && data.url) {
-        window.location.href = data.url;
+      if (method === 'card' && data.clientSecret && data.publishableKey) {
+        setEmbeddedCheckout(data);
+      } else if (method === 'card' && data.url) {
+        window.location.assign(data.url);
       } else if (method === 'card') {
         throw new Error(data.message || (lang === 'cz' ? 'Platební brána nevrátila adresu pro přesměrování.' : 'Payment gateway did not return a redirect URL.'));
       }
@@ -124,6 +135,13 @@ const SettingsView = () => {
 
   return (
     <div data-testid="page-settings-container" style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto' }} className="fade-in custom-scrollbar">
+      <StripeEmbeddedCheckoutModal
+        checkout={embeddedCheckout}
+        lang={lang}
+        isMobile={isMobile}
+        onClose={() => setEmbeddedCheckout(null)}
+        onError={(message) => showToast(message, 'error')}
+      />
       <h2 style={{ fontSize: '2rem', fontWeight: '800' }}>
         {activeRole === 'app_owner' ? t('controlCenter') : t('agencyControlCenter')}
       </h2>
