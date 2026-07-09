@@ -4,6 +4,10 @@ const jwt = require('jsonwebtoken');
 jest.mock('../src/services/db');
 jest.mock('../src/services/logger');
 jest.mock('../src/services/alertService');
+jest.mock('stripe', () => jest.fn().mockImplementation(() => ({
+  checkout: { sessions: { create: jest.fn() } },
+  webhooks: { constructEvent: jest.fn() }
+})), { virtual: true });
 jest.mock('axios', () => ({ get: jest.fn(), post: jest.fn() }));
 jest.mock('node-ssh', () => ({
   NodeSSH: jest.fn().mockImplementation(() => ({
@@ -120,5 +124,22 @@ describe('billing checkout', () => {
         data: expect.objectContaining({ status: 'ACTIVE' })
       })
     );
+  });
+
+  it('rejects unsigned billing webhooks in production', async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+
+    try {
+      const res = await request(app)
+        .post('/api/billing/webhook')
+        .send({ sessionId: 'sub_pending_1', status: 'PAID' });
+
+      expect(res.status).toBe(400);
+      expect(prismaMock.agency.update).not.toHaveBeenCalled();
+      expect(prismaMock.subscription.findFirst).not.toHaveBeenCalled();
+    } finally {
+      process.env.NODE_ENV = originalNodeEnv;
+    }
   });
 });

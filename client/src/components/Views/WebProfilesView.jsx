@@ -2,11 +2,27 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
   ChevronDown, Image, FileEdit, RefreshCw, Check, X, AlertTriangle,
-  Type, CreditCard, FileText
+  Type, CreditCard, FileText, Loader2
 } from 'lucide-react';
 
 import { useNexus } from '../../context/ContextHook';
 import PremiumSelector from '../UI/PremiumSelector';
+
+const parseProfileGallery = (gallery) => {
+  if (Array.isArray(gallery)) return gallery;
+  if (!gallery) return [];
+  try {
+    const parsed = JSON.parse(gallery);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const getWebProfileText = (profile, language, field, legacyValue = '') => {
+  const textData = profile?.data?.webProfileText || {};
+  return textData?.[language]?.[field] ?? legacyValue ?? '';
+};
 
 const WebProfilesView = () => {
   const nexus = useNexus() || {};
@@ -28,12 +44,20 @@ const WebProfilesView = () => {
     token = '',
     API_BASE = ''
   } = nexus;
+  const activeOperator = nexus.activeOperator || null;
   const [bioLang, setBioLang] = useState(lang?.toUpperCase() === 'CZ' ? 'CZ' : 'EN');
   const [localBios, setLocalBios] = useState({ EN: '', CZ: '' });
   const [localMottos, setLocalMottos] = useState({ EN: '', CZ: '' });
   const [localPricing, setLocalPricing] = useState({ EN: '', CZ: '' });
   const [agentDownloads, setAgentDownloads] = useState([]);
   const [isAgentDownloadsLoading, setIsAgentDownloadsLoading] = useState(false);
+  const [agentDownloadsReloadKey, setAgentDownloadsReloadKey] = useState(0);
+  const [agentUploadPlatform, setAgentUploadPlatform] = useState('windows');
+  const [isAgentUploading, setIsAgentUploading] = useState(false);
+  const [localGallery, setLocalGallery] = useState([]);
+  const [isGalleryLoading, setIsGalleryLoading] = useState(false);
+  const [isGalleryUploading, setIsGalleryUploading] = useState(false);
+  const [galleryVisibility, setGalleryVisibility] = useState('public');
 
   // Sync bioLang with global lang when it changes
   useEffect(() => {
@@ -63,7 +87,7 @@ const WebProfilesView = () => {
     return () => {
       cancelled = true;
     };
-  }, [API_BASE]);
+  }, [API_BASE, agentDownloadsReloadKey]);
 
   // Automation states
   const [automationPlatform, setAutomationPlatform] = useState('adultwork');
@@ -82,17 +106,18 @@ const WebProfilesView = () => {
   useEffect(() => {
     if (activeProfile) {
       setLocalBios({
-        EN: activeProfile.description_en || activeProfile.description || '',
-        CZ: activeProfile.description_cz || ''
+        EN: getWebProfileText(activeProfile, 'EN', 'description', activeProfile.description),
+        CZ: getWebProfileText(activeProfile, 'CZ', 'description')
       });
       setLocalMottos({
-        EN: activeProfile.bio_en || activeProfile.bio || '',
-        CZ: activeProfile.bio_cz || ''
+        EN: getWebProfileText(activeProfile, 'EN', 'bio', activeProfile.bio),
+        CZ: getWebProfileText(activeProfile, 'CZ', 'bio')
       });
       setLocalPricing({
-        EN: activeProfile.pricing_en || '',
-        CZ: activeProfile.pricing_cz || ''
+        EN: getWebProfileText(activeProfile, 'EN', 'pricing'),
+        CZ: getWebProfileText(activeProfile, 'CZ', 'pricing')
       });
+      setLocalGallery(parseProfileGallery(activeProfile.gallery));
       
       setAdsPowerId(activeProfile.adsPowerId || ''); 
       setPlatformUser('');
@@ -108,15 +133,54 @@ const WebProfilesView = () => {
     }
   }, [activeProfileId, activeProfile]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const fetchGallery = async () => {
+      if (!API_BASE || !token || !activeProfileId || activeProfileId === 'all') {
+        setLocalGallery([]);
+        return;
+      }
+
+      try {
+        setIsGalleryLoading(true);
+        const { data } = await axios.get(`${API_BASE}/profiles/${activeProfileId}/gallery`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!cancelled) setLocalGallery(Array.isArray(data?.photos) ? data.photos : []);
+      } catch {
+        if (!cancelled) setLocalGallery(parseProfileGallery(activeProfile?.gallery));
+      } finally {
+        if (!cancelled) setIsGalleryLoading(false);
+      }
+    };
+
+    fetchGallery();
+    return () => {
+      cancelled = true;
+    };
+  }, [API_BASE, token, activeProfileId, activeProfile?.gallery]);
+
   const onSaveBioData = async () => {
     if (!activeProfileId) return;
     try {
+      const currentTextData = activeProfile?.data?.webProfileText || {};
+      const nextTextData = {
+        ...currentTextData,
+        [bioLang]: {
+          ...(currentTextData[bioLang] || {}),
+          description: localBios[bioLang],
+          bio: localMottos[bioLang],
+          pricing: localPricing[bioLang]
+        }
+      };
+
       await axios.patch(`${API_BASE}/profiles/${activeProfileId}`, { 
-        [`description_${bioLang.toLowerCase()}`]: localBios[bioLang],
-        [`bio_${bioLang.toLowerCase()}`]: localMottos[bioLang],
-        [`pricing_${bioLang.toLowerCase()}`]: localPricing[bioLang],
         description: localBios[bioLang],
-        bio: localMottos[bioLang]
+        bio: localMottos[bioLang],
+        data: {
+          ...(activeProfile?.data || {}),
+          webProfileText: nextTextData
+        }
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -178,6 +242,95 @@ const WebProfilesView = () => {
       showToast(t('error'), 'error');
     }
   };
+
+  const onUploadGalleryPhoto = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!activeProfileId || activeProfileId === 'all') {
+      showToast(lang === 'cz' ? 'Nejdřív vyberte konkrétní profil.' : 'Select a profile first.', 'warning');
+      return;
+    }
+
+    try {
+      setIsGalleryUploading(true);
+      const formData = new FormData();
+      formData.append('photo', file);
+      formData.append('metadata', JSON.stringify({ visibility: galleryVisibility }));
+
+      const { data } = await axios.post(`${API_BASE}/profiles/${activeProfileId}/gallery`, formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setLocalGallery(Array.isArray(data?.photos) ? data.photos : []);
+      showToast(lang === 'cz' ? 'Fotka byla nahraná do galerie.' : 'Photo uploaded to gallery.', 'success');
+    } catch (_err) {
+      showToast(_err?.response?.data?.message || (lang === 'cz' ? 'Nahrání fotky se nepovedlo.' : 'Photo upload failed.'), 'error');
+    } finally {
+      setIsGalleryUploading(false);
+    }
+  };
+
+  const onDeleteGalleryPhoto = async (photoId) => {
+    if (!activeProfileId || activeProfileId === 'all' || !photoId) return;
+    try {
+      const { data } = await axios.delete(`${API_BASE}/profiles/${activeProfileId}/gallery/${photoId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setLocalGallery(Array.isArray(data?.photos) ? data.photos : []);
+      showToast(lang === 'cz' ? 'Fotka byla odstraněná.' : 'Photo removed.', 'success');
+    } catch (_err) {
+      showToast(_err?.response?.data?.message || (lang === 'cz' ? 'Fotku se nepovedlo odstranit.' : 'Photo removal failed.'), 'error');
+    }
+  };
+
+  const onUploadAgentPackage = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    try {
+      setIsAgentUploading(true);
+      const formData = new FormData();
+      formData.append('agent', file);
+      formData.append('platform', agentUploadPlatform);
+      const versionMatch = file.name.match(/v?(\d+(?:\.\d+){1,3})/i);
+      if (versionMatch) formData.append('version', versionMatch[1]);
+
+      await axios.post(`${API_BASE}/vultr/upload-agent`, formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAgentDownloadsReloadKey(key => key + 1);
+      showToast(lang === 'cz' ? 'Agent balíček byl publikovaný.' : 'Agent package published.', 'success');
+    } catch (_err) {
+      showToast(_err?.response?.data?.message || (lang === 'cz' ? 'Nahrání agent balíčku se nepovedlo.' : 'Agent package upload failed.'), 'error');
+    } finally {
+      setIsAgentUploading(false);
+    }
+  };
+
+  const publicGallery = localGallery.filter(photo => photo.visibility !== 'private');
+  const privateGallery = localGallery.filter(photo => photo.visibility === 'private');
+  const renderGalleryGrid = (photos, emptyLabel) => (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '1rem' }}>
+      {photos.length === 0 ? (
+        <div style={{ minHeight: '100px', border: '1px dashed var(--card-border)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.75rem', color: 'var(--text-secondary)', fontSize: '0.75rem', textAlign: 'center' }}>
+          {emptyLabel}
+        </div>
+      ) : photos.map(photo => (
+        <div key={photo.id || photo.url} style={{ position: 'relative', aspectRatio: '1 / 1', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.04)' }}>
+          <img src={photo.url} alt={photo.caption || 'Profile gallery'} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          <button
+            type="button"
+            onClick={() => onDeleteGalleryPhoto(photo.id)}
+            title={lang === 'cz' ? 'Odstranit fotku' : 'Remove photo'}
+            style={{ position: 'absolute', top: '6px', right: '6px', width: '28px', height: '28px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.65)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          >
+            <X size={15} />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <div data-testid="page-web-profiles-container" style={{ padding: isMobile ? '1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto', overflowX: 'hidden', display: 'flex', flexDirection: 'column', gap: '1.5rem', maxHeight: '100%' }} className="fade-in custom-scrollbar">
@@ -372,33 +525,45 @@ const WebProfilesView = () => {
           <div className="glass-card" style={{ padding: '2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Image size={20} color="var(--accent-color)" /> {t('gallery')}</h3>
-              <>
-               <input type="file" id="photo-upload-input" accept="image/*" style={{ display: 'none' }} onChange={(_err) => {
-                 const file = _err.target.files?.[0];
-                 if (file) {
-                   showToast(lang === 'cz' ? 'Nahrávání galerie zatím není napojené na úložiště.' : 'Gallery upload is not connected to storage yet.', 'warning');
-                   _err.target.value = '';
-                 }
-               }} />
-               <button className="action-btn" onClick={() => document.getElementById('photo-upload-input').click()} style={{ width: 'auto', padding: '0.5rem 1rem', marginTop: 0, fontSize: '0.8rem' }}>+ {t('uploadPhoto')}</button>
-             </>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                <select
+                  value={galleryVisibility}
+                  onChange={(e) => setGalleryVisibility(e.target.value)}
+                  className="note-input"
+                  style={{ width: 'auto', minWidth: '110px', padding: '0.45rem 0.65rem', fontSize: '0.75rem', background: 'rgba(255,255,255,0.05)' }}
+                >
+                  <option value="public">{lang === 'cz' ? 'Veřejná' : 'Public'}</option>
+                  <option value="private">{lang === 'cz' ? 'Privátní' : 'Private'}</option>
+                </select>
+                <input type="file" id="photo-upload-input" accept="image/jpeg,image/png,image/webp,image/gif" style={{ display: 'none' }} onChange={onUploadGalleryPhoto} />
+                <button
+                  className="action-btn"
+                  disabled={isGalleryUploading || !activeProfile || activeProfileId === 'all'}
+                  onClick={() => document.getElementById('photo-upload-input').click()}
+                  style={{ width: 'auto', padding: '0.5rem 1rem', marginTop: 0, fontSize: '0.8rem', opacity: isGalleryUploading ? 0.75 : 1 }}
+                >
+                  {isGalleryUploading ? <Loader2 size={14} className="animate-spin" /> : '+'} {t('uploadPhoto')}
+                </button>
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem', flexDirection: isMobile ? 'column' : 'row' }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-secondary)' }}>{t('publicGalleryCap')}</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '1rem' }}>
-                  <div className="placeholder-img" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200)' }}></div>
-                  <div className="placeholder-img" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=200)' }}></div>
-                  <div className="placeholder-img" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=200)' }}></div>
-                </div>
+                {isGalleryLoading ? (
+                  <div style={{ minHeight: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', gap: '0.5rem', fontSize: '0.75rem' }}>
+                    <Loader2 size={16} className="animate-spin" /> {lang === 'cz' ? 'Načítám galerii...' : 'Loading gallery...'}
+                  </div>
+                ) : renderGalleryGrid(publicGallery, lang === 'cz' ? 'Žádné veřejné fotky' : 'No public photos')}
               </div>
               {!isMobile && <div style={{ width: '1px', background: 'var(--card-border)' }}></div>}
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-secondary)' }}>{t('privateGalleryCap')} (VIP)</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '1rem' }}>
-                  <div className="placeholder-img" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=200)' }}></div>
-                </div>
+                {isGalleryLoading ? (
+                  <div style={{ minHeight: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', gap: '0.5rem', fontSize: '0.75rem' }}>
+                    <Loader2 size={16} className="animate-spin" /> {lang === 'cz' ? 'Načítám galerii...' : 'Loading gallery...'}
+                  </div>
+                ) : renderGalleryGrid(privateGallery, lang === 'cz' ? 'Žádné privátní fotky' : 'No private photos')}
               </div>
             </div>
           </div>
@@ -556,7 +721,7 @@ const WebProfilesView = () => {
                     style={{ fontSize: '0.75rem', padding: '0.6rem', textAlign: 'center', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)' }}
                     download
                   >
-                    {item.label}
+                    {item.label}{item.version ? ` v${item.version}` : ''}
                   </a>
                 ))
               ) : (
@@ -568,6 +733,29 @@ const WebProfilesView = () => {
             <p style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', marginTop: '1rem', textAlign: 'center' }}>
               {t('agentReadMeNote')}
             </p>
+            {activeOperator?.isAppOwner && (
+              <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                <select
+                  value={agentUploadPlatform}
+                  onChange={(e) => setAgentUploadPlatform(e.target.value)}
+                  className="note-input"
+                  style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.05)' }}
+                >
+                  <option value="windows">Windows</option>
+                  <option value="macos">macOS</option>
+                  <option value="linux">Linux</option>
+                </select>
+                <input id="agent-package-upload-input" type="file" accept=".zip,application/zip" style={{ display: 'none' }} onChange={onUploadAgentPackage} />
+                <button
+                  className="action-btn"
+                  disabled={isAgentUploading}
+                  onClick={() => document.getElementById('agent-package-upload-input').click()}
+                  style={{ fontSize: '0.75rem', padding: '0.65rem', marginTop: 0 }}
+                >
+                  {isAgentUploading ? <Loader2 size={14} className="animate-spin" /> : '+'} {lang === 'cz' ? 'Publikovat agent ZIP' : 'Publish agent ZIP'}
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="glass-card" style={{ padding: '1.5rem', background: 'rgba(5,7,10,0.6)' }}>

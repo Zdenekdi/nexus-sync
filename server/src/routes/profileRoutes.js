@@ -1,13 +1,58 @@
 const express = require('express');
 const router = express.Router();
+const fs = require('fs');
+const path = require('path');
+const multer = require('multer');
 const profileController = require('../controllers/profileController');
 const authMiddleware = require('../middleware/authMiddleware');
 const { validate } = require('../middleware/validate');
 const { createProfile, patchProfile, assignUsers } = require('../middleware/schemas');
+const { isManagerRole } = require('../utils/authz');
+
+const requireProfileManager = (req, res, next) => {
+  if (!isManagerRole(req.user?.role)) {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+  next();
+};
+
+const galleryStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, '..', '..', 'uploads', 'profile-gallery', String(req.params.id));
+    fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    const safeExt = ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext) ? ext : '.jpg';
+    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2, 10)}${safeExt}`);
+  }
+});
+
+const galleryUpload = multer({
+  storage: galleryStorage,
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!/^image\/(jpeg|png|webp|gif)$/.test(file.mimetype || '')) {
+      return cb(new Error('Only image uploads are allowed'));
+    }
+    cb(null, true);
+  }
+});
+
+const handleGalleryUpload = (req, res, next) => {
+  galleryUpload.single('photo')(req, res, (err) => {
+    if (err) return res.status(400).json({ message: err.message });
+    next();
+  });
+};
 
 router.get('/', authMiddleware, profileController.getProfiles);
 router.post('/', authMiddleware, validate(createProfile), profileController.createProfile);
 router.patch('/:id', authMiddleware, validate(patchProfile), profileController.patchProfile);
+router.get('/:id/gallery', authMiddleware, profileController.getGallery);
+router.post('/:id/gallery', authMiddleware, requireProfileManager, handleGalleryUpload, profileController.uploadGalleryPhoto);
+router.delete('/:id/gallery/:photoId', authMiddleware, requireProfileManager, profileController.deleteGalleryPhoto);
 router.patch('/:id/assignees', authMiddleware, validate(assignUsers), profileController.assignUsersToProfile);
 router.post('/:id/sync', authMiddleware, profileController.syncProfile);
 router.get('/:id/credentials', authMiddleware, profileController.getCredentials);

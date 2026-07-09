@@ -294,6 +294,7 @@ class BillingController {
   async handleWebhook(req, res) {
     try {
       let sessionId, status, stripeSubscriptionId, stripePaymentIntentId;
+      const allowUnsignedWebhook = process.env.NODE_ENV === 'test' || process.env.ALLOW_UNSIGNED_BILLING_WEBHOOK === 'true';
 
       if (Buffer.isBuffer(req.body)) {
         const signature = req.headers['stripe-signature'];
@@ -315,15 +316,17 @@ class BillingController {
         } else {
           return res.status(400).json({ message: 'Missing Stripe webhook signature configuration' });
         }
-      } else if (req.body?.id && req.body?.object === 'event') {
+      } else if (allowUnsignedWebhook && req.body?.id && req.body?.object === 'event') {
         const session = req.body.data?.object || {};
         sessionId = session.metadata?.localSubscriptionId || session.client_reference_id;
         status = session.payment_status === 'paid' || session.status === 'complete' ? 'PAID' : session.payment_status;
         stripeSubscriptionId = session.subscription || null;
         stripePaymentIntentId = session.payment_intent || null;
-      } else {
+      } else if (allowUnsignedWebhook) {
         sessionId = req.body.sessionId;
         status = req.body.status;
+      } else {
+        return res.status(400).json({ message: 'Unsigned billing webhook rejected' });
       }
 
       if (!sessionId || status !== 'PAID') return res.status(200).json({ received: true });
@@ -397,6 +400,10 @@ class BillingController {
    * Helper for testing/manual simulation
    */
   async simulateSuccess(req, res) {
+    const allowed = process.env.NODE_ENV === 'test' || process.env.ALLOW_BILLING_SIMULATION === 'true';
+    if (!allowed) {
+      return res.status(403).json({ message: 'Billing simulation is disabled' });
+    }
     const { sessionId } = req.body;
     req.body = { sessionId, status: 'PAID' };
     return this.handleWebhook(req, res);

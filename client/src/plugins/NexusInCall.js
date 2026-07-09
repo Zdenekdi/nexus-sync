@@ -71,6 +71,7 @@ export function useInCallService(handlers = {}) {
   const [callState,       setCallState]       = useState('idle');
   const [incomingCall,    setIncomingCall]     = useState(null);
   const [isDefault,       setIsDefault]        = useState(false);
+  const [isFeatureEnabled, setIsFeatureEnabled] = useState(false);
   const [callDuration,    setCallDuration]     = useState(0);
   const timerRef = useRef(null);
 
@@ -81,13 +82,20 @@ export function useInCallService(handlers = {}) {
 
   useEffect(() => {
     if (!isInCallAvailable()) return;
-    NexusInCall.isDefaultDialer().then(({ isDefault: d }) => setIsDefault(d));
+    NexusInCall.isDefaultDialer().then(({ isDefault: d, featureEnabled }) => {
+      const enabled = featureEnabled !== false;
+      setIsFeatureEnabled(enabled);
+      setIsDefault(enabled && d);
+    }).catch(() => {
+      setIsFeatureEnabled(false);
+      setIsDefault(false);
+    });
   }, []);
 
   // ── Nastavení listenerů ────────────────────────────────────────────────────
 
   useEffect(() => {
-    if (!isInCallAvailable()) return;
+    if (!isInCallAvailable() || !isFeatureEnabled) return;
 
     const subs = [];
 
@@ -142,7 +150,7 @@ export function useInCallService(handlers = {}) {
       clearInterval(timerRef.current);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isFeatureEnabled]);
 
   // ── WebRTC: příjem zvuku v prohlížeči ─────────────────────────────────────
 
@@ -230,16 +238,19 @@ export function useInCallService(handlers = {}) {
   // ── Akce ──────────────────────────────────────────────────────────────────
 
   const answer = useCallback(async () => {
+    if (!isFeatureEnabled) return;
     await NexusInCall.answer();
-  }, []);
+  }, [isFeatureEnabled]);
 
   const reject = useCallback(async () => {
+    if (!isFeatureEnabled) return;
     await NexusInCall.reject();
     setIncomingCall(null);
     setCallState('idle');
-  }, []);
+  }, [isFeatureEnabled]);
 
   const hangup = useCallback(async () => {
+    if (!isFeatureEnabled) return;
     await NexusInCall.hangup();
     clearInterval(timerRef.current);
     setIncomingCall(null);
@@ -248,30 +259,36 @@ export function useInCallService(handlers = {}) {
       pcRef.current.close();
       pcRef.current = null;
     }
-  }, []);
+  }, [isFeatureEnabled]);
 
   const setMuted = useCallback(async (muted) => {
+    if (!isFeatureEnabled) return;
     await NexusInCall.setMuted({ muted });
-  }, []);
+  }, [isFeatureEnabled]);
 
   const setSpeaker = useCallback(async (enabled) => {
+    if (!isFeatureEnabled) return;
     await NexusInCall.setSpeaker({ enabled });
-  }, []);
+  }, [isFeatureEnabled]);
 
   const requestDefaultDialer = useCallback(async () => {
+    if (!isFeatureEnabled) return;
     await NexusInCall.requestDefaultDialer();
     // Zkontroluj stav po chvíli
     setTimeout(async () => {
-      const { isDefault: d } = await NexusInCall.isDefaultDialer();
-      setIsDefault(d);
+      const { isDefault: d, featureEnabled } = await NexusInCall.isDefaultDialer();
+      const enabled = featureEnabled !== false;
+      setIsFeatureEnabled(enabled);
+      setIsDefault(enabled && d);
     }, 2000);
-  }, []);
+  }, [isFeatureEnabled]);
 
   return {
     incomingCall,
     callState,
     callDuration,
     isDefaultDialer: isDefault,
+    isFeatureEnabled,
     answer,
     reject,
     hangup,

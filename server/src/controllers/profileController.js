@@ -1,4 +1,6 @@
 const prisma = require('../services/db');
+const fs = require('fs');
+const path = require('path');
 const { encrypt, decrypt } = require('../utils/encryption');
 const { getIO } = require('../services/socket');
 const { isAppOwnerRole, isManagerRole } = require('../utils/authz');
@@ -7,6 +9,21 @@ function parseData(raw) {
   if (!raw) return {};
   if (typeof raw === 'object') return raw;
   try { return JSON.parse(raw); } catch { return {}; }
+}
+
+function parseGallery(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function getPublicBaseUrl(req) {
+  return (process.env.API_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/+$/, '');
 }
 
 const logger = require('../services/logger');
@@ -96,20 +113,108 @@ exports.getProfiles = async (req, res) => {
 exports.patchProfile = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, phone, quickReplies, bio, description, gallery, commission, sampleMessages } = req.body;
+    const { name, phone, phoneNumber, quickReplies, bio, description, gallery, commission, sampleMessages, data } = req.body;
     const { agencyId } = req.user;
     const existing = await prisma.profile.findUnique({ where: { id } });
     if (!existing || (existing.agencyId !== agencyId && !req.user.role?.isAppOwner)) return res.status(404).json({ message: 'Not found' });
     const currentData = parseData(existing.data);
-    const newData = { ...currentData, ...(quickReplies !== undefined && { quickReplies }) };
+    const newData = { ...currentData, ...(data && typeof data === 'object' ? data : {}), ...(quickReplies !== undefined && { quickReplies }) };
+    const resolvedPhoneNumber = phoneNumber !== undefined ? phoneNumber : phone;
     const updated = await prisma.profile.update({
       where: { id },
-      data: { ...(name && { name }), ...(phone !== undefined && { phone }), ...(bio !== undefined && { bio }), ...(description !== undefined && { description }), ...(sampleMessages !== undefined && { sampleMessages }), ...(commission !== undefined && { commission: Number(commission) }), ...(gallery !== undefined && { gallery: typeof gallery === 'string' ? gallery : JSON.stringify(gallery) }), data: newData },
+      data: {
+        ...(name && { name }),
+        ...(resolvedPhoneNumber !== undefined && { phoneNumber: resolvedPhoneNumber }),
+        ...(bio !== undefined && { bio }),
+        ...(description !== undefined && { description }),
+        ...(sampleMessages !== undefined && { sampleMessages }),
+        ...(commission !== undefined && { commission: Number(commission) }),
+        ...(gallery !== undefined && { gallery: typeof gallery === 'string' ? gallery : JSON.stringify(gallery) }),
+        data: JSON.stringify(newData)
+      },
       include: { assignees: { select: { id: true, name: true } } }
     });
     res.json({ ...updated, data: newData, quickReplies: newData.quickReplies || [] });
   } catch (error) {
     res.status(500).json({ message: 'Failed' });
+  }
+};
+
+exports.getGallery = async (req, res) => {
+  try {
+    const profile = await getScopedProfile(req.params.id, req);
+    if (!profile) return res.status(404).json({ message: 'Profile not found' });
+    res.json({ photos: parseGallery(profile.gallery) });
+  } catch (error) {
+    logger.error('[Profiles] Failed to get gallery:', error);
+    res.status(500).json({ message: 'Failed to load gallery' });
+  }
+};
+
+exports.uploadGalleryPhoto = async (req, res) => {
+  try {
+    if (!requireProfileManager(req, res)) return;
+    const profile = await getScopedProfile(req.params.id, req);
+    if (!profile) return res.status(404).json({ message: 'Profile not found' });
+    if (!req.file) return res.status(400).json({ message: 'Photo file is required' });
+
+    const gallery = parseGallery(profile.gallery);
+    let metadata = {};
+    try {
+      metadata = req.body?.metadata ? JSON.parse(req.body.metadata) : {};
+    } catch {
+      metadata = {};
+    }
+
+    const photo = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+      url: `${getPublicBaseUrl(req)}/uploads/profile-gallery/${profile.id}/${req.file.filename}`,
+      filename: req.file.filename,
+      visibility: metadata.visibility === 'private' ? 'private' : 'public',
+      caption: typeof metadata.caption === 'string' ? metadata.caption.slice(0, 500) : '',
+      contentType: req.file.mimetype,
+      size: req.file.size,
+      uploadedAt: new Date().toISOString()
+    };
+
+    const nextGallery = [photo, ...gallery].slice(0, 100);
+    await prisma.profile.update({
+      where: { id: profile.id },
+      data: { gallery: JSON.stringify(nextGallery) }
+    });
+
+    res.status(201).json({ photo, photos: nextGallery });
+  } catch (error) {
+    logger.error('[Profiles] Failed to upload gallery photo:', error);
+    res.status(500).json({ message: 'Failed to upload gallery photo' });
+  }
+};
+
+exports.deleteGalleryPhoto = async (req, res) => {
+  try {
+    if (!requireProfileManager(req, res)) return;
+    const profile = await getScopedProfile(req.params.id, req);
+    if (!profile) return res.status(404).json({ message: 'Profile not found' });
+
+    const gallery = parseGallery(profile.gallery);
+    const photo = gallery.find(item => String(item.id) === String(req.params.photoId));
+    if (!photo) return res.status(404).json({ message: 'Photo not found' });
+
+    const nextGallery = gallery.filter(item => String(item.id) !== String(req.params.photoId));
+    await prisma.profile.update({
+      where: { id: profile.id },
+      data: { gallery: JSON.stringify(nextGallery) }
+    });
+
+    if (photo.filename) {
+      const filePath = path.join(__dirname, '..', '..', 'uploads', 'profile-gallery', profile.id, path.basename(photo.filename));
+      fs.promises.unlink(filePath).catch(() => {});
+    }
+
+    res.json({ photos: nextGallery });
+  } catch (error) {
+    logger.error('[Profiles] Failed to delete gallery photo:', error);
+    res.status(500).json({ message: 'Failed to delete gallery photo' });
   }
 };
 
