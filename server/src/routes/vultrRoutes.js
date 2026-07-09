@@ -25,6 +25,11 @@ const headers = () => ({
   "Authorization": `Bearer ${process.env.VULTR_API_KEY}`,
   "Content-Type": "application/json",
 });
+const AGENT_DOWNLOADS = [
+  { id: "windows", label: "Windows (.zip)", filename: "nexus-agent-windows.zip" },
+  { id: "macos", label: "macOS (.zip)", filename: "nexus-agent-macos.zip" },
+  { id: "linux", label: "Linux (.zip)", filename: "nexus-agent-linux.zip" }
+];
 
 // ── APK Upload (multer) ───────────────────────────────────────────────────────
 const DOWNLOADS_DIR = path.join(__dirname, "../../public/downloads");
@@ -141,6 +146,29 @@ router.get("/download-full.apk", (req, res) => {
   } else {
     res.status(404).send("APK not found");
   }
+});
+
+router.get("/agent-downloads", async (req, res) => {
+  const baseUrl = (process.env.API_BASE_URL || "https://nexus-api.myvnc.com").replace(/\/+$/, "");
+  const downloads = await Promise.all(AGENT_DOWNLOADS.map(async (item) => {
+    const filePath = path.join(DOWNLOADS_DIR, item.filename);
+    if (!fs.existsSync(filePath)) {
+      return { ...item, available: false };
+    }
+    const stat = await fs.promises.stat(filePath);
+    return {
+      ...item,
+      available: true,
+      size: stat.size,
+      updatedAt: stat.mtime.toISOString(),
+      downloadUrl: `${baseUrl}/downloads/${item.filename}`
+    };
+  }));
+
+  res.json({
+    available: downloads.some(item => item.available),
+    downloads
+  });
 });
 
 // Apply auth to all OTHER vultr routes

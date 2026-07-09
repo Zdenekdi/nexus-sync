@@ -32,6 +32,8 @@ const WebProfilesView = () => {
   const [localBios, setLocalBios] = useState({ EN: '', CZ: '' });
   const [localMottos, setLocalMottos] = useState({ EN: '', CZ: '' });
   const [localPricing, setLocalPricing] = useState({ EN: '', CZ: '' });
+  const [agentDownloads, setAgentDownloads] = useState([]);
+  const [isAgentDownloadsLoading, setIsAgentDownloadsLoading] = useState(false);
 
   // Sync bioLang with global lang when it changes
   useEffect(() => {
@@ -39,6 +41,29 @@ const WebProfilesView = () => {
       setBioLang(lang.toUpperCase());
     }
   }, [lang]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchAgentDownloads = async () => {
+      if (!API_BASE) return;
+      try {
+        setIsAgentDownloadsLoading(true);
+        const { data } = await axios.get(`${API_BASE}/vultr/agent-downloads`);
+        if (!cancelled) {
+          setAgentDownloads(Array.isArray(data?.downloads) ? data.downloads.filter(item => item.available) : []);
+        }
+      } catch (_err) {
+        if (!cancelled) setAgentDownloads([]);
+      } finally {
+        if (!cancelled) setIsAgentDownloadsLoading(false);
+      }
+    };
+
+    fetchAgentDownloads();
+    return () => {
+      cancelled = true;
+    };
+  }, [API_BASE]);
 
   // Automation states
   const [automationPlatform, setAutomationPlatform] = useState('adultwork');
@@ -350,7 +375,10 @@ const WebProfilesView = () => {
               <>
                <input type="file" id="photo-upload-input" accept="image/*" style={{ display: 'none' }} onChange={(_err) => {
                  const file = _err.target.files?.[0];
-                 if (file) showToast((lang === 'cz' ? 'Foto vybráno: ' : 'Photo selected: ') + file.name, 'success');
+                 if (file) {
+                   showToast(lang === 'cz' ? 'Nahrávání galerie zatím není napojené na úložiště.' : 'Gallery upload is not connected to storage yet.', 'warning');
+                   _err.target.value = '';
+                 }
                }} />
                <button className="action-btn" onClick={() => document.getElementById('photo-upload-input').click()} style={{ width: 'auto', padding: '0.5rem 1rem', marginTop: 0, fontSize: '0.8rem' }}>+ {t('uploadPhoto')}</button>
              </>
@@ -515,30 +543,27 @@ const WebProfilesView = () => {
               {t('agentDownloadDesc')}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              <a 
-                href={`${API_BASE.replace('/api', '')}/downloads/nexus-agent-windows.zip`} 
-                className="action-btn" 
-                style={{ fontSize: '0.75rem', padding: '0.6rem', textAlign: 'center', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)' }}
-                download
-              >
-                🪟 Windows (.zip)
-              </a>
-              <a 
-                href={`${API_BASE.replace('/api', '')}/downloads/nexus-agent-macos.zip`} 
-                className="action-btn" 
-                style={{ fontSize: '0.75rem', padding: '0.6rem', textAlign: 'center', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)' }}
-                download
-              >
-                🍎 macOS (.zip)
-              </a>
-              <a 
-                href={`${API_BASE.replace('/api', '')}/downloads/nexus-agent-linux.zip`} 
-                className="action-btn" 
-                style={{ fontSize: '0.75rem', padding: '0.6rem', textAlign: 'center', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)' }}
-                download
-              >
-                🐧 Linux (.zip)
-              </a>
+              {isAgentDownloadsLoading ? (
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', padding: '0.6rem' }}>
+                  {lang === 'cz' ? 'Ověřuji dostupné balíky...' : 'Checking available packages...'}
+                </div>
+              ) : agentDownloads.length > 0 ? (
+                agentDownloads.map(item => (
+                  <a
+                    key={item.id}
+                    href={item.downloadUrl}
+                    className="action-btn"
+                    style={{ fontSize: '0.75rem', padding: '0.6rem', textAlign: 'center', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)' }}
+                    download
+                  >
+                    {item.label}
+                  </a>
+                ))
+              ) : (
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', padding: '0.75rem', border: '1px dashed var(--card-border)', borderRadius: '12px', lineHeight: 1.4 }}>
+                  {lang === 'cz' ? 'Desktop agent zatím není publikovaný ke stažení.' : 'The desktop agent is not published for download yet.'}
+                </div>
+              )}
             </div>
             <p style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', marginTop: '1rem', textAlign: 'center' }}>
               {t('agentReadMeNote')}

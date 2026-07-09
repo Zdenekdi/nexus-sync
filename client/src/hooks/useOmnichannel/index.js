@@ -29,14 +29,22 @@ export const useOmnichannel = (config = {}) => {
     try {
       const service = new CommunicationService(config);
       
-      // Register adapters
-      service.registerAdapter('whatsapp', new WhatsAppAdapter(config.whatsapp || {}));
-      service.registerAdapter('sms', new SMSAdapter(config.sms || {}));
-      service.registerAdapter('webchat', new WebChatAdapter(config.webchat || {}));
-      
-      // Connect all adapters
+      const adapterFactories = {
+        whatsapp: (channelConfig) => new WhatsAppAdapter(channelConfig),
+        sms: (channelConfig) => new SMSAdapter(channelConfig),
+        webchat: (channelConfig) => new WebChatAdapter(channelConfig)
+      };
+
+      Object.entries(adapterFactories).forEach(([channelName, createAdapter]) => {
+        const channelConfig = config[channelName];
+        if (channelConfig?.enabled === true) {
+          service.registerAdapter(channelName, createAdapter(channelConfig));
+        }
+      });
+
+      // Connect explicitly enabled adapters. Missing credentials should be visible as disconnected.
       Object.entries(config).forEach(async ([channelName, channelConfig]) => {
-        if (['whatsapp', 'sms', 'webchat'].includes(channelName)) {
+        if (channelConfig?.enabled === true && ['whatsapp', 'sms', 'webchat'].includes(channelName)) {
           try {
             const adapter = service.getAdapter(channelName);
             await adapter.connect();

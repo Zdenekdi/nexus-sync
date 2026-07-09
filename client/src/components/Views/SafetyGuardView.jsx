@@ -29,9 +29,6 @@ const SafetyGuardView = () => {
     audioSentinelVolume: 0.5
   });
   
-  // Simulated heart rates and battery levels
-  const [simData, setSimData] = useState({});
-
   const isCz = lang === 'cz' || lang === 'cs';
 
   // Leaflet state & refs
@@ -50,39 +47,7 @@ const SafetyGuardView = () => {
     });
   }, []);
 
-  const availableProfiles = nexus.profiles || [];
-
-  const mockLocations = useMemo(() => [
-    { name: 'Diana', lat: 51.5074, lng: -0.1278, state: 'CHECKED_IN', locationType: 'outcall' },
-    { name: 'Chloe', lat: 52.4862, lng: -1.8904, state: 'GRACE', locationType: 'incall' },
-    { name: 'Bella', lat: 53.4808, lng: -2.2426, state: 'CHECKED_IN', locationType: 'incall' },
-    { name: 'Lily', lat: 51.4816, lng: -3.1791, state: 'CHECKED_IN', locationType: 'outcall' },
-    { name: 'Katerina', lat: 54.9783, lng: -1.6178, state: 'ESCALATED', locationType: 'outcall' }
-  ], []);
-
-  const processedSessions = useMemo(() => {
-    // If backend returns real active sessions, use them
-    if (sessions && sessions.length > 0) {
-      return sessions;
-    }
-    
-    // Otherwise, fallback to generating mock sessions using the profiles from context or fallback names
-    const baseProfiles = availableProfiles.length > 0 
-      ? availableProfiles 
-      : mockLocations.map((loc, idx) => ({ id: `mock-p-${idx}`, name: loc.name }));
-
-    return baseProfiles.map((prof, idx) => {
-      const locTemplate = mockLocations[idx % mockLocations.length];
-      return {
-        id: `mock-s-${prof.id || idx}`,
-        profileId: prof.id,
-        state: locTemplate.state,
-        locationType: locTemplate.locationType,
-        locationPoints: [{ lat: locTemplate.lat, lng: locTemplate.lng }],
-        profile: prof
-      };
-    });
-  }, [sessions, availableProfiles, mockLocations]);
+  const processedSessions = useMemo(() => Array.isArray(sessions) ? sessions : [], [sessions]);
 
   const filteredSessions = useMemo(() => {
     return processedSessions.filter(s => {
@@ -94,17 +59,27 @@ const SafetyGuardView = () => {
   }, [processedSessions, search, filter]);
 
   const getCoordinates = useCallback((session) => {
-    if (session.locationPoints?.[0]?.lat && session.locationPoints?.[0]?.lng) {
-      return { lat: session.locationPoints[0].lat, lng: session.locationPoints[0].lng };
+    const candidates = [session.locationPoints?.[0], session.trackerLocations?.[0]];
+    for (const point of candidates) {
+      const lat = Number(point?.lat);
+      const lng = Number(point?.lng);
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        return { lat, lng };
+      }
     }
-    const name = session.profile?.name || '';
-    if (name.includes('Diana')) return { lat: 51.5074, lng: -0.1278 };
-    if (name.includes('Chloe')) return { lat: 52.4862, lng: -1.8904 };
-    if (name.includes('Bella')) return { lat: 53.4808, lng: -2.2426 };
-    if (name.includes('Lily')) return { lat: 51.4816, lng: -3.1791 };
-    if (name.includes('Katerina')) return { lat: 54.9783, lng: -1.6178 };
-    
-    return { lat: 51.5074, lng: -0.1278 };
+    return null;
+  }, []);
+
+  const getSessionBattery = useCallback((session) => {
+    const raw = session.trackerLocations?.[0]?.battery ?? session.battery ?? session.deviceBattery;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : null;
+  }, []);
+
+  const getSessionHeartRate = useCallback((session) => {
+    const raw = session.heartRate ?? session.bpm ?? session.vitals?.heartRate;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : null;
   }, []);
 
   const getStatusColor = useCallback((state) => {
@@ -130,20 +105,6 @@ const SafetyGuardView = () => {
       });
       const data = res.data || [];
       setSessions(data);
-      
-      // Initialize sim data for new sessions
-      setSimData(prev => {
-        const next = { ...prev };
-        data.forEach(s => {
-          if (!next[s.id]) {
-            next[s.id] = {
-              bpm: 70 + Math.floor(Math.random() * 20),
-              battery: 85 + Math.floor(Math.random() * 15)
-            };
-          }
-        });
-        return next;
-      });
     } catch (_err) {
       console.error('Failed to fetch safety sessions:', _err);
       if (_err.response?.status !== 404) {
@@ -170,46 +131,11 @@ const SafetyGuardView = () => {
     fetchSessions();
     fetchSettings();
     const interval = setInterval(() => fetchSessions(true), 15000);
-    
-    // Sim pulse effect
-    const simInterval = setInterval(() => {
-      setSimData(prev => {
-        const next = { ...prev };
-        Object.keys(next).forEach(id => {
-          if (next[id]) {
-            next[id].bpm += (Math.random() > 0.5 ? 1 : -1);
-            if (next[id].bpm < 60) next[id].bpm = 62;
-            if (next[id].bpm > 110) next[id].bpm = 108;
-            if (Math.random() > 0.98) next[id].battery -= 1;
-          }
-        });
-        return next;
-      });
-    }, 3000);
 
     return () => {
       clearInterval(interval);
-      clearInterval(simInterval);
     };
   }, [fetchSessions, fetchSettings]);
-
-  // Maintain simData for processedSessions
-  useEffect(() => {
-    setSimData(prev => {
-      const next = { ...prev };
-      let updated = false;
-      processedSessions.forEach(s => {
-        if (!next[s.id]) {
-          next[s.id] = {
-            bpm: 70 + Math.floor(Math.random() * 20),
-            battery: 85 + Math.floor(Math.random() * 15)
-          };
-          updated = true;
-        }
-      });
-      return updated ? next : prev;
-    });
-  }, [processedSessions]);
 
   // Initialize Map
   useEffect(() => {
@@ -249,6 +175,7 @@ const SafetyGuardView = () => {
     const newMarkers = [];
     filteredSessions.forEach(session => {
       const coords = getCoordinates(session);
+      if (!coords) return;
       const color = getStatusColor(session.state);
       
       const markerIcon = L.divIcon({
@@ -429,6 +356,12 @@ const SafetyGuardView = () => {
                   display: 'flex', flexDirection: 'column', gap: '1rem', transition: 'all 0.3s ease',
                   boxShadow: session.state === 'ESCALATED' ? '0 0 20px rgba(239, 68, 68, 0.1)' : 'none'
                 }}>
+                  {(() => {
+                    const bpm = getSessionHeartRate(session);
+                    const battery = getSessionBattery(session);
+                    const coords = getCoordinates(session);
+                    return (
+                      <>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                       <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
@@ -449,24 +382,24 @@ const SafetyGuardView = () => {
                   {/* Metrics */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                     <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                       <Activity size={14} color="#ef4444" className={simData[session.id]?.bpm > 90 ? 'heart-pulse' : ''} />
+                       <Activity size={14} color="#ef4444" className={bpm && bpm > 90 ? 'heart-pulse' : ''} />
                        <div>
                           <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('heartRate')}</div>
-                          <div data-testid={`safety-bpm-${session.id}`} style={{ fontSize: '0.85rem', fontWeight: 900, color: 'white' }}>{simData[session.id]?.bpm || 72} BPM</div>
+                          <div data-testid={`safety-bpm-${session.id}`} style={{ fontSize: '0.85rem', fontWeight: 900, color: 'white' }}>{bpm ? `${bpm} BPM` : '--'}</div>
                        </div>
                     </div>
                     <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                       <Battery size={14} color={simData[session.id]?.battery < 20 ? '#ef4444' : '#10b981'} />
+                       <Battery size={14} color={battery !== null && battery < 20 ? '#ef4444' : '#10b981'} />
                        <div>
                           <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('battery')}</div>
-                          <div data-testid={`safety-battery-${session.id}`} style={{ fontSize: '0.85rem', fontWeight: 900, color: 'white' }}>{simData[session.id]?.battery || 100}%</div>
+                          <div data-testid={`safety-battery-${session.id}`} style={{ fontSize: '0.85rem', fontWeight: 900, color: 'white' }}>{battery !== null ? `${battery}%` : '--'}</div>
                        </div>
                     </div>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
                     <MapPin size={12} />
-                    {session.locationPoints?.[0] ? `${session.locationPoints[0].lat.toFixed(5)}, ${session.locationPoints[0].lng.toFixed(5)}` : t('unknownLocation')}
+                    {coords ? `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}` : t('unknownLocation')}
                   </div>
 
                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: 'auto' }}>
@@ -487,6 +420,9 @@ const SafetyGuardView = () => {
                        <Eye size={16} />
                     </button>
                   </div>
+                      </>
+                    );
+                  })()}
                 </div>
               ))}
             </div>

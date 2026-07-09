@@ -37,10 +37,7 @@ const InboxView = () => {
 
   const omnichannel = useOmnichannel({
     token,
-    API_BASE,
-    whatsapp: { enabled: true },
-    sms: { enabled: true },
-    webchat: { enabled: true }
+    API_BASE
   });
 
   const { 
@@ -65,7 +62,13 @@ const InboxView = () => {
         return;
       } catch (err) {
         console.error("Omnichannel send failed:", err);
-        showToast(lang === 'cz' ? `Chyba při odesílání přes ${channel}` : `Failed to send via ${channel}`, "error");
+        showToast(
+          lang === 'cz'
+            ? `Kanál ${channel} zatím není nakonfigurovaný pro odesílání.`
+            : `${channel} is not configured for sending yet.`,
+          "error"
+        );
+        return;
       }
     }
 

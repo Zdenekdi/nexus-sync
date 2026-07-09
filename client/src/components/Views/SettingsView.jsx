@@ -47,6 +47,15 @@ const SettingsView = () => {
     return lang === 'cz' ? 'Neomezeně' : 'Unlimited';
   })();
   const [bankInstructions, setBankInstructions] = React.useState(null);
+  const [timezoneLabel] = React.useState(() => {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    const offsetMinutes = -new Date().getTimezoneOffset();
+    const sign = offsetMinutes >= 0 ? '+' : '-';
+    const absolute = Math.abs(offsetMinutes);
+    const hours = Math.floor(absolute / 60);
+    const minutes = absolute % 60;
+    return `${timeZone} (UTC${sign}${hours}${minutes ? `:${String(minutes).padStart(2, '0')}` : ''})`;
+  });
   const loadingText = lang === 'cz' ? 'NAČÍTÁM...' : 'LOADING...';
   const activationButtonText = (label) => isStartingSubscription ? loadingText : label;
   const activationButtonBaseStyle = {
@@ -513,11 +522,10 @@ const SettingsView = () => {
                   <button onClick={() => setLang('en')} style={{ padding: '8px 18px', border: 'none', background: lang === 'en' ? 'var(--accent-color)' : 'transparent', color: 'white', borderRadius: '9px', fontSize: '0.75rem', fontWeight: '900', cursor: 'pointer', transition: 'all 0.2s' }}>EN</button>
                 </div>
               </div>
-              {/* Timezone placeholder */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: '14px', border: '1px solid var(--card-border)' }}>
                 <div>
                   <div style={{ fontWeight: '700', marginBottom: '0.25rem' }}>{lang === 'cz' ? 'Časové pásmo' : 'Timezone'}</div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Europe/Prague (UTC+2)</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{timezoneLabel}</div>
                 </div>
                 <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', padding: '0.4rem 0.85rem', background: 'rgba(255,255,255,0.04)', borderRadius: '10px', border: '1px solid var(--card-border)' }}>AUTO</div>
               </div>
