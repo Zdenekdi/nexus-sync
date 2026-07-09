@@ -51,6 +51,9 @@ beforeEach(() => {
   delete process.env.STRIPE_SECRET_KEY;
   delete process.env.STRIPE_PUBLISHABLE_KEY;
   delete process.env.STRIPE_WEBHOOK_SECRET;
+  Object.keys(process.env)
+    .filter(key => key.startsWith('STRIPE_PRICE_'))
+    .forEach(key => delete process.env[key]);
   delete process.env.BANK_ACCOUNT;
   delete process.env.ALLOW_BANK_TRANSFER_BILLING;
   prismaMock.globalSetting.findUnique.mockResolvedValue(null);
@@ -342,6 +345,62 @@ describe('billing checkout', () => {
       })
     ]);
     expect(sessionPayload.line_items[0]).not.toHaveProperty('price');
+  });
+
+  it('retries Stripe checkout with inline price_data when a configured price id is invalid', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_configured';
+    process.env.STRIPE_PUBLISHABLE_KEY = 'pk_test_configured';
+    process.env.STRIPE_PRICE_AGENCY_MONTHLY_GBP = 'price_invalid_gbp';
+
+    mockStripeCheckoutSessionCreate
+      .mockRejectedValueOnce(new Error('No such price: price_invalid_gbp'))
+      .mockResolvedValueOnce({
+        id: 'cs_test_retry_inline_gbp_123',
+        client_secret: 'cs_test_retry_inline_gbp_123_secret_abc',
+        url: null
+      });
+
+    const res = await request(app)
+      .post('/api/billing/checkout')
+      .set('Authorization', `Bearer ${makeToken()}`)
+      .send({
+        planId: 'agency_monthly',
+        checkoutMode: 'embedded',
+        market: 'uk',
+        successUrl: 'https://app.example.test/settings',
+        cancelUrl: 'https://app.example.test/settings'
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      provider: 'stripe',
+      checkoutMode: 'embedded',
+      id: 'cs_test_retry_inline_gbp_123',
+      clientSecret: 'cs_test_retry_inline_gbp_123_secret_abc',
+      url: null
+    });
+
+    expect(mockStripeCheckoutSessionCreate).toHaveBeenCalledTimes(2);
+    expect(mockStripeCheckoutSessionCreate.mock.calls[0][0].line_items).toEqual([
+      expect.objectContaining({ quantity: 1, price: 'price_invalid_gbp' })
+    ]);
+    expect(mockStripeCheckoutSessionCreate.mock.calls[1][0].line_items).toEqual([
+      expect.objectContaining({
+        quantity: 1,
+        price_data: expect.objectContaining({
+          currency: 'gbp',
+          unit_amount: 8500
+        })
+      })
+    ]);
+    expect(prismaMock.subscription.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          stripePriceId: null,
+          note: expect.stringContaining('"stripePriceId":null')
+        })
+      })
+    );
   });
 
   it('rejects bank-transfer checkout by default', async () => {
