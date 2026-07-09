@@ -69,6 +69,25 @@ describe('POST /api/auth/login', () => {
     }
   });
 
+  it('loads auth context only after password is verified', async () => {
+    const { role: _role, agency: _agency, assignedProfiles: _profiles, ...bareUser } = TEST_USER;
+    prismaMock.user.findUnique.mockResolvedValue(bareUser);
+    prismaMock.role.findUnique.mockResolvedValue(TEST_USER.role);
+    prismaMock.agency.findUnique.mockResolvedValue(TEST_USER.agency);
+    prismaMock.refreshToken.create.mockResolvedValue({ id: 'rt-1', token: 'refresh-tok' });
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'test@agency.com', password: 'ValidPass1' });
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.role.findUnique).toHaveBeenCalledWith({ where: { id: TEST_USER.roleId } });
+    expect(prismaMock.agency.findUnique).toHaveBeenCalledWith({
+      where: { id: TEST_USER.agencyId },
+      select: { id: true, name: true }
+    });
+  });
+
   it('returns 401 on wrong password', async () => {
     prismaMock.user.findUnique.mockResolvedValue(TEST_USER);
 
@@ -78,6 +97,19 @@ describe('POST /api/auth/login', () => {
 
     expect(res.status).toBe(401);
     expect(res.body.message).toBe('Invalid credentials');
+  });
+
+  it('returns 401 on wrong password without loading role relations', async () => {
+    const { role: _role, agency: _agency, assignedProfiles: _profiles, ...bareUser } = TEST_USER;
+    prismaMock.user.findUnique.mockResolvedValue(bareUser);
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'test@agency.com', password: 'WrongPass1' });
+
+    expect(res.status).toBe(401);
+    expect(prismaMock.role.findUnique).not.toHaveBeenCalled();
+    expect(prismaMock.agency.findUnique).not.toHaveBeenCalled();
   });
 
   it('returns 401 instead of 500 when stored password hash is missing', async () => {
