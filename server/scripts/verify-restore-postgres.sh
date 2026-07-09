@@ -4,6 +4,11 @@ set -euo pipefail
 : "${BACKUP_FILE:?BACKUP_FILE is required}"
 : "${RESTORE_DATABASE_URL:?RESTORE_DATABASE_URL is required}"
 
+if [ -n "${DATABASE_URL:-}" ] && [ "$RESTORE_DATABASE_URL" = "$DATABASE_URL" ]; then
+  echo "RESTORE_DATABASE_URL must not equal DATABASE_URL. Refusing to restore into the primary database." >&2
+  exit 1
+fi
+
 if [ ! -f "$BACKUP_FILE" ]; then
   echo "Backup file not found: $BACKUP_FILE" >&2
   exit 1

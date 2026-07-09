@@ -2,16 +2,17 @@
 # ============================================================
 # test-relay-live.sh — Live E2E Relay & Call Forwarding Tests
 # Tests the staging Nexus Hub backend WITHOUT an Android device.
-# Usage: bash scripts/test-relay-live.sh
-# Override: API_BASE=... DEVICE_SECRET=... PROFILE_PHONE=... bash scripts/test-relay-live.sh
+# Usage:
+#   API_BASE=... DEVICE_SECRET=... PROFILE_PHONE=... MANAGER_EMAIL=... MANAGER_PASSWORD=... \
+#     bash scripts/test-relay-live.sh
 # ============================================================
 
-# ─── Configuration (override via env vars) ──────────────────
-API_BASE="${API_BASE:-https://nexus-backend-ii3tsimbnq-ey.a.run.app/api}"
-DEVICE_SECRET="${DEVICE_SECRET:-devicesecret12345}"
-PROFILE_PHONE="${PROFILE_PHONE:-+420 773 227 907}"
-MANAGER_EMAIL="${MANAGER_EMAIL:-jan@nexus.sync}"
-MANAGER_PASSWORD="${MANAGER_PASSWORD:-password123}"
+# ─── Configuration ──────────────────────────────────────────
+: "${API_BASE:?API_BASE is required, e.g. https://nexus-api.example.com/api}"
+: "${DEVICE_SECRET:?DEVICE_SECRET is required}"
+: "${PROFILE_PHONE:?PROFILE_PHONE is required, e.g. +420123456789}"
+: "${MANAGER_EMAIL:?MANAGER_EMAIL is required}"
+: "${MANAGER_PASSWORD:?MANAGER_PASSWORD is required}"
 CALLER_PHONE="+420900111222"
 GOIP_SRC="+420900111333"
 

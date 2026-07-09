@@ -1,11 +1,21 @@
 const axios = require('axios');
-const API_BASE = 'https://nexus-api.myvnc.com/api';
+const API_BASE = process.env.API_BASE || 'https://nexus-api.myvnc.com/api';
+const TEST_PASSWORD = process.env.TEST_PASSWORD;
+const TEST_EMAILS = (process.env.TEST_EMAILS || '')
+  .split(',')
+  .map(email => email.trim())
+  .filter(Boolean);
+
+if (!TEST_PASSWORD || TEST_EMAILS.length === 0) {
+  console.error('Usage: TEST_EMAILS="user@example.com,other@example.com" TEST_PASSWORD="..." node scripts/debug-auth.js');
+  process.exit(1);
+}
 
 async function checkLogin(email) {
   try {
     const res = await axios.post(`${API_BASE}/auth/login`, {
       email: email,
-      password: 'password123'
+      password: TEST_PASSWORD
     }, { validateStatus: () => true });
     console.log(`Login ${email}: ${res.status} ${res.data?.message || ''}`);
   } catch (err) {
@@ -13,5 +23,4 @@ async function checkLogin(email) {
   }
 }
 
-checkLogin('alice@nexus.sync');
-checkLogin('alice@nexus-sync.com');
+Promise.all(TEST_EMAILS.map(checkLogin));

@@ -109,6 +109,11 @@ Workflowy v repozitari pouzivaji tyto secrets:
 - `TEST_OWNER_PASSWORD`
 - `FRONTEND_URL`
 
+Poznamka: backend deploy guard odmita nasazeni, pokud je v GitHub Actions nastaveny
+`STRIPE_SECRET_KEY`, ale chybi `STRIPE_WEBHOOK_SECRET` nebo `STRIPE_PUBLISHABLE_KEY`.
+Je to zamerne: bez webhook secretu by Stripe checkout mohl vzniknout, ale placeny tarif
+by se nemusel bezpecne aktivovat.
+
 ## Generovani hodnot
 
 ```bash

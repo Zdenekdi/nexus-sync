@@ -28,6 +28,24 @@ Pro overeni nainstalovane verze:
 adb shell dumpsys package com.nexushub.app | grep -E 'versionName|versionCode'
 ```
 
+Pro overeni, ze Android skutecne drzi Nexus Relay jako vychozi SMS aplikaci:
+
+```bash
+adb shell cmd role holders android.app.role.SMS
+adb shell dumpsys package com.nexushub.app | grep -E 'READ_SMS|RECEIVE_SMS|SEND_SMS|WRITE_SMS'
+adb shell appops get com.nexushub.app READ_SMS
+```
+
+Pro rychlou kontrolu, zda SMS lezi v systemovem SMS provideru telefonu:
+
+```bash
+adb shell content query --uri content://sms/inbox --projection address,body,date --sort "date DESC"
+```
+
+Pokud posledni SMS neni ani v `content://sms/inbox`, problem je pred Relay aplikaci
+nebo v systemove SMS aplikaci/operatorovi. Pokud tam je, ale neni ve webu, resit
+broadcast receiver, inbox fallback, auth token a odpoved `/api/device/relay`.
+
 ## Test 1: parovani zarizeni
 
 1. Odhlaste a znovu prihlaste Relay aplikaci.
@@ -171,6 +189,8 @@ Telefon zpravu vidi, server ji nema:
 - hledat `Native Forward Error`, HTTP 401/403/404/409 nebo `missing auth token`;
 - zkontrolovat `installationId`, `profileId`, DeviceBinding a bearer token;
 - overit, jestli inbox fallback pozdeji zpravu dosynchronizoval.
+- overit, ze Nexus Relay je stale drzitelem role `android.app.role.SMS` a ma
+  `READ_SMS`, `RECEIVE_SMS`, `SEND_SMS`, `WRITE_SMS` opravneni.
 
 Server zpravu ma, web ji neukazuje:
 
