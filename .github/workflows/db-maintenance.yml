@@ -10,6 +10,7 @@ on:
         type: choice
         options:
           - backup-and-migrate
+          - baseline-and-migrate
           - backup-only
           - migrate-only
       confirm:
@@ -52,6 +53,9 @@ jobs:
             fi
 
             if [ "${{ inputs.mode }}" != "backup-only" ]; then
+              if [ "${{ inputs.mode }}" = "baseline-and-migrate" ]; then
+                ./node_modules/.bin/prisma migrate resolve --applied 0_init
+              fi
               ./node_modules/.bin/prisma migrate deploy
               ./node_modules/.bin/prisma generate
               pm2 restart nexus-backend-final --update-env || pm2 start server.js --name nexus-backend-final

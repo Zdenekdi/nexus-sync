@@ -31,14 +31,34 @@ CREATE INDEX IF NOT EXISTS "SalonKeyLog_keyId_idx" ON "SalonKeyLog"("keyId");
 CREATE INDEX IF NOT EXISTS "SalonKeyLog_userId_idx" ON "SalonKeyLog"("userId");
 
 -- AddForeignKey
-ALTER TABLE "SalonKey" ADD CONSTRAINT IF NOT EXISTS "SalonKey_agencyId_fkey"
-    FOREIGN KEY ("agencyId") REFERENCES "Agency"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'SalonKey_agencyId_fkey') THEN
+        ALTER TABLE "SalonKey" ADD CONSTRAINT "SalonKey_agencyId_fkey"
+            FOREIGN KEY ("agencyId") REFERENCES "Agency"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END $$;
 
-ALTER TABLE "SalonKey" ADD CONSTRAINT IF NOT EXISTS "SalonKey_holderId_fkey"
-    FOREIGN KEY ("holderId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'SalonKey_holderId_fkey') THEN
+        ALTER TABLE "SalonKey" ADD CONSTRAINT "SalonKey_holderId_fkey"
+            FOREIGN KEY ("holderId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+    END IF;
+END $$;
 
-ALTER TABLE "SalonKeyLog" ADD CONSTRAINT IF NOT EXISTS "SalonKeyLog_keyId_fkey"
-    FOREIGN KEY ("keyId") REFERENCES "SalonKey"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'SalonKeyLog_keyId_fkey') THEN
+        ALTER TABLE "SalonKeyLog" ADD CONSTRAINT "SalonKeyLog_keyId_fkey"
+            FOREIGN KEY ("keyId") REFERENCES "SalonKey"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END $$;
 
-ALTER TABLE "SalonKeyLog" ADD CONSTRAINT IF NOT EXISTS "SalonKeyLog_userId_fkey"
-    FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'SalonKeyLog_userId_fkey') THEN
+        ALTER TABLE "SalonKeyLog" ADD CONSTRAINT "SalonKeyLog_userId_fkey"
+            FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+    END IF;
+END $$;
