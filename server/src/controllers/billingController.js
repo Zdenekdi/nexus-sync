@@ -210,42 +210,47 @@ class BillingController {
 
     if (!this.stripe?.prices?.list || !this.stripe?.prices?.create) return null;
 
-    const lookupKey = this.stripeLookupKey(planId, currency, item);
-    const existing = await this.stripe.prices.list({
-      lookup_keys: [lookupKey],
-      active: true,
-      limit: 1
-    });
+    try {
+      const lookupKey = this.stripeLookupKey(planId, currency, item);
+      const existing = await this.stripe.prices.list({
+        lookup_keys: [lookupKey],
+        active: true,
+        limit: 1
+      });
 
-    if (existing?.data?.[0]?.id) return existing.data[0].id;
+      if (existing?.data?.[0]?.id) return existing.data[0].id;
 
-    const payload = {
-      currency: currency.toLowerCase(),
-      unit_amount: this.toMinorUnits(item.price),
-      lookup_key: lookupKey,
-      product_data: {
-        name: item.name || `Nexus ${item.targetValue}`,
+      const payload = {
+        currency: currency.toLowerCase(),
+        unit_amount: this.toMinorUnits(item.price),
+        lookup_key: lookupKey,
+        product_data: {
+          name: item.name || `Nexus ${item.targetValue}`,
+          metadata: {
+            planId,
+            type: item.type,
+            targetValue: item.targetValue,
+            ...(item.metadata || {})
+          }
+        },
         metadata: {
           planId,
           type: item.type,
           targetValue: item.targetValue,
-          ...(item.metadata || {})
+          currency
         }
-      },
-      metadata: {
-        planId,
-        type: item.type,
-        targetValue: item.targetValue,
-        currency
+      };
+
+      if (item.type === 'plan') {
+        payload.recurring = item.recurring || { interval: 'month', interval_count: 1 };
       }
-    };
 
-    if (item.type === 'plan') {
-      payload.recurring = item.recurring || { interval: 'month', interval_count: 1 };
+      const created = await this.stripe.prices.create(payload);
+      return created?.id || null;
+    } catch (error) {
+      logger.warn('[Billing] Stripe price sync failed; falling back to inline price_data:', error.message);
+      return null;
     }
-
-    const created = await this.stripe.prices.create(payload);
-    return created?.id || null;
   }
 
   async getOrCreateStripeCustomer(agencyId, userEmail) {

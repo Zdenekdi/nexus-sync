@@ -296,6 +296,54 @@ describe('billing checkout', () => {
     expect(sessionPayload).not.toHaveProperty('cancel_url');
   });
 
+  it('falls back to inline Stripe price_data when reusable price sync fails', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_configured';
+    process.env.STRIPE_PUBLISHABLE_KEY = 'pk_test_configured';
+
+    mockStripePricesCreate.mockRejectedValueOnce(new Error('lookup key conflict'));
+    mockStripeCheckoutSessionCreate.mockResolvedValueOnce({
+      id: 'cs_test_embedded_gbp_123',
+      client_secret: 'cs_test_embedded_gbp_123_secret_abc',
+      url: null
+    });
+
+    const res = await request(app)
+      .post('/api/billing/checkout')
+      .set('Authorization', `Bearer ${makeToken()}`)
+      .send({
+        planId: 'agency_monthly',
+        checkoutMode: 'embedded',
+        market: 'uk',
+        successUrl: 'https://app.example.test/settings',
+        cancelUrl: 'https://app.example.test/settings'
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      provider: 'stripe',
+      checkoutMode: 'embedded',
+      id: 'cs_test_embedded_gbp_123',
+      clientSecret: 'cs_test_embedded_gbp_123_secret_abc',
+      url: null
+    });
+
+    const sessionPayload = mockStripeCheckoutSessionCreate.mock.calls[0][0];
+    expect(sessionPayload.line_items).toEqual([
+      expect.objectContaining({
+        quantity: 1,
+        price_data: expect.objectContaining({
+          currency: 'gbp',
+          unit_amount: 8500,
+          recurring: { interval: 'month', interval_count: 1 },
+          product_data: expect.objectContaining({
+            name: 'Nexus Agency'
+          })
+        })
+      })
+    ]);
+    expect(sessionPayload.line_items[0]).not.toHaveProperty('price');
+  });
+
   it('rejects bank-transfer checkout by default', async () => {
     const res = await request(app)
       .post('/api/billing/checkout')
