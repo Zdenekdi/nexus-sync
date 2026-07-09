@@ -32,6 +32,9 @@ Stripe:
 - `STRIPE_PUBLISHABLE_KEY`: `pk_live_...` pro produkci, `pk_test_...` pro test.
 - `STRIPE_SECRET_KEY`: `sk_live_...` pro produkci, `sk_test_...` pro test.
 - `STRIPE_WEBHOOK_SECRET`: `whsec_...` ze Stripe webhook endpointu.
+- `STRIPE_PRICE_STARTER_MONTHLY_CZK`: volitelne pevne Stripe Price ID pro Starter.
+- `STRIPE_PRICE_PRO_MONTHLY_CZK`: volitelne pevne Stripe Price ID pro Professional.
+- `STRIPE_PRICE_AGENCY_MONTHLY_CZK`: volitelne pevne Stripe Price ID pro Agency.
 - `REQUIRE_STRIPE_CONFIG=true`: zapnout v produkci, pokud ma byt aktivni platba kartou.
 
 Monitoring:
@@ -42,8 +45,9 @@ Monitoring:
 
 Bankovni platby:
 
-- `BANK_ACCOUNT`: ucet zobrazeny u bankovniho prevodu.
-- `FIO_API_TOKEN`: token pro Fio synchronizaci plateb, pokud je aktivni Fio worker.
+- `ALLOW_BANK_TRANSFER_BILLING=false`: bankovni prevod je vypnuty a nema byt dostupny v prvnim pilotu.
+- `BANK_ACCOUNT`: ucet zobrazeny u bankovniho prevodu, pouzit pouze pokud se prevod nekdy znovu zapne.
+- `FIO_API_TOKEN`: token pro Fio synchronizaci plateb, pouzit pouze pokud je aktivni Fio worker.
 
 SIP/Asterisk:
 

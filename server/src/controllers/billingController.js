@@ -1,36 +1,99 @@
 const prisma = require('../services/db');
 const logger = require('../services/logger');
-const Stripe = require('stripe');
+let Stripe = null;
+
+try {
+  Stripe = require('stripe');
+} catch {
+  Stripe = null;
+}
 
 /**
  * Billing & Subscription Automation Controller
  */
 class BillingController {
-  
   /**
-   * Internal plan mapping to decouple frontend IDs from database tiers
+   * Canonical paid plans. Older ids are accepted only as aliases to avoid
+   * breaking stale UI clients, but persisted tiers are Starter/Professional/Agency.
    */
   PLAN_MAP = {
-    starter_monthly: { type: 'plan', targetValue: 'Starter', name: 'Nexus Starter', prices: { CZK: 290, EUR: 12, GBP: 10, USD: 13 }, durationDays: 30, recurring: { interval: 'month', interval_count: 1 } },
-    pro_monthly: { type: 'plan', targetValue: 'Professional', name: 'Nexus Professional', prices: { CZK: 990, EUR: 39, GBP: 35, USD: 45 }, durationDays: 30, recurring: { interval: 'month', interval_count: 1 } },
-    agency_monthly: { type: 'plan', targetValue: 'Agency', name: 'Nexus Agency', prices: { CZK: 2490, EUR: 99, GBP: 85, USD: 109 }, durationDays: 30, recurring: { interval: 'month', interval_count: 1 } },
-    MONTHLY: { type: 'plan', targetValue: 'MONTHLY', name: 'Nexus Monthly', prices: { CZK: 990, EUR: 39, GBP: 35, USD: 45 }, durationDays: 30, recurring: { interval: 'month', interval_count: 1 } },
-    SEMI_ANNUAL: { type: 'plan', targetValue: 'SEMI_ANNUAL', name: 'Nexus Semi-Annual', prices: { CZK: 5490, EUR: 219, GBP: 189, USD: 249 }, durationDays: 182, recurring: { interval: 'month', interval_count: 6 } },
-    ANNUAL: { type: 'plan', targetValue: 'ANNUAL', name: 'Nexus Annual', prices: { CZK: 9990, EUR: 399, GBP: 349, USD: 449 }, durationDays: 365, recurring: { interval: 'year', interval_count: 1 } },
-    ai_module: { type: 'addon', targetValue: 'ai_features', name: 'AI Optimizer Pack', prices: { CZK: 490, EUR: 20, GBP: 18, USD: 22 }, durationDays: 30 },
-    ai_opt: { type: 'addon', targetValue: 'ai_features', name: 'AI Optimizer Pack', prices: { CZK: 1200, EUR: 48, GBP: 42, USD: 52 }, durationDays: 30 },
-    analytics_module: { type: 'addon', targetValue: 'analytics', name: 'Analytics Module', prices: { CZK: 390, EUR: 16, GBP: 14, USD: 18 }, durationDays: 30 },
-    api_access: { type: 'addon', targetValue: 'api_access', name: 'Developer API Access', prices: { CZK: 290, EUR: 12, GBP: 10, USD: 13 }, durationDays: 30 },
-    senior_op: { type: 'addon', targetValue: 'senior_operator', name: 'Senior Operator Role', prices: { CZK: 500, EUR: 20, GBP: 18, USD: 22 }, durationDays: 30 },
-    vip_supp: { type: 'addon', targetValue: 'vip_support', name: 'Priority VIP Support', prices: { CZK: 2000, EUR: 80, GBP: 70, USD: 88 }, durationDays: 30 },
-    extra_profiles: { type: 'addon', targetValue: 'extra_profiles', name: 'Extra Profiles Pack', prices: { CZK: 250, EUR: 10, GBP: 9, USD: 11 }, durationDays: 30 }
+    starter_monthly: {
+      type: 'plan',
+      targetValue: 'Starter',
+      name: 'Nexus Starter',
+      prices: { CZK: 290, EUR: 12, GBP: 10, USD: 13 },
+      profilesLimit: 5,
+      recurring: { interval: 'month', interval_count: 1 }
+    },
+    pro_monthly: {
+      type: 'plan',
+      targetValue: 'Professional',
+      name: 'Nexus Professional',
+      prices: { CZK: 990, EUR: 39, GBP: 35, USD: 45 },
+      profilesLimit: 10,
+      recurring: { interval: 'month', interval_count: 1 }
+    },
+    agency_monthly: {
+      type: 'plan',
+      targetValue: 'Agency',
+      name: 'Nexus Agency',
+      prices: { CZK: 2490, EUR: 99, GBP: 85, USD: 109 },
+      profilesLimit: 20,
+      recurring: { interval: 'month', interval_count: 1 }
+    },
+    ai_module: {
+      type: 'addon',
+      targetValue: 'ai_features',
+      name: 'AI Optimizer Pack',
+      prices: { CZK: 490, EUR: 20, GBP: 18, USD: 22 }
+    },
+    ai_opt: {
+      type: 'addon',
+      targetValue: 'ai_features',
+      name: 'AI Optimizer Pack',
+      prices: { CZK: 1200, EUR: 48, GBP: 42, USD: 52 }
+    },
+    analytics_module: {
+      type: 'addon',
+      targetValue: 'analytics',
+      name: 'Analytics Module',
+      prices: { CZK: 390, EUR: 16, GBP: 14, USD: 18 }
+    },
+    api_access: {
+      type: 'addon',
+      targetValue: 'api_access',
+      name: 'Developer API Access',
+      prices: { CZK: 290, EUR: 12, GBP: 10, USD: 13 }
+    },
+    senior_op: {
+      type: 'addon',
+      targetValue: 'senior_operator',
+      name: 'Senior Operator Role',
+      prices: { CZK: 500, EUR: 20, GBP: 18, USD: 22 }
+    },
+    vip_supp: {
+      type: 'addon',
+      targetValue: 'vip_support',
+      name: 'Priority VIP Support',
+      prices: { CZK: 2000, EUR: 80, GBP: 70, USD: 88 }
+    },
+    extra_profiles: {
+      type: 'addon',
+      targetValue: 'extra_profiles',
+      name: 'Extra Profiles Pack',
+      prices: { CZK: 250, EUR: 10, GBP: 9, USD: 11 }
+    }
   };
 
-  DEFAULT_DYNAMIC_PLANS = [
-    { id: 'basic', name: 'Basic', prices: { cz: '2900', eu: '120', us: '130', uk: '110' }, profilesLimit: 5 },
-    { id: 'pro', name: 'Pro', prices: { cz: '5900', eu: '240', us: '260', uk: '220' }, profilesLimit: 10 },
-    { id: 'agency', name: 'Agency', prices: { cz: '9900', eu: '400', us: '440', uk: '360' }, profilesLimit: 20 }
-  ];
+  PLAN_ALIASES = {
+    starter: 'starter_monthly',
+    basic: 'starter_monthly',
+    pro: 'pro_monthly',
+    professional: 'pro_monthly',
+    agency: 'agency_monthly',
+    enterprise: 'agency_monthly',
+    monthly: 'pro_monthly'
+  };
 
   MARKET_CURRENCY = {
     cz: 'CZK',
@@ -41,16 +104,30 @@ class BillingController {
 
   get stripe() {
     if (!process.env.STRIPE_SECRET_KEY) return null;
+    if (!Stripe) return null;
     if (!this._stripe) {
       this._stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     }
     return this._stripe;
   }
 
+  normalizePlanId(planId) {
+    const raw = String(planId || '').trim();
+    const lower = raw.toLowerCase();
+    return this.PLAN_ALIASES[lower] || raw;
+  }
+
   normalizeCurrency(currency, market) {
     const fromMarket = this.MARKET_CURRENCY[String(market || '').toLowerCase()];
     const normalized = String(currency || fromMarket || 'CZK').toUpperCase();
     return ['CZK', 'EUR', 'GBP', 'USD'].includes(normalized) ? normalized : 'CZK';
+  }
+
+  normalizeStripeStatus(status) {
+    if (status === 'active' || status === 'trialing') return 'ACTIVE';
+    if (status === 'past_due' || status === 'unpaid' || status === 'incomplete' || status === 'incomplete_expired') return 'PAST_DUE';
+    if (status === 'canceled') return 'CANCELLED';
+    return status ? String(status).toUpperCase() : 'ACTIVE';
   }
 
   priceFor(item, currency) {
@@ -63,10 +140,22 @@ class BillingController {
     return Math.round(Number(amount) * 100);
   }
 
+  fromMinorUnits(amount) {
+    const parsed = Number(amount);
+    return Number.isFinite(parsed) ? parsed / 100 : null;
+  }
+
+  fromStripeTimestamp(value) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? new Date(parsed * 1000) : null;
+  }
+
+  fallbackExpiresAt(days = 30) {
+    return new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  }
+
   checkoutUrl(baseUrl, status) {
-    const fallback = status === 'success'
-      ? 'https://nexus-sync-8d50b.web.app/plans'
-      : 'https://nexus-sync-8d50b.web.app/plans';
+    const fallback = 'https://nexus-sync-8d50b.web.app/settings';
     const url = baseUrl || fallback;
     const separator = url.includes('?') ? '&' : '?';
     return status === 'success'
@@ -74,97 +163,173 @@ class BillingController {
       : `${url}${separator}checkout=cancelled`;
   }
 
-  targetValueForPlan(plan) {
-    const id = String(plan.id || '').toLowerCase();
-    if (id === 'basic') return 'Starter';
-    if (id === 'pro') return 'Professional';
-    if (id === 'agency') return 'Agency';
-    return plan.name || plan.id;
+  portalReturnUrl(baseUrl) {
+    return baseUrl || 'https://nexus-sync-8d50b.web.app/settings';
   }
 
-  async getDynamicPlan(planId, currency, market) {
-    let plans = this.DEFAULT_DYNAMIC_PLANS;
+  safeJson(value, fallback = {}) {
     try {
-      const setting = await prisma.globalSetting?.findUnique?.({ where: { key: 'SUBSCRIPTION_PLANS' } });
-      if (setting?.value) {
-        const parsed = JSON.parse(setting.value);
-        if (Array.isArray(parsed) && parsed.length > 0) plans = parsed;
-      }
-    } catch (error) {
-      logger.warn('[Billing] Could not load dynamic subscription plans:', error.message);
+      return value ? JSON.parse(value) : fallback;
+    } catch {
+      return fallback;
     }
+  }
 
-    const plan = plans.find(p => String(p.id).toLowerCase() === String(planId).toLowerCase());
-    if (!plan) return null;
-
-    const marketKey = Object.entries(this.MARKET_CURRENCY).find(([, value]) => value === currency)?.[0] || String(market || 'cz').toLowerCase();
-    const amount = Number(plan.prices?.[marketKey]);
-    if (!Number.isFinite(amount) || amount <= 0) return null;
+  async resolveBillingItem(planId, currency) {
+    const canonicalPlanId = this.normalizePlanId(planId);
+    const config = this.PLAN_MAP[canonicalPlanId];
+    if (!config) return null;
 
     return {
-      type: 'plan',
-      targetValue: this.targetValueForPlan(plan),
-      name: `Nexus ${plan.name}`,
-      price: amount,
+      ...config,
+      id: canonicalPlanId,
+      price: this.priceFor(config, currency),
       currency,
-      durationDays: 30,
-      recurring: { interval: 'month', interval_count: 1 },
-      metadata: { profilesLimit: String(plan.profilesLimit ?? '') }
+      durationDays: config.type === 'plan' ? 30 : 30,
+      metadata: {
+        profilesLimit: config.profilesLimit ? String(config.profilesLimit) : ''
+      }
     };
   }
 
-  async resolveBillingItem(planId, currency, market) {
-    const staticConfig = this.PLAN_MAP[planId];
-    if (staticConfig) {
-      return {
-        ...staticConfig,
-        price: this.priceFor(staticConfig, currency),
-        currency
-      };
-    }
-    return this.getDynamicPlan(planId, currency, market);
+  stripePriceEnvKey(planId, currency) {
+    const normalized = String(planId || '').toUpperCase().replace(/[^A-Z0-9]+/g, '_');
+    return `STRIPE_PRICE_${normalized}_${currency}`;
   }
 
-  /**
-   * 1. Create a Checkout Session
-   */
-  /**
-   * 1. Create a Checkout Session or Bank Instructions
-   */
+  stripeLookupKey(planId, currency, item) {
+    const cadence = item.type === 'plan'
+      ? `${item.recurring?.interval || 'month'}_${item.recurring?.interval_count || 1}`
+      : 'one_time';
+    return `nexus_${String(planId).toLowerCase()}_${currency.toLowerCase()}_${cadence}`.replace(/[^a-z0-9_]/g, '_');
+  }
+
+  async getOrCreateStripePrice(planId, currency, item) {
+    const envKey = this.stripePriceEnvKey(planId, currency);
+    if (process.env[envKey]) return process.env[envKey];
+
+    if (!this.stripe?.prices?.list || !this.stripe?.prices?.create) return null;
+
+    const lookupKey = this.stripeLookupKey(planId, currency, item);
+    const existing = await this.stripe.prices.list({
+      lookup_keys: [lookupKey],
+      active: true,
+      limit: 1
+    });
+
+    if (existing?.data?.[0]?.id) return existing.data[0].id;
+
+    const payload = {
+      currency: currency.toLowerCase(),
+      unit_amount: this.toMinorUnits(item.price),
+      lookup_key: lookupKey,
+      product_data: {
+        name: item.name || `Nexus ${item.targetValue}`,
+        metadata: {
+          planId,
+          type: item.type,
+          targetValue: item.targetValue,
+          ...(item.metadata || {})
+        }
+      },
+      metadata: {
+        planId,
+        type: item.type,
+        targetValue: item.targetValue,
+        currency
+      }
+    };
+
+    if (item.type === 'plan') {
+      payload.recurring = item.recurring || { interval: 'month', interval_count: 1 };
+    }
+
+    const created = await this.stripe.prices.create(payload);
+    return created?.id || null;
+  }
+
+  async getOrCreateStripeCustomer(agencyId, userEmail) {
+    const agency = await prisma.agency.findUnique({
+      where: { id: agencyId },
+      select: { id: true, name: true, email: true, stripeCustomerId: true }
+    });
+
+    if (agency?.stripeCustomerId) {
+      return { agency, customerId: agency.stripeCustomerId };
+    }
+
+    const customer = await this.stripe.customers.create({
+      email: agency?.email || userEmail || undefined,
+      name: agency?.name || undefined,
+      metadata: { agencyId }
+    });
+
+    if (customer?.id) {
+      await prisma.agency.update({
+        where: { id: agencyId },
+        data: { stripeCustomerId: customer.id }
+      });
+    }
+
+    return { agency, customerId: customer?.id || null };
+  }
+
   async createCheckoutSession(req, res) {
     try {
       const { agencyId } = req.user;
-      const { planId, paymentMethod = 'card', successUrl, cancelUrl, currency: requestedCurrency, market } = req.body;
+      const {
+        planId: requestedPlanId,
+        paymentMethod = 'card',
+        successUrl,
+        cancelUrl,
+        currency: requestedCurrency,
+        market
+      } = req.body;
+      const planId = this.normalizePlanId(requestedPlanId);
       const currency = this.normalizeCurrency(requestedCurrency, market);
 
-      const planConfig = await this.resolveBillingItem(planId, currency, market);
+      if (paymentMethod !== 'card') {
+        return res.status(400).json({
+          code: paymentMethod === 'transfer' ? 'bank_transfer_disabled' : 'unsupported_payment_method',
+          message: 'Only card checkout is currently available.'
+        });
+      }
+
+      const planConfig = await this.resolveBillingItem(planId, currency);
       if (!planConfig) {
-        return res.status(400).json({ message: `Invalid planId: ${planId}` });
+        return res.status(400).json({ message: `Invalid planId: ${requestedPlanId}` });
       }
 
       const { type, targetValue, price, durationDays = 30 } = planConfig;
       if (!price) return res.status(400).json({ message: `Price is not configured for ${planId} in ${currency}` });
 
-      const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
-      const note = {
-        type,
-        targetValue,
-        planId,
-        paymentMethod,
-        provider: paymentMethod === 'card' ? 'stripe' : 'bank_transfer',
-        currency,
-        market: market || null
-      };
-
       const mockBillingAllowed = process.env.NODE_ENV === 'test' || process.env.ALLOW_MOCK_BILLING === 'true';
-      if (paymentMethod === 'card' && !this.stripe && !mockBillingAllowed) {
+      if (process.env.STRIPE_SECRET_KEY && !Stripe && !mockBillingAllowed) {
+        return res.status(503).json({
+          code: 'stripe_dependency_missing',
+          message: 'Stripe SDK is not installed on the backend.'
+        });
+      }
+
+      if (!this.stripe && !mockBillingAllowed) {
         return res.status(503).json({
           code: 'stripe_not_configured',
           message: 'Stripe is not configured. Set STRIPE_SECRET_KEY on the backend.'
         });
       }
 
-      // Create a pending subscription
+      const expiresAt = this.fallbackExpiresAt(durationDays);
+      const note = {
+        type,
+        targetValue,
+        planId,
+        requestedPlanId: requestedPlanId || null,
+        paymentMethod: 'card',
+        provider: this.stripe ? 'stripe' : 'mock',
+        currency,
+        market: market || null
+      };
+
       const subscription = await prisma.subscription.create({
         data: {
           agencyId,
@@ -173,50 +338,26 @@ class BillingController {
           amountPaid: price,
           currency,
           expiresAt,
+          provider: this.stripe ? 'stripe' : 'mock',
+          providerStatus: 'checkout_pending',
           note: JSON.stringify(note)
         }
       });
 
-      if (paymentMethod === 'transfer') {
-        // GENERATE VARIABLE SYMBOL (Numeric, max 10 digits)
-        // We use a simple hash of the subscription ID + part of timestamp
-        const vs = Math.abs(subscription.id.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0) % 1000000000);
-        
-        // Update subscription with the VS
-        await prisma.subscription.update({
-          where: { id: subscription.id },
-          data: { paymentRef: String(vs) }
-        });
-
+      if (!this.stripe && mockBillingAllowed) {
+        const mockUrl = `${successUrl || 'http://localhost:3000/success'}?session_id=${subscription.id}`;
         return res.json({
-          paymentMethod: 'transfer',
-          provider: 'bank_transfer',
+          paymentMethod: 'card',
+          provider: 'mock',
           id: subscription.id,
-          instructions: {
-            accountNumber: process.env.BANK_ACCOUNT || '123456789/2010',
-            bankName: 'Fio banka, a.s.',
-            amount: price,
-            currency,
-            variableSymbol: vs,
-            message: `Nexus Hub - ${planId}`
-          },
-          message: 'Bank transfer instructions generated'
+          localSubscriptionId: subscription.id,
+          url: mockUrl,
+          message: 'Mock checkout session created'
         });
       }
 
-      if (!this.stripe) {
-        if (mockBillingAllowed) {
-          const mockUrl = `${successUrl || 'http://localhost:3000/success'}?session_id=${subscription.id}`;
-          return res.json({
-            paymentMethod: 'card',
-            provider: 'mock',
-            id: subscription.id,
-            url: mockUrl,
-            message: 'Mock checkout session created'
-          });
-        }
-      }
-
+      const { customerId } = await this.getOrCreateStripeCustomer(agencyId, req.user.email);
+      const stripePriceId = await this.getOrCreateStripePrice(planId, currency, planConfig);
       const mode = type === 'plan' ? 'subscription' : 'payment';
       const metadata = {
         localSubscriptionId: subscription.id,
@@ -226,26 +367,25 @@ class BillingController {
         targetValue
       };
 
-      const lineItem = {
-        quantity: 1,
-        price_data: {
-          currency: currency.toLowerCase(),
-          unit_amount: this.toMinorUnits(price),
-          product_data: {
-            name: planConfig.name || `Nexus ${targetValue}`,
-            metadata: {
-              planId,
-              type,
-              targetValue,
-              ...(planConfig.metadata || {})
+      const lineItem = stripePriceId
+        ? { quantity: 1, price: stripePriceId }
+        : {
+            quantity: 1,
+            price_data: {
+              currency: currency.toLowerCase(),
+              unit_amount: this.toMinorUnits(price),
+              product_data: {
+                name: planConfig.name || `Nexus ${targetValue}`,
+                metadata: {
+                  planId,
+                  type,
+                  targetValue,
+                  ...(planConfig.metadata || {})
+                }
+              },
+              ...(mode === 'subscription' ? { recurring: planConfig.recurring || { interval: 'month', interval_count: 1 } } : {})
             }
-          }
-        }
-      };
-
-      if (mode === 'subscription') {
-        lineItem.price_data.recurring = planConfig.recurring || { interval: 'month', interval_count: 1 };
-      }
+          };
 
       const sessionPayload = {
         mode,
@@ -254,8 +394,8 @@ class BillingController {
         cancel_url: this.checkoutUrl(cancelUrl || successUrl, 'cancel'),
         client_reference_id: subscription.id,
         metadata,
-        customer_email: req.user.email || undefined,
-        allow_promotion_codes: true
+        allow_promotion_codes: true,
+        ...(customerId ? { customer: customerId } : { customer_email: req.user.email || undefined })
       };
 
       if (mode === 'subscription') {
@@ -269,10 +409,15 @@ class BillingController {
         where: { id: subscription.id },
         data: {
           paymentRef: session.id,
-          note: JSON.stringify({ ...note, stripeSessionId: session.id, stripeMode: mode })
+          provider: 'stripe',
+          providerStatus: 'checkout_created',
+          stripeCheckoutSessionId: session.id,
+          stripeCustomerId: customerId,
+          stripePriceId,
+          note: JSON.stringify({ ...note, stripeSessionId: session.id, stripeMode: mode, stripeCustomerId: customerId, stripePriceId })
         }
       });
-      
+
       res.json({
         paymentMethod: 'card',
         provider: 'stripe',
@@ -288,82 +433,342 @@ class BillingController {
     }
   }
 
-  /**
-   * 2. Handle Payment Webhook (Stripe/Simulation)
-   */
+  async createPortalSession(req, res) {
+    try {
+      if (!this.stripe) {
+        const code = process.env.STRIPE_SECRET_KEY && !Stripe ? 'stripe_dependency_missing' : 'stripe_not_configured';
+        return res.status(503).json({
+          code,
+          message: code === 'stripe_dependency_missing'
+            ? 'Stripe SDK is not installed on the backend.'
+            : 'Stripe is not configured. Set STRIPE_SECRET_KEY on the backend.'
+        });
+      }
+
+      const agency = await prisma.agency.findUnique({
+        where: { id: req.user.agencyId },
+        select: { id: true, stripeCustomerId: true }
+      });
+
+      let customerId = agency?.stripeCustomerId || null;
+      if (!customerId) {
+        const active = await prisma.subscription.findFirst({
+          where: {
+            agencyId: req.user.agencyId,
+            provider: 'stripe',
+            status: { in: ['ACTIVE', 'PAST_DUE', 'TRIAL'] }
+          },
+          orderBy: { updatedAt: 'desc' }
+        });
+        customerId = active?.stripeCustomerId || null;
+      }
+
+      if (!customerId) {
+        return res.status(404).json({
+          code: 'stripe_customer_missing',
+          message: 'No Stripe customer is linked to this agency yet.'
+        });
+      }
+
+      const session = await this.stripe.billingPortal.sessions.create({
+        customer: customerId,
+        return_url: this.portalReturnUrl(req.body?.returnUrl)
+      });
+
+      res.json({ provider: 'stripe', url: session.url });
+    } catch (error) {
+      logger.error('[Billing] Portal Session Error:', error);
+      res.status(500).json({ message: 'Failed to open billing portal' });
+    }
+  }
+
   async handleWebhook(req, res) {
     try {
-      let sessionId, status, stripeSubscriptionId, stripePaymentIntentId;
       const allowUnsignedWebhook = process.env.NODE_ENV === 'test' || process.env.ALLOW_UNSIGNED_BILLING_WEBHOOK === 'true';
+      let eventType = null;
+      let payload = null;
+      let manualPayload = null;
 
       if (Buffer.isBuffer(req.body)) {
         const signature = req.headers['stripe-signature'];
         if (signature && process.env.STRIPE_WEBHOOK_SECRET && this.stripe) {
           const event = this.stripe.webhooks.constructEvent(req.body, signature, process.env.STRIPE_WEBHOOK_SECRET);
-          if (event.type !== 'checkout.session.completed' && event.type !== 'checkout.session.async_payment_succeeded') {
-            return res.json({ received: true, ignored: event.type });
-          }
-
-          const session = event.data.object;
-          sessionId = session.metadata?.localSubscriptionId || session.client_reference_id;
-          status = session.payment_status === 'paid' || session.status === 'complete' ? 'PAID' : session.payment_status;
-          stripeSubscriptionId = session.subscription || null;
-          stripePaymentIntentId = session.payment_intent || null;
+          eventType = event.type;
+          payload = event.data?.object || {};
         } else if (process.env.NODE_ENV === 'test') {
           const parsed = JSON.parse(req.body.toString('utf8') || '{}');
-          sessionId = parsed.sessionId;
-          status = parsed.status;
+          if (parsed?.object === 'event') {
+            eventType = parsed.type;
+            payload = parsed.data?.object || {};
+          } else {
+            manualPayload = parsed;
+          }
         } else {
           return res.status(400).json({ message: 'Missing Stripe webhook signature configuration' });
         }
       } else if (allowUnsignedWebhook && req.body?.id && req.body?.object === 'event') {
-        const session = req.body.data?.object || {};
-        sessionId = session.metadata?.localSubscriptionId || session.client_reference_id;
-        status = session.payment_status === 'paid' || session.status === 'complete' ? 'PAID' : session.payment_status;
-        stripeSubscriptionId = session.subscription || null;
-        stripePaymentIntentId = session.payment_intent || null;
+        eventType = req.body.type;
+        payload = req.body.data?.object || {};
       } else if (allowUnsignedWebhook) {
-        sessionId = req.body.sessionId;
-        status = req.body.status;
+        manualPayload = req.body;
       } else {
         return res.status(400).json({ message: 'Unsigned billing webhook rejected' });
       }
 
-      if (!sessionId || status !== 'PAID') return res.status(200).json({ received: true });
+      if (manualPayload) {
+        if (!manualPayload.sessionId || manualPayload.status !== 'PAID') return res.status(200).json({ received: true });
+        const result = await this._activateSubscription(manualPayload.sessionId, false, {
+          provider: 'mock',
+          providerStatus: 'active'
+        });
+        if (!result.success) return res.status(404).json({ message: result.message });
+        return res.json({ ok: true, activated: result.targetValue });
+      }
 
-      const result = await this._activateSubscription(sessionId, false, {
-        stripeSubscriptionId,
-        stripePaymentIntentId
-      });
-      if (!result.success) return res.status(404).json({ message: result.message });
-
-      res.json({ ok: true, activated: result.targetValue });
+      const result = await this.processStripeEvent(eventType, payload);
+      if (result?.notFound) return res.status(404).json({ message: result.message });
+      return res.json({ received: true, ...result });
     } catch (error) {
       logger.error('[Billing Webhook] Error:', error);
       res.status(500).json({ message: 'Internal automation error' });
     }
   }
 
-  /**
-   * INTERNAL: Unified activation logic
-   * Can be called by Webhooks (Stripe) or Workers (Fio)
-   */
+  async processStripeEvent(eventType, payload = {}) {
+    switch (eventType) {
+      case 'checkout.session.completed':
+      case 'checkout.session.async_payment_succeeded':
+        return this.handleCheckoutCompleted(payload);
+      case 'invoice.paid':
+      case 'invoice.payment_succeeded':
+        return this.handleInvoicePaid(payload);
+      case 'invoice.payment_failed':
+        return this.handleInvoicePaymentFailed(payload);
+      case 'customer.subscription.updated':
+        return this.handleSubscriptionUpdated(payload);
+      case 'customer.subscription.deleted':
+        return this.handleSubscriptionDeleted(payload);
+      default:
+        return { ignored: eventType };
+    }
+  }
+
+  async retrieveStripeSubscription(stripeSubscriptionId) {
+    if (!stripeSubscriptionId || !this.stripe?.subscriptions?.retrieve) return null;
+    try {
+      return await this.stripe.subscriptions.retrieve(stripeSubscriptionId);
+    } catch (error) {
+      logger.warn('[Billing] Could not retrieve Stripe subscription:', error.message);
+      return null;
+    }
+  }
+
+  subscriptionMetaFromStripeSubscription(subscription = {}) {
+    const firstItem = subscription.items?.data?.[0] || {};
+    return {
+      stripeSubscriptionId: subscription.id || null,
+      stripeCustomerId: typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id || null,
+      stripePriceId: firstItem.price?.id || null,
+      providerStatus: subscription.status || null,
+      currentPeriodStart: this.fromStripeTimestamp(subscription.current_period_start),
+      currentPeriodEnd: this.fromStripeTimestamp(subscription.current_period_end)
+    };
+  }
+
+  invoicePeriod(invoice = {}) {
+    const line = invoice.lines?.data?.[0] || {};
+    return {
+      currentPeriodStart: this.fromStripeTimestamp(line.period?.start || invoice.period_start),
+      currentPeriodEnd: this.fromStripeTimestamp(line.period?.end || invoice.period_end)
+    };
+  }
+
+  async handleCheckoutCompleted(session = {}) {
+    const localSubscriptionId = session.metadata?.localSubscriptionId || session.client_reference_id;
+    const isPaid = session.payment_status === 'paid' || session.status === 'complete';
+    if (!localSubscriptionId || !isPaid) return { ignored: 'checkout_not_paid' };
+
+    const stripeSubscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id || null;
+    const stripeSubscription = await this.retrieveStripeSubscription(stripeSubscriptionId);
+    const stripeMeta = this.subscriptionMetaFromStripeSubscription(stripeSubscription || {});
+
+    const result = await this._activateSubscription(localSubscriptionId, false, {
+      provider: 'stripe',
+      providerStatus: stripeMeta.providerStatus || 'active',
+      stripeCheckoutSessionId: session.id || null,
+      stripeSubscriptionId,
+      stripePaymentIntentId: typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id || null,
+      stripeCustomerId: typeof session.customer === 'string' ? session.customer : session.customer?.id || stripeMeta.stripeCustomerId,
+      stripePriceId: stripeMeta.stripePriceId,
+      currentPeriodStart: stripeMeta.currentPeriodStart,
+      currentPeriodEnd: stripeMeta.currentPeriodEnd
+    });
+
+    if (!result.success) return { notFound: true, message: result.message };
+    return { ok: true, activated: result.targetValue };
+  }
+
+  async findStripeSubscriptionRecord(stripeSubscriptionId, localSubscriptionId = null) {
+    if (localSubscriptionId) {
+      const byId = await prisma.subscription.findFirst({
+        where: { id: localSubscriptionId },
+        include: { agency: true }
+      });
+      if (byId) return byId;
+    }
+
+    return prisma.subscription.findFirst({
+      where: {
+        OR: [
+          { stripeSubscriptionId },
+          { paymentRef: stripeSubscriptionId }
+        ]
+      },
+      include: { agency: true }
+    });
+  }
+
+  async handleInvoicePaid(invoice = {}) {
+    const stripeSubscriptionId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id || null;
+    if (!stripeSubscriptionId) return { ignored: 'invoice_without_subscription' };
+
+    const subscription = await this.findStripeSubscriptionRecord(stripeSubscriptionId);
+    if (!subscription) return { ignored: 'local_subscription_missing' };
+
+    const period = this.invoicePeriod(invoice);
+    const amountPaid = this.fromMinorUnits(invoice.amount_paid);
+    const currency = invoice.currency ? String(invoice.currency).toUpperCase() : subscription.currency;
+    const note = this.safeJson(subscription.note);
+
+    await prisma.subscription.update({
+      where: { id: subscription.id },
+      data: {
+        status: 'ACTIVE',
+        provider: 'stripe',
+        providerStatus: 'active',
+        paymentRef: stripeSubscriptionId,
+        amountPaid: amountPaid ?? subscription.amountPaid,
+        currency,
+        currentPeriodStart: period.currentPeriodStart || subscription.currentPeriodStart,
+        currentPeriodEnd: period.currentPeriodEnd || subscription.currentPeriodEnd,
+        expiresAt: period.currentPeriodEnd || subscription.expiresAt
+      }
+    });
+
+    if (note.type === 'plan' && note.targetValue) {
+      await prisma.agency.update({
+        where: { id: subscription.agencyId },
+        data: { plan: note.targetValue, tier: note.targetValue }
+      });
+    }
+
+    return { ok: true, renewed: subscription.id };
+  }
+
+  async handleInvoicePaymentFailed(invoice = {}) {
+    const stripeSubscriptionId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id || null;
+    if (!stripeSubscriptionId) return { ignored: 'invoice_without_subscription' };
+
+    const subscription = await this.findStripeSubscriptionRecord(stripeSubscriptionId);
+    if (!subscription) return { ignored: 'local_subscription_missing' };
+
+    await prisma.subscription.update({
+      where: { id: subscription.id },
+      data: {
+        status: 'PAST_DUE',
+        provider: 'stripe',
+        providerStatus: 'payment_failed'
+      }
+    });
+
+    return { ok: true, pastDue: subscription.id };
+  }
+
+  async handleSubscriptionUpdated(stripeSubscription = {}) {
+    const localSubscriptionId = stripeSubscription.metadata?.localSubscriptionId || null;
+    const subscription = await this.findStripeSubscriptionRecord(stripeSubscription.id, localSubscriptionId);
+    if (!subscription) return { ignored: 'local_subscription_missing' };
+
+    const stripeMeta = this.subscriptionMetaFromStripeSubscription(stripeSubscription);
+    const localStatus = this.normalizeStripeStatus(stripeSubscription.status);
+    const note = this.safeJson(subscription.note);
+
+    await prisma.subscription.update({
+      where: { id: subscription.id },
+      data: {
+        status: localStatus,
+        provider: 'stripe',
+        providerStatus: stripeSubscription.status || null,
+        stripeSubscriptionId: stripeSubscription.id || subscription.stripeSubscriptionId,
+        stripeCustomerId: stripeMeta.stripeCustomerId || subscription.stripeCustomerId,
+        stripePriceId: stripeMeta.stripePriceId || subscription.stripePriceId,
+        paymentRef: stripeSubscription.id || subscription.paymentRef,
+        currentPeriodStart: stripeMeta.currentPeriodStart || subscription.currentPeriodStart,
+        currentPeriodEnd: stripeMeta.currentPeriodEnd || subscription.currentPeriodEnd,
+        expiresAt: stripeMeta.currentPeriodEnd || subscription.expiresAt
+      }
+    });
+
+    if (localStatus === 'ACTIVE' && note.type === 'plan' && note.targetValue) {
+      await prisma.agency.update({
+        where: { id: subscription.agencyId },
+        data: { plan: note.targetValue, tier: note.targetValue }
+      });
+    }
+
+    return { ok: true, subscriptionUpdated: subscription.id, status: localStatus };
+  }
+
+  async handleSubscriptionDeleted(stripeSubscription = {}) {
+    const localSubscriptionId = stripeSubscription.metadata?.localSubscriptionId || null;
+    const subscription = await this.findStripeSubscriptionRecord(stripeSubscription.id, localSubscriptionId);
+    if (!subscription) return { ignored: 'local_subscription_missing' };
+
+    const note = this.safeJson(subscription.note);
+    await prisma.subscription.update({
+      where: { id: subscription.id },
+      data: {
+        status: 'CANCELLED',
+        provider: 'stripe',
+        providerStatus: 'canceled',
+        cancelledAt: new Date(),
+        stripeSubscriptionId: stripeSubscription.id || subscription.stripeSubscriptionId,
+        paymentRef: stripeSubscription.id || subscription.paymentRef
+      }
+    });
+
+    if (note.type === 'plan') {
+      await prisma.agency.update({
+        where: { id: subscription.agencyId },
+        data: { plan: 'Standard', tier: 'Standard' }
+      });
+    }
+
+    return { ok: true, cancelled: subscription.id };
+  }
+
   async _activateSubscription(sessionIdOrVS, isVS = false, paymentMeta = {}) {
     try {
       const subscription = await prisma.subscription.findFirst({
-        where: isVS ? { paymentRef: String(sessionIdOrVS), status: 'PENDING' } : { id: sessionIdOrVS, status: 'PENDING' },
+        where: isVS
+          ? { paymentRef: String(sessionIdOrVS), status: 'PENDING' }
+          : { id: sessionIdOrVS, status: 'PENDING' },
         include: { agency: true }
       });
 
       if (!subscription) return { success: false, message: 'Pending session not found' };
 
-      const { type, targetValue } = JSON.parse(subscription.note || '{}');
+      const { type, targetValue } = this.safeJson(subscription.note);
 
-      logger.info(`[Billing Activation] Processing ${type} for Agency ${subscription.agencyId} via ${isVS ? 'Fio' : 'Stripe'}`);
+      logger.info(`[Billing Activation] Processing ${type} for Agency ${subscription.agencyId} via ${paymentMeta.provider || (isVS ? 'manual' : 'Stripe')}`);
 
       if (type === 'plan') {
         await prisma.subscription.updateMany({
-          where: { agencyId: subscription.agencyId, status: { in: ['ACTIVE', 'TRIAL'] } },
+          where: {
+            agencyId: subscription.agencyId,
+            id: { not: subscription.id },
+            status: { in: ['ACTIVE', 'TRIAL', 'PAST_DUE'] }
+          },
           data: { status: 'CANCELLED', cancelledAt: new Date() }
         });
 
@@ -372,7 +777,7 @@ class BillingController {
           data: { plan: targetValue, tier: targetValue }
         });
       } else if (type === 'addon') {
-        const currentFeatures = JSON.parse(subscription.agency.extraFeatures || '{}');
+        const currentFeatures = this.safeJson(subscription.agency.extraFeatures);
         currentFeatures[targetValue] = true;
         await prisma.agency.update({
           where: { id: subscription.agencyId },
@@ -380,12 +785,23 @@ class BillingController {
         });
       }
 
+      const periodStart = paymentMeta.currentPeriodStart || new Date();
+      const periodEnd = paymentMeta.currentPeriodEnd || subscription.expiresAt;
       await prisma.subscription.update({
         where: { id: subscription.id },
         data: {
           status: 'ACTIVE',
-          startedAt: new Date(),
-          paymentRef: paymentMeta.stripeSubscriptionId || paymentMeta.stripePaymentIntentId || subscription.paymentRef
+          startedAt: periodStart,
+          expiresAt: periodEnd,
+          provider: paymentMeta.provider || subscription.provider || 'stripe',
+          providerStatus: paymentMeta.providerStatus || 'active',
+          paymentRef: paymentMeta.stripeSubscriptionId || paymentMeta.stripePaymentIntentId || subscription.paymentRef,
+          stripeCheckoutSessionId: paymentMeta.stripeCheckoutSessionId || subscription.stripeCheckoutSessionId,
+          stripeSubscriptionId: paymentMeta.stripeSubscriptionId || subscription.stripeSubscriptionId,
+          stripeCustomerId: paymentMeta.stripeCustomerId || subscription.stripeCustomerId,
+          stripePriceId: paymentMeta.stripePriceId || subscription.stripePriceId,
+          currentPeriodStart: periodStart,
+          currentPeriodEnd: periodEnd
         }
       });
 
@@ -396,9 +812,6 @@ class BillingController {
     }
   }
 
-  /**
-   * Helper for testing/manual simulation
-   */
   async simulateSuccess(req, res) {
     const allowed = process.env.NODE_ENV === 'test' || process.env.ALLOW_BILLING_SIMULATION === 'true';
     if (!allowed) {

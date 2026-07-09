@@ -80,9 +80,9 @@ const PlansDashboard = () => {
             <button 
               onClick={async () => {
                 const defaultPlans = [
-                  { id: 'basic', name: 'Basic', description: t('basicDesc', 'Ideální pro nezávislé modely a začínající agentury. Zahrnuje základní nástroje pro správu.'), prices: { cz: '2900', eu: '120', us: '130', uk: '110' }, profilesLimit: 5, features: ['Správa profilů', 'Základní analytika', 'Podpora 24/7'] },
-                  { id: 'pro', name: 'Pro', description: t('proDesc', 'Nejlepší volba pro rostoucí týmy. Získejte přístup k pokročilým analytickým nástrojům a AI.'), prices: { cz: '5900', eu: '240', us: '260', uk: '220' }, profilesLimit: 10, features: ['Vše z Basic', 'Pokročilá analytika', 'AI Optimalizace'] },
-                  { id: 'agency', name: 'Agency', description: t('agencyDesc', 'Komplexní řešení pro velké agentury s neomezenou škálovatelností a plným přístupem.'), prices: { cz: '9900', eu: '400', us: '440', uk: '360' }, profilesLimit: 20, features: ['Vše z Pro', 'Auditní logy', 'API Přístup'] }
+                  { id: 'starter_monthly', name: 'Starter', description: t('starterDesc', 'Základní správa profilů, SOS alerty a manuální SMS routing.'), prices: { cz: '290', eu: '12', us: '13', uk: '10' }, profilesLimit: 5, features: ['Správa profilů', 'SOS alerty', 'Manuální SMS routing'] },
+                  { id: 'pro_monthly', name: 'Professional', description: t('professionalDesc', 'Nejlepší volba pro rostoucí týmy včetně analytiky a AI funkcí.'), prices: { cz: '990', eu: '39', us: '45', uk: '35' }, profilesLimit: 10, features: ['Vše ve Starter', 'Analytics modul', 'AI Optimalizace'] },
+                  { id: 'agency_monthly', name: 'Agency', description: t('agencyDesc', 'Kompletní řešení pro agentury s API přístupem a prioritní podporou.'), prices: { cz: '2490', eu: '99', us: '109', uk: '85' }, profilesLimit: 20, features: ['Vše v Professional', 'Auditní logy', 'API Přístup'] }
                 ];
                 const result = await updatePlans(defaultPlans);
                 if (result.success) {
@@ -289,7 +289,7 @@ const PlansDashboard = () => {
                     {[
                       { 
                         title: 'Základ a Dědičnost', 
-                        items: ['Vše z Basic', 'Vše z Pro'] 
+                        items: ['Vše ve Starter', 'Vše v Professional'] 
                       },
                       { 
                         title: 'Správa a Analytika', 
@@ -344,7 +344,7 @@ const PlansDashboard = () => {
                     
                     {/* Preserve custom features not in our list */}
                     {(() => {
-                      const allKnown = ['Vše z Basic', 'Vše z Pro', 'Správa profilů', 'Základní analytika', 'Pokročilá analytika', 'Auditní logy', 'AI Optimalizace', 'API Přístup', 'Podpora 24/7', 'VIP Podpora', 'Tvorba Web Profilů'];
+                      const allKnown = ['Vše ve Starter', 'Vše v Professional', 'Správa profilů', 'SOS alerty', 'Manuální SMS routing', 'Analytics modul', 'Základní analytika', 'Pokročilá analytika', 'Auditní logy', 'AI Optimalizace', 'API Přístup', 'Podpora 24/7', 'VIP Podpora', 'Tvorba Web Profilů'];
                       const customFeatures = (editingPlan.features || []).filter(f => !allKnown.includes(f));
                       if (customFeatures.length === 0) return null;
                       return (

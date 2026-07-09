@@ -197,20 +197,20 @@ const LandingPage = () => {
         { icon: Database, title: "Public API", desc: "REST rozhraní pro vaše vlastní integrace." },
         { icon: Globe, title: "Global Sync", desc: "Synchronizace napříč všemi zařízeními." },
         { icon: BarChart3, title: "Deep Analytics", desc: "Tržby a konverze pod mikroskopem." },
-        { icon: CreditCard, title: "Hybrid Billing", desc: "Automatické platby kartou i převodem." }
+        { icon: CreditCard, title: "Stripe Billing", desc: "Automatické platby kartou a správa předplatného." }
       ],
       pricingTitle: "Plány a ceny",
       plans: [
-        { id: 'basic', name: 'Basic', price: '2 900 Kč', desc: 'Ideální pro začínající týmy.', features: ['Správa 5 profilů', 'Základní analytika', 'Safety Guard standard'] },
-        { id: 'pro', name: 'Pro', price: '5 900 Kč', desc: 'Pro rostoucí profesionály.', features: ['Správa 10 profilů', 'AI Optimalizace', 'Pokročilé reporty'], popular: true },
-        { id: 'agency', name: 'Agency', price: '9 900 Kč', desc: 'Neomezený výkon pro lídry.', features: ['Správa 20+ profilů', 'API Přístup', 'Prioritní podpora'] }
+        { id: 'starter_monthly', name: 'Starter', price: '290 Kč', desc: 'Ideální pro začínající týmy.', features: ['Správa 5 profilů', 'SOS alerty', 'Manuální SMS routing'] },
+        { id: 'pro_monthly', name: 'Professional', price: '990 Kč', desc: 'Pro rostoucí profesionály.', features: ['Správa 10 profilů', 'AI Optimalizace', 'Pokročilé reporty'], popular: true },
+        { id: 'agency_monthly', name: 'Agency', price: '2 490 Kč', desc: 'Širší provoz pro agentury.', features: ['Správa 20 profilů', 'API Přístup', 'Prioritní podpora'] }
       ],
       faqTitle: "Časté dotazy",
       faqs: [
         { q: "Je systém 100% anonymní?", a: "Ano, Nexus Hub je navržen s důrazem na soukromí. Neukládáme žádné citlivé údaje, které by mohly spojit operátory s konkrétními osobami." },
         { q: "Jak funguje SOS a bezpečnost?", a: "V případě nebezpečí stačí vyslovit hlasový kód nebo stisknout SOS tlačítko. Systém okamžitě rozešle alerty všem managerům s polohou a zvukem." },
         { q: "Nabízíte API pro vývojáře?", a: "Ano, v rámci tarifu Agency poskytujeme přístup k našemu Public REST API, díky kterému můžete Nexus propojit s vašimi interními systémy nebo vlastními boty." },
-        { q: "Jak mohu zaplatit?", a: "Podporujeme okamžité platby kartou přes Stripe a také automatizované bankovní převody přes Fio banku (párování plateb probíhá v reálném čase)." },
+        { q: "Jak mohu zaplatit?", a: "Podporujeme okamžité platby kartou přes Stripe. Správa karet, faktur a předplatného probíhá přes zabezpečený Stripe portál." },
         { q: "Dá se tarif později změnit?", a: "Samozřejmě. Upgrade i downgrade je možný kdykoliv přímo z vašeho administračního panelu." }
       ],
       videos: [
@@ -240,20 +240,20 @@ const LandingPage = () => {
         { icon: Database, title: "Public API", desc: "REST interface for your own integrations." },
         { icon: Globe, title: "Global Sync", desc: "Synchronization across all devices." },
         { icon: BarChart3, title: "Deep Analytics", desc: "Revenue and conversion insights." },
-        { icon: CreditCard, title: "Hybrid Billing", desc: "Automated card and bank payments." }
+        { icon: CreditCard, title: "Stripe Billing", desc: "Automated card payments and subscription management." }
       ],
       pricingTitle: "Plans & Pricing",
       plans: [
-        { id: 'basic', name: 'Basic', price: '€120', desc: 'Perfect for starting teams.', features: ['5 Profiles', 'Basic Analytics', 'Safety Guard Standard'] },
-        { id: 'pro', name: 'Pro', price: '€240', desc: 'For growing professionals.', features: ['10 Profiles', 'AI Optimization', 'Advanced Reports'], popular: true },
-        { id: 'agency', name: 'Agency', price: '€400', desc: 'Unlimited power for leaders.', features: ['20+ Profiles', 'API Access', 'Priority Support'] }
+        { id: 'starter_monthly', name: 'Starter', price: '€12', desc: 'Perfect for starting teams.', features: ['5 Profiles', 'SOS Alerts', 'Manual SMS Routing'] },
+        { id: 'pro_monthly', name: 'Professional', price: '€39', desc: 'For growing professionals.', features: ['10 Profiles', 'AI Optimization', 'Advanced Reports'], popular: true },
+        { id: 'agency_monthly', name: 'Agency', price: '€99', desc: 'Broader operations for agencies.', features: ['20 Profiles', 'API Access', 'Priority Support'] }
       ],
       faqTitle: "Frequently Asked Questions",
       faqs: [
         { q: "Is the system 100% anonymous?", a: "Yes, Nexus Hub is built with privacy first. We do not store sensitive links between operators and identities." },
         { q: "How does SOS & Safety work?", a: "In case of danger, say the voice code or press SOS. The system alerts managers with location and live audio." },
         { q: "Do you offer API for developers?", a: "Yes, the Agency plan provides access to our Public REST API, allowing you to connect Nexus with your internal tools or custom bots." },
-        { q: "How can I pay?", a: "We support instant card payments via Stripe as well as automated bank transfers (real-time reconciliation)." },
+        { q: "How can I pay?", a: "We support instant card payments via Stripe. Cards, invoices, and subscriptions are managed through the secure Stripe portal." },
         { q: "Can I change my plan later?", a: "Absolutely. You can upgrade or downgrade your subscription at any time via the administration panel." }
       ],
       videos: [

@@ -10,6 +10,13 @@ Backend musi mit nastavene tyto promenne:
 - `STRIPE_PUBLISHABLE_KEY`: testovaci publishable key, musi zacinat `pk_test_`.
 - `STRIPE_WEBHOOK_SECRET`: podpisovy secret z `stripe listen`, musi zacinat `whsec_`.
 - `FRONTEND_URL`: URL aplikace, kam se Stripe vraci po platbe.
+- Volitelne pevne Stripe Price ID pro kanonicke tarify:
+  - `STRIPE_PRICE_STARTER_MONTHLY_CZK`
+  - `STRIPE_PRICE_PRO_MONTHLY_CZK`
+  - `STRIPE_PRICE_AGENCY_MONTHLY_CZK`
+
+Pokud Price ID nejsou nastavena, backend vytvori nebo znovu pouzije Stripe Price podle `lookup_key`.
+Platba prevodem je defaultne vypnuta; testovaci platby provadejte kartou pres Stripe.
 
 Frontend musi mit nastavene:
 
@@ -42,6 +49,8 @@ Ocekavany vysledek:
 - Stripe session ID zacina `cs_`.
 - Checkout URL vede na `checkout.stripe.com`.
 - `localSubscriptionId` je vyplnene.
+- Checkout vytvori nebo znovu pouzije Stripe Customer pro agenturu.
+- Opakovany tarif pouziva stabilni Stripe Price ID nebo backendovy `lookup_key`.
 
 ## Manualni end-to-end platba
 
@@ -65,6 +74,9 @@ stripe listen --forward-to http://localhost:3000/api/billing/webhook
 - Bez `STRIPE_SECRET_KEY` ma backend vratit chybu `stripe_not_configured`.
 - S chybnym `STRIPE_WEBHOOK_SECRET` ma webhook podpis selhat a subscription se nesmi aktivovat.
 - Unsigned webhook request se nesmi zpracovat.
+- `invoice.paid` ma prodlouzit aktivni obdobi predplatneho.
+- `invoice.payment_failed` ma prepnout subscription do `PAST_DUE`.
+- `customer.subscription.deleted` ma zrusit lokalni pristup k tarifu.
 - Pokud Stripe vrati chybu pri vytvareni session, UI ma zobrazit uzivatelsky srozumitelnou chybu a nesmi zmenit tarif.
 
 ## Produkcni opatrnost

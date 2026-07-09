@@ -8,25 +8,25 @@ const { isAppOwnerRole, isManagerRole } = require('../utils/authz');
 
 // Plan durations in days
 const PLAN_DURATIONS = {
-  MONTHLY:     30,
-  SEMI_ANNUAL: 182,
-  ANNUAL:      365,
+  Starter: 30,
+  Professional: 30,
+  Agency: 30,
 };
 
 // Multi-currency plan pricing
 const PLAN_PRICES = {
-  MONTHLY:     { CZK: 990,  EUR: 39,  GBP: 35,  USD: 45 },
-  SEMI_ANNUAL: { CZK: 5490, EUR: 219, GBP: 189, USD: 249 },
-  ANNUAL:      { CZK: 9990, EUR: 399, GBP: 349, USD: 449 },
+  Starter:      { CZK: 290,  EUR: 12, GBP: 10, USD: 13 },
+  Professional: { CZK: 990,  EUR: 39, GBP: 35, USD: 45 },
+  Agency:       { CZK: 2490, EUR: 99, GBP: 85, USD: 109 },
 };
 
 // ── GET /api/subscriptions/plans
 // Returns plan options + pricing (no auth needed for this)
 router.get('/plans', async (req, res) => {
   const defaultPlans = [
-    { id: 'basic', name: 'Basic', description: 'Ideální pro nezávislé modely a začínající agentury. Zahrnuje základní nástroje pro správu.', prices: { cz: '2900', eu: '120', us: '130', uk: '110' }, profilesLimit: 5, features: ['Správa profilů', 'Základní analytika', 'Podpora 24/7'] },
-    { id: 'pro', name: 'Pro', description: 'Nejlepší volba pro rostoucí týmy. Získejte přístup k pokročilým analytickým nástrojům a AI.', prices: { cz: '5900', eu: '240', us: '260', uk: '220' }, profilesLimit: 10, features: ['Vše z Basic', 'Pokročilá analytika', 'AI Optimalizace'] },
-    { id: 'agency', name: 'Agency', description: 'Komplexní řešení pro velké agentury s neomezenou škálovatelností a plným přístupem.', prices: { cz: '9900', eu: '400', us: '440', uk: '360' }, profilesLimit: 20, features: ['Vše z Pro', 'Auditní logy', 'API Přístup'] }
+    { id: 'starter_monthly', name: 'Starter', description: 'Základní správa profilů, SOS alerty a manuální SMS routing.', prices: { cz: '290', eu: '12', us: '13', uk: '10' }, profilesLimit: 5, features: ['Správa profilů', 'SOS alerty', 'Manuální SMS routing'] },
+    { id: 'pro_monthly', name: 'Professional', description: 'Nejlepší volba pro rostoucí týmy včetně analytiky a AI funkcí.', prices: { cz: '990', eu: '39', us: '45', uk: '35' }, profilesLimit: 10, features: ['Vše ve Starter', 'Analytics modul', 'AI chatové návrhy'] },
+    { id: 'agency_monthly', name: 'Agency', description: 'Kompletní řešení pro agentury s API přístupem a prioritní podporou.', prices: { cz: '2490', eu: '99', us: '109', uk: '85' }, profilesLimit: 20, features: ['Vše v Professional', 'Developer API přístup', 'Prioritní podpora'] }
   ];
 
   try {
@@ -105,7 +105,7 @@ router.get('/history', async (req, res) => {
 
 // ── POST /api/subscriptions/start
 // Start (or renew) a subscription for the agency
-// Body: { plan: 'MONTHLY'|'SEMI_ANNUAL'|'ANNUAL', paymentRef?, amountPaid?, note? }
+// Body: { plan: 'Starter'|'Professional'|'Agency', paymentRef?, amountPaid?, note? }
 router.post('/start', requireManualSubscriptionStart, validate(startSubscription), async (req, res) => {
   try {
     const { plan, paymentRef, amountPaid, currency = 'CZK', note } = req.body;
@@ -142,7 +142,7 @@ router.post('/start', requireManualSubscriptionStart, validate(startSubscription
     // Update agency.plan field to reflect the active plan
     await prisma.agency.update({
       where: { id: agencyId },
-      data:  { plan },
+      data:  { plan, tier: plan },
     });
 
     res.status(201).json(subscription);
@@ -160,6 +160,18 @@ router.post('/cancel', requireSubscriptionManager, validate(cancelSubscription),
     const { note } = req.body;
     const now = new Date();
 
+    const active = await prisma.subscription.findFirst({
+      where: { agencyId, status: { in: ['ACTIVE', 'TRIAL', 'PAST_DUE'] } },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    if (active?.provider === 'stripe' || active?.stripeSubscriptionId) {
+      return res.status(409).json({
+        code: 'stripe_portal_required',
+        message: 'Stripe subscriptions must be managed through the Billing Portal.'
+      });
+    }
+
     const result = await prisma.subscription.updateMany({
       where: { agencyId, status: { in: ['ACTIVE', 'TRIAL'] } },
       data:  { status: 'CANCELLED', cancelledAt: now, note: note ?? undefined },
@@ -172,7 +184,7 @@ router.post('/cancel', requireSubscriptionManager, validate(cancelSubscription),
     // Reset agency.plan to Standard
     await prisma.agency.update({
       where: { id: agencyId },
-      data:  { plan: 'Standard' },
+      data:  { plan: 'Standard', tier: 'Standard' },
     });
 
     res.json({ success: true, cancelled: result.count });
@@ -225,7 +237,7 @@ router.post('/trial', validate(startTrial), async (req, res) => {
     const trial = await prisma.subscription.create({
       data: {
         agencyId,
-        plan:      'MONTHLY',
+        plan:      'Starter',
         status:    'TRIAL',
         startedAt:  now,
         expiresAt,
@@ -258,10 +270,21 @@ router.get('/admin/stats', async (req, res) => {
       where: { status: 'ACTIVE' }
     });
 
+    const planDistributionRows = await prisma.subscription.groupBy({
+      by: ['plan'],
+      _count: { _all: true },
+      where: { status: { in: ['ACTIVE', 'TRIAL'] } }
+    });
+
     // Convert revenueByCurrency to a clean object map
     const revenueMap = {};
     revenueByCurrency.forEach(r => {
       revenueMap[r.currency] = r._sum.amountPaid || 0;
+    });
+
+    const planDistribution = {};
+    planDistributionRows.forEach(row => {
+      planDistribution[row.plan] = row._count?._all || 0;
     });
 
     res.json({
@@ -269,6 +292,7 @@ router.get('/admin/stats', async (req, res) => {
       activeSubscriptions: totalActive,
       trialPeriods: totalTrial,
       revenueByCurrency: revenueMap,
+      planDistribution,
       recentPayments: await prisma.subscription.findMany({
         take: 10,
         orderBy: { startedAt: 'desc' },

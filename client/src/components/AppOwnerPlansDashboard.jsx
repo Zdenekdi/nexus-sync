@@ -270,9 +270,9 @@ const BillingContent = ({
             {lang === 'cz' ? 'Popularita Tarifů' : 'Plan Popularity'}
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <ProgressItem label="Annual" count={stats?.planDistribution?.ANNUAL || 0} total={stats?.activeSubscriptions} color="#10b981" />
-            <ProgressItem label="Semi-Annual" count={stats?.planDistribution?.SEMI_ANNUAL || 0} total={stats?.activeSubscriptions} color="#6366f1" />
-            <ProgressItem label="Monthly" count={stats?.planDistribution?.MONTHLY || 0} total={stats?.activeSubscriptions} color="#a855f7" />
+            <ProgressItem label="Agency" count={stats?.planDistribution?.Agency || 0} total={stats?.activeSubscriptions} color="#10b981" />
+            <ProgressItem label="Professional" count={stats?.planDistribution?.Professional || 0} total={stats?.activeSubscriptions} color="#6366f1" />
+            <ProgressItem label="Starter" count={stats?.planDistribution?.Starter || 0} total={stats?.activeSubscriptions} color="#a855f7" />
             <ProgressItem label="Trial" count={stats?.planDistribution?.TRIAL || 0} total={stats?.activeSubscriptions} color="#f59e0b" />
           </div>
         </div>

@@ -3,12 +3,21 @@ const jwt = require('jsonwebtoken');
 
 const mockStripeCheckoutSessionCreate = jest.fn();
 const mockStripeWebhookConstructEvent = jest.fn();
+const mockStripeCustomerCreate = jest.fn();
+const mockStripePricesList = jest.fn();
+const mockStripePricesCreate = jest.fn();
+const mockStripePortalSessionCreate = jest.fn();
+const mockStripeSubscriptionRetrieve = jest.fn();
 
 jest.mock('../src/services/db');
 jest.mock('../src/services/logger');
 jest.mock('../src/services/alertService');
 jest.mock('stripe', () => jest.fn().mockImplementation(() => ({
+  customers: { create: mockStripeCustomerCreate },
   checkout: { sessions: { create: mockStripeCheckoutSessionCreate } },
+  prices: { list: mockStripePricesList, create: mockStripePricesCreate },
+  billingPortal: { sessions: { create: mockStripePortalSessionCreate } },
+  subscriptions: { retrieve: mockStripeSubscriptionRetrieve },
   webhooks: { constructEvent: mockStripeWebhookConstructEvent }
 })), { virtual: true });
 jest.mock('axios', () => ({ get: jest.fn(), post: jest.fn() }));
@@ -42,7 +51,14 @@ beforeEach(() => {
   delete process.env.STRIPE_PUBLISHABLE_KEY;
   delete process.env.STRIPE_WEBHOOK_SECRET;
   delete process.env.BANK_ACCOUNT;
+  delete process.env.ALLOW_BANK_TRANSFER_BILLING;
   prismaMock.globalSetting.findUnique.mockResolvedValue(null);
+  prismaMock.agency.findUnique.mockResolvedValue({
+    id: 'agency-1',
+    name: 'Test Agency',
+    email: 'billing@example.test',
+    stripeCustomerId: null
+  });
   prismaMock.subscription.create.mockResolvedValue({
     id: 'sub_pending_1',
     agencyId: 'agency-1',
@@ -54,6 +70,18 @@ beforeEach(() => {
   mockStripeCheckoutSessionCreate.mockResolvedValue({
     id: 'cs_test_123',
     url: 'https://checkout.stripe.test/session'
+  });
+  mockStripeCustomerCreate.mockResolvedValue({ id: 'cus_test_123' });
+  mockStripePricesList.mockResolvedValue({ data: [] });
+  mockStripePricesCreate.mockResolvedValue({ id: 'price_pro_monthly_czk' });
+  mockStripePortalSessionCreate.mockResolvedValue({ url: 'https://billing.stripe.test/session' });
+  mockStripeSubscriptionRetrieve.mockResolvedValue({
+    id: 'sub_stripe_123',
+    customer: 'cus_test_123',
+    status: 'active',
+    current_period_start: 1783500000,
+    current_period_end: 1786092000,
+    items: { data: [{ price: { id: 'price_pro_monthly_czk' } }] }
   });
 });
 
@@ -81,7 +109,7 @@ describe('billing checkout', () => {
     }
   });
 
-  it('creates a pending dynamic plan checkout session without trusting client price', async () => {
+  it('creates a pending canonical plan checkout session from a legacy alias without trusting client price', async () => {
     const res = await request(app)
       .post('/api/billing/checkout')
       .set('Authorization', `Bearer ${makeToken()}`)
@@ -103,7 +131,7 @@ describe('billing checkout', () => {
           agencyId: 'agency-1',
           plan: 'Professional',
           status: 'PENDING',
-          amountPaid: 5900,
+          amountPaid: 990,
           currency: 'CZK'
         })
       })
@@ -149,18 +177,11 @@ describe('billing checkout', () => {
       expect.objectContaining({
         mode: 'subscription',
         client_reference_id: 'sub_pending_1',
-        customer_email: 'owner@example.test',
+        customer: 'cus_test_123',
         line_items: [
           expect.objectContaining({
             quantity: 1,
-            price_data: expect.objectContaining({
-              currency: 'czk',
-              unit_amount: 99000,
-              recurring: { interval: 'month', interval_count: 1 },
-              product_data: expect.objectContaining({
-                name: 'Nexus Professional'
-              })
-            })
+            price: 'price_pro_monthly_czk'
           })
         ],
         metadata: expect.objectContaining({
@@ -176,14 +197,39 @@ describe('billing checkout', () => {
       where: { id: 'sub_pending_1' },
       data: expect.objectContaining({
         paymentRef: 'cs_test_123',
+        provider: 'stripe',
+        providerStatus: 'checkout_created',
+        stripeCheckoutSessionId: 'cs_test_123',
+        stripeCustomerId: 'cus_test_123',
+        stripePriceId: 'price_pro_monthly_czk',
         note: expect.stringContaining('"stripeSessionId":"cs_test_123"')
       })
     });
+    expect(mockStripeCustomerCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'billing@example.test',
+        name: 'Test Agency',
+        metadata: { agencyId: 'agency-1' }
+      })
+    );
+    expect(prismaMock.agency.update).toHaveBeenCalledWith({
+      where: { id: 'agency-1' },
+      data: { stripeCustomerId: 'cus_test_123' }
+    });
+    expect(mockStripePricesCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        currency: 'czk',
+        unit_amount: 99000,
+        recurring: { interval: 'month', interval_count: 1 },
+        metadata: expect.objectContaining({
+          planId: 'pro_monthly',
+          targetValue: 'Professional'
+        })
+      })
+    );
   });
 
-  it('returns bank-transfer instructions without requiring Stripe', async () => {
-    process.env.BANK_ACCOUNT = '987654321/0100';
-
+  it('rejects bank-transfer checkout by default', async () => {
     const res = await request(app)
       .post('/api/billing/checkout')
       .set('Authorization', `Bearer ${makeToken()}`)
@@ -193,33 +239,32 @@ describe('billing checkout', () => {
         market: 'cz'
       });
 
-    expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({
-      paymentMethod: 'transfer',
-      provider: 'bank_transfer',
-      id: 'sub_pending_1',
-      instructions: expect.objectContaining({
-        accountNumber: '987654321/0100',
-        amount: 2490,
-        currency: 'CZK',
-        message: 'Nexus Hub - agency_monthly'
-      })
-    });
-    expect(res.body.instructions.variableSymbol).toEqual(expect.any(Number));
+    expect(res.status).toBe(400);
+    expect(res.body).toMatchObject({ code: 'bank_transfer_disabled' });
     expect(mockStripeCheckoutSessionCreate).not.toHaveBeenCalled();
-    expect(prismaMock.subscription.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          plan: 'Agency',
-          status: 'PENDING',
-          amountPaid: 2490,
-          currency: 'CZK'
-        })
-      })
-    );
-    expect(prismaMock.subscription.update).toHaveBeenCalledWith({
-      where: { id: 'sub_pending_1' },
-      data: { paymentRef: String(res.body.instructions.variableSymbol) }
+    expect(prismaMock.subscription.create).not.toHaveBeenCalled();
+  });
+
+  it('opens Stripe Billing Portal for a linked customer', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_configured';
+    prismaMock.agency.findUnique.mockResolvedValue({
+      id: 'agency-1',
+      stripeCustomerId: 'cus_existing_123'
+    });
+
+    const res = await request(app)
+      .post('/api/billing/portal')
+      .set('Authorization', `Bearer ${makeToken()}`)
+      .send({ returnUrl: 'https://app.example.test/settings' });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      provider: 'stripe',
+      url: 'https://billing.stripe.test/session'
+    });
+    expect(mockStripePortalSessionCreate).toHaveBeenCalledWith({
+      customer: 'cus_existing_123',
+      return_url: 'https://app.example.test/settings'
     });
   });
 
@@ -334,6 +379,132 @@ describe('billing checkout', () => {
     } finally {
       process.env.NODE_ENV = originalNodeEnv;
     }
+  });
+
+  it('renews a Stripe subscription from invoice.paid', async () => {
+    prismaMock.subscription.findFirst.mockResolvedValue({
+      id: 'sub_local_active',
+      agencyId: 'agency-1',
+      status: 'ACTIVE',
+      plan: 'Professional',
+      paymentRef: 'sub_stripe_123',
+      stripeSubscriptionId: 'sub_stripe_123',
+      amountPaid: 990,
+      currency: 'CZK',
+      expiresAt: new Date('2026-08-01T00:00:00.000Z'),
+      note: JSON.stringify({ type: 'plan', targetValue: 'Professional' }),
+      agency: { id: 'agency-1', extraFeatures: '{}' }
+    });
+
+    const res = await request(app)
+      .post('/api/billing/webhook')
+      .send({
+        id: 'evt_invoice_paid',
+        object: 'event',
+        type: 'invoice.paid',
+        data: {
+          object: {
+            subscription: 'sub_stripe_123',
+            amount_paid: 99000,
+            currency: 'czk',
+            lines: {
+              data: [
+                { period: { start: 1783500000, end: 1786092000 } }
+              ]
+            }
+          }
+        }
+      });
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.subscription.update).toHaveBeenCalledWith({
+      where: { id: 'sub_local_active' },
+      data: expect.objectContaining({
+        status: 'ACTIVE',
+        provider: 'stripe',
+        providerStatus: 'active',
+        paymentRef: 'sub_stripe_123',
+        amountPaid: 990,
+        currency: 'CZK',
+        expiresAt: new Date(1786092000 * 1000)
+      })
+    });
+    expect(prismaMock.agency.update).toHaveBeenCalledWith({
+      where: { id: 'agency-1' },
+      data: { plan: 'Professional', tier: 'Professional' }
+    });
+  });
+
+  it('marks a Stripe subscription past due from invoice.payment_failed', async () => {
+    prismaMock.subscription.findFirst.mockResolvedValue({
+      id: 'sub_local_active',
+      agencyId: 'agency-1',
+      status: 'ACTIVE',
+      paymentRef: 'sub_stripe_123',
+      stripeSubscriptionId: 'sub_stripe_123',
+      note: JSON.stringify({ type: 'plan', targetValue: 'Professional' }),
+      agency: { id: 'agency-1', extraFeatures: '{}' }
+    });
+
+    const res = await request(app)
+      .post('/api/billing/webhook')
+      .send({
+        id: 'evt_invoice_failed',
+        object: 'event',
+        type: 'invoice.payment_failed',
+        data: { object: { subscription: 'sub_stripe_123' } }
+      });
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.subscription.update).toHaveBeenCalledWith({
+      where: { id: 'sub_local_active' },
+      data: {
+        status: 'PAST_DUE',
+        provider: 'stripe',
+        providerStatus: 'payment_failed'
+      }
+    });
+  });
+
+  it('cancels local access from customer.subscription.deleted', async () => {
+    prismaMock.subscription.findFirst.mockResolvedValue({
+      id: 'sub_local_active',
+      agencyId: 'agency-1',
+      status: 'ACTIVE',
+      paymentRef: 'sub_stripe_123',
+      stripeSubscriptionId: 'sub_stripe_123',
+      note: JSON.stringify({ type: 'plan', targetValue: 'Professional' }),
+      agency: { id: 'agency-1', extraFeatures: '{}' }
+    });
+
+    const res = await request(app)
+      .post('/api/billing/webhook')
+      .send({
+        id: 'evt_sub_deleted',
+        object: 'event',
+        type: 'customer.subscription.deleted',
+        data: {
+          object: {
+            id: 'sub_stripe_123',
+            metadata: { localSubscriptionId: 'sub_local_active' }
+          }
+        }
+      });
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.subscription.update).toHaveBeenCalledWith({
+      where: { id: 'sub_local_active' },
+      data: expect.objectContaining({
+        status: 'CANCELLED',
+        provider: 'stripe',
+        providerStatus: 'canceled',
+        paymentRef: 'sub_stripe_123'
+      })
+    });
+    expect(prismaMock.agency.update).toHaveBeenCalledWith({
+      where: { id: 'agency-1' },
+      data: { plan: 'Standard', tier: 'Standard' }
+    });
   });
 
   it('rejects unsigned billing webhooks in production', async () => {
