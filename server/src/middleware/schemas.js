@@ -10,6 +10,12 @@ const severity = z.enum(['warning', 'danger']);
 const locationType = z.enum(['incall', 'outcall']);
 const latitude = z.number().min(-90).max(90);
 const longitude = z.number().min(-180).max(180);
+const latitudeInput = z.coerce.number().min(-90).max(90);
+const longitudeInput = z.coerce.number().min(-180).max(180);
+const trackerIdentifier = z.preprocess(
+  value => (typeof value === 'string' ? value.replace(/\s+/g, '') : value),
+  z.string().min(4).max(64).regex(/^[A-Za-z0-9:_-]+$/, 'IMEI / tracker ID contains unsupported characters')
+);
 
 // ── Messages ─────────────────────────────────────────────────────────────────
 const createMessage = z.object({
@@ -59,6 +65,36 @@ const safetyLocation = z.object({
   lng: longitude,
   accuracy: z.number().min(0).max(10000).optional().nullable(),
   capturedAt: isoDate.optional()
+});
+
+// ── External GPS Trackers ───────────────────────────────────────────────────
+const pairGpsTracker = z.object({
+  imei: trackerIdentifier,
+  profileId: cuid.optional().nullable(),
+  label: z.string().max(120).optional().nullable()
+});
+
+const trackerLocationIngest = z.object({
+  token: z.string().max(256).optional(),
+  trackerId: z.string().max(128).optional(),
+  secret: z.string().max(256).optional(),
+  imei: trackerIdentifier.optional(),
+  lat: latitudeInput.optional(),
+  lng: longitudeInput.optional(),
+  accuracy: z.coerce.number().min(0).max(10000).optional().nullable(),
+  speedKph: z.coerce.number().min(0).max(1000).optional().nullable(),
+  speed: z.coerce.number().min(0).max(1000).optional().nullable(),
+  heading: z.coerce.number().min(0).max(360).optional().nullable(),
+  battery: z.coerce.number().int().min(0).max(100).optional().nullable(),
+  capturedAt: isoDate.optional(),
+  gprmc: z.string().max(500).optional(),
+  nmea: z.string().max(500).optional(),
+  raw: z.string().max(2000).optional()
+}).refine(data => {
+  const hasCoords = data.lat !== undefined && data.lng !== undefined;
+  return hasCoords || data.gprmc || data.nmea;
+}, {
+  message: 'Either lat/lng or gprmc/nmea must be provided'
 });
 
 // ── Blacklist ────────────────────────────────────────────────────────────────
@@ -348,6 +384,8 @@ module.exports = {
   updateBooking,
   createSafetySession,
   safetyLocation,
+  pairGpsTracker,
+  trackerLocationIngest,
   createBlacklist,
   updateBlacklist,
   blacklistReport,
