@@ -20,6 +20,22 @@ async function comparePassword(password, hash) {
   }
 }
 
+async function withAssignedProfile(user) {
+  if (!user?.id) return user;
+
+  try {
+    const assignedProfiles = await prisma.profile.findMany({
+      where: { assignedUsers: { some: { id: user.id } } },
+      take: 1,
+      select: { id: true }
+    });
+    return { ...user, assignedProfiles: assignedProfiles || [] };
+  } catch (error) {
+    console.error('[Auth] Assigned profile lookup failed:', error.message);
+    return { ...user, assignedProfiles: [] };
+  }
+}
+
 function validatePassword(password) {
   if (!password || typeof password !== 'string') {
     return 'Password is required';
@@ -103,7 +119,7 @@ exports.login = async (req, res) => {
     
     const user = await prisma.user.findUnique({
       where: { email },
-      include: { role: true, agency: true, assignedProfiles: { take: 1, select: { id: true } } }
+      include: { role: true, agency: true }
     });
 
     const passwordMatches = await comparePassword(password, user?.password);
@@ -116,11 +132,13 @@ exports.login = async (req, res) => {
 
     logAction(user.agencyId, user.id, 'LOGIN', `User ${user.email} logged in`);
 
+    const userWithProfile = await withAssignedProfile(user);
+
     res.json({
       token: accessToken,
       refreshToken,
       expiresIn: 3600,
-      user: buildUserResponse(user)
+      user: buildUserResponse(userWithProfile)
     });
   } catch (error) {
     console.error(error);
@@ -137,7 +155,7 @@ exports.refresh = async (req, res) => {
 
     const stored = await prisma.refreshToken.findUnique({
       where: { token: refreshToken },
-      include: { user: { include: { role: true, agency: true, assignedProfiles: { take: 1, select: { id: true } } } } }
+      include: { user: { include: { role: true, agency: true } } }
     });
 
     if (!stored || stored.revokedAt || stored.expiresAt < new Date()) {
@@ -152,12 +170,13 @@ exports.refresh = async (req, res) => {
 
     const accessToken = generateAccessToken(stored.user);
     const newRefreshToken = await generateRefreshToken(stored.userId);
+    const userWithProfile = await withAssignedProfile(stored.user);
 
     res.json({
       token: accessToken,
       refreshToken: newRefreshToken,
       expiresIn: 3600,
-      user: buildUserResponse(stored.user)
+      user: buildUserResponse(userWithProfile)
     });
   } catch (error) {
     console.error(error);
@@ -394,21 +413,22 @@ exports.getProfile = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user.userId },
-      include: { role: true, agency: true, assignedProfiles: { take: 1, select: { id: true } } }
+      include: { role: true, agency: true }
     });
     
     if (!user) return res.status(404).json({ message: 'User not found' });
+    const userWithProfile = await withAssignedProfile(user);
     
     res.json({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role.name,
-      isManager: user.role.isManager,
-      isAppOwner: user.role.isAppOwner,
-      agencyId: user.agencyId,
-      agencyName: user.agency?.name || 'System',
-      profileId: user.assignedProfiles?.[0]?.id || null
+      id: userWithProfile.id,
+      email: userWithProfile.email,
+      name: userWithProfile.name,
+      role: userWithProfile.role.name,
+      isManager: userWithProfile.role.isManager,
+      isAppOwner: userWithProfile.role.isAppOwner,
+      agencyId: userWithProfile.agencyId,
+      agencyName: userWithProfile.agency?.name || 'System',
+      profileId: userWithProfile.assignedProfiles?.[0]?.id || null
     });
   } catch {
     res.status(500).json({ message: 'Server error' });
