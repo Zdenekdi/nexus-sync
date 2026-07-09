@@ -51,6 +51,7 @@ router.get('/', authMiddleware, profileController.getProfiles);
 router.post('/', authMiddleware, validate(createProfile), profileController.createProfile);
 router.patch('/:id', authMiddleware, validate(patchProfile), profileController.patchProfile);
 router.get('/:id/gallery', authMiddleware, profileController.getGallery);
+router.get('/:id/gallery/:photoId/file', authMiddleware, profileController.getGalleryPhoto);
 router.post('/:id/gallery', authMiddleware, requireProfileManager, handleGalleryUpload, profileController.uploadGalleryPhoto);
 router.delete('/:id/gallery/:photoId', authMiddleware, requireProfileManager, profileController.deleteGalleryPhoto);
 router.patch('/:id/assignees', authMiddleware, validate(assignUsers), profileController.assignUsersToProfile);

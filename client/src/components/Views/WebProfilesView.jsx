@@ -24,6 +24,8 @@ const getWebProfileText = (profile, language, field, legacyValue = '') => {
   return textData?.[language]?.[field] ?? legacyValue ?? '';
 };
 
+const isProtectedGalleryPhotoUrl = (url = '') => /\/api\/profiles\/.+\/gallery\/.+\/file/.test(url);
+
 const WebProfilesView = () => {
   const nexus = useNexus() || {};
   const {
@@ -55,6 +57,7 @@ const WebProfilesView = () => {
   const [agentUploadPlatform, setAgentUploadPlatform] = useState('windows');
   const [isAgentUploading, setIsAgentUploading] = useState(false);
   const [localGallery, setLocalGallery] = useState([]);
+  const [galleryObjectUrls, setGalleryObjectUrls] = useState({});
   const [isGalleryLoading, setIsGalleryLoading] = useState(false);
   const [isGalleryUploading, setIsGalleryUploading] = useState(false);
   const [galleryVisibility, setGalleryVisibility] = useState('public');
@@ -159,6 +162,50 @@ const WebProfilesView = () => {
       cancelled = true;
     };
   }, [API_BASE, token, activeProfileId, activeProfile?.gallery]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const objectUrls = [];
+
+    const loadGalleryImages = async () => {
+      if (!token || localGallery.length === 0) {
+        setGalleryObjectUrls({});
+        return;
+      }
+
+      const entries = await Promise.all(localGallery.map(async (photo) => {
+        const key = photo?.id || photo?.url;
+        if (!key || !photo?.url) return null;
+        if (!isProtectedGalleryPhotoUrl(photo.url)) return [key, photo.url];
+
+        try {
+          const { data } = await axios.get(photo.url, {
+            responseType: 'blob',
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const objectUrl = URL.createObjectURL(data);
+          if (cancelled) {
+            URL.revokeObjectURL(objectUrl);
+            return null;
+          }
+          objectUrls.push(objectUrl);
+          return [key, objectUrl];
+        } catch {
+          return [key, ''];
+        }
+      }));
+
+      if (!cancelled) {
+        setGalleryObjectUrls(Object.fromEntries(entries.filter(Boolean)));
+      }
+    };
+
+    loadGalleryImages();
+    return () => {
+      cancelled = true;
+      objectUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [localGallery, token]);
 
   const onSaveBioData = async () => {
     if (!activeProfileId) return;
@@ -316,19 +363,29 @@ const WebProfilesView = () => {
         <div style={{ minHeight: '100px', border: '1px dashed var(--card-border)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.75rem', color: 'var(--text-secondary)', fontSize: '0.75rem', textAlign: 'center' }}>
           {emptyLabel}
         </div>
-      ) : photos.map(photo => (
-        <div key={photo.id || photo.url} style={{ position: 'relative', aspectRatio: '1 / 1', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.04)' }}>
-          <img src={photo.url} alt={photo.caption || 'Profile gallery'} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-          <button
-            type="button"
-            onClick={() => onDeleteGalleryPhoto(photo.id)}
-            title={lang === 'cz' ? 'Odstranit fotku' : 'Remove photo'}
-            style={{ position: 'absolute', top: '6px', right: '6px', width: '28px', height: '28px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.65)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-          >
-            <X size={15} />
-          </button>
-        </div>
-      ))}
+      ) : photos.map(photo => {
+        const galleryKey = photo.id || photo.url;
+        const imageSrc = galleryObjectUrls[galleryKey] || (!isProtectedGalleryPhotoUrl(photo.url) ? photo.url : '');
+        return (
+          <div key={galleryKey} style={{ position: 'relative', aspectRatio: '1 / 1', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.04)' }}>
+            {imageSrc ? (
+              <img src={imageSrc} alt={photo.caption || 'Profile gallery'} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            ) : (
+              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
+                <Loader2 size={18} className="animate-spin" />
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => onDeleteGalleryPhoto(photo.id)}
+              title={lang === 'cz' ? 'Odstranit fotku' : 'Remove photo'}
+              style={{ position: 'absolute', top: '6px', right: '6px', width: '28px', height: '28px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.65)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            >
+              <X size={15} />
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 

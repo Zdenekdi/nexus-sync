@@ -112,7 +112,12 @@ describe('GET /api/profiles/:id/gallery', () => {
       id: 'p1',
       name: 'Profile 1',
       agencyId: 'agency-1',
-      gallery: JSON.stringify([{ id: 'photo-1', url: 'https://cdn.example.test/photo.jpg', visibility: 'public' }])
+      gallery: JSON.stringify([{
+        id: 'photo-1',
+        url: 'http://example.test/uploads/profile-gallery/p1/photo.jpg',
+        filename: 'photo.jpg',
+        visibility: 'public'
+      }])
     });
 
     const res = await request(app)
@@ -121,7 +126,22 @@ describe('GET /api/profiles/:id/gallery', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.photos).toEqual([
-      expect.objectContaining({ id: 'photo-1', visibility: 'public' })
+      expect.objectContaining({
+        id: 'photo-1',
+        visibility: 'public',
+        url: expect.stringContaining('/api/profiles/p1/gallery/photo-1/file')
+      })
     ]);
+    expect(res.body.photos[0].url).not.toContain('/uploads/');
+  });
+
+  it('requires auth for gallery photo file access', async () => {
+    const res = await request(app).get('/api/profiles/p1/gallery/photo-1/file');
+    expect(res.status).toBe(401);
+  });
+
+  it('does not expose profile gallery uploads as public static files', async () => {
+    const res = await request(app).get('/uploads/profile-gallery/p1/photo.jpg');
+    expect(res.status).toBe(404);
   });
 });

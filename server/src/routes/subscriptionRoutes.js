@@ -4,6 +4,7 @@ const prisma = require('../services/db');
 const authMiddleware = require('../middleware/authMiddleware');
 const { validate } = require('../middleware/validate');
 const { startSubscription, cancelSubscription, startTrial } = require('../middleware/schemas');
+const { isAppOwnerRole, isManagerRole } = require('../utils/authz');
 
 // Plan durations in days
 const PLAN_DURATIONS = {
@@ -42,6 +43,25 @@ router.get('/plans', async (req, res) => {
 });
 
 router.use(authMiddleware);
+
+const requireSubscriptionManager = (req, res, next) => {
+  if (!isManagerRole(req.user?.role)) {
+    return res.status(403).json({ message: 'Manager role required' });
+  }
+  next();
+};
+
+const requireManualSubscriptionStart = (req, res, next) => {
+  if (isAppOwnerRole(req.user?.role)) return next();
+
+  const allowManagerOverride = process.env.ALLOW_MANUAL_SUBSCRIPTION_START === 'true';
+  const isNonProduction = process.env.NODE_ENV !== 'production';
+  if (allowManagerOverride && isNonProduction && isManagerRole(req.user?.role)) {
+    return next();
+  }
+
+  return res.status(403).json({ message: 'Manual subscription activation requires App Owner' });
+};
 
 // ── GET /api/subscriptions/current
 // Returns the active subscription for the caller's agency
@@ -86,7 +106,7 @@ router.get('/history', async (req, res) => {
 // ── POST /api/subscriptions/start
 // Start (or renew) a subscription for the agency
 // Body: { plan: 'MONTHLY'|'SEMI_ANNUAL'|'ANNUAL', paymentRef?, amountPaid?, note? }
-router.post('/start', validate(startSubscription), async (req, res) => {
+router.post('/start', requireManualSubscriptionStart, validate(startSubscription), async (req, res) => {
   try {
     const { plan, paymentRef, amountPaid, currency = 'CZK', note } = req.body;
     const agencyId = req.user.agencyId;
@@ -134,7 +154,7 @@ router.post('/start', validate(startSubscription), async (req, res) => {
 
 // ── POST /api/subscriptions/cancel
 // Cancel the active subscription
-router.post('/cancel', validate(cancelSubscription), async (req, res) => {
+router.post('/cancel', requireSubscriptionManager, validate(cancelSubscription), async (req, res) => {
   try {
     const agencyId = req.user.agencyId;
     const { note } = req.body;
