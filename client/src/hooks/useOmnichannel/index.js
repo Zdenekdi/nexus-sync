@@ -27,7 +27,8 @@ export const useOmnichannel = (config = {}) => {
   // Initialize communication service
   useEffect(() => {
     try {
-      const service = new CommunicationService(config);
+      const initialConfig = configRef.current || {};
+      const service = new CommunicationService(initialConfig);
       
       const adapterFactories = {
         whatsapp: (channelConfig) => new WhatsAppAdapter(channelConfig),
@@ -36,14 +37,14 @@ export const useOmnichannel = (config = {}) => {
       };
 
       Object.entries(adapterFactories).forEach(([channelName, createAdapter]) => {
-        const channelConfig = config[channelName];
+        const channelConfig = initialConfig[channelName];
         if (channelConfig?.enabled === true) {
           service.registerAdapter(channelName, createAdapter(channelConfig));
         }
       });
 
       // Connect explicitly enabled adapters. Missing credentials should be visible as disconnected.
-      Object.entries(config).forEach(async ([channelName, channelConfig]) => {
+      Object.entries(initialConfig).forEach(async ([channelName, channelConfig]) => {
         if (channelConfig?.enabled === true && ['whatsapp', 'sms', 'webchat'].includes(channelName)) {
           try {
             const adapter = service.getAdapter(channelName);

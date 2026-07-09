@@ -31,13 +31,16 @@ import axios from 'axios';
 
 import { useNexus } from '../context/ContextHook';
 
-const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, requestRelayPermissions, processRelayOutbox, syncSmsHistory }) => {
+function relayDebug(...args) {
+  console.info('[Relay]', ...args);
+}
+
+const RelayMode = ({ operator, t, onHide: _onHide, onExit, syncPushToken, isSyncingPush: _isSyncingPush, requestRelayPermissions, processRelayOutbox, syncSmsHistory }) => {
   const nexus = useNexus();
   const { 
     isRelayActive: isActive, 
     setIsRelayActive: setIsActive, 
     relaySimSlot: selectedSimSlot, 
-    setRelaySimSlot: setSelectedSimSlot,
     relayLogs: logs,
     setRelayLogs: setLogs,
     addRelayLog: addLocalLog,
@@ -48,7 +51,6 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     setLang
   } = nexus || {};
 
-  const isMobile = window.innerWidth <= 768;
   const RELAY_API_BASE = (import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api').replace(/\/api$/, '');
 
 
@@ -62,18 +64,13 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   }, [setLogs]);
 
   const [connectionStatus, setConnectionStatus] = useState('connecting');
-  const [signalStrength, setSignalStrength] = useState(85);
+  const [_signalStrength, setSignalStrength] = useState(85);
   const [batteryLevel, setBatteryLevel] = useState(100);
   const [isCharging, setIsCharging] = useState(false);
 
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isRefreshingLogs, setIsRefreshingLogs] = useState(false);
-  const [activeLog, setActiveLog] = useState(null);
-  const [showSettings, setShowSettings] = useState(false);
-  const [settingsBatteryWarning, setSettingsBatteryWarning] = useState(true);
-  const [settingsTrafficProxy, setSettingsTrafficProxy] = useState(true);
-  const [settingsHiddenMode, setSettingsHiddenMode] = useState(false);
   const [permissionsStatus, setPermissionsStatus] = useState({
     smsMonitoring: false,
     callMonitoring: false,
@@ -86,6 +83,11 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   const latestHealthCheckRef = useRef(0);
   const consecutiveHealthFailuresRef = useRef(0);
   const POLL_FAILURES_FOR_DISCONNECT = 5;
+
+  const showRelayNotice = useCallback((type, message) => {
+    relayDebug('showRelayNotice', { type, message });
+    setRelayNotice({ type, message });
+  }, []);
 
   // ── SIP VoIP integration ────────────────────────────────────────────────────
 
@@ -130,7 +132,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
   const pullStartRef = useRef(0);
   const isPullingRef = useRef(false);
 
-  const handleTouchStart = (_err) => {
+  const _handleTouchStart = (_err) => {
     const scrollEl = document.querySelector('.relay-logs-scroll');
     if (scrollEl && scrollEl.scrollTop === 0) {
       pullStartRef.current = _err.touches[0].clientY;
@@ -138,7 +140,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     }
   };
 
-  const handleTouchMove = (_err) => {
+  const _handleTouchMove = (_err) => {
     if (!isPullingRef.current) return;
     const currentY = _err.touches[0].clientY;
     const distance = currentY - pullStartRef.current;
@@ -148,7 +150,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     }
   };
 
-  const handleTouchEnd = () => {
+  const _handleTouchEnd = () => {
     if (isPullingRef.current) {
       if (pullDistance > 60) {
         void refreshLogs();
@@ -220,20 +222,20 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     incomingCall: gsmIncomingCall,
     callState:    gsmCallState,
     callDuration: gsmCallDuration,
-    isDefaultDialer,
+    isDefaultDialer: _isDefaultDialer,
     answer:       gsmAnswer,
     reject:       gsmReject,
     hangup:       gsmHangup,
     setMuted:     gsmSetMuted,
     setSpeaker:   gsmSetSpeaker,
-    requestDefaultDialer,
+    requestDefaultDialer: _requestDefaultDialer,
   } = useInCallService({
     onIncoming: (call) => addLocalLog('call', call.callerId, 'GSM hovor (příchozí)', 'inbound', 'ringing'),
     onAnswered: ()     => addLocalLog('call', 'GSM', 'Hovor přijat operátorem', 'inbound', 'answered'),
     onEnded:    ()     => addLocalLog('call', 'GSM', 'Hovor ukončen', 'inbound', 'completed'),
   });
 
-  const { isDefaultSmsApp, requestDefaultSmsApp, incomingSms, clearIncomingSms, sendSms, configureRelay } = useSmsRelay({
+  const { isDefaultSmsApp: _isDefaultSmsApp, requestDefaultSmsApp: _requestDefaultSmsApp, incomingSms, clearIncomingSms, sendSms, configureRelay } = useSmsRelay({
     onIncoming: (sms) => addLocalLog('sms', sms.from, 'Příchozí SMS (GSM)', 'inbound', 'completed'),
     socket: nexus.socket
   });
@@ -274,7 +276,6 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
 
   const HEALTH_CHECK_TIMEOUT_MS = 8000;
   const MANUAL_RETRY_ATTEMPTS = 3;
-  const relayDebug = (...args) => console.info('[Relay]', ...args);
 
   const connectionUi = {
     connected: {
@@ -294,7 +295,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     }
   };
 
-  const currentConnectionUi = connectionUi[connectionStatus] || connectionUi.disconnected;
+  const _currentConnectionUi = connectionUi[connectionStatus] || connectionUi.disconnected;
   const isServerConnected = connectionStatus === 'connected';
 
   const toggleRelayActive = () => {
@@ -336,7 +337,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     }
   };
 
-  const refreshDiagnostics = () => {
+  const _refreshDiagnostics = () => {
     setIsRefreshing(true);
     void updateBatteryDiagnostics();
     setTimeout(() => {
@@ -437,7 +438,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     return false;
   }, [isActive, nexus, operator?.profileId, RELAY_API_BASE]);
 
-  const reconnectServer = async () => {
+  const _reconnectServer = async () => {
     relayDebug('reconnectServer:clicked');
     setIsRefreshing(true);
     let connected = await checkServerConnection({ source: 'manual', attempts: MANUAL_RETRY_ATTEMPTS });
@@ -489,7 +490,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     return () => clearInterval(interval);
   }, [isActive, checkServerConnection]);
 
-  const testSms = () => {
+  const _testSms = () => {
     // Open in-app confirm dialog instead of window.confirm (crashes Android WebView)
     setShowTestSmsConfirm(true);
   };
@@ -703,7 +704,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
 
   const refreshLogs = useCallback(async () => {
     // Keep ref up to date so early-registered socket handlers can call us
-    refreshLogsRef.current = refreshLogs; // eslint-disable-line no-use-before-define
+    refreshLogsRef.current = refreshLogs;
     if (isRefreshingLogs) return;
     setIsRefreshingLogs(true);
     try {
@@ -792,12 +793,7 @@ const RelayMode = ({ operator, t, onHide, onExit, syncPushToken, isSyncingPush, 
     }, 10000); 
 
     return () => clearInterval(interval);
-  }, [isActive, refreshPermissionsStatus, refreshLogs]);
-
-  const showRelayNotice = useCallback((type, message) => {
-    relayDebug('showRelayNotice', { type, message });
-    setRelayNotice({ type, message });
-  }, []);
+  }, [isActive, refreshPermissionsStatus, refreshLogs, requestRelayPermissions]);
 
   useEffect(() => {
     if (!relayNotice) return;

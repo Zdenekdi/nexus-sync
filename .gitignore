@@ -68,3 +68,4 @@ server/firebase-auth.json
 server/coverage/
 playwright-report/
 test-results/
+test-results.json

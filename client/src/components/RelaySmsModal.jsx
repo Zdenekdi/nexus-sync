@@ -131,7 +131,7 @@ const RelaySmsModal = ({ isOpen, onClose }) => {
         res.messages.forEach(msg => {
           let addr = msg.address;
           if (!addr) return;
-          addr = addr.replace(/[\s\-\(\)]/g, '');
+          addr = addr.replace(/[\s()-]/g, '');
           if (addr.startsWith('00')) addr = '+' + addr.substring(2);
           if (addr.length === 9 && !addr.startsWith('+')) addr = '+420' + addr;
           msg.normalizedAddress = addr;

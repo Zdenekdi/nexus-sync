@@ -552,7 +552,7 @@ export const NexusProvider = ({ children }) => {
     } catch (_err) {
       console.warn('[Safety] SOS trigger failed:', _err);
     }
-  }, [API_BASE, token, activeProfileId, linkedTracker]);
+  }, [token, activeProfileId, linkedTracker]);
 
   const cancelSOS = useCallback(() => {
     _setSosActive(false);
