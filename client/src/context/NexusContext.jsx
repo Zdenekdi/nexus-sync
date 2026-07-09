@@ -250,6 +250,15 @@ export const NexusProvider = ({ children }) => {
 
   const [_sosActive, _setSosActive] = useState(false);
   const [showPanicConfirm, setShowPanicConfirm] = useState(false);
+  const [checkinMinutes, setCheckinMinutes] = useState(30);
+  const [checkinTimerEnd, setCheckinTimerEnd] = useState(null);
+  const [nowTs, setNowTs] = useState(() => Date.now());
+  const [hrThreshold, setHrThreshold] = useState(130);
+  const [heartRate] = useState(0);
+  const [isBluetoothConnected, setIsBluetoothConnected] = useState(false);
+  const [incomingGhostCall, setIncomingGhostCall] = useState(false);
+  const [ghostCallScheduledAt, setGhostCallScheduledAt] = useState(null);
+  const [linkedSessionId, setLinkedSessionId] = useState(null);
 
   // UI Modals
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
@@ -410,7 +419,8 @@ export const NexusProvider = ({ children }) => {
     () => {}, // handleEmergencyAlert (TODO if needed)
     () => {}, // handleSipIncomingCall (TODO if needed)
     () => {}, // handleRelayCommand
-    (d) => d?.type === 'SYNC_COMPLETED' && showToast(lang === 'cz' ? '✅ Synchronizace dokončena' : '✅ Sync completed', 'success')
+    (d) => d?.type === 'SYNC_COMPLETED' && showToast(lang === 'cz' ? '✅ Synchronizace dokončena' : '✅ Sync completed', 'success'),
+    (d) => nexusData.applyTrackerLocation?.(d)
   );
 
   // --- Capacitor Connection Recovery ---
@@ -443,6 +453,80 @@ export const NexusProvider = ({ children }) => {
     if (!activeProfileId || activeProfileId === 'all') return null;
     return (nexusData.profiles || []).find(p => String(p.id) === String(activeProfileId));
   }, [activeProfileId, nexusData.profiles]);
+
+  const linkedTracker = useMemo(() => {
+    const activeTrackers = (nexusData.trackers || []).filter(t => t.active !== false);
+    if (!activeTrackers.length) return null;
+    if (activeProfileId && activeProfileId !== 'all') {
+      return activeTrackers.find(t => String(t.profileId || '') === String(activeProfileId)) || activeTrackers[0];
+    }
+    return activeTrackers[0];
+  }, [nexusData.trackers, activeProfileId]);
+
+  const gpsHistory = useMemo(() => nexusData.gpsHistory || [], [nexusData.gpsHistory]);
+  const lastTrackerUpdate = useMemo(() => {
+    const value = linkedTracker?.lastSeenAt || linkedTracker?.lastCapturedAt;
+    if (!value) return null;
+    const ts = new Date(value).getTime();
+    return Number.isNaN(ts) ? null : ts;
+  }, [linkedTracker]);
+
+  useEffect(() => {
+    if (!checkinTimerEnd) return undefined;
+    const intervalId = window.setInterval(() => setNowTs(Date.now()), 1000);
+    return () => window.clearInterval(intervalId);
+  }, [checkinTimerEnd]);
+
+  const checkinTimerEndTs = checkinTimerEnd ? new Date(checkinTimerEnd).getTime() : null;
+  const checkinRemaining = checkinTimerEndTs ? Math.max(0, checkinTimerEndTs - nowTs) : 0;
+
+  const startCheckinTimer = useCallback(() => {
+    const endAt = new Date(Date.now() + Number(checkinMinutes || 30) * 60000);
+    setCheckinTimerEnd(endAt.toISOString());
+  }, [checkinMinutes]);
+
+  const resetCheckinTimer = useCallback(() => {
+    setCheckinTimerEnd(null);
+    setLinkedSessionId(null);
+  }, []);
+
+  const triggerSOS = useCallback(async (type = 'manual') => {
+    _setSosActive(true);
+    try {
+      await fetch(`${API_BASE}/sos`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          type,
+          profileId: activeProfileId && activeProfileId !== 'all' ? activeProfileId : null,
+          lat: linkedTracker?.lastLat ?? null,
+          lng: linkedTracker?.lastLng ?? null,
+          accuracy: linkedTracker?.lastAccuracy ?? null
+        })
+      });
+    } catch (_err) {
+      console.warn('[Safety] SOS trigger failed:', _err);
+    }
+  }, [API_BASE, token, activeProfileId, linkedTracker]);
+
+  const cancelSOS = useCallback(() => {
+    _setSosActive(false);
+  }, []);
+
+  const confirmDeparture = useCallback(() => {
+    resetCheckinTimer();
+  }, [resetCheckinTimer]);
+
+  const triggerGhostCall = useCallback((delay = 0) => {
+    setGhostCallScheduledAt(Date.now() + Number(delay || 0) * 1000);
+    setIncomingGhostCall(true);
+  }, []);
+
+  const verifyIdentity = useCallback(async () => true, []);
+  const playBeep = useCallback(() => {}, []);
 
   const myProfiles = useMemo(() => {
     const all = nexusData.profiles || [];
@@ -522,6 +606,23 @@ export const NexusProvider = ({ children }) => {
     // Safety - Voice Guardian & Audio Sentinel
     voiceGuardianActive, handleToggleVoiceGuardian,
     audioSentinelActive, setAudioSentinelActive,
+    sosActive: _sosActive, triggerSOS, cancelSOS,
+    linkedSessionId, checkinMinutes, setCheckinMinutes,
+    checkinTimerEnd, checkinRemaining, startCheckinTimer, resetCheckinTimer, confirmDeparture,
+    SAFETY_SUGGESTIONS: ['15m', '30m', '45m', '60m', '1.5h', '2h'],
+    onDelayBooking: nexusData.handleDelayBooking,
+    trackers: nexusData.trackers || [],
+    linkedTracker, linkedTrackerId: linkedTracker?.imei || linkedTracker?.id || null,
+    lastTrackerUpdate, trackerProvisioning: nexusData.trackerProvisioning,
+    isPairingTracker: nexusData.isPairingTracker,
+    handlePairTracker: nexusData.handlePairTracker,
+    handleUnpairTracker: nexusData.handleUnpairTracker,
+    gpsHistory, _gpsHistory: gpsHistory,
+    batteryLevel: linkedTracker?.lastBattery ?? 100,
+    incomingGhostCall, setIncomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity,
+    heartRate, hrThreshold, setHrThreshold, isBluetoothConnected, setIsBluetoothConnected,
+    activeBioWarning: false,
+    playBeep,
     // Relay mode
     isRelayMode, setIsRelayMode,
     // Chat Logic
@@ -542,12 +643,16 @@ export const NexusProvider = ({ children }) => {
     nexusData.activeSubscription, nexusData.subscriptionHistory, nexusData.subscriptionPlans, nexusData.fetchPlans,
     nexusData.updatePlans, nexusData.isPlansLoading, nexusData.isStartingSubscription, nexusData.onStartSubscription,
     nexusData.onCancelSubscription, nexusData.startCheckout, daysLeft,
-    voiceGuardianActive, handleToggleVoiceGuardian, audioSentinelActive,
+    voiceGuardianActive, handleToggleVoiceGuardian, audioSentinelActive, _sosActive, triggerSOS, cancelSOS,
+    linkedSessionId, checkinMinutes, checkinTimerEnd, checkinRemaining, startCheckinTimer, resetCheckinTimer, confirmDeparture,
+    nexusData.handleDelayBooking, nexusData.trackers, linkedTracker, lastTrackerUpdate, nexusData.trackerProvisioning,
+    nexusData.isPairingTracker, nexusData.handlePairTracker, nexusData.handleUnpairTracker, gpsHistory,
+    incomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity, heartRate, hrThreshold, isBluetoothConnected, playBeep,
     isRelayMode,
     // Chat Logic Deps
     chatMessages, isHistoryLoading, fetchChatMessages, handleSendMessage,
     handleSaveNote, handleDeleteNote, handleTranslate, clientNotes, internalNote, setInternalNote,
-    filteredMessages, setActiveContactId, selectedChat, typingProfiles,
+    filteredMessages, setActiveContactId, selectedChat, typingProfiles, handleRefreshMessages,
     nexusData.handleSyncChatHistory
   ]);
 

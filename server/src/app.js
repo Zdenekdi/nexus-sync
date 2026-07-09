@@ -27,6 +27,7 @@ const profileRoutes = require('./routes/profileRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const deviceRoutes = require('./routes/deviceRoutes');
+const trackerRoutes = require('./routes/trackerRoutes');
 const safetyRoutes = require('./routes/safetyRoutes');
 const agencyRoutes = require('./routes/agencyRoutes');
 const vultrRoutes = require('./routes/vultrRoutes');
@@ -182,6 +183,7 @@ app.use('/api/', limiter);
 // Per-route granular limiters
 app.use('/api/auth', authLimiter);
 app.use('/api/device', deviceLimiter);
+app.use('/api/trackers', deviceLimiter);
 app.use('/api/analytics', analyticsLimiter);
 // Write operation limiter for mutation-heavy routes
 app.use('/api/profiles', writeLimiter);
@@ -212,6 +214,7 @@ app.use('/api/profiles', profileRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/device', deviceRoutes);
+app.use('/api/trackers', trackerRoutes);
 app.use('/api/safety', safetyRoutes);
 app.use('/api/agency', agencyRoutes);
 app.use('/api/vultr', vultrRoutes);

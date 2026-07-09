@@ -33,6 +33,7 @@ model Agency {
   chats     Chat[]
   pushDevices PushDevice[]
   deviceBindings DeviceBinding[]
+  gpsTrackers GpsTracker[] @relation("AgencyGpsTrackers")
   auditLogs  AuditLog[]
   subscriptions Subscription[]
   
@@ -175,6 +176,7 @@ model Profile {
   callLogs    CallLog[]
   bookings    Booking[]
   sessions    SafetySession[]
+  gpsTrackers GpsTracker[] @relation("ProfileGpsTrackers")
   qaRecords   QaRecord[]
   icalUrl     String?
   deviceBindings DeviceBinding[]
@@ -251,6 +253,7 @@ model SafetySession {
   resolvedAt    DateTime?
   
   locationPoints SafetyLocationPoint[]
+  trackerLocations GpsTrackerLocation[] @relation("SafetySessionTrackerLocations")
   emergencyEvents EmergencyEvent[]
   
   createdAt     DateTime  @default(now())
@@ -266,6 +269,62 @@ model SafetyLocationPoint {
   accuracy      Float?
   capturedAt    DateTime
   receivedAt    DateTime  @default(now())
+}
+
+model GpsTracker {
+  id             String   @id @default(cuid())
+  agencyId       String
+  agency         Agency   @relation("AgencyGpsTrackers", fields: [agencyId], references: [id], onDelete: Cascade)
+  profileId      String?
+  profile        Profile? @relation("ProfileGpsTrackers", fields: [profileId], references: [id], onDelete: SetNull)
+  imei           String   @unique
+  label          String?
+  secretHash     String
+  active         Boolean  @default(true)
+  lastSeenAt     DateTime?
+  lastLat        Float?
+  lastLng        Float?
+  lastAccuracy   Float?
+  lastBattery    Int?
+  lastSpeedKph   Float?
+  lastHeading    Float?
+  lastCapturedAt DateTime?
+  locations      GpsTrackerLocation[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([agencyId])
+  @@index([profileId])
+  @@index([active])
+}
+
+model GpsTrackerLocation {
+  id              String         @id @default(cuid())
+  trackerId       String
+  tracker         GpsTracker     @relation(fields: [trackerId], references: [id], onDelete: Cascade)
+  agencyId        String
+  profileId       String?
+  safetySessionId String?
+  safetySession   SafetySession? @relation("SafetySessionTrackerLocations", fields: [safetySessionId], references: [id], onDelete: SetNull)
+  sosAlertId      String?
+  sosAlert        SOSAlert?      @relation("SosAlertTrackerLocations", fields: [sosAlertId], references: [id], onDelete: SetNull)
+  lat             Float
+  lng             Float
+  accuracy        Float?
+  speedKph        Float?
+  heading         Float?
+  battery         Int?
+  capturedAt      DateTime
+  receivedAt      DateTime       @default(now())
+  source          String         @default("tracker")
+  raw             String?
+
+  @@index([trackerId])
+  @@index([agencyId])
+  @@index([profileId])
+  @@index([safetySessionId])
+  @@index([sosAlertId])
+  @@index([capturedAt])
 }
 
 model EmergencyEvent {
@@ -794,6 +853,7 @@ model SOSAlert {
   resolvedAt      DateTime?
   
   locationUpdates SOSLocationUpdate[]
+  trackerLocations GpsTrackerLocation[] @relation("SosAlertTrackerLocations")
   
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

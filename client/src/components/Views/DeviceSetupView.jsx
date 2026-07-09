@@ -44,6 +44,17 @@ const DeviceSetupView = () => {
     : isApkInfoLoading
       ? ` (${lang === 'cz' ? 'ověřuji verzi...' : 'checking version...'})`
       : '';
+  const activeTracker = nexus.linkedTracker || null;
+  const [trackerImei, setTrackerImei] = React.useState('');
+  const [trackerProfileId, setTrackerProfileId] = React.useState(() => (
+    nexus.activeProfileId && nexus.activeProfileId !== 'all' ? nexus.activeProfileId : ''
+  ));
+
+  React.useEffect(() => {
+    if (nexus.activeProfileId && nexus.activeProfileId !== 'all') {
+      setTrackerProfileId(nexus.activeProfileId);
+    }
+  }, [nexus.activeProfileId]);
 
   return (
     <div data-testid="page-device-setup-container" style={{ padding: isMobile ? '1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto', maxHeight: '100%' }} className="fade-in custom-scrollbar">
@@ -117,7 +128,7 @@ const DeviceSetupView = () => {
         </div>
 
         {/* External GPS Tracker Setup */}
-        <div className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2.5rem', border: nexus.linkedTrackerId ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid var(--card-border)' }}>
+        <div className="glass-card" style={{ padding: isMobile ? '1.5rem' : '2.5rem', border: activeTracker ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid var(--card-border)' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1.5rem', flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: '250px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -132,23 +143,37 @@ const DeviceSetupView = () => {
                 </div>
               </div>
 
-              {!nexus.linkedTrackerId ? (
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
+              {!activeTracker ? (
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr minmax(180px, 240px) auto', gap: '0.75rem' }}>
                   <input 
                     id="tracker-imei-input"
                     type="text" 
                     placeholder="IMEI / ID zařízení" 
+                    value={trackerImei}
+                    onChange={(e) => setTrackerImei(e.target.value)}
                     style={{ flex: 1, background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0.75rem 1rem', color: 'white' }}
                   />
+                  <select
+                    value={trackerProfileId}
+                    onChange={(e) => setTrackerProfileId(e.target.value)}
+                    style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0.75rem 1rem', color: 'white' }}
+                  >
+                    <option value="">{nexus.lang === 'cz' ? 'Bez profilu' : 'No profile'}</option>
+                    {(nexus.profiles || []).map(profile => (
+                      <option key={profile.id} value={profile.id}>{profile.name}</option>
+                    ))}
+                  </select>
                   <button 
                     className="action-btn"
-                    style={{ background: 'var(--accent-color)', color: 'white', fontWeight: 800, padding: '0 1.5rem', borderRadius: '10px' }}
+                    disabled={!trackerImei.trim() || nexus.isPairingTracker}
+                    style={{ background: 'var(--accent-color)', color: 'white', fontWeight: 800, padding: '0 1.5rem', borderRadius: '10px', opacity: !trackerImei.trim() || nexus.isPairingTracker ? 0.55 : 1 }}
                     onClick={() => {
-                      const input = document.getElementById('tracker-imei-input');
-                      if (input?.value) nexus.handlePairTracker(input.value);
+                      if (trackerImei.trim()) {
+                        nexus.handlePairTracker(trackerImei, { profileId: trackerProfileId || null });
+                      }
                     }}
                   >
-                    {nexus.lang === 'cz' ? 'Spárovat' : 'Pair'}
+                    {nexus.isPairingTracker ? (nexus.lang === 'cz' ? 'Páruji...' : 'Pairing...') : (nexus.lang === 'cz' ? 'Spárovat' : 'Pair')}
                   </button>
                 </div>
               ) : (
@@ -156,16 +181,38 @@ const DeviceSetupView = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#22c55e' }} />
                     <span style={{ fontSize: '0.9rem', color: 'white', fontWeight: 700 }}>
-                      ID: {nexus.linkedTrackerId}
+                      ID: {activeTracker.imei || activeTracker.id}
                     </span>
                     <span style={{ fontSize: '0.75rem', color: '#22c55e', fontWeight: 800, textTransform: 'uppercase' }}>{nexus.lang === 'cz' ? 'Spárováno' : 'Synced'}</span>
+                    {activeTracker.lastSeenAt && (
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                        {new Date(activeTracker.lastSeenAt).toLocaleString(nexus.lang === 'cz' ? 'cs-CZ' : 'en-GB')}
+                      </span>
+                    )}
                   </div>
                   <button 
-                    onClick={nexus.handleUnpairTracker}
+                    onClick={() => nexus.handleUnpairTracker(activeTracker.id)}
                     style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline' }}
                   >
                     {nexus.lang === 'cz' ? 'Odpojit' : 'Unpair'}
                   </button>
+                </div>
+              )}
+
+              {nexus.trackerProvisioning && (
+                <div style={{ marginTop: '1rem', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(96, 165, 250, 0.25)', background: 'rgba(59,130,246,0.06)' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 900, color: '#60a5fa', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
+                    {nexus.lang === 'cz' ? 'Jednorázové nastavení trackeru' : 'One-time tracker provisioning'}
+                  </div>
+                  <code style={{ display: 'block', wordBreak: 'break-all', color: 'white', background: 'rgba(0,0,0,0.28)', padding: '0.75rem', borderRadius: '8px', marginBottom: '0.5rem' }}>
+                    {nexus.trackerProvisioning.url}
+                  </code>
+                  <code style={{ display: 'block', wordBreak: 'break-all', color: '#fbbf24', background: 'rgba(0,0,0,0.28)', padding: '0.75rem', borderRadius: '8px' }}>
+                    {nexus.trackerProvisioning.token}
+                  </code>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '0.6rem' }}>
+                    {nexus.lang === 'cz' ? 'Token se z bezpečnostních důvodů zobrazuje jen po vytvoření nebo rotaci.' : 'For security, the token is shown only after creation or rotation.'}
+                  </div>
                 </div>
               )}
             </div>

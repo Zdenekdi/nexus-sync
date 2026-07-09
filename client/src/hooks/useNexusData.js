@@ -137,6 +137,9 @@ export function useNexusData({
   const [_syncStatus, _setSyncStatus] = useState({ aw: 'synced', ege: 'synced', tpb: 'warning' });
   const [_syncProgress, _setSyncProgress] = useState(0);
   const [relayOnline, setRelayOnline] = useState(false);
+  const [trackers, setTrackers] = useState([]);
+  const [trackerProvisioning, setTrackerProvisioning] = useState(null);
+  const [isPairingTracker, setIsPairingTracker] = useState(false);
   const [isPlansLoading, setIsPlansLoading] = useState(false);
   const [isStartingSubscription, setIsStartingSubscription] = useState(false);
 
@@ -344,9 +347,10 @@ export function useNexusData({
       setIsBackgroundLoading(true);
 
       // PHASE 2: HEAVY DATA (Background hydration)
-      const [chatRes, bindingRes, statsRes, agencyRes, analyticsRes, bookingRes, featuresRes, globalSettingsRes, subCurrentRes, subHistoryRes] = await Promise.all([
+      const [chatRes, bindingRes, trackerRes, statsRes, agencyRes, analyticsRes, bookingRes, featuresRes, globalSettingsRes, subCurrentRes, subHistoryRes] = await Promise.all([
         axiosWithTiming(`${API_BASE}/chats`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/device/bindings`, { headers: { Authorization: `Bearer ${token}` } }),
+        axiosWithTiming(`${API_BASE}/trackers`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { trackers: [] } })),
         axiosWithTiming(`${API_BASE}/agency/stats`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/agency/all`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
         axiosWithTiming(`${API_BASE}/analytics/summary?days=7`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
@@ -361,6 +365,7 @@ export function useNexusData({
       if (Array.isArray(globalSettingsRes?.data)) setGlobalSettings(globalSettingsRes.data);
       if (subCurrentRes?.data) _setActiveSubscription(subCurrentRes.data);
       if (Array.isArray(subHistoryRes?.data)) _setSubscriptionHistory(subHistoryRes.data);
+      if (Array.isArray(trackerRes?.data?.trackers)) setTrackers(trackerRes.data.trackers);
 
       // ------------------------------------------------------------
       // SECONDARY DATA PROCESSING
@@ -802,6 +807,73 @@ export function useNexusData({
     }
   }, [token, API_BASE, showToast, lang]);
 
+  const handlePairTracker = useCallback(async (imei, options = {}) => {
+    const cleanImei = String(imei || '').trim();
+    if (!cleanImei || !token) return null;
+
+    const selectedProfileId = options.profileId !== undefined
+      ? options.profileId
+      : (activeProfileId && activeProfileId !== 'all' ? activeProfileId : null);
+
+    try {
+      setIsPairingTracker(true);
+      const { data } = await axios.post(`${API_BASE}/trackers/pair`, {
+        imei: cleanImei,
+        profileId: selectedProfileId || null,
+        label: options.label || null
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (data?.tracker) {
+        setTrackers(prev => {
+          const rest = prev.filter(t => t.id !== data.tracker.id);
+          return [data.tracker, ...rest];
+        });
+      }
+      if (data?.ingest) setTrackerProvisioning(data.ingest);
+      if (showToast) showToast(lang === 'cz' ? 'Tracker byl spárován. Token si uložte do zařízení.' : 'Tracker paired. Store the token on the device.', 'success');
+      return data;
+    } catch (_err) {
+      console.error('Pair tracker failed:', _err);
+      const message = _err.response?.data?.message || (lang === 'cz' ? 'Párování trackeru selhalo.' : 'Tracker pairing failed.');
+      if (showToast) showToast(message, 'error');
+      return null;
+    } finally {
+      setIsPairingTracker(false);
+    }
+  }, [API_BASE, activeProfileId, token, showToast, lang]);
+
+  const handleUnpairTracker = useCallback(async (trackerId) => {
+    if (!trackerId || !token) return;
+    try {
+      await axios.delete(`${API_BASE}/trackers/${trackerId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setTrackers(prev => prev.map(t => t.id === trackerId ? { ...t, active: false } : t));
+      setTrackerProvisioning(null);
+      if (showToast) showToast(lang === 'cz' ? 'Tracker byl odpojen.' : 'Tracker unpaired.', 'success');
+    } catch (_err) {
+      console.error('Unpair tracker failed:', _err);
+      const message = _err.response?.data?.message || (lang === 'cz' ? 'Odpojení trackeru selhalo.' : 'Tracker unpair failed.');
+      if (showToast) showToast(message, 'error');
+    }
+  }, [API_BASE, token, showToast, lang]);
+
+  const applyTrackerLocation = useCallback((payload = {}) => {
+    if (!payload.trackerId) return;
+    const now = new Date().toISOString();
+    setTrackers(prev => prev.map(t => t.id === payload.trackerId ? {
+      ...t,
+      lastLat: payload.lat,
+      lastLng: payload.lng,
+      lastAccuracy: payload.accuracy,
+      lastBattery: payload.battery,
+      lastCapturedAt: payload.capturedAt || now,
+      lastSeenAt: now
+    } : t));
+  }, []);
+
   const onStartSubscription = useCallback(async (planId, options = {}) => {
     return startCheckout({ planId, ...options });
   }, [startCheckout]);
@@ -823,6 +895,22 @@ export function useNexusData({
     }
   }, [API_BASE, token, showToast, lang, initData]);
 
+  const gpsHistory = useMemo(() => (
+    (trackers || [])
+      .filter(t => t.active !== false && Number.isFinite(Number(t.lastLat)) && Number.isFinite(Number(t.lastLng)))
+      .map(t => ({
+        trackerId: t.id,
+        profileId: t.profileId,
+        lat: Number(t.lastLat),
+        lng: Number(t.lastLng),
+        accuracy: t.lastAccuracy,
+        battery: t.lastBattery,
+        capturedAt: t.lastCapturedAt || t.lastSeenAt,
+        label: t.label || t.imei
+      }))
+      .sort((a, b) => new Date(b.capturedAt || 0) - new Date(a.capturedAt || 0))
+  ), [trackers]);
+
   return useMemo(() => ({
     profiles, agencies, agencySettings: _agencySettings, operators, sessions, stats, activeSubscription: _activeSubscription,
     subscriptionHistory: _subscriptionHistory, globalFeatures, handleFeatureToggle,
@@ -834,7 +922,9 @@ export function useNexusData({
     calendar, isCalendarSyncOpen, setIsCalendarSyncOpen, calendarSyncUrl, setCalendarSyncUrl,
     isBookingModalOpen, setIsBookingModalOpen, selectedScheduleEvent, setSelectedScheduleEvent,
     newBookingForm, setNewBookingForm, bioText, setBioText, isSyncing, syncStatus: _syncStatus, syncProgress: _syncProgress,
-    relayOnline, handleSaveBio, handleSyncAll, handleSyncChatHistory, handleRevokeBinding, handleSaveCredentials, handleQuickSaveMeeting, handleDelayBooking, initData,
+    relayOnline, trackers, gpsHistory, trackerProvisioning, isPairingTracker,
+    handlePairTracker, handleUnpairTracker, applyTrackerLocation,
+    handleSaveBio, handleSyncAll, handleSyncChatHistory, handleRevokeBinding, handleSaveCredentials, handleQuickSaveMeeting, handleDelayBooking, initData,
     handleExportICS, handleSaveCalendarSync, handleSaveBooking, fetchClientByPhone,
     setProfiles, toggleOperatorStatus, handleSaveAssignees,
     rolePermissions
@@ -844,7 +934,8 @@ export function useNexusData({
     globalSettings, handleUpdateGlobalSetting, isTraining, trainingProgress, 
     onStartTraining, onResetTraining, isDataLoading, isBackgroundLoading, hasHydrated, clientNames, calendar, 
     isCalendarSyncOpen, calendarSyncUrl, isBookingModalOpen, selectedScheduleEvent, newBookingForm, bioText, 
-    isSyncing, _syncStatus, _syncProgress, relayOnline, handleSaveBio, handleSyncAll, handleSyncChatHistory, 
+    isSyncing, _syncStatus, _syncProgress, relayOnline, trackers, gpsHistory, trackerProvisioning, isPairingTracker,
+    handlePairTracker, handleUnpairTracker, applyTrackerLocation, handleSaveBio, handleSyncAll, handleSyncChatHistory,
     handleSaveCredentials, handleQuickSaveMeeting, handleDelayBooking, initData, handleExportICS, 
     handleSaveCalendarSync, handleSaveBooking, fetchClientByPhone, toggleOperatorStatus, handleSaveAssignees, 
     handleRevokeBinding, rolePermissions
