@@ -23,6 +23,7 @@
     "version:bump": "node scripts/bump-version.js",
     "test:smoke": "npx playwright test --ignore-snapshots --grep-invert android",
     "test:api": "npx playwright test rbac sms-relay --project=chromium",
+    "test:stripe": "npx playwright test tests/stripe_billing.spec.js --project=chromium",
     "test:e2e": "npx playwright test smoke dashboard sidebar_profiles mobile_navigation safety_guard inventory_ops operator_chat profile_management settings --project=chromium",
     "test:mobile": "npx playwright test tests/mobile_navigation.spec.js --project=mobile",
     "test:profiles": "npx playwright test tests/sidebar_profiles.spec.js --project=chromium",

@@ -1,0 +1,74 @@
+# Stripe test mode runbook
+
+Tento postup slouzi k overeni Stripe napojeni v testovacim rezimu. Smoke test vytvari pouze Checkout Session a neprovadi platbu, aby sam od sebe nemenil aktivni tarif agentury.
+
+## Povinne konfigurace
+
+Backend musi mit nastavene tyto promenne:
+
+- `STRIPE_SECRET_KEY`: testovaci secret key ze Stripe Dashboardu, musi zacinat `sk_test_`.
+- `STRIPE_PUBLISHABLE_KEY`: testovaci publishable key, musi zacinat `pk_test_`.
+- `STRIPE_WEBHOOK_SECRET`: podpisovy secret z `stripe listen`, musi zacinat `whsec_`.
+- `FRONTEND_URL`: URL aplikace, kam se Stripe vraci po platbe.
+
+Frontend musi mit nastavene:
+
+- `VITE_STRIPE_PUBLISHABLE_KEY`: stejny testovaci publishable key, `pk_test_...`.
+
+Secret hodnoty nikdy neukladejte do repozitare. Pro GitHub Actions patri do `Settings -> Secrets and variables -> Actions`, pro server do prostredi deploye.
+
+## Automaticky smoke test
+
+Vychozi beh je preskoceny, aby CI bez Stripe secrets nepadalo.
+
+```bash
+npm run test:stripe
+```
+
+Pro skutecny test proti backendu s testovacimi Stripe klici:
+
+```bash
+RUN_STRIPE_TEST_MODE=true \
+NEXUS_API_URL=http://localhost:3000/api \
+FRONTEND_URL=http://localhost:5173/settings \
+STRIPE_TEST_PLAN_ID=pro_monthly \
+npm run test:stripe
+```
+
+Ocekavany vysledek:
+
+- API vrati HTTP `200`.
+- Odpoved ma `provider: "stripe"` a `paymentMethod: "card"`.
+- Stripe session ID zacina `cs_`.
+- Checkout URL vede na `checkout.stripe.com`.
+- `localSubscriptionId` je vyplnene.
+
+## Manualni end-to-end platba
+
+1. Spustte backend s testovacimi Stripe klici.
+2. Spustte frontend a prihlaseni jako agency admin.
+3. Spustte Stripe CLI:
+
+```bash
+stripe listen --forward-to http://localhost:3000/api/billing/webhook
+```
+
+4. Zkopirujte hodnotu `whsec_...` do `STRIPE_WEBHOOK_SECRET` a restartujte backend.
+5. V aplikaci otevrite `Nastaveni -> Srovnani a zmena tarifu`.
+6. Kliknete na `Aktivovat Professional`.
+7. Zaplatte testovaci kartou `4242 4242 4242 4242`, libovolnym budoucim datem expirace a libovolnym CVC.
+8. Ve Stripe CLI overte prijem udalosti `checkout.session.completed`.
+9. V aplikaci overte, ze je tarif aktivni a ze se nezobrazuje chyba konfigurace Stripe.
+
+## Negativni testy
+
+- Bez `STRIPE_SECRET_KEY` ma backend vratit chybu `stripe_not_configured`.
+- S chybnym `STRIPE_WEBHOOK_SECRET` ma webhook podpis selhat a subscription se nesmi aktivovat.
+- Unsigned webhook request se nesmi zpracovat.
+- Pokud Stripe vrati chybu pri vytvareni session, UI ma zobrazit uzivatelsky srozumitelnou chybu a nesmi zmenit tarif.
+
+## Produkcni opatrnost
+
+- Testy spoustejte proti testovacim Stripe klicum, ne proti `sk_live_`.
+- Produkcni webhook secret nepouzivejte v lokalnim Stripe CLI.
+- Smoke test vytvari pending local subscription. Testovaci zaznamy lze nechat expirovat nebo je uklidit v testovaci databazi.
