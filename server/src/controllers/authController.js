@@ -36,6 +36,43 @@ async function withAssignedProfile(user) {
   }
 }
 
+async function withAuthContext(user, options = {}) {
+  if (!user?.id) return user;
+  const includeProfile = options.includeProfile !== false;
+  const context = { ...user };
+
+  if (!context.role && context.roleId) {
+    try {
+      context.role = await prisma.role.findUnique({ where: { id: context.roleId } });
+    } catch (error) {
+      console.error('[Auth] Role lookup failed:', error.message);
+      context.role = null;
+    }
+  }
+
+  if (context.agency === undefined) {
+    if (context.agencyId) {
+      try {
+        context.agency = await prisma.agency.findUnique({
+          where: { id: context.agencyId },
+          select: { id: true, name: true }
+        });
+      } catch (error) {
+        console.error('[Auth] Agency lookup failed:', error.message);
+        context.agency = null;
+      }
+    } else {
+      context.agency = null;
+    }
+  }
+
+  return includeProfile ? withAssignedProfile(context) : context;
+}
+
+function hasUsableRole(user) {
+  return Boolean(user?.role?.name);
+}
+
 function validatePassword(password) {
   if (!password || typeof password !== 'string') {
     return 'Password is required';
@@ -118,8 +155,7 @@ exports.login = async (req, res) => {
     const email = rawEmail?.toLowerCase();
     
     const user = await prisma.user.findUnique({
-      where: { email },
-      include: { role: true, agency: true }
+      where: { email }
     });
 
     const passwordMatches = await comparePassword(password, user?.password);
@@ -127,12 +163,15 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const accessToken = generateAccessToken(user);
-    const refreshToken = await generateRefreshToken(user.id);
+    const userWithProfile = await withAuthContext(user);
+    if (!hasUsableRole(userWithProfile)) {
+      return res.status(403).json({ message: 'User role is not configured' });
+    }
 
-    logAction(user.agencyId, user.id, 'LOGIN', `User ${user.email} logged in`);
+    const accessToken = generateAccessToken(userWithProfile);
+    const refreshToken = await generateRefreshToken(userWithProfile.id);
 
-    const userWithProfile = await withAssignedProfile(user);
+    logAction(userWithProfile.agencyId, userWithProfile.id, 'LOGIN', `User ${userWithProfile.email} logged in`);
 
     res.json({
       token: accessToken,
@@ -155,7 +194,7 @@ exports.refresh = async (req, res) => {
 
     const stored = await prisma.refreshToken.findUnique({
       where: { token: refreshToken },
-      include: { user: { include: { role: true, agency: true } } }
+      include: { user: true }
     });
 
     if (!stored || stored.revokedAt || stored.expiresAt < new Date()) {
@@ -168,9 +207,13 @@ exports.refresh = async (req, res) => {
       data: { revokedAt: new Date() }
     });
 
-    const accessToken = generateAccessToken(stored.user);
+    const userWithProfile = await withAuthContext(stored.user);
+    if (!hasUsableRole(userWithProfile)) {
+      return res.status(403).json({ message: 'User role is not configured' });
+    }
+
+    const accessToken = generateAccessToken(userWithProfile);
     const newRefreshToken = await generateRefreshToken(stored.userId);
-    const userWithProfile = await withAssignedProfile(stored.user);
 
     res.json({
       token: accessToken,
@@ -412,12 +455,14 @@ exports.resetPasswordConfirm = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
-      where: { id: req.user.userId },
-      include: { role: true, agency: true }
+      where: { id: req.user.userId }
     });
     
     if (!user) return res.status(404).json({ message: 'User not found' });
-    const userWithProfile = await withAssignedProfile(user);
+    const userWithProfile = await withAuthContext(user);
+    if (!hasUsableRole(userWithProfile)) {
+      return res.status(403).json({ message: 'User role is not configured' });
+    }
     
     res.json({
       id: userWithProfile.id,
