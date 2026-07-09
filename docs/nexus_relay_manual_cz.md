@@ -61,3 +61,11 @@ V dolní části obrazovky vidíte **FORWARDING LOGS**:
 ---
 > [!TIP]
 > Pokud systém přestane přeposílat, zkuste tlačítko **PAUSE** a znovu **PLAY** pro restartování spojení se serverem.
+
+---
+
+## Terénní ověření
+
+Pro pilotní nasazení a řešení chyb typu "SMS je vidět v telefonu, ale není ve webu" použijte checklist:
+
+- [Android Relay field-test checklist](./android-relay-field-test.md)
