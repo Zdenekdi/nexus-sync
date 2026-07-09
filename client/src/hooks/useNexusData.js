@@ -143,7 +143,7 @@ export function useNexusData({
   const [isPlansLoading, setIsPlansLoading] = useState(false);
   const [isStartingSubscription, setIsStartingSubscription] = useState(false);
 
-  const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51TquE62QtVKkRmFpedHm41mwHBeYPld9A9GnO2zNgoxBP7mGkL1j4tLsc1CUgWjWu114zIsm57y3MI35zM2MEotJ00O9Oh0g3t';
+  const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
 
   const checkRelayStatus = useCallback(async () => {
     if (!isLoggedIn || !token) return;
@@ -227,7 +227,12 @@ export function useNexusData({
     }
 
     const Stripe = await loadStripeJs();
-    const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+    const publishableKey = checkout.publishableKey || STRIPE_PUBLISHABLE_KEY;
+    if (!publishableKey) {
+      throw new Error('Stripe publishable key is not configured.');
+    }
+
+    const stripe = Stripe(publishableKey);
     const result = await stripe.redirectToCheckout({ sessionId: checkout.id });
     if (result?.error) throw result.error;
   }, [STRIPE_PUBLISHABLE_KEY, loadStripeJs]);
