@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { TEST_USERS, authClient, loginAs } from './helpers/api.js';
 
 const RUN_STRIPE_PAYMENT_E2E = process.env.RUN_STRIPE_PAYMENT_E2E === 'true';
+const RUN_STRIPE_EMBEDDED_E2E = process.env.RUN_STRIPE_EMBEDDED_E2E === 'true';
 const TEST_PLAN_ID = process.env.STRIPE_TEST_PLAN_ID || 'pro_monthly';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://nexus-sync-8d50b.web.app/settings';
 const STRIPE_TEST_USER = {
@@ -31,40 +32,69 @@ async function fillFirstVisible(page, selectors, value, timeout = 1_500) {
 }
 
 async function clickFirstVisible(page, selectors, timeout = 2_000) {
-  for (const selector of selectors) {
-    const locator = page.locator(selector).first();
-    try {
-      await locator.waitFor({ state: 'visible', timeout });
-      await locator.click({ timeout });
-      return true;
-    } catch {
-      // Try the next Stripe Checkout variant.
+  for (const scope of locatorScopes(page)) {
+    for (const selector of selectors) {
+      const locator = scope.locator(selector).first();
+      try {
+        await locator.waitFor({ state: 'visible', timeout });
+        await locator.click({ timeout });
+        return true;
+      } catch {
+        // Try the next Stripe Checkout variant.
+      }
+    }
+  }
+  return false;
+}
+
+async function checkFirstVisible(page, selectors, timeout = 2_000) {
+  for (const scope of locatorScopes(page)) {
+    for (const selector of selectors) {
+      const locator = scope.locator(selector).first();
+      try {
+        await locator.waitFor({ state: 'visible', timeout });
+        await locator.check({ timeout, force: true });
+        return true;
+      } catch {
+        // Try the next Stripe Checkout variant.
+      }
     }
   }
   return false;
 }
 
 async function selectCountryIfVisible(page, countryCode) {
-  const country = page.locator('select[name="billingAddressCountry"], select[name="country"], select[name="billingCountry"]').first();
-  try {
-    await country.waitFor({ state: 'visible', timeout: 2_000 });
-    await country.selectOption(countryCode);
-  } catch {
-    // Some Checkout sessions infer country from the customer and omit the field.
+  for (const scope of locatorScopes(page)) {
+    const country = scope.locator('select[name="billingAddressCountry"], select[name="country"], select[name="billingCountry"]').first();
+    try {
+      await country.waitFor({ state: 'visible', timeout: 2_000 });
+      await country.selectOption(countryCode);
+      return true;
+    } catch {
+      // Some Checkout sessions infer country from the customer and omit the field.
+    }
   }
+  return false;
 }
 
 async function completeStripeCheckout(page) {
   await page.waitForLoadState('domcontentloaded');
 
-  await page.getByRole('textbox', { name: /Email/i }).fill(`stripe-e2e-${Date.now()}@example.test`);
+  await fillFirstVisible(page, [
+    'input[name="email"]',
+    'input[type="email"]',
+    'input[autocomplete="email"]',
+  ], `stripe-e2e-${Date.now()}@example.test`, 2_000);
 
   await clickFirstVisible(page, [
     'button:has-text("Pay with card")',
   ], 5_000);
 
   try {
-    await page.getByRole('radio', { name: /^Card$/i }).check({ timeout: 2_000, force: true });
+    await checkFirstVisible(page, [
+      'input[type="radio"][value="card"]',
+      'input[type="radio"][aria-label="Card"]',
+    ], 2_000);
   } catch {
     // Some Stripe Checkout layouts expose only the "Pay with card" button.
   }
@@ -111,13 +141,67 @@ async function completeStripeCheckout(page) {
     'input[placeholder*="Postal"]',
   ], '11000');
 
-  await page.locator('button[type="submit"], button:has-text("Subscribe"), button:has-text("Pay")').first().click();
+  expect(await clickFirstVisible(page, [
+    'button[type="submit"]',
+    'button:has-text("Pay and subscribe")',
+    'button:has-text("Subscribe")',
+    'button:has-text("Pay")',
+  ], 10_000)).toBeTruthy();
+}
+
+function appOrigin() {
+  return new URL(FRONTEND_URL).origin;
+}
+
+async function loginThroughUi(page, credentials) {
+  await page.addInitScript(() => {
+    localStorage.setItem('nexus_hasSeenOnboarding', 'true');
+    localStorage.setItem('nexus_onboarding_seen', 'true');
+  });
+
+  await page.goto(`${appOrigin()}/login`, { waitUntil: 'load', timeout: 60_000 });
+  await page.getByTestId('login-email').fill(credentials.email);
+  await page.getByTestId('login-password').fill(credentials.password);
+  await page.getByTestId('login-submit').click();
+  await expect(page.getByTestId('login-email')).not.toBeVisible({ timeout: 30_000 });
+}
+
+async function clickFirstAvailablePlanButton(page) {
+  const candidates = [
+    { testId: 'plan-activate-agency', planId: 'agency_monthly' },
+    { testId: 'plan-activate-professional', planId: 'pro_monthly' },
+    { testId: 'plan-activate-starter', planId: 'starter_monthly' },
+  ];
+
+  for (const candidate of candidates) {
+    const button = page.getByTestId(candidate.testId);
+    if (await button.isVisible().catch(() => false) && await button.isEnabled().catch(() => false)) {
+      await button.scrollIntoViewIfNeeded();
+      await button.click();
+      return candidate;
+    }
+  }
+
+  throw new Error('No available subscription plan activation button was visible.');
+}
+
+async function waitForSubscriptionActivation(client, localSubscriptionId) {
+  await expect.poll(async () => {
+    const history = await client.get('/subscriptions/history');
+    const item = Array.isArray(history.data)
+      ? history.data.find(subscription => subscription.id === localSubscriptionId)
+      : null;
+    return item?.status || null;
+  }, {
+    timeout: 120_000,
+    intervals: [3_000, 5_000, 10_000],
+    message: 'Stripe webhook should activate the pending subscription',
+  }).toBe('ACTIVE');
 }
 
 test.describe('Stripe payment test-mode E2E', () => {
-  test.skip(!RUN_STRIPE_PAYMENT_E2E, 'Set RUN_STRIPE_PAYMENT_E2E=true to complete a real Stripe test-mode payment.');
-
   test('completes Checkout, receives webhook activation and opens Billing Portal', async ({ page }) => {
+    test.skip(!RUN_STRIPE_PAYMENT_E2E, 'Set RUN_STRIPE_PAYMENT_E2E=true to complete a real Stripe test-mode payment.');
     test.setTimeout(300_000);
 
     const login = await loginAs(STRIPE_TEST_USER);
@@ -143,17 +227,7 @@ test.describe('Stripe payment test-mode E2E', () => {
     await completeStripeCheckout(page);
     await expect(page).toHaveURL(/checkout=success/, { timeout: 90_000 });
 
-    await expect.poll(async () => {
-      const history = await client.get('/subscriptions/history');
-      const item = Array.isArray(history.data)
-        ? history.data.find(subscription => subscription.id === checkout.data.localSubscriptionId)
-        : null;
-      return item?.status || null;
-    }, {
-      timeout: 90_000,
-      intervals: [3_000, 5_000, 10_000],
-      message: 'Stripe webhook should activate the pending subscription',
-    }).toBe('ACTIVE');
+    await waitForSubscriptionActivation(client, checkout.data.localSubscriptionId);
 
     const current = await client.get('/subscriptions/current');
     expect(current.status, JSON.stringify(current.data)).toBe(200);
@@ -167,5 +241,48 @@ test.describe('Stripe payment test-mode E2E', () => {
     expect(portal.status, JSON.stringify(portal.data)).toBe(200);
     expect(portal.data).toMatchObject({ provider: 'stripe' });
     expect(String(portal.data.url || '')).toContain('billing.stripe.com');
+  });
+
+  test('opens embedded Checkout from the deployed settings UI and activates the selected plan', async ({ page }) => {
+    test.skip(!RUN_STRIPE_EMBEDDED_E2E, 'Set RUN_STRIPE_EMBEDDED_E2E=true to complete a real embedded Stripe test-mode payment from the deployed UI.');
+    test.setTimeout(300_000);
+
+    const login = await loginAs(STRIPE_TEST_USER);
+    expect(login?.token, `Could not login as ${STRIPE_TEST_USER.email}`).toBeTruthy();
+    const client = authClient(login.token);
+
+    await loginThroughUi(page, STRIPE_TEST_USER);
+    await page.goto(FRONTEND_URL, { waitUntil: 'load', timeout: 60_000 });
+    await expect(page.getByTestId('page-settings-container')).toBeVisible({ timeout: 30_000 });
+
+    const checkoutResponsePromise = page.waitForResponse(response =>
+      response.request().method() === 'POST' && response.url().includes('/billing/checkout')
+    );
+    const selectedPlan = await clickFirstAvailablePlanButton(page);
+    const checkoutResponse = await checkoutResponsePromise;
+    const checkoutBody = await checkoutResponse.text();
+    expect(checkoutResponse.status(), checkoutBody).toBe(200);
+    const checkoutData = JSON.parse(checkoutBody);
+
+    expect(checkoutData).toMatchObject({
+      provider: 'stripe',
+      checkoutMode: 'embedded',
+      localSubscriptionId: expect.any(String),
+      publishableKey: expect.stringMatching(/^pk_/),
+      clientSecret: expect.stringMatching(/^cs_/),
+    });
+
+    await expect(page.getByTestId('stripe-embedded-modal')).toBeVisible({ timeout: 30_000 });
+    await completeStripeCheckout(page);
+    await waitForSubscriptionActivation(client, checkoutData.localSubscriptionId);
+
+    const current = await client.get('/subscriptions/current');
+    expect(current.status, JSON.stringify(current.data)).toBe(200);
+    expect(current.data).toMatchObject({
+      id: checkoutData.localSubscriptionId,
+      provider: 'stripe',
+      status: 'ACTIVE',
+    });
+    expect(['starter_monthly', 'pro_monthly', 'agency_monthly']).toContain(selectedPlan.planId);
   });
 });

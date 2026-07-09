@@ -406,7 +406,7 @@ class BillingController {
       };
 
       if (checkoutMode === 'embedded') {
-        sessionPayload.ui_mode = 'embedded';
+        sessionPayload.ui_mode = 'embedded_page';
         sessionPayload.return_url = this.checkoutUrl(successUrl, 'success');
         sessionPayload.redirect_on_completion = 'if_required';
       } else {
