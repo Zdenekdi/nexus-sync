@@ -2,6 +2,11 @@
 set -euo pipefail
 umask 077
 
+if [ -z "${DATABASE_URL:-}" ] && [ -f .env ]; then
+  DATABASE_URL="$(node -e "require('dotenv').config(); if (!process.env.DATABASE_URL) process.exit(1); process.stdout.write(process.env.DATABASE_URL)")"
+  export DATABASE_URL
+fi
+
 : "${DATABASE_URL:?DATABASE_URL is required}"
 
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/nexus}"

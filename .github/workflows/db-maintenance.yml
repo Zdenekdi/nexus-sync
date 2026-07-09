@@ -1,0 +1,60 @@
+name: "🛠️ DB Maintenance"
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Maintenance action to run"
+        required: true
+        default: "backup-and-migrate"
+        type: choice
+        options:
+          - backup-and-migrate
+          - backup-only
+          - migrate-only
+      confirm:
+        description: "Type MIGRATE_PRODUCTION to confirm production DB maintenance"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  production-db-maintenance:
+    name: Production DB Maintenance
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - name: Run backup and migrations on VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          password: ${{ secrets.DEPLOY_PASSWORD }}
+          command_timeout: 15m
+          script: |
+            set -e
+            if [ "${{ inputs.confirm }}" != "MIGRATE_PRODUCTION" ]; then
+              echo "Confirmation mismatch. Type MIGRATE_PRODUCTION to run production DB maintenance."
+              exit 1
+            fi
+
+            cd /root/nexus-backend
+            git fetch origin master
+            git checkout master
+            git pull --ff-only origin master
+
+            npm install
+
+            if [ "${{ inputs.mode }}" != "migrate-only" ]; then
+              npm run db:backup
+            fi
+
+            if [ "${{ inputs.mode }}" != "backup-only" ]; then
+              ./node_modules/.bin/prisma migrate deploy
+              ./node_modules/.bin/prisma generate
+              pm2 restart nexus-backend-final --update-env || pm2 start server.js --name nexus-backend-final
+              sleep 3
+              pm2 status nexus-backend-final | grep -q online && echo "DB maintenance deploy OK" || exit 1
+            fi
