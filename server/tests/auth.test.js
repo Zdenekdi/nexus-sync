@@ -51,6 +51,24 @@ describe('POST /api/auth/login', () => {
     expect(decoded.agencyId).toBe('agency-1');
   });
 
+  it('does not fail login when assigned profile lookup fails', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    prismaMock.user.findUnique.mockResolvedValue(TEST_USER);
+    prismaMock.refreshToken.create.mockResolvedValue({ id: 'rt-1', token: 'refresh-tok' });
+    prismaMock.profile.findMany.mockRejectedValueOnce(new Error('relation mismatch'));
+
+    try {
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'test@agency.com', password: 'ValidPass1' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.user.profileId).toBeNull();
+    } finally {
+      consoleSpy.mockRestore();
+    }
+  });
+
   it('returns 401 on wrong password', async () => {
     prismaMock.user.findUnique.mockResolvedValue(TEST_USER);
 
