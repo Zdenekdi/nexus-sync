@@ -66,8 +66,6 @@ app.use('/downloads', (req, res, next) => {
   next();
 }, express.static(path.join(__dirname, '..', 'public', 'downloads')));
 
-app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
-
 // Rate limiting: global 5000 req/15min
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,

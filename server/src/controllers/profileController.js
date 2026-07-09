@@ -22,8 +22,33 @@ function parseGallery(raw) {
   }
 }
 
-function getPublicBaseUrl(req) {
-  return (process.env.API_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/+$/, '');
+function getApiBaseUrl(req) {
+  return (process.env.API_BASE_URL || `${req.protocol}://${req.get('host')}`)
+    .replace(/\/+$/, '')
+    .replace(/\/api$/i, '');
+}
+
+function getGalleryFilePath(profileId, filename) {
+  return path.join(
+    __dirname,
+    '..',
+    '..',
+    'uploads',
+    'profile-gallery',
+    String(profileId),
+    path.basename(filename || '')
+  );
+}
+
+function withGalleryFileUrls(req, profileId, gallery) {
+  const baseUrl = getApiBaseUrl(req);
+  return gallery.map(photo => {
+    if (!photo?.id || !photo?.filename) return photo;
+    return {
+      ...photo,
+      url: `${baseUrl}/api/profiles/${encodeURIComponent(String(profileId))}/gallery/${encodeURIComponent(String(photo.id))}/file`
+    };
+  });
 }
 
 const logger = require('../services/logger');
@@ -144,10 +169,31 @@ exports.getGallery = async (req, res) => {
   try {
     const profile = await getScopedProfile(req.params.id, req);
     if (!profile) return res.status(404).json({ message: 'Profile not found' });
-    res.json({ photos: parseGallery(profile.gallery) });
+    res.json({ photos: withGalleryFileUrls(req, profile.id, parseGallery(profile.gallery)) });
   } catch (error) {
     logger.error('[Profiles] Failed to get gallery:', error);
     res.status(500).json({ message: 'Failed to load gallery' });
+  }
+};
+
+exports.getGalleryPhoto = async (req, res) => {
+  try {
+    const profile = await getScopedProfile(req.params.id, req);
+    if (!profile) return res.status(404).json({ message: 'Profile not found' });
+
+    const gallery = parseGallery(profile.gallery);
+    const photo = gallery.find(item => String(item.id) === String(req.params.photoId));
+    if (!photo?.filename) return res.status(404).json({ message: 'Photo not found' });
+
+    const filePath = getGalleryFilePath(profile.id, photo.filename);
+    if (!fs.existsSync(filePath)) return res.status(404).json({ message: 'Photo file not found' });
+
+    res.type(photo.contentType || 'application/octet-stream');
+    res.set('Cache-Control', 'private, max-age=300');
+    return res.sendFile(filePath);
+  } catch (error) {
+    logger.error('[Profiles] Failed to serve gallery photo:', error);
+    return res.status(500).json({ message: 'Failed to load gallery photo' });
   }
 };
 
@@ -168,7 +214,6 @@ exports.uploadGalleryPhoto = async (req, res) => {
 
     const photo = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
-      url: `${getPublicBaseUrl(req)}/uploads/profile-gallery/${profile.id}/${req.file.filename}`,
       filename: req.file.filename,
       visibility: metadata.visibility === 'private' ? 'private' : 'public',
       caption: typeof metadata.caption === 'string' ? metadata.caption.slice(0, 500) : '',
@@ -183,7 +228,8 @@ exports.uploadGalleryPhoto = async (req, res) => {
       data: { gallery: JSON.stringify(nextGallery) }
     });
 
-    res.status(201).json({ photo, photos: nextGallery });
+    const photos = withGalleryFileUrls(req, profile.id, nextGallery);
+    res.status(201).json({ photo: photos[0], photos });
   } catch (error) {
     logger.error('[Profiles] Failed to upload gallery photo:', error);
     res.status(500).json({ message: 'Failed to upload gallery photo' });
@@ -207,11 +253,11 @@ exports.deleteGalleryPhoto = async (req, res) => {
     });
 
     if (photo.filename) {
-      const filePath = path.join(__dirname, '..', '..', 'uploads', 'profile-gallery', profile.id, path.basename(photo.filename));
+      const filePath = getGalleryFilePath(profile.id, photo.filename);
       fs.promises.unlink(filePath).catch(() => {});
     }
 
-    res.json({ photos: nextGallery });
+    res.json({ photos: withGalleryFileUrls(req, profile.id, nextGallery) });
   } catch (error) {
     logger.error('[Profiles] Failed to delete gallery photo:', error);
     res.status(500).json({ message: 'Failed to delete gallery photo' });

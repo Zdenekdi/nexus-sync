@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 jest.mock('../src/services/db');
 jest.mock('../src/services/logger');
 jest.mock('../src/services/alertService');
+jest.mock('stripe', () => jest.fn().mockImplementation(() => ({})), { virtual: true });
 
 const prismaMock = require('../src/services/db');
 const app = require('../src/app');
@@ -93,5 +94,34 @@ describe('POST /api/messages', () => {
       .send({ chatId: 'c1', text: 'Test message', direction: 'OUTBOUND' });
 
     expect([200, 201]).toContain(res.status);
+  });
+});
+
+describe('POST /api/messages/simulate', () => {
+  it('blocks message simulation in production before database access', async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+
+    try {
+      const res = await request(app)
+        .post('/api/messages/simulate')
+        .set('Authorization', `Bearer ${makeToken()}`)
+        .send({ profileId: 'profile-1', externalId: '+420739777718', text: 'Test' });
+
+      expect(res.status).toBe(403);
+      expect(prismaMock.profile.findUnique).not.toHaveBeenCalled();
+    } finally {
+      process.env.NODE_ENV = originalNodeEnv;
+    }
+  });
+
+  it('blocks message simulation for non-manager users', async () => {
+    const res = await request(app)
+      .post('/api/messages/simulate')
+      .set('Authorization', `Bearer ${makeToken({ role: { name: 'Operator', isManager: false } })}`)
+      .send({ profileId: 'profile-1', externalId: '+420739777718', text: 'Test' });
+
+    expect(res.status).toBe(403);
+    expect(prismaMock.profile.findUnique).not.toHaveBeenCalled();
   });
 });
