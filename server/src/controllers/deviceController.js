@@ -291,6 +291,15 @@ exports.handleRelay = async (req, res) => {
       return res.status(401).json({ message: 'Unauthorized: Device ID mismatch' });
     }
 
+    try {
+      await prisma.deviceBinding.update({
+        where: { installationId: binding.installationId },
+        data: { lastSeenAt: new Date() }
+      });
+    } catch {
+      // Heartbeat update must not block delivery processing.
+    }
+
     const eventDate = timestamp ? new Date(timestamp) : new Date();
     const createdAt = Number.isNaN(eventDate.getTime()) ? new Date() : eventDate;
 

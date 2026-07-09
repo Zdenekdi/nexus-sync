@@ -17,5 +17,6 @@ router.post('/settings', validate(updateGlobalSetting), adminController.updateGl
 
 // Monitoring systému
 router.get('/health', adminController.getSystemHealth);
+router.get('/operational-health', adminController.getOperationalHealth);
 
 module.exports = router;

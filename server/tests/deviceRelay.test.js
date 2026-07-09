@@ -6,6 +6,10 @@ jest.mock('../src/services/db');
 jest.mock('../src/services/socket');
 jest.mock('../src/services/pushService');
 jest.mock('../src/services/logger');
+jest.mock('stripe', () => jest.fn().mockImplementation(() => ({
+  checkout: { sessions: { create: jest.fn() } },
+  webhooks: { constructEvent: jest.fn() }
+})), { virtual: true });
 
 const prismaMock = require('../src/services/db');
 const socketMock = require('../src/services/socket');
@@ -265,6 +269,10 @@ describe('POST /api/device/relay', () => {
       });
 
     expect(res.status).toBe(200);
+    expect(prismaMock.deviceBinding.update).toHaveBeenCalledWith({
+      where: { installationId: INSTALLATION_ID },
+      data: { lastSeenAt: expect.any(Date) }
+    });
     expect(prismaMock.message.create).toHaveBeenCalledTimes(1);
     expect(mockTo).toHaveBeenCalledWith('agency_agency-1');
     expect(mockEmit).toHaveBeenCalledWith('new_message', expect.objectContaining({ transport: 'sms' }));
