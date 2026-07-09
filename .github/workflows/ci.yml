@@ -275,13 +275,22 @@ jobs:
             cd /root/nexus-backend
             git pull origin master
             pm2 stop nexus-backend-final || true
+            if [ -n "${{ secrets.STRIPE_SECRET_KEY }}" ] && [ -z "${{ secrets.STRIPE_WEBHOOK_SECRET }}" ]; then
+              echo "STRIPE_SECRET_KEY is configured, but STRIPE_WEBHOOK_SECRET is missing. Refusing to deploy billing without webhook verification."
+              exit 1
+            fi
+            if [ -n "${{ secrets.STRIPE_SECRET_KEY }}" ] && [ -z "${{ secrets.STRIPE_PUBLISHABLE_KEY }}" ]; then
+              echo "STRIPE_SECRET_KEY is configured, but STRIPE_PUBLISHABLE_KEY is missing. Refusing to deploy incomplete billing config."
+              exit 1
+            fi
             if [ -n "${{ secrets.STRIPE_SECRET_KEY }}" ]; then
               touch .env
-              grep -vE '^(STRIPE_PUBLISHABLE_KEY|STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET)=' .env > .env.tmp || true
+              grep -vE '^(STRIPE_PUBLISHABLE_KEY|STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET|REQUIRE_STRIPE_CONFIG)=' .env > .env.tmp || true
               mv .env.tmp .env
               echo "STRIPE_PUBLISHABLE_KEY=${{ secrets.STRIPE_PUBLISHABLE_KEY }}" >> .env
               echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" >> .env
               echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}" >> .env
+              echo "REQUIRE_STRIPE_CONFIG=true" >> .env
             fi
             npm install
             ./node_modules/.bin/prisma generate

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+umask 077
 
 : "${DATABASE_URL:?DATABASE_URL is required}"
 

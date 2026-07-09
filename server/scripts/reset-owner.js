@@ -3,8 +3,14 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function reset() {
-  const email = 'dias.zd@gmail.com';
-  const newPassword = 'NexusSync2026!';
+  const email = process.env.OWNER_EMAIL;
+  const newPassword = process.env.OWNER_PASSWORD;
+
+  if (!email || !newPassword) {
+    console.error('Usage: OWNER_EMAIL="owner@example.com" OWNER_PASSWORD="..." node server/scripts/reset-owner.js');
+    process.exit(1);
+  }
+
   const hashedPassword = await bcrypt.hash(newPassword, 10);
 
   console.log(`Resetting password for: ${email}...`);
@@ -43,9 +49,8 @@ async function reset() {
 
     console.log('-----------------------------------');
     console.log(`SUCCESS: Password reset for ${email}`);
-    console.log(`New Password: ${newPassword}`);
     console.log('-----------------------------------');
-    console.log('You can now log in with these credentials.');
+    console.log('You can now log in with the password supplied via OWNER_PASSWORD.');
 
   } catch (error) {
     console.error('ERROR during password reset:', error.message);

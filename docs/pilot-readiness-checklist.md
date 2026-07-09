@@ -39,6 +39,8 @@ Go/no-go:
 - No-go, pokud produkce pouziva test Stripe keys omylem.
 - No-go, pokud `STRIPE_SECRET_KEY` existuje, ale chybi `STRIPE_WEBHOOK_SECRET`.
 - No-go, pokud nejsou nastavene startup secrets a backend by spadl po restartu.
+- No-go, pokud GitHub Actions obsahuje `STRIPE_SECRET_KEY`, ale neobsahuje
+  `STRIPE_WEBHOOK_SECRET`; deploy guard takovy backend zamerne nenasadi.
 
 ## 3. Backup and restore gate
 

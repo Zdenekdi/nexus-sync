@@ -769,15 +769,15 @@ export const TRANSLATIONS = {
                 items: [
                     {
                         service: 'SSH (Server)',
-                        user: 'root',
-                        password: 'a3P!?Usa#v2e6Vf,',
-                        note: 'Host: 78.141.202.139 (with comma at end)'
+                        user: 'Configured on server',
+                        password: 'Stored outside the app',
+                        note: 'Use the deployment secret store or server password manager.'
                     },
                     {
                         service: 'PostgreSQL',
                         user: 'nexus',
-                        password: 'nexus_prod_2024!',
-                        note: 'DB: nexus_prod'
+                        password: 'Stored in DATABASE_URL',
+                        note: 'Do not store database passwords in the frontend bundle.'
                     },
                     {
                         service: 'PM2 Process',
@@ -795,7 +795,7 @@ export const TRANSLATIONS = {
             migration: {
                 title: '⚙️ Database Management - Schema Migration',
                 description: 'If schema.prisma changes, run:',
-                command: 'export DATABASE_URL="postgresql://nexus:nexus_prod_2024%21@localhost:5432/nexus_prod"\nnpx prisma migrate deploy'
+                command: 'export DATABASE_URL="$DATABASE_URL"\nnpx prisma migrate deploy'
             },
             diagnostics: {
                 title: '🛠️ Diagnostics and Logs',
@@ -1639,15 +1639,15 @@ export const TRANSLATIONS = {
                 items: [
                     {
                         service: 'SSH (Server)',
-                        user: 'root',
-                        password: 'a3P!?Usa#v2e6Vf,',
-                        note: 'Host: 78.141.202.139 (s čárkou na konci)'
+                        user: 'Nastaveno na serveru',
+                        password: 'Uloženo mimo aplikaci',
+                        note: 'Použijte deploy secret store nebo serverový správce hesel.'
                     },
                     {
                         service: 'PostgreSQL',
                         user: 'nexus',
-                        password: 'nexus_prod_2024!',
-                        note: 'DB: nexus_prod'
+                        password: 'Uloženo v DATABASE_URL',
+                        note: 'Databázová hesla nepatří do frontend bundlu.'
                     },
                     {
                         service: 'PM2 Process',
@@ -1665,7 +1665,7 @@ export const TRANSLATIONS = {
             migration: {
                 title: '⚙️ Správa Databáze - Migrace Schématu',
                 description: 'Pokud dojde ke změně v schema.prisma, spusťte:',
-                command: 'export DATABASE_URL="postgresql://nexus:nexus_prod_2024%21@localhost:5432/nexus_prod"\nnpx prisma migrate deploy'
+                command: 'export DATABASE_URL="$DATABASE_URL"\nnpx prisma migrate deploy'
             },
             diagnostics: {
                 title: '🛠️ Diagnostika a Logy',

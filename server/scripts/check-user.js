@@ -2,7 +2,13 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function check() {
-  const email = 'dias.zd@gmail.com';
+  const email = process.env.USER_EMAIL;
+
+  if (!email) {
+    console.error('Usage: USER_EMAIL="user@example.com" node server/scripts/check-user.js');
+    process.exit(1);
+  }
+
   const user = await prisma.user.findUnique({
     where: { email },
     include: { role: true }

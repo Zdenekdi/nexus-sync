@@ -63,6 +63,11 @@ server/.npm/
 server/.npm_cache/
 server/Library/
 server/firebase-auth.json
+server/test-ssh*.js
+server/get_all_credentials.js
+server/export_*.js
+scratch/fetch_remote_credentials.js
+scratch/check_prod_logs.js
 
 # Test coverage
 server/coverage/

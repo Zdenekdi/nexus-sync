@@ -24,6 +24,7 @@ The script writes a custom-format `pg_dump` file and a checksum:
 - `/var/backups/nexus/nexus_YYYYMMDDTHHMMSSZ.dump`
 - `/var/backups/nexus/nexus_YYYYMMDDTHHMMSSZ.dump.sha256`
 
+Backup files are created with owner-only permissions via `umask 077`.
 Default retention is 14 days. Override it with:
 
 ```bash
@@ -62,6 +63,7 @@ If `npm run db:backup` fails, stop the deploy.
 ## Restore verification drill
 
 Create an empty restore database first. Do not point `RESTORE_DATABASE_URL` to production.
+The verification script refuses to run if `RESTORE_DATABASE_URL` equals `DATABASE_URL`.
 
 ```bash
 createdb nexus_restore_verify
