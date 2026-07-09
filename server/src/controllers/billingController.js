@@ -287,6 +287,7 @@ class BillingController {
       const {
         planId: requestedPlanId,
         paymentMethod = 'card',
+        checkoutMode: requestedCheckoutMode = 'redirect',
         successUrl,
         cancelUrl,
         currency: requestedCurrency,
@@ -294,6 +295,7 @@ class BillingController {
       } = req.body;
       const planId = this.normalizePlanId(requestedPlanId);
       const currency = this.normalizeCurrency(requestedCurrency, market);
+      const checkoutMode = String(requestedCheckoutMode || '').toLowerCase() === 'embedded' ? 'embedded' : 'redirect';
 
       if (paymentMethod !== 'card') {
         return res.status(400).json({
@@ -397,13 +399,20 @@ class BillingController {
       const sessionPayload = {
         mode,
         line_items: [lineItem],
-        success_url: this.checkoutUrl(successUrl, 'success'),
-        cancel_url: this.checkoutUrl(cancelUrl || successUrl, 'cancel'),
         client_reference_id: subscription.id,
         metadata,
         allow_promotion_codes: true,
         ...(customerId ? { customer: customerId } : { customer_email: req.user.email || undefined })
       };
+
+      if (checkoutMode === 'embedded') {
+        sessionPayload.ui_mode = 'embedded';
+        sessionPayload.return_url = this.checkoutUrl(successUrl, 'success');
+        sessionPayload.redirect_on_completion = 'if_required';
+      } else {
+        sessionPayload.success_url = this.checkoutUrl(successUrl, 'success');
+        sessionPayload.cancel_url = this.checkoutUrl(cancelUrl || successUrl, 'cancel');
+      }
 
       if (mode === 'subscription') {
         sessionPayload.subscription_data = { metadata };
@@ -421,16 +430,18 @@ class BillingController {
           stripeCheckoutSessionId: session.id,
           stripeCustomerId: customerId,
           stripePriceId,
-          note: JSON.stringify({ ...note, stripeSessionId: session.id, stripeMode: mode, stripeCustomerId: customerId, stripePriceId })
+          note: JSON.stringify({ ...note, stripeSessionId: session.id, stripeMode: mode, stripeCheckoutMode: checkoutMode, stripeCustomerId: customerId, stripePriceId })
         }
       });
 
       res.json({
         paymentMethod: 'card',
         provider: 'stripe',
+        checkoutMode,
         id: session.id,
         localSubscriptionId: subscription.id,
         publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || null,
+        clientSecret: checkoutMode === 'embedded' ? session.client_secret || null : null,
         url: session.url,
         message: 'Stripe Checkout session created'
       });
