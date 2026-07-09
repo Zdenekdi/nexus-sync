@@ -363,6 +363,7 @@ const SettingsView = () => {
                     </button>
                   ) : (
                     <button 
+                      data-testid="plan-activate-starter"
                       disabled={isStartingSubscription}
                       onClick={() => handleUpgrade('starter_monthly')} 
                       style={{ padding: '0.75rem', borderRadius: '10px', border: 'none', background: 'var(--accent-color)', color: 'white', fontSize: '0.8rem', fontWeight: '800', width: '100%', ...activationButtonBaseStyle }}
@@ -415,6 +416,7 @@ const SettingsView = () => {
                     </button>
                   ) : (
                     <button 
+                      data-testid="plan-activate-professional"
                       disabled={isStartingSubscription}
                       onClick={() => handleUpgrade('pro_monthly')} 
                       style={{ padding: '0.75rem', borderRadius: '10px', border: 'none', background: 'var(--accent-color)', color: 'white', fontSize: '0.8rem', fontWeight: '800', width: '100%', ...activationButtonBaseStyle }}
@@ -461,6 +463,7 @@ const SettingsView = () => {
                     </button>
                   ) : (
                     <button 
+                      data-testid="plan-activate-agency"
                       disabled={isStartingSubscription}
                       onClick={() => handleUpgrade('agency_monthly')} 
                       style={{ padding: '0.75rem', borderRadius: '10px', border: 'none', background: 'var(--accent-color)', color: 'white', fontSize: '0.8rem', fontWeight: '800', width: '100%', ...activationButtonBaseStyle }}
