@@ -371,7 +371,7 @@ class BillingController {
       }
 
       const { customerId } = await this.getOrCreateStripeCustomer(agencyId, req.user.email);
-      const stripePriceId = await this.getOrCreateStripePrice(planId, currency, planConfig);
+      let stripePriceId = await this.getOrCreateStripePrice(planId, currency, planConfig);
       const mode = type === 'plan' ? 'subscription' : 'payment';
       const metadata = {
         localSubscriptionId: subscription.id,
@@ -381,27 +381,29 @@ class BillingController {
         targetValue
       };
 
-      const lineItem = stripePriceId
-        ? { quantity: 1, price: stripePriceId }
+      const buildLineItem = (priceId) => priceId
+        ? { quantity: 1, price: priceId }
         : {
-            quantity: 1,
-            price_data: {
-              currency: currency.toLowerCase(),
-              unit_amount: this.toMinorUnits(price),
-              product_data: {
-                name: planConfig.name || `Nexus ${targetValue}`,
-                metadata: {
-                  planId,
-                  type,
-                  targetValue,
-                  ...(planConfig.metadata || {})
-                }
-              },
-              ...(mode === 'subscription' ? { recurring: planConfig.recurring || { interval: 'month', interval_count: 1 } } : {})
-            }
-          };
+          quantity: 1,
+          price_data: {
+            currency: currency.toLowerCase(),
+            unit_amount: this.toMinorUnits(price),
+            product_data: {
+              name: planConfig.name || `Nexus ${targetValue}`,
+              metadata: {
+                planId,
+                type,
+                targetValue,
+                ...(planConfig.metadata || {})
+              }
+            },
+            ...(mode === 'subscription' ? { recurring: planConfig.recurring || { interval: 'month', interval_count: 1 } } : {})
+          }
+        };
 
-      const sessionPayload = {
+      const lineItem = buildLineItem(stripePriceId);
+
+      let sessionPayload = {
         mode,
         line_items: [lineItem],
         client_reference_id: subscription.id,
@@ -425,7 +427,19 @@ class BillingController {
         sessionPayload.payment_intent_data = { metadata };
       }
 
-      const session = await this.stripe.checkout.sessions.create(sessionPayload);
+      let session;
+      try {
+        session = await this.stripe.checkout.sessions.create(sessionPayload);
+      } catch (error) {
+        if (!stripePriceId) throw error;
+        logger.warn('[Billing] Stripe checkout with price id failed; retrying with inline price_data:', error.message);
+        stripePriceId = null;
+        sessionPayload = {
+          ...sessionPayload,
+          line_items: [buildLineItem(null)]
+        };
+        session = await this.stripe.checkout.sessions.create(sessionPayload);
+      }
       await prisma.subscription.update({
         where: { id: subscription.id },
         data: {
