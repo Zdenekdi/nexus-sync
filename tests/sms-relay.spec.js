@@ -274,20 +274,45 @@ test.describe('Relay — installationId binding', () => {
     }
   });
 
-  test('relay with installationId from different user → 401 or 403', async () => {
+  test('relay accepts deviceId as a device label, not a user id', async () => {
+    if (!seededInstallationId) {
+      console.log('  ⏭️  Skipped: no device binding available for this manager');
+      return;
+    }
+
     const res = await anonRelay.post(`${API_BASE}/device/relay`, {
-      installationId: TEST_INSTALLATION_ID,
-      deviceId: 'wrong-user-id',  // Mismatched userId
+      installationId: seededInstallationId,
+      deviceId: 'relay-device-label',
       type: 'sms',
       transport: 'sms',
       from: '+420777000002',
-      content: 'Hijack attempt',
+      content: `Relay deviceId label test ${Date.now()}`,
       secret: DEVICE_SECRET,
     });
     skipIfApiUnavailable(res);
 
-    // Should fail — either no binding match or binding mismatch
-    expect([401, 403, 404, 409]).toContain(res.status);
+    expect(res.status).toBe(200);
+    expect(res.data.ok).toBe(true);
+  });
+
+  test('relay rejects an explicit mismatched userId → 401', async () => {
+    if (!seededInstallationId) {
+      console.log('  ⏭️  Skipped: no device binding available for this manager');
+      return;
+    }
+
+    const res = await anonRelay.post(`${API_BASE}/device/relay`, {
+      installationId: seededInstallationId,
+      userId: 'wrong-user-id',
+      type: 'sms',
+      transport: 'sms',
+      from: '+420777000003',
+      content: 'Explicit user mismatch attempt',
+      secret: DEVICE_SECRET,
+    });
+    skipIfApiUnavailable(res);
+
+    expect(res.status).toBe(401);
   });
 });
 

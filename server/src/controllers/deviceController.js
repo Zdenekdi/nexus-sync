@@ -263,7 +263,7 @@ exports.sendTestPush = async (req, res) => {
 
 exports.handleRelay = async (req, res) => {
   try {
-    const { installationId, type, transport, from, content, body, text, secret, deviceId, userId, timestamp } = req.body;
+    const { installationId, type, transport, from, content, body, text, secret, userId, timestamp } = req.body;
     const eventContent = content || body || text;
     if (!from || !eventContent) return res.status(400).json({ ok: false, message: 'Missing from or content' });
     

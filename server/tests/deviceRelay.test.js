@@ -373,6 +373,48 @@ describe('POST /api/device/relay', () => {
     expect(mockEmit).toHaveBeenCalledWith('new_message', expect.objectContaining({ transport: 'sms' }));
   });
 
+  it('accepts relay payloads with a non-user deviceId label', async () => {
+    prismaMock.deviceBinding.findUnique.mockResolvedValue(mockBinding);
+    prismaMock.chat.findFirst.mockResolvedValue(null);
+    prismaMock.chat.create.mockResolvedValue(mockChat);
+    prismaMock.message.create.mockResolvedValue(mockMessage);
+    prismaMock.chat.update.mockResolvedValue({});
+
+    const res = await request(app)
+      .post('/api/device/relay')
+      .send({
+        installationId: INSTALLATION_ID,
+        deviceId: 'RELAY-DEVICE-LABEL',
+        from: CALLER_PHONE,
+        content: 'Relay SMS with device label',
+        transport: 'sms',
+        secret: DEVICE_SECRET,
+      });
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.message.create).toHaveBeenCalledTimes(1);
+    expect(mockEmit).toHaveBeenCalledWith('new_message', expect.objectContaining({ transport: 'sms' }));
+  });
+
+  it('rejects relay payloads with an explicit mismatched userId', async () => {
+    prismaMock.deviceBinding.findUnique.mockResolvedValue(mockBinding);
+
+    const res = await request(app)
+      .post('/api/device/relay')
+      .send({
+        installationId: INSTALLATION_ID,
+        userId: 'user-from-another-binding',
+        from: CALLER_PHONE,
+        content: 'Relay SMS user mismatch',
+        transport: 'sms',
+        secret: DEVICE_SECRET,
+      });
+
+    expect(res.status).toBe(401);
+    expect(res.body).toMatchObject({ message: 'Unauthorized: User ID mismatch' });
+    expect(prismaMock.message.create).not.toHaveBeenCalled();
+  });
+
   it('normalizes local Czech caller numbers before creating a relay chat', async () => {
     prismaMock.deviceBinding.findUnique.mockResolvedValue({
       ...mockBinding,
