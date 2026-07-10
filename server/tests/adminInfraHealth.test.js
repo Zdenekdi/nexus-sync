@@ -18,7 +18,7 @@ jest.mock('node-ssh', () => ({
 jest.mock('stripe', () => jest.fn().mockImplementation(() => ({
   checkout: { sessions: { create: jest.fn() } },
   webhooks: { constructEvent: jest.fn() }
-})), { virtual: true });
+})));
 
 const app = require('../src/app');
 

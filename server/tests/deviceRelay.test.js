@@ -9,7 +9,7 @@ jest.mock('../src/services/logger');
 jest.mock('stripe', () => jest.fn().mockImplementation(() => ({
   checkout: { sessions: { create: jest.fn() } },
   webhooks: { constructEvent: jest.fn() }
-})), { virtual: true });
+})));
 
 const prismaMock = require('../src/services/db');
 const socketMock = require('../src/services/socket');

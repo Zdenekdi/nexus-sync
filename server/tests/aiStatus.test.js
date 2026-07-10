@@ -24,7 +24,7 @@ jest.mock('node-ssh', () => ({
 jest.mock('stripe', () => jest.fn().mockImplementation(() => ({
   checkout: { sessions: { create: jest.fn() } },
   webhooks: { constructEvent: jest.fn() }
-})), { virtual: true });
+})));
 
 const prismaMock = require('../src/services/db');
 const app = require('../src/app');

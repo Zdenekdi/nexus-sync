@@ -6,7 +6,7 @@ jest.mock('../src/services/db');
 jest.mock('../src/services/socket');
 jest.mock('../src/services/logger');
 jest.mock('../src/services/pushService');
-jest.mock('stripe', () => jest.fn().mockImplementation(() => ({})), { virtual: true });
+jest.mock('stripe', () => jest.fn().mockImplementation(() => ({})));
 
 const prismaMock = require('../src/services/db');
 const socketMock = require('../src/services/socket');
