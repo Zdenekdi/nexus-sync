@@ -68,7 +68,7 @@ export function useHetzner() {
       await axios.post(`${API_BASE}/hetzner/${action}`, {}, getHeaders());
       setTimeout(fetchStatus, 3500);
     } catch (err) {
-      setError(err.response?.data?.error || err.message);
+      setError(err.response?.data?.error || err.response?.data?.message || err.message);
     } finally {
       setLoading(false);
     }
@@ -81,7 +81,7 @@ export function useHetzner() {
       const { data } = await axios.post(`${API_BASE}/hetzner/command`, { command }, getHeaders());
       setCmdOutput(data.stdout || data.stderr || "Žádný výstup");
     } catch (err) {
-      setCmdOutput("Error: " + (err.response?.data?.error || err.message));
+      setCmdOutput("Error: " + (err.response?.data?.error || err.response?.data?.message || err.message));
     }
   };
 
@@ -91,7 +91,7 @@ export function useHetzner() {
       const { data } = await axios.post(`${API_BASE}/hetzner/git-pull`, { path }, getHeaders());
       setCmdOutput(data.stdout || data.stderr || "Git pull dokončen");
     } catch (err) {
-      setCmdOutput("Error: " + (err.response?.data?.error || err.message));
+      setCmdOutput("Error: " + (err.response?.data?.error || err.response?.data?.message || err.message));
     }
   };
 

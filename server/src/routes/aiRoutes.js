@@ -8,6 +8,7 @@ const { requirePlan } = require('../middleware/planMiddleware');
  * @route POST /api/ai/test
  * @desc Test AI connectivity
  */
+router.get('/status', authenticateToken, requirePlan(['Professional', 'Agency'], 'ai_features'), aiController.status);
 router.post('/test', authenticateToken, requirePlan(['Professional', 'Agency'], 'ai_features'), aiController.testAI);
 router.post('/suggest', authenticateToken, requirePlan(['Professional', 'Agency'], 'ai_features'), aiController.suggestReply);
 router.post('/translate', authenticateToken, requirePlan(['Professional', 'Agency'], 'ai_features'), aiController.translate);

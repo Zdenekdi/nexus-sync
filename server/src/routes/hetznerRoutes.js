@@ -28,7 +28,7 @@ async function getSSHConnection() {
   const ssh = new NodeSSH();
   await ssh.connect({
     host: process.env.HETZNER_SSH_HOST,
-    username: process.env.SSH_USER || 'root',
+    username: process.env.HETZNER_SSH_USER || process.env.SSH_USER || 'root',
     privateKeyPath: process.env.SSH_KEY_PATH,
   });
   return ssh;

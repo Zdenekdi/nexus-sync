@@ -1,17 +1,13 @@
 const { NodeSSH } = require('node-ssh');
 const path = require('path');
-const fs = require('fs');
+const { buildSshConfig } = require('./scripts/ssh-env');
 
 const ssh = new NodeSSH();
 
 async function deploy() {
   try {
     console.log('Connecting to server for deployment...');
-    await ssh.connect({
-      host: '78.141.202.139',
-      username: 'root',
-      password: 'a3P!?Usa#v2e6Vf,'
-    });
+    await ssh.connect(buildSshConfig());
     console.log('Connected!');
 
     const remotePath = '/root/nexus-backend';

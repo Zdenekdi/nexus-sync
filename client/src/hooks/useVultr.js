@@ -24,7 +24,7 @@ export function useVultr() {
       setError(null);
     } catch (_err) {
       console.error("Failed to fetch Vultr status:", _err);
-      setError(_err.response?.data?.error || _err.message);
+      setError(_err.response?.data?.error || _err.response?.data?.message || _err.message);
     }
   }, [getHeaders]);
 
@@ -77,7 +77,7 @@ export function useVultr() {
       await axios.post(`${API_BASE}/vultr/${action}`, {}, getHeaders());
       setTimeout(fetchStatus, 3500);
     } catch (_err) {
-      setError(_err.response?.data?.error || _err.message);
+      setError(_err.response?.data?.error || _err.response?.data?.message || _err.message);
     } finally {
       setLoading(false);
     }
@@ -90,7 +90,7 @@ export function useVultr() {
       const { data } = await axios.post(`${API_BASE}/vultr/command`, { command }, getHeaders());
       setCmdOutput(data.stdout || data.stderr || "Žádný výstup");
     } catch (_err) {
-      setCmdOutput("Error: " + (_err.response?.data?.error || _err.message));
+      setCmdOutput("Error: " + (_err.response?.data?.error || _err.response?.data?.message || _err.message));
     }
   };
 
@@ -100,7 +100,7 @@ export function useVultr() {
       const { data } = await axios.post(`${API_BASE}/vultr/git-pull`, { path }, getHeaders());
       setCmdOutput(data.stdout || data.stderr || "Git pull dokončen");
     } catch (_err) {
-      setCmdOutput("Error: " + (_err.response?.data?.error || _err.message));
+      setCmdOutput("Error: " + (_err.response?.data?.error || _err.response?.data?.message || _err.message));
     }
   };
 

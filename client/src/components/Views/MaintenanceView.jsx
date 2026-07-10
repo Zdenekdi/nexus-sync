@@ -65,8 +65,8 @@ const MaintenanceView = () => {
       icon: <Server size={20} color="#10b981" />,
       content: [
         { label: 'Status procesů', cmd: 'pm2 status', desc: 'Zobrazí přehled běžících služeb.' },
-        { label: 'Restart serveru', cmd: 'pm2 restart nexus-backend', desc: 'Restartuje backend pro načtení změn.' },
-        { label: 'Zobrazení logů', cmd: 'pm2 logs nexus-backend', desc: 'Ukáže výstup v reálném čase pro ladění chyb.' },
+        { label: 'Restart serveru', cmd: 'pm2 restart nexus-backend-final --update-env', desc: 'Restartuje backend pro načtení změn.' },
+        { label: 'Zobrazení logů', cmd: 'pm2 logs nexus-backend-final', desc: 'Ukáže výstup v reálném čase pro ladění chyb.' },
         { label: 'Smazání logů', cmd: 'pm2 flush', desc: 'Pročistí staré logy pro uvolnění místa.' }
       ]
     },

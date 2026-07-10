@@ -3,12 +3,45 @@ const logger = require('./logger');
 
 /**
  * AI Service for Nexus Hub
- * Communicates with local Ollama instance via SSH tunnel
+ * Communicates with Ollama via an explicit AI_BASE_URL.
+ * In production this can point to a private Hetzner URL, VPN address,
+ * or a local SSH tunnel exposed to the backend/container.
  */
 class AIService {
   constructor() {
-    this.baseUrl = 'http://localhost:11434/api';
-    this.model = 'llama3.1:8b-instruct-q4_0';
+    this.baseUrl = (process.env.AI_BASE_URL || 'http://127.0.0.1:11434/api').replace(/\/+$/, '');
+    this.model = process.env.AI_MODEL || 'llama3.1:8b-instruct-q4_0';
+    const configuredTimeout = Number(process.env.AI_TIMEOUT_MS || 60000);
+    this.timeoutMs = Number.isFinite(configuredTimeout) && configuredTimeout > 0 ? configuredTimeout : 60000;
+  }
+
+  getConfig() {
+    return {
+      baseUrl: this.baseUrl,
+      model: this.model,
+      timeoutMs: this.timeoutMs
+    };
+  }
+
+  async healthCheck(options = {}) {
+    const { includeInternal = false } = options;
+    try {
+      const response = await axios.get(`${this.baseUrl}/tags`, { timeout: Math.min(this.timeoutMs, 10000) });
+      const payload = { ok: true, configured: true, model: this.model, models: response.data?.models || [] };
+      if (includeInternal) payload.baseUrl = this.baseUrl;
+      return payload;
+    } catch (error) {
+      const message = error.response ? JSON.stringify(error.response.data) : error.message;
+      logger.warn(`AI Healthcheck failed: ${message}`);
+      const payload = {
+        ok: false,
+        configured: Boolean(this.baseUrl && this.model),
+        model: this.model,
+        error: includeInternal ? message : 'AI service is not reachable'
+      };
+      if (includeInternal) payload.baseUrl = this.baseUrl;
+      return payload;
+    }
   }
 
   /**
@@ -31,7 +64,7 @@ class AIService {
           top_p: 0.9,
           num_predict: 512
         }
-      }, { timeout: 60000 });
+      }, { timeout: this.timeoutMs });
 
       return response.data.response;
     } catch (error) {
@@ -39,7 +72,7 @@ class AIService {
       logger.error(`AI Service Error: ${errorMsg}`);
       
       if (error.code === 'ECONNREFUSED') {
-        throw new Error('AI Engine (Ollama) is not reachable. Check SSH tunnel.');
+        throw new Error(`AI Engine (Ollama) is not reachable at ${this.baseUrl}. Check AI_BASE_URL or SSH tunnel.`);
       }
       throw error;
     }
@@ -117,7 +150,7 @@ class AIService {
           temperature: 0.85,
           num_predict: 512
         }
-      }, { timeout: 35000 });
+      }, { timeout: Math.min(this.timeoutMs, 35000) });
 
       const rawContent = response.data.response.trim();
       try {

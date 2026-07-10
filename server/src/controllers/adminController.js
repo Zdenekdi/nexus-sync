@@ -1,6 +1,8 @@
 const prisma = require('../services/db');
 const logger = require('../services/logger');
 const monitoringService = require('../services/monitoringService');
+const infraHealthService = require('../services/infraHealthService');
+const { isAppOwnerRole } = require('../utils/authz');
 const os = require('os');
 const { execSync } = require('child_process');
 
@@ -193,8 +195,7 @@ exports.getSystemHealth = async (req, res) => {
 // GET /api/admin/operational-health - billing/relay/infra monitoring (App Owner only)
 exports.getOperationalHealth = async (req, res) => {
   try {
-    const userRole = req.user?.role;
-    if (!userRole || !userRole.isAppOwner) {
+    if (!isAppOwnerRole(req.user?.role)) {
       return res.status(403).json({ error: 'Access denied: Requires App Owner role.' });
     }
 
@@ -203,5 +204,20 @@ exports.getOperationalHealth = async (req, res) => {
   } catch (err) {
     logger.error('Error fetching operational health:', err.message);
     res.status(500).json({ error: 'Failed to fetch operational health' });
+  }
+};
+
+// GET /api/admin/infra-health - servers, PM2, AI tunnel, Ollama and provider state
+exports.getInfraHealth = async (req, res) => {
+  try {
+    if (!isAppOwnerRole(req.user?.role)) {
+      return res.status(403).json({ error: 'Access denied: Requires App Owner role.' });
+    }
+
+    const report = await infraHealthService.summarize();
+    res.status(report.status === 'ok' ? 200 : 503).json(report);
+  } catch (err) {
+    logger.error('Error fetching infra health:', err.message);
+    res.status(500).json({ error: 'Failed to fetch infrastructure health' });
   }
 };
