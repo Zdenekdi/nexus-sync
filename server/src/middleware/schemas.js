@@ -189,6 +189,13 @@ const createCallLog = z.object({
   status: z.enum(['missed', 'answered', 'rejected', 'ringing'])
 });
 
+const updateCallLog = z.object({
+  duration: z.number().int().min(0).optional(),
+  status: z.enum(['missed', 'answered', 'rejected', 'ringing']).optional()
+}).refine(data => data.duration !== undefined || data.status !== undefined, {
+  message: 'At least one field is required'
+});
+
 // ── Inventory ────────────────────────────────────────────────────────────────
 const createInventoryItem = z.object({
   name: z.string().min(1).max(200),
@@ -407,6 +414,7 @@ module.exports = {
   createQaRecord,
   updateQaRecord,
   createCallLog,
+  updateCallLog,
   createInventoryItem,
   updateInventoryItem,
   createInventoryLocation,

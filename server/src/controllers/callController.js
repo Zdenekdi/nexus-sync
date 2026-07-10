@@ -1,6 +1,68 @@
 const prisma = require('../services/db');
 const logger = require('../services/logger');
 
+const callStatus = (status) => (typeof status === 'string' ? status.toLowerCase() : status);
+
+const isAppOwner = (req) => req.user?.role?.isAppOwner === true;
+
+const getScopedAgencyId = (req) => {
+  const agencyId = req.user?.agencyId;
+  return agencyId ? String(agencyId) : null;
+};
+
+const ownsAgencyResource = (req, agencyId) => {
+  if (isAppOwner(req)) return true;
+  const scopedAgencyId = getScopedAgencyId(req);
+  return scopedAgencyId && String(agencyId) === scopedAgencyId;
+};
+
+const findProfileForCallWrite = async (profileId, req) => {
+  const profile = await prisma.profile.findUnique({
+    where: { id: String(profileId) },
+    select: { id: true, agencyId: true }
+  });
+  if (!profile || !ownsAgencyResource(req, profile.agencyId)) return null;
+  return profile;
+};
+
+const findCallLogForWrite = async (id, req) => {
+  const log = await prisma.callLog.findUnique({
+    where: { id: String(id) },
+    select: {
+      id: true,
+      profile: { select: { agencyId: true } }
+    }
+  });
+  if (!log || !ownsAgencyResource(req, log.profile?.agencyId)) return null;
+  return log;
+};
+
+const rejectSpoofedAgency = (req, res, suppliedAgencyId) => {
+  const scopedAgencyId = getScopedAgencyId(req);
+  if (!scopedAgencyId && !isAppOwner(req)) {
+    res.status(403).json({ message: 'No agency' });
+    return null;
+  }
+  if (suppliedAgencyId && !isAppOwner(req) && String(suppliedAgencyId) !== scopedAgencyId) {
+    res.status(403).json({ message: 'Access denied' });
+    return null;
+  }
+  return suppliedAgencyId && isAppOwner(req) ? String(suppliedAgencyId) : scopedAgencyId;
+};
+
+const verifyScopedInstallation = async (installationId, agencyId) => {
+  if (!installationId || !agencyId) return true;
+  const binding = await prisma.deviceBinding.findFirst({
+    where: {
+      installationId: String(installationId),
+      agencyId: String(agencyId),
+      active: true
+    },
+    select: { id: true }
+  });
+  return !!binding;
+};
+
 class CallController {
   /**
    * POST /api/calls/log
@@ -13,12 +75,15 @@ class CallController {
         return res.status(400).json({ message: 'profileId and from are required' });
       }
 
+      const profile = await findProfileForCallWrite(profileId, req);
+      if (!profile) return res.status(404).json({ message: 'Profile not found' });
+
       const log = await prisma.callLog.create({
         data: {
-          profileId,
-          from,
-          duration: parseInt(duration) || 0,
-          status: status || 'incoming'
+          profileId: profile.id,
+          from: String(from),
+          duration: Number.isInteger(duration) ? duration : parseInt(duration, 10) || 0,
+          status: callStatus(status) || 'ringing'
         }
       });
 
@@ -38,11 +103,15 @@ class CallController {
       const { id } = req.params;
       const { duration, status } = req.body;
 
+      if (!(await findCallLogForWrite(id, req))) {
+        return res.status(404).json({ message: 'Call log not found' });
+      }
+
       const log = await prisma.callLog.update({
         where: { id },
         data: {
-          ...(duration !== undefined && { duration: parseInt(duration) }),
-          ...(status && { status })
+          ...(duration !== undefined && { duration: Number.isInteger(duration) ? duration : parseInt(duration, 10) }),
+          ...(status && { status: callStatus(status) })
         }
       });
 
@@ -189,23 +258,30 @@ class CallController {
   async webrtcOffer(req, res) {
     try {
       const { sdp, callerId, agencyId, installationId } = req.body;
-      if (!sdp || !agencyId) {
-        return res.status(400).json({ message: 'sdp a agencyId jsou povinné' });
+      if (!sdp) {
+        return res.status(400).json({ message: 'sdp is required' });
+      }
+
+      const scopedAgencyId = rejectSpoofedAgency(req, res, agencyId);
+      if (!scopedAgencyId) return;
+
+      if (!(await verifyScopedInstallation(installationId, scopedAgencyId))) {
+        return res.status(404).json({ message: 'Relay device not found' });
       }
 
       const { getIO } = require('../services/socket');
       const io = getIO();
 
       // Přepošli offer všem operátorům v dané agentuře
-      io.to(`agency:${agencyId}`).emit('call:incoming-gsm', {
+      io.to(`agency_${scopedAgencyId}`).emit('call:incoming-gsm', {
         sdp,
         callerId,
-        agencyId,
+        agencyId: scopedAgencyId,
         installationId,
         timestamp: new Date().toISOString(),
       });
 
-      logger.info(`[WebRTC] Offer přijat od relay ${installationId}, přeposlán do agency:${agencyId}`);
+      logger.info(`[WebRTC] Offer přijat od relay ${installationId || 'unknown'}, přeposlán do agency_${scopedAgencyId}`);
       res.json({ ok: true });
     } catch (err) {
       logger.error('webrtcOffer error:', err);
@@ -223,6 +299,13 @@ class CallController {
       const { sdp, callerId, installationId } = req.body;
       if (!sdp || !installationId) {
         return res.status(400).json({ message: 'sdp a installationId jsou povinné' });
+      }
+
+      const scopedAgencyId = rejectSpoofedAgency(req, res);
+      if (!scopedAgencyId) return;
+
+      if (!(await verifyScopedInstallation(installationId, scopedAgencyId))) {
+        return res.status(404).json({ message: 'Relay device not found' });
       }
 
       const { getIO } = require('../services/socket');
@@ -247,13 +330,24 @@ class CallController {
   async webrtcIce(req, res) {
     try {
       const { sdpMid, sdpMLineIndex, candidate, direction, agencyId, installationId } = req.body;
+      const scopedAgencyId = rejectSpoofedAgency(req, res, agencyId);
+      if (!scopedAgencyId) return;
+
+      if (direction !== 'phone-to-browser') {
+        if (!installationId) return res.status(400).json({ message: 'installationId is required' });
+        if (!(await verifyScopedInstallation(installationId, scopedAgencyId))) {
+          return res.status(404).json({ message: 'Relay device not found' });
+        }
+      } else if (installationId && !(await verifyScopedInstallation(installationId, scopedAgencyId))) {
+        return res.status(404).json({ message: 'Relay device not found' });
+      }
 
       const { getIO } = require('../services/socket');
       const io = getIO();
 
       if (direction === 'phone-to-browser') {
         // ICE z telefonu → operátor
-        io.to(`agency:${agencyId}`).emit('call:ice-candidate', {
+        io.to(`agency_${scopedAgencyId}`).emit('call:ice-candidate', {
           sdpMid, sdpMLineIndex, candidate, from: 'phone',
         });
       } else {
@@ -277,6 +371,17 @@ class CallController {
   async webrtcHangup(req, res) {
     try {
       const { agencyId, installationId, initiator } = req.body;
+      const scopedAgencyId = rejectSpoofedAgency(req, res, agencyId);
+      if (!scopedAgencyId) return;
+
+      if (initiator === 'browser') {
+        if (!installationId) return res.status(400).json({ message: 'installationId is required' });
+        if (!(await verifyScopedInstallation(installationId, scopedAgencyId))) {
+          return res.status(404).json({ message: 'Relay device not found' });
+        }
+      } else if (installationId && !(await verifyScopedInstallation(installationId, scopedAgencyId))) {
+        return res.status(404).json({ message: 'Relay device not found' });
+      }
 
       const { getIO } = require('../services/socket');
       const io = getIO();
@@ -284,7 +389,7 @@ class CallController {
       if (initiator === 'browser') {
         io.to(`relay:${installationId}`).emit('call:hangup', { initiator: 'browser' });
       } else {
-        io.to(`agency:${agencyId}`).emit('call:hangup', { initiator: 'phone' });
+        io.to(`agency_${scopedAgencyId}`).emit('call:hangup', { initiator: 'phone' });
       }
 
       res.json({ ok: true });
@@ -296,4 +401,3 @@ class CallController {
 }
 
 module.exports = new CallController();
-
