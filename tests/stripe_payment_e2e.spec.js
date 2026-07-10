@@ -149,25 +149,22 @@ async function completeStripeCheckout(page) {
   ];
 
   expect(await waitForFirstVisible(page, [
+    'text=Contact information',
+    'text=Payment method',
     ...emailSelectors,
     ...cardNumberSelectors,
     'button:has-text("Pay with Link")',
+    'button:has-text("Pay with card")',
   ], 30_000)).toBeTruthy();
 
   await fillFirstVisible(page, emailSelectors, testEmail, 2_000);
 
-  await clickFirstVisible(page, [
-    'button:has-text("Pay with card")',
-  ], 5_000);
-
-  try {
-    await checkFirstVisible(page, [
-      'input[type="radio"][value="card"]',
-      'input[type="radio"][aria-label="Card"]',
-    ], 2_000);
-  } catch {
-    // Some Stripe Checkout layouts expose only the "Pay with card" button.
-  }
+  await clickFirstVisible(page, ['button:has-text("Pay with card")'], 5_000);
+  await checkFirstVisible(page, [
+    'input[type="radio"][value="card"]',
+    'input[type="radio"][aria-label="Card"]',
+  ], 2_000);
+  await checkFirstVisibleRole(page, 'radio', { name: /card/i }, 5_000);
 
   await page.waitForTimeout(1_000);
 

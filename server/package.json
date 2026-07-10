@@ -13,6 +13,7 @@
     "prisma:migrate": "prisma migrate dev",
     "db:backup": "bash scripts/backup-postgres.sh",
     "db:restore:verify": "bash scripts/verify-restore-postgres.sh",
+    "security:runtime": "node scripts/audit-runtime-secrets.js",
     "lint": "eslint src",
     "test": "jest --forceExit --detectOpenHandles",
     "test:security": "jest tests/deviceRelay.test.js tests/authzRelaySecurity.test.js --runInBand --forceExit",

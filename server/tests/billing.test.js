@@ -51,6 +51,8 @@ beforeEach(() => {
   delete process.env.STRIPE_SECRET_KEY;
   delete process.env.STRIPE_PUBLISHABLE_KEY;
   delete process.env.STRIPE_WEBHOOK_SECRET;
+  delete process.env.ALLOW_MOCK_BILLING;
+  delete process.env.ALLOW_UNSIGNED_BILLING_WEBHOOK;
   Object.keys(process.env)
     .filter(key => key.startsWith('STRIPE_PRICE_'))
     .forEach(key => delete process.env[key]);
@@ -126,6 +128,31 @@ describe('billing checkout', () => {
       expect(prismaMock.subscription.create).not.toHaveBeenCalled();
     } finally {
       process.env.NODE_ENV = originalNodeEnv;
+    }
+  });
+
+  it('does not allow mock billing in production even when the dev flag is set', async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    process.env.ALLOW_MOCK_BILLING = 'true';
+
+    try {
+      const res = await request(app)
+        .post('/api/billing/checkout')
+        .set('Authorization', `Bearer ${makeToken()}`)
+        .send({
+          planId: 'pro_monthly',
+          market: 'cz',
+          successUrl: 'https://app.example.test/plans',
+          cancelUrl: 'https://app.example.test/plans'
+        });
+
+      expect(res.status).toBe(503);
+      expect(res.body).toMatchObject({ code: 'stripe_not_configured' });
+      expect(prismaMock.subscription.create).not.toHaveBeenCalled();
+    } finally {
+      process.env.NODE_ENV = originalNodeEnv;
+      delete process.env.ALLOW_MOCK_BILLING;
     }
   });
 
@@ -778,6 +805,25 @@ describe('billing checkout', () => {
       expect(prismaMock.subscription.findFirst).not.toHaveBeenCalled();
     } finally {
       process.env.NODE_ENV = originalNodeEnv;
+    }
+  });
+
+  it('ignores the unsigned webhook dev flag in production', async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    process.env.ALLOW_UNSIGNED_BILLING_WEBHOOK = 'true';
+
+    try {
+      const res = await request(app)
+        .post('/api/billing/webhook')
+        .send({ sessionId: 'sub_pending_1', status: 'PAID' });
+
+      expect(res.status).toBe(400);
+      expect(prismaMock.agency.update).not.toHaveBeenCalled();
+      expect(prismaMock.subscription.findFirst).not.toHaveBeenCalled();
+    } finally {
+      process.env.NODE_ENV = originalNodeEnv;
+      delete process.env.ALLOW_UNSIGNED_BILLING_WEBHOOK;
     }
   });
 });
