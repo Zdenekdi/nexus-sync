@@ -14,6 +14,37 @@ Tento checklist slouzi pro realne overeni Nexus Relay na fyzickem telefonu se SI
 - Optimalizace baterie je vypnuta, u Xiaomi/Samsung/Oppo/Vivo take povolit autostart nebo unrestricted battery.
 - Telefon je pripojeny k nabijecce.
 
+## Rychly backend smoke test bez telefonu
+
+Nez zacnete hledat problem v Androidu nebo SIM karte, overte, ze testovaci backend umi
+sparovat Relay zarizeni a ulozit prijatou zpravu pres aktualni endpointy
+`/api/device/verify` a `/api/device/relay`.
+
+```bash
+API_BASE=https://nexus-api.example.com/api \
+DEVICE_SECRET=... \
+PROFILE_PHONE=+420773227907 \
+PROFILE_ID=profile-id-z-dashboardu \
+MANAGER_EMAIL=alice@example.com \
+MANAGER_PASSWORD=... \
+npm run test:relay:live
+```
+
+Co skript overuje:
+
+- login managera a cteni `/api/chats`;
+- sparovani `installationId` pres `/api/device/verify`;
+- prijem SMS pres `/api/device/relay` a dohledani ulozene zpravy v `/api/messages/:chatId`;
+- varianty cisla s `+420`, `420`, `0` a lokalnim tvarem;
+- call event pres `/api/device/relay`;
+- zamitnuti spatneho `DEVICE_SECRET`;
+- volitelne legacy endpointy `/api/device/mobile/*` a `/api/device/goip/sms`, pokud nejsou v produkci vypnute.
+
+Pokud tento smoke test projde, backend prijem funguje a dalsi hledani smerujte na
+telefon: default SMS role, permissions, foreground service, inbox fallback a logcat.
+Pokud smoke test selze uz na `/api/device/verify` nebo `/api/device/relay`, problem
+je v serverove konfiguraci, bindingu, `DEVICE_SECRET` nebo profilu.
+
 ## Doporucene logy
 
 Pri testu sbirejte Android logcat:
