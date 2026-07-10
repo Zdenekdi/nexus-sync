@@ -617,7 +617,7 @@ public class NexusRelayPlugin extends Plugin {
             android.os.PowerManager.PARTIAL_WAKE_LOCK, "NexusHub::FcmSmsWakeLock");
         wakeLock.acquire(20_000L); // max 20s
 
-        String finalStatus;
+        String finalStatus = "failed";
         try {
             SmsManager smsManager;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -646,41 +646,46 @@ public class NexusRelayPlugin extends Plugin {
             android.util.Log.e("NexusRelay", "sendSmsFromData: failed to send SMS", e);
             finalStatus = "failed";
         } finally {
+            reportMessageStatusBlocking(baseUrl, messageId, finalStatus, authToken);
             if (wakeLock.isHeld()) wakeLock.release();
         }
+    }
 
-        // Report status back to server so forwarding logs are written correctly
-        if (messageId != null && !messageId.isEmpty() && baseUrl != null) {
+    private static void reportMessageStatusBlocking(String baseUrl, String messageId, String statusToReport, String authToken) {
+        if (messageId == null || messageId.isEmpty() || baseUrl == null) {
+            return;
+        }
+
+        java.net.HttpURLConnection conn = null;
+        try {
             final String apiBase = baseUrl.replaceAll("/api/device/relay$", "")
                                           .replaceAll("/api$", "");
-            final String statusToReport = finalStatus;
-            new Thread(() -> {
-                try {
-                    java.net.URL url = new java.net.URL(apiBase + "/api/messages/" + messageId + "/status");
-                    java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
-                    conn.setRequestMethod("PATCH");
-                    conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-                    if (authToken != null && !authToken.isEmpty()) {
-                        conn.setRequestProperty("Authorization", "Bearer " + authToken);
-                    }
-                    conn.setDoOutput(true);
-                    conn.setConnectTimeout(8000);
-                    conn.setReadTimeout(8000);
-                    String body = "{\"status\":\"" + statusToReport + "\"}";
-                    try (java.io.OutputStream os = conn.getOutputStream()) {
-                        os.write(body.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-                    }
-                    int code = conn.getResponseCode();
-                    android.util.Log.d("NexusRelay", "sendSmsFromData: status reported (" + statusToReport + "), HTTP " + code);
-                    conn.disconnect();
-                } catch (Exception ex) {
-                    android.util.Log.w("NexusRelay", "sendSmsFromData: failed to report status", ex);
-                }
-            }).start();
+            java.net.URL url = new java.net.URL(apiBase + "/api/messages/" + messageId + "/status");
+            conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("PATCH");
+            conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+            if (authToken != null && !authToken.isEmpty()) {
+                conn.setRequestProperty("Authorization", "Bearer " + authToken);
+            }
+            conn.setDoOutput(true);
+            conn.setConnectTimeout(8000);
+            conn.setReadTimeout(8000);
+            String body = "{\"status\":\"" + statusToReport + "\"}";
+            try (java.io.OutputStream os = conn.getOutputStream()) {
+                os.write(body.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            }
+            int code = conn.getResponseCode();
+            android.util.Log.d("NexusRelay", "sendSmsFromData: status reported (" + statusToReport + "), HTTP " + code);
+        } catch (Exception ex) {
+            android.util.Log.w("NexusRelay", "sendSmsFromData: failed to report status", ex);
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
         }
     }
-    
-    private static void insertSentSms(Context context, String to, String text) {
+
+    static void insertSentSms(Context context, String to, String text) {
         try {
             android.content.ContentValues values = new android.content.ContentValues();
             values.put(android.provider.Telephony.Sms.ADDRESS, to);
@@ -761,6 +766,30 @@ public class NexusRelayPlugin extends Plugin {
         onTransportMessageReceived(context, "sms", from, body, null, timestamp);
     }
 
+    public static void onSmsBroadcastReceived(final Context context, final String from, final String body, final long timestamp, final boolean persistToProvider, final Runnable completion) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    if (persistToProvider) {
+                        insertInboxSmsIfMissing(context, from, body, timestamp);
+                    }
+                    onMessageReceivedBlocking(context, from, body, timestamp);
+                } catch (Exception e) {
+                    android.util.Log.e("NexusRelay", "SMS broadcast forward failed", e);
+                } finally {
+                    if (completion != null) {
+                        completion.run();
+                    }
+                }
+            }
+        }).start();
+    }
+
+    public static boolean onMessageReceivedBlocking(Context context, String from, String body, long timestamp) {
+        return onTransportMessageReceivedBlocking(context, "sms", from, body, null, timestamp);
+    }
+
     public static void onRcsMessageReceived(Context context, String from, String body, String sourcePackage) {
         onTransportMessageReceived(context, "rcs", from, body, sourcePackage, System.currentTimeMillis());
     }
@@ -801,6 +830,114 @@ public class NexusRelayPlugin extends Plugin {
         // 2. Native Background Forwarding
         if (isActive && baseUrl != null) {
             forwardDataNative(context, baseUrl, deviceId, installationId, safeTransport, safeFrom, safeBody, timestamp);
+        }
+    }
+
+    private static boolean onTransportMessageReceivedBlocking(Context context, String transport, String from, String body, String sourcePackage, long timestamp) {
+        android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        boolean isActive = prefs.getBoolean(KEY_IS_ACTIVE, false);
+        String baseUrl = prefs.getString(KEY_BASE_URL, null);
+        String deviceId = prefs.getString(KEY_DEVICE_ID, "RELAY-DEVICE");
+        String installationId = prefs.getString(KEY_INSTALLATION_ID, null);
+
+        String safeFrom = from != null ? from : "UNKNOWN";
+        String safeBody = body != null ? body : "";
+        String safeTransport = normalizeTransport(transport);
+
+        if ("sms".equals(safeTransport)) {
+            rememberRecentSmsBody(safeBody);
+        }
+
+        if (instance != null) {
+            JSObject ret = new JSObject();
+            ret.put("from", safeFrom);
+            ret.put("body", safeBody);
+            ret.put("transport", safeTransport);
+            ret.put("type", safeTransport);
+            if (sourcePackage != null) {
+                ret.put("sourcePackage", sourcePackage);
+            }
+            instance.notifyListeners("onMessageReceived", ret, true);
+            if ("rcs".equals(safeTransport)) {
+                instance.notifyListeners("onRcsReceived", ret, true);
+            } else {
+                instance.notifyListeners("onSmsReceived", ret, true);
+            }
+        }
+
+        if (!isActive || baseUrl == null) {
+            return false;
+        }
+
+        boolean forwarded = forwardDataNativeBlocking(
+            context,
+            baseUrl,
+            deviceId,
+            installationId,
+            safeTransport,
+            safeFrom,
+            safeBody,
+            timestamp
+        );
+
+        if (forwarded && "sms".equals(safeTransport)) {
+            long currentLastSync = prefs.getLong(KEY_LAST_SMS_HISTORY_SYNC_AT, 0L);
+            if (timestamp > currentLastSync) {
+                prefs.edit().putLong(KEY_LAST_SMS_HISTORY_SYNC_AT, timestamp).apply();
+            }
+        }
+
+        return forwarded;
+    }
+
+    private static void insertInboxSmsIfMissing(Context context, String from, String body, long timestamp) {
+        if (context == null || from == null || from.isEmpty() || body == null || body.isEmpty()) {
+            return;
+        }
+
+        long messageDate = timestamp > 0 ? timestamp : System.currentTimeMillis();
+        long windowStart = Math.max(0L, messageDate - 5000L);
+        long windowEnd = messageDate + 5000L;
+        Cursor cursor = null;
+
+        try {
+            String selection = android.provider.Telephony.Sms.ADDRESS + " = ? AND " +
+                android.provider.Telephony.Sms.BODY + " = ? AND " +
+                android.provider.Telephony.Sms.DATE + " >= ? AND " +
+                android.provider.Telephony.Sms.DATE + " <= ?";
+            String[] selectionArgs = new String[] {
+                from,
+                body,
+                String.valueOf(windowStart),
+                String.valueOf(windowEnd)
+            };
+
+            cursor = context.getContentResolver().query(
+                android.provider.Telephony.Sms.Inbox.CONTENT_URI,
+                new String[] { android.provider.Telephony.Sms._ID },
+                selection,
+                selectionArgs,
+                null
+            );
+
+            if (cursor != null && cursor.moveToFirst()) {
+                return;
+            }
+
+            android.content.ContentValues values = new android.content.ContentValues();
+            values.put(android.provider.Telephony.Sms.ADDRESS, from);
+            values.put(android.provider.Telephony.Sms.BODY, body);
+            values.put(android.provider.Telephony.Sms.DATE, messageDate);
+            values.put(android.provider.Telephony.Sms.TYPE, android.provider.Telephony.Sms.MESSAGE_TYPE_INBOX);
+            values.put(android.provider.Telephony.Sms.READ, 0);
+            values.put(android.provider.Telephony.Sms.SEEN, 0);
+            context.getContentResolver().insert(android.provider.Telephony.Sms.Inbox.CONTENT_URI, values);
+        } catch (Exception e) {
+            android.util.Log.w("NexusRelay", "Failed to persist inbound SMS to provider", e);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
         }
     }
 

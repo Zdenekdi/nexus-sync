@@ -231,6 +231,7 @@ public class NexusRelayForegroundService extends Service {
                     } else {
                         smsManager.sendTextMessage(to, null, text, null, null);
                     }
+                    NexusRelayPlugin.insertSentSms(this, to, text);
                     Log.d(TAG, "pollOutboxNative: SMS sent to " + to + " (msg=" + messageId + ")");
                     updateMessageStatus(apiBase, messageId, "sent", authToken);
                 } catch (Exception smsEx) {

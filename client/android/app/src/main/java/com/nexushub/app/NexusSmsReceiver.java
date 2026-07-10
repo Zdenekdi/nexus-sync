@@ -35,6 +35,19 @@ public class NexusSmsReceiver extends BroadcastReceiver {
         // goAsync() keeps the BroadcastReceiver alive while we hand off to the
         // plugin (which spawns its own thread); finish() signals Android we're done.
         final PendingResult result = goAsync();
+        final Context appContext = context.getApplicationContext();
+        final Runnable finishReceiver = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    result.finish();
+                } finally {
+                    if (wakeLock != null && wakeLock.isHeld()) {
+                        wakeLock.release();
+                    }
+                }
+            }
+        };
 
         try {
             String sender = null;
@@ -58,15 +71,28 @@ public class NexusSmsReceiver extends BroadcastReceiver {
             }
 
             if (bodyBuilder.length() > 0) {
-                NexusRelayPlugin.onMessageReceived(context, sender, bodyBuilder.toString(), timestamp);
+                NexusRelayPlugin.onSmsBroadcastReceived(
+                    appContext,
+                    sender,
+                    bodyBuilder.toString(),
+                    timestamp,
+                    Telephony.Sms.Intents.SMS_DELIVER_ACTION.equals(action),
+                    finishReceiver
+                );
             } else {
-                NexusRelayPlugin.syncSmsHistoryNative(context, 25, 10 * 60_000L);
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            NexusRelayPlugin.syncSmsHistoryNative(appContext, 25, 10 * 60_000L);
+                        } finally {
+                            finishReceiver.run();
+                        }
+                    }
+                }).start();
             }
-        } finally {
-            result.finish();
-            if (wakeLock != null && wakeLock.isHeld()) {
-                wakeLock.release();
-            }
+        } catch (Exception e) {
+            finishReceiver.run();
         }
     }
 }
