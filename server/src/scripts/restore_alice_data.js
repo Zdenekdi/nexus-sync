@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function restore() {
@@ -32,22 +33,34 @@ async function restore() {
   }
 
   // 3. Najdeme Alici (podle jména nebo emailu) a propojíme ji
-  const alice = await prisma.user.upsert({
-    where: { email: 'alice@nexus.sync' },
-    update: {
-      name: 'Alice M.',
-      agencyId: 'agency-01',
-      roleId: adminRole.id
-    },
-    create: {
-      id: 'op-01',
-      email: 'alice@nexus.sync',
-      name: 'Alice M.',
-      password: '$2a$10$YourHashedPasswordHere', // Bude vyžadovat reset hesla nebo ponechání stávajícího
-      agencyId: 'agency-01',
-      roleId: adminRole.id
+  const existingAlice = await prisma.user.findUnique({ where: { email: 'alice@nexus.sync' } });
+  let alice;
+  if (existingAlice) {
+    alice = await prisma.user.update({
+      where: { email: 'alice@nexus.sync' },
+      data: {
+        name: 'Alice M.',
+        agencyId: 'agency-01',
+        roleId: adminRole.id
+      }
+    });
+  } else {
+    const alicePassword = process.env.ALICE_PASSWORD;
+    if (!alicePassword) {
+      throw new Error('ALICE_PASSWORD is required when creating alice@nexus.sync');
     }
-  });
+
+    alice = await prisma.user.create({
+      data: {
+        id: 'op-01',
+        email: 'alice@nexus.sync',
+        name: 'Alice M.',
+        password: await bcrypt.hash(alicePassword, 10),
+        agencyId: 'agency-01',
+        roleId: adminRole.id
+      }
+    });
+  }
   console.log('✅ Alice prolinkována na agenturu a roli Admin.');
 
   // 4. Obnova modelek a přiřazení k Alici
