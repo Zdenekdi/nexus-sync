@@ -133,3 +133,116 @@ describe('GET /api/agency/roles', () => {
     });
   });
 });
+
+describe('POST /api/agency/users', () => {
+  it('adds a user with an existing role in the caller agency', async () => {
+    prismaMock.role.findFirst.mockResolvedValue({
+      id: 'role-operator',
+      name: 'Operator',
+      agencyId: 'agency-1',
+      isAppOwner: false,
+    });
+    prismaMock.user.create.mockResolvedValue({
+      id: 'user-2',
+      name: 'New Operator',
+      email: 'new.operator@example.test',
+      agencyId: 'agency-1',
+      role: { name: 'Operator' },
+    });
+
+    const res = await request(app)
+      .post('/api/agency/users')
+      .set('Authorization', `Bearer ${makeToken()}`)
+      .send({
+        name: 'New Operator',
+        email: 'new.operator@example.test',
+        password: 'StrongPass1',
+        roleName: 'Operator',
+      });
+
+    expect(res.status).toBe(201);
+    expect(prismaMock.role.findFirst).toHaveBeenCalledWith({
+      where: { name: 'Operator', agencyId: 'agency-1' },
+    });
+    expect(prismaMock.role.create).not.toHaveBeenCalled();
+    expect(prismaMock.user.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          roleId: 'role-operator',
+          agencyId: 'agency-1',
+        }),
+      })
+    );
+  });
+
+  it('clones a safe global role template instead of creating all-permission fallback roles', async () => {
+    prismaMock.role.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: 'global-operator',
+        name: 'Operator',
+        description: 'Operator template',
+        permissions: JSON.stringify({ messaging: true }),
+        minTier: null,
+        isManager: false,
+        isAppOwner: false,
+        agencyId: null,
+      });
+    prismaMock.role.create.mockResolvedValue({
+      id: 'role-operator',
+      name: 'Operator',
+      agencyId: 'agency-1',
+      isAppOwner: false,
+    });
+    prismaMock.user.create.mockResolvedValue({
+      id: 'user-2',
+      name: 'New Operator',
+      email: 'new.operator@example.test',
+      agencyId: 'agency-1',
+      role: { name: 'Operator' },
+    });
+
+    const res = await request(app)
+      .post('/api/agency/users')
+      .set('Authorization', `Bearer ${makeToken()}`)
+      .send({
+        name: 'New Operator',
+        email: 'new.operator@example.test',
+        password: 'StrongPass1',
+        roleName: 'Operator',
+      });
+
+    expect(res.status).toBe(201);
+    expect(prismaMock.role.create).toHaveBeenCalledWith({
+      data: {
+        name: 'Operator',
+        description: 'Operator template',
+        permissions: JSON.stringify({ messaging: true }),
+        minTier: null,
+        isManager: false,
+        isAppOwner: false,
+        agencyId: 'agency-1',
+      },
+    });
+  });
+
+  it('rejects unknown roles instead of creating all-permission roles', async () => {
+    prismaMock.role.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+
+    const res = await request(app)
+      .post('/api/agency/users')
+      .set('Authorization', `Bearer ${makeToken()}`)
+      .send({
+        name: 'Overpowered User',
+        email: 'power@example.test',
+        password: 'StrongPass1',
+        roleName: 'Unreviewed Admin',
+      });
+
+    expect(res.status).toBe(400);
+    expect(prismaMock.role.create).not.toHaveBeenCalled();
+    expect(prismaMock.user.create).not.toHaveBeenCalled();
+  });
+});
