@@ -21,6 +21,7 @@
     "webhook:start": "node scripts/antigravity-webhook.js",
     "sync:backend": "node scripts/sync-backend.js",
     "version:bump": "node scripts/bump-version.js",
+    "security:secrets": "node scripts/check-secrets.js",
     "test:smoke": "npx playwright test --ignore-snapshots --grep-invert android",
     "test:api": "npx playwright test rbac sms-relay --project=chromium",
     "test:stripe": "npx playwright test tests/stripe_billing.spec.js --project=chromium",

@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
@@ -90,11 +91,16 @@ async function main() {
       if (!managerRoleId) {
         console.error('CRITICAL: Manager role not found! Cannot create user.');
       } else {
+        const managerPassword = process.env.MANAGER_PASSWORD;
+        if (!managerPassword) {
+          throw new Error('MANAGER_PASSWORD is required to create manager@nexus.sync');
+        }
+        const hashedPassword = await bcrypt.hash(managerPassword, 10);
         await prisma.user.create({
           data: {
             email: managerEmail,
             name: 'Agency Manager',
-            password: '$2b$10$pLTSH9pC.r0BIdIByN7a.e3C.u8u8u8u8u8u8u8u8u8u8u8u8u8u8', // password123 (bcrypt)
+            password: hashedPassword,
             roleId: managerRoleId,
             agencyId: 'agency-01'
           }
