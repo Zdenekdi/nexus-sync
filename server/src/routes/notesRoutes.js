@@ -7,6 +7,13 @@ const { createNote } = require('../middleware/schemas');
 const { getPhoneLookupValues, normalizePhoneNumber } = require('../utils/phoneNumber');
 
 router.use(authMiddleware);
+router.use((req, res, next) => {
+  if (req.user?.agencyId) return next();
+  return res.status(403).json({
+    code: 'agency_required',
+    message: 'Client notes require an agency-scoped user.'
+  });
+});
 
 const getScopedProfile = (profileId, agencyId) => {
   if (!profileId) return null;

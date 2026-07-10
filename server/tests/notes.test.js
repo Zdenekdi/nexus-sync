@@ -113,6 +113,21 @@ describe('POST /api/notes', () => {
 
     expect(res.status).toBe(400);
   });
+
+  it('blocks note creation for users without an agency scope', async () => {
+    const res = await request(app)
+      .post('/api/notes')
+      .set('Authorization', `Bearer ${makeToken({
+        agencyId: null,
+        role: { name: 'App Owner', isManager: true, isAppOwner: true },
+      })}`)
+      .send({ profileId: 'profile-1', clientPhone: '+1234567890', text: 'No agency' });
+
+    expect(res.status).toBe(403);
+    expect(res.body).toMatchObject({ code: 'agency_required' });
+    expect(prismaMock.profile.findFirst).not.toHaveBeenCalled();
+    expect(prismaMock.clientNote.create).not.toHaveBeenCalled();
+  });
 });
 
 describe('GET /api/notes/:clientPhone', () => {
@@ -185,6 +200,19 @@ describe('GET /api/notes/:clientPhone', () => {
     const res = await request(app).get('/api/notes/+1234567890');
     expect(res.status).toBe(401);
   });
+
+  it('blocks note reads for users without an agency scope', async () => {
+    const res = await request(app)
+      .get('/api/notes/+1234567890')
+      .set('Authorization', `Bearer ${makeToken({
+        agencyId: null,
+        role: { name: 'App Owner', isManager: true, isAppOwner: true },
+      })}`);
+
+    expect(res.status).toBe(403);
+    expect(res.body).toMatchObject({ code: 'agency_required' });
+    expect(prismaMock.clientNote.findMany).not.toHaveBeenCalled();
+  });
 });
 
 describe('DELETE /api/notes/:id', () => {
@@ -208,5 +236,19 @@ describe('DELETE /api/notes/:id', () => {
       .set('Authorization', `Bearer ${makeToken()}`);
 
     expect(res.status).toBe(404);
+  });
+
+  it('blocks note deletion for users without an agency scope', async () => {
+    const res = await request(app)
+      .delete('/api/notes/note-1')
+      .set('Authorization', `Bearer ${makeToken({
+        agencyId: null,
+        role: { name: 'App Owner', isManager: true, isAppOwner: true },
+      })}`);
+
+    expect(res.status).toBe(403);
+    expect(res.body).toMatchObject({ code: 'agency_required' });
+    expect(prismaMock.clientNote.findFirst).not.toHaveBeenCalled();
+    expect(prismaMock.clientNote.delete).not.toHaveBeenCalled();
   });
 });
