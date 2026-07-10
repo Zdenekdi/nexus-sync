@@ -25,6 +25,7 @@
     "security:runtime": "cd server && npm run security:runtime",
     "test:smoke": "npx playwright test --ignore-snapshots --grep-invert android",
     "test:api": "npx playwright test rbac sms-relay --project=chromium",
+    "test:relay:live": "bash scripts/test-relay-live.sh",
     "test:stripe": "npx playwright test tests/stripe_billing.spec.js --project=chromium",
     "test:stripe:payment": "npx playwright test tests/stripe_payment_e2e.spec.js --project=chromium",
     "test:e2e": "npx playwright test smoke dashboard sidebar_profiles mobile_navigation safety_guard inventory_ops operator_chat profile_management settings --project=chromium",

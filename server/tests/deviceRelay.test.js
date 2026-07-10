@@ -87,6 +87,101 @@ const mockBinding = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// POST /api/device/verify (Nexus APK pairing flow)
+// ═══════════════════════════════════════════════════════════════════════════════
+describe('POST /api/device/verify', () => {
+  it('binds a relay installation to an explicit same-agency profile and marks it online', async () => {
+    prismaMock.profile.findFirst.mockResolvedValue(mockProfile);
+    prismaMock.deviceBinding.upsert.mockResolvedValue(mockBinding);
+    prismaMock.deviceBinding.updateMany.mockResolvedValue({ count: 1 });
+    prismaMock.profile.update.mockResolvedValue({ ...mockProfile, status: 'online' });
+
+    const res = await request(app)
+      .post('/api/device/verify')
+      .set('Authorization', `Bearer ${makeRelayToken({ role: { name: 'Agency Admin', isManager: true, isAppOwner: false } })}`)
+      .send({
+        installationId: INSTALLATION_ID,
+        profileId: 'profile-1',
+        platform: 'android',
+        model: 'RelayApp',
+        deviceName: 'Nexus Relay',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ ok: true });
+    expect(prismaMock.profile.findFirst).toHaveBeenCalledWith({
+      where: { id: 'profile-1', agencyId: 'agency-1' },
+    });
+    expect(prismaMock.deviceBinding.upsert).toHaveBeenCalledWith({
+      where: { installationId: INSTALLATION_ID },
+      update: expect.objectContaining({
+        userId: 'user-relay-1',
+        agencyId: 'agency-1',
+        profileId: 'profile-1',
+        platform: 'android',
+        active: true,
+        model: 'RelayApp',
+        deviceName: 'Nexus Relay',
+      }),
+      create: expect.objectContaining({
+        installationId: INSTALLATION_ID,
+        userId: 'user-relay-1',
+        agencyId: 'agency-1',
+        profileId: 'profile-1',
+        platform: 'android',
+        active: true,
+      }),
+    });
+    expect(prismaMock.deviceBinding.updateMany).toHaveBeenCalledWith({
+      where: {
+        profileId: 'profile-1',
+        NOT: { installationId: INSTALLATION_ID },
+        active: true,
+      },
+      data: { active: false },
+    });
+    expect(prismaMock.profile.update).toHaveBeenCalledWith({
+      where: { id: 'profile-1' },
+      data: { status: 'online' },
+    });
+  });
+
+  it('rejects binding a relay installation to a profile outside the user agency', async () => {
+    prismaMock.profile.findFirst.mockResolvedValue(null);
+
+    const res = await request(app)
+      .post('/api/device/verify')
+      .set('Authorization', `Bearer ${makeRelayToken({ role: { name: 'Agency Admin', isManager: true, isAppOwner: false } })}`)
+      .send({
+        installationId: INSTALLATION_ID,
+        profileId: 'profile-other-agency',
+        platform: 'android',
+      });
+
+    expect(res.status).toBe(404);
+    expect(res.body).toMatchObject({ ok: false, message: 'Profile not found' });
+    expect(prismaMock.deviceBinding.upsert).not.toHaveBeenCalled();
+    expect(prismaMock.profile.update).not.toHaveBeenCalled();
+  });
+
+  it('returns profileRequired when no profileId is provided and the user has no assigned profile', async () => {
+    prismaMock.profile.findFirst.mockResolvedValue(null);
+
+    const res = await request(app)
+      .post('/api/device/verify')
+      .set('Authorization', `Bearer ${makeRelayToken({ role: { name: 'Senior Operator', isManager: true, isAppOwner: false } })}`)
+      .send({
+        installationId: INSTALLATION_ID,
+        platform: 'android',
+      });
+
+    expect(res.status).toBe(409);
+    expect(res.body).toMatchObject({ ok: false, profileRequired: true });
+    expect(prismaMock.deviceBinding.upsert).not.toHaveBeenCalled();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // POST /api/device/mobile/sms
 // ═══════════════════════════════════════════════════════════════════════════════
 describe('POST /api/device/mobile/sms', () => {
