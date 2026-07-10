@@ -103,4 +103,111 @@ describe('subscription legacy route authorization', () => {
     expect(prismaMock.subscription.updateMany).not.toHaveBeenCalled();
     expect(prismaMock.agency.update).not.toHaveBeenCalled();
   });
+
+  it('returns App Owner agency membership overview with paid-through dates', async () => {
+    const paidUntil = new Date('2026-08-10T00:00:00.000Z');
+    prismaMock.agency.count.mockResolvedValue(2);
+    prismaMock.subscription.count
+      .mockResolvedValueOnce(1)
+      .mockResolvedValueOnce(1);
+    prismaMock.subscription.groupBy
+      .mockResolvedValueOnce([{ currency: 'CZK', _sum: { amountPaid: 990 } }])
+      .mockResolvedValueOnce([{ plan: 'Professional', _count: { _all: 1 } }]);
+    prismaMock.subscription.findMany
+      .mockResolvedValueOnce([
+        {
+          id: 'sub-recent',
+          agencyId: 'agency-1',
+          agency: { name: 'Premium Sync Europe' },
+          plan: 'Professional',
+          status: 'ACTIVE',
+          amountPaid: 990,
+          currency: 'CZK',
+          provider: 'stripe',
+          providerStatus: 'active',
+          paymentRef: 'sub_stripe_123',
+          startedAt: new Date('2026-07-10T00:00:00.000Z'),
+          expiresAt: paidUntil,
+          currentPeriodEnd: paidUntil,
+          createdAt: new Date('2026-07-10T00:00:00.000Z')
+        }
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: 'sub-current',
+          agencyId: 'agency-1',
+          agency: { name: 'Premium Sync Europe' },
+          plan: 'Professional',
+          status: 'ACTIVE',
+          amountPaid: 990,
+          currency: 'CZK',
+          provider: 'stripe',
+          providerStatus: 'active',
+          paymentRef: 'sub_stripe_123',
+          startedAt: new Date('2026-07-10T00:00:00.000Z'),
+          expiresAt: paidUntil,
+          currentPeriodEnd: paidUntil,
+          createdAt: new Date('2026-07-10T00:00:00.000Z')
+        }
+      ]);
+    prismaMock.agency.findMany.mockResolvedValue([
+      {
+        id: 'agency-1',
+        name: 'Premium Sync Europe',
+        email: 'owner@example.test',
+        region: 'EU',
+        plan: 'Professional',
+        tier: 'Professional'
+      },
+      {
+        id: 'agency-2',
+        name: 'Starter House',
+        email: null,
+        region: 'CZ',
+        plan: 'Standard',
+        tier: 'Standard'
+      }
+    ]);
+
+    const res = await request(app)
+      .get('/api/subscriptions/admin/stats')
+      .set('Authorization', `Bearer ${makeToken(
+        { name: 'App Owner', isManager: true, isAppOwner: true },
+        { agencyId: null }
+      )}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      totalAgencies: 2,
+      activeSubscriptions: 1,
+      trialPeriods: 1,
+      revenueByCurrency: { CZK: 990 },
+      planDistribution: { Professional: 1 }
+    });
+    expect(res.body.recentTransactions[0]).toMatchObject({
+      id: 'sub-recent',
+      agencyName: 'Premium Sync Europe',
+      plan: 'Professional',
+      status: 'ACTIVE',
+      amount: 990,
+      currency: 'CZK',
+      provider: 'stripe'
+    });
+    expect(res.body.agencySubscriptions).toHaveLength(2);
+    expect(res.body.agencySubscriptions[0]).toMatchObject({
+      agencyId: 'agency-1',
+      agencyName: 'Premium Sync Europe',
+      plan: 'Professional',
+      status: 'ACTIVE',
+      amountPaid: 990,
+      currency: 'CZK',
+      provider: 'stripe'
+    });
+    expect(res.body.agencySubscriptions[0].paidUntil).toBe(paidUntil.toISOString());
+    expect(res.body.agencySubscriptions[1]).toMatchObject({
+      agencyId: 'agency-2',
+      plan: 'Standard',
+      status: 'NO_ACTIVE_SUBSCRIPTION'
+    });
+  });
 });

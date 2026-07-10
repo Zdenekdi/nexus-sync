@@ -138,8 +138,31 @@ const AppOwnerPlansDashboard = () => {
 const BillingContent = ({
   lang, isMobile, stats, activeMarket, setActiveMarket,
   getCurrencySymbol, _getApiCurrency, currentMRR
-}) => (
-  <>
+}) => {
+  const agencySubscriptions = stats?.agencySubscriptions || [];
+  const recentTransactions = stats?.recentTransactions || stats?.recentPayments || [];
+
+  const formatDate = (value) => {
+    if (!value) return '—';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '—';
+    return date.toLocaleDateString(lang === 'cz' ? 'cs-CZ' : 'en-GB');
+  };
+
+  const formatMoney = (amount, currency) => (
+    amount === null || amount === undefined ? '—' : `${Number(amount).toLocaleString()} ${currency || ''}`.trim()
+  );
+
+  const statusStyle = (status) => {
+    const normalized = String(status || '').toUpperCase();
+    if (normalized === 'ACTIVE') return { background: 'rgba(16,185,129,0.1)', color: '#10b981', border: 'rgba(16,185,129,0.2)' };
+    if (normalized === 'TRIAL') return { background: 'rgba(245,158,11,0.1)', color: '#f59e0b', border: 'rgba(245,158,11,0.2)' };
+    if (normalized === 'PAST_DUE' || normalized === 'PENDING') return { background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: 'rgba(239,68,68,0.2)' };
+    return { background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', border: 'rgba(255,255,255,0.1)' };
+  };
+
+  return (
+    <>
     {/* Header Info */}
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '1rem', flexDirection: isMobile ? 'column' : 'row', gap: '1.5rem' }}>
       <div>
@@ -207,6 +230,80 @@ const BillingContent = ({
       />
     </div>
 
+    {/* Agency Membership Overview */}
+    <div className="glass-card" style={{ padding: '1.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', gap: '0.75rem', marginBottom: '1.25rem' }}>
+        <div>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '0.25rem' }}>
+            {lang === 'cz' ? 'Členství agentur' : 'Agency Memberships'}
+          </h3>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+            {lang === 'cz' ? 'Aktuální tarif, stav platby a datum, do kdy má agentura zaplaceno.' : 'Current plan, payment state and paid-through date for each agency.'}
+          </div>
+        </div>
+        <span className="status-badge" style={{ fontSize: '0.65rem' }}>
+          {agencySubscriptions.length} {lang === 'cz' ? 'agentur' : 'agencies'}
+        </span>
+      </div>
+
+      <div style={{ overflowX: 'auto' }}>
+        <table data-testid="app-owner-agency-memberships" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '760px' }}>
+          <thead>
+            <tr style={{ borderBottom: '1px solid var(--card-border)', textAlign: 'left' }}>
+              <th style={{ padding: '0.75rem 0', fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{lang === 'cz' ? 'AGENTURA' : 'AGENCY'}</th>
+              <th style={{ padding: '0.75rem 0', fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{lang === 'cz' ? 'TARIF' : 'PLAN'}</th>
+              <th style={{ padding: '0.75rem 0', fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{lang === 'cz' ? 'STAV' : 'STATUS'}</th>
+              <th style={{ padding: '0.75rem 0', fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{lang === 'cz' ? 'ZAPLACENO DO' : 'PAID UNTIL'}</th>
+              <th style={{ padding: '0.75rem 0', fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{lang === 'cz' ? 'ZBÝVÁ' : 'LEFT'}</th>
+              <th style={{ padding: '0.75rem 0', fontSize: '0.65rem', color: 'var(--text-secondary)', textAlign: 'right' }}>{lang === 'cz' ? 'PLATBA' : 'PAYMENT'}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {agencySubscriptions.map((row) => {
+              const style = statusStyle(row.status);
+              const daysLabel = row.daysRemaining === null
+                ? '—'
+                : row.daysRemaining < 0
+                  ? (lang === 'cz' ? `po splatnosti ${Math.abs(row.daysRemaining)} d` : `${Math.abs(row.daysRemaining)}d overdue`)
+                  : (lang === 'cz' ? `${row.daysRemaining} dní` : `${row.daysRemaining} days`);
+
+              return (
+                <tr key={row.agencyId} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                  <td style={{ padding: '0.9rem 0' }}>
+                    <div style={{ fontWeight: '800', fontSize: '0.85rem' }}>{row.agencyName}</div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>{row.email || row.region || '—'}</div>
+                  </td>
+                  <td style={{ padding: '0.9rem 0' }}>
+                    <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.45rem', background: 'rgba(99,102,241,0.1)', color: 'var(--accent-color)', borderRadius: '4px', fontWeight: '800' }}>
+                      {row.plan || 'Standard'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '0.9rem 0' }}>
+                    <span style={{ fontSize: '0.65rem', padding: '0.15rem 0.4rem', borderRadius: '4px', background: style.background, color: style.color, border: `1px solid ${style.border}`, fontWeight: '800' }}>
+                      {row.status}
+                    </span>
+                  </td>
+                  <td style={{ padding: '0.9rem 0', fontSize: '0.82rem', fontWeight: '700' }}>{formatDate(row.paidUntil || row.expiresAt)}</td>
+                  <td style={{ padding: '0.9rem 0', fontSize: '0.82rem', color: row.daysRemaining < 0 ? '#ef4444' : 'var(--text-secondary)', fontWeight: '700' }}>{daysLabel}</td>
+                  <td style={{ padding: '0.9rem 0', textAlign: 'right' }}>
+                    <div style={{ fontWeight: '800', fontSize: '0.82rem' }}>{formatMoney(row.amountPaid, row.currency)}</div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.68rem' }}>{row.provider || '—'}</div>
+                  </td>
+                </tr>
+              );
+            })}
+            {agencySubscriptions.length === 0 && (
+              <tr>
+                <td colSpan={6} style={{ padding: '1.25rem 0', color: 'var(--text-secondary)', textAlign: 'center', fontSize: '0.85rem' }}>
+                  {lang === 'cz' ? 'Žádná data o členství zatím nejsou k dispozici.' : 'No membership data is available yet.'}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     {/* Main Content Area */}
     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '2rem' }}>
       
@@ -232,7 +329,7 @@ const BillingContent = ({
               </tr>
             </thead>
             <tbody>
-              {stats?.recentTransactions?.map((tx) => (
+              {recentTransactions.map((tx) => (
                 <tr key={tx.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                   <td style={{ padding: '1rem 0', fontWeight: '700', fontSize: '0.85rem' }}>{tx.agencyName}</td>
                   <td style={{ padding: '1rem 0' }}>
@@ -243,7 +340,7 @@ const BillingContent = ({
                       {tx.plan}
                     </span>
                   </td>
-                  <td style={{ padding: '1rem 0', fontWeight: '800', fontSize: '0.85rem' }}>{tx.amount?.toLocaleString()} {tx.currency}</td>
+                  <td style={{ padding: '1rem 0', fontWeight: '800', fontSize: '0.85rem' }}>{formatMoney(tx.amount ?? tx.amountPaid, tx.currency)}</td>
                   <td style={{ padding: '1rem 0', textAlign: 'right' }}>
                     <span style={{ 
                       fontSize: '0.6rem', padding: '0.15rem 0.4rem', borderRadius: '4px',
@@ -291,7 +388,8 @@ const BillingContent = ({
       </div>
     </div>
   </>
-);
+  );
+};
 
 const StatCard = ({ icon, label, value, trend, trendUp }) => (
   <div className="glass-card" style={{ padding: '1.25rem' }}>

@@ -346,6 +346,34 @@ export async function setupApiMocks(page) {
         activeSubscriptions: 20,
         revenueByCurrency: { CZK: 150000, EUR: 6000, GBP: 5000, USD: 7000 },
         planDistribution: { TRIAL: 5, Starter: 3, Professional: 12, Agency: 5 },
+        agencySubscriptions: [
+          {
+            agencyId: 'agency-1',
+            agencyName: 'Premium Sync Europe',
+            email: 'owner@premium.example',
+            region: 'EU',
+            plan: 'Agency',
+            status: 'ACTIVE',
+            amountPaid: 6000,
+            currency: 'EUR',
+            provider: 'stripe',
+            paidUntil: '2026-08-10T00:00:00.000Z',
+            daysRemaining: 31
+          },
+          {
+            agencyId: 'agency-2',
+            agencyName: 'Global Talents UK',
+            email: 'owner@global.example',
+            region: 'UK',
+            plan: 'Professional',
+            status: 'TRIAL',
+            amountPaid: 0,
+            currency: 'GBP',
+            provider: null,
+            paidUntil: '2026-07-24T00:00:00.000Z',
+            daysRemaining: 14
+          }
+        ],
         recentTransactions: [
           { id: 'tx-1', agencyName: 'Premium Sync Europe', plan: 'Enterprise', amount: 6000, currency: 'EUR', status: 'ACTIVE' },
           { id: 'tx-2', agencyName: 'Global Talents UK', plan: 'Professional', amount: 5000, currency: 'GBP', status: 'ACTIVE' }
