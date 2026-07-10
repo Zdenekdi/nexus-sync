@@ -20,6 +20,68 @@ const PLAN_PRICES = {
   Agency:       { CZK: 2490, EUR: 99, GBP: 85, USD: 109 },
 };
 
+const CURRENT_SUBSCRIPTION_STATUSES = ['ACTIVE', 'TRIAL', 'PAST_DUE', 'PENDING'];
+
+const daysUntil = (date, now = new Date()) => {
+  if (!date) return null;
+  const parsed = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return Math.ceil((parsed.getTime() - now.getTime()) / 86400000);
+};
+
+const paidUntilFor = (subscription) => subscription?.currentPeriodEnd || subscription?.expiresAt || null;
+
+const formatAdminTransaction = (subscription) => {
+  const paidUntil = paidUntilFor(subscription);
+  return {
+    id: subscription.id,
+    agencyId: subscription.agencyId,
+    agencyName: subscription.agency?.name || 'Unknown agency',
+    plan: subscription.plan,
+    status: subscription.status,
+    amount: subscription.amountPaid,
+    amountPaid: subscription.amountPaid,
+    currency: subscription.currency,
+    provider: subscription.provider || null,
+    providerStatus: subscription.providerStatus || null,
+    paymentRef: subscription.paymentRef || null,
+    startedAt: subscription.startedAt,
+    expiresAt: subscription.expiresAt,
+    paidUntil,
+    createdAt: subscription.createdAt
+  };
+};
+
+const formatAgencySubscriptionRow = (agency, subscription, now = new Date()) => {
+  const paidUntil = paidUntilFor(subscription);
+  const remaining = daysUntil(paidUntil, now);
+  const plan = subscription?.plan || agency.plan || agency.tier || 'Standard';
+
+  return {
+    agencyId: agency.id,
+    agencyName: agency.name,
+    email: agency.email || null,
+    region: agency.region || null,
+    agencyPlan: agency.plan || null,
+    agencyTier: agency.tier || null,
+    subscriptionId: subscription?.id || null,
+    plan,
+    status: subscription?.status || 'NO_ACTIVE_SUBSCRIPTION',
+    amountPaid: subscription?.amountPaid ?? null,
+    currency: subscription?.currency || null,
+    provider: subscription?.provider || null,
+    providerStatus: subscription?.providerStatus || null,
+    paymentRef: subscription?.paymentRef || null,
+    startedAt: subscription?.startedAt || null,
+    expiresAt: subscription?.expiresAt || null,
+    paidUntil,
+    currentPeriodStart: subscription?.currentPeriodStart || null,
+    currentPeriodEnd: subscription?.currentPeriodEnd || null,
+    daysRemaining: remaining,
+    isExpired: remaining !== null ? remaining < 0 : false
+  };
+};
+
 // ── GET /api/subscriptions/plans
 // Returns plan options + pricing (no auth needed for this)
 router.get('/plans', async (req, res) => {
@@ -269,20 +331,53 @@ router.get('/admin/stats', async (req, res) => {
       return res.status(403).json({ message: 'App Owner access required' });
     }
 
-    const totalActive = await prisma.subscription.count({ where: { status: 'ACTIVE' } });
-    const totalTrial = await prisma.subscription.count({ where: { status: 'TRIAL' } });
-    
-    const revenueByCurrency = await prisma.subscription.groupBy({
-      by: ['currency'],
-      _sum: { amountPaid: true },
-      where: { status: 'ACTIVE' }
-    });
+    const now = new Date();
 
-    const planDistributionRows = await prisma.subscription.groupBy({
-      by: ['plan'],
-      _count: { _all: true },
-      where: { status: { in: ['ACTIVE', 'TRIAL'] } }
-    });
+    const [
+      totalAgencies,
+      totalActive,
+      totalTrial,
+      revenueByCurrency,
+      planDistributionRows,
+      recentPayments,
+      agencies,
+      currentSubscriptions
+    ] = await Promise.all([
+      prisma.agency.count(),
+      prisma.subscription.count({ where: { status: 'ACTIVE' } }),
+      prisma.subscription.count({ where: { status: 'TRIAL' } }),
+      prisma.subscription.groupBy({
+        by: ['currency'],
+        _sum: { amountPaid: true },
+        where: { status: 'ACTIVE' }
+      }),
+      prisma.subscription.groupBy({
+        by: ['plan'],
+        _count: { _all: true },
+        where: { status: { in: ['ACTIVE', 'TRIAL'] } }
+      }),
+      prisma.subscription.findMany({
+        take: 10,
+        orderBy: [{ startedAt: 'desc' }, { createdAt: 'desc' }],
+        include: { agency: true }
+      }),
+      prisma.agency.findMany({
+        orderBy: { name: 'asc' },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          region: true,
+          plan: true,
+          tier: true
+        }
+      }),
+      prisma.subscription.findMany({
+        where: { status: { in: CURRENT_SUBSCRIPTION_STATUSES } },
+        orderBy: [{ expiresAt: 'desc' }, { updatedAt: 'desc' }],
+        include: { agency: true }
+      })
+    ]);
 
     // Convert revenueByCurrency to a clean object map
     const revenueMap = {};
@@ -295,17 +390,28 @@ router.get('/admin/stats', async (req, res) => {
       planDistribution[row.plan] = row._count?._all || 0;
     });
 
+    const currentByAgency = new Map();
+    for (const subscription of currentSubscriptions) {
+      const existing = currentByAgency.get(subscription.agencyId);
+      if (!existing || (paidUntilFor(subscription)?.getTime?.() || 0) > (paidUntilFor(existing)?.getTime?.() || 0)) {
+        currentByAgency.set(subscription.agencyId, subscription);
+      }
+    }
+
+    const recentTransactions = recentPayments.map(formatAdminTransaction);
+    const agencySubscriptions = agencies.map((agency) =>
+      formatAgencySubscriptionRow(agency, currentByAgency.get(agency.id), now)
+    );
+
     res.json({
-      totalAgencies: totalActive + totalTrial,
+      totalAgencies,
       activeSubscriptions: totalActive,
       trialPeriods: totalTrial,
       revenueByCurrency: revenueMap,
       planDistribution,
-      recentPayments: await prisma.subscription.findMany({
-        take: 10,
-        orderBy: { startedAt: 'desc' },
-        include: { agency: true }
-      })
+      recentPayments,
+      recentTransactions,
+      agencySubscriptions
     });
   } catch (err) {
     console.error('GET /subscriptions/admin/stats error:', err);
