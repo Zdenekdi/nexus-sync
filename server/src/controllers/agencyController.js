@@ -168,13 +168,47 @@ exports.addUser = async (req, res) => {
     const isAppOwner = !!role?.isAppOwner;
     const effectiveAdmin = await isEffectiveAdmin(role, userAgencyId);
     if (!isAppOwner && !effectiveAdmin) return res.status(403).json({ message: 'Forbidden' });
-    const { name, email, password, roleName: bodyRoleName, agencyId: bodyAgencyId } = req.body;
+    const { name, email, password, roleId, roleName: bodyRoleName, role: bodyRole, agencyId: bodyAgencyId } = req.body;
     const targetAgencyId = isAppOwner ? bodyAgencyId : userAgencyId;
-    const hashedPassword = await bcrypt.hash(password, 10);
-    let targetRole = await prisma.role.findFirst({ where: { name: bodyRoleName, agencyId: targetAgencyId } });
-    if (!targetRole) {
-      targetRole = await prisma.role.create({ data: { name: bodyRoleName, agencyId: targetAgencyId, permissions: JSON.stringify({ all: true }) } });
+    if (!targetAgencyId) return res.status(400).json({ message: 'Target agency is required' });
+
+    const requestedRoleName = bodyRoleName || bodyRole;
+    let targetRole = null;
+
+    if (roleId) {
+      targetRole = await prisma.role.findFirst({
+        where: { id: String(roleId), agencyId: String(targetAgencyId) }
+      });
+    } else if (requestedRoleName) {
+      targetRole = await prisma.role.findFirst({
+        where: { name: String(requestedRoleName), agencyId: String(targetAgencyId) }
+      });
+
+      if (!targetRole) {
+        const globalTemplate = await prisma.role.findFirst({
+          where: { name: String(requestedRoleName), agencyId: null }
+        });
+
+        if (globalTemplate && !globalTemplate.isAppOwner) {
+          targetRole = await prisma.role.create({
+            data: {
+              name: globalTemplate.name,
+              description: globalTemplate.description,
+              permissions: globalTemplate.permissions,
+              minTier: globalTemplate.minTier,
+              isManager: globalTemplate.isManager,
+              isAppOwner: false,
+              agencyId: String(targetAgencyId)
+            }
+          });
+        }
+      }
     }
+
+    if (!targetRole) return res.status(400).json({ message: 'Valid roleId or roleName is required' });
+    if (targetRole.isAppOwner) return res.status(403).json({ message: 'Cannot assign App Owner role from agency user management' });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = await prisma.user.create({ data: { name, email, password: hashedPassword, roleId: targetRole.id, agencyId: targetAgencyId }, include: { role: true } });
     res.status(201).json({ id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role.name, agencyId: newUser.agencyId });
   } catch (error) {
