@@ -53,12 +53,28 @@ Before a deploy that includes Prisma migrations:
 
 ```bash
 cd /root/nexus-backend/server
+npm run db:backup:audit
 npm run db:backup
 npx prisma migrate deploy
 pm2 restart nexus-backend-final
 ```
 
 If `npm run db:backup` fails, stop the deploy.
+
+For a strict pre-pilot readiness check that also requires restore verification
+inputs:
+
+```bash
+cd /root/nexus-backend/server
+STRICT_BACKUP_AUDIT=true \
+RESTORE_DATABASE_URL='postgresql://nexus:password@localhost:5432/nexus_restore_verify' \
+BACKUP_FILE='/var/backups/nexus/nexus_YYYYMMDDTHHMMSSZ.dump' \
+npm run db:backup:audit
+```
+
+The audit does not run `pg_dump` or `pg_restore`; it only checks required env,
+PostgreSQL tooling, backup directory writability, retention settings and that
+`RESTORE_DATABASE_URL` does not point to the same host/database as `DATABASE_URL`.
 
 ## Restore verification drill
 

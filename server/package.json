@@ -12,6 +12,7 @@
     "prisma:seed": "node prisma/seed.js",
     "prisma:migrate": "prisma migrate dev",
     "db:backup": "bash scripts/backup-postgres.sh",
+    "db:backup:audit": "node scripts/audit-backup-restore.js",
     "db:restore:verify": "bash scripts/verify-restore-postgres.sh",
     "security:runtime": "node scripts/audit-runtime-secrets.js",
     "lint": "eslint src",

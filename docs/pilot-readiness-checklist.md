@@ -46,6 +46,7 @@ Go/no-go:
 
 Podle `docs/database-backup-restore-runbook.md` overte:
 
+- `STRICT_BACKUP_AUDIT=true npm run db:backup:audit` probehl na backend serveru.
 - Manualni backup probehl pred pilotem.
 - Checksum existuje.
 - Restore verification probehl do oddelene databaze.
