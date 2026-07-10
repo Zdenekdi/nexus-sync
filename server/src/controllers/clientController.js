@@ -1,5 +1,6 @@
 const prisma = require('../services/db');
 const logger = require('../services/logger');
+const { getPhoneLookupValues, normalizePhoneNumber } = require('../utils/phoneNumber');
 
 /**
  * Client Controller (CRM)
@@ -30,13 +31,12 @@ exports.getClientByPhone = async (req, res) => {
   try {
     const { phone } = req.params;
     const { agencyId } = req.user;
+    const phoneVariants = getPhoneLookupValues(phone);
 
-    const client = await prisma.client.findUnique({
+    const client = await prisma.client.findFirst({
       where: {
-        agencyId_phone: {
-          agencyId,
-          phone
-        }
+        agencyId,
+        phone: { in: phoneVariants.length ? phoneVariants : [normalizePhoneNumber(phone)] }
       },
       include: {
         bookings: {

@@ -20,6 +20,7 @@ const prismaMock = {
   inventory: { findMany: jest.fn(), create: jest.fn(), update: jest.fn() },
   note: { findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
   clientNote: { findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), delete: jest.fn() },
+  client: { findUnique: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), upsert: jest.fn(), count: jest.fn(), aggregate: jest.fn() },
   subscription: { findMany: jest.fn(), findFirst: jest.fn(), create: jest.fn(), update: jest.fn(), updateMany: jest.fn(), count: jest.fn(), groupBy: jest.fn() },
   globalSetting: { findUnique: jest.fn(), upsert: jest.fn(), findMany: jest.fn() },
   feature: { findMany: jest.fn(), findFirst: jest.fn(), create: jest.fn(), update: jest.fn(), upsert: jest.fn() },

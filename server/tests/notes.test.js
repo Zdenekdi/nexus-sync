@@ -27,6 +27,11 @@ afterEach(() => jest.clearAllMocks());
 
 describe('POST /api/notes', () => {
   it('creates a note with valid data', async () => {
+    prismaMock.profile.findFirst.mockResolvedValue({
+      id: 'profile-1',
+      agencyId: 'agency-1',
+      phoneNumber: '+420773227907',
+    });
     prismaMock.clientNote.create.mockResolvedValue({
       id: 'note-1',
       agencyId: 'agency-1',
@@ -45,6 +50,49 @@ describe('POST /api/notes', () => {
     expect(res.status).toBe(201);
     expect(res.body.text).toBe('Client prefers morning calls');
     expect(res.body.clientPhone).toBe('+1234567890');
+    expect(prismaMock.profile.findFirst).toHaveBeenCalledWith({
+      where: { id: 'profile-1', agencyId: 'agency-1' },
+      select: { id: true, phoneNumber: true }
+    });
+  });
+
+  it('normalizes clientPhone before creating a note', async () => {
+    prismaMock.profile.findFirst.mockResolvedValue({
+      id: 'profile-1',
+      agencyId: 'agency-1',
+      phoneNumber: '+420773227907',
+    });
+    prismaMock.clientNote.create.mockResolvedValue({
+      id: 'note-1',
+      agencyId: 'agency-1',
+      profileId: 'profile-1',
+      clientPhone: '+420739777718',
+      text: 'Client prefers morning calls',
+      authorName: 'Test User',
+      createdAt: new Date('2025-06-01'),
+    });
+
+    const res = await request(app)
+      .post('/api/notes')
+      .set('Authorization', `Bearer ${makeToken()}`)
+      .send({ profileId: 'profile-1', clientPhone: '739 777 718', text: 'Client prefers morning calls' });
+
+    expect(res.status).toBe(201);
+    expect(prismaMock.clientNote.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ clientPhone: '+420739777718' })
+    });
+  });
+
+  it('rejects notes for profiles outside the user agency', async () => {
+    prismaMock.profile.findFirst.mockResolvedValue(null);
+
+    const res = await request(app)
+      .post('/api/notes')
+      .set('Authorization', `Bearer ${makeToken()}`)
+      .send({ profileId: 'profile-other-agency', clientPhone: '+1234567890', text: 'Nope' });
+
+    expect(res.status).toBe(404);
+    expect(prismaMock.clientNote.create).not.toHaveBeenCalled();
   });
 
   it('returns 400 with missing required fields', async () => {
@@ -92,6 +140,11 @@ describe('GET /api/notes/:clientPhone', () => {
   });
 
   it('filters by profileId query parameter', async () => {
+    prismaMock.profile.findFirst.mockResolvedValue({
+      id: 'profile-1',
+      agencyId: 'agency-1',
+      phoneNumber: '+420773227907',
+    });
     prismaMock.clientNote.findMany.mockResolvedValue([]);
 
     const res = await request(app)
@@ -103,8 +156,26 @@ describe('GET /api/notes/:clientPhone', () => {
       expect.objectContaining({
         where: expect.objectContaining({
           agencyId: 'agency-1',
-          clientPhone: '+1234567890',
+          clientPhone: { in: expect.arrayContaining(['+1234567890', '1234567890']) },
           profileId: 'profile-1',
+        }),
+      })
+    );
+  });
+
+  it('looks up notes across phone variants', async () => {
+    prismaMock.clientNote.findMany.mockResolvedValue([]);
+
+    const res = await request(app)
+      .get(`/api/notes/${encodeURIComponent('00420 739 777 718')}`)
+      .set('Authorization', `Bearer ${makeToken()}`);
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.clientNote.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          agencyId: 'agency-1',
+          clientPhone: { in: expect.arrayContaining(['00420739777718', '+420739777718']) },
         }),
       })
     );
