@@ -100,12 +100,18 @@ jobs:
         if: steps.cache-playwright.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps
 
-      # - name: Run Playwright tests
-      #   run: npm run test:smoke
-      #   env:
-      #     FRONTEND_URL: http://localhost:5173
-      #     TEST_OWNER_EMAIL: ${{ secrets.TEST_OWNER_EMAIL }}
-      #     TEST_OWNER_PASSWORD: ${{ secrets.TEST_OWNER_PASSWORD }}
+      - name: Run API relay/security tests
+        run: npm run test:api
+        env:
+          NEXUS_API_URL: ${{ secrets.NEXUS_API_URL || 'https://nexus-api.myvnc.com/api' }}
+          NEXUS_DEVICE_SECRET: ${{ secrets.NEXUS_DEVICE_SECRET }}
+          TEST_OWNER_EMAIL: ${{ secrets.TEST_OWNER_EMAIL }}
+          TEST_OWNER_PASSWORD: ${{ secrets.TEST_OWNER_PASSWORD }}
+
+      - name: Run Playwright tests
+        run: npm run test:all:e2e
+        env:
+          FRONTEND_URL: ${{ secrets.FRONTEND_URL || 'https://nexus-sync-8d50b.web.app' }}
 
   # ── Android APK Build ───────────────────────────────────────────────────────
   build-android:
