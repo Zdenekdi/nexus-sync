@@ -23,6 +23,7 @@
     "version:bump": "node scripts/bump-version.js",
     "security:secrets": "node scripts/check-secrets.js",
     "security:runtime": "cd server && npm run security:runtime",
+    "ops:health": "cd server && npm run ops:health",
     "test:smoke": "npx playwright test --ignore-snapshots --grep-invert android",
     "test:api": "npx playwright test rbac sms-relay --project=chromium",
     "test:relay:live": "bash scripts/test-relay-live.sh",

@@ -14,6 +14,7 @@
     "db:backup": "bash scripts/backup-postgres.sh",
     "db:backup:audit": "node scripts/audit-backup-restore.js",
     "db:restore:verify": "bash scripts/verify-restore-postgres.sh",
+    "ops:health": "node scripts/audit-operational-health.js",
     "security:runtime": "node scripts/audit-runtime-secrets.js",
     "lint": "eslint src",
     "test": "jest --forceExit --detectOpenHandles",

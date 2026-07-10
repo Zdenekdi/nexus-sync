@@ -171,6 +171,16 @@ STRICT_RUNTIME_SECRETS=true npm run security:runtime
 
 - `/health` vraci `status: ok`.
 - `/api/admin/operational-health` vraci `status: ok` pro App Ownera.
+- Opakovatelny smoke prikaz bez vypisu tokenu/hodnot:
+
+```bash
+OPS_API_BASE_URL=https://nexus-api.myvnc.com/api \
+OPS_OWNER_EMAIL=owner@example.com \
+OPS_OWNER_PASSWORD=... \
+STRICT_OPERATIONAL_HEALTH=true \
+npm run ops:health
+```
+
 - Stripe checkout vytvori session a webhook ji aktivuje.
 - Relay telefon posle inbound SMS a outbox poll obnovuje `lastSeenAt`.
 - Telegram alerty jsou dorucitelne nebo jsou vedome vypnute.
