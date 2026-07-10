@@ -382,6 +382,21 @@ export async function setupApiMocks(page) {
     });
   });
 
+  await context.route('**/subscriptions/trial', async route => {
+    await route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'trial-mock',
+        agencyId: 'agency-2',
+        plan: 'Starter',
+        status: 'TRIAL',
+        amountPaid: 0,
+        expiresAt: '2026-07-24T00:00:00.000Z'
+      })
+    });
+  });
+
   // Salon Keys mock
   await context.route('**/salon-keys', async route => {
     if (route.request().method() === 'GET') {
