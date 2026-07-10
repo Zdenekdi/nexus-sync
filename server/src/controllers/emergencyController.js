@@ -142,10 +142,27 @@ class EmergencyController {
   async acknowledgeReceipt(req, res) {
     try {
       const { id } = req.params;
-      const userId = req.user?.id;
+      const userId = req.user?.userId || req.user?.id || req.user?.sub;
+      const agencyId = req.user?.agencyId;
+      const isAppOwner = req.user?.role?.isAppOwner;
 
-      const receipt = await prisma.emergencyReceipt.findUnique({ where: { id } });
+      if (!userId) return res.status(403).json({ message: 'User scope required' });
+
+      const receipt = await prisma.emergencyReceipt.findUnique({
+        where: { id },
+        include: {
+          event: {
+            select: {
+              session: { select: { agencyId: true } }
+            }
+          }
+        }
+      });
       if (!receipt) return res.status(404).json({ message: 'Receipt not found' });
+      const receiptAgencyId = receipt.event?.session?.agencyId;
+      if (!isAppOwner && receiptAgencyId && receiptAgencyId !== agencyId) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
       if (receipt.recipientId !== userId) {
         return res.status(403).json({ message: 'Not your receipt' });
       }

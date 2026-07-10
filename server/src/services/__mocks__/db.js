@@ -30,6 +30,7 @@ const prismaMock = {
   auditLog: { findMany: jest.fn(), findFirst: jest.fn(), create: jest.fn(), count: jest.fn() },
   inventoryLocation: { findMany: jest.fn(), findUnique: jest.fn(), create: jest.fn(), delete: jest.fn() },
   emergencyEvent: { findMany: jest.fn(), findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
+  emergencyReceipt: { findUnique: jest.fn(), update: jest.fn() },
   $transaction: jest.fn((fn) => fn(prismaMock)),
   $queryRaw: jest.fn().mockResolvedValue([{ '?column?': 1 }]),
   $on: jest.fn(),
