@@ -277,7 +277,6 @@ jobs:
           script: |
             cd /root/nexus-backend
             git pull origin master
-            pm2 stop nexus-backend-final || true
             if [ -n "${{ secrets.STRIPE_SECRET_KEY }}" ] && [ -z "${{ secrets.STRIPE_WEBHOOK_SECRET }}" ]; then
               echo "STRIPE_SECRET_KEY is configured, but STRIPE_WEBHOOK_SECRET is missing. Refusing to deploy billing without webhook verification."
               exit 1
