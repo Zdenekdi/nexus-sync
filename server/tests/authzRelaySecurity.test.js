@@ -21,6 +21,7 @@ const app = require('../src/app');
 
 const originalNodeEnv = process.env.NODE_ENV;
 const originalWebhookSecret = process.env.WEBHOOK_SECRET;
+const originalAllowLegacyDeviceEndpoints = process.env.ALLOW_LEGACY_DEVICE_ENDPOINTS;
 
 function makeToken({
   userId = 'user-1',
@@ -47,6 +48,11 @@ afterEach(() => {
     delete process.env.WEBHOOK_SECRET;
   } else {
     process.env.WEBHOOK_SECRET = originalWebhookSecret;
+  }
+  if (originalAllowLegacyDeviceEndpoints === undefined) {
+    delete process.env.ALLOW_LEGACY_DEVICE_ENDPOINTS;
+  } else {
+    process.env.ALLOW_LEGACY_DEVICE_ENDPOINTS = originalAllowLegacyDeviceEndpoints;
   }
 });
 
@@ -176,6 +182,43 @@ describe('legacy device endpoint production guard', () => {
       });
 
     expect(res.status).toBe(410);
+    expect(prismaMock.message.create).not.toHaveBeenCalled();
+  });
+
+  it('disables legacy mobile call ingestion unless explicitly enabled', async () => {
+    process.env.NODE_ENV = 'production';
+    delete process.env.ALLOW_LEGACY_DEVICE_ENDPOINTS;
+
+    const res = await request(app)
+      .post('/api/device/mobile/call')
+      .send({
+        secret: process.env.DEVICE_SECRET,
+        from: '+420900111222',
+        to: '+420773227907',
+        state: 'RINGING'
+      });
+
+    expect(res.status).toBe(410);
+    expect(prismaMock.callLog.create).not.toHaveBeenCalled();
+  });
+
+  it('disables legacy GoIP SMS ingestion unless explicitly enabled', async () => {
+    process.env.NODE_ENV = 'production';
+    delete process.env.ALLOW_LEGACY_DEVICE_ENDPOINTS;
+
+    const res = await request(app)
+      .post('/api/device/goip/sms')
+      .type('form')
+      .send({
+        secret: process.env.DEVICE_SECRET,
+        src: '+420900111222',
+        dst: '+420773227907',
+        msg: 'legacy goip sms'
+      });
+
+    expect(res.status).toBe(410);
+    expect(res.text).toBe('LEGACY ENDPOINT DISABLED');
+    expect(prismaMock.profile.findFirst).not.toHaveBeenCalled();
     expect(prismaMock.message.create).not.toHaveBeenCalled();
   });
 });
