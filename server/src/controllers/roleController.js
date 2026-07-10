@@ -34,7 +34,7 @@ exports.isEffectiveAdmin = async (userRole, userAgencyId) => {
 exports.getRoles = async (req, res) => {
     try {
         const { agencyId } = req.query;
-        const { role: userRole } = req.user;
+        const { role: userRole, agencyId: userAgencyId } = req.user;
 
         if (!userRole?.isAppOwner && !userRole?.isManager) {
             return res.status(403).json({ message: 'Access denied' });
@@ -42,8 +42,11 @@ exports.getRoles = async (req, res) => {
 
         // Build where clause
         let where;
-        if (agencyId) {
-            where = { agencyId };
+        if (!userRole?.isAppOwner) {
+            if (!userAgencyId) return res.status(403).json({ message: 'No agency' });
+            where = { agencyId: String(userAgencyId) };
+        } else if (agencyId) {
+            where = { agencyId: String(agencyId) };
         } else {
             // Global view: fetch agencyId null AND empty string to catch all global-scoped roles
             where = { OR: [{ agencyId: null }, { agencyId: '' }] };
