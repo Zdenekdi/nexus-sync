@@ -4,6 +4,50 @@ const crypto = require('crypto');
 const logger = require('../services/logger');
 const { isEffectiveAdmin } = require('./roleController');
 
+const API_ACCESS_PLANS = new Set(['Agency', 'Professional', 'Enterprise']);
+const ALLOWED_API_KEY_SCOPES = new Set(['read:stats', 'read:profiles', 'read:messages']);
+
+const normalizeApiKeyScopes = (input) => {
+  const rawScopes = Array.isArray(input)
+    ? input
+    : String(input || 'read:stats').split(',');
+  const scopes = [...new Set(rawScopes.map(scope => String(scope).trim()).filter(Boolean))];
+  const invalidScopes = scopes.filter(scope => !ALLOWED_API_KEY_SCOPES.has(scope));
+
+  return {
+    scopes: scopes.length ? scopes : ['read:stats'],
+    invalidScopes,
+    value: scopes.length ? scopes.join(',') : 'read:stats'
+  };
+};
+
+const normalizeKeyName = (name) => {
+  if (name === undefined || name === null || name === '') return 'Default Key';
+  if (typeof name !== 'string') return null;
+  return name.trim().slice(0, 120) || 'Default Key';
+};
+
+const agencyHasApiAccess = (agency) => {
+  const currentPlan = agency?.plan || agency?.tier;
+  if (API_ACCESS_PLANS.has(currentPlan)) return true;
+
+  try {
+    const features = JSON.parse(agency?.extraFeatures || '{}');
+    return features.api_access === true || features.api_access === 'true';
+  } catch {
+    return false;
+  }
+};
+
+const requireAgencyScope = (res, agencyId) => {
+  if (agencyId) return true;
+  res.status(403).json({
+    code: 'agency_required',
+    message: 'API key management requires an agency-scoped user.'
+  });
+  return false;
+};
+
 /**
  * Generate a new API key for the agency.
  * Returns the plain text key (only shown once).
@@ -13,17 +57,36 @@ exports.createKey = async (req, res) => {
     const { agencyId, role } = req.user;
     const { name, scopes } = req.body;
 
+    if (!requireAgencyScope(res, agencyId)) return;
+
     // 1. Check permissions (Must be an effective admin)
     const isAdmin = await isEffectiveAdmin(role, agencyId);
     if (!isAdmin) {
       return res.status(403).json({ message: 'Only agency administrators can manage API keys' });
     }
 
+    const normalizedName = normalizeKeyName(name);
+    if (!normalizedName) {
+      return res.status(400).json({ message: 'API key name must be a string' });
+    }
+
+    const normalizedScopes = normalizeApiKeyScopes(scopes);
+    if (normalizedScopes.invalidScopes.length) {
+      return res.status(400).json({
+        code: 'invalid_api_key_scopes',
+        message: 'API key contains unsupported scopes',
+        invalidScopes: normalizedScopes.invalidScopes,
+        allowedScopes: [...ALLOWED_API_KEY_SCOPES]
+      });
+    }
+
     // 2. Validate Agency Plan
     const agency = await prisma.agency.findUnique({ where: { id: agencyId } });
-    const allowedPlans = ['Agency', 'Professional', 'Enterprise'];
-    if (!allowedPlans.includes(agency.plan || agency.tier)) {
-      return res.status(403).json({ message: 'Public API access requires an Agency plan' });
+    if (!agency) {
+      return res.status(404).json({ message: 'Agency not found' });
+    }
+    if (!agencyHasApiAccess(agency)) {
+      return res.status(403).json({ message: 'API access requires Professional, Agency, Enterprise, or the API access add-on' });
     }
 
     // 3. Generate Key Parts
@@ -38,8 +101,8 @@ exports.createKey = async (req, res) => {
       data: {
         keyId,
         keyHash,
-        name: name || 'Default Key',
-        scopes: scopes || 'read:stats',
+        name: normalizedName,
+        scopes: normalizedScopes.value,
         agencyId
       }
     });
@@ -49,7 +112,8 @@ exports.createKey = async (req, res) => {
     res.status(201).json({
       message: 'API key generated successfully. Please save it now, it will never be shown again.',
       apiKey: fullKey,
-      name: name || 'Default Key'
+      name: normalizedName,
+      scopes: normalizedScopes.scopes
     });
   } catch (error) {
     logger.error('[API Controller] createKey ERROR:', error);
@@ -63,6 +127,8 @@ exports.createKey = async (req, res) => {
 exports.listKeys = async (req, res) => {
   try {
     const { agencyId, role } = req.user;
+
+    if (!requireAgencyScope(res, agencyId)) return;
     
     const isAdmin = await isEffectiveAdmin(role, agencyId);
     if (!isAdmin) return res.status(403).json({ message: 'Forbidden' });
@@ -95,6 +161,8 @@ exports.revokeKey = async (req, res) => {
   try {
     const { id } = req.params;
     const { agencyId, role } = req.user;
+
+    if (!requireAgencyScope(res, agencyId)) return;
 
     const isAdmin = await isEffectiveAdmin(role, agencyId);
     if (!isAdmin) return res.status(403).json({ message: 'Forbidden' });
