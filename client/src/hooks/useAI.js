@@ -39,15 +39,21 @@ export const useAI = () => {
     try {
       setIsAiLoading(true);
       setAiError(null);
-      
+
+      const history = Array.isArray(messages) ? messages : [];
+      const lastMessage = history[history.length - 1] || {};
+      const messageText = lastMessage.text || lastMessage.content || '';
+
       const response = await axios.post(`${API_BASE}/ai/suggest`, {
-        messages,
-        profileId: profileId === 'all' ? null : profileId
+        messageText,
+        history,
+        profileId: profileId === 'all' ? null : profileId,
+        lang
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      return response.data.response;
+      return response.data.suggestions;
     } catch (err) {
       console.error('AI Suggestion Error:', err);
       const msg = lang === 'cz' 

@@ -278,8 +278,8 @@ export const NexusProvider = ({ children }) => {
   const [calViewDate, setCalViewDate] = useState(new Date());
 
   const availableServers = useMemo(() => [
-    { id: 'main-hub', name: 'Main Hub', ip: '45.76.115.89' },
-    { id: 'ai-node', name: 'AI Node (Hetzner)', ip: '135.181.85.220' }
+    { id: 'main-hub', name: 'Main Hub', ip: '78.141.202.139' },
+    { id: 'ai-node', name: 'AI Node (Hetzner)', ip: '178.105.39.179' }
   ], []);
   const [selectedServerId, setSelectedServerId] = useState('main-hub');
 

@@ -7,10 +7,18 @@ import {
 import axios from 'axios';
 import { useNexus } from '../context/ContextHook';
 
+const formatUptime = (seconds = 0) => {
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  return { days, hours, minutes };
+};
+
 const SystemHealthTab = ({ server }) => {
   const nexus = useNexus();
   const { token, API_BASE, t } = nexus;
   const [health, setHealth] = useState(null);
+  const [infra, setInfra] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -19,41 +27,73 @@ const SystemHealthTab = ({ server }) => {
   const fetchHealth = useCallback(async () => {
     try {
       setLoading(true);
-      
+
+      const r = await axios.get(`${API_BASE}/admin/infra-health`, {
+        headers: { Authorization: `Bearer ${token}` },
+        validateStatus: status => status < 600
+      });
+
+      if (r.status >= 400 && !r.data?.checks) {
+        throw new Error(r.data?.error || 'Failed to fetch infrastructure health');
+      }
+
+      const report = r.data;
+      setInfra(report);
+
       if (isMainHub) {
-        const r = await axios.get(`${API_BASE}/admin/health`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setHealth(r.data);
-      } else if (server?.id === 'ai-node') {
-        const r = await axios.get(`${API_BASE}/hetzner/status`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        const data = r.data;
+        const api = report.checks?.api || {};
+        const disk = report.checks?.disk || {};
+        const provider = report.checks?.providers?.vultr || {};
         setHealth({
           platform: 'linux',
-          release: data.os || 'Ubuntu 24.04',
+          release: provider.name || 'Vultr',
           arch: 'x64',
-          nodeVersion: 'v20.x',
+          nodeVersion: api.nodeVersion || '---',
           cpu: {
-            cores: data.vcpu_count || 4,
-            model: 'Hetzner vCPU',
+            cores: api.cpu?.cores || 1,
+            model: api.cpu?.model || 'Production VPS',
+            loadAvg: api.loadAvg || [0, 0, 0]
+          },
+          memory: {
+            total: `${api.memory?.totalGb || '---'} GB`,
+            used: `${api.memory?.usedGb || '---'} GB`,
+            percent: api.memory?.percent || 0
+          },
+          disk: {
+            total: `${disk.totalGb || '---'} GB`,
+            used: `${disk.usedGb || '---'} GB`,
+            percent: disk.percent || 'N/A'
+          },
+          uptime: formatUptime(api.hostUptimeSeconds || 0),
+          timestamp: report.timestamp,
+          power_status: provider.status === 'running' ? 'running' : report.status
+        });
+      } else if (server?.id === 'ai-node') {
+        const provider = report.checks?.providers?.hetzner || {};
+        const ai = report.checks?.ai || {};
+        setHealth({
+          platform: 'linux',
+          release: provider.name || 'Hetzner AI Node',
+          arch: 'x64',
+          nodeVersion: ai.model || 'Ollama',
+          cpu: {
+            cores: provider.vcpuCount || 8,
+            model: provider.serverType || 'Hetzner vCPU',
             loadAvg: [0, 0, 0]
           },
           memory: {
-            total: `${(data.ram / 1024).toFixed(1)} GB`,
+            total: `${provider.ramGb || 16} GB`,
             used: '---',
             percent: 0
           },
           disk: {
-            total: `${data.disk} GB`,
+            total: provider.diskGb ? `${provider.diskGb} GB` : '---',
             used: '---',
             percent: 0
           },
           uptime: { days: 0, hours: 0, minutes: 0 },
-          timestamp: new Date().toISOString(),
-          power_status: data.power_status
+          timestamp: report.timestamp,
+          power_status: provider.status === 'running' ? 'running' : 'off'
         });
       }
       
@@ -68,12 +108,11 @@ const SystemHealthTab = ({ server }) => {
 
   useEffect(() => {
     setHealth(null);
+    setInfra(null);
     setError(null);
     fetchHealth();
-    if (isMainHub) {
-      const interval = setInterval(fetchHealth, 30000);
-      return () => clearInterval(interval);
-    }
+    const interval = setInterval(fetchHealth, 30000);
+    return () => clearInterval(interval);
   }, [server, isMainHub, fetchHealth]);
 
   if (loading && !health) return (
@@ -93,6 +132,18 @@ const SystemHealthTab = ({ server }) => {
   );
 
   const isMobile = window.innerWidth < 768;
+  const checks = infra?.checks || {};
+  const serviceCards = isMainHub ? [
+    { label: 'API', ok: checks.api?.ok, value: checks.api?.nodeVersion || '---' },
+    { label: 'Database', ok: checks.database?.ok, value: checks.database?.status || '---' },
+    { label: 'PM2 Backend', ok: checks.pm2?.processes?.backend?.ok, value: checks.pm2?.processes?.backend?.status || '---' },
+    { label: 'AI Tunnel', ok: checks.pm2?.processes?.aiTunnel?.ok, value: checks.pm2?.processes?.aiTunnel?.status || '---' }
+  ] : [
+    { label: 'Hetzner', ok: checks.providers?.hetzner?.ok, value: checks.providers?.hetzner?.status || '---' },
+    { label: 'Ollama', ok: checks.ai?.ok, value: checks.ai?.model || '---' },
+    { label: 'AI Tunnel', ok: checks.pm2?.processes?.aiTunnel?.ok, value: checks.pm2?.processes?.aiTunnel?.status || '---' },
+    { label: 'SSH', ok: checks.ssh?.targets?.hetzner?.ok, value: checks.ssh?.targets?.hetzner?.hostname || '---' }
+  ];
 
   return (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -144,6 +195,27 @@ const SystemHealthTab = ({ server }) => {
           color="#ec4899"
         />
       </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '1rem' }}>
+        {serviceCards.map(card => (
+          <ServiceStatusCard key={card.label} {...card} />
+        ))}
+      </div>
+
+      {infra?.issues?.length > 0 && (
+        <div className="glass-card" style={{ padding: '1.25rem', border: '1px solid rgba(245, 158, 11, 0.25)', background: 'rgba(245, 158, 11, 0.08)' }}>
+          <h3 style={{ fontSize: '0.95rem', fontWeight: '900', marginBottom: '0.75rem', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <AlertTriangle size={18} /> Infrastructure warnings
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {infra.issues.map((issue, index) => (
+              <div key={`${issue.check}-${index}`} style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                <strong style={{ color: '#f59e0b' }}>{issue.check}:</strong> {issue.message}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1.2fr', gap: '2rem' }}>
         
@@ -208,6 +280,22 @@ const HealthStatCard = ({ icon, label, value, subtitle, color }) => (
     <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{subtitle}</div>
   </div>
 );
+
+const ServiceStatusCard = ({ label, ok, value }) => {
+  const color = ok ? '#10b981' : '#ef4444';
+  return (
+    <div className="glass-card" style={{ padding: '1rem', border: `1px solid ${color}25`, minHeight: '84px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+        <span style={{ fontSize: '0.7rem', fontWeight: '900', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>{label}</span>
+        {ok ? <CheckCircle size={16} color={color} /> : <AlertTriangle size={16} color={color} />}
+      </div>
+      <div style={{ fontSize: '0.95rem', fontWeight: '900', color, lineHeight: 1.25 }}>
+        {ok ? 'OK' : 'CHECK'}
+      </div>
+      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.25rem', wordBreak: 'break-word' }}>{value}</div>
+    </div>
+  );
+};
 
 const UsageBar = ({ label, percent, value, color }) => (
   <div>

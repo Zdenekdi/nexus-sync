@@ -1,6 +1,12 @@
 const prisma = require('../services/db');
 const aiService = require('../services/aiService');
 
+// GET /api/ai/status — Check AI/Ollama connectivity
+exports.status = async (_req, res) => {
+  const status = await aiService.healthCheck({ includeInternal: false });
+  res.status(status.ok ? 200 : 503).json(status);
+};
+
 // POST /api/ai/suggest-reply — AI-powered reply suggestions
 exports.suggestReply = async (req, res) => {
   try {
@@ -25,11 +31,13 @@ exports.suggestReply = async (req, res) => {
       }
     }
 
-    // Prepare messages for AI (ensure role/content format)
-    const formattedHistory = history.map(h => ({
-      role: h.direction === 'INBOUND' ? 'user' : 'assistant',
-      content: h.text
-    }));
+    // Prepare messages for AI (accept both {direction,text} and {role,content})
+    const formattedHistory = history
+      .map(h => ({
+        role: h.role || (h.direction === 'INBOUND' ? 'user' : 'assistant'),
+        content: h.content || h.text || ''
+      }))
+      .filter(h => h.content.trim().length > 0);
     
     // Add the latest message if not in history
     if (formattedHistory.length === 0 || formattedHistory[formattedHistory.length - 1].content !== messageText) {
