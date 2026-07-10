@@ -51,6 +51,14 @@ const requireSubscriptionManager = (req, res, next) => {
   next();
 };
 
+const requireAgencySubscriptionScope = (req, res, next) => {
+  if (req.user?.agencyId) return next();
+  return res.status(403).json({
+    code: 'agency_required',
+    message: 'Subscription action requires an agency-scoped user.'
+  });
+};
+
 const requireManualSubscriptionStart = (req, res, next) => {
   if (isAppOwnerRole(req.user?.role)) return next();
 
@@ -65,7 +73,7 @@ const requireManualSubscriptionStart = (req, res, next) => {
 
 // ── GET /api/subscriptions/current
 // Returns the active subscription for the caller's agency
-router.get('/current', async (req, res) => {
+router.get('/current', requireAgencySubscriptionScope, async (req, res) => {
   try {
     const agencyId = req.user.agencyId;
     const now = new Date();
@@ -90,7 +98,7 @@ router.get('/current', async (req, res) => {
 
 // ── GET /api/subscriptions/history
 // Full subscription history for the agency
-router.get('/history', async (req, res) => {
+router.get('/history', requireAgencySubscriptionScope, async (req, res) => {
   try {
     const agencyId = req.user.agencyId;
     const list = await prisma.subscription.findMany({
@@ -106,7 +114,7 @@ router.get('/history', async (req, res) => {
 // ── POST /api/subscriptions/start
 // Start (or renew) a subscription for the agency
 // Body: { plan: 'Starter'|'Professional'|'Agency', paymentRef?, amountPaid?, note? }
-router.post('/start', requireManualSubscriptionStart, validate(startSubscription), async (req, res) => {
+router.post('/start', requireAgencySubscriptionScope, requireManualSubscriptionStart, validate(startSubscription), async (req, res) => {
   try {
     const { plan, paymentRef, amountPaid, currency = 'CZK', note } = req.body;
     const agencyId = req.user.agencyId;
@@ -154,7 +162,7 @@ router.post('/start', requireManualSubscriptionStart, validate(startSubscription
 
 // ── POST /api/subscriptions/cancel
 // Cancel the active subscription
-router.post('/cancel', requireSubscriptionManager, validate(cancelSubscription), async (req, res) => {
+router.post('/cancel', requireAgencySubscriptionScope, requireSubscriptionManager, validate(cancelSubscription), async (req, res) => {
   try {
     const agencyId = req.user.agencyId;
     const { note } = req.body;
