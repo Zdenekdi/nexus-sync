@@ -19,13 +19,25 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: lts/*
+        cache: npm
+        cache-dependency-path: |
+          package-lock.json
+          client/package-lock.json
     - name: Install dependencies
       run: npm install
     - name: Install client dependencies
       run: cd client && npm install --legacy-peer-deps --prefer-offline --no-audit
     - name: Build client dist for mocked UI routes
       run: cd client && npm run build
+    - name: Cache Playwright Browsers
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json', 'client/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-playwright-
     - name: Install Playwright Browsers
+      timeout-minutes: 20
       run: npx playwright install --with-deps
     - name: Run API relay/security tests
       run: npm run test:api
