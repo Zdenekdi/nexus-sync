@@ -1,5 +1,6 @@
 const prisma = require('../services/db');
 const crypto = require('crypto');
+const { isManagerRole, isAppOwnerRole } = require('../utils/authz');
 
 // Generate a unique referral code for the agency
 function generateReferralCode() {
@@ -10,6 +11,12 @@ function generateReferralCode() {
 exports.getStats = async (req, res) => {
   try {
     const { agencyId } = req.user;
+    if (!agencyId) {
+      return res.status(403).json({
+        code: 'agency_required',
+        message: 'Referral stats require an agency-scoped user.'
+      });
+    }
 
     const agency = await prisma.agency.findUnique({
       where: { id: agencyId },
@@ -134,7 +141,7 @@ exports.confirmReferral = async (req, res) => {
     const { id } = req.params;
     const { rewardAmount } = req.body;
 
-    if (!req.user.role?.isManager) {
+    if (!isManagerRole(req.user.role)) {
       return res.status(403).json({ message: 'Only managers can confirm referrals' });
     }
 
@@ -142,7 +149,7 @@ exports.confirmReferral = async (req, res) => {
     if (!referral) return res.status(404).json({ message: 'Referral not found' });
 
     // Only the referrer's agency managers can confirm
-    if (referral.referrerId !== req.user.agencyId && !req.user.role?.isAppOwner) {
+    if (referral.referrerId !== req.user.agencyId && !isAppOwnerRole(req.user.role)) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
@@ -163,7 +170,7 @@ exports.confirmReferral = async (req, res) => {
 // GET /api/referrals/admin/all — list all referrals (App Owner only)
 exports.getAllReferrals = async (req, res) => {
   try {
-    if (!req.user.role?.isAppOwner && req.user.role?.name !== 'APP OWNER') {
+    if (!isAppOwnerRole(req.user.role)) {
       return res.status(403).json({ message: 'Only App Owners can access the master referral list' });
     }
 
