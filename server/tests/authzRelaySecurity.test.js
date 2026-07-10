@@ -115,6 +115,32 @@ describe('infrastructure authorization boundaries', () => {
   });
 });
 
+describe('admin settings authorization boundaries', () => {
+  it('keeps global settings app-owner-only', async () => {
+    const res = await request(app)
+      .get('/api/admin/settings')
+      .set('Authorization', `Bearer ${makeToken({ roleName: 'Agency Admin', isManager: true })}`);
+
+    expect(res.status).toBe(403);
+    expect(prismaMock.globalSetting.findMany).not.toHaveBeenCalled();
+  });
+
+  it('allows app owners to read global settings', async () => {
+    prismaMock.globalSetting.findMany.mockResolvedValue([
+      { id: 'setting-1', key: 'SUBSCRIPTION_PLANS', value: '[]' }
+    ]);
+
+    const res = await request(app)
+      .get('/api/admin/settings')
+      .set('Authorization', `Bearer ${makeToken({ roleName: 'App Owner', isManager: true, isAppOwner: true })}`);
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.globalSetting.findMany).toHaveBeenCalledWith({
+      orderBy: { key: 'asc' }
+    });
+  });
+});
+
 describe('webhook routing and shared-secret enforcement', () => {
   it('rejects generic webhooks without the shared secret', async () => {
     process.env.WEBHOOK_SECRET = 'test-webhook-secret';

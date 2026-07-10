@@ -81,12 +81,12 @@ exports.updateGlobalFeature = async (req, res) => {
   }
 };
 
-// GET /api/admin/settings — list all settings (App Owner, Manager)
+// GET /api/admin/settings — list all system settings (App Owner only)
 exports.getGlobalSettings = async (req, res) => {
   try {
     const userRole = req.user?.role;
-    if (!userRole || (!userRole.isAppOwner && !userRole.isManager)) {
-      return res.status(403).json({ error: 'Access denied: Requires App Owner or Manager role.' });
+    if (!userRole || !userRole.isAppOwner) {
+      return res.status(403).json({ error: 'Access denied: Requires App Owner role.' });
     }
 
     const settings = await prisma.globalSetting.findMany({
