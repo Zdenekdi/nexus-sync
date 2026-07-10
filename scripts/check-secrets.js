@@ -45,6 +45,8 @@ const exactPlaceholderValues = new Set([
   'devicesecret12345'
 ]);
 
+const PRIVATE_KEY_MARKER = ['-----BEGIN', 'PRIVATE KEY-----'].join(' ');
+
 const rules = [
   {
     id: 'stripe-secret-key',
@@ -60,7 +62,7 @@ const rules = [
   },
   {
     id: 'firebase-private-key',
-    regex: /-----BEGIN PRIVATE KEY-----/g
+    regex: new RegExp(PRIVATE_KEY_MARKER, 'g')
   },
   {
     id: 'postgres-url-with-password',
