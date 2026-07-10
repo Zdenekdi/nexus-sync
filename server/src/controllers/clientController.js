@@ -63,6 +63,14 @@ exports.updateClient = async (req, res) => {
     const { id } = req.params;
     const { agencyId } = req.user;
     const { name, tags, preferences } = req.body;
+    if (!agencyId) return res.status(400).json({ message: 'Agency ID required' });
+
+    const existing = await prisma.client.findFirst({
+      where: { id, agencyId },
+      select: { id: true }
+    });
+
+    if (!existing) return res.status(404).json({ message: 'Client not found' });
 
     const client = await prisma.client.update({
       where: { id },

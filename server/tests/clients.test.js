@@ -60,3 +60,48 @@ describe('GET /api/clients/:phone', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('PATCH /api/clients/:id', () => {
+  it('updates a client that belongs to the caller agency', async () => {
+    prismaMock.client.findFirst.mockResolvedValue({ id: 'client-1' });
+    prismaMock.client.update.mockResolvedValue({
+      id: 'client-1',
+      agencyId: 'agency-1',
+      phone: '+420739777718',
+      name: 'Updated Client',
+      tags: JSON.stringify(['VIP']),
+      preferences: 'Prefers evenings'
+    });
+
+    const res = await request(app)
+      .patch('/api/clients/client-1')
+      .set('Authorization', `Bearer ${makeToken()}`)
+      .send({ name: 'Updated Client', tags: ['VIP'], preferences: 'Prefers evenings' });
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.client.findFirst).toHaveBeenCalledWith({
+      where: { id: 'client-1', agencyId: 'agency-1' },
+      select: { id: true }
+    });
+    expect(prismaMock.client.update).toHaveBeenCalledWith({
+      where: { id: 'client-1' },
+      data: {
+        name: 'Updated Client',
+        tags: JSON.stringify(['VIP']),
+        preferences: 'Prefers evenings'
+      }
+    });
+  });
+
+  it('does not update a client outside the caller agency', async () => {
+    prismaMock.client.findFirst.mockResolvedValue(null);
+
+    const res = await request(app)
+      .patch('/api/clients/client-other-agency')
+      .set('Authorization', `Bearer ${makeToken()}`)
+      .send({ name: 'Should Not Update' });
+
+    expect(res.status).toBe(404);
+    expect(prismaMock.client.update).not.toHaveBeenCalled();
+  });
+});
