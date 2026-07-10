@@ -295,6 +295,7 @@ jobs:
               echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}" >> .env
               echo "REQUIRE_STRIPE_CONFIG=true" >> .env
             fi
+            STRICT_RUNTIME_SECRETS=true node scripts/audit-runtime-secrets.js
             npm install
             ./node_modules/.bin/prisma generate
             pm2 restart nexus-backend-final --update-env || pm2 start server.js --name nexus-backend-final

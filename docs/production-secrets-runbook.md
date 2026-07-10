@@ -162,6 +162,13 @@ Deploy tokeny:
 
 ## Kontrola po deployi
 
+- Spustte runtime preflight bez vypisu hodnot:
+
+```bash
+cd /root/nexus-backend
+STRICT_RUNTIME_SECRETS=true npm run security:runtime
+```
+
 - `/health` vraci `status: ok`.
 - `/api/admin/operational-health` vraci `status: ok` pro App Ownera.
 - Stripe checkout vytvori session a webhook ji aktivuje.

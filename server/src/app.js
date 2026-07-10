@@ -113,6 +113,20 @@ const analyticsLimiter = rateLimit({
   message: { message: 'Too many analytics requests, please try again later.' }
 });
 
+const positiveIntEnv = (name, fallback) => {
+  const parsed = Number.parseInt(process.env[name], 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+// Public Stripe webhook: keep raw body for signature verification, but rate-limit abuse.
+const billingWebhookLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: positiveIntEnv('BILLING_WEBHOOK_RATE_LIMIT', 300),
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many billing webhook requests, please try again later.' }
+});
+
 app.use(helmet({
   contentSecurityPolicy: false, // API server, no HTML pages
   hsts: { maxAge: 31536000, includeSubDomains: true },
@@ -174,7 +188,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.post('/api/billing/webhook', express.raw({ type: 'application/json' }), (req, res) => billingController.handleWebhook(req, res));
+app.post('/api/billing/webhook', billingWebhookLimiter, express.raw({ type: 'application/json' }), (req, res) => billingController.handleWebhook(req, res));
 
 app.use(express.json({ limit: '64kb' }));
 

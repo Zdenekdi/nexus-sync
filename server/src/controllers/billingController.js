@@ -317,7 +317,8 @@ class BillingController {
       const { type, targetValue, price, durationDays = 30 } = planConfig;
       if (!price) return res.status(400).json({ message: `Price is not configured for ${planId} in ${currency}` });
 
-      const mockBillingAllowed = process.env.NODE_ENV === 'test' || process.env.ALLOW_MOCK_BILLING === 'true';
+      const mockBillingAllowed = process.env.NODE_ENV === 'test' ||
+        (process.env.NODE_ENV !== 'production' && process.env.ALLOW_MOCK_BILLING === 'true');
       if (process.env.STRIPE_SECRET_KEY && !Stripe && !mockBillingAllowed) {
         return res.status(503).json({
           code: 'stripe_dependency_missing',
@@ -546,7 +547,8 @@ class BillingController {
 
   async handleWebhook(req, res) {
     try {
-      const allowUnsignedWebhook = process.env.NODE_ENV === 'test' || process.env.ALLOW_UNSIGNED_BILLING_WEBHOOK === 'true';
+      const allowUnsignedWebhook = process.env.NODE_ENV === 'test' ||
+        (process.env.NODE_ENV !== 'production' && process.env.ALLOW_UNSIGNED_BILLING_WEBHOOK === 'true');
       let eventType = null;
       let payload = null;
       let manualPayload = null;

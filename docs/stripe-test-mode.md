@@ -69,6 +69,30 @@ stripe listen --forward-to http://localhost:3000/api/billing/webhook
 8. Ve Stripe CLI overte prijem udalosti `checkout.session.completed`.
 9. V aplikaci overte, ze je tarif aktivni a ze se nezobrazuje chyba konfigurace Stripe.
 
+## Automaticky end-to-end test platby
+
+Tento test provede skutecnou Stripe test-mode platbu kartou, pocka na webhook aktivaci
+lokalniho subscription zaznamu a overi otevreni Billing Portalu. Spoustejte ho jen proti
+testovacim Stripe klicum a testovacimu uzivateli.
+
+```bash
+RUN_STRIPE_PAYMENT_E2E=true \
+NEXUS_API_URL=https://nexus-api.myvnc.com/api \
+FRONTEND_URL=https://nexus-sync-8d50b.web.app/settings \
+STRIPE_TEST_PLAN_ID=pro_monthly \
+npm run test:stripe:payment
+```
+
+Pro embedded Checkout primo z nastaveni aplikace:
+
+```bash
+RUN_STRIPE_EMBEDDED_E2E=true \
+NEXUS_API_URL=https://nexus-api.myvnc.com/api \
+FRONTEND_URL=https://nexus-sync-8d50b.web.app/settings \
+STRIPE_TEST_PLAN_ID=pro_monthly \
+npm run test:stripe:payment
+```
+
 ## Negativni testy
 
 - Bez `STRIPE_SECRET_KEY` ma backend vratit chybu `stripe_not_configured`.
