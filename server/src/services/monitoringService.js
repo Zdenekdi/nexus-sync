@@ -1,9 +1,13 @@
 const prisma = require('./db');
 const logger = require('./logger');
 const { sendAlert } = require('./alertService');
+const fs = require('fs');
+const path = require('path');
 
 const DEFAULT_PENDING_PAYMENT_MINUTES = 60;
 const DEFAULT_RELAY_OFFLINE_MINUTES = 15;
+const DEFAULT_RELAY_OUTBOX_PENDING_MINUTES = 10;
+const DEFAULT_BACKUP_MAX_AGE_MINUTES = 26 * 60;
 const DEFAULT_ALERT_COOLDOWN_MINUTES = 60;
 
 const lastAlertAt = new Map();
@@ -14,6 +18,8 @@ const positiveIntEnv = (name, fallback) => {
 };
 
 const minutesAgoCutoff = (now, minutes) => new Date(now.getTime() - minutes * 60 * 1000);
+
+const booleanEnv = (name) => String(process.env[name] || '').toLowerCase() === 'true';
 
 const ageMinutes = (now, value) => {
   const date = value instanceof Date ? value : new Date(value);
@@ -61,6 +67,17 @@ const formatBinding = (binding, now) => ({
   deviceName: binding.deviceName || binding.model || null,
   lastSeenAt: binding.lastSeenAt,
   ageMinutes: ageMinutes(now, binding.lastSeenAt)
+});
+
+const formatPendingRelayMessage = (message, now) => ({
+  id: message.id,
+  agencyId: message.chat?.agencyId || null,
+  profileId: message.chat?.profileId || null,
+  profileName: message.chat?.profile?.name || null,
+  to: message.chat?.externalId || null,
+  transport: message.transport || null,
+  createdAt: message.createdAt,
+  ageMinutes: ageMinutes(now, message.createdAt)
 });
 
 class MonitoringService {
@@ -162,15 +179,121 @@ class MonitoringService {
     };
   }
 
+  async checkOutbox(now) {
+    const thresholdMinutes = positiveIntEnv('RELAY_OUTBOX_PENDING_MINUTES', DEFAULT_RELAY_OUTBOX_PENDING_MINUTES);
+    const issues = [];
+    let pendingMessages = [];
+
+    try {
+      pendingMessages = await prisma.message.findMany({
+        where: {
+          direction: 'OUTBOUND',
+          status: 'pending_relay',
+          createdAt: { lt: minutesAgoCutoff(now, thresholdMinutes) }
+        },
+        include: {
+          chat: {
+            select: {
+              agencyId: true,
+              profileId: true,
+              externalId: true,
+              profile: { select: { name: true } }
+            }
+          }
+        },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        take: 25
+      });
+    } catch (error) {
+      issues.push(`Relay outbox query failed: ${error.message}`);
+    }
+
+    const formattedPending = pendingMessages.map(message => formatPendingRelayMessage(message, now));
+    if (formattedPending.length > 0) {
+      issues.push(`${formattedPending.length} outbound Relay SMS message(s) have been pending for more than ${thresholdMinutes} minutes.`);
+    }
+
+    return {
+      status: issues.length > 0 ? 'degraded' : 'ok',
+      thresholdMinutes,
+      pendingCount: formattedPending.length,
+      pending: formattedPending.slice(0, 10),
+      issues
+    };
+  }
+
+  checkBackups(now) {
+    const enabled = booleanEnv('BACKUP_MONITORING_ENABLED') || booleanEnv('REQUIRE_BACKUP_MONITORING');
+    const required = booleanEnv('REQUIRE_BACKUP_MONITORING');
+    const thresholdMinutes = positiveIntEnv('BACKUP_MAX_AGE_MINUTES', DEFAULT_BACKUP_MAX_AGE_MINUTES);
+    const backupDir = process.env.BACKUP_DIR || '/var/backups/nexus';
+    const issues = [];
+
+    if (!enabled) {
+      return {
+        status: 'skipped',
+        enabled: false,
+        required,
+        backupDir,
+        thresholdMinutes,
+        latest: null,
+        issues
+      };
+    }
+
+    let latest = null;
+    try {
+      const entries = fs.readdirSync(backupDir, { withFileTypes: true })
+        .filter(entry => entry.isFile() && /^nexus_.*\.dump$/.test(entry.name))
+        .map(entry => {
+          const fullPath = path.join(backupDir, entry.name);
+          const stats = fs.statSync(fullPath);
+          return {
+            file: fullPath,
+            createdAt: stats.mtime,
+            ageMinutes: ageMinutes(now, stats.mtime),
+            sizeBytes: stats.size
+          };
+        })
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+      latest = entries[0] || null;
+      if (!latest) {
+        issues.push(`No database backup files matching nexus_*.dump were found in ${backupDir}.`);
+      } else if (latest.ageMinutes !== null && latest.ageMinutes > thresholdMinutes) {
+        issues.push(`Latest database backup is ${latest.ageMinutes} minutes old, above the ${thresholdMinutes} minute threshold.`);
+      }
+    } catch (error) {
+      issues.push(`Database backup check failed for ${backupDir}: ${error.message}`);
+    }
+
+    return {
+      status: issues.length > 0 ? 'degraded' : 'ok',
+      enabled,
+      required,
+      backupDir,
+      thresholdMinutes,
+      latest: latest ? {
+        file: latest.file,
+        createdAt: latest.createdAt,
+        ageMinutes: latest.ageMinutes,
+        sizeBytes: latest.sizeBytes
+      } : null,
+      issues
+    };
+  }
+
   async summarizeOperationalHealth(options = {}) {
     const now = options.now || new Date();
-    const [database, stripe, relay] = await Promise.all([
+    const [database, stripe, relay, outbox] = await Promise.all([
       this.checkDatabase(),
       this.checkStripe(now),
-      this.checkRelay(now)
+      this.checkRelay(now),
+      this.checkOutbox(now)
     ]);
+    const backups = this.checkBackups(now);
 
-    const checks = { database, stripe, relay };
+    const checks = { database, stripe, relay, outbox, backups };
     const issues = Object.entries(checks).flatMap(([name, check]) =>
       (check.issues || []).map(message => ({ check: name, message }))
     );
