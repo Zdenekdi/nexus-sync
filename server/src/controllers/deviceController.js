@@ -270,25 +270,35 @@ exports.handleRelay = async (req, res) => {
     const messageTransport = normalizeTransport(transport || type);
     if (!messageTransport) return res.status(400).json({ ok: false, message: 'Invalid transport' });
 
-    const reqUserId = String(deviceId || userId || '');
+    // NOTE: deviceId is a device label (e.g. "RELAY-DEVICE"), NOT the DB userId.
+    // Only use the explicit `userId` field for the ownership check.
+    const reqUserId = String(userId || '');
     const binding = await prisma.deviceBinding.findUnique({
       where: { installationId: installationId || 'none' },
       include: { profile: { select: { id: true, name: true, agencyId: true, phoneNumber: true } } }
     });
 
-    if (!binding) return res.status(404).json({ ok: false, message: 'Source device not found' });
-    if (!binding.active) return res.status(401).json({ message: 'Unauthorized: Device binding inactive' });
+    if (!binding) {
+      console.warn(`[Relay] Device not found: installationId=${installationId}`);
+      return res.status(404).json({ ok: false, message: 'Source device not found' });
+    }
+    if (!binding.active) {
+      console.warn(`[Relay] Inactive binding: installationId=${installationId}`);
+      return res.status(401).json({ message: 'Unauthorized: Device binding inactive' });
+    }
 
     const secretAuthorized = secureCompare(secret, process.env.DEVICE_SECRET);
     const bearerAuthorized = !secretAuthorized && isRelayBearerAuthorized(decodeBearerToken(req), binding);
     if (!secretAuthorized && !bearerAuthorized) {
+      console.warn(`[Relay] Auth failed: installationId=${installationId}, hasSecret=${!!secret}, hasBearer=${!!req.headers.authorization}`);
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    // If we find a binding by installationId, ensure it belongs to the same user
-    // if a deviceId/userId was provided in the request (extra security layer).
+    // Extra ownership check: only if the request explicitly provides a userId field.
+    // deviceId is intentionally excluded – it is a device label, not a user identifier.
     if (reqUserId && String(binding.userId) !== reqUserId) {
-      return res.status(401).json({ message: 'Unauthorized: Device ID mismatch' });
+      console.warn(`[Relay] User mismatch: binding.userId=${binding.userId}, reqUserId=${reqUserId}`);
+      return res.status(401).json({ message: 'Unauthorized: User ID mismatch' });
     }
 
     try {
