@@ -207,6 +207,7 @@ app.use('/api/chats', writeLimiter);
 app.use('/api/blacklist', writeLimiter);
 app.use('/api/agency', writeLimiter);
 app.use('/api/clients', writeLimiter);
+app.use('/api/calls', writeLimiter);
 // SOS has no extra limiter — safety-critical
 
 if (process.env.NODE_ENV !== 'test') {

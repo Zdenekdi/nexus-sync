@@ -16,7 +16,7 @@ const prismaMock = {
   blacklistEntry: { findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn() },
   deviceBinding: { findFirst: jest.fn(), findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), updateMany: jest.fn(), upsert: jest.fn(), delete: jest.fn() },
   dailyStat: { findMany: jest.fn(), create: jest.fn() },
-  callLog: { findMany: jest.fn(), create: jest.fn(), count: jest.fn() },
+  callLog: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), count: jest.fn() },
   inventory: { findMany: jest.fn(), create: jest.fn(), update: jest.fn() },
   note: { findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
   clientNote: { findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), delete: jest.fn() },
