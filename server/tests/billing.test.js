@@ -665,6 +665,33 @@ describe('billing checkout', () => {
     }
   });
 
+  it('rejects signed Stripe webhooks with an invalid signature in production', async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    process.env.STRIPE_SECRET_KEY = 'sk_test_configured';
+    process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test';
+    mockStripeWebhookConstructEvent.mockImplementationOnce(() => {
+      const error = new Error('No signatures found matching the expected signature');
+      error.type = 'StripeSignatureVerificationError';
+      throw error;
+    });
+
+    try {
+      const res = await request(app)
+        .post('/api/billing/webhook')
+        .set('stripe-signature', 'invalid-test-signature')
+        .set('Content-Type', 'application/json')
+        .send(JSON.stringify({ id: 'evt_test' }));
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({ code: 'stripe_signature_invalid' });
+      expect(prismaMock.agency.update).not.toHaveBeenCalled();
+      expect(prismaMock.subscription.findFirst).not.toHaveBeenCalled();
+    } finally {
+      process.env.NODE_ENV = originalNodeEnv;
+    }
+  });
+
   it('renews a Stripe subscription from invoice.paid', async () => {
     prismaMock.subscription.findFirst.mockResolvedValue({
       id: 'sub_local_active',
