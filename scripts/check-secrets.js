@@ -161,13 +161,13 @@ function scanFile(file) {
 }
 
 function main() {
-  const tracked = execFileSync('git', ['ls-files'], { cwd: ROOT, encoding: 'utf8' })
+  const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: ROOT, encoding: 'utf8' })
     .split('\n')
     .map((file) => file.trim())
     .filter(Boolean)
     .filter((file) => !isIgnored(file));
 
-  const findings = tracked.flatMap(scanFile);
+  const findings = files.flatMap(scanFile);
 
   if (findings.length > 0) {
     console.error('Potential secrets detected. Values are intentionally not printed.');
@@ -178,7 +178,7 @@ function main() {
     process.exit(1);
   }
 
-  console.log(`Secret scan passed (${tracked.length} tracked files checked).`);
+  console.log(`Secret scan passed (${files.length} tracked/non-ignored files checked).`);
 }
 
 main();
