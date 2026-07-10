@@ -304,6 +304,28 @@ router.post('/trial', validate(startTrial), async (req, res) => {
     const expiresAt = new Date(now);
     expiresAt.setDate(expiresAt.getDate() + days);
 
+    const agency = await prisma.agency.findUnique({
+      where: { id: agencyId },
+      select: { id: true, name: true }
+    });
+    if (!agency) return res.status(404).json({ message: 'Agency not found' });
+
+    const paidSubscription = await prisma.subscription.findFirst({
+      where: { agencyId, status: { in: ['ACTIVE', 'PAST_DUE'] } },
+      orderBy: { expiresAt: 'desc' }
+    });
+    if (paidSubscription) {
+      return res.status(409).json({
+        code: 'active_subscription_exists',
+        message: 'Agency already has an active or past-due paid subscription.'
+      });
+    }
+
+    await prisma.subscription.updateMany({
+      where: { agencyId, status: { in: ['TRIAL', 'PENDING'] } },
+      data: { status: 'CANCELLED', cancelledAt: now }
+    });
+
     const trial = await prisma.subscription.create({
       data: {
         agencyId,
@@ -312,8 +334,15 @@ router.post('/trial', validate(startTrial), async (req, res) => {
         startedAt:  now,
         expiresAt,
         amountPaid: 0,
-        note:       note ?? `Trial – ${days} days`,
+        provider:   'manual',
+        providerStatus: 'trial_granted',
+        note:       note ?? `Trial - ${days} days`,
       },
+    });
+
+    await prisma.agency.update({
+      where: { id: agencyId },
+      data: { plan: 'Starter', tier: 'Starter' }
     });
 
     res.status(201).json(trial);

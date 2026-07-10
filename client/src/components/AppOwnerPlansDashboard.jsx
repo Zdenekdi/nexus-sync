@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Wallet, Users, TrendingUp, ArrowUpRight, 
   CreditCard, Activity, Calendar, Download,
@@ -13,7 +13,7 @@ import SystemHealthTab from './SystemHealthTab';
 
 const AppOwnerPlansDashboard = () => {
   const nexus = useNexus();
-  const { lang, token, API_BASE, activeMarket, setActiveMarket } = nexus;
+  const { lang, token, API_BASE, activeMarket, setActiveMarket, showToast } = nexus;
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('billing');
@@ -39,24 +39,25 @@ const AppOwnerPlansDashboard = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const r = await axios.get(`${API_BASE}/subscriptions/admin/stats`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setStats(r.data);
-      } catch (_err) {
-        console.error('Failed to fetch admin stats:', _err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchStats = useCallback(async () => {
+    try {
+      const r = await axios.get(`${API_BASE}/subscriptions/admin/stats`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setStats(r.data);
+    } catch (_err) {
+      console.error('Failed to fetch admin stats:', _err);
+      showToast?.(lang === 'cz' ? 'Nepodařilo se načíst billing přehled.' : 'Failed to load billing overview.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [API_BASE, token, showToast, lang]);
 
+  useEffect(() => {
     if (token && API_BASE) {
       fetchStats();
     }
-  }, [API_BASE, token]);
+  }, [API_BASE, token, fetchStats]);
 
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px' }}>
@@ -125,6 +126,10 @@ const AppOwnerPlansDashboard = () => {
           getCurrencySymbol={getCurrencySymbol}
           getApiCurrency={getApiCurrency}
           currentMRR={currentMRR}
+          token={token}
+          API_BASE={API_BASE}
+          showToast={showToast}
+          refreshStats={fetchStats}
         />
       ) : activeTab === 'health' ? (
         <SystemHealthTab nexus={nexus} />
@@ -137,10 +142,16 @@ const AppOwnerPlansDashboard = () => {
 
 const BillingContent = ({
   lang, isMobile, stats, activeMarket, setActiveMarket,
-  getCurrencySymbol, _getApiCurrency, currentMRR
+  getCurrencySymbol, _getApiCurrency, currentMRR,
+  token, API_BASE, showToast, refreshStats
 }) => {
   const agencySubscriptions = stats?.agencySubscriptions || [];
   const recentTransactions = stats?.recentTransactions || stats?.recentPayments || [];
+  const [trialModalOpen, setTrialModalOpen] = useState(false);
+  const [trialAgencyId, setTrialAgencyId] = useState('');
+  const [trialDays, setTrialDays] = useState(14);
+  const [trialNote, setTrialNote] = useState('');
+  const [isGrantingTrial, setIsGrantingTrial] = useState(false);
 
   const formatDate = (value) => {
     if (!value) return '—';
@@ -159,6 +170,102 @@ const BillingContent = ({
     if (normalized === 'TRIAL') return { background: 'rgba(245,158,11,0.1)', color: '#f59e0b', border: 'rgba(245,158,11,0.2)' };
     if (normalized === 'PAST_DUE' || normalized === 'PENDING') return { background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: 'rgba(239,68,68,0.2)' };
     return { background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', border: 'rgba(255,255,255,0.1)' };
+  };
+
+  const eligibleTrialAgencies = agencySubscriptions.filter((agency) => (
+    !['ACTIVE', 'PAST_DUE', 'PENDING'].includes(String(agency.status || '').toUpperCase())
+  ));
+
+  const csvCell = (value) => {
+    if (value === null || value === undefined) return '';
+    const raw = value instanceof Date ? value.toISOString() : String(value);
+    return /[",\n;]/.test(raw) ? `"${raw.replace(/"/g, '""')}"` : raw;
+  };
+
+  const downloadCsv = (filename, headers, rows) => {
+    if (!rows.length) {
+      showToast?.(lang === 'cz' ? 'Není co exportovat.' : 'Nothing to export.', 'info');
+      return;
+    }
+    const content = [
+      headers.map(header => csvCell(header.label)).join(','),
+      ...rows.map(row => headers.map(header => csvCell(row[header.key])).join(','))
+    ].join('\n');
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportMemberships = () => {
+    downloadCsv('nexus-agency-memberships.csv', [
+      { key: 'agencyName', label: 'Agency' },
+      { key: 'email', label: 'Email' },
+      { key: 'region', label: 'Region' },
+      { key: 'plan', label: 'Plan' },
+      { key: 'status', label: 'Status' },
+      { key: 'paidUntil', label: 'Paid until' },
+      { key: 'daysRemaining', label: 'Days remaining' },
+      { key: 'amountPaid', label: 'Amount paid' },
+      { key: 'currency', label: 'Currency' },
+      { key: 'provider', label: 'Provider' },
+      { key: 'paymentRef', label: 'Payment reference' }
+    ], agencySubscriptions);
+  };
+
+  const exportTransactions = () => {
+    downloadCsv('nexus-billing-transactions.csv', [
+      { key: 'agencyName', label: 'Agency' },
+      { key: 'plan', label: 'Plan' },
+      { key: 'status', label: 'Status' },
+      { key: 'amount', label: 'Amount' },
+      { key: 'amountPaid', label: 'Amount paid' },
+      { key: 'currency', label: 'Currency' },
+      { key: 'provider', label: 'Provider' },
+      { key: 'paidUntil', label: 'Paid until' },
+      { key: 'paymentRef', label: 'Payment reference' }
+    ], recentTransactions);
+  };
+
+  const openTrialModal = () => {
+    const defaultAgency = eligibleTrialAgencies[0]?.agencyId || '';
+    setTrialAgencyId(current => current || defaultAgency);
+    setTrialDays(14);
+    setTrialNote('');
+    setTrialModalOpen(true);
+  };
+
+  const grantTrial = async () => {
+    if (!trialAgencyId) {
+      showToast?.(lang === 'cz' ? 'Vyberte agenturu.' : 'Select an agency.', 'error');
+      return;
+    }
+    setIsGrantingTrial(true);
+    try {
+      await axios.post(`${API_BASE}/subscriptions/trial`, {
+        agencyId: trialAgencyId,
+        days: Number(trialDays) || 14,
+        note: trialNote || null
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      showToast?.(lang === 'cz' ? 'Trial byl aktivován.' : 'Trial has been activated.', 'success');
+      setTrialModalOpen(false);
+      await refreshStats?.();
+    } catch (error) {
+      const code = error?.response?.data?.code;
+      const message = code === 'active_subscription_exists'
+        ? (lang === 'cz' ? 'Agentura už má aktivní nebo dlužné placené členství.' : 'Agency already has an active or past-due paid membership.')
+        : (error?.response?.data?.message || (lang === 'cz' ? 'Trial se nepodařilo aktivovat.' : 'Failed to activate trial.'));
+      showToast?.(message, 'error');
+    } finally {
+      setIsGrantingTrial(false);
+    }
   };
 
   return (
@@ -313,7 +420,7 @@ const BillingContent = ({
           <h3 style={{ fontSize: '1.1rem', fontWeight: '800' }}>
             {lang === 'cz' ? 'Transakční Historie' : 'Transaction History'}
           </h3>
-          <button className="status-badge" style={{ fontSize: '0.6rem', cursor: 'pointer', border: '1px solid var(--card-border)' }}>
+          <button onClick={exportTransactions} className="status-badge" style={{ fontSize: '0.6rem', cursor: 'pointer', border: '1px solid var(--card-border)' }}>
             <Download size={10} style={{ marginRight: '0.3rem' }} /> EXPORT
           </button>
         </div>
@@ -380,13 +487,126 @@ const BillingContent = ({
             {lang === 'cz' ? 'Rychlé Akce' : 'Quick Actions'}
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-            <ActionButton icon={<Zap size={14} />} label={lang === 'cz' ? 'Darovat Trial' : 'Gift Trial'} color="var(--accent-color)" />
-            <ActionButton icon={<Download size={14} />} label={lang === 'cz' ? 'Reporty' : 'Reports'} color="#10b981" />
+            <ActionButton
+              icon={<Zap size={14} />}
+              label={lang === 'cz' ? 'Darovat Trial' : 'Gift Trial'}
+              color="var(--accent-color)"
+              onClick={openTrialModal}
+              disabled={eligibleTrialAgencies.length === 0}
+            />
+            <ActionButton
+              icon={<Download size={14} />}
+              label={lang === 'cz' ? 'Reporty' : 'Reports'}
+              color="#10b981"
+              onClick={exportMemberships}
+            />
           </div>
         </div>
 
       </div>
     </div>
+
+    {trialModalOpen && (
+      <div
+        role="dialog"
+        aria-modal="true"
+        data-testid="gift-trial-modal"
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.72)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem'
+        }}
+      >
+        <div
+          style={{
+            width: 'min(520px, 100%)',
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--card-border)',
+            borderRadius: '8px',
+            padding: '1.25rem',
+            boxShadow: '0 24px 70px rgba(0,0,0,0.45)'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '1rem' }}>
+            <div>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: '900', margin: 0 }}>
+                {lang === 'cz' ? 'Darovat trial' : 'Gift trial'}
+              </h3>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: '0.25rem' }}>
+                {lang === 'cz' ? 'Starter trial lze aktivovat jen agenturám bez aktivního placeného členství.' : 'Starter trial can be activated only for agencies without an active paid membership.'}
+              </div>
+            </div>
+            <button
+              onClick={() => setTrialModalOpen(false)}
+              style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem', lineHeight: 1 }}
+              aria-label="Close"
+            >
+              ×
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)' }}>
+              {lang === 'cz' ? 'Agentura' : 'Agency'}
+              <select
+                value={trialAgencyId}
+                onChange={(event) => setTrialAgencyId(event.target.value)}
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--card-border)', borderRadius: '8px', color: 'white', padding: '0.75rem' }}
+              >
+                {eligibleTrialAgencies.map((agency) => (
+                  <option key={agency.agencyId} value={agency.agencyId}>
+                    {agency.agencyName} ({agency.status})
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)' }}>
+              {lang === 'cz' ? 'Délka trialu' : 'Trial length'}
+              <input
+                type="number"
+                min="1"
+                max="365"
+                value={trialDays}
+                onChange={(event) => setTrialDays(event.target.value)}
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--card-border)', borderRadius: '8px', color: 'white', padding: '0.75rem' }}
+              />
+            </label>
+
+            <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)' }}>
+              {lang === 'cz' ? 'Poznámka' : 'Note'}
+              <textarea
+                value={trialNote}
+                onChange={(event) => setTrialNote(event.target.value)}
+                rows={3}
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--card-border)', borderRadius: '8px', color: 'white', padding: '0.75rem', resize: 'vertical' }}
+              />
+            </label>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.25rem' }}>
+            <button
+              onClick={() => setTrialModalOpen(false)}
+              style={{ padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid var(--card-border)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', fontWeight: '800' }}
+            >
+              {lang === 'cz' ? 'Zrušit' : 'Cancel'}
+            </button>
+            <button
+              onClick={grantTrial}
+              disabled={isGrantingTrial || !trialAgencyId}
+              style={{ padding: '0.75rem 1rem', borderRadius: '8px', border: 'none', background: 'var(--accent-color)', color: 'white', cursor: isGrantingTrial ? 'wait' : 'pointer', fontWeight: '900', opacity: isGrantingTrial || !trialAgencyId ? 0.65 : 1 }}
+            >
+              {isGrantingTrial ? (lang === 'cz' ? 'Aktivuji...' : 'Activating...') : (lang === 'cz' ? 'Aktivovat trial' : 'Activate trial')}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
   </>
   );
 };
@@ -426,12 +646,13 @@ const ProgressItem = ({ label, count, total, color }) => {
   );
 };
 
-const ActionButton = ({ icon, label, color }) => (
-  <button style={{ 
+const ActionButton = ({ icon, label, color, onClick, disabled = false }) => (
+  <button onClick={onClick} disabled={disabled} style={{
     display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.6rem 1rem',
     background: 'rgba(255,255,255,0.03)', border: `1px solid ${color}33`, borderRadius: '10px',
-    color: 'white', fontWeight: '700', fontSize: '0.8rem', cursor: 'pointer', textAlign: 'left',
-    transition: 'all 0.2s'
+    color: disabled ? 'var(--text-secondary)' : 'white', fontWeight: '700', fontSize: '0.8rem', cursor: disabled ? 'not-allowed' : 'pointer', textAlign: 'left',
+    transition: 'all 0.2s',
+    opacity: disabled ? 0.55 : 1
   }} className="hover-scale">
     {React.cloneElement(icon, { color })}
     {label}

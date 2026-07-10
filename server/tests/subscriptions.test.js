@@ -210,4 +210,76 @@ describe('subscription legacy route authorization', () => {
       status: 'NO_ACTIVE_SUBSCRIPTION'
     });
   });
+
+  it('allows App Owner to gift a Starter trial to an agency without paid membership', async () => {
+    prismaMock.agency.findUnique.mockResolvedValue({ id: 'agency-2', name: 'Starter House' });
+    prismaMock.subscription.findFirst.mockResolvedValue(null);
+    prismaMock.subscription.updateMany.mockResolvedValue({ count: 1 });
+    prismaMock.subscription.create.mockResolvedValue({
+      id: 'trial-1',
+      agencyId: 'agency-2',
+      plan: 'Starter',
+      status: 'TRIAL',
+      amountPaid: 0
+    });
+    prismaMock.agency.update.mockResolvedValue({});
+
+    const res = await request(app)
+      .post('/api/subscriptions/trial')
+      .set('Authorization', `Bearer ${makeToken(
+        { name: 'App Owner', isManager: true, isAppOwner: true },
+        { agencyId: null }
+      )}`)
+      .send({ agencyId: 'agency-2', days: 21, note: 'Pilot trial' });
+
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({
+      id: 'trial-1',
+      agencyId: 'agency-2',
+      status: 'TRIAL'
+    });
+    expect(prismaMock.subscription.updateMany).toHaveBeenCalledWith({
+      where: { agencyId: 'agency-2', status: { in: ['TRIAL', 'PENDING'] } },
+      data: { status: 'CANCELLED', cancelledAt: expect.any(Date) }
+    });
+    expect(prismaMock.subscription.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        agencyId: 'agency-2',
+        plan: 'Starter',
+        status: 'TRIAL',
+        amountPaid: 0,
+        provider: 'manual',
+        providerStatus: 'trial_granted',
+        note: 'Pilot trial'
+      })
+    }));
+    expect(prismaMock.agency.update).toHaveBeenCalledWith({
+      where: { id: 'agency-2' },
+      data: { plan: 'Starter', tier: 'Starter' }
+    });
+  });
+
+  it('does not let App Owner overwrite an active paid subscription with a trial', async () => {
+    prismaMock.agency.findUnique.mockResolvedValue({ id: 'agency-1', name: 'Paid Agency' });
+    prismaMock.subscription.findFirst.mockResolvedValue({
+      id: 'sub-paid',
+      agencyId: 'agency-1',
+      status: 'ACTIVE',
+      plan: 'Professional'
+    });
+
+    const res = await request(app)
+      .post('/api/subscriptions/trial')
+      .set('Authorization', `Bearer ${makeToken(
+        { name: 'App Owner', isManager: true, isAppOwner: true },
+        { agencyId: null }
+      )}`)
+      .send({ agencyId: 'agency-1', days: 14 });
+
+    expect(res.status).toBe(409);
+    expect(res.body).toMatchObject({ code: 'active_subscription_exists' });
+    expect(prismaMock.subscription.updateMany).not.toHaveBeenCalled();
+    expect(prismaMock.subscription.create).not.toHaveBeenCalled();
+    expect(prismaMock.agency.update).not.toHaveBeenCalled();
+  });
 });
