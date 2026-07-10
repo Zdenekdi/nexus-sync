@@ -556,7 +556,16 @@ class BillingController {
       if (Buffer.isBuffer(req.body)) {
         const signature = req.headers['stripe-signature'];
         if (signature && process.env.STRIPE_WEBHOOK_SECRET && this.stripe) {
-          const event = this.stripe.webhooks.constructEvent(req.body, signature, process.env.STRIPE_WEBHOOK_SECRET);
+          let event;
+          try {
+            event = this.stripe.webhooks.constructEvent(req.body, signature, process.env.STRIPE_WEBHOOK_SECRET);
+          } catch (error) {
+            logger.warn('[Billing Webhook] Invalid Stripe signature:', error.message);
+            return res.status(400).json({
+              code: 'stripe_signature_invalid',
+              message: 'Invalid Stripe webhook signature'
+            });
+          }
           eventType = event.type;
           payload = event.data?.object || {};
         } else if (process.env.NODE_ENV === 'test') {

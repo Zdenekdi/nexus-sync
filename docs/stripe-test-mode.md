@@ -96,7 +96,8 @@ npm run test:stripe:payment
 ## Negativni testy
 
 - Bez `STRIPE_SECRET_KEY` ma backend vratit chybu `stripe_not_configured`.
-- S chybnym `STRIPE_WEBHOOK_SECRET` ma webhook podpis selhat a subscription se nesmi aktivovat.
+- S chybnym `STRIPE_WEBHOOK_SECRET` ma webhook vratit `400 stripe_signature_invalid`
+  a subscription se nesmi aktivovat.
 - Unsigned webhook request se nesmi zpracovat.
 - `invoice.paid` ma prodlouzit aktivni obdobi predplatneho.
 - `invoice.payment_failed` ma prepnout subscription do `PAST_DUE`.
