@@ -2,6 +2,9 @@ jest.mock('../src/services/db');
 jest.mock('../src/services/logger');
 jest.mock('../src/services/alertService');
 
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 const prismaMock = require('../src/services/db');
 const { sendAlert } = require('../src/services/alertService');
 const monitoringService = require('../src/services/monitoringService');
@@ -17,15 +20,21 @@ beforeEach(() => {
   delete process.env.REQUIRE_STRIPE_CONFIG;
   delete process.env.PENDING_BILLING_ALERT_MINUTES;
   delete process.env.RELAY_OFFLINE_ALERT_MINUTES;
+  delete process.env.RELAY_OUTBOX_PENDING_MINUTES;
+  delete process.env.BACKUP_MONITORING_ENABLED;
+  delete process.env.REQUIRE_BACKUP_MONITORING;
+  delete process.env.BACKUP_MAX_AGE_MINUTES;
+  delete process.env.BACKUP_DIR;
   delete process.env.MONITOR_ALERT_COOLDOWN_MINUTES;
 
   prismaMock.$queryRaw.mockResolvedValue([{ ok: 1 }]);
   prismaMock.subscription.findMany.mockResolvedValue([]);
   prismaMock.deviceBinding.findMany.mockResolvedValue([]);
+  prismaMock.message.findMany.mockResolvedValue([]);
 });
 
 describe('monitoringService', () => {
-  it('reports ok when database, Stripe pending payments and Relay devices are healthy', async () => {
+  it('reports ok when database, Stripe pending payments, Relay devices and outbox are healthy', async () => {
     process.env.STRIPE_SECRET_KEY = 'sk_test_configured';
     process.env.STRIPE_WEBHOOK_SECRET = 'whsec_configured';
 
@@ -36,9 +45,11 @@ describe('monitoringService', () => {
     expect(report.checks.database.status).toBe('ok');
     expect(report.checks.stripe.status).toBe('ok');
     expect(report.checks.relay.status).toBe('ok');
+    expect(report.checks.outbox.status).toBe('ok');
+    expect(report.checks.backups.status).toBe('skipped');
   });
 
-  it('reports stale Stripe card payments, missing webhook secret and offline Relay bindings', async () => {
+  it('reports stale Stripe card payments, missing webhook secret, offline Relay bindings and stuck outbox messages', async () => {
     process.env.STRIPE_SECRET_KEY = 'sk_test_configured';
     prismaMock.subscription.findMany.mockResolvedValue([
       {
@@ -75,6 +86,19 @@ describe('monitoringService', () => {
         profile: { name: 'Diana' }
       }
     ]);
+    prismaMock.message.findMany.mockResolvedValue([
+      {
+        id: 'msg-stuck',
+        transport: 'sms',
+        createdAt: new Date('2026-07-09T11:45:00.000Z'),
+        chat: {
+          agencyId: 'agency-1',
+          profileId: 'profile-1',
+          externalId: '+420739777718',
+          profile: { name: 'Diana' }
+        }
+      }
+    ]);
 
     const report = await monitoringService.summarizeOperationalHealth({ now: NOW });
 
@@ -89,7 +113,36 @@ describe('monitoringService', () => {
       installationId: 'relay-1',
       ageMinutes: 40
     });
+    expect(report.checks.outbox.pendingCount).toBe(1);
+    expect(report.checks.outbox.pending[0]).toMatchObject({
+      id: 'msg-stuck',
+      ageMinutes: 15,
+      to: '+420739777718'
+    });
     expect(report.issues.map(issue => issue.message).join('\n')).toContain('STRIPE_WEBHOOK_SECRET is missing');
+    expect(report.issues.map(issue => issue.message).join('\n')).toContain('outbound Relay SMS');
+  });
+
+  it('reports stale database backups when backup monitoring is enabled', async () => {
+    const backupDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nexus-backup-monitor-'));
+    const backupFile = path.join(backupDir, 'nexus_20260709T090000Z.dump');
+    fs.writeFileSync(backupFile, 'backup');
+    fs.utimesSync(backupFile, new Date('2026-07-09T09:00:00.000Z'), new Date('2026-07-09T09:00:00.000Z'));
+
+    process.env.BACKUP_MONITORING_ENABLED = 'true';
+    process.env.BACKUP_DIR = backupDir;
+    process.env.BACKUP_MAX_AGE_MINUTES = '120';
+
+    const report = await monitoringService.summarizeOperationalHealth({ now: NOW });
+
+    expect(report.status).toBe('degraded');
+    expect(report.checks.backups.status).toBe('degraded');
+    expect(report.checks.backups.latest).toMatchObject({
+      file: backupFile,
+      ageMinutes: 180,
+      sizeBytes: 6
+    });
+    expect(report.issues.map(issue => issue.message).join('\n')).toContain('Latest database backup is 180 minutes old');
   });
 
   it('sends degraded alerts with cooldown', async () => {
