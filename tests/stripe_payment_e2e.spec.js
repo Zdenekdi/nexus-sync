@@ -15,11 +15,36 @@ function locatorScopes(page) {
   return [page, ...page.frames()];
 }
 
+async function locatorExists(locator) {
+  try {
+    return await locator.count() > 0;
+  } catch {
+    return false;
+  }
+}
+
+async function waitForFirstVisible(page, selectors, timeout = 30_000) {
+  const deadline = Date.now() + timeout;
+  while (Date.now() < deadline) {
+    for (const scope of locatorScopes(page)) {
+      for (const selector of selectors) {
+        const locator = scope.locator(selector).first();
+        if (await locatorExists(locator) && await locator.isVisible().catch(() => false)) {
+          return true;
+        }
+      }
+    }
+    await page.waitForTimeout(300);
+  }
+  return false;
+}
+
 async function fillFirstVisible(page, selectors, value, timeout = 1_500) {
   for (const scope of locatorScopes(page)) {
     for (const selector of selectors) {
       const locator = scope.locator(selector).first();
       try {
+        if (!await locatorExists(locator)) continue;
         await locator.waitFor({ state: 'visible', timeout });
         await locator.fill(value, { timeout });
         return true;
@@ -36,8 +61,9 @@ async function clickFirstVisible(page, selectors, timeout = 2_000) {
     for (const selector of selectors) {
       const locator = scope.locator(selector).first();
       try {
+        if (!await locatorExists(locator)) continue;
         await locator.waitFor({ state: 'visible', timeout });
-        await locator.click({ timeout });
+        await locator.click({ timeout, noWaitAfter: true });
         return true;
       } catch {
         // Try the next Stripe Checkout variant.
@@ -52,12 +78,43 @@ async function checkFirstVisible(page, selectors, timeout = 2_000) {
     for (const selector of selectors) {
       const locator = scope.locator(selector).first();
       try {
+        if (!await locatorExists(locator)) continue;
         await locator.waitFor({ state: 'visible', timeout });
         await locator.check({ timeout, force: true });
         return true;
       } catch {
         // Try the next Stripe Checkout variant.
       }
+    }
+  }
+  return false;
+}
+
+async function checkFirstVisibleRole(page, role, options, timeout = 2_000) {
+  for (const scope of locatorScopes(page)) {
+    const locator = scope.getByRole(role, options).first();
+    try {
+      if (!await locatorExists(locator)) continue;
+      await locator.waitFor({ state: 'visible', timeout });
+      await locator.check({ timeout, force: true });
+      return true;
+    } catch {
+      // Try the next Stripe Checkout frame/layout.
+    }
+  }
+  return false;
+}
+
+async function fillFirstVisibleRole(page, role, options, value, timeout = 2_000) {
+  for (const scope of locatorScopes(page)) {
+    const locator = scope.getByRole(role, options).first();
+    try {
+      if (!await locatorExists(locator)) continue;
+      await locator.waitFor({ state: 'visible', timeout });
+      await locator.fill(value, { timeout });
+      return true;
+    } catch {
+      // Try the next Stripe Checkout frame/layout.
     }
   }
   return false;
@@ -79,12 +136,25 @@ async function selectCountryIfVisible(page, countryCode) {
 
 async function completeStripeCheckout(page) {
   await page.waitForLoadState('domcontentloaded');
-
-  await fillFirstVisible(page, [
+  const testEmail = `stripe-e2e-${Date.now()}@example.test`;
+  const emailSelectors = [
     'input[name="email"]',
     'input[type="email"]',
     'input[autocomplete="email"]',
-  ], `stripe-e2e-${Date.now()}@example.test`, 2_000);
+  ];
+  const cardNumberSelectors = [
+    'input[name="cardNumber"]',
+    'input[autocomplete="cc-number"]',
+    'input[placeholder*="1234"]',
+  ];
+
+  expect(await waitForFirstVisible(page, [
+    ...emailSelectors,
+    ...cardNumberSelectors,
+    'button:has-text("Pay with Link")',
+  ], 30_000)).toBeTruthy();
+
+  await fillFirstVisible(page, emailSelectors, testEmail, 2_000);
 
   await clickFirstVisible(page, [
     'button:has-text("Pay with card")',
@@ -99,33 +169,28 @@ async function completeStripeCheckout(page) {
     // Some Stripe Checkout layouts expose only the "Pay with card" button.
   }
 
-  const aiAgent = page.getByRole('checkbox', { name: /AI agent/i });
-  try {
-    await aiAgent.check({ timeout: 2_000 });
-  } catch {
-    // Stripe only shows this disclosure in some automated browser contexts.
-  }
-
   await page.waitForTimeout(1_000);
 
-  expect(await fillFirstVisible(page, [
-    'input[name="cardNumber"]',
-    'input[autocomplete="cc-number"]',
-    'input[placeholder*="1234"]',
-  ], '4242424242424242')).toBeTruthy();
+  await fillFirstVisible(page, emailSelectors, testEmail, 5_000);
+
+  expect(await waitForFirstVisible(page, cardNumberSelectors, 30_000)).toBeTruthy();
+  expect(await fillFirstVisible(page, cardNumberSelectors, '4242424242424242') || await fillFirstVisibleRole(page, 'textbox', { name: /card number/i }, '4242424242424242')).toBeTruthy();
 
   expect(await fillFirstVisible(page, [
     'input[name="cardExpiry"]',
     'input[autocomplete="cc-exp"]',
     'input[placeholder*="MM"]',
-  ], '1234')).toBeTruthy();
+  ], '1234') || await fillFirstVisibleRole(page, 'textbox', { name: /expiration|expiry/i }, '1234')).toBeTruthy();
 
   expect(await fillFirstVisible(page, [
     'input[name="cardCvc"]',
+    'input[name="cvc"]',
     'input[autocomplete="cc-csc"]',
+    'input[aria-label*="CVC"]',
+    'input[aria-label*="CVV"]',
     'input[placeholder*="CVC"]',
     'input[placeholder*="CVV"]',
-  ], '123')).toBeTruthy();
+  ], '123') || await fillFirstVisibleRole(page, 'textbox', { name: /cvc|cvv|security code/i }, '123', 5_000)).toBeTruthy();
 
   await fillFirstVisible(page, [
     'input[name="billingName"]',
@@ -141,12 +206,20 @@ async function completeStripeCheckout(page) {
     'input[placeholder*="Postal"]',
   ], '11000');
 
-  expect(await clickFirstVisible(page, [
+  await checkFirstVisibleRole(page, 'checkbox', { name: /AI agent/i }, 2_000);
+
+  const submitSelectors = [
     'button[type="submit"]',
     'button:has-text("Pay and subscribe")',
     'button:has-text("Subscribe")',
     'button:has-text("Pay")',
-  ], 10_000)).toBeTruthy();
+  ];
+
+  expect(await clickFirstVisible(page, submitSelectors, 10_000)).toBeTruthy();
+
+  if (await checkFirstVisibleRole(page, 'checkbox', { name: /AI agent/i }, 5_000)) {
+    await clickFirstVisible(page, submitSelectors, 10_000);
+  }
 }
 
 function appOrigin() {
