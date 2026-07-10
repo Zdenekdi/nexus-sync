@@ -81,3 +81,55 @@ describe('GET /api/agency/settings', () => {
     expect(res.body).toHaveProperty('name', 'Test Agency');
   });
 });
+
+describe('GET /api/agency/roles', () => {
+  it('ignores a spoofed agencyId query for non-app-owner managers', async () => {
+    prismaMock.role.findMany.mockResolvedValue([
+      {
+        id: 'role-1',
+        name: 'Operator',
+        agencyId: 'agency-1',
+        permissions: JSON.stringify({ messaging: true }),
+      },
+    ]);
+
+    const res = await request(app)
+      .get('/api/agency/roles?agencyId=agency-2')
+      .set('Authorization', `Bearer ${makeToken()}`);
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.role.findMany).toHaveBeenCalledWith({
+      where: { agencyId: 'agency-1' },
+      orderBy: { createdAt: 'asc' },
+    });
+    expect(res.body[0]).toMatchObject({
+      id: 'role-1',
+      agencyId: 'agency-1',
+      permissions: { messaging: true },
+    });
+  });
+
+  it('allows app owner to request roles for a selected agency', async () => {
+    prismaMock.role.findMany.mockResolvedValue([
+      {
+        id: 'role-2',
+        name: 'Manager',
+        agencyId: 'agency-2',
+        permissions: JSON.stringify({ analytics: true }),
+      },
+    ]);
+
+    const res = await request(app)
+      .get('/api/agency/roles?agencyId=agency-2')
+      .set('Authorization', `Bearer ${makeToken({
+        agencyId: null,
+        role: { name: 'App Owner', isManager: true, isAppOwner: true },
+      })}`);
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.role.findMany).toHaveBeenCalledWith({
+      where: { agencyId: 'agency-2' },
+      orderBy: { createdAt: 'asc' },
+    });
+  });
+});
