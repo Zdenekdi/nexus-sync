@@ -8,6 +8,8 @@ try { io = require('../services/socket').getIO(); } catch (_) {}
 
 router.use(authMiddleware);
 
+const currentUserId = (user) => user?.userId || user?.id || user?.sub;
+
 // Room access rules
 function canAccessRoom(user, room) {
   const role = user.role || {};
@@ -52,9 +54,10 @@ router.post('/messages', async (req, res) => {
   try {
     const { room = 'general', text } = req.body;
     const agencyId = req.user.agencyId;
-    const authorId = req.user.id;
+    const authorId = currentUserId(req.user);
 
     if (!agencyId) return res.status(403).json({ error: 'No agency context' });
+    if (!authorId) return res.status(403).json({ error: 'No user context' });
     if (!text || !text.trim()) return res.status(400).json({ error: 'Text required' });
     if (!canAccessRoom(req.user, room)) return res.status(403).json({ error: 'Access denied to this room' });
 
@@ -80,9 +83,11 @@ router.post('/messages', async (req, res) => {
 router.delete('/messages/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id;
+    const userId = currentUserId(req.user);
     const agencyId = req.user.agencyId;
     const isManager = req.user.role?.isManager || req.user.role?.isAdmin || req.user.role?.isAppOwner;
+
+    if (!userId) return res.status(403).json({ error: 'No user context' });
 
     const msg = await prisma.teamMessage.findFirst({ where: { id, agencyId, deletedAt: null } });
     if (!msg) return res.status(404).json({ error: 'Message not found' });
@@ -107,7 +112,8 @@ router.get('/unread', async (req, res) => {
   try {
     const agencyId = req.user.agencyId;
     const { since } = req.query;
-    if (!agencyId || !since) return res.json({ count: 0 });
+    const userId = currentUserId(req.user);
+    if (!agencyId || !since || !userId) return res.json({ count: 0 });
 
     const count = await prisma.teamMessage.count({
       where: {
@@ -115,7 +121,7 @@ router.get('/unread', async (req, res) => {
         room: 'general',
         createdAt: { gt: new Date(since) },
         deletedAt: null,
-        authorId: { not: req.user.id }
+        authorId: { not: userId }
       }
     });
     res.json({ count });
