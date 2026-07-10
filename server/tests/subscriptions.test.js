@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 jest.mock('../src/services/db');
 jest.mock('../src/services/logger');
 jest.mock('../src/services/alertService');
-jest.mock('stripe', () => jest.fn().mockImplementation(() => ({})), { virtual: true });
+jest.mock('stripe', () => jest.fn().mockImplementation(() => ({})));
 
 const prismaMock = require('../src/services/db');
 const app = require('../src/app');

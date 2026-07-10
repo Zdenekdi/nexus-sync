@@ -19,7 +19,7 @@ jest.mock('stripe', () => jest.fn().mockImplementation(() => ({
   billingPortal: { sessions: { create: mockStripePortalSessionCreate } },
   subscriptions: { retrieve: mockStripeSubscriptionRetrieve },
   webhooks: { constructEvent: mockStripeWebhookConstructEvent }
-})), { virtual: true });
+})));
 jest.mock('axios', () => ({ get: jest.fn(), post: jest.fn() }));
 jest.mock('node-ssh', () => ({
   NodeSSH: jest.fn().mockImplementation(() => ({
