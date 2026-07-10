@@ -4,8 +4,17 @@ const prisma = require('../services/db');
 const authMiddleware = require('../middleware/authMiddleware');
 const { validate } = require('../middleware/validate');
 const { createNote } = require('../middleware/schemas');
+const { getPhoneLookupValues, normalizePhoneNumber } = require('../utils/phoneNumber');
 
 router.use(authMiddleware);
+
+const getScopedProfile = (profileId, agencyId) => {
+  if (!profileId) return null;
+  return prisma.profile.findFirst({
+    where: { id: String(profileId), agencyId: String(agencyId) },
+    select: { id: true, phoneNumber: true }
+  });
+};
 
 // GET /api/notes/:clientPhone  – get all notes for a client (scoped to agency)
 router.get('/:clientPhone', async (req, res) => {
@@ -13,11 +22,14 @@ router.get('/:clientPhone', async (req, res) => {
     const { clientPhone } = req.params;
     const { profileId } = req.query;
     const agencyId = req.user.agencyId;
+    const profile = await getScopedProfile(profileId, agencyId);
+    if (profileId && !profile) return res.status(404).json({ message: 'Profile not found' });
+    const phoneVariants = getPhoneLookupValues(clientPhone, { referenceNumber: profile?.phoneNumber });
 
     const notes = await prisma.clientNote.findMany({
       where: {
         agencyId,
-        clientPhone,
+        clientPhone: { in: phoneVariants.length ? phoneVariants : [normalizePhoneNumber(clientPhone)] },
         ...(profileId ? { profileId } : {}),
       },
       orderBy: { createdAt: 'desc' },
@@ -36,12 +48,15 @@ router.post('/', validate(createNote), async (req, res) => {
     const { clientPhone, text, profileId } = req.body;
     const agencyId = req.user.agencyId;
     const authorName = req.user.name || req.user.email;
+    const profile = await getScopedProfile(profileId, agencyId);
+    if (!profile) return res.status(404).json({ message: 'Profile not found' });
+    const normalizedClientPhone = normalizePhoneNumber(clientPhone, { referenceNumber: profile.phoneNumber });
 
     const note = await prisma.clientNote.create({
       data: {
         agencyId,
         profileId,
-        clientPhone,
+        clientPhone: normalizedClientPhone,
         text,
         authorName,
       },

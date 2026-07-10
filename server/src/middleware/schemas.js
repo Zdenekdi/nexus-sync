@@ -38,6 +38,9 @@ const createBooking = z.object({
   startTime: isoDate,
   endTime: isoDate,
   locationType: locationType.optional().default('incall'),
+  clientPhone: phone,
+  clientName: z.string().max(200).optional().nullable(),
+  price: z.coerce.number().min(0).max(1000000).optional(),
   source: z.string().max(50).optional().nullable()
 });
 
