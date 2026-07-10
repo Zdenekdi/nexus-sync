@@ -1,6 +1,18 @@
 const prisma = require('../services/db');
 const logger = require('../services/logger');
 const { getIO } = require('../services/socket');
+const { getPhoneLookupValues, normalizePhoneNumber } = require('../utils/phoneNumber');
+
+const normalizeBlacklistPhone = (phone) => {
+    if (phone === undefined) return undefined;
+    if (phone === null || `${phone}`.trim() === '') return null;
+    return normalizePhoneNumber(phone);
+};
+
+const phoneSearchValues = (phone) => {
+    const values = getPhoneLookupValues(phone);
+    return values.length ? values : [normalizePhoneNumber(phone)];
+};
 
 /**
  * Blacklist Controller — Shared cross-agency dangerous client database
@@ -16,7 +28,9 @@ class BlacklistController {
             const where = {};
             if (severity) where.severity = severity;
             if (search) {
+                const phoneValues = phoneSearchValues(search);
                 where.OR = [
+                    { phone: { in: phoneValues } },
                     { phone: { contains: search } },
                     { licensePlate: { contains: search } },
                     { name: { contains: search } },
@@ -56,10 +70,11 @@ class BlacklistController {
             }
 
             const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+            const normalizedPhone = normalizeBlacklistPhone(phone);
 
             const entry = await prisma.blacklistEntry.create({
                 data: {
-                    phone: phone || null,
+                    phone: normalizedPhone,
                     licensePlate: licensePlate ? licensePlate.toUpperCase() : null,
                     name: name || null,
                     description,
@@ -110,7 +125,7 @@ class BlacklistController {
             const entry = await prisma.blacklistEntry.update({
                 where: { id },
                 data: {
-                    ...(phone !== undefined && { phone: phone || null }),
+                    ...(phone !== undefined && { phone: normalizeBlacklistPhone(phone) }),
                     ...(licensePlate !== undefined && { licensePlate: licensePlate ? licensePlate.toUpperCase() : null }),
                     ...(name !== undefined && { name: name || null }),
                     ...(description !== undefined && { description }),
@@ -188,9 +203,10 @@ class BlacklistController {
         try {
             const { phone } = req.query;
             if (!phone) return res.status(400).json({ message: 'Phone number is required' });
+            const phoneValues = phoneSearchValues(phone);
 
             const entry = await prisma.blacklistEntry.findFirst({
-                where: { phone },
+                where: { phone: { in: phoneValues } },
                 include: { reports: { select: { agencyId: true } } }
             });
 
