@@ -2,8 +2,11 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../services/db');
 const authMiddleware = require('../middleware/authMiddleware');
+const { isManagerRole } = require('../utils/authz');
 
 router.use(authMiddleware);
+
+const currentUserId = (user) => user?.userId || user?.id || user?.sub;
 
 // GET /api/salon-keys  — list all keys for this agency (with holder info)
 router.get('/', async (req, res) => {
@@ -31,6 +34,7 @@ router.post('/', async (req, res) => {
     const agencyId = req.user.agencyId;
     const { label } = req.body;
     if (!agencyId) return res.status(403).json({ error: 'No agency context' });
+    if (!isManagerRole(req.user.role)) return res.status(403).json({ error: 'Manager role required' });
     const key = await prisma.salonKey.create({
       data: { agencyId, label: label || 'Klíče od salonu' }
     });
@@ -46,8 +50,10 @@ router.post('/:id/take', async (req, res) => {
   try {
     const { id } = req.params;
     const { note } = req.body;
-    const userId = req.user.id;
+    const userId = currentUserId(req.user);
     const agencyId = req.user.agencyId;
+
+    if (!userId) return res.status(403).json({ error: 'No user context' });
 
     const existing = await prisma.salonKey.findFirst({ where: { id, agencyId } });
     if (!existing) return res.status(404).json({ error: 'Key not found' });
@@ -75,15 +81,17 @@ router.post('/:id/return', async (req, res) => {
   try {
     const { id } = req.params;
     const { note } = req.body;
-    const userId = req.user.id;
+    const userId = currentUserId(req.user);
     const agencyId = req.user.agencyId;
+
+    if (!userId) return res.status(403).json({ error: 'No user context' });
 
     const existing = await prisma.salonKey.findFirst({ where: { id, agencyId } });
     if (!existing) return res.status(404).json({ error: 'Key not found' });
     if (!existing.holderId) return res.status(409).json({ error: 'Key is already in place' });
 
     // Allow manager/admin to force-return, or holder themselves
-    const isManager = req.user.role?.isManager || req.user.role?.isAdmin || req.user.role?.isAppOwner;
+    const isManager = isManagerRole(req.user.role);
     if (!isManager && existing.holderId !== userId) {
       return res.status(403).json({ error: 'Only the current holder or a manager can return the key' });
     }
@@ -132,6 +140,7 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const agencyId = req.user.agencyId;
+    if (!isManagerRole(req.user.role)) return res.status(403).json({ error: 'Manager role required' });
     await prisma.salonKey.deleteMany({ where: { id, agencyId } });
     res.json({ ok: true });
   } catch (err) {
