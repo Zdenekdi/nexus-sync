@@ -65,6 +65,20 @@ describe('GET /api/referrals/stats', () => {
     const res = await request(app).get('/api/referrals/stats');
     expect(res.status).toBe(401);
   });
+
+  it('blocks referral stats for users without an agency scope', async () => {
+    const res = await request(app)
+      .get('/api/referrals/stats')
+      .set('Authorization', `Bearer ${makeToken({
+        agencyId: null,
+        role: { name: 'App Owner', isManager: true, isAppOwner: true },
+      })}`);
+
+    expect(res.status).toBe(403);
+    expect(res.body).toMatchObject({ code: 'agency_required' });
+    expect(prismaMock.agency.findUnique).not.toHaveBeenCalled();
+    expect(prismaMock.referral.findMany).not.toHaveBeenCalled();
+  });
 });
 
 describe('POST /api/referrals/generate-code', () => {
