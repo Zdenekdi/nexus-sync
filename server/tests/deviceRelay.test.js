@@ -27,6 +27,7 @@ beforeEach(() => {
   pushMock.sendChatPush.mockResolvedValue({ sent: 1, failed: 0 });
   pushMock.sendCallPush.mockResolvedValue({ sent: 1, failed: 0 });
   prismaMock.message.findFirst.mockResolvedValue(null);
+  prismaMock.profile.findMany.mockResolvedValue([]);
 });
 
 afterEach(() => jest.clearAllMocks());
@@ -207,6 +208,62 @@ describe('POST /api/device/mobile/sms', () => {
     expect(mockEmit).toHaveBeenCalledWith('new_message', expect.objectContaining({ transport: 'sms' }));
   });
 
+  it('finds the target profile when mobile SMS uses an international dialing prefix', async () => {
+    prismaMock.profile.findFirst.mockResolvedValue(mockProfile);
+    prismaMock.chat.findFirst.mockResolvedValue(null);
+    prismaMock.chat.create.mockResolvedValue(mockChat);
+    prismaMock.message.create.mockResolvedValue(mockMessage);
+
+    const res = await request(app)
+      .post('/api/device/mobile/sms')
+      .send({
+        secret: DEVICE_SECRET,
+        from: CALLER_PHONE,
+        to: '00420 773 227 907',
+        text: 'International prefix SMS',
+      });
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.profile.findFirst).toHaveBeenCalledWith({
+      where: {
+        phoneNumber: {
+          in: expect.arrayContaining(['00420773227907', '+420773227907', '+420 773 227 907']),
+        },
+      },
+    });
+    expect(prismaMock.message.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls back to stored profile country context for local non-EU mobile SMS destinations', async () => {
+    const ukProfile = {
+      id: 'profile-uk',
+      name: 'Bella UK',
+      phoneNumber: '+44 7700 900456',
+      agencyId: 'agency-uk',
+    };
+    prismaMock.profile.findFirst.mockResolvedValue(null);
+    prismaMock.profile.findMany.mockResolvedValue([ukProfile]);
+    prismaMock.chat.findFirst.mockResolvedValue(null);
+    prismaMock.chat.create.mockResolvedValue({ ...mockChat, profileId: 'profile-uk', agencyId: 'agency-uk' });
+    prismaMock.message.create.mockResolvedValue(mockMessage);
+
+    const res = await request(app)
+      .post('/api/device/mobile/sms')
+      .send({
+        secret: DEVICE_SECRET,
+        from: '+1 212 555 0101',
+        to: '07700 900456',
+        text: 'UK local destination SMS',
+      });
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.profile.findMany).toHaveBeenCalledWith({
+      where: { phoneNumber: { not: null } },
+      select: { id: true, name: true, phoneNumber: true, agencyId: true },
+    });
+    expect(mockTo).toHaveBeenCalledWith('agency_agency-uk');
+  });
+
   it('wrong secret → 401', async () => {
     const res = await request(app)
       .post('/api/device/mobile/sms')
@@ -273,6 +330,25 @@ describe('POST /api/device/mobile/call', () => {
     );
     expect(mockTo).toHaveBeenCalledWith('agency_agency-1');
     expect(mockEmit).toHaveBeenCalledWith('incoming_call', expect.objectContaining({ state: 'RINGING' }));
+  });
+
+  it('finds the target profile when mobile call uses an international dialing prefix', async () => {
+    prismaMock.profile.findFirst.mockResolvedValue(mockProfile);
+    prismaMock.callLog.create.mockResolvedValue({ ...mockCallLog, status: 'RINGING' });
+
+    const res = await request(app)
+      .post('/api/device/mobile/call')
+      .send({
+        secret: DEVICE_SECRET,
+        from: CALLER_PHONE,
+        to: '00420 773 227 907',
+        state: 'RINGING',
+      });
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.callLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ profileId: 'profile-1' }) })
+    );
   });
 
   it('state ANSWERED → 200, CallLog with state ANSWERED', async () => {
@@ -640,6 +716,28 @@ describe('POST /api/device/goip/sms', () => {
 
     expect(res.status).toBe(200);
     expect(res.text).toContain('RECEIVE OK');
+  });
+
+  it('finds the target profile when GoIP destination uses 00 international prefix', async () => {
+    prismaMock.profile.findFirst.mockResolvedValue(mockProfile);
+    prismaMock.chat.findFirst.mockResolvedValue(null);
+    prismaMock.chat.create.mockResolvedValue(mockChat);
+    prismaMock.message.create.mockResolvedValue(mockMessage);
+
+    const res = await request(app)
+      .post('/api/device/goip/sms')
+      .set('Content-Type', 'application/x-www-form-urlencoded')
+      .send(`secret=${process.env.DEVICE_SECRET}&src=${encodeURIComponent('+420900111333')}&dst=${encodeURIComponent('00420 773 227 907')}&msg=${encodeURIComponent('GoIP prefix test')}`);
+
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('RECEIVE OK');
+    expect(prismaMock.profile.findFirst).toHaveBeenCalledWith({
+      where: {
+        phoneNumber: {
+          in: expect.arrayContaining(['00420773227907', '+420773227907']),
+        },
+      },
+    });
   });
 
   it('unknown dst phone → 404', async () => {

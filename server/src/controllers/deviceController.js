@@ -70,6 +70,30 @@ const findOrCreateSmsChat = async ({ externalId, profileId, agencyId, referenceN
   });
 };
 
+const findProfileByPhoneNumber = async (phoneNumber) => {
+  const directLookupValues = getPhoneLookupValues(phoneNumber);
+  const directProfile = await prisma.profile.findFirst({
+    where: {
+      phoneNumber: {
+        in: directLookupValues.length ? directLookupValues : [normalizePhoneNumber(phoneNumber)]
+      }
+    }
+  });
+
+  if (directProfile) return directProfile;
+
+  const profiles = await prisma.profile.findMany({
+    where: { phoneNumber: { not: null } },
+    select: { id: true, name: true, phoneNumber: true, agencyId: true }
+  });
+
+  return (profiles || []).find((profile) => {
+    const incomingValues = getPhoneLookupValues(phoneNumber, { referenceNumber: profile.phoneNumber });
+    const profileValues = getPhoneLookupValues(profile.phoneNumber, { referenceNumber: profile.phoneNumber });
+    return incomingValues.some(value => profileValues.includes(value));
+  }) || null;
+};
+
 // --- AUTHENTICATED ENDPOINTS (RBAC) ---
 
 exports.registerPushToken = async (req, res) => {
@@ -376,7 +400,7 @@ exports.handleGoIP = async (req, res) => {
     const { src, dst, msg, secret } = req.body;
     if (!secureCompare(secret, process.env.DEVICE_SECRET)) return res.status(401).send('UNAUTHORIZED');
     if (!src || !dst || !msg) return res.status(400).send('BAD FIELDS');
-    const profile = await prisma.profile.findFirst({ where: { phoneNumber: dst } });
+    const profile = await findProfileByPhoneNumber(dst);
     if (!profile) return res.status(404).send('NOT FOUND');
 
     const chat = await findOrCreateSmsChat({
@@ -399,7 +423,7 @@ exports.handleMobileSms = async (req, res) => {
     const { from, to, text, secret } = req.body;
     if (!from || !to || !text) return res.status(400).json({ ok: false, message: 'Missing fields' });
     if (!secureCompare(secret, process.env.DEVICE_SECRET)) return res.status(401).json({ message: 'Unauthorized' });
-    const profile = await prisma.profile.findFirst({ where: { phoneNumber: to } });
+    const profile = await findProfileByPhoneNumber(to);
     if (!profile) return res.status(404).json({ message: 'Profile not found' });
 
     const chat = await findOrCreateSmsChat({
@@ -422,7 +446,7 @@ exports.handleMobileCall = async (req, res) => {
     const { from, to, state, secret } = req.body;
     if (!from || !to || !state) return res.status(400).json({ ok: false, message: 'Missing fields' });
     if (!secureCompare(secret, process.env.DEVICE_SECRET)) return res.status(401).json({ message: 'Unauthorized' });
-    const profile = await prisma.profile.findFirst({ where: { phoneNumber: to } });
+    const profile = await findProfileByPhoneNumber(to);
     if (!profile) return res.status(404).json({ message: 'Profile not found' });
 
     const callState = normalizeCallState(state);

@@ -4,6 +4,7 @@ const path = require('path');
 const { encrypt, decrypt } = require('../utils/encryption');
 const { getIO } = require('../services/socket');
 const { isAppOwnerRole, isManagerRole } = require('../utils/authz');
+const { normalizePhoneNumber } = require('../utils/phoneNumber');
 
 function parseData(raw) {
   if (!raw) return {};
@@ -20,6 +21,12 @@ function parseGallery(raw) {
   } catch {
     return [];
   }
+}
+
+function normalizeProfilePhoneNumber(value, referenceNumber) {
+  if (value === undefined) return undefined;
+  if (value === null || `${value}`.trim() === '') return null;
+  return normalizePhoneNumber(value, { referenceNumber });
 }
 
 function getApiBaseUrl(req) {
@@ -145,11 +152,12 @@ exports.patchProfile = async (req, res) => {
     const currentData = parseData(existing.data);
     const newData = { ...currentData, ...(data && typeof data === 'object' ? data : {}), ...(quickReplies !== undefined && { quickReplies }) };
     const resolvedPhoneNumber = phoneNumber !== undefined ? phoneNumber : phone;
+    const normalizedPhoneNumber = normalizeProfilePhoneNumber(resolvedPhoneNumber, existing.phoneNumber);
     const updated = await prisma.profile.update({
       where: { id },
       data: {
         ...(name && { name }),
-        ...(resolvedPhoneNumber !== undefined && { phoneNumber: resolvedPhoneNumber }),
+        ...(resolvedPhoneNumber !== undefined && { phoneNumber: normalizedPhoneNumber }),
         ...(bio !== undefined && { bio }),
         ...(description !== undefined && { description }),
         ...(sampleMessages !== undefined && { sampleMessages }),
@@ -297,7 +305,8 @@ exports.createProfile = async (req, res) => {
     const { role, agencyId } = req.user;
     const { name, phoneNumber, targetAgencyId } = req.body;
     const resolvedAgencyId = (role?.isAppOwner && targetAgencyId) ? targetAgencyId : agencyId;
-    const profile = await prisma.profile.create({ data: { name, phoneNumber: phoneNumber || null, agencyId: resolvedAgencyId, status: 'offline', data: JSON.stringify({ quickReplies: [] }) }, include: { assignees: { select: { id: true, name: true } } } });
+    const normalizedPhoneNumber = normalizeProfilePhoneNumber(phoneNumber);
+    const profile = await prisma.profile.create({ data: { name, phoneNumber: normalizedPhoneNumber === undefined ? null : normalizedPhoneNumber, agencyId: resolvedAgencyId, status: 'offline', data: JSON.stringify({ quickReplies: [] }) }, include: { assignees: { select: { id: true, name: true } } } });
     res.status(201).json({ ...profile, data: { quickReplies: [] }, quickReplies: [] });
   } catch (error) {
     res.status(500).json({ message: 'Failed' });
