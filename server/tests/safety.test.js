@@ -37,6 +37,85 @@ describe('GET /api/blacklist', () => {
 
     expect(res.status).toBe(200);
   });
+
+  it('searches blacklist phone entries across phone variants', async () => {
+    prismaMock.blacklistEntry.findMany.mockResolvedValue([]);
+    prismaMock.blacklistEntry.count = jest.fn().mockResolvedValue(0);
+
+    const res = await request(app)
+      .get(`/api/blacklist?search=${encodeURIComponent('00420 739 777 718')}`)
+      .set('Authorization', `Bearer ${makeToken()}`);
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.blacklistEntry.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: expect.arrayContaining([
+            { phone: { in: expect.arrayContaining(['00420739777718', '+420739777718']) } }
+          ])
+        })
+      })
+    );
+  });
+});
+
+describe('POST /api/blacklist', () => {
+  it('normalizes phone numbers before creating blacklist entries', async () => {
+    prismaMock.user.findUnique.mockResolvedValue({ name: 'Test User' });
+    prismaMock.blacklistEntry.create.mockResolvedValue({
+      id: 'bl1',
+      phone: '+420739777718',
+      licensePlate: null,
+      name: null,
+      severity: 'danger',
+      description: 'Known scammer',
+      createdByName: 'Test User',
+      reports: [],
+    });
+
+    const res = await request(app)
+      .post('/api/blacklist')
+      .set('Authorization', `Bearer ${makeToken()}`)
+      .send({
+        phone: '739 777 718',
+        description: 'Known scammer',
+        severity: 'danger',
+      });
+
+    expect(res.status).toBe(201);
+    expect(prismaMock.blacklistEntry.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ phone: '+420739777718' })
+      })
+    );
+  });
+});
+
+describe('GET /api/blacklist/check', () => {
+  it('checks blacklist phone numbers across phone variants', async () => {
+    prismaMock.blacklistEntry.findFirst.mockResolvedValue({
+      id: 'bl1',
+      phone: '+420739777718',
+      severity: 'danger',
+      name: 'Risky Client',
+      description: 'Known scammer',
+      reports: [{ agencyId: 'agency-2' }],
+    });
+
+    const res = await request(app)
+      .get(`/api/blacklist/check?phone=${encodeURIComponent('00420 739 777 718')}`)
+      .set('Authorization', `Bearer ${makeToken()}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ blacklisted: true, severity: 'danger', reportCount: 2 });
+    expect(prismaMock.blacklistEntry.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          phone: { in: expect.arrayContaining(['00420739777718', '+420739777718']) }
+        }
+      })
+    );
+  });
 });
 
 describe('POST /api/sos', () => {
