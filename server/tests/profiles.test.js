@@ -63,6 +63,30 @@ describe('POST /api/profiles', () => {
 
     expect(res.status).toBe(201);
   });
+
+  it('normalizes phoneNumber when creating a profile', async () => {
+    prismaMock.profile.create.mockResolvedValue({
+      id: 'p4',
+      name: 'Phone Profile',
+      agencyId: 'agency-1',
+      phoneNumber: '+420739777718',
+      status: 'offline',
+      data: JSON.stringify({ quickReplies: [] }),
+      assignees: []
+    });
+
+    const res = await request(app)
+      .post('/api/profiles')
+      .set('Authorization', `Bearer ${makeToken()}`)
+      .send({ name: 'Phone Profile', phoneNumber: '+420 739 777 718' });
+
+    expect(res.status).toBe(201);
+    expect(prismaMock.profile.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ phoneNumber: '+420739777718' })
+      })
+    );
+  });
 });
 
 describe('PATCH /api/profiles/:id', () => {
@@ -71,6 +95,7 @@ describe('PATCH /api/profiles/:id', () => {
       id: 'p1',
       name: 'Profile 1',
       agencyId: 'agency-1',
+      phoneNumber: '+420773227907',
       data: JSON.stringify({ quickReplies: ['Old'] })
     });
     prismaMock.profile.update.mockResolvedValue({
@@ -89,7 +114,7 @@ describe('PATCH /api/profiles/:id', () => {
       .patch('/api/profiles/p1')
       .set('Authorization', `Bearer ${makeToken()}`)
       .send({
-        phoneNumber: '+420739777718',
+        phoneNumber: '739 777 718',
         quickReplies: ['Hello'],
         data: {
           webProfileText: { EN: { bio: 'Hello world' } }
