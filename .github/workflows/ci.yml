@@ -389,25 +389,30 @@ jobs:
       - name: Run relay field test
         run: bash scripts/relay-field-test.sh
         env:
-          API_BASE_URL:           ${{ secrets.API_BASE_URL }}
-          RELAY_MANAGER_EMAIL:    ${{ secrets.RELAY_MANAGER_EMAIL }}
-          RELAY_MANAGER_PASSWORD: ${{ secrets.RELAY_MANAGER_PASSWORD }}
-          RELAY_INSTALLATION_ID:  ${{ secrets.RELAY_INSTALLATION_ID }}
-          RELAY_PROFILE_ID:       ${{ secrets.RELAY_PROFILE_ID }}
-          DEVICE_SECRET:          ${{ secrets.NEXUS_DEVICE_SECRET }}
-          CALLER_PHONE:           ${{ vars.RELAY_TEST_CALLER_PHONE || '+420000000001' }}
-          FIELD_TEST_STRICT:      'true'
+          # Relay phone identity — no Bearer token, only installationId + secret
+          API_BASE_URL:            ${{ secrets.API_BASE_URL }}
+          RELAY_INSTALLATION_ID:   ${{ secrets.RELAY_INSTALLATION_ID }}
+          RELAY_PROFILE_ID:        ${{ secrets.RELAY_PROFILE_ID }}
+          DEVICE_SECRET:           ${{ secrets.NEXUS_DEVICE_SECRET }}
+          CALLER_PHONE:            ${{ vars.RELAY_TEST_CALLER_PHONE || '+420000000001' }}
+          FIELD_TEST_STRICT:       'true'
+          # Optional: operator/manager read-only access to verify DB persistence
+          RELAY_CHECKER_EMAIL:     ${{ secrets.RELAY_CHECKER_EMAIL }}
+          RELAY_CHECKER_PASSWORD:  ${{ secrets.RELAY_CHECKER_PASSWORD }}
 
       - name: Run strict operational health smoke
         run: node server/scripts/audit-operational-health.js
         env:
           OPS_API_BASE_URL:           ${{ secrets.API_BASE_URL }}
+          # App Owner login for /admin/operational-health (admin endpoint)
           OPS_OWNER_EMAIL:            ${{ secrets.TEST_OWNER_EMAIL }}
           OPS_OWNER_PASSWORD:         ${{ secrets.TEST_OWNER_PASSWORD }}
+          # Relay phone identity for relay-specific checks (no manager token)
           OPS_RELAY_PROFILE_ID:       ${{ secrets.RELAY_PROFILE_ID }}
           OPS_RELAY_INSTALLATION_ID:  ${{ secrets.RELAY_INSTALLATION_ID }}
           OPS_DEVICE_SECRET:          ${{ secrets.NEXUS_DEVICE_SECRET }}
           OPS_SMOKE_CALLER:           ${{ vars.RELAY_TEST_CALLER_PHONE || '+420000000001' }}
           OPS_MAX_MESSAGE_AGE_DAYS:   '7'
           STRICT_OPERATIONAL_HEALTH:  'true'
+
 
