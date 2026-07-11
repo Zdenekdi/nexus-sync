@@ -133,6 +133,7 @@ async function runOperationalSmoke(options = {}) {
 
   if (!token) return summary;
 
+  // ── [3] Admin operational health ────────────────────────────────────────────
   try {
     const operational = await requester(buildUrl(apiBase, '/admin/operational-health'), {
       timeoutMs,
@@ -150,6 +151,165 @@ async function runOperationalSmoke(options = {}) {
     }
   } catch (error) {
     failIfNeeded(summary, strict, 'operational-health', `/api/admin/operational-health request failed: ${error.message}`);
+  }
+
+  // ── [4] Active relay device bindings ────────────────────────────────────────
+  try {
+    const bindingsRes = await requester(buildUrl(apiBase, '/device/bindings'), {
+      timeoutMs,
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const bindings = Array.isArray(bindingsRes.body?.bindings)
+      ? bindingsRes.body.bindings
+      : Array.isArray(bindingsRes.body) ? bindingsRes.body : [];
+    const activeBindings = bindings.filter((b) => b.active === true);
+
+    if (bindingsRes.status >= 200 && bindingsRes.status < 300 && activeBindings.length > 0) {
+      addCheck(summary, 'relay-device-bindings', 'ok',
+        `${activeBindings.length} active device binding(s) found.`,
+        { activeCount: activeBindings.length, totalCount: bindings.length }
+      );
+    } else if (bindingsRes.status >= 200 && bindingsRes.status < 300 && activeBindings.length === 0) {
+      failIfNeeded(summary, strict, 'relay-device-bindings',
+        'No active device bindings found. Relay cannot receive SMS/calls.',
+        { totalCount: bindings.length }
+      );
+    } else {
+      failIfNeeded(summary, strict, 'relay-device-bindings',
+        `/device/bindings returned ${bindingsRes.status}.`,
+        { httpStatus: bindingsRes.status }
+      );
+    }
+  } catch (error) {
+    failIfNeeded(summary, strict, 'relay-device-bindings',
+      `/device/bindings request failed: ${error.message}`
+    );
+  }
+
+  // ── [5] Relay outbox endpoint accessible ─────────────────────────────────────
+  const relayProfileId = String(env.OPS_RELAY_PROFILE_ID || env.RELAY_PROFILE_ID || '').trim();
+  const relayInstallationId = String(env.OPS_RELAY_INSTALLATION_ID || env.RELAY_INSTALLATION_ID || '').trim();
+
+  if (relayProfileId && relayInstallationId) {
+    try {
+      const outboxUrl = buildUrl(
+        apiBase,
+        `/messages/outbox?profileId=${encodeURIComponent(relayProfileId)}&installationId=${encodeURIComponent(relayInstallationId)}`
+      );
+      const outboxRes = await requester(outboxUrl, {
+        timeoutMs,
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (outboxRes.status >= 200 && outboxRes.status < 300) {
+        const pending = Array.isArray(outboxRes.body) ? outboxRes.body.length : 0;
+        addCheck(summary, 'relay-outbox-accessible', 'ok',
+          `Outbox accessible for profileId=${relayProfileId}. Pending: ${pending}.`,
+          { pendingCount: pending }
+        );
+      } else {
+        failIfNeeded(summary, strict, 'relay-outbox-accessible',
+          `Outbox returned ${outboxRes.status} for profileId=${relayProfileId}.`,
+          { httpStatus: outboxRes.status }
+        );
+      }
+    } catch (error) {
+      failIfNeeded(summary, strict, 'relay-outbox-accessible',
+        `Outbox request failed: ${error.message}`
+      );
+    }
+
+    // ── [6] Relay inbound smoke POST ─────────────────────────────────────────
+    const deviceSecret = String(env.OPS_DEVICE_SECRET || env.DEVICE_SECRET || env.NEXUS_DEVICE_SECRET || '').trim();
+    if (deviceSecret) {
+      try {
+        const smokeContent = `ops-smoke-${Date.now()}`;
+        const relayRes = await requester(buildUrl(apiBase, '/device/relay'), {
+          method: 'POST',
+          timeoutMs,
+          body: {
+            installationId: relayInstallationId,
+            type: 'sms',
+            transport: 'sms',
+            from: String(env.OPS_SMOKE_CALLER || env.SMOKE_CALLER_PHONE || '+420000000001').trim(),
+            content: smokeContent,
+            secret: deviceSecret
+          }
+        });
+
+        if (relayRes.status === 200 && relayRes.body?.ok === true) {
+          addCheck(summary, 'relay-inbound-smoke', 'ok',
+            'Relay inbound smoke POST accepted and persisted.',
+            { duplicate: relayRes.body?.duplicate === true }
+          );
+        } else {
+          failIfNeeded(summary, strict, 'relay-inbound-smoke',
+            `Relay inbound smoke returned ${relayRes.status}: ${JSON.stringify(relayRes.body)}`,
+            { httpStatus: relayRes.status }
+          );
+        }
+      } catch (error) {
+        failIfNeeded(summary, strict, 'relay-inbound-smoke',
+          `Relay inbound smoke request failed: ${error.message}`
+        );
+      }
+    } else {
+      addCheck(summary, 'relay-inbound-smoke', 'warning',
+        'Skipped: OPS_DEVICE_SECRET / DEVICE_SECRET not configured.'
+      );
+    }
+  } else {
+    addCheck(summary, 'relay-outbox-accessible', 'warning',
+      'Skipped: OPS_RELAY_PROFILE_ID and OPS_RELAY_INSTALLATION_ID not configured.'
+    );
+    addCheck(summary, 'relay-inbound-smoke', 'warning',
+      'Skipped: OPS_RELAY_PROFILE_ID and OPS_RELAY_INSTALLATION_ID not configured.'
+    );
+  }
+
+  // ── [7] DB message recency guard ────────────────────────────────────────────
+  // Check that the /chats endpoint returns at least one chat with a recent message.
+  // This acts as a proxy for DB write liveness.
+  const maxMessageAgeDays = Number.parseInt(env.OPS_MAX_MESSAGE_AGE_DAYS || '14', 10);
+  try {
+    const chatsRes = await requester(buildUrl(apiBase, '/chats'), {
+      timeoutMs,
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const chats = Array.isArray(chatsRes.body) ? chatsRes.body : [];
+    if (chatsRes.status >= 200 && chatsRes.status < 300 && chats.length > 0) {
+      const latestTs = chats
+        .map((c) => new Date(c.lastMessageAt || 0).getTime())
+        .filter((t) => !Number.isNaN(t) && t > 0)
+        .sort((a, b) => b - a)[0] || 0;
+      const ageMs = Date.now() - latestTs;
+      const ageDays = Math.floor(ageMs / 86_400_000);
+      if (latestTs > 0 && ageDays <= maxMessageAgeDays) {
+        addCheck(summary, 'db-message-recency', 'ok',
+          `Most recent chat message is ${ageDays} day(s) old (threshold: ${maxMessageAgeDays} days).`,
+          { ageDays }
+        );
+      } else {
+        failIfNeeded(summary, strict, 'db-message-recency',
+          latestTs > 0
+            ? `Most recent message is ${ageDays} day(s) old — exceeds ${maxMessageAgeDays}-day threshold. Relay may be silently dropping messages.`
+            : 'No messages with a valid timestamp found in any chat.',
+          { ageDays: latestTs > 0 ? ageDays : null, thresholdDays: maxMessageAgeDays }
+        );
+      }
+    } else if (chatsRes.status >= 200 && chats.length === 0) {
+      addCheck(summary, 'db-message-recency', 'warning',
+        'No chats found — cannot determine message recency.'
+      );
+    } else {
+      failIfNeeded(summary, strict, 'db-message-recency',
+        `/chats returned ${chatsRes.status}.`, { httpStatus: chatsRes.status }
+      );
+    }
+  } catch (error) {
+    failIfNeeded(summary, strict, 'db-message-recency',
+      `/chats request failed: ${error.message}`
+    );
   }
 
   return summary;
