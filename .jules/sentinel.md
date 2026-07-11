@@ -37,3 +37,7 @@
 **Vulnerability:** Weak random number generation using `Math.random()` for password generation in client code.
 **Learning:** `Math.random()` is not cryptographically secure and predictable, additionally the sort trick `(() => 0.5 - Math.random())` for shuffling creates non-uniform distributions.
 **Prevention:** Always use `window.crypto.getRandomValues()` for security-sensitive random number generation in the frontend, and apply a proper Fisher-Yates shuffle instead of `.sort` based shuffling.
+## 2026-07-11 - [Stateless Password Reset Token Hardening]
+**Vulnerability:** JWT token reuse in password reset functionality. The original implementation used a static server secret (`process.env.JWT_SECRET`) for signing password reset tokens, leaving a 1-hour window where an intercepted token could be reused.
+**Learning:** In a completely stateless architecture (without a database table tracking revoked tokens), standard JWTs lack a built-in single-use property.
+**Prevention:** Incorporate a dynamic property unique to the user's current state (e.g., `user.password` hash) into the JWT signing secret. When the user completes the action (password reset), the state changes, altering the valid secret and instantly invalidating the used token. This requires decoding the token payload unverified first to fetch the user state.
