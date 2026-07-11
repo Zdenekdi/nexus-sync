@@ -292,6 +292,7 @@ test.describe('Stripe payment test-mode E2E', () => {
     expect(String(checkout.data.localSubscriptionId || '')).toBeTruthy();
     expect(String(checkout.data.url || '')).toContain('checkout.stripe.com');
 
+    await loginThroughUi(page, STRIPE_TEST_USER);
     await page.goto(checkout.data.url, { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/checkout\.stripe\.com/, { timeout: 30_000 });
     await completeStripeCheckout(page);
