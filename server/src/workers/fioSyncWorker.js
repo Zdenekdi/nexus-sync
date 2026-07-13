@@ -43,11 +43,19 @@ async function syncFioTransactions() {
 
       if (!vs) continue;
 
-      // 2. Check if we have a pending subscription with this VS
-      const result = await billingController._activateSubscription(String(vs), true);
-      
+      // 2. Check if we have a pending subscription with this VS.
+      //    Amount + currency se předávají do aktivace, kde se ověří proti očekávané
+      //    ceně — jinak by šlo aktivovat plán zaplacením libovolně malé částky.
+      const result = await billingController._activateSubscription(String(vs), true, {
+        provider: 'fio',
+        amount,
+        currency,
+      });
+
       if (result.success) {
         logger.info(`[FioWorker] SUCCESS: Activated subscription via VS ${vs} (Amount: ${amount} ${currency})`);
+      } else {
+        logger.warn(`[FioWorker] SKIPPED VS ${vs} (Amount: ${amount} ${currency}): ${result.message}`);
       }
     }
 

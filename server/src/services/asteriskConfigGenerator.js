@@ -28,6 +28,29 @@ const SIP_PORT  = process.env.ASTERISK_SIP_PORT  || '5060';
 const VPS_HOST  = process.env.VPS_SSH_HOST        || 'localhost';
 const VPS_USER  = process.env.VPS_SSH_USER        || 'root';
 
+// ── Sanitizace hodnot vkládaných do Asterisk konfigurace ──────────────────────
+// Config se nasazuje na VPS přes SSH heredoc (`cat > … << 'NEXUS_EOF'`). Jakýkoli
+// nový řádek v interpolované hodnotě může heredoc předčasně ukončit a spustit
+// zbytek jako shell (RCE), případně vložit libovolné Asterisk direktivy. Proto se
+// KAŽDÁ hodnota z DB před vložením do configu striktně čistí. Pro validní data
+// (alfanumerické sipUser, běžná jména) jsou tyto funkce no-op.
+function sipId(v) {
+  // Identifikátory endpointů/auth/aor/exten — pouze alfanumerika, pomlčka, podtržítko
+  return String(v || '').replace(/[^A-Za-z0-9_-]/g, '');
+}
+function phoneId(v) {
+  // Telefonní čísla — pouze číslice a vedoucí '+'
+  return String(v || '').replace(/[^0-9+]/g, '');
+}
+function callText(v) {
+  // Volný text v callerid/komentářích — zákaz nových řádků, uvozovek a řídicích znaků
+  return String(v || '').replace(/[\r\n"\\;]/g, '').trim();
+}
+function confValue(v) {
+  // Hodnota na jednom řádku (heslo) — zákaz nových řádků a řídicích znaků
+  return String(v || '').replace(/[\r\n\x00-\x1f]/g, '');
+}
+
 // ── Generátor pjsip.conf ──────────────────────────────────────────────────────
 
 function generatePjsipConf(relays, operators) {
@@ -62,7 +85,10 @@ function generatePjsipConf(relays, operators) {
   ];
 
   for (const relay of relays) {
-    const { sipUser, profileName } = relay;
+    const sipUser     = sipId(relay.sipUser);
+    const profileName = callText(relay.profileName);
+    const sipPassword = confValue(relay.sipPasswordPlain);
+    if (!sipUser) continue; // po sanitizaci prázdný identifikátor → přeskočit
     lines.push(
       `; ${profileName || sipUser}`,
       `[${sipUser}]`,
@@ -89,14 +115,16 @@ function generatePjsipConf(relays, operators) {
       'type=auth',
       'auth_type=userpass',
       `username=${sipUser}`,
-      `password=${relay.sipPasswordPlain}`,
+      `password=${sipPassword}`,
       '',
     );
   }
 
   lines.push('; ── Web operátoři (JsSIP/WebRTC) ────────────────────────────────────────');
   for (const op of operators) {
-    const { sipUser } = op;
+    const sipUser     = sipId(op.sipUser);
+    const sipPassword = confValue(op.sipPasswordPlain);
+    if (!sipUser) continue;
     lines.push(
       `[${sipUser}]`,
       'type=endpoint',
@@ -127,7 +155,7 @@ function generatePjsipConf(relays, operators) {
       'type=auth',
       'auth_type=userpass',
       `username=${sipUser}`,
-      `password=${op.sipPasswordPlain}`,
+      `password=${sipPassword}`,
       '',
     );
   }
@@ -164,10 +192,11 @@ function generateExtensionsConf(relays, operators) {
   ];
 
   // Relay endpointy — každý namapován na svůj profil (modelku) + první operátor volá zároveň
-  const defaultOp = operators[0]?.sipUser || 'op1';
+  const defaultOp = sipId(operators[0]?.sipUser) || 'op1';
   for (const relay of relays) {
-    const { sipUser, profileName } = relay;
-    const safeName = (profileName || sipUser).replace(/[^a-zA-Z0-9 _-]/g, '').trim();
+    const sipUser  = sipId(relay.sipUser);
+    const safeName = callText(relay.profileName || relay.sipUser).replace(/[^a-zA-Z0-9 _-]/g, '').trim();
+    if (!sipUser) continue;
     lines.push(
       `; ${safeName}`,
       `exten => ${sipUser},1,Macro(relay-call,${sipUser},${safeName},${defaultOp})`,
@@ -177,9 +206,11 @@ function generateExtensionsConf(relays, operators) {
 
   // Přímé volání na operátory
   for (const op of operators) {
+    const sipUser = sipId(op.sipUser);
+    if (!sipUser) continue;
     lines.push(
-      `exten => ${op.sipUser},1,NoOp(Příchozí hovor na operátora ${op.sipUser})`,
-      ` same => n,Dial(PJSIP/${op.sipUser},30,rT)`,
+      `exten => ${sipUser},1,NoOp(Příchozí hovor na operátora ${sipUser})`,
+      ` same => n,Dial(PJSIP/${sipUser},30,rT)`,
       ' same => n,Hangup()',
       '',
     );
@@ -196,19 +227,22 @@ function generateExtensionsConf(relays, operators) {
 
   // DID mapování dle phoneNumber profilu
   for (const relay of relays) {
-    if (relay.phoneNumber) {
+    const phoneNumber = phoneId(relay.phoneNumber);
+    const sipUser     = sipId(relay.sipUser);
+    if (phoneNumber && sipUser) {
       lines.push(
-        `; ${relay.profileName || relay.sipUser}`,
-        `exten => ${relay.phoneNumber},1,Goto(nexushub,${relay.sipUser},1)`,
+        `; ${callText(relay.profileName || relay.sipUser)}`,
+        `exten => ${phoneNumber},1,Goto(nexushub,${sipUser},1)`,
       );
     }
   }
 
+  const firstRelay = sipId(relays[0]?.sipUser);
   lines.push(
     '',
     '; Fallback — vše ostatní na první relay',
-    relays.length > 0 ? `exten => s,1,Goto(nexushub,${relays[0].sipUser},1)` : 'exten => s,1,Hangup(21)',
-    'exten => _+XXXXXXXXXXXX,1,Goto(nexushub,' + (relays[0]?.sipUser || '_') + ',1)',
+    firstRelay ? `exten => s,1,Goto(nexushub,${firstRelay},1)` : 'exten => s,1,Hangup(21)',
+    'exten => _+XXXXXXXXXXXX,1,Goto(nexushub,' + (firstRelay || '_') + ',1)',
   );
 
   return lines.join('\n');

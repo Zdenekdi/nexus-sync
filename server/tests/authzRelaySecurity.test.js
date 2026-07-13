@@ -144,6 +144,7 @@ describe('admin settings authorization boundaries', () => {
 describe('webhook routing and shared-secret enforcement', () => {
   it('rejects generic webhooks without the shared secret', async () => {
     process.env.WEBHOOK_SECRET = 'test-webhook-secret';
+    process.env.ALLOW_LEGACY_WEBHOOK_SECRET = 'true'; // legacy sdílený secret je nově opt-in
 
     const res = await request(app)
       .post('/api/webhooks/generic')
@@ -156,6 +157,7 @@ describe('webhook routing and shared-secret enforcement', () => {
 
   it('does not create chats when webhook payload has no routed profile or agency', async () => {
     process.env.WEBHOOK_SECRET = 'test-webhook-secret';
+    process.env.ALLOW_LEGACY_WEBHOOK_SECRET = 'true'; // legacy sdílený secret je nově opt-in
 
     const res = await request(app)
       .post('/api/webhooks/generic')
@@ -170,6 +172,7 @@ describe('webhook routing and shared-secret enforcement', () => {
 
   it('rejects webhook profile and agency mismatches', async () => {
     process.env.WEBHOOK_SECRET = 'test-webhook-secret';
+    process.env.ALLOW_LEGACY_WEBHOOK_SECRET = 'true'; // legacy sdílený secret je nově opt-in
     prismaMock.profile.findUnique.mockResolvedValue({
       id: 'profile-2',
       agencyId: 'agency-2',

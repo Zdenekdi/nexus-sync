@@ -28,6 +28,32 @@ function clearRefreshCookie(res) {
 }
 const DUMMY_PASSWORD_HASH = '$2a$10$8DCENsW0fuhKRpdFa9GBa.NtIh1ZHWzPBWWcNU8ZTBfNxHyhaDK9W';
 
+// ── Security-PIN brute-force lockout ──────────────────────────────────────────
+// A 4-digit PIN má jen 10 000 kombinací, takže bez omezení pokusů je uhádnutelný.
+// Lockout je in-memory (per-instance) — pro víc instancí je vhodné přesunout do
+// Redis, ale i takto zásadně zvedá laťku (endpoint navíc vyžaduje platnou session).
+const PIN_MAX_ATTEMPTS = 5;
+const PIN_LOCK_MS = 15 * 60 * 1000;
+const pinAttempts = new Map(); // userId -> { count, lockedUntil }
+
+function pinLockRemaining(userId, now = Date.now()) {
+  const e = pinAttempts.get(userId);
+  if (e && e.lockedUntil > now) return e.lockedUntil - now;
+  return 0;
+}
+function registerPinFailure(userId, now = Date.now()) {
+  const e = pinAttempts.get(userId) || { count: 0, lockedUntil: 0 };
+  e.count += 1;
+  if (e.count >= PIN_MAX_ATTEMPTS) {
+    e.lockedUntil = now + PIN_LOCK_MS;
+    e.count = 0; // reset počítadla, lockout běží podle času
+  }
+  pinAttempts.set(userId, e);
+}
+function clearPinFailures(userId) {
+  pinAttempts.delete(userId);
+}
+
 async function comparePassword(password, hash) {
   const candidateHash = typeof hash === 'string' && hash ? hash : DUMMY_PASSWORD_HASH;
 
@@ -453,7 +479,7 @@ exports.resetPasswordConfirm = async (req, res) => {
 
     let decoded;
     try {
-      decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
+      decoded = jwt.verify(resetToken, process.env.JWT_SECRET, { algorithms: ['HS256'] });
     } catch {
       return res.status(400).json({ message: 'Invalid or expired reset token' });
     }
@@ -465,6 +491,13 @@ exports.resetPasswordConfirm = async (req, res) => {
     await prisma.user.update({
       where: { id: decoded.userId },
       data: { password: hashedPassword },
+    });
+
+    // Po resetu hesla zneplatni všechny existující session — jinak by případný
+    // útočník (který účet převzal) zůstal přihlášený přes svůj refresh token.
+    await prisma.refreshToken.updateMany({
+      where: { userId: decoded.userId, revokedAt: null },
+      data: { revokedAt: new Date() },
     });
 
     res.json({ message: 'Password has been reset successfully' });
@@ -547,13 +580,34 @@ exports.setSecurityPin = async (req, res) => {
 
 exports.verifySecurityPin = async (req, res) => {
   try {
+    const userId = req.user.userId;
+
+    const lockMs = pinLockRemaining(userId);
+    if (lockMs > 0) {
+      return res.status(429).json({
+        message: 'Too many attempts, PIN temporarily locked',
+        retryAfterSeconds: Math.ceil(lockMs / 1000),
+      });
+    }
+
     const { pin } = req.body;
-    const user = await prisma.user.findUnique({ where: { id: req.user.userId } });
+    const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user || !user.securityPin) return res.status(400).json({ message: 'PIN not set' });
-    
-    const isValid = await bcrypt.compare(pin, user.securityPin);
-    if (!isValid) return res.status(401).json({ message: 'Invalid PIN' });
-    
+
+    const isValid = await bcrypt.compare(String(pin || ''), user.securityPin);
+    if (!isValid) {
+      registerPinFailure(userId);
+      const stillLocked = pinLockRemaining(userId);
+      if (stillLocked > 0) {
+        return res.status(429).json({
+          message: 'Too many attempts, PIN temporarily locked',
+          retryAfterSeconds: Math.ceil(stillLocked / 1000),
+        });
+      }
+      return res.status(401).json({ message: 'Invalid PIN' });
+    }
+
+    clearPinFailures(userId);
     res.json({ ok: true });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });

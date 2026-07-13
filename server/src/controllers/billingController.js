@@ -831,6 +831,28 @@ class BillingController {
 
       if (!subscription) return { success: false, message: 'Pending session not found' };
 
+      // Bankovní převod (VS): ověř, že přišla očekávaná částka ve správné měně.
+      // Bez této kontroly stačí poslat 1 Kč se správným variabilním symbolem a
+      // aktivovat si plný plán (matchování jen podle VS = platební bypass).
+      if (isVS) {
+        const expected = subscription.amountPaid;
+        const paid = Number(paymentMeta.amount);
+        if (expected == null || !Number.isFinite(paid)) {
+          logger.warn(`[Billing Activation] VS ${sessionIdOrVS} zamítnut — nelze ověřit částku (očekáváno=${expected}, zaplaceno=${paymentMeta.amount})`);
+          return { success: false, message: 'Amount verification unavailable' };
+        }
+        if (paid + 0.01 < expected) { // přeplatek OK, nedoplatek ne (0.01 tolerance na zaokrouhlení)
+          logger.warn(`[Billing Activation] VS ${sessionIdOrVS} zamítnut — nedoplatek: zaplaceno ${paid}, očekáváno ${expected}`);
+          return { success: false, message: 'Insufficient amount' };
+        }
+        const paidCurrency = paymentMeta.currency && String(paymentMeta.currency).toUpperCase();
+        const wantCurrency = subscription.currency && String(subscription.currency).toUpperCase();
+        if (paidCurrency && wantCurrency && paidCurrency !== wantCurrency) {
+          logger.warn(`[Billing Activation] VS ${sessionIdOrVS} zamítnut — nesouhlasí měna: přišlo ${paidCurrency}, očekáváno ${wantCurrency}`);
+          return { success: false, message: 'Currency mismatch' };
+        }
+      }
+
       const { type, targetValue } = this.safeJson(subscription.note);
 
       logger.info(`[Billing Activation] Processing ${type} for Agency ${subscription.agencyId} via ${paymentMeta.provider || (isVS ? 'manual' : 'Stripe')}`);

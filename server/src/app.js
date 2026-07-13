@@ -78,14 +78,31 @@ const limiter = rateLimit({
   message: { message: 'Too many requests, please try again later.' }
 });
 
-// Auth: 100 req/15min (login brute-force protection), keyed by email or IP
-const authLimiter = rateLimit({
+// Auth brute-force protection — two independent layers, whichever trips first:
+//  1) per-IP: caps total auth attempts from a single source, so password spraying
+//     across many accounts from one IP is throttled (dřív se klíčovalo e-mailem,
+//     takže různé e-maily nesdílely counter a spraying prošel).
+//  2) per-email: caps attempts against a single account, stopping targeted
+//     brute-force even from rotating IPs.
+const authIpLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.body?.email?.toLowerCase() || req.ip,
+  keyGenerator: (req) => req.ip,
   message: { message: 'Too many auth attempts, please try again later.' }
+});
+
+const authEmailLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Bije jen tam, kde je v těle e-mail (login / reset / register); ostatní auth
+  // endpointy (refresh, logout, …) se přeskočí a řídí se jen per-IP limitem.
+  skip: (req) => !req.body?.email,
+  keyGenerator: (req) => `email:${req.body.email.toLowerCase()}`,
+  message: { message: 'Too many attempts for this account, please try again later.' }
 });
 
 // Write operations (POST/PUT/PATCH/DELETE): 1000 req/15min
@@ -221,7 +238,7 @@ app.use((req, _res, next) => {
 // Apply global limiter to all API routes
 app.use('/api/', limiter);
 // Per-route granular limiters
-app.use('/api/auth', authLimiter);
+app.use('/api/auth', authIpLimiter, authEmailLimiter);
 app.use('/api/device', deviceLimiter);
 app.use('/api/trackers', deviceLimiter);
 app.use('/api/analytics', analyticsLimiter);

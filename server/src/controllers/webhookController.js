@@ -28,17 +28,21 @@ function verifySharedWebhookSecret(req, res, provider, fallbackSecret) {
     return true;
   }
 
-  // Legacy fallback: a single shared secret. Kept for backward compatibility —
-  // unset WEBHOOK_SECRET / <PROVIDER>_WEBHOOK_SECRET once every provider has been
-  // migrated to its per-agency secret. The DEVICE_SECRET fallback is only honoured
-  // when legacy endpoints are explicitly enabled.
-  const legacyFallback = process.env.ALLOW_LEGACY_DEVICE_ENDPOINTS === 'true' ? fallbackSecret : null;
-  const configuredSecret =
-    process.env[`${provider.toUpperCase()}_WEBHOOK_SECRET`] ||
-    process.env.WEBHOOK_SECRET ||
-    legacyFallback;
-  if (configuredSecret && secureCompare(provided, configuredSecret)) {
-    return true;
+  // Legacy fallback: a single shared secret with NO agency binding. A holder of it
+  // can route into ANY tenant, because this path does not set req.webhookAgencyId
+  // and getWebhookRouting then trusts the attacker-supplied agencyId from the body.
+  // This is insecure for multi-tenant use, so it is OFF by default and must be
+  // explicitly re-enabled (ALLOW_LEGACY_WEBHOOK_SECRET=true) only while migrating a
+  // provider to its per-agency secret. Unset it again once migration is complete.
+  if (process.env.ALLOW_LEGACY_WEBHOOK_SECRET === 'true') {
+    const legacyFallback = process.env.ALLOW_LEGACY_DEVICE_ENDPOINTS === 'true' ? fallbackSecret : null;
+    const configuredSecret =
+      process.env[`${provider.toUpperCase()}_WEBHOOK_SECRET`] ||
+      process.env.WEBHOOK_SECRET ||
+      legacyFallback;
+    if (configuredSecret && secureCompare(provided, configuredSecret)) {
+      return true;
+    }
   }
 
   res.status(401).json({ message: 'Unauthorized' });

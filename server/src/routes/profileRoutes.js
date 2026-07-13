@@ -47,17 +47,21 @@ const handleGalleryUpload = (req, res, next) => {
   });
 };
 
+// Správa profilů (vytváření, editace, přiřazování uživatelů, credentials) je dle
+// ROLES.md výhradně manažerská operace — Operator/Model spravují jen chaty a
+// kalendář u přiřazených profilů, ne samotné profily. Bez těchto gate mohl každý
+// přihlášený uživatel agentury měnit libovolný profil (name, commission, …).
 router.get('/', authMiddleware, profileController.getProfiles);
-router.post('/', authMiddleware, validate(createProfile), profileController.createProfile);
-router.patch('/:id', authMiddleware, validate(patchProfile), profileController.patchProfile);
+router.post('/', authMiddleware, requireProfileManager, validate(createProfile), profileController.createProfile);
+router.patch('/:id', authMiddleware, requireProfileManager, validate(patchProfile), profileController.patchProfile);
 router.get('/:id/gallery', authMiddleware, profileController.getGallery);
 router.get('/:id/gallery/:photoId/file', authMiddleware, profileController.getGalleryPhoto);
 router.post('/:id/gallery', authMiddleware, requireProfileManager, handleGalleryUpload, profileController.uploadGalleryPhoto);
 router.delete('/:id/gallery/:photoId', authMiddleware, requireProfileManager, profileController.deleteGalleryPhoto);
-router.patch('/:id/assignees', authMiddleware, validate(assignUsers), profileController.assignUsersToProfile);
+router.patch('/:id/assignees', authMiddleware, requireProfileManager, validate(assignUsers), profileController.assignUsersToProfile);
 router.post('/:id/sync', authMiddleware, profileController.syncProfile);
-router.get('/:id/credentials', authMiddleware, profileController.getCredentials);
-router.post('/:id/credentials', authMiddleware, profileController.updateCredentials);
+router.get('/:id/credentials', authMiddleware, requireProfileManager, profileController.getCredentials);
+router.post('/:id/credentials', authMiddleware, requireProfileManager, profileController.updateCredentials);
 router.post('/:id/boost', authMiddleware, profileController.boostProfile);
 
 module.exports = router;

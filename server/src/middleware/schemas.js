@@ -16,6 +16,12 @@ const trackerIdentifier = z.preprocess(
   value => (typeof value === 'string' ? value.replace(/\s+/g, '') : value),
   z.string().min(4).max(64).regex(/^[A-Za-z0-9:_-]+$/, 'IMEI / tracker ID contains unsupported characters')
 );
+// SIP identifier — vkládá se do Asterisk konfigurace (endpoint/auth/exten). Musí být
+// striktně alfanumerické, aby nešlo injektovat config direktivy / rozbít SSH heredoc.
+const sipUserId = z.string().min(1).max(128).regex(/^[A-Za-z0-9_-]+$/, 'sipUser contains unsupported characters');
+// Zobrazované jméno — volný text, ale bez nových řádků / řídicích znaků (ochrana
+// proti config injection přes profile.name, které se vkládá do Asterisk callerid).
+const displayName = z.string().min(1).max(200).regex(/^[^\r\n\x00-\x1f]+$/, 'name contains control characters');
 
 // ── Messages ─────────────────────────────────────────────────────────────────
 const createMessage = z.object({
@@ -141,13 +147,13 @@ const sosLocation = z.object({
 
 // ── Profiles ─────────────────────────────────────────────────────────────────
 const createProfile = z.object({
-  name: z.string().min(1).max(200),
+  name: displayName,
   phoneNumber: phone,
   targetAgencyId: cuid.optional().nullable()
 });
 
 const patchProfile = z.object({
-  name: z.string().min(1).max(200).optional(),
+  name: displayName.optional(),
   phone: phone,
   phoneNumber: phone,
   bio: z.string().max(5000).optional().nullable(),
@@ -336,7 +342,7 @@ const revokeDeviceBinding = z.object({
 
 // ── SIP ──────────────────────────────────────────────────────────────────────
 const setSipConfig = z.object({
-  sipUser: z.string().min(1).max(128).optional(),
+  sipUser: sipUserId.optional(),
   sipPassword: z.string().min(1).max(256).optional(),
   sipDomain: z.string().max(256).optional(),
   sipProxy: z.string().max(256).optional()
