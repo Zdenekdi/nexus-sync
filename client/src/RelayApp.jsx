@@ -9,6 +9,7 @@ import { useRelay } from './context/RelayContext';
 import GlobalAppStyles from './styles/GlobalAppStyles';
 import { useSipCall } from './plugins/NexusSip';
 import { useInCallService, isInCallAvailable } from './plugins/NexusInCall';
+import { useSocket } from './hooks/useSocket';
 import { useSmsRelay } from './plugins/NexusSms';
 import { App as CapacitorApp } from '@capacitor/app';
 import axios from 'axios';
@@ -259,16 +260,26 @@ const RelayDashboard = () => {
     operator, isActive, API_BASE, isNativeApp,
   });
 
-  // GSM calls via InCallService
+  // Relay auth token + Socket.IO — needed to bridge GSM call audio to the web operator
+  const relayAuthToken = operator?.token || localStorage.getItem('nexus_token') || '';
+  const relaySocket = useSocket(relayAuthToken);
+
+  // GSM calls via InCallService — with WebRTC bridge config so an incoming GSM call
+  // is streamed to the operator over WebRTC (offer/answer/ICE relayed via the server).
   const {
     callState: gsmCallState, incomingCall: gsmIncomingCall, callDuration: gsmCallDuration,
     answer: gsmAnswer, reject: gsmReject, hangup: gsmHangup,
     setMuted: gsmSetMuted, setSpeaker: gsmSetSpeaker,
-  } = useInCallService({ operator, isActive, isNativeApp });
+  } = useInCallService({
+    apiUrl: `${(API_BASE || '').replace(/\/api$/, '')}/api/device`,
+    installationId: localStorage.getItem('nexus_installation_id') || operator?.installationId || '',
+    secret: localStorage.getItem('nexus_relay_device_secret') || operator?.token || '',
+    socket: relaySocket,
+    isActive,
+  });
 
   // SMS relay
   const { incomingSms, clearIncomingSms, sendSms, configureRelay } = useSmsRelay({ operator, isActive, isNativeApp, API_BASE });
-  const relayAuthToken = operator?.token || localStorage.getItem('nexus_token') || '';
 
   React.useEffect(() => {
     if (isNativeApp && API_BASE && configureRelay) {
@@ -289,7 +300,7 @@ const RelayDashboard = () => {
       try {
         if (!relayAuthToken) return;
         const url = API_BASE ? `${API_BASE.replace(/\/api$/, '')}/api/device/verify` : '/api/device/verify';
-        await axios.post(url, {
+        const vr = await axios.post(url, {
           installationId: localStorage.getItem('nexus_installation_id'),
           profileId: relayProfileId,
           platform: isNativeApp ? 'android' : 'web',
@@ -298,6 +309,10 @@ const RelayDashboard = () => {
         }, {
           headers: { Authorization: `Bearer ${relayAuthToken}` }
         });
+        // Ulož per-device relay secret (odvozený serverem) pro WebRTC signaling
+        if (vr?.data?.deviceSecret) {
+          localStorage.setItem('nexus_relay_device_secret', vr.data.deviceSecret);
+        }
       } catch (err) {
         console.error('Device binding failed:', err);
       }

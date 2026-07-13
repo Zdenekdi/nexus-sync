@@ -91,16 +91,19 @@ const writeLimiter = rateLimit({
   max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS',
+  skip: (req) => req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS' || req.originalUrl.includes('/webrtc/'),
   message: { message: 'Too many write requests, please try again later.' }
 });
 
-// Device endpoints: 3000 req/15min (relay polling every 15s)
+// Device endpoints: 3000 req/15min (relay polling every 15s).
+// WebRTC signaling is exempt here — it has its own dedicated limiter so bursty
+// ICE traffic is isolated from SMS-relay polling on the same IP.
 const deviceLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 3000,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.originalUrl.includes('/webrtc/'),
   message: { message: 'Too many device requests, please try again later.' }
 });
 

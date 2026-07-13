@@ -75,6 +75,18 @@ const init = (server) => {
       socket.to(`agency_${agencyId}`).emit('relay_event', data);
     });
 
+    // Relay telefon (Android) se přihlásí do své vlastní místnosti podle installationId,
+    // aby mohl přijímat WebRTC signaling (answer / ICE / hangup) cílený jen na něj.
+    socket.on('join-relay', (data) => {
+      const installationId = data && data.installationId;
+      if (installationId) {
+        socket.join(`relay:${installationId}`);
+        console.log(`[Socket-Relay] Socket ${socket.id} (user ${userId}) joined room relay:${installationId}`);
+      } else {
+        console.warn(`[Socket-Relay] join-relay from ${userId} without installationId`);
+      }
+    });
+
     socket.on('disconnect', () => {
       console.log('[Socket-DEBUG] User disconnected:', socket.id);
     });

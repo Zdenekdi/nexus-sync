@@ -442,7 +442,7 @@ export const NexusProvider = ({ children }) => {
   }, [lang, showToast]);
 
   // --- Socket.io Integration ---
-  useSocket(
+  const socket = useSocket(
     token,
     (d) => {
       const message = d?.message || d;
@@ -608,6 +608,7 @@ export const NexusProvider = ({ children }) => {
   }, [nexusData]);
 
   const value = useMemo(() => ({
+    socket,
     t, lang, setLang, activeTab, setActiveTab, activeMarket, setActiveMarket,
     pathname, navigate: navigateStable, authInitialTab, setAuthInitialTab,
     loading: nexusData.isDataLoading, activeOperator, isLoggedIn, token,
@@ -698,7 +699,8 @@ export const NexusProvider = ({ children }) => {
     chatMessages, isHistoryLoading, fetchChatMessages, handleSendMessage,
     handleSaveNote, handleDeleteNote, handleTranslate, clientNotes, internalNote, setInternalNote,
     filteredMessages, setActiveContactId, selectedChat, typingProfiles, handleRefreshMessages,
-    nexusData.handleSyncChatHistory
+    nexusData.handleSyncChatHistory,
+    socket
   ]);
 
   return (

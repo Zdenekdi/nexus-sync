@@ -67,7 +67,7 @@ export const isInCallAvailable = () =>
  *   setSpeaker(bool) — přepne na reproduktor
  *   requestDefaultDialer() — otevře dialog pro nastavení výchozí aplikace
  */
-export function useInCallService(handlers = {}) {
+export function useInCallService(config, handlers = {}) {
   const [callState,       setCallState]       = useState('idle');
   const [incomingCall,    setIncomingCall]     = useState(null);
   const [isDefault,       setIsDefault]        = useState(false);
@@ -123,25 +123,67 @@ export function useInCallService(handlers = {}) {
           setIncomingCall(null);
           setCallState('idle');
           handlers.onEnded?.();
+          
+          // Notify server so browser can hangup
+          if (config?.apiUrl && config?.installationId) {
+            try {
+              fetch(`${config.apiUrl}/webrtc/hangup`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'x-installation-id': config.installationId,
+                  'x-device-secret': localStorage.getItem('nexus_relay_device_secret') || config?.secret || '',
+                },
+                body: JSON.stringify({ initiator: 'phone' })
+              }).catch(_err => console.error(_err));
+            } catch (_err) {
+              console.error('[InCall] hangup failed', _err);
+            }
+          }
         }
       })
     );
 
     // WebRTC signaling: offer přišel z telefonu → pošleme na server → server pošle do prohlížeče
-    // Telefon sám vyšle event 'webrtcOffer' přes plugin → React ho zachytí
-    // a přes socket.io pošle na server (zpracuje NexusContext)
     subs.push(
       NexusInCall.addListener('webrtcOffer', async (data) => {
-        console.log('[InCall] WebRTC offer přijat, přeposílám přes socket...');
-        // Přeposílá se přes window event → NexusContext ho odchytí
-        window.dispatchEvent(new CustomEvent('nexus:webrtc-offer', { detail: data }));
+        console.log('[InCall] WebRTC offer přijat, odesílám na server...');
+        if (config?.apiUrl && config?.installationId) {
+          try {
+            await fetch(`${config.apiUrl}/webrtc/offer`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-installation-id': config.installationId,
+                'x-device-secret': localStorage.getItem('nexus_relay_device_secret') || config?.secret || '',
+              },
+              body: JSON.stringify(data)
+            });
+          } catch (err) {
+            console.error('[InCall] webrtcOffer API chyba:', err);
+          }
+        }
       })
     );
 
-    // ICE kandidáti z telefonu → server → prohlížeč
+    // ICE kandidáti z telefonu → server
     subs.push(
-      NexusInCall.addListener('iceCandidate', (data) => {
-        window.dispatchEvent(new CustomEvent('nexus:ice-candidate-from-phone', { detail: data }));
+      NexusInCall.addListener('iceCandidate', async (data) => {
+        if (config?.apiUrl && config?.installationId) {
+          try {
+            await fetch(`${config.apiUrl}/webrtc/ice`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-installation-id': config.installationId,
+                'x-device-secret': localStorage.getItem('nexus_relay_device_secret') || config?.secret || '',
+              },
+              body: JSON.stringify({ ...data, direction: 'phone-to-browser' })
+            });
+          } catch (err) {
+            console.error('[InCall] iceCandidate API chyba:', err);
+          }
+        }
       })
     );
 
@@ -152,88 +194,61 @@ export function useInCallService(handlers = {}) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFeatureEnabled]);
 
-  // ── WebRTC: příjem zvuku v prohlížeči ─────────────────────────────────────
-
+  // ── WebRTC: Poslech Socket.io pro odpověď ze serveru ──────────────────────
   useEffect(() => {
-    // Poslouchá na offer přicházející ZE SERVERU (operátor v prohlížeči)
-    const handleOfferFromServer = async (e) => {
-      const { sdp, callerId } = e.detail;
-      try {
-        const pc = new RTCPeerConnection({
-          iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-          ],
+    if (!config?.socket) return;
+    const socket = config.socket;
+
+    const onAnswer = (data) => {
+      console.log('[InCall] WebRTC answer ze serveru, aplikuji...', data);
+      NexusInCall.applyRemoteAnswer({ sdp: data.sdp });
+    };
+
+    const onIce = (data) => {
+      if (data.from === 'browser') {
+        NexusInCall.addIceCandidate({
+          sdpMid: data.sdpMid,
+          sdpMLineIndex: data.sdpMLineIndex,
+          candidate: data.candidate
         });
-        pcRef.current = pc;
-
-        // Zvukový výstup do prohlížeče
-        pc.ontrack = (ev) => {
-          if (ev.streams[0]) {
-            const audio = new Audio();
-            audio.srcObject = ev.streams[0];
-            audio.autoplay = true;
-          }
-        };
-
-        // ICE kandidáti z prohlížeče → server → telefon
-        pc.onicecandidate = (ev) => {
-          if (ev.candidate) {
-            window.dispatchEvent(new CustomEvent('nexus:ice-candidate-from-browser', {
-              detail: {
-                sdpMid: ev.candidate.sdpMid,
-                sdpMLineIndex: ev.candidate.sdpMLineIndex,
-                candidate: ev.candidate.candidate,
-              },
-            }));
-          }
-        };
-
-        // Přidej mikrofon prohlížeče (operátor mluví do telefonu)
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-        stream.getTracks().forEach(t => pc.addTrack(t, stream));
-
-        // Nastav remote description (offer z telefonu)
-        await pc.setRemoteDescription({ type: 'offer', sdp });
-
-        // Vytvoř answer
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-
-        // Pošli answer zpět přes custom event → NexusContext → server → telefon
-        window.dispatchEvent(new CustomEvent('nexus:webrtc-answer', {
-          detail: { sdp: answer.sdp, callerId },
-        }));
-
-        console.log('[InCall] WebRTC answer vytvořen a odeslán');
-      } catch (err) {
-        console.error('[InCall] WebRTC answer selhalo:', err);
       }
     };
 
-    // ICE kandidáti ze serveru (ze strany telefonu) → aplikuj na peer connection
-    const handleIceFromServer = async (e) => {
-      const pc = pcRef.current;
-      if (!pc) return;
-      try {
-        await pc.addIceCandidate(new RTCIceCandidate(e.detail));
-      } catch (err) {
-        console.warn('[InCall] addIceCandidate failed:', err);
-      }
+    const onHangup = () => {
+      NexusInCall.hangup();
+      setIncomingCall(null);
+      setCallState('idle');
     };
 
-    window.addEventListener('nexus:webrtc-offer-for-browser', handleOfferFromServer);
-    window.addEventListener('nexus:ice-candidate-for-browser', handleIceFromServer);
+    socket.on('call:webrtc-answer', onAnswer);
+    socket.on('call:ice-candidate', onIce);
+    socket.on('call:hangup', onHangup);
 
     return () => {
-      window.removeEventListener('nexus:webrtc-offer-for-browser', handleOfferFromServer);
-      window.removeEventListener('nexus:ice-candidate-for-browser', handleIceFromServer);
-      if (pcRef.current) {
-        pcRef.current.close();
-        pcRef.current = null;
-      }
+      socket.off('call:webrtc-answer', onAnswer);
+      socket.off('call:ice-candidate', onIce);
+      socket.off('call:hangup', onHangup);
     };
-  }, []);
+  }, [config?.socket]);
+
+  // ── Relay telefon se přihlásí do své socket místnosti (relay:<installationId>) ──
+  // Bez toho by mu server nemohl cíleně poslat answer / ICE / hangup.
+  useEffect(() => {
+    const socket = config?.socket;
+    const installationId = config?.installationId;
+    if (!socket || !installationId) return;
+
+    const joinRelayRoom = () => {
+      socket.emit('join-relay', { installationId });
+    };
+
+    if (socket.connected) joinRelayRoom();
+    socket.on('connect', joinRelayRoom);
+
+    return () => {
+      socket.off('connect', joinRelayRoom);
+    };
+  }, [config?.socket, config?.installationId]);
 
   // ── Akce ──────────────────────────────────────────────────────────────────
 

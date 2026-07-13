@@ -3,6 +3,7 @@ const router = express.Router();
 const rateLimit = require('express-rate-limit');
 const deviceController = require('../controllers/deviceController');
 const authMiddleware = require('../middleware/authMiddleware');
+const { signalingLimiter } = require('../middleware/rateLimiters');
 const { validate } = require('../middleware/validate');
 const { registerPushToken, verifyDeviceBinding, revokeDeviceBinding, relayMessage, mobileMessage, mobileCall } = require('../middleware/schemas');
 
@@ -28,6 +29,13 @@ router.get('/status', authMiddleware, deviceController.getRelayStatus);
 router.get('/logs', authMiddleware, deviceController.getLogs);
 router.post('/verify', authMiddleware, express.json(), validate(verifyDeviceBinding), deviceController.verifyDeviceBinding);
 router.post('/push-test', authMiddleware, express.json(), deviceController.sendTestPush);
+
+// WebRTC Signaling pro Relay telefony (autentikace přes X-Installation-Id a X-Device-Secret)
+const relayAuthMiddleware = require('../middleware/relayAuthMiddleware');
+const callController = require('../controllers/callController');
+router.post('/webrtc/offer', signalingLimiter, express.json(), relayAuthMiddleware, callController.webrtcOffer);
+router.post('/webrtc/ice', signalingLimiter, express.json(), relayAuthMiddleware, callController.webrtcIce);
+router.post('/webrtc/hangup', signalingLimiter, express.json(), relayAuthMiddleware, callController.webrtcHangup);
 
 // Device Management
 router.get('/bindings', authMiddleware, deviceController.getDeviceBindings);

@@ -211,7 +211,7 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, _setSelectedChatId, _set
         localStorage.setItem('nexus_installation_id', installationId);
       }
 
-      await axios.post(`${API_BASE}/device/verify`, {
+      const verifyRes = await axios.post(`${API_BASE}/device/verify`, {
         installationId,
         profileId: operator.profileId || operator.activeProfileId || null,
         model: info.model,
@@ -220,7 +220,12 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, _setSelectedChatId, _set
       }, {
         headers: { Authorization: `Bearer ${authToken}` }
       });
-      
+
+      // Ulož per-device relay secret (odvozený serverem) pro WebRTC signaling
+      if (verifyRes?.data?.deviceSecret) {
+        localStorage.setItem('nexus_relay_device_secret', verifyRes.data.deviceSecret);
+      }
+
       console.log('[Native] Device binding verified');
     } catch (_err) {
       console.warn('[Native] Device binding failed', _err.message);

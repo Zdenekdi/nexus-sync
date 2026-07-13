@@ -1,10 +1,12 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 
 const SOCKET_URL = (import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api').replace(/\/api$/, '');
 
 export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert, onSipIncomingCall, onRelayCommand, onRelayEvent, onTrackerLocation) => {
   const socketRef = useRef(null);
+  // Reactive socket instance so consumers (nexus.socket) re-render once it's ready
+  const [socket, setSocket] = useState(null);
   const handlersRef = useRef({ onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert, onSipIncomingCall, onRelayCommand, onRelayEvent, onTrackerLocation });
 
   // Update refs when handlers change without re-triggering the socket effect
@@ -18,6 +20,8 @@ export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall,
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSocket(null);
       }
       return;
     }
@@ -39,6 +43,8 @@ export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall,
 
       // Global reference for legacy components/bridge
       window._nexusSocket = socketRef.current;
+      // Expose the socket reactively (nexus.socket) for WebRTC relay + other consumers
+      setSocket(socketRef.current);
 
       socketRef.current.onAny((event, ...args) => {
         console.log(`[Socket-DEBUG] Received event: ${event}`, args);
@@ -116,7 +122,10 @@ export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall,
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
+        setSocket(null);
       }
     };
   }, [token]); // Run when token changes
+
+  return socket;
 };

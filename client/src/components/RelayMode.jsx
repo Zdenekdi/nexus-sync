@@ -230,6 +230,11 @@ const RelayMode = ({ operator, t, onHide: _onHide, onExit, syncPushToken, isSync
     setSpeaker:   gsmSetSpeaker,
     requestDefaultDialer: _requestDefaultDialer,
   } = useInCallService({
+    apiUrl: `${RELAY_API_BASE}/api/device`,
+    installationId: operator?.installationId || '',
+    secret: localStorage.getItem('nexus_relay_device_secret') || operator?.token || '', // Per-device relay secret (odvozený serverem, uložený při bindingu)
+    socket: nexus.socket
+  }, {
     onIncoming: (call) => addLocalLog('call', call.callerId, 'GSM hovor (příchozí)', 'inbound', 'ringing'),
     onAnswered: ()     => addLocalLog('call', 'GSM', 'Hovor přijat operátorem', 'inbound', 'answered'),
     onEnded:    ()     => addLocalLog('call', 'GSM', 'Hovor ukončen', 'inbound', 'completed'),

@@ -2,7 +2,7 @@ const prisma = require('../services/db');
 const jwt = require('jsonwebtoken');
 const { registerPushToken, sendChatPush, sendCallPush } = require('../services/pushService');
 const { getIO } = require('../services/socket');
-const { secureCompare } = require('../utils/security');
+const { secureCompare, deriveRelaySecret } = require('../utils/security');
 const { getPhoneLookupValues, normalizePhoneNumber } = require('../utils/phoneNumber');
 const { isAppOwnerRole, isManagerRole } = require('../utils/authz');
 
@@ -183,7 +183,11 @@ exports.verifyDeviceBinding = async (req, res) => {
       console.info(`[Device Binding] Profile ${resolvedProfileId} (Diana) is now ONLINE`);
     }
 
-    return res.json({ ok: true });
+    // Per-device relay secret pro WebRTC signaling (HMAC master + installationId).
+    // Ukládá se jen na klientu; master DEVICE_SECRET nikdy neopouští server.
+    const deviceSecret = deriveRelaySecret(installationId);
+
+    return res.json({ ok: true, deviceSecret });
   } catch (error) {
     console.error('[Device] Verify error:', error);
     return res.status(500).json({ ok: false });

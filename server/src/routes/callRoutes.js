@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const ctrl = require('../controllers/callController');
 const authMiddleware = require('../middleware/authMiddleware');
+const { signalingLimiter } = require('../middleware/rateLimiters');
 const { validate } = require('../middleware/validate');
 const { createCallLog, updateCallLog } = require('../middleware/schemas');
 
@@ -15,9 +16,9 @@ router.get('/operator-metrics', (req, res) => ctrl.getOperatorMetrics(req, res))
 
 // ── WebRTC Signaling (InCallService — GSM bez SIP Trunk) ──────────────────────
 // Relay telefon (NexusInCallService) ↔ Server ↔ Prohlížeč operátora
-router.post('/webrtc/offer',  (req, res) => ctrl.webrtcOffer(req, res));
-router.post('/webrtc/answer', (req, res) => ctrl.webrtcAnswer(req, res));
-router.post('/webrtc/ice',    (req, res) => ctrl.webrtcIce(req, res));
-router.post('/webrtc/hangup', (req, res) => ctrl.webrtcHangup(req, res));
+// /webrtc/offer je nyní v deviceRoutes (volá to relay)
+router.post('/webrtc/answer', signalingLimiter, (req, res) => ctrl.webrtcAnswer(req, res));
+router.post('/webrtc/ice',    signalingLimiter, (req, res) => ctrl.webrtcIce(req, res));
+router.post('/webrtc/hangup', signalingLimiter, (req, res) => ctrl.webrtcHangup(req, res));
 
 module.exports = router;

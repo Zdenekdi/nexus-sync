@@ -6,7 +6,7 @@ const callStatus = (status) => (typeof status === 'string' ? status.toLowerCase(
 const isAppOwner = (req) => req.user?.role?.isAppOwner === true;
 
 const getScopedAgencyId = (req) => {
-  const agencyId = req.user?.agencyId;
+  const agencyId = req.user?.agencyId || req.agencyId || req.agency?.id;
   return agencyId ? String(agencyId) : null;
 };
 
@@ -257,7 +257,10 @@ class CallController {
    */
   async webrtcOffer(req, res) {
     try {
-      const { sdp, callerId, agencyId, installationId } = req.body;
+      const { sdp, callerId, agencyId } = req.body;
+      // Preferuj installationId ověřený relay middlewarem (req.installationId),
+      // aby operátor dostal správné ID pro směrování answeru zpět na telefon.
+      const installationId = req.installationId || req.body.installationId;
       if (!sdp) {
         return res.status(400).json({ message: 'sdp is required' });
       }
