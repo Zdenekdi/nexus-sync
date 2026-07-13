@@ -2,6 +2,7 @@ import React from 'react';
 import { Smartphone, Info, Globe, ShieldCheck, MapPin, X, Radio, Server, Lock } from 'lucide-react';
 
 import { useNexus } from '../context/ContextHook';
+import TrunkManager from './sip/TrunkManager';
 
 const RelayControlCenter = () => {
   const nexus = useNexus();
@@ -168,6 +169,8 @@ const RelayControlCenter = () => {
         </div>
       </div>
       
+      <TrunkManager />
+
       <style>{`
         .glass-card { background: rgba(255,255,255,0.03); backdrop-filter: blur(10px); border: 1px solid var(--card-border); border-radius: 20px; transition: all 0.3s; }
         .glass-card:hover { border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); }
