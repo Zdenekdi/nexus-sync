@@ -449,10 +449,12 @@ exports.resetPasswordRequest = async (req, res) => {
     const user = await prisma.user.findUnique({ where: { email } });
     
     if (user) {
-      // Generate a JWT reset token (1 hour expiry)
+      // JWT reset token (1h). Secret = JWT_SECRET + aktuální hash hesla, takže se
+      // token po změně hesla sám zneplatní (jednorázový, nelze přehrát).
+      const secret = process.env.JWT_SECRET + user.password;
       const resetToken = jwt.sign(
         { userId: user.id, type: 'password_reset' },
-        process.env.JWT_SECRET,
+        secret,
         { expiresIn: '1h' }
       );
       console.log(`[RESET] Password reset requested for ${email}`);
@@ -477,14 +479,23 @@ exports.resetPasswordConfirm = async (req, res) => {
     const pwError = validatePassword(password);
     if (pwError) return res.status(400).json({ message: pwError });
 
+    // Dekóduj bez ověření, ať zjistíš uživatele — secret pro ověření závisí na jeho
+    // aktuálním hesle (viz resetPasswordRequest).
+    const decodedToken = jwt.decode(resetToken);
+    if (!decodedToken || decodedToken.type !== 'password_reset' || !decodedToken.userId) {
+      return res.status(400).json({ message: 'Invalid token' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: decodedToken.userId } });
+    if (!user) return res.status(400).json({ message: 'Invalid user' });
+
     let decoded;
     try {
-      decoded = jwt.verify(resetToken, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+      // Secret = JWT_SECRET + hash hesla → jednorázový token; HS256 zafixované.
+      const secret = process.env.JWT_SECRET + user.password;
+      decoded = jwt.verify(resetToken, secret, { algorithms: ['HS256'] });
     } catch {
       return res.status(400).json({ message: 'Invalid or expired reset token' });
-    }
-    if (decoded.type !== 'password_reset') {
-      return res.status(400).json({ message: 'Invalid token type' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
