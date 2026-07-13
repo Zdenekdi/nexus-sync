@@ -7,6 +7,25 @@ const { sendPasswordReset, sendWelcomeEmail, sendAgencyRegistrationEmail } = req
 
 const ACCESS_TOKEN_EXPIRY = '1h';
 const REFRESH_TOKEN_DAYS = 7;
+
+// httpOnly refresh-token cookie (web). Native/Capacitor clients keep using the
+// body token because cross-origin cookies are unreliable in a WebView.
+const REFRESH_COOKIE = 'nexus_rt';
+// Cross-origin refresh cookie must be Secure + SameSite=None. Treat anything that
+// isn't explicit development as prod so an unset NODE_ENV on an HTTPS host still works.
+const IS_PROD = process.env.NODE_ENV !== 'development';
+function setRefreshCookie(res, token) {
+  res.cookie(REFRESH_COOKIE, token, {
+    httpOnly: true,
+    secure: IS_PROD,
+    sameSite: IS_PROD ? 'none' : 'lax',
+    maxAge: REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000,
+    path: '/api/auth',
+  });
+}
+function clearRefreshCookie(res) {
+  res.clearCookie(REFRESH_COOKIE, { httpOnly: true, secure: IS_PROD, sameSite: IS_PROD ? 'none' : 'lax', path: '/api/auth' });
+}
 const DUMMY_PASSWORD_HASH = '$2a$10$8DCENsW0fuhKRpdFa9GBa.NtIh1ZHWzPBWWcNU8ZTBfNxHyhaDK9W';
 
 async function comparePassword(password, hash) {
@@ -170,6 +189,7 @@ exports.login = async (req, res) => {
 
     const accessToken = generateAccessToken(userWithProfile);
     const refreshToken = await generateRefreshToken(userWithProfile.id);
+    setRefreshCookie(res, refreshToken);
 
     logAction(userWithProfile.agencyId, userWithProfile.id, 'LOGIN', `User ${userWithProfile.email} logged in`);
 
@@ -187,7 +207,7 @@ exports.login = async (req, res) => {
 
 exports.refresh = async (req, res) => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken = req.cookies?.[REFRESH_COOKIE] || req.body.refreshToken;
     if (!refreshToken) {
       return res.status(400).json({ message: 'Refresh token is required' });
     }
@@ -214,6 +234,7 @@ exports.refresh = async (req, res) => {
 
     const accessToken = generateAccessToken(userWithProfile);
     const newRefreshToken = await generateRefreshToken(stored.userId);
+    setRefreshCookie(res, newRefreshToken);
 
     res.json({
       token: accessToken,
@@ -229,13 +250,14 @@ exports.refresh = async (req, res) => {
 
 exports.logout = async (req, res) => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken = req.cookies?.[REFRESH_COOKIE] || req.body.refreshToken;
     if (refreshToken) {
       await prisma.refreshToken.updateMany({
         where: { token: refreshToken, revokedAt: null },
         data: { revokedAt: new Date() }
       });
     }
+    clearRefreshCookie(res);
     res.json({ message: 'Logged out successfully' });
   } catch (error) {
     console.error(error);

@@ -60,9 +60,12 @@ const app = express();
 
 app.set('trust proxy', 1);
 
+// Redact sensitive query params before any URL is logged
+const redactUrl = (url) => String(url).replace(/([?&](?:secret|token|password|api[_-]?key)=)[^&#]*/gi, '$1[REDACTED]');
+
 // Static file serving for downloads with logging
 app.use('/downloads', (req, res, next) => {
-  console.log(`[Static] Request for: ${req.url}`);
+  console.log(`[Static] Request for: ${redactUrl(req.url)}`);
   next();
 }, express.static(path.join(__dirname, '..', 'public', 'downloads')));
 
@@ -195,6 +198,26 @@ app.post('/api/billing/webhook', billingWebhookLimiter, express.raw({ type: 'app
 
 app.use(express.json({ limit: '64kb' }));
 
+// Minimal cookie parser (no extra dependency): populates req.cookies for the
+// httpOnly refresh-token cookie. res.cookie/clearCookie are native to Express.
+app.use((req, _res, next) => {
+  req.cookies = {};
+  const header = req.headers.cookie;
+  if (header) {
+    for (const part of header.split(';')) {
+      const idx = part.indexOf('=');
+      if (idx > -1) {
+        const k = part.slice(0, idx).trim();
+        if (k) {
+          try { req.cookies[k] = decodeURIComponent(part.slice(idx + 1).trim()); }
+          catch { req.cookies[k] = part.slice(idx + 1).trim(); }
+        }
+      }
+    }
+  }
+  next();
+});
+
 // Apply global limiter to all API routes
 app.use('/api/', limiter);
 // Per-route granular limiters
@@ -222,7 +245,7 @@ if (process.env.NODE_ENV !== 'test') {
 
 // Request logging middleware
 app.use((req, res, next) => {
-  logger.info(`${req.method} ${req.url} - ${req.ip}`);
+  logger.info(`${req.method} ${redactUrl(req.url)} - ${req.ip}`);
   next();
 });
 

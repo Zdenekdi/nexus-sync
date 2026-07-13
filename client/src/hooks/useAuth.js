@@ -81,13 +81,13 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, _setSelectedChatId, _set
 
   const handleLogout = useCallback(() => {
     const storedRefreshToken = localStorage.getItem('nexus_refreshToken');
-    if (storedRefreshToken) {
-      fetch(`${API_BASE}/auth/logout`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken: storedRefreshToken }),
-      }).catch(() => {});
-    }
+    // credentials:'include' so the server can revoke/clear the httpOnly refresh cookie (web)
+    fetch(`${API_BASE}/auth/logout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(storedRefreshToken ? { refreshToken: storedRefreshToken } : {}),
+    }).catch(() => {});
     handleLogoutInternal();
   }, [API_BASE, handleLogoutInternal]);
 
@@ -97,7 +97,8 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, _setSelectedChatId, _set
     if (refreshPromiseRef.current) return refreshPromiseRef.current;
     
     const storedRefreshToken = localStorage.getItem('nexus_refreshToken');
-    if (!storedRefreshToken) {
+    // Native/Capacitor uses the body refresh token; web relies on the httpOnly cookie.
+    if (isNativeApp && !storedRefreshToken) {
       handleLogoutInternal();
       return null;
     }
@@ -107,13 +108,14 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, _setSelectedChatId, _set
         const res = await fetch(`${API_BASE}/auth/refresh`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken: storedRefreshToken }),
+          credentials: 'include',
+          body: JSON.stringify(storedRefreshToken ? { refreshToken: storedRefreshToken } : {}),
         });
         
         const data = await res.json();
         if (res.ok && data.token) {
           localStorage.setItem('nexus_token', data.token);
-          localStorage.setItem('nexus_refreshToken', data.refreshToken);
+          if (isNativeApp && data.refreshToken) localStorage.setItem('nexus_refreshToken', data.refreshToken);
           localStorage.setItem('nexus_isLoggedIn', 'true');
           setToken(data.token);
           if (setShowLanding) setShowLanding(false);
@@ -136,7 +138,7 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, _setSelectedChatId, _set
     })();
 
     return refreshPromiseRef.current;
-  }, [API_BASE, handleLogoutInternal, setShowLanding]);
+  }, [API_BASE, handleLogoutInternal, setShowLanding, isNativeApp]);
 
   const scheduleTokenRefresh = useCallback((expiresInSec) => {
     if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
@@ -163,16 +165,16 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, _setSelectedChatId, _set
         if (expiresIn > 0) {
           scheduleTokenRefresh(expiresIn);
         } else {
-          // Token already expired, try refresh
+          // Token already expired — web refreshes via the httpOnly cookie, native via the stored token
           const storedRefreshToken = localStorage.getItem('nexus_refreshToken');
-          if (storedRefreshToken) scheduleTokenRefresh(0);
+          if (!isNativeApp || storedRefreshToken) scheduleTokenRefresh(0);
         }
       } catch (_err) {
         console.warn('[Auth] Token parsing failed', _err);
       }
     }
     return () => { if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current); };
-  }, [isLoggedIn, token, scheduleTokenRefresh]);
+  }, [isLoggedIn, token, scheduleTokenRefresh, isNativeApp]);
 
   // Detect App Variant
   useEffect(() => {
@@ -257,13 +259,14 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, _setSelectedChatId, _set
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
 
       if (res.ok) {
         const data = await res.json();
         localStorage.setItem('nexus_token', data.token);
-        localStorage.setItem('nexus_refreshToken', data.refreshToken);
+        if (isNativeApp && data.refreshToken) localStorage.setItem('nexus_refreshToken', data.refreshToken);
         localStorage.setItem('nexus_isLoggedIn', 'true');
         localStorage.setItem('nexus_activeOperator', JSON.stringify(data.user));
         setToken(data.token);
