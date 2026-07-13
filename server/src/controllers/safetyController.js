@@ -33,6 +33,15 @@ class SafetyController {
                 agencyId = profile?.agencyId;
             }
 
+            // Verify the target profile belongs to the caller's agency (prevents
+            // cross-agency profile disclosure via the session-summary include).
+            if (!isAppOwner) {
+                const targetProfile = await prisma.profile.findUnique({ where: { id: profileId }, select: { agencyId: true } });
+                if (!targetProfile || targetProfile.agencyId !== agencyId) {
+                    return res.status(403).json({ message: 'Profile not in your agency' });
+                }
+            }
+
             // Calculate grace period
             const plannedEnd = plannedEndAt ? new Date(plannedEndAt) : new Date(Date.now() + 3600000);
             const graceUntil = new Date(plannedEnd.getTime() + graceMinutes * 60000);

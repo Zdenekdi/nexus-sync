@@ -258,7 +258,7 @@ exports.registerAgency = async (req, res) => {
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) return res.status(400).json({ message: 'User already exists' });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     // 2. Create Agency, Admin Role, and User in a transaction
     const result = await prisma.$transaction(async (tx) => {
@@ -349,7 +349,7 @@ exports.registerUser = async (req, res) => {
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) return res.status(400).json({ message: 'User already exists' });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 12);
     
     const rolePermissions = requestedRole === 'Model'
       ? JSON.stringify({ messaging: true, calendar: true })
@@ -509,7 +509,7 @@ exports.setSecurityPin = async (req, res) => {
       return res.status(401).json({ message: 'Invalid password' });
     }
     
-    const hashedPin = await bcrypt.hash(pin, 10);
+    const hashedPin = await bcrypt.hash(pin, 12);
     await prisma.user.update({
       where: { id: user.id },
       data: { securityPin: hashedPin }

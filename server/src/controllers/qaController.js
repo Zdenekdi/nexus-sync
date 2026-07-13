@@ -114,8 +114,17 @@ class QaController {
    */
   async updateRecord(req, res) {
     try {
+      const agencyId = req.user?.agencyId;
+      if (!agencyId) return res.status(403).json({ message: 'No agency' });
       const { id } = req.params;
       const { rating, comment, category } = req.body;
+
+      // Scope to caller's agency — prevents cross-agency IDOR
+      const existing = await prisma.qaRecord.findFirst({
+        where: { id, profile: { agencyId } },
+        select: { id: true }
+      });
+      if (!existing) return res.status(404).json({ message: 'QA record not found' });
 
       const record = await prisma.qaRecord.update({
         where: { id },
@@ -138,7 +147,12 @@ class QaController {
    */
   async deleteRecord(req, res) {
     try {
-      await prisma.qaRecord.delete({ where: { id: req.params.id } });
+      const agencyId = req.user?.agencyId;
+      if (!agencyId) return res.status(403).json({ message: 'No agency' });
+      const result = await prisma.qaRecord.deleteMany({
+        where: { id: req.params.id, profile: { agencyId } }
+      });
+      if (result.count === 0) return res.status(404).json({ message: 'QA record not found' });
       res.json({ ok: true });
     } catch (err) {
       logger.error('deleteRecord error:', err);

@@ -57,6 +57,8 @@ router.get('/profiles', requireScope('read:profiles'), async (req, res) => {
 
     const profiles = await prisma.profile.findMany({
       where: { agencyId, status: 'active' },
+      take: 1000,
+      orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         name: true,
@@ -80,11 +82,13 @@ router.get('/messages', requireScope('read:messages'), async (req, res) => {
   try {
     const { id: agencyId } = req.agency;
     const { limit = 50, offset = 0 } = req.query;
+    const take = Math.min(100, Math.max(1, parseInt(limit) || 50));
+    const skip = Math.max(0, parseInt(offset) || 0);
 
     const messages = await prisma.message.findMany({
       where: { chat: { agencyId } },
-      take: parseInt(limit),
-      skip: parseInt(offset),
+      take,
+      skip,
       orderBy: { createdAt: 'desc' },
       include: {
         chat: {

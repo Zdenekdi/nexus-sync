@@ -106,6 +106,14 @@ exports.updateRolePermissions = async (req, res) => {
             if (!existingRole.agencyId || existingRole.agencyId !== req.user.agencyId) {
                 return res.status(403).json({ message: 'Can only modify roles for your own agency' });
             }
+            // Prevent privilege escalation: only the app owner may grant admin-merge
+            // (promotes a role to effective Agency Admin). Mirrors the App-Owner-only
+            // toggleAdminMerge endpoint.
+            let permCheck = permissions;
+            if (typeof permCheck === 'string') { try { permCheck = JSON.parse(permCheck); } catch { permCheck = {}; } }
+            if (permCheck && permCheck.merged_with_admin) {
+                return res.status(403).json({ message: 'Only the app owner can grant admin-merged permissions' });
+            }
         }
 
         const serializedPerms = typeof permissions === 'object' ? JSON.stringify(permissions) : permissions;

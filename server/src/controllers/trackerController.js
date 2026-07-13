@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const prisma = require('../services/db');
 const logger = require('../services/logger');
 const { getIO } = require('../services/socket');
+const { isManagerRole } = require('../utils/authz');
 
 const TOKEN_PREFIX = 'nxtrk_';
 const ACTIVE_SESSION_STATES = ['CHECKED_IN', 'GRACE', 'ESCALATED'];
@@ -206,6 +207,7 @@ class TrackerController {
 
   async pair(req, res) {
     try {
+      if (!isManagerRole(req.user?.role)) return res.status(403).json({ message: 'Manager role required' });
       const { imei, profileId, label } = req.body;
       const normalizedImei = normalizeImei(imei);
       const { agencyId, error } = await this._resolveAgencyId(req, profileId);
@@ -245,6 +247,7 @@ class TrackerController {
 
   async rotateSecret(req, res) {
     try {
+      if (!isManagerRole(req.user?.role)) return res.status(403).json({ message: 'Manager role required' });
       const tracker = await this._requireTrackerAccess(req, res, req.params.id);
       if (!tracker) return;
       const secret = generateSecret();
@@ -267,6 +270,7 @@ class TrackerController {
 
   async unpair(req, res) {
     try {
+      if (!isManagerRole(req.user?.role)) return res.status(403).json({ message: 'Manager role required' });
       const tracker = await this._requireTrackerAccess(req, res, req.params.id);
       if (!tracker) return;
       await prisma.gpsTracker.update({ where: { id: tracker.id }, data: { active: false } });

@@ -130,6 +130,12 @@ router.post("/command", validate(sshCommand), async (req, res) => {
   const { command } = req.body;
   const trimmed = command.trim();
 
+  // The command is executed as a raw shell string, so reject ALL shell
+  // metacharacters (chaining / redirection / substitution / subshell) up front.
+  if (/[;&|`$<>()\n\r\\]/.test(trimmed)) {
+    return res.status(403).json({ message: 'Command contains disallowed characters' });
+  }
+
   if (COMMAND_BLOCKLIST.test(trimmed)) {
     return res.status(403).json({ message: 'This command is not allowed for security reasons' });
   }
@@ -154,7 +160,7 @@ router.post("/git-pull", validate(gitPull), async (req, res) => {
   const { path: repoPath } = req.body;
 
   // Prevent path traversal and command injection
-  if (/[$;|&\n`]|\.\./.test(repoPath)) {
+  if (/[$;|&<>()\n`]|\.\./.test(repoPath)) {
     return res.status(403).json({ message: 'Invalid path — traversal and command injection not allowed' });
   }
 

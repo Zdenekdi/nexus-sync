@@ -38,11 +38,26 @@ const PayoutsView = () => {
     fetchSummary();
   }, [fetchSummary]);
 
-  const handleExport = () => {
-    window.open(`${API_BASE}/payouts/export?startDate=${dateRange.start}&endDate=${dateRange.end}&token=${token}`, '_blank');
-    // Note: The controller doesn't check token from query param, but I'll add it just in case I update middleware
-    // Actually, normally you'd do a fetch and then blob download, but window.open is simpler for CSV if auth allows.
-    // If auth fails, I'll use a hidden link approach.
+  const handleExport = async () => {
+    // Auth via Authorization header + blob download — never put the JWT in the URL
+    // (query strings leak into browser history, proxy logs, and Referer headers).
+    try {
+      const res = await fetch(`${API_BASE}/payouts/export?startDate=${dateRange.start}&endDate=${dateRange.end}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error(`Export failed (${res.status})`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `payouts_${dateRange.start}_${dateRange.end}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('[Payouts] export failed', err);
+    }
   };
 
   const totalAgencyRevenue = summary.reduce((acc, curr) => acc + curr.totalRevenue, 0);

@@ -155,6 +155,19 @@ exports.verifyDeviceBinding = async (req, res) => {
 
     if (!resolvedProfileId) return res.status(409).json({ ok: false, profileRequired: true });
 
+    // Prevent cross-agency device hijack: if this installationId is already bound
+    // to a different agency, only the app owner may re-bind it (and thus receive
+    // its derived relay secret below).
+    const currentBinding = await prisma.deviceBinding.findUnique({
+      where: { installationId },
+      select: { agencyId: true }
+    });
+    if (currentBinding && currentBinding.agencyId
+        && String(currentBinding.agencyId) !== String(agencyId)
+        && req.user?.role?.isAppOwner !== true) {
+      return res.status(403).json({ ok: false, message: 'Device already bound to another agency' });
+    }
+
     await prisma.deviceBinding.upsert({
       where: { installationId },
       update: { userId: String(userId), agencyId: String(agencyId), profileId: String(resolvedProfileId), platform: String(platform || 'android'), active: true, model: resolvedModel, deviceName, lastSeenAt: new Date() },

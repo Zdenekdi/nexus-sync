@@ -332,16 +332,15 @@ class CallController {
    */
   async webrtcIce(req, res) {
     try {
-      const { sdpMid, sdpMLineIndex, candidate, direction, agencyId, installationId } = req.body;
+      const { sdpMid, sdpMLineIndex, candidate, direction, agencyId } = req.body;
+      const installationId = req.installationId || req.body.installationId;
       const scopedAgencyId = rejectSpoofedAgency(req, res, agencyId);
       if (!scopedAgencyId) return;
 
-      if (direction !== 'phone-to-browser') {
-        if (!installationId) return res.status(400).json({ message: 'installationId is required' });
-        if (!(await verifyScopedInstallation(installationId, scopedAgencyId))) {
-          return res.status(404).json({ message: 'Relay device not found' });
-        }
-      } else if (installationId && !(await verifyScopedInstallation(installationId, scopedAgencyId))) {
+      // Require and verify the installation for BOTH directions — ICE candidates
+      // must correspond to a real relay device bound to the scoped agency.
+      if (!installationId) return res.status(400).json({ message: 'installationId is required' });
+      if (!(await verifyScopedInstallation(installationId, scopedAgencyId))) {
         return res.status(404).json({ message: 'Relay device not found' });
       }
 
@@ -373,16 +372,13 @@ class CallController {
    */
   async webrtcHangup(req, res) {
     try {
-      const { agencyId, installationId, initiator } = req.body;
+      const { agencyId, initiator } = req.body;
+      const installationId = req.installationId || req.body.installationId;
       const scopedAgencyId = rejectSpoofedAgency(req, res, agencyId);
       if (!scopedAgencyId) return;
 
-      if (initiator === 'browser') {
-        if (!installationId) return res.status(400).json({ message: 'installationId is required' });
-        if (!(await verifyScopedInstallation(installationId, scopedAgencyId))) {
-          return res.status(404).json({ message: 'Relay device not found' });
-        }
-      } else if (installationId && !(await verifyScopedInstallation(installationId, scopedAgencyId))) {
+      if (!installationId) return res.status(400).json({ message: 'installationId is required' });
+      if (!(await verifyScopedInstallation(installationId, scopedAgencyId))) {
         return res.status(404).json({ message: 'Relay device not found' });
       }
 
