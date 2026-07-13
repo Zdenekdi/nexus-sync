@@ -34,6 +34,7 @@ model Agency {
   chats     Chat[]
   pushDevices PushDevice[]
   deviceBindings DeviceBinding[]
+  sipTrunks   SipTrunk[]
   gpsTrackers GpsTracker[] @relation("AgencyGpsTrackers")
   auditLogs  AuditLog[]
   subscriptions Subscription[]
@@ -172,6 +173,45 @@ model DeviceBinding {
   @@index([profileId])
 }
 
+// VoIP "bring your own trunk" — každá agentura si konfiguruje vlastního SIP
+// providera (dle země/preference). Příchozí hovor přesměrovaný ze SIMky modelky
+// na DID dorazí přes tento trunk do Asterisku a přemostí se operátorovi.
+model SipTrunk {
+  id         String   @id @default(cuid())
+  agencyId   String
+  agency     Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  name       String                        // popisek, např. "MyProvider CZ"
+  host       String                        // SIP host/IP providera
+  port       Int      @default(5060)
+  authMode   String   @default("register") // "register" (user/heslo) | "ip" (ACL)
+  username   String?                        // pro register auth
+  password   String?                        // AES-256-GCM šifrované (sipEncryption)
+  fromUser   String?                        // volitelný From-user override
+  codecs     String   @default("ulaw,alaw") // čárkou oddělené
+  active     Boolean  @default(true)
+  dids       SipDid[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([agencyId])
+}
+
+// Konkrétní telefonní číslo (DID) na trunku, namapované na profil (modelku).
+// [from-trunk] v Asterisku podle něj routuje příchozí hovor na správný profil.
+model SipDid {
+  id        String   @id @default(cuid())
+  trunkId   String
+  trunk     SipTrunk @relation(fields: [trunkId], references: [id], onDelete: Cascade)
+  number    String                          // DID v E.164
+  profileId String?
+  profile   Profile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@unique([trunkId, number])
+  @@index([profileId])
+}
+
 model Profile {
   id          String    @id @default(cuid())
   name        String
@@ -192,6 +232,7 @@ model Profile {
   qaRecords   QaRecord[]
   icalUrl     String?
   deviceBindings DeviceBinding[]
+  sipDids     SipDid[]
   assignees   User[]    @relation("ProfileAssignees")
   clientNotes ClientNote[]
   credentials String?   // Encrypted JSON containing platform logins, cookies, and proxy settings
