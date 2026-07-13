@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { safeRedirect } from '../../utils/safeRedirect';
 import { 
   Key, Plus, Trash2, Copy, CheckCircle2, AlertTriangle, 
   ShieldCheck, Globe, Loader2, Terminal, ExternalLink, Info, Zap, Crown
@@ -88,7 +89,7 @@ const ApiSettingsView = () => {
 
       if (data.url) {
         showToast(lang === 'cz' ? 'Přesměrování na platební bránu...' : 'Redirecting to payment gateway...', 'info');
-        window.location.href = data.url;
+        safeRedirect(data.url);
       }
     } catch (_error) {
       showToast(lang === 'cz' ? 'Chyba při inicializaci platby.' : 'Error initializing payment.', 'error');

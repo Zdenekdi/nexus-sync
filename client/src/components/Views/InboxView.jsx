@@ -1,4 +1,5 @@
 import React, { Fragment } from 'react';
+import { safeRedirect } from '../../utils/safeRedirect';
 import { 
   Search, MessageSquare, Phone, Clock, Link, Globe, Shield, Check, 
   Zap, Calendar, ChevronDown, ChevronLeft, ChevronRight, PlusCircle, 
@@ -129,7 +130,7 @@ const InboxView = () => {
         })
       });
       const data = await response.json();
-      if (data.url) window.location.href = data.url;
+      if (data.url) safeRedirect(data.url);
     } catch (err) {
       console.error("AI Upgrade failed:", err);
     } finally {

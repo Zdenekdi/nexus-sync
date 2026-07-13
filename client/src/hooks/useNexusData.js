@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
+import { safeRedirect } from '../utils/safeRedirect';
 import axios from 'axios';
 
 /**
@@ -300,8 +301,8 @@ export function useNexusData({
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      if (data?.url && typeof window !== 'undefined') {
-        window.location.href = data.url;
+      if (data?.url) {
+        safeRedirect(data.url);
       }
 
       return data;
