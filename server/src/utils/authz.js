@@ -26,10 +26,19 @@ const requireAppOwner = (req, res, next) => {
   next();
 };
 
+// Manager+ (Agency Admin / Senior Operator / App Owner). Operatoři a Modelky ne.
+const requireManager = (req, res, next) => {
+  if (!isManagerRole(req.user?.role)) {
+    return res.status(403).json({ message: 'Insufficient permissions' });
+  }
+  next();
+};
+
 module.exports = {
   roleName,
   normalizedRoleName,
   isAppOwnerRole,
   isManagerRole,
-  requireAppOwner
+  requireAppOwner,
+  requireManager
 };
