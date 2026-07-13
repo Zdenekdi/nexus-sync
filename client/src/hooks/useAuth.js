@@ -29,13 +29,11 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, _setSelectedChatId, _set
           return null;
         }
 
-        // App Ownera zobraz jednotně jako "App Owner". POZOR: tohle je jen UI/display
-        // z localStorage — NENÍ to autorizace. O právech rozhoduje výhradně server
-        // (viz server-side role/agency checks); klientská role se nesmí důvěřovat.
-        // (Dřív tu byla duplicitní podmínka `role === 'App Owner' || role === 'App Owner'`.)
-        if (parsed && parsed.role === 'App Owner') {
-          parsed.name = 'App Owner';
-        }
+        // POZOR: role/jméno z localStorage jsou jen UI/display, NENÍ to autorizace —
+        // localStorage je uživatelsky editovatelné. O právech rozhoduje výhradně server
+        // (role/agency checks). Proto tu záměrně žádný klientský override role/jména
+        // neděláme (dřív se tu App Ownerovi přepisovalo jméno + byla tu duplicitní
+        // podmínka `role === 'App Owner' || role === 'App Owner'`).
         return parsed;
       }
       return null;
