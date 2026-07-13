@@ -1,5 +1,7 @@
 const prisma = require('../services/db');
 const logger = require('../services/logger');
+// isEffectiveAdmin se requiruje lazy uvnitř handlerů — roleController ↔ auditController
+// mají cyklus a top-level require by rozbil pořadí načítání (isEffectiveAdmin undefined).
 let Stripe = null;
 
 try {
@@ -281,6 +283,11 @@ class BillingController {
 
   async createCheckoutSession(req, res) {
     try {
+      // Billing je vyhrazené Agency Adminovi / App Ownerovi (ne Operator/Model).
+      const { isEffectiveAdmin } = require('./roleController');
+      if (!(await isEffectiveAdmin(req.user?.role, req.user?.agencyId))) {
+        return res.status(403).json({ message: 'Only agency admins can manage billing' });
+      }
       const { agencyId } = req.user;
       if (!agencyId) {
         return res.status(403).json({
@@ -498,6 +505,11 @@ class BillingController {
 
   async createPortalSession(req, res) {
     try {
+      // Billing portal (zrušení předplatného, změna platby) — jen Agency Admin / App Owner.
+      const { isEffectiveAdmin } = require('./roleController');
+      if (!(await isEffectiveAdmin(req.user?.role, req.user?.agencyId))) {
+        return res.status(403).json({ message: 'Only agency admins can manage billing' });
+      }
       if (!this.stripe) {
         const code = process.env.STRIPE_SECRET_KEY && !Stripe ? 'stripe_dependency_missing' : 'stripe_not_configured';
         return res.status(503).json({
