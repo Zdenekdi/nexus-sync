@@ -46,16 +46,20 @@ export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall,
       // Expose the socket reactively (nexus.socket) for WebRTC relay + other consumers
       setSocket(socketRef.current);
 
-      socketRef.current.onAny((event, ...args) => {
-        console.log(`[Socket-DEBUG] Received event: ${event}`, args);
-      });
+      // Pouze ve vývoji — jinak by se do konzole dumpovaly VŠECHNY příchozí payloady
+      // (obsahy zpráv, data hovorů, polohy trackerů = PII) čitelné komukoli s devtools.
+      if (import.meta.env.DEV) {
+        socketRef.current.onAny((event, ...args) => {
+          console.log(`[Socket-DEBUG] Received event: ${event}`, args);
+        });
+      }
 
       socketRef.current.on('connect', () => {
-        console.log('[Socket-DEBUG] Connected with ID:', socketRef.current.id);
+        if (import.meta.env.DEV) console.log('[Socket-DEBUG] Connected with ID:', socketRef.current.id);
       });
 
       socketRef.current.on('new_message', (data) => {
-        console.log('[Socket-DEBUG] new_message received:', data);
+        if (import.meta.env.DEV) console.log('[Socket-DEBUG] new_message received:', data);
         if (handlersRef.current.onNewMessage) {
           handlersRef.current.onNewMessage(data);
         }
@@ -79,19 +83,15 @@ export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall,
         }
       });
 
-      socketRef.current.onAny((eventName, ...args) => {
-        console.log(`[Socket-Any] Event: ${eventName}`, args);
-      });
-
       socketRef.current.on('relay_command', (data) => {
-        console.log('Socket: Received relay_command', data);
+        if (import.meta.env.DEV) console.log('Socket: Received relay_command', data);
         if (handlersRef.current.onRelayCommand) {
           handlersRef.current.onRelayCommand(data);
         }
       });
 
       socketRef.current.on('relay_event', (data) => {
-        console.log('Socket: Received relay_event', data);
+        if (import.meta.env.DEV) console.log('Socket: Received relay_event', data);
         if (handlersRef.current.onRelayEvent) {
           handlersRef.current.onRelayEvent(data);
         }

@@ -45,7 +45,10 @@ public class NexusCallReceiver extends BroadcastReceiver {
             return;
         }
 
-        Log.d("NexusRelay", "Call state changed via Receiver: " + state + " from " + number);
+        // Telefonní číslo je PII — logujeme jen v debug buildu (jinak končí v logcatu)
+        if (BuildConfig.DEBUG) {
+            Log.d("NexusRelay", "Call state changed via Receiver: " + state + " from " + number);
+        }
         NexusRelayPlugin.onCallStateChanged(context, number, state);
     }
 }

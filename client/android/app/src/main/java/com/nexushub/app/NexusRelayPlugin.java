@@ -639,7 +639,9 @@ public class NexusRelayPlugin extends Plugin {
                 // If we are the default SMS app, we must write sent messages to the provider
                 insertSentSms(context, to, content);
                 
-                android.util.Log.d("NexusRelay", "sendSmsFromData: SMS sent to " + to);
+                if (BuildConfig.DEBUG) { // příjemce SMS je PII — nelogovat v produkci
+                    android.util.Log.d("NexusRelay", "sendSmsFromData: SMS sent to " + to);
+                }
                 finalStatus = "sent";
             }
         } catch (Exception e) {
