@@ -76,3 +76,22 @@ server/coverage/
 playwright-report/
 test-results/
 test-results.json
+
+# Scratch, debug scripts, result dumps (repo hygiene)
+.antigravity.env
+/scratch/
+/server/scratch/
+/server/check-db.js
+/server/check_*.js
+/server/src/check_*.js
+client/all_eslint_results*.txt
+client/results_*.txt
+client/lint_focused*.txt
+client/eslint_results.txt
+client/final_clean_results.txt
+client/build_output.txt
+client/all_vars.txt
+bugreport-*.zip
+client/android/*.mp4
+/patch.diff
+*.class
