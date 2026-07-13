@@ -139,6 +139,8 @@ describe('GET /api/qa/leaderboard', () => {
 
 describe('PUT /api/qa/records/:id', () => {
   it('updates a QA record with valid data', async () => {
+    // Controller nově ověří vlastnictví přes findFirst (agency-scoping / IDOR fix)
+    prismaMock.qaRecord.findFirst.mockResolvedValue({ id: 'qa-1' });
     prismaMock.qaRecord.update.mockResolvedValue({
       id: 'qa-1',
       rating: 5,
@@ -169,7 +171,8 @@ describe('PUT /api/qa/records/:id', () => {
 
 describe('DELETE /api/qa/records/:id', () => {
   it('deletes a QA record', async () => {
-    prismaMock.qaRecord.delete.mockResolvedValue({ id: 'qa-1' });
+    // Controller nově maže přes deleteMany scoped na agenturu (IDOR fix)
+    prismaMock.qaRecord.deleteMany.mockResolvedValue({ count: 1 });
 
     const res = await request(app)
       .delete('/api/qa/records/qa-1')

@@ -111,10 +111,26 @@ describe('call log agency scoping', () => {
 });
 
 describe('WebRTC call signaling scoping', () => {
-  it('emits phone offers to the JWT agency room', async () => {
+  // /webrtc/offer se přesunul do /api/device za relayAuthMiddleware — relay telefon
+  // se autentizuje installationId + per-device secretem (deriveRelaySecret), agentura
+  // se odvozuje z bindingu, ne z JWT.
+  const { deriveRelaySecret } = require('../src/utils/security');
+  const INSTALLATION_ID = 'test-installation-webrtc';
+  const binding = {
+    id: 'binding-1',
+    installationId: INSTALLATION_ID,
+    userId: 'user-relay',
+    agencyId: 'agency-1',
+    profileId: 'profile-1',
+  };
+
+  it('emits phone offers to the relay device agency room', async () => {
+    prismaMock.deviceBinding.findFirst.mockResolvedValue(binding);
+
     const res = await request(app)
-      .post('/api/calls/webrtc/offer')
-      .set('Authorization', `Bearer ${makeToken()}`)
+      .post('/api/device/webrtc/offer')
+      .set('X-Installation-Id', INSTALLATION_ID)
+      .set('X-Device-Secret', deriveRelaySecret(INSTALLATION_ID))
       .send({ sdp: 'offer-sdp', callerId: '+420739777718' });
 
     expect(res.status).toBe(200);
@@ -130,13 +146,15 @@ describe('WebRTC call signaling scoping', () => {
   });
 
   it('blocks spoofed agency rooms in phone offers', async () => {
+    prismaMock.deviceBinding.findFirst.mockResolvedValue(binding);
+
     const res = await request(app)
-      .post('/api/calls/webrtc/offer')
-      .set('Authorization', `Bearer ${makeToken()}`)
+      .post('/api/device/webrtc/offer')
+      .set('X-Installation-Id', INSTALLATION_ID)
+      .set('X-Device-Secret', deriveRelaySecret(INSTALLATION_ID))
       .send({ sdp: 'offer-sdp', callerId: '+420739777718', agencyId: 'agency-2' });
 
     expect(res.status).toBe(403);
-    expect(mockTo).not.toHaveBeenCalled();
     expect(mockEmit).not.toHaveBeenCalled();
   });
 
