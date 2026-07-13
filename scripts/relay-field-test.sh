@@ -7,7 +7,8 @@
 #
 # Architecture:
 #   • Relay app is installed on the MODEL's phone.
-#   • It authenticates using installationId + DEVICE_SECRET (no Bearer token).
+#   • It authenticates using installationId + a per-device HMAC secret
+#     HMAC-SHA256(DEVICE_SECRET, installationId) — no Bearer token.
 #   • A Senior Operator / Manager token is only used to verify that messages
 #     were actually persisted in the database (read-only).
 #
@@ -45,6 +46,13 @@ API_BASE="${API_BASE%/}"
 DEVICE_SECRET="${DEVICE_SECRET:-}"
 INSTALLATION_ID="${RELAY_INSTALLATION_ID:-}"
 PROFILE_ID="${RELAY_PROFILE_ID:-}"
+# Per-device relay secret = HMAC-SHA256(DEVICE_SECRET, installationId) — matches the
+# server deriveRelaySecret(). The raw global DEVICE_SECRET is no longer accepted in
+# production; the relay authenticates per-device.
+RELAY_SECRET=""
+if [ -n "$DEVICE_SECRET" ] && [ -n "$INSTALLATION_ID" ]; then
+  RELAY_SECRET=$(printf '%s' "$INSTALLATION_ID" | openssl dgst -sha256 -hmac "$DEVICE_SECRET" | awk '{print $NF}')
+fi
 CALLER_PHONE="${CALLER_PHONE:-+420777000099}"
 STRICT="${FIELD_TEST_STRICT:-true}"
 
@@ -142,7 +150,7 @@ curl_call -X POST "${API_BASE}/device/relay" \
     \"transport\": \"sms\",
     \"from\": \"${CALLER_PHONE}\",
     \"content\": \"${SMS_CONTENT}\",
-    \"secret\": \"${DEVICE_SECRET}\",
+    \"secret\": \"${RELAY_SECRET}\",
     \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)\"
   }"
 check_body_contains "[2] Relay inbound SMS accepted" "200" '"ok":true'
@@ -170,7 +178,7 @@ for variant in "${VARIANTS[@]}"; do
       \"transport\": \"sms\",
       \"from\": \"${variant}\",
       \"content\": \"Variant test ${variant} ${RUN_ID}\",
-      \"secret\": \"${DEVICE_SECRET}\"
+      \"secret\": \"${RELAY_SECRET}\"
     }"
   check_body_contains "[3] Number variant ${variant}" "200" '"ok":true'
 done
@@ -188,7 +196,7 @@ curl_call -X POST "${API_BASE}/device/relay" \
     \"transport\": \"call\",
     \"from\": \"${CALLER_PHONE}\",
     \"content\": \"RINGING\",
-    \"secret\": \"${DEVICE_SECRET}\"
+    \"secret\": \"${RELAY_SECRET}\"
   }"
 check_body_contains "[4] Relay RINGING accepted" "200" '"ok":true'
 
@@ -221,7 +229,7 @@ curl_call -X POST "${API_BASE}/device/relay" \
     \"transport\": \"sms\",
     \"from\": \"${CALLER_PHONE}\",
     \"content\": \"Should be rejected\",
-    \"secret\": \"${DEVICE_SECRET}\"
+    \"secret\": \"${RELAY_SECRET}\"
   }"
 check_status "[6] Mismatched userId → 401" "401"
 

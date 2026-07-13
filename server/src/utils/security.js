@@ -40,7 +40,21 @@ function deriveRelaySecret(installationId) {
   return crypto.createHmac('sha256', master).update(String(installationId)).digest('hex');
 }
 
+/**
+ * Derive a per-agency webhook secret from the master secret. Binds a webhook
+ * credential to a single agency so a secret-holder can only inject into that
+ * agency (closes cross-tenant webhook injection).
+ * @param {string} agencyId
+ * @returns {string} hex digest, or '' if inputs are missing
+ */
+function deriveWebhookSecret(agencyId) {
+  const master = process.env.WEBHOOK_SECRET || process.env.DEVICE_SECRET;
+  if (!master || !agencyId) return '';
+  return crypto.createHmac('sha256', master).update('webhook:' + String(agencyId)).digest('hex');
+}
+
 module.exports = {
   secureCompare,
-  deriveRelaySecret
+  deriveRelaySecret,
+  deriveWebhookSecret
 };

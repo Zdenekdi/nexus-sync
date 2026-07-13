@@ -233,7 +233,8 @@ async function runOperationalSmoke(options = {}) {
             transport: 'sms',
             from: String(env.OPS_SMOKE_CALLER || env.SMOKE_CALLER_PHONE || '+420000000001').trim(),
             content: smokeContent,
-            secret: deviceSecret
+            // Per-device relay secret (matches server deriveRelaySecret)
+            secret: require('crypto').createHmac('sha256', deviceSecret).update(String(relayInstallationId)).digest('hex')
           }
         });
 

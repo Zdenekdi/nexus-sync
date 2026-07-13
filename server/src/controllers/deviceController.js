@@ -328,9 +328,16 @@ exports.handleRelay = async (req, res) => {
       return res.status(401).json({ message: 'Unauthorized: Device binding inactive' });
     }
 
-    const secretAuthorized = secureCompare(secret, process.env.DEVICE_SECRET);
-    const bearerAuthorized = !secretAuthorized && isRelayBearerAuthorized(decodeBearerToken(req), binding);
-    if (!secretAuthorized && !bearerAuthorized) {
+    // Auth precedence (per-tenant): the production relay app uses a per-binding
+    // Bearer token; the "installationId + secret" model uses a PER-DEVICE HMAC
+    // secret (HMAC(DEVICE_SECRET, installationId)). The legacy GLOBAL DEVICE_SECRET
+    // is only accepted when legacy endpoints are explicitly enabled — it lets any
+    // secret-holder target any agency, so it stays off in production.
+    const perDeviceAuthorized = secureCompare(secret, deriveRelaySecret(binding.installationId));
+    const bearerAuthorized = !perDeviceAuthorized && isRelayBearerAuthorized(decodeBearerToken(req), binding);
+    const legacyAuthorized = !perDeviceAuthorized && !bearerAuthorized
+      && isLegacyDeviceEndpointEnabled() && secureCompare(secret, process.env.DEVICE_SECRET);
+    if (!perDeviceAuthorized && !bearerAuthorized && !legacyAuthorized) {
       console.warn(`[Relay] Auth failed: installationId=${installationId}, hasSecret=${!!secret}, hasBearer=${!!req.headers.authorization}`);
       return res.status(401).json({ message: 'Unauthorized' });
     }

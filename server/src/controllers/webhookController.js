@@ -1,7 +1,7 @@
 const prisma = require('../services/db');
 const { getIO } = require('../services/socket');
 const { sendChatPush } = require('../services/pushService');
-const { secureCompare } = require('../utils/security');
+const { secureCompare, deriveWebhookSecret } = require('../utils/security');
 const crypto = require('crypto');
 
 function getWebhookSecret(req) {
@@ -13,22 +13,36 @@ function getWebhookSecret(req) {
 }
 
 function verifySharedWebhookSecret(req, res, provider, fallbackSecret) {
-  const configuredSecret =
-    process.env[`${provider.toUpperCase()}_WEBHOOK_SECRET`] ||
-    process.env.WEBHOOK_SECRET ||
-    fallbackSecret;
-
-  if (!configuredSecret) {
-    res.status(503).json({ message: `${provider} webhook secret is not configured` });
-    return false;
-  }
-
-  if (!secureCompare(String(getWebhookSecret(req) || ''), configuredSecret)) {
+  const provided = String(getWebhookSecret(req) || '');
+  if (!provided) {
     res.status(401).json({ message: 'Unauthorized' });
     return false;
   }
 
-  return true;
+  // Preferred: per-agency secret = HMAC(master, "webhook:"+agencyId). It binds the
+  // credential to one agency, so a secret-holder can only inject into their own
+  // agency. When it matches, the agencyId is trusted (see getWebhookRouting).
+  const { agencyId } = getWebhookRouting(req);
+  if (agencyId && secureCompare(provided, deriveWebhookSecret(agencyId))) {
+    req.webhookAgencyId = String(agencyId);
+    return true;
+  }
+
+  // Legacy fallback: a single shared secret. Kept for backward compatibility —
+  // unset WEBHOOK_SECRET / <PROVIDER>_WEBHOOK_SECRET once every provider has been
+  // migrated to its per-agency secret. The DEVICE_SECRET fallback is only honoured
+  // when legacy endpoints are explicitly enabled.
+  const legacyFallback = process.env.ALLOW_LEGACY_DEVICE_ENDPOINTS === 'true' ? fallbackSecret : null;
+  const configuredSecret =
+    process.env[`${provider.toUpperCase()}_WEBHOOK_SECRET`] ||
+    process.env.WEBHOOK_SECRET ||
+    legacyFallback;
+  if (configuredSecret && secureCompare(provided, configuredSecret)) {
+    return true;
+  }
+
+  res.status(401).json({ message: 'Unauthorized' });
+  return false;
 }
 
 function getWebhookRouting(req, overrides = {}) {
@@ -40,6 +54,7 @@ function getWebhookRouting(req, overrides = {}) {
       req.headers['x-profile-id'] ||
       null,
     agencyId: overrides.agencyId ||
+      req.webhookAgencyId ||
       req.body?.agencyId ||
       req.body?.agency_id ||
       req.query?.agencyId ||
@@ -335,3 +350,36 @@ async function findOrCreateChat(externalId, clientName, transport, routing = {})
 
   return chat;
 }
+
+
+/**
+ * GET /api/webhooks/config  (authenticated, manager+)
+ * Returns the caller agency's per-agency webhook secret and ready-to-use URLs.
+ * The secret authorizes ONLY this agency.
+ */
+exports.getMyWebhookConfig = async (req, res) => {
+  try {
+    const role = req.user?.role;
+    if (!role?.isAppOwner && !role?.isManager) {
+      return res.status(403).json({ message: 'Manager role required' });
+    }
+    const agencyId = req.user?.agencyId;
+    if (!agencyId) return res.status(400).json({ message: 'No agency in context' });
+
+    const secret = deriveWebhookSecret(agencyId);
+    const base = `${req.protocol}://${req.get('host')}`;
+    return res.json({
+      agencyId,
+      secret,
+      note: 'Send this secret in the X-Webhook-Secret header (preferred) or ?secret= query, together with agencyId. It authorizes ONLY your agency.',
+      urls: {
+        telegram: `${base}/api/webhooks/telegram?agencyId=${agencyId}`,
+        whatsapp: `${base}/api/webhooks/whatsapp?agencyId=${agencyId}`,
+        generic: `${base}/api/webhooks/generic?agencyId=${agencyId}`,
+        adultwork: `${base}/api/webhooks/adultwork?agencyId=${agencyId}`
+      }
+    });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to build webhook config' });
+  }
+};

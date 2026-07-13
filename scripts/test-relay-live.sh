@@ -193,7 +193,7 @@ post_relay_sms() {
     transport: "sms",
     from: process.env.RELAY_FROM,
     content: process.env.RELAY_CONTENT,
-    secret: process.env.DEVICE_SECRET,
+    secret: require("crypto").createHmac("sha256", process.env.DEVICE_SECRET).update(String(process.env.RELAY_INSTALLATION_ID)).digest("hex"),
     timestamp: new Date().toISOString()
   }))')
   curl_call -X POST "${API_BASE}/device/relay" \
@@ -357,7 +357,7 @@ if [ "$RELAY_READY" = "1" ]; then
     transport: "call",
     from: process.env.CALLER_PHONE,
     content: "RINGING",
-    secret: process.env.DEVICE_SECRET
+    secret: require("crypto").createHmac("sha256", process.env.DEVICE_SECRET).update(String(process.env.RELAY_INSTALLATION_ID)).digest("hex")
   }))')
   curl_call -X POST "${API_BASE}/device/relay" \
     -H "Content-Type: application/json" \
