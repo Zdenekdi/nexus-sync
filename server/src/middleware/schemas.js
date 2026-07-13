@@ -21,6 +21,7 @@ const trackerIdentifier = z.preprocess(
 const sipUserId = z.string().min(1).max(128).regex(/^[A-Za-z0-9_-]+$/, 'sipUser contains unsupported characters');
 // Zobrazované jméno — volný text, ale bez nových řádků / řídicích znaků (ochrana
 // proti config injection přes profile.name, které se vkládá do Asterisk callerid).
+// eslint-disable-next-line no-control-regex -- řídicí znaky odmítáme záměrně
 const displayName = z.string().min(1).max(200).regex(/^[^\r\n\x00-\x1f]+$/, 'name contains control characters');
 
 // ── Messages ─────────────────────────────────────────────────────────────────

@@ -48,6 +48,7 @@ function callText(v) {
 }
 function confValue(v) {
   // Hodnota na jednom řádku (heslo) — zákaz nových řádků a řídicích znaků
+  // eslint-disable-next-line no-control-regex -- řídicí znaky odstraňujeme záměrně
   return String(v || '').replace(/[\r\n\x00-\x1f]/g, '');
 }
 
