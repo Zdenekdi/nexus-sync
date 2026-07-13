@@ -41,7 +41,7 @@ if (localBuildPropsFile.exists()) localBuildProps.load(new FileInputStream(local
 def enableGsmCallBridge = (
     localBuildProps.getProperty("ENABLE_GSM_CALL_BRIDGE")
         ?: System.getenv("ENABLE_GSM_CALL_BRIDGE")
-        ?: "false"
+        ?: "true"
 ).toBoolean()
 
 def githubRunNumber = System.getenv("GITHUB_RUN_NUMBER")
