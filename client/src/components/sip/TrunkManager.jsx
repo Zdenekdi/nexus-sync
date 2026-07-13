@@ -101,10 +101,31 @@ export default function TrunkManager() {
       <h3 style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
         <PhoneForwarded size={24} color="var(--accent-color)" /> SIP trunky (BYOT)
       </h3>
-      <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem' }}>
         Zadej svého VoIP providera a namapuj DID na modelku. Na SIMce nastav
         přesměrování <code>**21*&lt;DID&gt;#</code> — příchozí hovor pak dorazí operátorovi.
       </p>
+
+      {/* In-app návod */}
+      <details className="glass-card" style={{ padding: '1rem 1.25rem', marginBottom: '1.5rem' }}>
+        <summary style={{ cursor: 'pointer', fontWeight: 700, color: 'var(--accent-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Info size={16} /> Jak to zprovoznit (návod)
+        </summary>
+        <div style={{ marginTop: '1rem', fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+          <p style={{ margin: '0 0 0.75rem' }}><strong style={{ color: 'var(--text-primary, #fff)' }}>Předpoklad:</strong> běžící Asterisk dostupný providerovi (veřejná IP, SIP/RTP porty).</p>
+          <ol style={{ margin: 0, paddingLeft: '1.2rem' }}>
+            <li><strong style={{ color: 'var(--text-primary, #fff)' }}>Pořiď DID u providera</strong> — telefonní číslo v cílové zemi + SIP údaje (host, username, heslo). Provider musí umět SIP trunk.</li>
+            <li><strong style={{ color: 'var(--text-primary, #fff)' }}>Přidej trunk</strong> ve formuláři níže (heslo se uloží šifrovaně).</li>
+            <li><strong style={{ color: 'var(--text-primary, #fff)' }}>Přidej DID</strong> a namapuj ho na modelku (profil).</li>
+            <li><strong style={{ color: 'var(--text-primary, #fff)' }}>Na SIMce modelky zapni přesměrování:</strong> <code>**21*&lt;DID&gt;#</code> (vše), nebo podmíněné <code>**61/**62/**67*&lt;DID&gt;#</code> (nezvednuto/nedostupné/obsazeno). Zrušení: <code>##21#</code>.</li>
+            <li><strong style={{ color: 'var(--text-primary, #fff)' }}>Test:</strong> zavolej na číslo modelky → hovor dorazí operátorovi (obousměrně).</li>
+          </ol>
+          <p style={{ margin: '0.75rem 0 0' }}>
+            <strong style={{ color: 'var(--text-primary, #fff)' }}>Pozn.:</strong> SMS jedou dál přes relay aplikaci (nemění se) — přesměrovává se jen hlas.
+            Pro spolehlivé rozlišení modelek doporučujeme <strong style={{ color: 'var(--text-primary, #fff)' }}>1 DID na modelku</strong>.
+          </p>
+        </div>
+      </details>
 
       {/* Formulář: nový trunk */}
       <form onSubmit={createTrunk} className="glass-card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
