@@ -16,23 +16,66 @@ export class APIClient {
       baseURL: baseUrl,
       timeout: 30000,
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     });
 
-    // Interceptor pro refresh tokenu
+    // Vždy přilož AKTUÁLNÍ access token z localStorage (ne ten zachycený v
+    // konstruktoru) — jinak by klient po refreshi držel starý, expirovaný token.
+    this.client.interceptors.request.use((config) => {
+      const current = localStorage.getItem('nexus_token') || this.token;
+      if (current) config.headers.Authorization = `Bearer ${current}`;
+      return config;
+    });
+
+    // Na 401 se jednou pokus obnovit token a request zopakovat; při neúspěchu
+    // odhlásit. Stejný kontrakt jako useAuth.performRefresh / handleLogout.
     this.client.interceptors.response.use(
-      response => response,
-      async (_err) => {
-        if (_err.response?.status === 401) {
-          // Token expired - refresh nebo logout
-          console.warn('Token expired');
-          throw new Error('Auth token expired');
+      (response) => response,
+      async (err) => {
+        const original = err.config;
+        if (err.response?.status === 401 && original && !original._retried) {
+          original._retried = true;
+          const newToken = await this._refreshToken();
+          if (newToken) {
+            original.headers.Authorization = `Bearer ${newToken}`;
+            return this.client(original);
+          }
+          this._forceLogout();
         }
-        throw _err;
+        throw err;
       }
     );
+  }
+
+  // Obnoví access token přes /auth/refresh (httpOnly cookie na webu, body token na
+  // nativu). Vrací nový token, nebo null při selhání. Volá se samostatnou axios
+  // instancí, aby 401 z refreshe nespustil znovu tenhle interceptor (žádná smyčka).
+  async _refreshToken() {
+    try {
+      const storedRefreshToken = localStorage.getItem('nexus_refreshToken');
+      const res = await axios.post(
+        `${this.baseUrl}/auth/refresh`,
+        storedRefreshToken ? { refreshToken: storedRefreshToken } : {},
+        { withCredentials: true, headers: { 'Content-Type': 'application/json' } }
+      );
+      const newToken = res.data?.token;
+      if (!newToken) return null;
+      localStorage.setItem('nexus_token', newToken);
+      if (res.data.refreshToken) localStorage.setItem('nexus_refreshToken', res.data.refreshToken);
+      this.token = newToken;
+      return newToken;
+    } catch {
+      return null;
+    }
+  }
+
+  _forceLogout() {
+    try {
+      localStorage.removeItem('nexus_token');
+      localStorage.removeItem('nexus_refreshToken');
+    } catch { /* ignore */ }
+    if (typeof window !== 'undefined') window.location.href = '/logout';
   }
 
   async get(endpoint) {
