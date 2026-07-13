@@ -345,7 +345,19 @@ public class NexusInCallService extends InCallService {
             @Override public void onIceConnectionReceivingChange(boolean receiving) {}
         });
 
-        // Přidej audio track (mikrofon telefonu → WebRTC stream)
+        // Přidej audio track (mikrofon telefonu → WebRTC stream).
+        //
+        // OMEZENÍ ANDROIDU — bridge je jednosměrný: do WebRTC posíláme jen MIKROFON.
+        // Hlas protistrany (downlink GSM hovoru) tímto NEzachytíme. Zachycení downlinku
+        // vyžaduje AudioSource.VOICE_CALL / VOICE_DOWNLINK, k čemuž je potřeba oprávnění
+        // CAPTURE_AUDIO_OUTPUT (signature|privileged) — to NELZE získat na běžném telefonu
+        // ani s developerskými právy; jen na rootnutém / system-app zařízení.
+        //
+        // Na těchto telefonech (dev-mode sideload, bez rootu) je jediná in-app varianta,
+        // jak dostat hlas volajícího k operátorovi, akustický loopback: zapnout
+        // speakerphone (viz setupAudio) tak, aby mikrofon sejmul zvuk z reproduktoru.
+        // Má to ale echo/feedback a horší kvalitu, proto to zatím NENÍ zapnuté — čeká to
+        // na rozhodnutí (viz task "Fix one-way GSM in-call audio bridge").
         MediaConstraints audioConstraints = new MediaConstraints();
         audioConstraints.mandatory.add(new MediaConstraints.KeyValuePair("echoCancellation", "true"));
         audioConstraints.mandatory.add(new MediaConstraints.KeyValuePair("noiseSuppression", "true"));

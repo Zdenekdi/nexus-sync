@@ -356,13 +356,16 @@ public class NexusRelayPlugin extends Plugin {
                 smsManager = SmsManager.getDefault();
             }
 
-            if (text.length() > 160) {
-                java.util.ArrayList<String> parts = smsManager.divideMessage(text);
+            // Rozdělení nech na divideMessage — je encoding-aware (GSM-7 = 160 znaků/část,
+            // ale UCS-2 pro emoji/diakritiku jen 70). Pevná hranice 160 by unicode zprávu
+            // o 71–160 znacích poslala jako jednu a ořízla ji.
+            java.util.ArrayList<String> parts = smsManager.divideMessage(text);
+            if (parts.size() > 1) {
                 smsManager.sendMultipartTextMessage(to, null, parts, null, null);
             } else {
                 smsManager.sendTextMessage(to, null, text, null, null);
             }
-            
+
             // If we are the default SMS app, we must write sent messages to the provider
             insertSentSms(getContext(), to, text);
 
@@ -629,13 +632,15 @@ public class NexusRelayPlugin extends Plugin {
                 android.util.Log.e("NexusRelay", "sendSmsFromData: SmsManager unavailable");
                 finalStatus = "failed";
             } else {
-                if (content.length() > 160) {
-                    java.util.ArrayList<String> parts = smsManager.divideMessage(content);
+                // Encoding-aware rozdělení (viz sendSms výše) — pevná hranice 160 by
+                // ořízla unicode zprávu o 71–160 znacích (UCS-2 limit je 70/část).
+                java.util.ArrayList<String> parts = smsManager.divideMessage(content);
+                if (parts.size() > 1) {
                     smsManager.sendMultipartTextMessage(to, null, parts, null, null);
                 } else {
                     smsManager.sendTextMessage(to, null, content, null, null);
                 }
-                
+
                 // If we are the default SMS app, we must write sent messages to the provider
                 insertSentSms(context, to, content);
                 
