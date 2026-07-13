@@ -2,6 +2,8 @@
 process.env.JWT_SECRET = 'test-jwt-secret-that-is-at-least-32-chars-long!!';
 process.env.DEVICE_SECRET = 'test-device-secret-16chars';
 process.env.ENCRYPTION_KEY = 'test-encryption-key-that-is-at-least-32-chars-long';
+// SIP heslo/creds šifrování — 64-char hex (32 bajtů) pro sipEncryption
+process.env.SIP_ENCRYPTION_KEY = '0'.repeat(64);
 process.env.NODE_ENV = 'test';
 
 // Suppress console output during tests
