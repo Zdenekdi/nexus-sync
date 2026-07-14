@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { safeRedirect } from '../utils/safeRedirect';
 import axios from 'axios';
 
@@ -135,7 +135,12 @@ export function useNexusData({
   
   const [bioText, setBioText] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
-  const [_syncStatus, _setSyncStatus] = useState({ aw: 'synced', ege: 'synced', tpb: 'warning' });
+  // Reálné platformy, na kterých agent umí sync (viz local-agent/adapters).
+  // Stav řídí skutečné socket eventy z agenta (SYNC_COMPLETED/SYNC_FAILED), ne simulace.
+  const [_syncStatus, _setSyncStatus] = useState({ adultwork: 'idle', amateri: 'idle', onlyfans: 'idle' });
+  const syncingProfileRef = useRef(null);
+  const syncProgressTimerRef = useRef(null);
+  const syncFallbackTimerRef = useRef(null);
   const [_syncProgress, _setSyncProgress] = useState(0);
   const [relayOnline, setRelayOnline] = useState(false);
   const [trackers, setTrackers] = useState([]);
@@ -544,20 +549,17 @@ export function useNexusData({
     try {
       setIsSyncing(true);
       _setSyncProgress(0);
-      _setSyncStatus({ aw: 'syncing', ege: 'syncing', tpb: 'syncing' });
+      syncingProfileRef.current = activeProfileId;
+      _setSyncStatus({ adultwork: 'syncing', amateri: 'syncing', onlyfans: 'syncing' });
 
-      // Start progress simulation
-      const progressInterval = setInterval(() => {
-        _setSyncProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 5;
-        });
+      // Indeterminate progress — doleze k 90 %. Skutečných 100 % nastaví až real
+      // event z agenta (nefejkujeme úspěch, jak to bylo dřív).
+      if (syncProgressTimerRef.current) clearInterval(syncProgressTimerRef.current);
+      syncProgressTimerRef.current = setInterval(() => {
+        _setSyncProgress(prev => (prev >= 90 ? 90 : prev + 5));
       }, 500);
 
-      // Call API to dispatch relay command
+      // Dispatch relay command na agenta
       await axios.post(`${API_BASE}/profiles/${activeProfileId}/sync`, {
         bio: bioText,
         name: profiles.find(p => p.id === activeProfileId)?.name
@@ -565,27 +567,81 @@ export function useNexusData({
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      // For now, we simulate completion after API success + some delay
-      // In a real scenario, we would wait for a socket event from the relay
-      setTimeout(() => {
-        clearInterval(progressInterval);
-        _setSyncProgress(100);
-        _setSyncStatus({ aw: 'synced', ege: 'synced', tpb: 'synced' });
-        
-        setTimeout(() => {
-          setIsSyncing(false);
-          if (showToast) showToast(lang === 'cz' ? 'Synchronizace dokončena!' : 'Synchronization complete!', 'success');
-        }, 1000);
-      }, 3000);
+      // Fallback: když agent do 120 s nepošle výsledek (offline / spadl), nenech UI viset.
+      if (syncFallbackTimerRef.current) clearTimeout(syncFallbackTimerRef.current);
+      syncFallbackTimerRef.current = setTimeout(() => {
+        if (syncingProfileRef.current !== activeProfileId) return;
+        if (syncProgressTimerRef.current) clearInterval(syncProgressTimerRef.current);
+        setIsSyncing(false);
+        syncingProfileRef.current = null;
+        _setSyncStatus({ adultwork: 'error', amateri: 'error', onlyfans: 'error' });
+        if (showToast) showToast(lang === 'cz' ? 'Agent neodpověděl — běží local-agent?' : 'Agent did not respond — is the local-agent running?', 'error');
+      }, 120000);
 
     } catch (_err) {
       console.error('Sync failed:', _err);
+      if (syncProgressTimerRef.current) clearInterval(syncProgressTimerRef.current);
       setIsSyncing(false);
-      _setSyncStatus({ aw: '_err', ege: '_err', tpb: '_err' });
+      syncingProfileRef.current = null;
+      _setSyncStatus({ adultwork: 'error', amateri: 'error', onlyfans: 'error' });
       const errMsg = _err.response?.data?.message || (lang === 'cz' ? 'Synchronizace selhala.' : 'Synchronization failed.');
       if (showToast) showToast(errMsg, 'error');
     }
   }, [activeProfileId, bioText, token, API_BASE, profiles, showToast, lang]);
+
+  // Reálný stav syncu řízený eventy z agenta (agent → server → operátoři jako
+  // 'relay_event'). Nahrazuje dřívější simulaci. Aktualizuje per-platform odznaky
+  // podle results a zastaví loader.
+  useEffect(() => {
+    let socket = window._nexusSocket;
+    let waitTimer = null;
+
+    const finish = () => {
+      if (syncFallbackTimerRef.current) clearTimeout(syncFallbackTimerRef.current);
+      if (syncProgressTimerRef.current) clearInterval(syncProgressTimerRef.current);
+      _setSyncProgress(100);
+      setIsSyncing(false);
+      syncingProfileRef.current = null;
+    };
+
+    const onRelayEvent = (d) => {
+      if (!d || (d.type !== 'SYNC_COMPLETED' && d.type !== 'SYNC_FAILED')) return;
+      // Ber jen event pro profil, který zrovna synchronizujeme.
+      if (syncingProfileRef.current && d.profileId && d.profileId !== syncingProfileRef.current) return;
+
+      if (d.type === 'SYNC_FAILED') {
+        _setSyncStatus({ adultwork: 'error', amateri: 'error', onlyfans: 'error' });
+        if (showToast) showToast(lang === 'cz' ? 'Synchronizace v agentovi selhala.' : 'Sync failed in the agent.', 'error');
+      } else {
+        const results = Array.isArray(d.results) ? d.results : [];
+        _setSyncStatus(prev => {
+          const next = { ...prev };
+          // co bylo 'syncing' a nemá result → default 'synced'
+          for (const k of Object.keys(next)) if (next[k] === 'syncing') next[k] = 'synced';
+          for (const r of results) {
+            if (r && r.platform && Object.prototype.hasOwnProperty.call(next, r.platform)) {
+              next[r.platform] = r.ok === false ? 'error' : 'synced';
+            }
+          }
+          return next;
+        });
+      }
+      finish();
+    };
+
+    const attach = (s) => s.on('relay_event', onRelayEvent);
+    if (socket) attach(socket);
+    else {
+      // socket se může vytvořit až po mountu → počkej na něj.
+      waitTimer = setInterval(() => {
+        if (window._nexusSocket) { socket = window._nexusSocket; attach(socket); clearInterval(waitTimer); waitTimer = null; }
+      }, 1000);
+    }
+    return () => {
+      if (waitTimer) clearInterval(waitTimer);
+      if (socket) socket.off('relay_event', onRelayEvent);
+    };
+  }, [showToast, lang]);
 
   const handleSaveCredentials = useCallback(async (credentials) => {
     if (!activeProfileId || activeProfileId === 'all') return;

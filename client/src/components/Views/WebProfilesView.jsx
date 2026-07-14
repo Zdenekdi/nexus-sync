@@ -38,7 +38,7 @@ const WebProfilesView = () => {
     assignedProfiles = [],
     handleSaveCredentials = () => {},
     isSyncing = false,
-    syncStatus = { aw: 'synced', ege: 'synced', tpb: 'synced' },
+    syncStatus = { adultwork: 'idle', amateri: 'idle', onlyfans: 'idle' },
     syncProgress = 0,
     relayOnline = false,
     handleSyncAll = () => {},
@@ -823,47 +823,31 @@ const WebProfilesView = () => {
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
-              <div className="sync-platform-row" style={{ padding: '0.75rem', borderRadius: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div className="platform-icon" style={{ width: '28px', height: '28px', fontSize: '0.6rem' }}>AW</div>
-                  <div>
-                    <div style={{ fontWeight: '700', fontSize: '0.8rem' }}>AdultWork.com</div>
-                    <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{t('ukPrimary')}</div>
+              {[
+                { id: 'adultwork', icon: 'AW', name: 'AdultWork.com', sub: t('ukPrimary') },
+                { id: 'amateri', icon: 'AM', name: 'Amateri.com', sub: 'CZ / SK' },
+                { id: 'onlyfans', icon: 'OF', name: 'OnlyFans', sub: t('reviewSync') },
+              ].map((p) => {
+                const st = (syncStatus && syncStatus[p.id]) || 'idle';
+                return (
+                  <div key={p.id} className="sync-platform-row" style={{ padding: '0.75rem', borderRadius: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div className="platform-icon" style={{ width: '28px', height: '28px', fontSize: '0.6rem' }}>{p.icon}</div>
+                      <div>
+                        <div style={{ fontWeight: '700', fontSize: '0.8rem' }}>{p.name}</div>
+                        <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{p.sub}</div>
+                      </div>
+                    </div>
+                    <div className={`sync-badge ${st}`} style={{ fontSize: '0.6rem', padding: '2px 6px' }}>
+                      {st === 'syncing' ? <RefreshCw size={10} className="spin-animation" />
+                        : st === 'synced' ? <Check size={10} />
+                        : st === 'error' ? <X size={10} />
+                        : <AlertTriangle size={10} />}
+                      {' '}{st.toUpperCase()}
+                    </div>
                   </div>
-                </div>
-                <div className={`sync-badge ${syncStatus.aw}`} style={{ fontSize: '0.6rem', padding: '2px 6px' }}>
-                  {syncStatus.aw === 'syncing' ? <RefreshCw size={10} className="spin-animation" /> : (syncStatus.aw === 'synced' ? <Check size={10} /> : <X size={10} />)}
-                  {syncStatus.aw?.toUpperCase()}
-                </div>
-              </div>
-
-              <div className="sync-platform-row" style={{ padding: '0.75rem', borderRadius: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div className="platform-icon" style={{ width: '28px', height: '28px', fontSize: '0.6rem' }}>EG</div>
-                  <div>
-                    <div style={{ fontWeight: '700', fontSize: '0.8rem' }}>EuroGirlsEscort</div>
-                    <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{t('euWide')}</div>
-                  </div>
-                </div>
-                <div className={`sync-badge ${syncStatus.ege}`} style={{ fontSize: '0.6rem', padding: '2px 6px' }}>
-                  {syncStatus.ege === 'syncing' ? <RefreshCw size={10} className="spin-animation" /> : (syncStatus.ege === 'synced' ? <Check size={10} /> : <X size={10} />)}
-                  {syncStatus.ege?.toUpperCase()}
-                </div>
-              </div>
-
-              <div className="sync-platform-row" style={{ padding: '0.75rem', borderRadius: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div className="platform-icon" style={{ width: '28px', height: '28px', fontSize: '0.6rem' }}>TP</div>
-                  <div>
-                    <div style={{ fontWeight: '700', fontSize: '0.8rem' }}>ThePuntersB...</div>
-                    <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{t('reviewSync')}</div>
-                  </div>
-                </div>
-                <div className={`sync-badge ${syncStatus.tpb}`} style={{ fontSize: '0.6rem', padding: '2px 6px' }}>
-                  {syncStatus.tpb === 'syncing' ? <RefreshCw size={10} className="spin-animation" /> : (syncStatus.tpb === 'synced' ? <Check size={10} /> : <AlertTriangle size={10} />)}
-                  {syncStatus.tpb?.toUpperCase()}
-                </div>
-              </div>
+                );
+              })}
             </div>
 
             {isSyncing ? (
