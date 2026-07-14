@@ -15,6 +15,55 @@ const ADS_POWER_PORT = process.env.ADS_POWER_PORT || "50325";
 const ADS_POWER_URL = `http://local.adspower.com:${ADS_POWER_PORT}`;
 const solver = new CaptchaSolver(process.env.CAPSOLVER_KEY);
 
+// BACKEND_URL nese přes socket citlivá data (platformní credentials) — nešifrovaný
+// http mimo localhost je únik. Upozorni (nerozbíjej dev na localhost).
+(() => {
+    try {
+        const u = new URL(BACKEND_URL);
+        const local = ['localhost', '127.0.0.1', '::1'].includes(u.hostname);
+        if (u.protocol !== 'https:' && !local) {
+            console.warn(`⚠️  BACKEND_URL je nešifrované (${BACKEND_URL}) — credentials by tekly v plaintextu. Použij https://`);
+        }
+    } catch { console.warn(`⚠️  BACKEND_URL není platná URL: ${BACKEND_URL}`); }
+})();
+
+// adsPowerId přichází ze serveru → validuj, ať nejde injektovat do lokální AdsPower
+// API URL. AdsPower profile ID je krátký alfanumerický řetězec.
+function assertSafeAdsPowerId(id) {
+    if (typeof id !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(id)) {
+        throw new Error(`Neplatné AdsPower ID: ${JSON.stringify(id)}`);
+    }
+    return id;
+}
+
+// AdsPower běží lokálně → vrácený CDP endpoint musí mířit na localhost. Jinak by se
+// Playwright mohl připojit na cizí WS (SSRF-ish kontrola prohlížeče ze serveru).
+function assertLocalCdpEndpoint(ws) {
+    let u;
+    try { u = new URL(ws); } catch { throw new Error(`Neplatný CDP endpoint: ${ws}`); }
+    const okProto = u.protocol === 'ws:' || u.protocol === 'wss:';
+    const okHost = ['127.0.0.1', 'localhost', '::1'].includes(u.hostname);
+    if (!okProto || !okHost) throw new Error(`CDP endpoint není lokální (odmítám): ${ws}`);
+    return ws;
+}
+
+// Bezpečně otevře AdsPower prohlížeč a vrátí připojený Playwright browser.
+async function openAdsPowerBrowser(adsPowerId) {
+    assertSafeAdsPowerId(adsPowerId);
+    const id = encodeURIComponent(adsPowerId);
+    const check = await axios.get(`${ADS_POWER_URL}/api/v1/browser/active?user_id=${id}`).catch(() => ({ data: {} }));
+    let wsEndpoint;
+    if (check.data?.data?.status === 'active') {
+        wsEndpoint = check.data.data.ws.puppeteer;
+    } else {
+        const resp = await axios.get(`${ADS_POWER_URL}/api/v1/browser/start?user_id=${id}`);
+        if (resp.data.code !== 0) throw new Error(`AdsPower: ${resp.data.msg}`);
+        wsEndpoint = resp.data.data.ws.puppeteer;
+    }
+    assertLocalCdpEndpoint(wsEndpoint);
+    return chromium.connectOverCDP(wsEndpoint);
+}
+
 async function startAgent() {
     if (!process.env.RELAY_TOKEN || process.env.RELAY_TOKEN === 'VAŠ_TOKEN_Z_DASHBOARDU') {
         console.error("❌ CHYBA: Chybí RELAY_TOKEN v .env souboru!");
@@ -84,21 +133,7 @@ async function runMasterSync(payload) {
     let browser;
     try {
         console.log(`🔧 Startuji prohlížeč (ID: ${adsPowerId})`);
-        
-        // Zjištění stavu profilu
-        const check = await axios.get(`${ADS_POWER_URL}/api/v1/browser/active?user_id=${adsPowerId}`).catch(() => ({data:{}}));
-        let wsEndpoint;
-
-        if (check.data?.data?.status === 'active') {
-            console.log("   -> Profil již běží, připojuji se...");
-            wsEndpoint = check.data.data.ws.puppeteer;
-        } else {
-            const resp = await axios.get(`${ADS_POWER_URL}/api/v1/browser/start?user_id=${adsPowerId}`);
-            if (resp.data.code !== 0) throw new Error(`AdsPower: ${resp.data.msg}`);
-            wsEndpoint = resp.data.data.ws.puppeteer;
-        }
-
-        browser = await chromium.connectOverCDP(wsEndpoint);
+        browser = await openAdsPowerBrowser(adsPowerId);
         const context = browser.contexts()[0];
         
         // Pokud už je stránka otevřená, použijeme ji, jinak vytvoříme novou
@@ -141,18 +176,7 @@ async function runMasterBoost(payload) {
 
     let browser;
     try {
-        const check = await axios.get(`${ADS_POWER_URL}/api/v1/browser/active?user_id=${adsPowerId}`).catch(() => ({data:{}}));
-        let wsEndpoint;
-
-        if (check.data?.data?.status === 'active') {
-            wsEndpoint = check.data.data.ws.puppeteer;
-        } else {
-            const resp = await axios.get(`${ADS_POWER_URL}/api/v1/browser/start?user_id=${adsPowerId}`);
-            if (resp.data.code !== 0) throw new Error(`AdsPower: ${resp.data.msg}`);
-            wsEndpoint = resp.data.data.ws.puppeteer;
-        }
-
-        browser = await chromium.connectOverCDP(wsEndpoint);
+        browser = await openAdsPowerBrowser(adsPowerId);
         const context = browser.contexts()[0];
         const page = context.pages().length > 0 ? context.pages()[0] : await context.newPage();
         const cursor = createCursor(page);
