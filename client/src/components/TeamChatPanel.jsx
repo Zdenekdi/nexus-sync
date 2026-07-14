@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { useNexus } from '../context/ContextHook';
+import { useSocketBridge } from '../services/socketBridge';
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 const SendIcon = () => (
@@ -158,6 +159,7 @@ function DateSeparator({ dateStr }) {
 // ─── Main TeamChatPanel ───────────────────────────────────────────────────────
 export default function TeamChatPanel({ onClose, onMinimize }) {
   const { token, API_BASE, activeOperator } = useNexus();
+  const socket = useSocketBridge();
   const currentUserId = activeOperator?.id;
   const isManager = !!(activeOperator?.isManager || activeOperator?.isAdmin || activeOperator?.isAppOwner);
 
@@ -213,7 +215,6 @@ export default function TeamChatPanel({ onClose, onMinimize }) {
 
   // Socket.io real-time
   useEffect(() => {
-    const socket = window._nexusSocket;
     if (!socket) return;
     const handler = (data) => {
       if (data.room !== activeRoom) return;
@@ -234,7 +235,7 @@ export default function TeamChatPanel({ onClose, onMinimize }) {
       socket.off('team_chat_message', handler);
       socket.off('team_chat_delete', deleteHandler);
     };
-  }, [activeRoom, scrollToBottom]);
+  }, [socket, activeRoom, scrollToBottom]);
 
   // Scroll to bottom when messages load initially
   useEffect(() => {

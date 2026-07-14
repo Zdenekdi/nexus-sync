@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { safeRedirect } from '../utils/safeRedirect';
+import { useSocketBridge } from '../services/socketBridge';
 import axios from 'axios';
 
 /**
@@ -141,6 +142,14 @@ export function useNexusData({
   const syncingProfileRef = useRef(null);
   const syncProgressTimerRef = useRef(null);
   const syncFallbackTimerRef = useRef(null);
+  const bridgeSocket = useSocketBridge(); // aktuální socket (mimo window), reaktivně
+
+  // Při odmountování (navigace, logout) uprostřed syncu ukliď časovače, ať se
+  // nepokoušejí o setState po unmountu.
+  useEffect(() => () => {
+    if (syncProgressTimerRef.current) clearInterval(syncProgressTimerRef.current);
+    if (syncFallbackTimerRef.current) clearTimeout(syncFallbackTimerRef.current);
+  }, []);
   const [_syncProgress, _setSyncProgress] = useState(0);
   const [relayOnline, setRelayOnline] = useState(false);
   const [trackers, setTrackers] = useState([]);
@@ -593,8 +602,7 @@ export function useNexusData({
   // 'relay_event'). Nahrazuje dřívější simulaci. Aktualizuje per-platform odznaky
   // podle results a zastaví loader.
   useEffect(() => {
-    let socket = window._nexusSocket;
-    let waitTimer = null;
+    if (!bridgeSocket) return;
 
     const finish = () => {
       if (syncFallbackTimerRef.current) clearTimeout(syncFallbackTimerRef.current);
@@ -606,18 +614,20 @@ export function useNexusData({
 
     const onRelayEvent = (d) => {
       if (!d || (d.type !== 'SYNC_COMPLETED' && d.type !== 'SYNC_FAILED')) return;
-      // Ber jen event pro profil, který zrovna synchronizujeme.
-      if (syncingProfileRef.current && d.profileId && d.profileId !== syncingProfileRef.current) return;
+      // Reaguj jen když zrovna probíhá sync a event patří přesně tomu profilu —
+      // jinak by nesouvisející agent eventy (jiný profil / bez profileId) přepsaly odznaky.
+      if (!syncingProfileRef.current || d.profileId !== syncingProfileRef.current) return;
 
       if (d.type === 'SYNC_FAILED') {
         _setSyncStatus({ adultwork: 'error', amateri: 'error', onlyfans: 'error' });
         if (showToast) showToast(lang === 'cz' ? 'Synchronizace v agentovi selhala.' : 'Sync failed in the agent.', 'error');
       } else {
+        // Nastav stav POUZE podle reálně provedených platforem (results). Server
+        // odvozuje platformy z nakonfigurovaných credentials, takže neprovedené
+        // platformy zůstávají 'idle' — ne falešně 'synced'.
         const results = Array.isArray(d.results) ? d.results : [];
-        _setSyncStatus(prev => {
-          const next = { ...prev };
-          // co bylo 'syncing' a nemá result → default 'synced'
-          for (const k of Object.keys(next)) if (next[k] === 'syncing') next[k] = 'synced';
+        _setSyncStatus(() => {
+          const next = { adultwork: 'idle', amateri: 'idle', onlyfans: 'idle' };
           for (const r of results) {
             if (r && r.platform && Object.prototype.hasOwnProperty.call(next, r.platform)) {
               next[r.platform] = r.ok === false ? 'error' : 'synced';
@@ -629,19 +639,9 @@ export function useNexusData({
       finish();
     };
 
-    const attach = (s) => s.on('relay_event', onRelayEvent);
-    if (socket) attach(socket);
-    else {
-      // socket se může vytvořit až po mountu → počkej na něj.
-      waitTimer = setInterval(() => {
-        if (window._nexusSocket) { socket = window._nexusSocket; attach(socket); clearInterval(waitTimer); waitTimer = null; }
-      }, 1000);
-    }
-    return () => {
-      if (waitTimer) clearInterval(waitTimer);
-      if (socket) socket.off('relay_event', onRelayEvent);
-    };
-  }, [showToast, lang]);
+    bridgeSocket.on('relay_event', onRelayEvent);
+    return () => bridgeSocket.off('relay_event', onRelayEvent);
+  }, [bridgeSocket, showToast, lang]);
 
   const handleSaveCredentials = useCallback(async (credentials) => {
     if (!activeProfileId || activeProfileId === 'all') return;

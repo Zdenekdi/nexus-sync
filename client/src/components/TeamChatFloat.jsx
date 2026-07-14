@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { useNexus } from '../context/ContextHook';
+import { useSocketBridge } from '../services/socketBridge';
 import TeamChatPanel from './TeamChatPanel';
 
 const LAST_SEEN_KEY = 'nexus_team_chat_last_seen';
@@ -27,6 +28,7 @@ const ChatBubbleIcon = () => (
 
 export default function TeamChatFloat() {
   const { token, API_BASE, isLoggedIn, activeOperator, isMobile } = useNexus();
+  const socket = useSocketBridge();
   const [open, setOpen] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [unread, setUnread] = useState(0);
@@ -112,7 +114,6 @@ export default function TeamChatFloat() {
 
   // Socket.io: live unread bump when chat is closed
   useEffect(() => {
-    const socket = window._nexusSocket;
     if (!socket) return;
     const handler = (data) => {
       if (open) return; // chat is open, no badge needed
@@ -121,7 +122,7 @@ export default function TeamChatFloat() {
     };
     socket.on('team_chat_message', handler);
     return () => socket.off('team_chat_message', handler);
-  }, [open, activeOperator?.id]);
+  }, [socket, open, activeOperator?.id]);
 
   const handleOpen = () => {
     setOpen(true);

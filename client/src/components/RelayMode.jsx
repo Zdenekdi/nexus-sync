@@ -31,6 +31,7 @@ import axios from 'axios';
 
 
 import { useNexus } from '../context/ContextHook';
+import { useSocketBridge } from '../services/socketBridge';
 
 function relayDebug(...args) {
   console.info('[Relay]', ...args);
@@ -38,8 +39,9 @@ function relayDebug(...args) {
 
 const RelayMode = ({ operator, t, onHide: _onHide, onExit, syncPushToken, isSyncingPush: _isSyncingPush, requestRelayPermissions, processRelayOutbox, syncSmsHistory }) => {
   const nexus = useNexus();
-  const { 
-    isRelayActive: isActive, 
+  const socket = useSocketBridge();
+  const {
+    isRelayActive: isActive,
     setIsRelayActive: setIsActive, 
     relaySimSlot: selectedSimSlot, 
     relayLogs: logs,
@@ -104,11 +106,11 @@ const RelayMode = ({ operator, t, onHide: _onHide, onExit, syncPushToken, isSync
         addLocalLog('call', 'System', 'Fake call received', 'inbound', 'forwarded');
       }, delay);
     };
-    if (window._nexusSocket) {
-      window._nexusSocket.on('fake_call_request', handleFakeCall);
-      return () => window._nexusSocket.off('fake_call_request', handleFakeCall);
+    if (socket) {
+      socket.on('fake_call_request', handleFakeCall);
+      return () => socket.off('fake_call_request', handleFakeCall);
     }
-  }, [operator?.installationId, addLocalLog]);
+  }, [socket, operator?.installationId, addLocalLog]);
 
   // ── Automatic Refresh on New Message ──
   // NOTE: refreshLogs is defined later in this component. We use a ref so this
@@ -122,11 +124,11 @@ const RelayMode = ({ operator, t, onHide: _onHide, onExit, syncPushToken, isSync
         refreshLogsRef.current?.();
       }
     };
-    if (window._nexusSocket) {
-      window._nexusSocket.on('new_message', handleNewMessage);
-      return () => window._nexusSocket.off('new_message', handleNewMessage);
+    if (socket) {
+      socket.on('new_message', handleNewMessage);
+      return () => socket.off('new_message', handleNewMessage);
     }
-  }, [operator?.profileId]);
+  }, [socket, operator?.profileId]);
 
   // ── Pull to Refresh logic ──
   const [pullDistance, setPullDistance] = useState(0);

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
+import { setSocket as setBridgeSocket } from '../services/socketBridge';
 
 const SOCKET_URL = (import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api').replace(/\/api$/, '');
 
@@ -20,6 +21,7 @@ export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall,
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
+        setBridgeSocket(null);
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setSocket(null);
       }
@@ -41,8 +43,9 @@ export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall,
         autoConnect: true,
       });
 
-      // Global reference for legacy components/bridge
-      window._nexusSocket = socketRef.current;
+      // Sdílená reference mimo window (socketBridge) — pro komponenty napříč
+      // variantami app i pro non-context konzumenty.
+      setBridgeSocket(socketRef.current);
       // Expose the socket reactively (nexus.socket) for WebRTC relay + other consumers
       setSocket(socketRef.current);
 
@@ -122,6 +125,7 @@ export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall,
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
+        setBridgeSocket(null);
         setSocket(null);
       }
     };
