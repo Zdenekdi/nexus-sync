@@ -5,7 +5,7 @@ const logger = require('../services/logger');
 const { isEffectiveAdmin } = require('./roleController');
 
 const API_ACCESS_PLANS = new Set(['Agency', 'Professional', 'Enterprise']);
-const ALLOWED_API_KEY_SCOPES = new Set(['read:stats', 'read:profiles', 'read:messages']);
+const ALLOWED_API_KEY_SCOPES = new Set(['read:stats', 'read:profiles', 'read:messages', 'relay:bridge']);
 
 const normalizeApiKeyScopes = (input) => {
   const rawScopes = Array.isArray(input)

@@ -3,7 +3,37 @@ const { Server } = require('socket.io');
 let io;
 
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const prisma = require('./db');
+
+// Ověří socket handshake auth a vrátí socket.user context (nebo hodí chybu).
+// Dvě cesty:
+//   - API klíč (auth.apiKey): local-agent / automatizace — stabilní, revokovatelný,
+//     scoped na agenturu, vyžaduje scope 'relay:bridge'. Full-auto: nastavíš jednou,
+//     jede navždy (nebo do smazání klíče), žádný expirující token k přegenerování.
+//   - JWT (auth.token): operátoři (web) a relay telefon. Relay tokeny jsou
+//     revokovatelné přes user.tokenVersion (tv).
+async function resolveSocketUser(auth = {}) {
+  if (auth.apiKey) {
+    const [keyId, secret] = String(auth.apiKey).split('.');
+    if (!keyId || !secret) throw new Error('Invalid API key');
+    const rec = await prisma.apiKey.findUnique({ where: { keyId } });
+    if (!rec || !(await bcrypt.compare(secret, rec.keyHash))) throw new Error('Invalid API key');
+    if (rec.expiresAt && rec.expiresAt < new Date()) throw new Error('API key expired');
+    const scopes = String(rec.scopes || '').split(',').map(s => s.trim());
+    if (!scopes.includes('relay:bridge')) throw new Error('API key missing relay:bridge scope');
+    prisma.apiKey.update({ where: { id: rec.id }, data: { lastUsedAt: new Date() } }).catch(() => {});
+    return { agencyId: rec.agencyId, type: 'agent', apiKeyId: rec.id };
+  }
+  const token = auth.token;
+  if (!token) throw new Error('No token provided');
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  if (decoded.type === 'relay') {
+    const user = await prisma.user.findUnique({ where: { id: decoded.userId }, select: { tokenVersion: true } });
+    if (!user || (decoded.tv || 0) !== (user.tokenVersion || 0)) throw new Error('Relay token revoked');
+  }
+  return decoded;
+}
 
 const init = (server) => {
   // Build allowed origins matching the Express CORS configuration
@@ -45,27 +75,15 @@ const init = (server) => {
 
   // Authentication Middleware for Socket.io
   io.use(async (socket, next) => {
-    const token = socket.handshake.auth.token || socket.handshake.query.token;
-    if (!token) {
-      return next(new Error('Authentication error: No token provided'));
-    }
-
+    const auth = socket.handshake.auth || {};
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      // Relay tokeny (automatizace/local-agent) jsou revokovatelné: token nese tv,
-      // které musí sedět s aktuálním user.tokenVersion. Bump verze → token neplatný.
-      if (decoded.type === 'relay') {
-        const user = await prisma.user.findUnique({
-          where: { id: decoded.userId }, select: { tokenVersion: true }
-        });
-        if (!user || (decoded.tv || 0) !== (user.tokenVersion || 0)) {
-          return next(new Error('Authentication error: Relay token revoked'));
-        }
-      }
-      socket.user = decoded;
+      socket.user = await resolveSocketUser({
+        apiKey: auth.apiKey,
+        token: auth.token || socket.handshake.query.token,
+      });
       next();
     } catch (err) {
-      next(new Error('Authentication error: Invalid token'));
+      next(new Error('Authentication error: ' + err.message));
     }
   });
 
@@ -122,5 +140,6 @@ const getRoomSize = (roomName) => {
 module.exports = {
   init,
   getIO,
-  getRoomSize
+  getRoomSize,
+  resolveSocketUser
 };

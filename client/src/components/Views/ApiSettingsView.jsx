@@ -258,7 +258,7 @@ const ApiSettingsView = () => {
                     { val: 'read:stats', label: 'Statistiky agentury' },
                     { val: 'read:profiles', label: 'Seznam profilů' },
                     { val: 'read:messages', label: 'Historie zpráv' },
-                    { val: 'write:messages', label: 'Odesílání zpráv' }
+                    { val: 'relay:bridge', label: 'Automatizace / local-agent (bridge)' }
                   ].map(scope => (
                     <label key={scope.val} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', fontSize: '0.9rem' }}>
                       <input type="checkbox" name="scopes" value={scope.val} defaultChecked={scope.val === 'read:stats'} />

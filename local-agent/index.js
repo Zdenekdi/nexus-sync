@@ -65,9 +65,13 @@ async function openAdsPowerBrowser(adsPowerId) {
 }
 
 async function startAgent() {
-    if (!process.env.RELAY_TOKEN || process.env.RELAY_TOKEN === 'VAŠ_TOKEN_Z_DASHBOARDU') {
-        console.error("❌ CHYBA: Chybí RELAY_TOKEN v .env souboru!");
-        console.log("👉 Prosím, vložte svůj token z webového dashboardu (Správa webů -> Relay Token).");
+    // Preferuj AGENT_API_KEY (full-auto: stabilní, neexpiruje, revokovatelný smazáním
+    // klíče v dashboardu). RELAY_TOKEN (30denní JWT) je zpětně-kompatibilní fallback.
+    const apiKey = process.env.AGENT_API_KEY;
+    const legacyToken = process.env.RELAY_TOKEN;
+    if (!apiKey && (!legacyToken || legacyToken === 'VAŠ_TOKEN_Z_DASHBOARDU')) {
+        console.error("❌ CHYBA: Chybí AGENT_API_KEY (doporučeno) nebo RELAY_TOKEN v .env!");
+        console.log("👉 Vygeneruj API klíč se scopem 'relay:bridge' v dashboardu (Developer API) a vlož ho jako AGENT_API_KEY.");
         process.exit(1);
     }
 
@@ -78,10 +82,12 @@ async function startAgent() {
         // Neukončujeme, třeba ho uživatel spustí hned po startu agenta
     }
 
-    console.log("🚀 Nexus Local Agent (v2) - Multi-Platform Automation Ready");
+    console.log(`🚀 Nexus Local Agent (v2) — Multi-Platform Automation Ready (${apiKey ? 'API key' : 'legacy token'})`);
 
     const socket = io(BACKEND_URL, {
-        auth: { token: process.env.RELAY_TOKEN, type: 'local-bridge' }
+        auth: apiKey
+            ? { apiKey, type: 'local-bridge' }
+            : { token: legacyToken, type: 'local-bridge' }
     });
 
     socket.on("relay_command", async (data) => {
