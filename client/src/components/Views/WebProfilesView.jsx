@@ -537,6 +537,7 @@ const WebProfilesView = () => {
               </div>
             )}
 
+            {activeOperator?.isAppOwner && (
             <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
               <label className="input-label-premium">{t('relayTokenLabel')}</label>
               <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', alignItems: 'stretch' }}>
@@ -574,6 +575,7 @@ const WebProfilesView = () => {
                 {t('relayTokenNote')}
               </p>
             </div>
+            )}
             <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.5rem', textAlign: 'center' }}>
               {t('encryptionNote')}
             </p>
