@@ -141,6 +141,13 @@ export function useNexusData({
   const syncingProfileRef = useRef(null);
   const syncProgressTimerRef = useRef(null);
   const syncFallbackTimerRef = useRef(null);
+
+  // Při odmountování (navigace, logout) uprostřed syncu ukliď časovače, ať se
+  // nepokoušejí o setState po unmountu.
+  useEffect(() => () => {
+    if (syncProgressTimerRef.current) clearInterval(syncProgressTimerRef.current);
+    if (syncFallbackTimerRef.current) clearTimeout(syncFallbackTimerRef.current);
+  }, []);
   const [_syncProgress, _setSyncProgress] = useState(0);
   const [relayOnline, setRelayOnline] = useState(false);
   const [trackers, setTrackers] = useState([]);
@@ -606,18 +613,20 @@ export function useNexusData({
 
     const onRelayEvent = (d) => {
       if (!d || (d.type !== 'SYNC_COMPLETED' && d.type !== 'SYNC_FAILED')) return;
-      // Ber jen event pro profil, který zrovna synchronizujeme.
-      if (syncingProfileRef.current && d.profileId && d.profileId !== syncingProfileRef.current) return;
+      // Reaguj jen když zrovna probíhá sync a event patří přesně tomu profilu —
+      // jinak by nesouvisející agent eventy (jiný profil / bez profileId) přepsaly odznaky.
+      if (!syncingProfileRef.current || d.profileId !== syncingProfileRef.current) return;
 
       if (d.type === 'SYNC_FAILED') {
         _setSyncStatus({ adultwork: 'error', amateri: 'error', onlyfans: 'error' });
         if (showToast) showToast(lang === 'cz' ? 'Synchronizace v agentovi selhala.' : 'Sync failed in the agent.', 'error');
       } else {
+        // Nastav stav POUZE podle reálně provedených platforem (results). Server
+        // odvozuje platformy z nakonfigurovaných credentials, takže neprovedené
+        // platformy zůstávají 'idle' — ne falešně 'synced'.
         const results = Array.isArray(d.results) ? d.results : [];
-        _setSyncStatus(prev => {
-          const next = { ...prev };
-          // co bylo 'syncing' a nemá result → default 'synced'
-          for (const k of Object.keys(next)) if (next[k] === 'syncing') next[k] = 'synced';
+        _setSyncStatus(() => {
+          const next = { adultwork: 'idle', amateri: 'idle', onlyfans: 'idle' };
           for (const r of results) {
             if (r && r.platform && Object.prototype.hasOwnProperty.call(next, r.platform)) {
               next[r.platform] = r.ok === false ? 'error' : 'synced';
