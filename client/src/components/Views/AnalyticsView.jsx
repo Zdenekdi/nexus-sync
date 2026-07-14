@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { safeRedirect } from '../../utils/safeRedirect';
 import { DollarSign, Calendar, MessageSquare, TrendingUp, Users, Activity, Lock } from 'lucide-react';
 import { useNexus } from '../../context/ContextHook';
 import PinModal from '../Modals/PinModal';
@@ -37,7 +38,7 @@ const AnalyticsView = () => {
         })
       });
       const data = await response.json();
-      if (data.url) window.location.href = data.url;
+      if (data.url) safeRedirect(data.url);
     } catch (err) {
       console.error("Upgrade failed:", err);
     } finally {
