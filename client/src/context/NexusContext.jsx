@@ -5,6 +5,7 @@ import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { useAuth } from '../hooks/useAuth';
 import { useNexusData } from '../hooks/useNexusData';
+import { getSocket } from '../services/socketBridge';
 import { AgencyDataGateway } from '../services/agency/AgencyDataGateway';
 import { AnalyticsService } from '../services/analytics/AnalyticsService';
 import { ContentSyncService } from '../services/content/ContentSyncService';
@@ -471,10 +472,12 @@ export const NexusProvider = ({ children }) => {
       const listener = CapacitorApp.addListener('appStateChange', (state) => {
         if (state.isActive) {
           console.log('[NexusContext] App resumed. Reconnecting socket and fetching messages.');
-          if (window._nexusSocket) {
-            window._nexusSocket.disconnect();
+          const activeSocket = getSocket();
+          if (activeSocket) {
+            activeSocket.disconnect();
             setTimeout(() => {
-              if (window._nexusSocket) window._nexusSocket.connect();
+              const s = getSocket();
+              if (s) s.connect();
             }, 500);
           }
           if (selectedChatId) {

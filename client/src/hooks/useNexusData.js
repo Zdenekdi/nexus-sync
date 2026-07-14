@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { safeRedirect } from '../utils/safeRedirect';
+import { useSocketBridge } from '../services/socketBridge';
 import axios from 'axios';
 
 /**
@@ -141,6 +142,7 @@ export function useNexusData({
   const syncingProfileRef = useRef(null);
   const syncProgressTimerRef = useRef(null);
   const syncFallbackTimerRef = useRef(null);
+  const bridgeSocket = useSocketBridge(); // aktuální socket (mimo window), reaktivně
 
   // Při odmountování (navigace, logout) uprostřed syncu ukliď časovače, ať se
   // nepokoušejí o setState po unmountu.
@@ -600,8 +602,7 @@ export function useNexusData({
   // 'relay_event'). Nahrazuje dřívější simulaci. Aktualizuje per-platform odznaky
   // podle results a zastaví loader.
   useEffect(() => {
-    let socket = window._nexusSocket;
-    let waitTimer = null;
+    if (!bridgeSocket) return;
 
     const finish = () => {
       if (syncFallbackTimerRef.current) clearTimeout(syncFallbackTimerRef.current);
@@ -638,19 +639,9 @@ export function useNexusData({
       finish();
     };
 
-    const attach = (s) => s.on('relay_event', onRelayEvent);
-    if (socket) attach(socket);
-    else {
-      // socket se může vytvořit až po mountu → počkej na něj.
-      waitTimer = setInterval(() => {
-        if (window._nexusSocket) { socket = window._nexusSocket; attach(socket); clearInterval(waitTimer); waitTimer = null; }
-      }, 1000);
-    }
-    return () => {
-      if (waitTimer) clearInterval(waitTimer);
-      if (socket) socket.off('relay_event', onRelayEvent);
-    };
-  }, [showToast, lang]);
+    bridgeSocket.on('relay_event', onRelayEvent);
+    return () => bridgeSocket.off('relay_event', onRelayEvent);
+  }, [bridgeSocket, showToast, lang]);
 
   const handleSaveCredentials = useCallback(async (credentials) => {
     if (!activeProfileId || activeProfileId === 'all') return;
