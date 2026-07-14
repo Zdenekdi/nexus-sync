@@ -260,7 +260,12 @@ const Sidebar = () => {
       background: 'rgba(10, 12, 16, 0.98)',
       backdropFilter: 'blur(20px)',
       borderRight: isMobile ? 'none' : '1px solid var(--card-border)',
-      padding: isSidebarCollapsed ? '1.5rem 0' : '1.5rem',
+      // Na mobilu (fullscreen drawer, StatusBar overlaysWebView) musíme odsadit
+      // o safe-area insety, jinak hlavička leze pod notch/stavovou lištu a patička
+      // (uživatel + odhlášení) pod systémovou navigační lištu Androidu.
+      padding: isMobile
+        ? 'calc(1.5rem + env(safe-area-inset-top, 0px)) calc(1.5rem + env(safe-area-inset-right, 0px)) calc(1.5rem + env(safe-area-inset-bottom, 0px)) calc(1.5rem + env(safe-area-inset-left, 0px))'
+        : (isSidebarCollapsed ? '1.5rem 0' : '1.5rem'),
       display: 'flex',
       flexDirection: 'column',
       position: isMobile ? 'fixed' : 'relative',
