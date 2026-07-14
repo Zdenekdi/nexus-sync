@@ -39,6 +39,58 @@ import com.getcapacitor.annotation.PermissionCallback;
 )
 public class NexusRelayPlugin extends Plugin {
     static final String PREFS_NAME = "NexusRelayPrefs";
+
+    // ── Šifrované úložiště (Android Keystore) ────────────────────────────────
+    // Relay bearer token + credentials NESMÍ ležet v plaintext SharedPreferences.
+    // securePrefs() vrací EncryptedSharedPreferences pod jménem "<legacy>_secure",
+    // při první inicializaci zmigruje legacy plaintext hodnoty a smaže je. Když
+    // šifrování selže (raritní problém s Keystore), graceful fallback na plaintext
+    // — relay se nikdy nerozbije. Všechna čtení/zápisy prefs jdou přes tuhle metodu.
+    private static final java.util.Map<String, android.content.SharedPreferences> SECURE_CACHE = new java.util.HashMap<>();
+
+    static synchronized android.content.SharedPreferences securePrefs(Context context, String legacyName) {
+        android.content.SharedPreferences cached = SECURE_CACHE.get(legacyName);
+        if (cached != null) return cached;
+        android.content.SharedPreferences prefs;
+        try {
+            androidx.security.crypto.MasterKey key = new androidx.security.crypto.MasterKey.Builder(context)
+                .setKeyScheme(androidx.security.crypto.MasterKey.KeyScheme.AES256_GCM)
+                .build();
+            prefs = androidx.security.crypto.EncryptedSharedPreferences.create(
+                context,
+                legacyName + "_secure",
+                key,
+                androidx.security.crypto.EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                androidx.security.crypto.EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            );
+            migrateLegacyPrefs(context, legacyName, prefs);
+        } catch (Exception e) {
+            android.util.Log.e("NexusRelay", "EncryptedSharedPreferences selhalo pro '" + legacyName + "', fallback na plaintext: " + e.getMessage());
+            prefs = context.getSharedPreferences(legacyName, Context.MODE_PRIVATE);
+        }
+        SECURE_CACHE.put(legacyName, prefs);
+        return prefs;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void migrateLegacyPrefs(Context context, String legacyName, android.content.SharedPreferences enc) {
+        android.content.SharedPreferences legacy = context.getSharedPreferences(legacyName, Context.MODE_PRIVATE);
+        java.util.Map<String, ?> all = legacy.getAll();
+        if (all.isEmpty()) return;
+        android.content.SharedPreferences.Editor ed = enc.edit();
+        for (java.util.Map.Entry<String, ?> e : all.entrySet()) {
+            Object v = e.getValue();
+            if (v instanceof String) ed.putString(e.getKey(), (String) v);
+            else if (v instanceof Boolean) ed.putBoolean(e.getKey(), (Boolean) v);
+            else if (v instanceof Integer) ed.putInt(e.getKey(), (Integer) v);
+            else if (v instanceof Long) ed.putLong(e.getKey(), (Long) v);
+            else if (v instanceof Float) ed.putFloat(e.getKey(), (Float) v);
+            else if (v instanceof java.util.Set) ed.putStringSet(e.getKey(), (java.util.Set<String>) v);
+        }
+        ed.apply();
+        legacy.edit().clear().apply(); // po migraci smaž plaintext
+        android.util.Log.i("NexusRelay", "Migrace " + all.size() + " prefs '" + legacyName + "' do šifrovaného úložiště");
+    }
     static final String KEY_BASE_URL = "baseUrl";
     static final String KEY_DEVICE_ID = "deviceId";
     static final String KEY_INSTALLATION_ID = "installationId";
@@ -234,7 +286,7 @@ public class NexusRelayPlugin extends Plugin {
         Boolean isActive = call.getBoolean("isActive", false);
 
         Context context = getContext();
-        android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        android.content.SharedPreferences prefs = securePrefs(context, PREFS_NAME);
         android.content.SharedPreferences.Editor editor = prefs.edit();
         
         if (baseUrl != null) editor.putString(KEY_BASE_URL, baseUrl);
@@ -485,7 +537,7 @@ public class NexusRelayPlugin extends Plugin {
         SmsSyncResult result = new SmsSyncResult();
         if (context == null) return result;
 
-        android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        android.content.SharedPreferences prefs = securePrefs(context, PREFS_NAME);
         boolean isActive = prefs.getBoolean(KEY_IS_ACTIVE, false);
         String baseUrl = prefs.getString(KEY_BASE_URL, null);
         String deviceId = prefs.getString(KEY_DEVICE_ID, "RELAY-DEVICE");
@@ -595,7 +647,7 @@ public class NexusRelayPlugin extends Plugin {
         if (context == null || data == null) return;
 
         // Only proceed if relay mode is active
-        boolean isActive = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        boolean isActive = securePrefs(context, PREFS_NAME)
             .getBoolean(KEY_IS_ACTIVE, false);
         if (!isActive) {
             android.util.Log.w("NexusRelay", "sendSmsFromData: relay not active, skipping");
@@ -605,7 +657,7 @@ public class NexusRelayPlugin extends Plugin {
         String to        = data.get("to");
         String content   = data.get("content");
         String messageId = data.get("messageId");
-        android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        android.content.SharedPreferences prefs = securePrefs(context, PREFS_NAME);
         String baseUrl = prefs.getString(KEY_BASE_URL, null);
         String authToken = prefs.getString(KEY_AUTH_TOKEN, null);
 
@@ -802,7 +854,7 @@ public class NexusRelayPlugin extends Plugin {
     }
 
     private static void onTransportMessageReceived(Context context, String transport, String from, String body, String sourcePackage, long timestamp) {
-        android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        android.content.SharedPreferences prefs = securePrefs(context, PREFS_NAME);
         boolean isActive = prefs.getBoolean(KEY_IS_ACTIVE, false);
         String baseUrl = prefs.getString(KEY_BASE_URL, null);
         String deviceId = prefs.getString(KEY_DEVICE_ID, "RELAY-DEVICE");
@@ -841,7 +893,7 @@ public class NexusRelayPlugin extends Plugin {
     }
 
     private static boolean onTransportMessageReceivedBlocking(Context context, String transport, String from, String body, String sourcePackage, long timestamp) {
-        android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        android.content.SharedPreferences prefs = securePrefs(context, PREFS_NAME);
         boolean isActive = prefs.getBoolean(KEY_IS_ACTIVE, false);
         String baseUrl = prefs.getString(KEY_BASE_URL, null);
         String deviceId = prefs.getString(KEY_DEVICE_ID, "RELAY-DEVICE");
@@ -960,7 +1012,7 @@ public class NexusRelayPlugin extends Plugin {
             return;
         }
 
-        android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        android.content.SharedPreferences prefs = securePrefs(context, PREFS_NAME);
         boolean isActive = prefs.getBoolean(KEY_IS_ACTIVE, false);
         String baseUrl = prefs.getString(KEY_BASE_URL, null);
         String deviceId = prefs.getString(KEY_DEVICE_ID, "RELAY-DEVICE");
@@ -1005,10 +1057,10 @@ public class NexusRelayPlugin extends Plugin {
                         timestamp
                     );
                     if (forwarded && "sms".equals(normalizeTransport(type))) {
-                        long currentLastSync = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                        long currentLastSync = securePrefs(context, PREFS_NAME)
                             .getLong(KEY_LAST_SMS_HISTORY_SYNC_AT, 0L);
                         if (timestamp > currentLastSync) {
-                            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                            securePrefs(context, PREFS_NAME)
                                 .edit()
                                 .putLong(KEY_LAST_SMS_HISTORY_SYNC_AT, timestamp)
                                 .apply();
@@ -1037,7 +1089,7 @@ public class NexusRelayPlugin extends Plugin {
     ) {
         java.net.HttpURLConnection conn = null;
         try {
-            android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            android.content.SharedPreferences prefs = securePrefs(context, PREFS_NAME);
             String profileId = prefs.getString(KEY_PROFILE_ID, null);
             String authToken = prefs.getString(KEY_AUTH_TOKEN, null);
             if (authToken == null || authToken.isEmpty()) {
@@ -1179,7 +1231,7 @@ public class NexusRelayPlugin extends Plugin {
     }
 
     private boolean isRelayActiveInPrefs() {
-        return getContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getBoolean(KEY_IS_ACTIVE, false);
+        return securePrefs(getContext(), PREFS_NAME).getBoolean(KEY_IS_ACTIVE, false);
     }
 
     static class SmsSyncResult {

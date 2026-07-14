@@ -82,7 +82,7 @@ public class NexusRelayForegroundService extends Service {
             return START_NOT_STICKY;
         }
 
-        boolean relayActive = getSharedPreferences(NexusRelayPlugin.PREFS_NAME, MODE_PRIVATE)
+        boolean relayActive = NexusRelayPlugin.securePrefs(this, NexusRelayPlugin.PREFS_NAME)
             .getBoolean(NexusRelayPlugin.KEY_IS_ACTIVE, false);
         if (!relayActive) {
             stopNativePolling();
@@ -138,7 +138,7 @@ public class NexusRelayForegroundService extends Service {
      * sleeping mid-poll when the screen is off (Android Doze mode workaround).
      */
     private void pollOutboxNative() {
-        SharedPreferences prefs = getSharedPreferences(NexusRelayPlugin.PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences prefs = NexusRelayPlugin.securePrefs(this, NexusRelayPlugin.PREFS_NAME);
         if (!prefs.getBoolean(NexusRelayPlugin.KEY_IS_ACTIVE, false)) {
             Log.d(TAG, "pollOutboxNative: relay not active, skipping");
             return;

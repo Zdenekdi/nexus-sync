@@ -17,7 +17,7 @@ public class NexusBootReceiver extends BroadcastReceiver {
             return;
         }
 
-        boolean relayActive = context.getSharedPreferences(NexusRelayPlugin.PREFS_NAME, Context.MODE_PRIVATE)
+        boolean relayActive = NexusRelayPlugin.securePrefs(context, NexusRelayPlugin.PREFS_NAME)
             .getBoolean(NexusRelayPlugin.KEY_IS_ACTIVE, false);
         if (relayActive) {
             NexusRelayForegroundService.start(context);

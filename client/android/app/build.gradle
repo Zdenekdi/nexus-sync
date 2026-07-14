@@ -283,6 +283,9 @@ dependencies {
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation "androidx.lifecycle:lifecycle-process:2.8.7"
+    // Šifrované úložiště relay tokenu/credentials (Android Keystore). Knihovna je
+    // sice označená deprecated, ale je to standardní a funkční řešení pro tento účel.
+    implementation "androidx.security:security-crypto:1.1.0-alpha06"
     implementation "com.google.firebase:firebase-messaging:24.1.0"
     implementation project(':capacitor-android')
     // WebRTC — pro InCallService audio bridge (GSM hovor → prohlížeč)

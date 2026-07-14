@@ -113,7 +113,7 @@ public class NexusFcmService extends MessagingService {
     // -----------------------------------------------------------------------
 
     private void storeToken(String token) {
-        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        NexusRelayPlugin.securePrefs(this, PREFS_NAME)
             .edit()
             .putString(PREF_FCM_TOKEN, token)
             .apply();
@@ -121,7 +121,7 @@ public class NexusFcmService extends MessagingService {
 
     /** Returns the last known FCM token, or null if none has been issued yet. */
     public static String getStoredToken(Context context) {
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = NexusRelayPlugin.securePrefs(context, PREFS_NAME);
         return prefs.getString(PREF_FCM_TOKEN, null);
     }
 
