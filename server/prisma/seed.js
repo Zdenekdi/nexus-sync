@@ -3,6 +3,13 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
+  // Dev-only: seed zakládá demo účty se slabými, známými hesly (password123,
+  // Nexus2024!). V produkci by to vytvořilo veřejně známé admin přihlašovací
+  // údaje — odmítni, pokud NODE_ENV=production a není explicitně povoleno.
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_PROD_SEED !== 'true') {
+    console.error('[seed] Odmítám běžet v produkci (slabá demo hesla). Přepiš přes ALLOW_PROD_SEED=true.');
+    process.exit(1);
+  }
   console.log('Starting seed...');
 
   // 1. Agencies
