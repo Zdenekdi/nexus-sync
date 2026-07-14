@@ -1,11 +1,14 @@
 #!/bin/bash
-# Push full monorepo to nexus-sync, server-only subtree to nexus-backend
+# Push monorepo to origin (nexus-sync) + sync server/ to production (nexus-backend).
 set -e
 
 echo "📦 Pushing full repo to origin (nexus-sync)..."
 git push origin master
 
-echo "🔧 Pushing server/ subtree to live (nexus-backend)..."
-git subtree push --prefix=server live master
+echo "🔧 Syncing server/ to live (nexus-backend) as a PR..."
+# NEPOUŽÍVEJ `git subtree push` — jakmile se repa rozejdou, skončí na
+# non-fast-forward a jediná cesta by byl destruktivní force push. Bezpečný
+# forward-port + PR řeší sync-server-to-prod.sh (viz docs/repo-sync.md).
+"$(dirname "$0")/sync-server-to-prod.sh"
 
-echo "✅ Both remotes updated."
+echo "✅ Origin updated + prod sync PR opened."
