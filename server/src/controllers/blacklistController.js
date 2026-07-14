@@ -15,6 +15,20 @@ const phoneSearchValues = (phone) => {
     return values.length ? values : [normalizePhoneNumber(phone)];
 };
 
+// Sdílený blacklist odhaluje varování napříč agenturami, ale identitu hlásící
+// agentury/osoby cizím agenturám neodhalujeme — u cizích reportů vynulujeme
+// agencyId/reportedByName/reportedById, obsah (comment/createdAt) zůstává.
+// App Owner a vlastní agentura vidí vše. Aplikuj VŠUDE, kde se vrací entry s reports.
+function redactReports(reports, req) {
+    const callerAgencyId = req.user?.agencyId || null;
+    const isOwner = isAppOwnerRole(req.user?.role);
+    return (reports || []).map((r) =>
+        (isOwner || (callerAgencyId && r.agencyId === callerAgencyId))
+            ? r
+            : { ...r, agencyId: null, reportedByName: null, reportedById: null }
+    );
+}
+
 /**
  * Blacklist Controller — Shared cross-agency dangerous client database
  */
@@ -50,20 +64,7 @@ class BlacklistController {
                 prisma.blacklistEntry.count({ where })
             ]);
 
-            // Blacklist je sdílený (bezpečnostní varování napříč agenturami), ale
-            // identitu hlásící agentury/osoby cizím agenturám neodhalujeme —
-            // ponecháme jen obsah varování (comment/createdAt). App Owner vidí vše.
-            const callerAgencyId = req.user?.agencyId || null;
-            const isOwner = isAppOwnerRole(req.user?.role);
-            const sanitized = entries.map((e) => ({
-                ...e,
-                reports: (e.reports || []).map((r) =>
-                    (isOwner || (callerAgencyId && r.agencyId === callerAgencyId))
-                        ? r
-                        : { comment: r.comment, createdAt: r.createdAt, agencyId: null, reportedByName: null }
-                ),
-            }));
-
+            const sanitized = entries.map((e) => ({ ...e, reports: redactReports(e.reports, req) }));
             res.json({ entries: sanitized, total, page: Number(page), totalPages: Math.ceil(total / Number(limit)) });
         } catch (error) {
             logger.error('Blacklist list error:', error);
@@ -115,7 +116,7 @@ class BlacklistController {
             } catch (e) { /* socket not available */ }
 
             logger.info(`Blacklist entry created: ${entry.id} by user ${userId}`);
-            res.status(201).json(entry);
+            res.status(201).json({ ...entry, reports: redactReports(entry.reports, req) });
         } catch (error) {
             logger.error('Blacklist create error:', error);
             res.status(500).json({ message: 'Failed to create blacklist entry' });
@@ -149,7 +150,7 @@ class BlacklistController {
                 include: { reports: true }
             });
 
-            res.json(entry);
+            res.json({ ...entry, reports: redactReports(entry.reports, req) });
         } catch (error) {
             logger.error('Blacklist update error:', error);
             res.status(500).json({ message: 'Failed to update entry' });

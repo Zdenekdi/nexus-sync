@@ -12,9 +12,8 @@ export function safeRedirect(url) {
   try {
     const parsed = new URL(url, window.location.origin);
     const sameOrigin = parsed.origin === window.location.origin;
-    const allowedHost =
-      parsed.protocol === 'https:' &&
-      (ALLOWED_HOSTS.includes(parsed.hostname) || parsed.hostname.endsWith('.stripe.com'));
+    // Přesně jen ty dva Stripe hosty, kam redirecty reálně míří (ne celá *.stripe.com).
+    const allowedHost = parsed.protocol === 'https:' && ALLOWED_HOSTS.includes(parsed.hostname);
     if (sameOrigin || allowedHost) {
       window.location.href = parsed.href;
       return true;
