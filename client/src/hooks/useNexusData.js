@@ -616,7 +616,8 @@ export function useNexusData({
       if (!d || (d.type !== 'SYNC_COMPLETED' && d.type !== 'SYNC_FAILED')) return;
       // Reaguj jen když zrovna probíhá sync a event patří přesně tomu profilu —
       // jinak by nesouvisející agent eventy (jiný profil / bez profileId) přepsaly odznaky.
-      if (!syncingProfileRef.current || d.profileId !== syncingProfileRef.current) return;
+      // profileId se v kódu míchá string/number → porovnávej normalizovaně.
+      if (!syncingProfileRef.current || String(d.profileId) !== String(syncingProfileRef.current)) return;
 
       if (d.type === 'SYNC_FAILED') {
         _setSyncStatus({ adultwork: 'error', amateri: 'error', onlyfans: 'error' });
