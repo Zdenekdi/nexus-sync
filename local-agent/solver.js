@@ -81,24 +81,32 @@ class CaptchaSolver {
 
             console.log('   -> ✅ Captcha vyřešena. Vkládám token...');
 
-            // 3. Injektáž řešení do stránky
-            if (type === 'hcaptcha') {
-                await page.evaluate((token) => {
-                    // Vložíme token do skrytého pole
-                    const inputs = document.querySelectorAll('[name="h-captcha-response"], [name="g-recaptcha-response"]');
-                    inputs.forEach(el => el.innerHTML = token);
-                    
-                    // Pokud existuje callback, zavoláme ho
-                    if (window.hcaptcha && window.hcaptcha.execute) {
-                        // Většinou stačí jen vložit a odeslat formulář, ale některé weby vyžadují callback
-                    }
-                }, solution.gRecaptchaResponse);
-            } else if (type === 'turnstile') {
-                await page.evaluate((token) => {
-                    const inputs = document.querySelectorAll('[name="cf-turnstile-response"]');
-                    inputs.forEach(el => el.value = token);
-                }, solution.token);
-            }
+            // 3. Injektáž řešení do stránky. Jen nastavit hodnotu skrytého pole často
+            //    nestačí — moderní widgety token přijmou až přes DATA-CALLBACK. Proto
+            //    kromě value nastavíme i případný callback z data-callback atributu.
+            const token = type === 'hcaptcha' ? solution.gRecaptchaResponse : solution.token;
+            const fieldNames = type === 'hcaptcha'
+                ? ['h-captcha-response', 'g-recaptcha-response']
+                : ['cf-turnstile-response'];
+            const widgetSelector = type === 'hcaptcha' ? '.h-captcha, [data-hcaptcha-widget-id]' : '.cf-turnstile';
+
+            await page.evaluate(({ token, fieldNames, widgetSelector }) => {
+                // a) vyplň skryté pole (textarea i input)
+                for (const name of fieldNames) {
+                    document.querySelectorAll(`[name="${name}"]`).forEach(el => {
+                        el.value = token;
+                        if ('innerHTML' in el) el.innerHTML = token;
+                        el.dispatchEvent(new Event('input', { bubbles: true }));
+                        el.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
+                }
+                // b) zavolej data-callback widgetu (název funkce na window)
+                const widget = document.querySelector(widgetSelector);
+                const cbName = widget && widget.getAttribute('data-callback');
+                if (cbName && typeof window[cbName] === 'function') {
+                    try { window[cbName](token); } catch (_e) { /* ignore */ }
+                }
+            }, { token, fieldNames, widgetSelector });
 
             // Krátká pauza na zpracování
             await new Promise(r => setTimeout(r, 1000));
