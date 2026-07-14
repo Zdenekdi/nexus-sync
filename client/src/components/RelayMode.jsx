@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import * as tokenStore from '../services/tokenStore';
 import {
   Signal, 
   Wifi, 
@@ -232,7 +233,7 @@ const RelayMode = ({ operator, t, onHide: _onHide, onExit, syncPushToken, isSync
   } = useInCallService({
     apiUrl: `${RELAY_API_BASE}/api/device`,
     installationId: operator?.installationId || '',
-    secret: localStorage.getItem('nexus_relay_device_secret') || operator?.token || '', // Per-device relay secret (odvozený serverem, uložený při bindingu)
+    secret: tokenStore.getRelaySecret() || operator?.token || '', // Per-device relay secret (odvozený serverem, uložený při bindingu) — #5
     socket: nexus.socket
   }, {
     onIncoming: (call) => addLocalLog('call', call.callerId, 'GSM hovor (příchozí)', 'inbound', 'ringing'),
@@ -246,7 +247,7 @@ const RelayMode = ({ operator, t, onHide: _onHide, onExit, syncPushToken, isSync
   });
 
   useEffect(() => {
-    const relayAuthToken = operator?.token || nexusToken || localStorage.getItem('nexus_token') || '';
+    const relayAuthToken = operator?.token || nexusToken || tokenStore.getToken() || '';
     const relayProfileId = operator?.profileId || (activeProfileId && activeProfileId !== 'all' ? activeProfileId : '');
 
     configureRelay({
@@ -629,7 +630,7 @@ const RelayMode = ({ operator, t, onHide: _onHide, onExit, syncPushToken, isSync
           checkBlacklist(data.from);
           // Also forward to server (in case native plugin doesn't do it automatically)
           const installationId = localStorage.getItem('nexus_installation_id');
-          const token = localStorage.getItem('nexus_token');
+          const token = tokenStore.getToken();
           if (installationId && token) {
             try {
               const res = await fetch(`${RELAY_API_BASE}/api/device/relay`, {
@@ -714,7 +715,7 @@ const RelayMode = ({ operator, t, onHide: _onHide, onExit, syncPushToken, isSync
     setIsRefreshingLogs(true);
     try {
       const installationId = localStorage.getItem('nexus_installation_id');
-      const token = localStorage.getItem('nexus_token');
+      const token = tokenStore.getToken();
       if (!installationId || !token) {
         setIsRefreshingLogs(false);
         return;

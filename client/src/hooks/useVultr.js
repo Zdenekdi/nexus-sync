@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import * as tokenStore from '../services/tokenStore';
 import axios from "axios";
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
@@ -11,7 +12,7 @@ export function useVultr() {
   const [_err, setError] = useState(null);
 
   const getHeaders = useCallback(() => {
-    const token = localStorage.getItem('nexus_token');
+    const token = tokenStore.getToken();
     return {
       headers: { Authorization: `Bearer ${token}` }
     };
@@ -112,7 +113,7 @@ export function useVultr() {
     formData.append("apk", file);
     setUploadProgress(0);
     try {
-      const token = localStorage.getItem("nexus_token");
+      const token = tokenStore.getToken();
       const { data } = await axios.post(`${API_BASE}/vultr/upload-apk`, formData, {
         headers: { Authorization: `Bearer ${token}` },
         onUploadProgress: (_err) => setUploadProgress(Math.round((_err.loaded * 100) / _err.total))

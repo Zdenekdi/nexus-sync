@@ -16,14 +16,29 @@ module.exports = async (req, res, next) => {
       return res.status(401).json({ message: 'Invalid token type' });
     }
 
+    // Jediný DB lookup: čerstvá role (autorita) + tokenVersion (revokace relay tokenů).
+    // #7: NIKDY nedůvěřujeme roli zapečené v JWT — zastará, jakmile admin uživateli
+    // roli změní (degradace/povýšení). Autoritou je vždy aktuální role z DB.
+    const dbUser = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: {
+        tokenVersion: true,
+        role: { select: { name: true, isManager: true, isAppOwner: true } }
+      }
+    });
+
     // Relay tokeny (automatizace) jsou revokovatelné přes user.tokenVersion.
     if (decoded.type === 'relay') {
-      const user = await prisma.user.findUnique({
-        where: { id: decoded.userId }, select: { tokenVersion: true }
-      });
-      if (!user || (decoded.tv || 0) !== (user.tokenVersion || 0)) {
+      if (!dbUser || (decoded.tv || 0) !== (dbUser.tokenVersion || 0)) {
         return res.status(401).json({ message: 'Relay token revoked' });
       }
+    }
+
+    // Čerstvá role z DB přepíše zastaralý snapshot v tokenu. Když uživatel v DB není
+    // (smazaný účet), roli nepřepisujeme — access token je krátkodobý a refresh
+    // takovému účtu stejně selže; instant revokace smazaného účtu řeší tokenVersion.
+    if (dbUser?.role) {
+      decoded.role = dbUser.role;
     }
 
     req.user = decoded;

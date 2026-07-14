@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import * as tokenStore from '../services/tokenStore';
 import axios from "axios";
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
@@ -12,7 +13,7 @@ export function useHetzner() {
   const [stats, setStats] = useState(null);
 
   const getHeaders = useCallback(() => {
-    const token = localStorage.getItem('nexus_token');
+    const token = tokenStore.getToken();
     return {
       headers: { Authorization: `Bearer ${token}` }
     };

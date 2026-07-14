@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import * as tokenStore from '../services/tokenStore';
 import axios from 'axios';
 import { useNexus } from '../context/ContextHook';
 import { API_BASE } from '../constants/config';
@@ -33,7 +34,7 @@ export function useOperatorWebRTC() {
     !IS_RELAY_APP && isAppOwner !== true && CALL_ANSWER_ROLES.includes(role);
 
   const apiPost = useCallback((path, body) => {
-    const token = localStorage.getItem('nexus_token');
+    const token = tokenStore.getToken();
     return axios.post(`${API_BASE}${path}`, body, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });

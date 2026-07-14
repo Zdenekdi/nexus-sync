@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import * as tokenStore from '../services/tokenStore';
 import axios from "axios";
 import { useVultr } from "../hooks/useVultr";
 import { useHetzner } from "../hooks/useHetzner";
@@ -70,7 +71,7 @@ function InfraTab() {
     setCiTokenLoading(true);
     setCiToken(null);
     try {
-      const stored = localStorage.getItem('nexus_token');
+      const stored = tokenStore.getToken();
       const { data } = await axios.get(
         `${import.meta.env.VITE_API_BASE_URL || ''}/api/auth/relay-token`,
         { headers: { Authorization: `Bearer ${stored}` } }

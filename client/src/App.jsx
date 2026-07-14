@@ -110,9 +110,9 @@ const RelayLoginScreen = () => {
 
 function AppContent() {
   const nexus = useNexus();
-  const { 
-    isLoggedIn, activeTab, setIsSidebarOpen, isSidebarOpen, t, isMobile, showOnboarding, 
-    showLanding, isDataLoading, hasHydrated, myProfiles: assignedProfiles, 
+  const {
+    isLoggedIn, token, activeTab, setIsSidebarOpen, isSidebarOpen, t, isMobile, showOnboarding,
+    showLanding, isDataLoading, hasHydrated, myProfiles: assignedProfiles,
     activeProfileId, setActiveProfileId, isNativeApp, activeOperator, setShowPanicConfirm
   } = nexus;
   const mainRef = React.useRef(null);
@@ -243,6 +243,18 @@ function AppContent() {
         <NotificationSystem />
         <LoginScreen />
       </Suspense>
+    );
+  }
+
+  // #5 bootstrap gate (web): access token žije jen v paměti, takže po reloadu je
+  // krátce null, i když je uživatel přihlášený. Než ho useAuth obnoví přes httpOnly
+  // refresh cookie, držíme loader — jinak by se autentizovaný UI vykreslil bez tokenu
+  // a pálil API volání na 401. Nativ token perzistuje, takže se ho to netýká.
+  if (isLoggedIn && !token && !isNativeApp) {
+    return (
+      <div style={{ height: '100dvh', background: '#040507', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="nexus-loading-pulse" style={{ width: '64px', height: '64px', background: 'var(--accent-color)', borderRadius: '14px' }} />
+      </div>
     );
   }
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import * as tokenStore from '../../services/tokenStore';
 import { Smartphone, Download, Zap } from 'lucide-react';
 
 import { useNexus } from '../../context/ContextHook';
@@ -19,7 +20,7 @@ const DeviceSetupView = () => {
     const fetchRelayApkInfo = async () => {
       try {
         setIsApkInfoLoading(true);
-        const token = localStorage.getItem('nexus_token');
+        const token = tokenStore.getToken();
         const r = await fetch(`${API_BASE}/vultr/apk-info?type=relay`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
