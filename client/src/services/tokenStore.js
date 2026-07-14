@@ -1,24 +1,26 @@
 /**
  * tokenStore — jediný zdroj pravdy pro access token a per-device relay secret.
  *
- * Bezpečnost (#5 / H4): na WEBU tyto tajnosti žijí POUZE v paměti (module scope),
- * nikdy ne v localStorage/sessionStorage — takže je XSS payload nemůže vytáhnout
- * z perzistentního úložiště. Po reloadu se access token znovu získá přes
- * /auth/refresh (httpOnly refresh cookie).
+ * POZN. (#5 / H4): Cílem bylo držet access token na WEBU jen v paměti, aby ho XSS
+ * nemohl vytáhnout z localStorage; po reloadu ho obnovit přes httpOnly refresh
+ * cookie. To ale v SOUČASNÉ topologii NEFUNGUJE: web běží na jiné registrovatelné
+ * doméně (…web.app) než API (…myvnc.com), takže refresh cookie je z pohledu
+ * prohlížeče THIRD-PARTY a moderní prohlížeče ji cross-site blokují (Safari ITP
+ * vždy, Chrome čím dál víc) — bez ohledu na SameSite=None. Memory-only token pak
+ * po reloadu nemá jak session obnovit → uživatel se okamžitě odhlásí.
  *
- * Nativní (Capacitor) aplikace tajnosti perzistuje do localStorage jako dřív:
- *   - relay app nemá refresh flow ani httpOnly cookie, takže by jinak po restartu
- *     appky vypadla z přihlášení;
- *   - útočná plocha je výrazně menší (WebView načítá jen zabundlované lokální
- *     assety přes capacitor://localhost, žádný cizí/injektovaný obsah);
- *   - relay secret je na zařízení navíc už šifrovaný v nativním úložišti (#9).
+ * Proto tokenStore zatím PERZISTUJE i na webu (jako dřív). Memory-only variantu
+ * půjde zapnout, až bude API dostupné pod stejným originem jako web (reverse proxy
+ * / stejná doména), kdy je refresh cookie first-party. Viz [[h4-token-store]].
+ *
+ * Nativní (Capacitor) app perzistuje také (relay app nemá refresh flow ani cookie,
+ * jinak by po restartu vypadla z přihlášení; útočná plocha WebView je malá a relay
+ * secret je na zařízení navíc šifrovaný v nativním úložišti — #9).
  */
-import { Capacitor } from '@capacitor/core';
 
-// Na nativu perzistujeme (viz výše), na webu držíme jen v paměti.
-const PERSIST = (() => {
-  try { return Capacitor.isNativePlatform(); } catch { return false; }
-})();
+// Zatím perzistujeme na všech platformách (viz poznámka výše). Přepnout na
+// `Capacitor.isNativePlatform()` až bude web + API same-origin.
+const PERSIST = true;
 
 const TOKEN_KEY = 'nexus_token';
 const SECRET_KEY = 'nexus_relay_device_secret';
