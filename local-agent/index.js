@@ -5,10 +5,14 @@ const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const { createCursor } = require('ghost-cursor');
 const axios = require('axios');
 const CaptchaSolver = require('./solver');
+const { getAdapter } = require('./adapters');
 
 chromium.use(StealthPlugin());
 
 const { checkAdsPower } = require('./setup');
+
+// socket drží modulový scope, aby na něj dosáhly i runnery (emit completion eventů).
+let socket = null;
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:5000";
 const ADS_POWER_PORT = process.env.ADS_POWER_PORT || "50325";
@@ -84,7 +88,7 @@ async function startAgent() {
 
     console.log(`🚀 Nexus Local Agent (v2) — Multi-Platform Automation Ready (${apiKey ? 'API key' : 'legacy token'})`);
 
-    const socket = io(BACKEND_URL, {
+    socket = io(BACKEND_URL, {
         auth: apiKey
             ? { apiKey, type: 'local-bridge' }
             : { token: legacyToken, type: 'local-bridge' }
@@ -114,254 +118,79 @@ startAgent().catch(err => {
     console.error("💥 Kritická chyba při startu agenta:", err);
 });
 
-// Pomocná funkce pro lidské psaní
-async function humanType(page, selector, text) {
-    if (!text) return;
-    await page.focus(selector);
-    // Lidské vymazání pole (Ctrl+A -> Backspace)
-    await page.keyboard.press('Control+A');
-    await page.keyboard.press('Meta+A'); // Pro Mac
-    await page.keyboard.press('Backspace');
-    await new Promise(r => setTimeout(r, 200));
-
-    for (const char of text) {
-        await page.type(selector, char, { delay: Math.random() * 100 + 40 });
-    }
+// Otevře prohlížeč a vrátí { browser, page, cursor } připravené pro adaptér.
+async function openWorkspace(adsPowerId) {
+    const browser = await openAdsPowerBrowser(adsPowerId);
+    const context = browser.contexts()[0];
+    const page = context.pages().length > 0 ? context.pages()[0] : await context.newPage();
+    const cursor = createCursor(page);
+    return { browser, page, cursor };
 }
 
+// SYNC — projde platformy přes registr adaptérů (updateBio). Přidání stránky =
+// nový soubor v adapters/, žádná změna zde.
 async function runMasterSync(payload) {
-    const { adsPowerId, credentials, bio, platforms } = payload;
-    if (!adsPowerId) {
-        console.error("❌ Chybí AdsPower ID.");
-        return;
-    }
-
-    let browser;
-    try {
-        console.log(`🔧 Startuji prohlížeč (ID: ${adsPowerId})`);
-        browser = await openAdsPowerBrowser(adsPowerId);
-        const context = browser.contexts()[0];
-        
-        // Pokud už je stránka otevřená, použijeme ji, jinak vytvoříme novou
-        const pages = context.pages();
-        const page = pages.length > 0 ? pages[0] : await context.newPage();
-        
-        const cursor = createCursor(page);
-
-        for (const platform of platforms) {
-            console.log(`🤖 Pracuji na: ${platform.toUpperCase()}`);
-            const creds = credentials ? credentials[platform] : null;
-            
-            if (platform === 'adultwork') {
-                await syncAdultwork(page, cursor, bio, creds);
-            } else if (platform === 'amateri') {
-                await syncAmateri(page, cursor, bio, creds);
-            } else if (platform === 'onlyfans') {
-                await syncOnlyFans(page, cursor, bio, creds);
-            }
-        }
-
-        console.log("✅ Všechny platformy synchronizovány.");
-        
-        // Informujeme server, že je hotovo, aby se v UI mohl zastavit loader
-        socket.emit('relay_event', {
-            type: 'SYNC_COMPLETED',
-            profileId: payload.profileId,
-            platforms: platforms
-        });
-        
-        // Browser nebudeme zavírat, aby operátor mohl zkontrolovat výsledek
-    } catch (err) {
-        console.error(`🔴 Chyba syncu: ${err.message}`);
-    }
-}
-
-async function runMasterBoost(payload) {
-    const { adsPowerId, credentials, platform, settings } = payload;
+    const { adsPowerId, credentials, bio, platforms, profileId } = payload;
     if (!adsPowerId) return console.error("❌ Chybí AdsPower ID.");
 
-    let browser;
     try {
-        browser = await openAdsPowerBrowser(adsPowerId);
-        const context = browser.contexts()[0];
-        const page = context.pages().length > 0 ? context.pages()[0] : await context.newPage();
-        const cursor = createCursor(page);
+        console.log(`🔧 Startuji prohlížeč (ID: ${adsPowerId})`);
+        const { page, cursor } = await openWorkspace(adsPowerId);
 
-        const creds = credentials ? credentials[platform] : null;
-
-        if (platform === 'adultwork') {
-            await boostAdultwork(page, cursor, creds, settings);
+        const results = [];
+        for (const platform of platforms || []) {
+            const adapter = getAdapter(platform);
+            if (!adapter || typeof adapter.updateBio !== 'function') {
+                console.warn(`   ⚠️  Platforma '${platform}' nemá sync adaptér — přeskakuji.`);
+                results.push({ platform, ok: false, reason: 'no_adapter' });
+                continue;
+            }
+            console.log(`🤖 Pracuji na: ${String(platform).toUpperCase()}`);
+            const ctx = {
+                page, cursor, solver, bio,
+                creds: credentials ? credentials[platform] : null,
+                log: (m) => console.log(`   [${platform}] ${m}`),
+            };
+            try {
+                const ok = await adapter.updateBio(ctx);
+                results.push({ platform, ok: ok !== false });
+            } catch (e) {
+                console.error(`   ! ${platform} error: ${e.message}`);
+                results.push({ platform, ok: false, reason: e.message });
+            }
         }
 
+        console.log("✅ Sync dokončen.");
+        // Zpětná vazba do UI (skutečný stav, ne simulovaný). Browser nezavíráme.
+        socket?.emit('relay_event', { type: 'SYNC_COMPLETED', profileId, platforms, results });
+    } catch (err) {
+        console.error(`🔴 Chyba syncu: ${err.message}`);
+        socket?.emit('relay_event', { type: 'SYNC_FAILED', profileId, error: err.message });
+    }
+}
+
+// BOOST — "organická aktivita" přes adapter.boost (volitelné per stránka).
+async function runMasterBoost(payload) {
+    const { adsPowerId, credentials, platform, settings, profileId } = payload;
+    if (!adsPowerId) return console.error("❌ Chybí AdsPower ID.");
+
+    const adapter = getAdapter(platform);
+    if (!adapter || typeof adapter.boost !== 'function') {
+        return console.warn(`⚠️  Platforma '${platform}' nemá boost adaptér.`);
+    }
+
+    try {
+        const { page, cursor } = await openWorkspace(adsPowerId);
+        const ctx = {
+            page, cursor, solver, settings,
+            creds: credentials ? credentials[platform] : null,
+            log: (m) => console.log(`   [${platform}] ${m}`),
+        };
+        const ok = await adapter.boost(ctx);
         console.log(`✅ Boost pro ${platform} dokončen.`);
+        socket?.emit('relay_event', { type: 'BOOST_COMPLETED', profileId, platform, ok: ok !== false });
     } catch (err) {
         console.error(`🔴 Chyba boostu: ${err.message}`);
+        socket?.emit('relay_event', { type: 'BOOST_FAILED', profileId, platform, error: err.message });
     }
-}
-
-// --- ADULTWORK MODUL ---
-async function syncAdultwork(page, cursor, bio, creds) {
-    try {
-        console.log("   -> Adultwork Mobile Sync start...");
-        await page.goto('https://m.adultwork.com/Member/Profile.asp', { waitUntil: 'domcontentloaded', timeout: 45000 });
-        
-        // Detekce Cloudflare / Blokace
-        if (await page.title() === "Attention Required! | Cloudflare" || await page.content().then(c => c.includes('Sorry, you have been blocked'))) {
-            console.error("   🔴 KRITICKÉ: Adultwork zablokoval přístup (Cloudflare). Zkontrolujte Proxy/AdsPower.");
-            return;
-        }
-
-        if (page.url().includes('login.asp')) {
-            console.log("   -> Vyžadováno přihlášení (Mobilní verze)...");
-            if (!creds) return console.warn("      ! Chybí credentials pro Adultwork");
-            
-            // Mobilní login selektory
-            await humanType(page, 'input[name="UserID"], input[name="nickname"]', creds.user);
-            await humanType(page, 'input[name="password"]', creds.pass);
-            
-            await solver.solve(page, 'hcaptcha'); // Případně ALTCHA, pokud se objeví
-            
-            await cursor.click('input[value="Login"], button[type="submit"]');
-            await page.waitForNavigation({ timeout: 20000 }).catch(() => {});
-        }
-
-        console.log("   -> Upravuji profil (Mobilní verze)...");
-        await page.goto('https://m.adultwork.com/Member/Profile.asp', { waitUntil: 'domcontentloaded' });
-        // Na mobilu je About Me často přímo na této stránce nebo pod odkazem Edit
-        if (await page.$('#txtAboutMe')) {
-            await humanType(page, '#txtAboutMe', bio);
-            await cursor.click('#btnUpdate, input[value="Update"]');
-        } else {
-            console.log("      [INFO] Přepínám na detailní editaci...");
-            await page.goto('https://m.adultwork.com/Member/ProfileEdit.asp', { waitUntil: 'domcontentloaded' });
-            await humanType(page, '#txtAboutMe', bio);
-            await cursor.click('#btnSave, input[value="Save"]');
-        }
-        console.log("   -> Adultwork Mobile: Hotovo.");
-    } catch (e) { console.error(`   ! Adultwork error: ${e.message}`); }
-}
-
-async function boostAdultwork(page, cursor, creds, settings) {
-    try {
-        console.log("   -> Adultwork Mobile Organic Boost start...");
-        await page.goto('https://m.adultwork.com/Member/Profile.asp', { waitUntil: 'domcontentloaded', timeout: 45000 });
-
-        // Detekce Blokace
-        if (await page.content().then(c => c.includes('Sorry, you have been blocked'))) {
-            console.error("   🔴 KRITICKÉ: Adultwork zablokoval přístup (Cloudflare).");
-            return;
-        }
-
-        if (page.url().includes('login.asp')) {
-            if (!creds) return console.warn("      ! Chybí credentials");
-            await humanType(page, 'input[name="UserID"], input[name="nickname"]', creds.user);
-            await humanType(page, 'input[name="password"]', creds.pass);
-            await solver.solve(page, 'hcaptcha');
-            await cursor.click('input[value="Login"]');
-            await page.waitForNavigation({ waitUntil: 'networkidle', timeout: 30000 }).catch(() => {});
-        }
-
-        // 1. Available Today/Now
-        if (settings.autoAvailable) {
-            console.log("   -> Zapínám Available status (Mobilní verze)...");
-            // Na mobilu je to často přímo na Profile.asp nebo v Available.asp
-            await page.goto('https://m.adultwork.com/Member/Available.asp', { waitUntil: 'domcontentloaded' }).catch(() => {});
-            const isSet = await page.$('input[name="chkAvailableToday"]:checked');
-            if (!isSet) {
-                const check = await page.$('input[name="chkAvailableToday"]');
-                if (check) {
-                    await cursor.click('input[name="chkAvailableToday"]');
-                    await page.waitForTimeout(1000);
-                    await cursor.click('input[value="Update"], #btnUpdate');
-                    console.log("      [OK] Status Available Today aktivován.");
-                }
-            } else {
-                console.log("      [INFO] Již aktivní.");
-            }
-        }
-
-        // 2. Summary Tweak (Organic Activity)
-        if (settings.tweakSummary) {
-            console.log("   -> Provádím drobnou úpravu Summary (Mobilní verze)...");
-            await page.goto('https://m.adultwork.com/Member/Profile.asp', { waitUntil: 'domcontentloaded' });
-            
-            let selector = '#txtAboutMe';
-            if (!(await page.$(selector))) {
-                await page.goto('https://m.adultwork.com/Member/ProfileEdit.asp', { waitUntil: 'domcontentloaded' });
-            }
-
-            const currentAbout = await page.$eval(selector, el => el.value).catch(() => "");
-            if (currentAbout) {
-                let newAbout = currentAbout.trim();
-                newAbout = newAbout.endsWith('.') ? newAbout.slice(0, -1) : newAbout + '.';
-                await humanType(page, selector, newAbout);
-                await cursor.click('input[value="Update"], input[value="Save"], #btnSave');
-                console.log("      [OK] Summary upraveno.");
-            }
-        }
-
-        // 3. Photo Rotation
-        if (settings.rotatePhotos) {
-            console.log("   -> Rotace fotek (Mobilní verze)...");
-            await page.goto('https://m.adultwork.com/Member/Photos.asp', { waitUntil: 'domcontentloaded' });
-            const swapBtns = await page.$$('input[value="Make Main"], input[value="Set as Main"]');
-            if (swapBtns.length > 0) {
-                const randomPhotoIdx = Math.floor(Math.random() * swapBtns.length);
-                console.log(`      [OK] Nastavuji fotku ${randomPhotoIdx + 1} jako hlavní.`);
-                await swapBtns[randomPhotoIdx].click();
-                await page.waitForTimeout(2000);
-            }
-        }
-
-    } catch (e) {
-        console.error(`   ! Adultwork Mobile Boost Error: ${e.message}`);
-    }
-}
-
-// --- AMATERI.COM MODUL ---
-async function syncAmateri(page, cursor, bio, creds) {
-    try {
-        await page.goto('https://www.amateri.com/cs/nastaveni-profilu', { waitUntil: 'domcontentloaded', timeout: 30000 });
-        
-        if (page.url().includes('prihlaseni')) {
-            console.log("   -> Přihlašuji k Amateri...");
-            if (!creds) return console.warn("      ! Chybí credentials pro Amateri");
-            await humanType(page, 'input[name="username"]', creds.user);
-            await humanType(page, 'input[name="password"]', creds.pass);
-            
-            // Amateri používá Turnstile (Cloudflare)
-            await solver.solve(page, 'turnstile');
-            
-            await cursor.click('button[type="submit"]');
-            await page.waitForNavigation({ timeout: 15000 }).catch(() => {});
-        }
-
-        await humanType(page, 'textarea[name="biography"]', bio);
-        await cursor.click('#save-profile-btn');
-        console.log("   -> Amateri: Hotovo.");
-    } catch (e) { console.error(`   ! Amateri error: ${e.message}`); }
-}
-
-// --- ONLYFANS MODUL ---
-async function syncOnlyFans(page, cursor, bio, creds) {
-    try {
-        await page.goto('https://onlyfans.com/my/settings/profile', { waitUntil: 'domcontentloaded', timeout: 30000 });
-        
-        if (page.url().includes('login')) {
-            console.log("   -> OnlyFans: Vyžadováno přihlášení...");
-            if (!creds) return console.warn("      ! Chybí credentials pro OnlyFans");
-            await humanType(page, 'input[name="email"]', creds.user);
-            await humanType(page, 'input[name="password"]', creds.pass);
-            
-            // OnlyFans používá HCaptcha
-            await solver.solve(page, 'hcaptcha');
-            
-            await cursor.click('button[type="submit"]');
-            await page.waitForNavigation({ timeout: 15000 }).catch(() => {});
-        }
-
-        await humanType(page, 'textarea[name="about"]', bio);
-        await cursor.click('button.b-profile__header__btn-save');
-        console.log("   -> OnlyFans: Hotovo.");
-    } catch (e) { console.error(`   ! OnlyFans error: ${e.message}`); }
 }

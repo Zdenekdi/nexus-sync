@@ -344,8 +344,20 @@ exports.syncProfile = async (req, res) => {
       const decryptedString = await decrypt(profile.credentials);
       if (decryptedString) decryptedCredentials = JSON.parse(decryptedString);
     }
+    // Platformy odvodíme z nakonfigurovaných credentials (klíč s login objektem),
+    // ne z natvrdo daného seznamu — přidání nové stránky pak nevyžaduje změnu serveru
+    // (stačí nový adaptér v agentovi + uživatel vyplní přihlašovací údaje). Fallback na
+    // původní trojici, když je struktura credentials neočekávaná.
+    const KNOWN_PLATFORMS = ['adultwork', 'amateri', 'onlyfans'];
+    const configuredPlatforms = decryptedCredentials
+      ? Object.keys(decryptedCredentials).filter((k) => {
+          const v = decryptedCredentials[k];
+          return v && typeof v === 'object' && (v.user || v.username || v.pass);
+        })
+      : [];
+    const platforms = configuredPlatforms.length ? configuredPlatforms : KNOWN_PLATFORMS;
     const io = getIO();
-    io.to(`agency_${profile.agencyId}`).emit('relay_command', { type: 'SYNC_WEB_PROFILE', profileId: id, payload: { name: name || profile.name, bio: bio || profile.bio, credentials: decryptedCredentials, platforms: ['adultwork', 'amateri', 'onlyfans'] } });
+    io.to(`agency_${profile.agencyId}`).emit('relay_command', { type: 'SYNC_WEB_PROFILE', profileId: id, payload: { name: name || profile.name, bio: bio || profile.bio, credentials: decryptedCredentials, platforms } });
     res.json({ ok: true });
   } catch (error) {
     res.status(500).json({ message: 'Failed' });
