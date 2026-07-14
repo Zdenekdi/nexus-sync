@@ -3,6 +3,7 @@ const { Server } = require('socket.io');
 let io;
 
 const jwt = require('jsonwebtoken');
+const prisma = require('./db');
 
 const init = (server) => {
   // Build allowed origins matching the Express CORS configuration
@@ -43,7 +44,7 @@ const init = (server) => {
   });
 
   // Authentication Middleware for Socket.io
-  io.use((socket, next) => {
+  io.use(async (socket, next) => {
     const token = socket.handshake.auth.token || socket.handshake.query.token;
     if (!token) {
       return next(new Error('Authentication error: No token provided'));
@@ -51,6 +52,16 @@ const init = (server) => {
 
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      // Relay tokeny (automatizace/local-agent) jsou revokovatelné: token nese tv,
+      // které musí sedět s aktuálním user.tokenVersion. Bump verze → token neplatný.
+      if (decoded.type === 'relay') {
+        const user = await prisma.user.findUnique({
+          where: { id: decoded.userId }, select: { tokenVersion: true }
+        });
+        if (!user || (decoded.tv || 0) !== (user.tokenVersion || 0)) {
+          return next(new Error('Authentication error: Relay token revoked'));
+        }
+      }
       socket.user = decoded;
       next();
     } catch (err) {

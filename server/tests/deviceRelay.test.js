@@ -28,6 +28,8 @@ beforeEach(() => {
   pushMock.sendCallPush.mockResolvedValue({ sent: 1, failed: 0 });
   prismaMock.message.findFirst.mockResolvedValue(null);
   prismaMock.profile.findMany.mockResolvedValue([]);
+  // authMiddleware nově ověřuje tokenVersion u relay tokenů (revokace) → user musí existovat
+  prismaMock.user.findUnique.mockResolvedValue({ tokenVersion: 0 });
 });
 
 afterEach(() => jest.clearAllMocks());

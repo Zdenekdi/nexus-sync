@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
+const prisma = require('../services/db');
 
-module.exports = (req, res, next) => {
+module.exports = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -13,6 +14,16 @@ module.exports = (req, res, next) => {
     // Single-purpose tokens (e.g. password reset) must not act as session bearers.
     if (decoded.type === 'password_reset') {
       return res.status(401).json({ message: 'Invalid token type' });
+    }
+
+    // Relay tokeny (automatizace) jsou revokovatelné přes user.tokenVersion.
+    if (decoded.type === 'relay') {
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.userId }, select: { tokenVersion: true }
+      });
+      if (!user || (decoded.tv || 0) !== (user.tokenVersion || 0)) {
+        return res.status(401).json({ message: 'Relay token revoked' });
+      }
     }
 
     req.user = decoded;

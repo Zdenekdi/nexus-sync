@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const prisma = require('../services/db');
 const { logAction } = require('./auditController');
+const { isAppOwnerRole } = require('../utils/authz');
 const { sendPasswordReset, sendWelcomeEmail, sendAgencyRegistrationEmail } = require('../services/emailService');
 
 const ACCESS_TOKEN_EXPIRY = '1h';
@@ -160,10 +161,11 @@ function generateRelayToken(user) {
         isManager: user.role.isManager,
         isAppOwner: user.role.isAppOwner
       },
-      type: 'relay'
+      type: 'relay',
+      tv: user.tokenVersion || 0 // revokace: musí sedět s user.tokenVersion
     },
     process.env.JWT_SECRET,
-    { expiresIn: '30d' } // Long-lived for automation
+    { expiresIn: '30d' } // Long-lived for automation (revokovatelné přes tokenVersion)
   );
 }
 
@@ -548,15 +550,39 @@ exports.getProfile = async (req, res) => {
 
 exports.getRelayToken = async (req, res) => {
   try {
+    // Relay token = full-access 30d pověření pro automatizaci (local-agent/CI).
+    // Razit smí jen App Owner — nastavení automatizace je vlastníkova věc, ne
+    // Operátora/Modelky (ti by si jinak vygenerovali plnoprávnou propustku).
+    if (!isAppOwnerRole(req.user?.role)) {
+      return res.status(403).json({ message: 'Only the app owner can generate relay tokens' });
+    }
     const user = await prisma.user.findUnique({
       where: { id: req.user.userId },
       include: { role: true }
     });
-    
+
     if (!user) return res.status(404).json({ message: 'User not found' });
-    
+
     const token = generateRelayToken(user);
     res.json({ token });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// POST /api/auth/relay-token/revoke — zneplatní VŠECHNY relay tokeny volajícího
+// (bump tokenVersion). Použij, když propustka unikla. Vyžaduje App Ownera.
+exports.revokeRelayTokens = async (req, res) => {
+  try {
+    if (!isAppOwnerRole(req.user?.role)) {
+      return res.status(403).json({ message: 'Only the app owner can revoke relay tokens' });
+    }
+    const updated = await prisma.user.update({
+      where: { id: req.user.userId },
+      data: { tokenVersion: { increment: 1 } },
+      select: { tokenVersion: true },
+    });
+    res.json({ ok: true, tokenVersion: updated.tokenVersion });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
