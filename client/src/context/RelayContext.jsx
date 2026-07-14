@@ -8,6 +8,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
 import { TRANSLATIONS } from '../translations';
+import * as tokenStore from '../services/tokenStore';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
 
@@ -21,7 +22,7 @@ export const useRelay = () => {
 
 export const RelayProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('nexus_isLoggedIn') === 'true');
-  const [token, setToken] = useState(() => localStorage.getItem('nexus_token'));
+  const [token, setToken] = useState(() => tokenStore.getToken()); // #5
   const [activeOperator, setActiveOperator] = useState(() => {
     try {
       const s = localStorage.getItem('nexus_activeOperator');
@@ -62,7 +63,7 @@ export const RelayProvider = ({ children }) => {
       const { token: newToken, user: operator } = res.data;
       if (!newToken) return { success: false, error: 'Neplatná odpověď serveru' };
 
-      localStorage.setItem('nexus_token', newToken);
+      tokenStore.setToken(newToken); // #5 (nativ perzistuje, web jen paměť)
       localStorage.setItem('nexus_isLoggedIn', 'true');
       localStorage.setItem('nexus_activeOperator', JSON.stringify(operator));
       axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
@@ -78,7 +79,7 @@ export const RelayProvider = ({ children }) => {
   }, []);
 
   const onLogout = useCallback(() => {
-    localStorage.removeItem('nexus_token');
+    tokenStore.clear(); // #5
     localStorage.removeItem('nexus_isLoggedIn');
     localStorage.removeItem('nexus_activeOperator');
     delete axios.defaults.headers.common['Authorization'];

@@ -24,6 +24,7 @@
 
 import { registerPlugin, Capacitor } from '@capacitor/core';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import * as tokenStore from '../services/tokenStore';
 
 // ── Plugin registration ────────────────────────────────────────────────────────
 
@@ -132,7 +133,7 @@ export function useInCallService(config, handlers = {}) {
                 headers: {
                   'Content-Type': 'application/json',
                   'x-installation-id': config.installationId,
-                  'x-device-secret': localStorage.getItem('nexus_relay_device_secret') || config?.secret || '',
+                  'x-device-secret': tokenStore.getRelaySecret() || config?.secret || '',
                 },
                 body: JSON.stringify({ initiator: 'phone' })
               }).catch(_err => console.error(_err));
@@ -155,7 +156,7 @@ export function useInCallService(config, handlers = {}) {
               headers: {
                 'Content-Type': 'application/json',
                 'x-installation-id': config.installationId,
-                'x-device-secret': localStorage.getItem('nexus_relay_device_secret') || config?.secret || '',
+                'x-device-secret': tokenStore.getRelaySecret() || config?.secret || '',
               },
               body: JSON.stringify(data)
             });
@@ -176,7 +177,7 @@ export function useInCallService(config, handlers = {}) {
               headers: {
                 'Content-Type': 'application/json',
                 'x-installation-id': config.installationId,
-                'x-device-secret': localStorage.getItem('nexus_relay_device_secret') || config?.secret || '',
+                'x-device-secret': tokenStore.getRelaySecret() || config?.secret || '',
               },
               body: JSON.stringify({ ...data, direction: 'phone-to-browser' })
             });

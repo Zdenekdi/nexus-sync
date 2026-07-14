@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
 import { Device } from '@capacitor/device';
+import * as tokenStore from '../services/tokenStore';
 
 function generateSecureInstallationId() {
   const array = new Uint8Array(12);
@@ -16,7 +17,9 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, _setSelectedChatId, _set
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem('nexus_isLoggedIn') === 'true';
   });
-  const [token, setToken] = useState(() => localStorage.getItem('nexus_token'));
+  // Access token: zdroj pravdy je tokenStore (na webu jen v paměti — #5). Na reloadu
+  // je na webu null a bootstrap effect ho obnoví přes refresh cookie.
+  const [token, setToken] = useState(() => tokenStore.getToken());
   const [activeOperator, setActiveOperator] = useState(() => {
     try {
       const saved = localStorage.getItem('nexus_activeOperator');
@@ -69,6 +72,7 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, _setSelectedChatId, _set
   const handleLogoutInternal = useCallback(() => {
     if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
     const lang = localStorage.getItem('nexus_lang') || 'cz';
+    tokenStore.clear(); // vymazat in-memory access token + relay secret (#5)
     localStorage.clear(); // Nuclear option to ensure no stale data remains
     // Preserve onboarding state so returning users don't see onboarding again after logout
     localStorage.setItem('nexus_hasSeenOnboarding', 'true');
@@ -115,7 +119,7 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, _setSelectedChatId, _set
         
         const data = await res.json();
         if (res.ok && data.token) {
-          localStorage.setItem('nexus_token', data.token);
+          tokenStore.setToken(data.token); // #5: web = jen paměť, nativ = perzistuje
           if (isNativeApp && data.refreshToken) localStorage.setItem('nexus_refreshToken', data.refreshToken);
           localStorage.setItem('nexus_isLoggedIn', 'true');
           setToken(data.token);
@@ -157,6 +161,24 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, _setSelectedChatId, _set
   useEffect(() => {
     scheduleTokenRefreshRef.current = scheduleTokenRefresh;
   }, [scheduleTokenRefresh]);
+
+  // #5 bootstrap (web): access token žije jen v paměti, takže po reloadu je null,
+  // i když je uživatel přihlášený (flag nexus_isLoggedIn zůstává). Obnovíme ho přes
+  // httpOnly refresh cookie. isBootstrapping drží UI na loaderu, dokud token není
+  // zpět — jinak by komponenty pálily API volání bez tokenu a spadly na 401.
+  const [isBootstrapping, setIsBootstrapping] = useState(
+    () => !isNativeApp && isLoggedIn && !tokenStore.getToken()
+  );
+  const didBootstrapRef = useRef(false);
+  useEffect(() => {
+    if (didBootstrapRef.current) return;
+    if (!isNativeApp && isLoggedIn && !token) {
+      didBootstrapRef.current = true;
+      performRefresh().finally(() => setIsBootstrapping(false));
+    } else if (isBootstrapping) {
+      setIsBootstrapping(false);
+    }
+  }, [isNativeApp, isLoggedIn, token, performRefresh, isBootstrapping]);
 
   useEffect(() => {
     if (isLoggedIn && token) {
@@ -224,9 +246,9 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, _setSelectedChatId, _set
         headers: { Authorization: `Bearer ${authToken}` }
       });
 
-      // Ulož per-device relay secret (odvozený serverem) pro WebRTC signaling
+      // Ulož per-device relay secret (odvozený serverem) pro WebRTC signaling (#5)
       if (verifyRes?.data?.deviceSecret) {
-        localStorage.setItem('nexus_relay_device_secret', verifyRes.data.deviceSecret);
+        tokenStore.setRelaySecret(verifyRes.data.deviceSecret);
       }
 
       console.log('[Native] Device binding verified');
@@ -266,7 +288,7 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, _setSelectedChatId, _set
 
       if (res.ok) {
         const data = await res.json();
-        localStorage.setItem('nexus_token', data.token);
+        tokenStore.setToken(data.token); // #5: web = jen paměť, nativ = perzistuje
         if (isNativeApp && data.refreshToken) localStorage.setItem('nexus_refreshToken', data.refreshToken);
         localStorage.setItem('nexus_isLoggedIn', 'true');
         localStorage.setItem('nexus_activeOperator', JSON.stringify(data.user));
@@ -402,6 +424,7 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, _setSelectedChatId, _set
     tempUser, setTempUser,
     originalOperator, setOriginalOperator,
     isLoginLoading,
+    isBootstrapping,
     isNativeApp,
     handleLogin,
     handleLogout,
@@ -415,9 +438,9 @@ export function useAuth({ API_BASE, _t, setIsRelayMode, _setSelectedChatId, _set
     shouldAutoRelay,
     scheduleTokenRefresh
   }), [
-    isLoggedIn, token, activeOperator, activeClient, appVariant, 
-    showResetPassword, tempUser, originalOperator, isLoginLoading, 
-    isNativeApp, handleLogin, handleLogout, handleRegisterAgency, 
+    isLoggedIn, token, activeOperator, activeClient, appVariant,
+    showResetPassword, tempUser, originalOperator, isLoginLoading, isBootstrapping,
+    isNativeApp, handleLogin, handleLogout, handleRegisterAgency,
     handleRegisterUser, handleResetRequest, handleResetRequired, 
     handleResetComplete, verifyNativeDeviceBinding, 
     maybePromptRcsAccessOnFirstLogin, shouldAutoRelay,

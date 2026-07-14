@@ -6,6 +6,7 @@
 import React, { useState, Suspense, lazy, useCallback } from 'react';
 import { Loader2, Lock, Mail, Eye, EyeOff, Smartphone, Battery, Server, ShieldCheck, Pause, Play, Settings } from 'lucide-react';
 import { useRelay } from './context/RelayContext';
+import * as tokenStore from './services/tokenStore';
 import GlobalAppStyles from './styles/GlobalAppStyles';
 import { useSipCall } from './plugins/NexusSip';
 import { useInCallService, isInCallAvailable } from './plugins/NexusInCall';
@@ -261,7 +262,7 @@ const RelayDashboard = () => {
   });
 
   // Relay auth token + Socket.IO — needed to bridge GSM call audio to the web operator
-  const relayAuthToken = operator?.token || localStorage.getItem('nexus_token') || '';
+  const relayAuthToken = operator?.token || tokenStore.getToken() || '';
   const relaySocket = useSocket(relayAuthToken);
 
   // GSM calls via InCallService — with WebRTC bridge config so an incoming GSM call
@@ -273,7 +274,7 @@ const RelayDashboard = () => {
   } = useInCallService({
     apiUrl: `${(API_BASE || '').replace(/\/api$/, '')}/api/device`,
     installationId: localStorage.getItem('nexus_installation_id') || operator?.installationId || '',
-    secret: localStorage.getItem('nexus_relay_device_secret') || operator?.token || '',
+    secret: tokenStore.getRelaySecret() || operator?.token || '',
     socket: relaySocket,
     isActive,
   });
@@ -311,7 +312,7 @@ const RelayDashboard = () => {
         });
         // Ulož per-device relay secret (odvozený serverem) pro WebRTC signaling
         if (vr?.data?.deviceSecret) {
-          localStorage.setItem('nexus_relay_device_secret', vr.data.deviceSecret);
+          tokenStore.setRelaySecret(vr.data.deviceSecret);
         }
       } catch (err) {
         console.error('Device binding failed:', err);

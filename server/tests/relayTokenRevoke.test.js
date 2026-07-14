@@ -13,17 +13,21 @@ const app = require('../src/app');
 const OWNER = { name: 'App Owner', isManager: true, isAppOwner: true };
 const OPERATOR = { name: 'Operator', isManager: false, isAppOwner: false };
 
-function sessionToken(role) {
-  return jwt.sign({ userId: 'u1', agencyId: 'a1', role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+function sessionToken(role, userId = 'u1') {
+  return jwt.sign({ userId, agencyId: 'a1', role }, process.env.JWT_SECRET, { expiresIn: '1h' });
 }
 function relayToken(tv) {
   return jwt.sign({ userId: 'u1', agencyId: 'a1', role: OWNER, type: 'relay', tv }, process.env.JWT_SECRET, { expiresIn: '30d' });
 }
 
+// authMiddleware bere roli autoritativně z DB (#7), proto DB mock musí odpovídat
+// userId v tokenu. jest.clearAllMocks() nečistí implementace, takže mock nastavujeme
+// v každém testu explicitně, aby nedocházelo k prosakování mezi testy.
 afterEach(() => jest.clearAllMocks());
 
 describe('M1 — relay token minting is App-Owner-only + revocable', () => {
   it('Operator cannot mint a relay token (403)', async () => {
+    prismaMock.user.findUnique.mockResolvedValue({ id: 'u1', agencyId: 'a1', tokenVersion: 0, role: OPERATOR });
     const res = await request(app).get('/api/auth/relay-token').set('Authorization', `Bearer ${sessionToken(OPERATOR)}`);
     expect(res.status).toBe(403);
   });
@@ -51,11 +55,17 @@ describe('M1 — relay token minting is App-Owner-only + revocable', () => {
 
   it('revoke bumps tokenVersion (App Owner only)', async () => {
     prismaMock.user.update.mockResolvedValue({ tokenVersion: 1 });
-    const res = await request(app).post('/api/auth/relay-token/revoke').set('Authorization', `Bearer ${sessionToken(OWNER)}`).send({});
+    // Role je autoritativně z DB — mockujeme podle userId v tokenu.
+    prismaMock.user.findUnique.mockImplementation(({ where }) =>
+      Promise.resolve(where.id === 'owner1'
+        ? { id: 'owner1', agencyId: 'a1', tokenVersion: 0, role: OWNER }
+        : { id: 'op1', agencyId: 'a1', tokenVersion: 0, role: OPERATOR }));
+
+    const res = await request(app).post('/api/auth/relay-token/revoke').set('Authorization', `Bearer ${sessionToken(OWNER, 'owner1')}`).send({});
     expect(res.status).toBe(200);
     expect(res.body.tokenVersion).toBe(1);
 
-    const denied = await request(app).post('/api/auth/relay-token/revoke').set('Authorization', `Bearer ${sessionToken(OPERATOR)}`).send({});
+    const denied = await request(app).post('/api/auth/relay-token/revoke').set('Authorization', `Bearer ${sessionToken(OPERATOR, 'op1')}`).send({});
     expect(denied.status).toBe(403);
   });
 });

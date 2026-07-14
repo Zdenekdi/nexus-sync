@@ -4,6 +4,7 @@
  */
 
 import axios from 'axios';
+import * as tokenStore from '../tokenStore';
 
 /**
  * APIClient - Centrální HTTP klient pro všechny API volání
@@ -20,10 +21,11 @@ export class APIClient {
       }
     });
 
-    // Vždy přilož AKTUÁLNÍ access token z localStorage (ne ten zachycený v
+    // Vždy přilož AKTUÁLNÍ access token z tokenStore (ne ten zachycený v
     // konstruktoru) — jinak by klient po refreshi držel starý, expirovaný token.
+    // tokenStore je in-memory (web) / perzistentní (nativ) zdroj pravdy — #5.
     this.client.interceptors.request.use((config) => {
-      const current = localStorage.getItem('nexus_token') || this.token;
+      const current = tokenStore.getToken() || this.token;
       if (current) config.headers.Authorization = `Bearer ${current}`;
       return config;
     });
@@ -61,7 +63,7 @@ export class APIClient {
       );
       const newToken = res.data?.token;
       if (!newToken) return null;
-      localStorage.setItem('nexus_token', newToken);
+      tokenStore.setToken(newToken); // #5
       if (res.data.refreshToken) localStorage.setItem('nexus_refreshToken', res.data.refreshToken);
       this.token = newToken;
       return newToken;
@@ -72,7 +74,7 @@ export class APIClient {
 
   _forceLogout() {
     try {
-      localStorage.removeItem('nexus_token');
+      tokenStore.clear(); // #5
       localStorage.removeItem('nexus_refreshToken');
     } catch { /* ignore */ }
     if (typeof window !== 'undefined') window.location.href = '/logout';
