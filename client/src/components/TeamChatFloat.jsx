@@ -35,8 +35,10 @@ export default function TeamChatFloat() {
 
   // Plovoucí tlačítko: volitelná uložená pozice + možnost schování.
   const [pos, setPos] = useState(() => {
-    try { const p = JSON.parse(localStorage.getItem(POS_KEY)); return p && typeof p.x === 'number' ? p : null; }
-    catch { return null; }
+    try {
+      const p = JSON.parse(localStorage.getItem(POS_KEY));
+      return (p && typeof p.x === 'number' && typeof p.y === 'number') ? clampPos(p) : null;
+    } catch { return null; }
   });
   const [hidden, setHidden] = useState(() => localStorage.getItem(HIDDEN_KEY) === '1');
   const [dragging, setDragging] = useState(false);
@@ -46,12 +48,12 @@ export default function TeamChatFloat() {
   const drag = useRef({ active: false, moved: false, startX: 0, startY: 0, dx: 0, dy: 0 });
 
   // Po změně velikosti okna / rotaci udrž tlačítko uvnitř viewportu.
+  // Listener připojíme jen jednou; handler no-opne, dokud není pozice nastavená.
   useEffect(() => {
-    if (!pos) return;
     const onResize = () => setPos(p => (p ? clampPos(p) : p));
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, [pos]);
+  }, []);
 
   const onPointerDown = (e) => {
     const el = btnRef.current;
@@ -65,7 +67,9 @@ export default function TeamChatFloat() {
     if (!d.active) return;
     if (!d.moved && Math.hypot(e.clientX - d.startX, e.clientY - d.startY) < 6) return; // práh tap vs. drag
     if (!d.moved) { d.moved = true; setDragging(true); }
-    setPos(clampPos({ x: e.clientX - d.dx, y: e.clientY - d.dy }));
+    const np = clampPos({ x: e.clientX - d.dx, y: e.clientY - d.dy });
+    posRef.current = np; // synchronně, aby pointerup uložil aktuální pozici (ne o krok pozadu)
+    setPos(np);
   };
   const onPointerUp = (e) => {
     const d = drag.current;
@@ -151,6 +155,7 @@ export default function TeamChatFloat() {
     return (
       <button
         onClick={restoreButton}
+        data-testid="team-chat-restore"
         title="Zobrazit týmový chat"
         aria-label="Zobrazit týmový chat"
         style={{
@@ -211,7 +216,10 @@ export default function TeamChatFloat() {
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          transformOrigin: 'bottom right', // vyrůstá z rohu u plovoucí ikonky
+          // Ve výchozí poloze panel vyrůstá z rohu u ikonky; když je FAB přetažený
+          // jinam, použijeme neutrální střed (panel zůstává ukotvený vpravo dole
+          // kvůli bezpečnému umístění ve viewportu).
+          transformOrigin: pos ? 'center' : 'bottom right',
           willChange: 'transform, opacity, filter',
           animation: 'chatPanelIn 0.36s cubic-bezier(0.22, 1.12, 0.36, 1) both',
         }}>
@@ -222,50 +230,80 @@ export default function TeamChatFloat() {
         </div>
       )}
 
-      {/* ── Floating Button (drag to move, × to hide) ── */}
-      <button
-        ref={btnRef}
-        onClick={handleFabClick}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        data-testid="team-chat-float-btn"
-        title="Týmový chat (táhni pro přesun)"
-        style={{
-          position: 'fixed',
-          ...anchorStyle,
-          width: FAB_SIZE,
-          height: FAB_SIZE,
-          borderRadius: '50%',
-          border: 'none',
-          background: open
-            ? 'rgba(59,130,246,0.2)'
-            : 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-          color: '#fff',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'grab',
-          touchAction: 'none',
-          zIndex: 9001,
-          boxShadow: open
-            ? '0 4px 20px rgba(59,130,246,0.2)'
-            : '0 4px 20px rgba(59,130,246,0.4), 0 0 0 1px rgba(59,130,246,0.3)',
-          transition: dragging ? 'none' : 'background 0.2s, box-shadow 0.2s',
-          transform: open ? 'scale(0.9) rotate(10deg)' : 'scale(1)',
-        }}
-      >
-        <ChatBubbleIcon />
+      {/* ── Floating Button (drag to move; × sibling to hide) ── */}
+      <div style={{ position: 'fixed', ...anchorStyle, width: FAB_SIZE, height: FAB_SIZE, zIndex: 9001 }}>
+        <button
+          ref={btnRef}
+          onClick={handleFabClick}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          data-testid="team-chat-float-btn"
+          title="Týmový chat (táhni pro přesun)"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            borderRadius: '50%',
+            border: 'none',
+            background: open
+              ? 'rgba(59,130,246,0.2)'
+              : 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+            color: '#fff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: dragging ? 'grabbing' : 'grab',
+            touchAction: 'none',
+            boxShadow: open
+              ? '0 4px 20px rgba(59,130,246,0.2)'
+              : '0 4px 20px rgba(59,130,246,0.4), 0 0 0 1px rgba(59,130,246,0.3)',
+            transition: dragging ? 'none' : 'background 0.2s, box-shadow 0.2s',
+            transform: open ? 'scale(0.9) rotate(10deg)' : 'scale(1)',
+          }}
+        >
+          <ChatBubbleIcon />
 
-        {/* × schovat tlačítko (jen když je chat zavřený) */}
+          {/* Unread badge */}
+          {unread > 0 && !open && (
+            <div style={{
+              position: 'absolute',
+              top: -3, right: -3,
+              minWidth: 18, height: 18,
+              background: '#ef4444',
+              borderRadius: 9,
+              border: '2px solid #0d1018',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '0.65rem', fontWeight: 800, color: '#fff',
+              padding: '0 4px',
+              animation: 'badgePop 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+              boxShadow: '0 2px 8px rgba(239,68,68,0.5)',
+            }}>
+              {unread > 99 ? '99+' : unread}
+            </div>
+          )}
+
+          {/* Pulse ring when there are unread messages */}
+          {unread > 0 && !open && (
+            <div style={{
+              position: 'absolute', inset: -6,
+              borderRadius: '50%',
+              border: '2px solid rgba(239,68,68,0.4)',
+              animation: 'chatPulseRing 2s infinite',
+              pointerEvents: 'none',
+            }} />
+          )}
+        </button>
+
+        {/* × schovat — samostatné tlačítko (validní HTML, klávesnicově ovladatelné) */}
         {!open && (
-          <span
-            role="button"
+          <button
+            onClick={hideButton}
+            data-testid="team-chat-hide"
             aria-label="Schovat týmový chat"
             title="Schovat"
-            onPointerDown={e => e.stopPropagation()}
-            onClick={e => { e.stopPropagation(); hideButton(); }}
             style={{
               position: 'absolute',
               top: -6, left: -6,
@@ -275,43 +313,14 @@ export default function TeamChatFloat() {
               border: '1px solid rgba(255,255,255,0.2)',
               color: 'rgba(255,255,255,0.7)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '0.8rem', lineHeight: 1, cursor: 'pointer',
+              fontSize: '0.85rem', lineHeight: 1, cursor: 'pointer',
+              padding: 0,
             }}
           >
             ×
-          </span>
+          </button>
         )}
-
-        {/* Unread badge */}
-        {unread > 0 && !open && (
-          <div style={{
-            position: 'absolute',
-            top: -3, right: -3,
-            minWidth: 18, height: 18,
-            background: '#ef4444',
-            borderRadius: 9,
-            border: '2px solid #0d1018',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '0.65rem', fontWeight: 800, color: '#fff',
-            padding: '0 4px',
-            animation: 'badgePop 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-            boxShadow: '0 2px 8px rgba(239,68,68,0.5)',
-          }}>
-            {unread > 99 ? '99+' : unread}
-          </div>
-        )}
-
-        {/* Pulse ring when there are unread messages */}
-        {unread > 0 && !open && (
-          <div style={{
-            position: 'absolute', inset: -6,
-            borderRadius: '50%',
-            border: '2px solid rgba(239,68,68,0.4)',
-            animation: 'chatPulseRing 2s infinite',
-            pointerEvents: 'none',
-          }} />
-        )}
-      </button>
+      </div>
 
       {/* Minimized chip */}
       {minimized && !open && (
