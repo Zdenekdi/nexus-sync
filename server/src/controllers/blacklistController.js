@@ -2,6 +2,7 @@ const prisma = require('../services/db');
 const logger = require('../services/logger');
 const { getIO } = require('../services/socket');
 const { getPhoneLookupValues, normalizePhoneNumber } = require('../utils/phoneNumber');
+const { isAppOwnerRole } = require('../utils/authz');
 
 const normalizeBlacklistPhone = (phone) => {
     if (phone === undefined) return undefined;
@@ -49,7 +50,21 @@ class BlacklistController {
                 prisma.blacklistEntry.count({ where })
             ]);
 
-            res.json({ entries, total, page: Number(page), totalPages: Math.ceil(total / Number(limit)) });
+            // Blacklist je sdílený (bezpečnostní varování napříč agenturami), ale
+            // identitu hlásící agentury/osoby cizím agenturám neodhalujeme —
+            // ponecháme jen obsah varování (comment/createdAt). App Owner vidí vše.
+            const callerAgencyId = req.user?.agencyId || null;
+            const isOwner = isAppOwnerRole(req.user?.role);
+            const sanitized = entries.map((e) => ({
+                ...e,
+                reports: (e.reports || []).map((r) =>
+                    (isOwner || (callerAgencyId && r.agencyId === callerAgencyId))
+                        ? r
+                        : { comment: r.comment, createdAt: r.createdAt, agencyId: null, reportedByName: null }
+                ),
+            }));
+
+            res.json({ entries: sanitized, total, page: Number(page), totalPages: Math.ceil(total / Number(limit)) });
         } catch (error) {
             logger.error('Blacklist list error:', error);
             res.status(500).json({ message: 'Failed to load blacklist' });
