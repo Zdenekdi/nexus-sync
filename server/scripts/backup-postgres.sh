@@ -39,12 +39,20 @@ verify_fail() {
   exit 1
 }
 
-actual_size="$(wc -c < "$backup_file" | tr -d '[:space:]')"
+# Pozn.: čteme velikost v `if` podmínce, aby selhání `wc` (I/O chyba) neshodilo
+# skript přes `set -e` DŘÍV, než stihne verify_fail uklidit vadný soubor.
+if ! actual_size="$(wc -c < "$backup_file" | tr -d '[:space:]')"; then
+  verify_fail "nelze zjistit velikost zálohy"
+fi
 [ "${actual_size:-0}" -ge 1024 ] || verify_fail "podezřele malý dump (${actual_size:-0} B)"
 
 # Custom formát umí --list bez skutečného obnovení → potvrdí, že archiv je čitelný.
+# pg_restore je pro validaci (a pozdější obnovení) custom-format zálohy nezbytný —
+# jeho absenci bereme jako selhání ověření, ne jako důvod tiše přeskočit kontrolu.
 if command -v pg_restore >/dev/null 2>&1; then
   pg_restore --list "$backup_file" >/dev/null 2>&1 || verify_fail "archiv není čitelný (pg_restore --list)"
+else
+  verify_fail "pg_restore není dostupný — nelze ověřit čitelnost custom-format zálohy"
 fi
 
 # Zpětné ověření checksumu.
