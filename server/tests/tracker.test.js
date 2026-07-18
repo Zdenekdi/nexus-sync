@@ -184,3 +184,48 @@ describe('GPS tracker ingest', () => {
     expect(data.heading).toBeCloseTo(84.4, 4);
   });
 });
+
+describe('GPS tracker self-pairing (phone as tracker)', () => {
+  const modelToken = () => makeToken({ userId: 'model-1', role: { name: 'Model', isManager: false, isAppOwner: false } });
+
+  it('lets a Model pair their own phone to their assigned profile and returns a token', async () => {
+    prismaMock.user.findUnique.mockResolvedValue({
+      agencyId: 'agency-1',
+      assignedProfiles: [{ id: 'profile-1', agencyId: 'agency-1' }]
+    });
+    prismaMock.gpsTracker.findUnique.mockResolvedValue(null);
+    prismaMock.gpsTracker.create.mockImplementation(async ({ data }) => ({ id: 'tracker-9', ...data }));
+
+    const res = await request(app)
+      .post('/api/trackers/pair-self')
+      .set('Authorization', `Bearer ${modelToken()}`)
+      .send({ installationId: 'inst_abc123def456' });
+
+    expect(res.status).toBe(201);
+    expect(res.body.ingest.token).toMatch(/^nxtrk_tracker-9\./);
+    const saved = prismaMock.gpsTracker.create.mock.calls[0][0].data;
+    expect(saved.profileId).toBe('profile-1');
+    expect(saved.imei).toBe('PHONE:INST_ABC123DEF456'); // installationId as normalized pseudo-IMEI
+  });
+
+  it('rejects self-pairing when the account has no assigned profile', async () => {
+    prismaMock.user.findUnique.mockResolvedValue({ agencyId: 'agency-1', assignedProfiles: [] });
+
+    const res = await request(app)
+      .post('/api/trackers/pair-self')
+      .set('Authorization', `Bearer ${modelToken()}`)
+      .send({ installationId: 'inst_abc123def456' });
+
+    expect(res.status).toBe(403);
+    expect(prismaMock.gpsTracker.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects an invalid installationId', async () => {
+    const res = await request(app)
+      .post('/api/trackers/pair-self')
+      .set('Authorization', `Bearer ${modelToken()}`)
+      .send({ installationId: 'x' });
+
+    expect(res.status).toBe(400);
+  });
+});

@@ -245,6 +245,68 @@ class TrackerController {
     }
   }
 
+  // Self-pairing: a Model provisions THEIR OWN phone as a tracker (phone-as-GPS).
+  // No manager role needed — but they can only pair to a profile assigned to them,
+  // and the phone is keyed by its installationId (pseudo-IMEI, prefixed so it can't
+  // collide with a real hardware IMEI).
+  async pairSelf(req, res) {
+    try {
+      const userId = req.user?.userId;
+      const installationId = String(req.body?.installationId || '').trim();
+      if (!/^[A-Za-z0-9_.:-]{6,128}$/.test(installationId)) {
+        return res.status(400).json({ message: 'Valid installationId is required' });
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { agencyId: true, assignedProfiles: { select: { id: true, agencyId: true } } }
+      });
+      if (!user) return res.status(404).json({ message: 'User not found' });
+
+      const ownProfiles = user.assignedProfiles || [];
+      const requestedProfileId = req.body?.profileId;
+      const profile = requestedProfileId
+        ? ownProfiles.find(p => p.id === requestedProfileId)
+        : ownProfiles[0];
+      if (!profile) {
+        return res.status(403).json({ message: 'No assigned profile to track for this account' });
+      }
+
+      const agencyId = user.agencyId || profile.agencyId;
+      if (!agencyId) return res.status(403).json({ message: 'Agency context required' });
+
+      const imei = normalizeImei(`PHONE:${installationId}`);
+      const existing = await prisma.gpsTracker.findUnique({ where: { imei } });
+      if (existing && existing.agencyId !== agencyId) {
+        return res.status(409).json({ message: 'Phone already paired to another agency' });
+      }
+
+      const secret = generateSecret();
+      const secretHash = await bcrypt.hash(secret, 12);
+      const data = {
+        agencyId,
+        profileId: profile.id,
+        imei,
+        label: 'Phone (self)',
+        secretHash,
+        active: true,
+        lastSeenAt: null
+      };
+      const tracker = existing
+        ? await prisma.gpsTracker.update({ where: { id: existing.id }, data })
+        : await prisma.gpsTracker.create({ data });
+
+      res.status(existing ? 200 : 201).json({
+        tracker: toPublicTracker(tracker),
+        ingest: this._ingestInfo(req, tracker, secret),
+        message: 'Phone paired as tracker. Store the token now; it will not be shown again.'
+      });
+    } catch (error) {
+      logger.error('[Tracker] pairSelf error:', error);
+      res.status(500).json({ message: 'Failed to pair phone as tracker' });
+    }
+  }
+
   async rotateSecret(req, res) {
     try {
       if (!isManagerRole(req.user?.role)) return res.status(403).json({ message: 'Manager role required' });
