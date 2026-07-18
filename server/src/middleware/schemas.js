@@ -84,6 +84,12 @@ const pairGpsTracker = z.object({
   label: z.string().max(120).optional().nullable()
 });
 
+// Self-pair: Model provisions their own phone. installationId slouží jako pseudo-IMEI.
+const pairSelfGpsTracker = z.object({
+  installationId: z.string().regex(/^[A-Za-z0-9_.:-]{6,128}$/, 'Invalid installationId'),
+  profileId: cuid.optional().nullable()
+});
+
 const trackerLocationIngest = z.object({
   token: z.string().max(256).optional(),
   trackerId: z.string().max(128).optional(),
@@ -408,6 +414,7 @@ module.exports = {
   createSafetySession,
   safetyLocation,
   pairGpsTracker,
+  pairSelfGpsTracker,
   trackerLocationIngest,
   createBlacklist,
   updateBlacklist,

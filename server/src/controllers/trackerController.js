@@ -275,10 +275,18 @@ class TrackerController {
       const agencyId = user.agencyId || profile.agencyId;
       if (!agencyId) return res.status(403).json({ message: 'Agency context required' });
 
+      const ownProfileIds = ownProfiles.map(p => p.id);
       const imei = normalizeImei(`PHONE:${installationId}`);
       const existing = await prisma.gpsTracker.findUnique({ where: { imei } });
-      if (existing && existing.agencyId !== agencyId) {
-        return res.status(409).json({ message: 'Phone already paired to another agency' });
+      if (existing) {
+        if (existing.agencyId !== agencyId) {
+          return res.status(409).json({ message: 'Phone already paired to another agency' });
+        }
+        // Nedovol převzít tracker připnutý na CIZÍ profil (i ve stejné agentuře) —
+        // jinak by kdokoli se znalostí cizího installationId přepnul tracker na sebe.
+        if (existing.profileId && !ownProfileIds.includes(existing.profileId)) {
+          return res.status(409).json({ message: 'This installation is already paired to another profile' });
+        }
       }
 
       const secret = generateSecret();

@@ -28,7 +28,8 @@ export async function provisionPhoneTracker(apiBase, authToken, installationId) 
     { headers: { Authorization: `Bearer ${authToken}` }, timeout: 15000 }
   );
   ingestToken = data?.ingest?.token || null;
-  ingestUrl = `${apiBase}/trackers/ingest`;
+  // Použij URL ze serveru (odolné vůči path/prefix/proxy rozdílům); fallback z apiBase.
+  ingestUrl = data?.ingest?.url || `${apiBase}/trackers/ingest`;
   return !!ingestToken;
 }
 
@@ -54,7 +55,8 @@ async function sendPosition(position) {
       { timeout: 15000 }
     );
   } catch {
-    lastSentAt = 0; // ať se příští bod pošle hned, když tenhle selhal
+    // Necháme throttle okno i při chybě — jinak by se při výpadku serveru/offline
+    // posílalo při každém watchPosition callbacku (baterie + zátěž serveru).
   }
 }
 

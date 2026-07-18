@@ -228,4 +228,23 @@ describe('GPS tracker self-pairing (phone as tracker)', () => {
 
     expect(res.status).toBe(400);
   });
+
+  it('does not let a caller take over a phone tracker paired to another profile (same agency)', async () => {
+    prismaMock.user.findUnique.mockResolvedValue({
+      agencyId: 'agency-1',
+      assignedProfiles: [{ id: 'profile-mine', agencyId: 'agency-1' }]
+    });
+    prismaMock.gpsTracker.findUnique.mockResolvedValue({
+      id: 'tracker-x', agencyId: 'agency-1', profileId: 'profile-victim'
+    });
+
+    const res = await request(app)
+      .post('/api/trackers/pair-self')
+      .set('Authorization', `Bearer ${modelToken()}`)
+      .send({ installationId: 'inst_victimdevice' });
+
+    expect(res.status).toBe(409);
+    expect(prismaMock.gpsTracker.update).not.toHaveBeenCalled();
+    expect(prismaMock.gpsTracker.create).not.toHaveBeenCalled();
+  });
 });
