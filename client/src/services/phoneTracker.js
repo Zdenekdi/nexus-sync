@@ -92,3 +92,17 @@ export async function stopPhoneTracking() {
 export function isPhoneTracking() {
   return !!watchId;
 }
+
+export function isProvisioned() {
+  return !!ingestToken;
+}
+
+// Sjednocené „zapni sledování": provisionuje jen jednou za session, pak startuje.
+// Gating volá tohle při zapnutí a stopPhoneTracking() při vypnutí.
+export async function ensurePhoneTracking(apiBase, authToken, installationId) {
+  if (!ingestToken) {
+    const ok = await provisionPhoneTracker(apiBase, authToken, installationId);
+    if (!ok) return false;
+  }
+  return startPhoneTracking();
+}

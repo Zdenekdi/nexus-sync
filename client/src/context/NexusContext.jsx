@@ -6,6 +6,7 @@ import { App as CapacitorApp } from '@capacitor/app';
 import { useAuth } from '../hooks/useAuth';
 import { useNexusData } from '../hooks/useNexusData';
 import { getSocket } from '../services/socketBridge';
+import { ensurePhoneTracking, stopPhoneTracking } from '../services/phoneTracker';
 import { AgencyDataGateway } from '../services/agency/AgencyDataGateway';
 import { AnalyticsService } from '../services/analytics/AnalyticsService';
 import { ContentSyncService } from '../services/content/ContentSyncService';
@@ -561,6 +562,37 @@ export const NexusProvider = ({ children }) => {
     _setSosActive(false);
   }, []);
 
+  // ── Telefon jako GPS tracker (Model, native) — gating A+B+C ──────────────────
+  // Reportuj polohu na /ingest, když platí KTERÉKOLIV z: manuální přepínač (B) /
+  // aktivní check-in schůzky (A) / aktivní SOS (C). Jinak mlč (baterie + soukromí).
+  const [manualTrackingOn, setManualTrackingOnState] = useState(() => {
+    try { return localStorage.getItem('nexus_manual_tracking') === '1'; } catch { return false; }
+  });
+  const setManualTracking = useCallback((on) => {
+    setManualTrackingOnState(!!on);
+    try { localStorage.setItem('nexus_manual_tracking', on ? '1' : '0'); } catch { /* ignore */ }
+  }, []);
+
+  const phoneTrackingActive =
+    manualTrackingOn || _sosActive || (!!checkinTimerEnd && checkinRemaining > 0);
+
+  useEffect(() => {
+    const roleUpper = String(activeOperator?.role?.name || activeOperator?.role || '')
+      .toUpperCase().replace(/\s+/g, '_');
+    if (!isNativeApp || roleUpper !== 'MODEL' || !token) return;
+
+    if (phoneTrackingActive) {
+      let installationId = null;
+      try { installationId = localStorage.getItem('nexus_installation_id'); } catch { /* ignore */ }
+      if (installationId) ensurePhoneTracking(API_BASE, token, installationId).catch(() => {});
+    } else {
+      stopPhoneTracking().catch(() => {});
+    }
+  }, [phoneTrackingActive, isNativeApp, token, activeOperator]);
+
+  // Při odmountování (logout / teardown) zastav sledování.
+  useEffect(() => () => { stopPhoneTracking().catch(() => {}); }, []);
+
   const confirmDeparture = useCallback(() => {
     resetCheckinTimer();
   }, [resetCheckinTimer]);
@@ -654,6 +686,7 @@ export const NexusProvider = ({ children }) => {
     voiceGuardianActive, handleToggleVoiceGuardian,
     audioSentinelActive, setAudioSentinelActive,
     sosActive: _sosActive, triggerSOS, cancelSOS,
+    manualTrackingOn, setManualTracking, phoneTrackingActive,
     linkedSessionId, checkinMinutes, setCheckinMinutes,
     checkinTimerEnd, checkinRemaining, startCheckinTimer, resetCheckinTimer, confirmDeparture,
     SAFETY_SUGGESTIONS: ['15m', '30m', '45m', '60m', '1.5h', '2h'],
@@ -692,6 +725,7 @@ export const NexusProvider = ({ children }) => {
     nexusData.updatePlans, nexusData.isPlansLoading, nexusData.isStartingSubscription, nexusData.onStartSubscription,
     nexusData.onCancelSubscription, nexusData.startCheckout, nexusData.startBillingPortal, daysLeft,
     voiceGuardianActive, handleToggleVoiceGuardian, audioSentinelActive, _sosActive, triggerSOS, cancelSOS,
+    manualTrackingOn, setManualTracking, phoneTrackingActive,
     linkedSessionId, checkinMinutes, checkinTimerEnd, checkinRemaining, startCheckinTimer, resetCheckinTimer, confirmDeparture,
     nexusData.handleDelayBooking, nexusData.trackers, linkedTracker, lastTrackerUpdate, nexusData.trackerProvisioning,
     nexusData.isPairingTracker, nexusData.handlePairTracker, nexusData.handleUnpairTracker, gpsHistory,
