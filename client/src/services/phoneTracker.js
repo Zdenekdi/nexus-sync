@@ -11,11 +11,15 @@
 // POZN.: watchPosition drží polohu ve FOREGROUNDU. Spolehlivý background (zhasnutá
 // obrazovka) přidá nativní foreground service — samostatný krok. Viz [[phone-gps-tracker]].
 import axios from 'axios';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
+
+const NexusRelay = registerPlugin('NexusRelay');
 
 let ingestToken = null;
 let ingestUrl = null;
 let watchId = null;
+let nativeTracking = false;
 let lastSentAt = 0;
 
 const MIN_SEND_INTERVAL_MS = 20000; // neposílat častěji než ~20 s (baterie + rate-limit)
@@ -63,14 +67,26 @@ async function sendPosition(position) {
 // Spustí sledování polohy (foreground). Vyžaduje předchozí provisioning.
 // Vrací true při úspěšném startu.
 export async function startPhoneTracking() {
-  if (watchId) return true;
-  if (!ingestToken) return false;
+  if (!ingestToken || !ingestUrl) return false;
 
   try {
     const perm = await Geolocation.requestPermissions();
     if (perm && perm.location === 'denied' && perm.coarseLocation === 'denied') return false;
   } catch { /* na webu/bez pluginu jen zkusíme watchPosition */ }
 
+  // Nativně: foreground service reportuje i na pozadí / se zhasnutou obrazovkou.
+  if (Capacitor.isNativePlatform()) {
+    try {
+      await NexusRelay.startLocationTracking({ token: ingestToken, ingestUrl, minIntervalMs: MIN_SEND_INTERVAL_MS });
+      nativeTracking = true;
+      return true;
+    } catch {
+      nativeTracking = false; // fallback na foreground watchPosition níže
+    }
+  }
+
+  // Web / fallback: foreground watchPosition (jen dokud je app v popředí).
+  if (watchId) return true;
   try {
     watchId = await Geolocation.watchPosition(
       { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 },
@@ -84,13 +100,18 @@ export async function startPhoneTracking() {
 }
 
 export async function stopPhoneTracking() {
-  if (!watchId) return;
-  try { await Geolocation.clearWatch({ id: watchId }); } catch { /* ignore */ }
-  watchId = null;
+  if (nativeTracking) {
+    try { await NexusRelay.stopLocationTracking(); } catch { /* ignore */ }
+    nativeTracking = false;
+  }
+  if (watchId) {
+    try { await Geolocation.clearWatch({ id: watchId }); } catch { /* ignore */ }
+    watchId = null;
+  }
 }
 
 export function isPhoneTracking() {
-  return !!watchId;
+  return !!watchId || nativeTracking;
 }
 
 export function isProvisioned() {

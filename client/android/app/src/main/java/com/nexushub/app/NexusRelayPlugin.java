@@ -214,6 +214,40 @@ public class NexusRelayPlugin extends Plugin {
         call.resolve(ret);
     }
 
+    // ── Sdílení polohy (telefon jako GPS tracker) ────────────────────────────────
+    // JS (phoneTracker) zavolá tohle, když gating (A+B+C) chce reportovat polohu.
+    // Config uložíme do securePrefs a spustíme foreground NexusLocationService, aby
+    // reportování jelo i se zhasnutou obrazovkou.
+    @PluginMethod
+    public void startLocationTracking(PluginCall call) {
+        String token = call.getString("token");
+        String ingestUrl = call.getString("ingestUrl");
+        if (token == null || token.isEmpty() || ingestUrl == null || ingestUrl.isEmpty()) {
+            call.reject("token and ingestUrl are required");
+            return;
+        }
+        Long minMs = call.getLong("minIntervalMs");
+        long minInterval = (minMs != null && minMs > 0) ? minMs : 20000L;
+
+        securePrefs(getContext(), PREFS_NAME).edit()
+            .putBoolean(NexusLocationService.KEY_TRACK_ACTIVE, true)
+            .putString(NexusLocationService.KEY_TRACK_TOKEN, token)
+            .putString(NexusLocationService.KEY_TRACK_URL, ingestUrl)
+            .putLong(NexusLocationService.KEY_TRACK_MIN_MS, minInterval)
+            .apply();
+        NexusLocationService.start(getContext());
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void stopLocationTracking(PluginCall call) {
+        securePrefs(getContext(), PREFS_NAME).edit()
+            .putBoolean(NexusLocationService.KEY_TRACK_ACTIVE, false)
+            .apply();
+        NexusLocationService.stop(getContext());
+        call.resolve();
+    }
+
     private void maybeRegisterCallStateListener() {
         // Foreground service owns call monitoring when relay mode is active.
         if (isRelayActiveInPrefs()) {
