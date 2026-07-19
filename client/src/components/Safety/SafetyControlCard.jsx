@@ -11,7 +11,8 @@ const SafetyControlCard = () => {
     linkedTrackerId, lastTrackerUpdate, voiceGuardianActive, handleToggleVoiceGuardian,
     batteryLevel, incomingGhostCall, setIncomingGhostCall, ghostCallScheduledAt, triggerGhostCall, verifyIdentity,
     heartRate, hrThreshold, setHrThreshold, isBluetoothConnected, setIsBluetoothConnected,
-    audioSentinelActive, setAudioSentinelActive, showToast
+    audioSentinelActive, setAudioSentinelActive, showToast,
+    manualTrackingOn, setManualTracking, phoneTrackingActive
   } = useNexus();
 
   const isCz = lang === 'cz' || lang === 'cs';
@@ -328,6 +329,41 @@ const SafetyControlCard = () => {
           </div>
         </div>
       )}
+
+      {/* Sledování polohy — manuální přepínač (B). Automaticky se navíc zapne během
+          check-inu (A) i při SOS (C); indikátor ukazuje, zda se poloha zrovna posílá. */}
+      <button
+        onClick={() => setManualTracking && setManualTracking(!manualTrackingOn)}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          width: '100%', padding: '0.7rem 0.9rem', marginBottom: '0.75rem',
+          borderRadius: '12px', cursor: 'pointer',
+          background: manualTrackingOn ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255,255,255,0.04)',
+          border: `1px solid ${manualTrackingOn ? 'rgba(34, 197, 94, 0.3)' : 'rgba(255,255,255,0.1)'}`,
+          color: 'white', textAlign: 'left'
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>
+            {lang === 'cz' ? 'Sledovat moji polohu' : 'Track my location'}
+          </span>
+          <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
+            {phoneTrackingActive
+              ? (lang === 'cz' ? '● Poloha se odesílá' : '● Sending location')
+              : (lang === 'cz' ? 'Zapíná se i při check-inu a SOS' : 'Also on during check-in & SOS')}
+          </span>
+        </div>
+        <div style={{
+          width: 40, height: 22, borderRadius: 11, flexShrink: 0, position: 'relative',
+          background: manualTrackingOn ? 'var(--success-color)' : 'rgba(255,255,255,0.15)',
+          transition: 'background 0.2s'
+        }}>
+          <div style={{
+            position: 'absolute', top: 2, left: manualTrackingOn ? 20 : 2,
+            width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left 0.2s'
+          }} />
+        </div>
+      </button>
 
       {/* Check-in Timer Controls */}
       <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
