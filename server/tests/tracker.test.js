@@ -248,3 +248,53 @@ describe('GPS tracker self-pairing (phone as tracker)', () => {
     expect(prismaMock.gpsTracker.create).not.toHaveBeenCalled();
   });
 });
+
+describe('Traccar gateway forwarding (physical GPS+SIM trackers)', () => {
+  const FORWARD_SECRET = 'test-forward-secret';
+  beforeAll(() => { process.env.TRACCAR_FORWARD_SECRET = FORWARD_SECRET; });
+
+  const traccarPayload = () => ({
+    device: { uniqueId: '123456789012345' },
+    position: {
+      latitude: 50.1, longitude: 14.4, speed: 10, course: 90, accuracy: 5,
+      fixTime: '2026-07-14T12:00:00Z', attributes: { batteryLevel: 87 }
+    }
+  });
+
+  it('maps a Traccar position to the tracker (by IMEI) and persists it (knots→kph)', async () => {
+    prismaMock.gpsTracker.findUnique.mockResolvedValue({ id: 'tracker-7', agencyId: 'agency-1', profileId: 'profile-1', active: true });
+    prismaMock.safetySession.findFirst.mockResolvedValue(null);
+    prismaMock.gpsTrackerLocation.create.mockImplementation(async ({ data }) => ({ id: 'loc-1', ...data }));
+    prismaMock.gpsTracker.update.mockResolvedValue({});
+
+    const res = await request(app)
+      .post('/api/trackers/traccar-forward')
+      .set('x-forward-secret', FORWARD_SECRET)
+      .send(traccarPayload());
+
+    expect(res.status).toBe(201);
+    const saved = prismaMock.gpsTrackerLocation.create.mock.calls[0][0].data;
+    expect(saved.lat).toBeCloseTo(50.1, 4);
+    expect(saved.lng).toBeCloseTo(14.4, 4);
+    expect(saved.speedKph).toBeCloseTo(18.52, 2); // 10 knots
+    expect(saved.battery).toBe(87);
+  });
+
+  it('rejects a wrong forward secret (401)', async () => {
+    const res = await request(app)
+      .post('/api/trackers/traccar-forward')
+      .set('x-forward-secret', 'nope')
+      .send(traccarPayload());
+    expect(res.status).toBe(401);
+    expect(prismaMock.gpsTrackerLocation.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects an unknown / inactive tracker (404)', async () => {
+    prismaMock.gpsTracker.findUnique.mockResolvedValue(null);
+    const res = await request(app)
+      .post('/api/trackers/traccar-forward')
+      .set('x-forward-secret', FORWARD_SECRET)
+      .send(traccarPayload());
+    expect(res.status).toBe(404);
+  });
+});

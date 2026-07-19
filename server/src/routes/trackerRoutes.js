@@ -9,6 +9,10 @@ const { pairGpsTracker, pairSelfGpsTracker, trackerLocationIngest } = require('.
 router.post('/ingest', validate(trackerLocationIngest), (req, res) => trackerController.ingest(req, res));
 router.get('/ingest', (req, res) => trackerController.ingest(req, res));
 
+// Traccar gateway → náš ingest (fyzické GPS+SIM trackery). Autentizace přes sdílené
+// tajemství (x-forward-secret / ?secret == TRACCAR_FORWARD_SECRET), ne uživatelský login.
+router.post('/traccar-forward', (req, res) => trackerController.traccarForward(req, res));
+
 router.use(authMiddleware);
 
 router.get('/', (req, res) => trackerController.list(req, res));

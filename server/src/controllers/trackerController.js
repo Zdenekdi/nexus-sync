@@ -416,6 +416,144 @@ class TrackerController {
     };
   }
 
+  // Uloží bod, napojí ho na aktivní SafetySession/SOS, aktualizuje cache trackeru
+  // a odešle socket. Sdílené jádro pro /ingest (per-tracker token) i pro Traccar
+  // gateway (fyzické GPS+SIM trackery). Vrací id lokace + napojené session/SOS.
+  async _persistPoint(tracker, point) {
+    const activeSession = tracker.profileId
+      ? await prisma.safetySession.findFirst({
+        where: { agencyId: tracker.agencyId, profileId: tracker.profileId, state: { in: ACTIVE_SESSION_STATES } },
+        orderBy: { updatedAt: 'desc' }
+      })
+      : null;
+
+    const activeSos = tracker.profileId
+      ? await prisma.sOSAlert.findFirst({
+        where: { agencyId: tracker.agencyId, profileId: tracker.profileId, status: { in: ACTIVE_SOS_STATES } },
+        orderBy: { createdAt: 'desc' }
+      })
+      : null;
+
+    const location = await prisma.gpsTrackerLocation.create({
+      data: {
+        trackerId: tracker.id,
+        agencyId: tracker.agencyId,
+        profileId: tracker.profileId || null,
+        safetySessionId: activeSession?.id || null,
+        sosAlertId: activeSos?.id || null,
+        lat: point.lat,
+        lng: point.lng,
+        accuracy: point.accuracy,
+        speedKph: point.speedKph,
+        heading: point.heading,
+        battery: point.battery,
+        capturedAt: point.capturedAt,
+        raw: point.raw || null
+      }
+    });
+
+    if (activeSession) {
+      await prisma.safetyLocationPoint.create({
+        data: { sessionId: activeSession.id, lat: point.lat, lng: point.lng, accuracy: point.accuracy, capturedAt: point.capturedAt }
+      });
+    }
+
+    if (activeSos) {
+      await prisma.sOSLocationUpdate.create({
+        data: { sosAlertId: activeSos.id, lat: point.lat, lng: point.lng, accuracy: point.accuracy, capturedAt: point.capturedAt }
+      });
+      await prisma.sOSAlert.update({
+        where: { id: activeSos.id },
+        data: { lat: point.lat, lng: point.lng, accuracy: point.accuracy }
+      });
+    }
+
+    await prisma.gpsTracker.update({
+      where: { id: tracker.id },
+      data: {
+        lastSeenAt: new Date(),
+        lastLat: point.lat,
+        lastLng: point.lng,
+        lastAccuracy: point.accuracy,
+        lastBattery: point.battery,
+        lastSpeedKph: point.speedKph,
+        lastHeading: point.heading,
+        lastCapturedAt: point.capturedAt
+      }
+    });
+
+    try {
+      const io = getIO();
+      const payload = {
+        trackerId: tracker.id,
+        profileId: tracker.profileId,
+        lat: point.lat,
+        lng: point.lng,
+        accuracy: point.accuracy,
+        battery: point.battery,
+        capturedAt: point.capturedAt,
+        safetySessionId: activeSession?.id || null,
+        sosAlertId: activeSos?.id || null
+      };
+      io.to(`agency_${tracker.agencyId}`).emit('tracker_location_update', payload);
+      if (activeSos) io.to(`agency_${tracker.agencyId}`).emit('sos_location_update', { alertId: activeSos.id, ...payload });
+    } catch (socketError) {
+      logger.warn('[Tracker] socket emit failed:', socketError.message);
+    }
+
+    return { locationId: location.id, activeSessionId: activeSession?.id || null, activeSosId: activeSos?.id || null };
+  }
+
+  // Traccar gateway → náš ingest. Traccar (open-source) přijme raw-TCP od fyzických
+  // GPS+SIM trackerů a HTTP-forwarduje pozice sem. Autentizace sdíleným tajemstvím
+  // (TRACCAR_FORWARD_SECRET), mapování zařízení na náš tracker přes IMEI (device.uniqueId).
+  async traccarForward(req, res) {
+    try {
+      const secret = process.env.TRACCAR_FORWARD_SECRET;
+      if (!secret) return res.status(503).json({ message: 'Traccar forwarding not configured' });
+      const provided = req.headers['x-forward-secret'] || req.query?.secret;
+      if (provided !== secret) return res.status(401).json({ message: 'Invalid forward secret' });
+
+      const position = req.body?.position || {};
+      const device = req.body?.device || {};
+      const imeiRaw = device.uniqueId || position.uniqueId;
+      if (!imeiRaw) return res.status(400).json({ message: 'Missing device uniqueId' });
+
+      const tracker = await prisma.gpsTracker.findUnique({ where: { imei: normalizeImei(imeiRaw) } });
+      if (!tracker || !tracker.active) return res.status(404).json({ message: 'Unknown or inactive tracker' });
+
+      const lat = Number(position.latitude);
+      const lng = Number(position.longitude);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+        return res.status(400).json({ message: 'Invalid coordinates' });
+      }
+
+      const attrs = position.attributes || {};
+      let battery = null;
+      if (attrs.batteryLevel != null) {
+        const b = Math.round(Number(attrs.batteryLevel));
+        if (Number.isFinite(b)) battery = Math.max(0, Math.min(100, b));
+      }
+
+      const point = {
+        lat,
+        lng,
+        accuracy: parseNullableNumber(position.accuracy, { name: 'accuracy', min: 0, max: 100000 }),
+        speedKph: position.speed != null && Number.isFinite(Number(position.speed)) ? Number(position.speed) * 1.852 : null, // uzly → km/h
+        heading: parseNullableNumber(position.course, { name: 'course', min: 0, max: 360 }),
+        battery,
+        capturedAt: parseDateTime(position.fixTime || position.deviceTime, new Date()),
+        raw: null
+      };
+
+      const result = await this._persistPoint(tracker, point);
+      res.status(201).json({ ok: true, trackerId: tracker.id, locationId: result.locationId });
+    } catch (error) {
+      logger.error('[Tracker] traccarForward error:', error);
+      res.status(500).json({ message: 'Failed to forward tracker location' });
+    }
+  }
+
   async ingest(req, res) {
     try {
       const { tracker, error } = await this._authenticateIngest(req);
@@ -427,120 +565,22 @@ class TrackerController {
       } catch (parseError) {
         return res.status(400).json({ message: parseError.message });
       }
+      point.raw = point.raw || req.body?.gprmc || req.body?.nmea || null;
 
-      const activeSession = tracker.profileId
-        ? await prisma.safetySession.findFirst({
-          where: {
-            agencyId: tracker.agencyId,
-            profileId: tracker.profileId,
-            state: { in: ACTIVE_SESSION_STATES }
-          },
-          orderBy: { updatedAt: 'desc' }
-        })
-        : null;
-
-      const activeSos = tracker.profileId
-        ? await prisma.sOSAlert.findFirst({
-          where: {
-            agencyId: tracker.agencyId,
-            profileId: tracker.profileId,
-            status: { in: ACTIVE_SOS_STATES }
-          },
-          orderBy: { createdAt: 'desc' }
-        })
-        : null;
-
-      const location = await prisma.gpsTrackerLocation.create({
-        data: {
-          trackerId: tracker.id,
-          agencyId: tracker.agencyId,
-          profileId: tracker.profileId || null,
-          safetySessionId: activeSession?.id || null,
-          sosAlertId: activeSos?.id || null,
-          lat: point.lat,
-          lng: point.lng,
-          accuracy: point.accuracy,
-          speedKph: point.speedKph,
-          heading: point.heading,
-          battery: point.battery,
-          capturedAt: point.capturedAt,
-          raw: point.raw || req.body?.gprmc || req.body?.nmea || null
-        }
-      });
-
-      if (activeSession) {
-        await prisma.safetyLocationPoint.create({
-          data: {
-            sessionId: activeSession.id,
-            lat: point.lat,
-            lng: point.lng,
-            accuracy: point.accuracy,
-            capturedAt: point.capturedAt
-          }
-        });
-      }
-
-      if (activeSos) {
-        await prisma.sOSLocationUpdate.create({
-          data: {
-            sosAlertId: activeSos.id,
-            lat: point.lat,
-            lng: point.lng,
-            accuracy: point.accuracy,
-            capturedAt: point.capturedAt
-          }
-        });
-        await prisma.sOSAlert.update({
-          where: { id: activeSos.id },
-          data: { lat: point.lat, lng: point.lng, accuracy: point.accuracy }
-        });
-      }
-
-      await prisma.gpsTracker.update({
-        where: { id: tracker.id },
-        data: {
-          lastSeenAt: new Date(),
-          lastLat: point.lat,
-          lastLng: point.lng,
-          lastAccuracy: point.accuracy,
-          lastBattery: point.battery,
-          lastSpeedKph: point.speedKph,
-          lastHeading: point.heading,
-          lastCapturedAt: point.capturedAt
-        }
-      });
-
-      try {
-        const io = getIO();
-        const payload = {
-          trackerId: tracker.id,
-          profileId: tracker.profileId,
-          lat: point.lat,
-          lng: point.lng,
-          accuracy: point.accuracy,
-          battery: point.battery,
-          capturedAt: point.capturedAt,
-          safetySessionId: activeSession?.id || null,
-          sosAlertId: activeSos?.id || null
-        };
-        io.to(`agency_${tracker.agencyId}`).emit('tracker_location_update', payload);
-        if (activeSos) io.to(`agency_${tracker.agencyId}`).emit('sos_location_update', { alertId: activeSos.id, ...payload });
-      } catch (socketError) {
-        logger.warn('[Tracker] socket emit failed:', socketError.message);
-      }
-
-      res.status(201).json({
+      const result = await this._persistPoint(tracker, point);
+      return res.status(201).json({
         ok: true,
         trackerId: tracker.id,
-        locationId: location.id,
-        linkedSafetySessionId: activeSession?.id || null,
-        linkedSosAlertId: activeSos?.id || null
+        locationId: result.locationId,
+        linkedSafetySessionId: result.activeSessionId,
+        linkedSosAlertId: result.activeSosId
       });
     } catch (error) {
       logger.error('[Tracker] ingest error:', error);
-      res.status(500).json({ message: 'Failed to ingest tracker location' });
+      return res.status(500).json({ message: 'Failed to ingest tracker location' });
     }
   }
+
 }
 
 module.exports = new TrackerController();
