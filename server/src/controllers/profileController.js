@@ -426,7 +426,7 @@ exports.boostProfile = async (req, res) => {
         credentials: decryptedCredentials,
         platform,
         settings: automationSettings,
-        adsPowerId: decryptedCredentials?.adsPowerId || null // adsPowerId žije v credentials; Profile takový sloupec nemá
+        adsPowerId: decryptedCredentials?.adsPowerId ?? null // adsPowerId žije v credentials; Profile takový sloupec nemá
       }
     });
 
