@@ -70,13 +70,17 @@ export async function doLogin(page, email, password) {
   await page.fill('[data-testid="login-password"]', password);
   await page.click('[data-testid="login-submit"]');
 
-  // Verify successful login (wait for dashboard elements)
+  // Verify successful login (wait for dashboard elements).
+  // Login dělá hard nav na /dashboard → full reload + hydratace dat; na CI pod
+  // zátěží to bývá pomalé, proto štědré timeouty (dřív 30s → občas flakoval i po
+  // 2 retry). Toto je hlavní příčina flaky rbac.spec.js loginu.
   console.log('🛰️ Verifying dashboard access...');
-  await expect(emailInput).not.toBeVisible({ timeout: 30000 });
-  
+  await expect(emailInput).not.toBeVisible({ timeout: 45000 });
+  await page.waitForLoadState('domcontentloaded').catch(() => {});
+
   // Wait for either desktop sidebar, mobile bottom nav, or mobile hamburger menu
   const dashboardElement = page.locator('nav, .mobile-bottom-nav, [data-testid="page-safety-container"], button .lucide-menu, .lucide-menu').first();
-  await dashboardElement.waitFor({ state: 'attached', timeout: 30000 });
+  await dashboardElement.waitFor({ state: 'attached', timeout: 60000 });
 
   console.log(`✅ UI Login Success: ${email}`);
 }
