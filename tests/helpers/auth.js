@@ -76,9 +76,9 @@ export async function doLogin(page, email, password) {
   // 2 retry). Toto je hlavní příčina flaky rbac.spec.js loginu.
   console.log('🛰️ Verifying dashboard access...');
   await expect(emailInput).not.toBeVisible({ timeout: 45000 });
-  await page.waitForLoadState('domcontentloaded').catch(() => {});
 
   // Wait for either desktop sidebar, mobile bottom nav, or mobile hamburger menu
+  // (this is the authoritative "logged in" signal and yields a clear error on failure).
   const dashboardElement = page.locator('nav, .mobile-bottom-nav, [data-testid="page-safety-container"], button .lucide-menu, .lucide-menu').first();
   await dashboardElement.waitFor({ state: 'attached', timeout: 60000 });
 

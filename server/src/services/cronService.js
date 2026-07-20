@@ -136,7 +136,7 @@ class CronService {
             credentials: decryptedCredentials, 
             platform: 'adultwork',
             settings: settings,
-            adsPowerId: decryptedCredentials?.adsPowerId || null // adsPowerId žije v credentials; Profile takový sloupec nemá
+            adsPowerId: decryptedCredentials?.adsPowerId ?? null // adsPowerId žije v credentials; Profile takový sloupec nemá
           } 
         });
       }
