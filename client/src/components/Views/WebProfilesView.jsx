@@ -122,7 +122,9 @@ const WebProfilesView = () => {
       });
       setLocalGallery(parseProfileGallery(activeProfile.gallery));
       
-      setAdsPowerId(activeProfile.adsPowerId || ''); 
+      // adsPowerId žije v šifrovaných credentials (načítá se přes getCredentials),
+      // ne na Profile — proto při přepnutí profilu jen vyčistíme pole.
+      setAdsPowerId('');
       setPlatformUser('');
       setPlatformPass('');
       setProxyConfig('');
