@@ -37,3 +37,7 @@
 **Vulnerability:** Weak random number generation using `Math.random()` for password generation in client code.
 **Learning:** `Math.random()` is not cryptographically secure and predictable, additionally the sort trick `(() => 0.5 - Math.random())` for shuffling creates non-uniform distributions.
 **Prevention:** Always use `window.crypto.getRandomValues()` for security-sensitive random number generation in the frontend, and apply a proper Fisher-Yates shuffle instead of `.sort` based shuffling.
+## 2026-07-21 - Prevent Timing Attack in Tracker Forwarding
+**Vulnerability:** Timing attack possible on Traccar forward endpoint because `x-forward-secret` was compared with the configured secret using standard equality operators (`!==`).
+**Learning:** The simple comparison string exposes time differences allowing an attacker to brute force the secret character by character.
+**Prevention:** Use `secureCompare` from `../utils/security` which wraps `crypto.timingSafeEqual` for all secret validation.
