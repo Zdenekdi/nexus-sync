@@ -7,6 +7,7 @@ import {
 
 import { useNexus } from '../../context/ContextHook';
 import PremiumSelector from '../UI/PremiumSelector';
+import FeatureLock from '../FeatureLock';
 
 const parseProfileGallery = (gallery) => {
   if (Array.isArray(gallery)) return gallery;
@@ -417,6 +418,7 @@ const WebProfilesView = () => {
           
           {/* SEKCE AUTOMATIZACE A PŘIHLAŠOVACÍ ÚDAJE */}
           <div className="glass-card" style={{ padding: '2rem', border: '1px solid var(--accent-color)', boxShadow: '0 0 15px rgba(59, 130, 246, 0.1)' }}>
+            <FeatureLock featureKey="web-automation">
             <h3 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.6rem', marginBottom: '1.5rem', color: 'var(--accent-color)' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}><RefreshCw size={20} /> {t('automationSettings')}</span>
               <span style={{ 
@@ -581,6 +583,7 @@ const WebProfilesView = () => {
             <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.5rem', textAlign: 'center' }}>
               {t('encryptionNote')}
             </p>
+            </FeatureLock>
           </div>
 
           <div className="glass-card" style={{ padding: '2rem' }}>

@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { safeRedirect } from '../utils/safeRedirect';
 import { useSocketBridge } from '../services/socketBridge';
+import { isFeatureLocked } from '../config/featureLocks';
 import axios from 'axios';
 
 /**
@@ -550,6 +551,10 @@ export function useNexusData({
   }, [activeProfileId, bioText, token, API_BASE, initData, showToast, lang]);
 
   const handleSyncAll = useCallback(async () => {
+    if (isFeatureLocked('web-automation')) {
+      if (showToast) showToast(lang === 'cz' ? 'Automatizace se dokončuje — zatím uzamčeno.' : 'Automation is being finalized — locked for now.', 'info');
+      return;
+    }
     if (!activeProfileId || activeProfileId === 'all') {
       if (showToast) showToast(lang === 'cz' ? 'Vyberte konkrétní profil pro synchronizaci.' : 'Select a specific profile to sync.', 'info');
       return;
