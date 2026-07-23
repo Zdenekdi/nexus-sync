@@ -32,6 +32,7 @@ import axios from 'axios';
 
 import { useNexus } from '../context/ContextHook';
 import { useSocketBridge } from '../services/socketBridge';
+import { isFeatureLocked } from '../config/featureLocks';
 
 function relayDebug(...args) {
   console.info('[Relay]', ...args);
@@ -811,8 +812,9 @@ const RelayMode = ({ operator, t, onHide: _onHide, onExit, syncPushToken, isSync
 
   return (
     <>
-      {/* IncomingCallModal: GSM hovor zachycený přes InCallService (bez SIP Trunk) */}
-      {isInCallAvailable() && (gsmCallState === 'ringing' || gsmCallState === 'active') && (
+      {/* IncomingCallModal: GSM hovor zachycený přes InCallService (bez SIP Trunk).
+          Uzamčeno — přímý GSM audio most je neověřený; produkčně jede přes VoIP. */}
+      {isInCallAvailable() && !isFeatureLocked('gsm-call-bridge') && (gsmCallState === 'ringing' || gsmCallState === 'active') && (
         <IncomingCallModal
           incomingCall={gsmIncomingCall}
           callState={gsmCallState}
