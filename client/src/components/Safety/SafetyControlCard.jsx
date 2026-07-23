@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import FeatureLock from '../FeatureLock';
 import { Shield, Clock, CheckCircle, LogOut, Zap, Mic, MicOff, Battery, Phone, PhoneOff, UserCheck, XCircle, Bluetooth, Activity, Settings, ChevronDown, Volume2 } from 'lucide-react';
 import { useNexus } from '../../context/ContextHook';
 
@@ -331,7 +332,9 @@ const SafetyControlCard = () => {
       )}
 
       {/* Sledování polohy — manuální přepínač (B). Automaticky se navíc zapne během
-          check-inu (A) i při SOS (C); indikátor ukazuje, zda se poloha zrovna posílá. */}
+          check-inu (A) i při SOS (C). Uzamčeno přes FeatureLock, dokud není
+          background tracking ověřený na zařízení (bezpečnostní funkce). */}
+      <FeatureLock featureKey="phone-tracking" compact>
       <button
         onClick={() => setManualTracking && setManualTracking(!manualTrackingOn)}
         style={{
@@ -364,6 +367,7 @@ const SafetyControlCard = () => {
           }} />
         </div>
       </button>
+      </FeatureLock>
 
       {/* Check-in Timer Controls */}
       <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
