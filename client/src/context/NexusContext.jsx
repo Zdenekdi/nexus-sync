@@ -7,6 +7,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useNexusData } from '../hooks/useNexusData';
 import { getSocket } from '../services/socketBridge';
 import { ensurePhoneTracking, stopPhoneTracking } from '../services/phoneTracker';
+import { isFeatureLocked } from '../config/featureLocks';
 import { AgencyDataGateway } from '../services/agency/AgencyDataGateway';
 import { AnalyticsService } from '../services/analytics/AnalyticsService';
 import { ContentSyncService } from '../services/content/ContentSyncService';
@@ -580,6 +581,11 @@ export const NexusProvider = ({ children }) => {
     const roleUpper = String(activeOperator?.role?.name || activeOperator?.role || '')
       .toUpperCase().replace(/\s+/g, '_');
     if (!isNativeApp || roleUpper !== 'MODEL' || !token) return;
+
+    // Bezpečnostní pojistka: dokud je funkce uzamčená (neověřená na zařízení),
+    // NEspouštěj reálné sledování — ani při check-inu/SOS. Ať nikdo nespoléhá na
+    // něco, co ještě nemusí fungovat.
+    if (isFeatureLocked('phone-tracking')) { stopPhoneTracking().catch(() => {}); return; }
 
     if (phoneTrackingActive) {
       let installationId = null;
