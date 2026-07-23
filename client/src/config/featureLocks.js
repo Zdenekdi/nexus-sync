@@ -16,6 +16,27 @@ export const LOCKED_FEATURES = {
     title: 'Sledování polohy telefonem',
     note: 'Funkce se dokončuje a testuje na zařízeních. Zatím na ni prosím nespoléhej.',
   },
+
+  // Automatické postování na externí weby (adultwork/amateri/onlyfans) — selektory
+  // jsou hádané a neověřené proti živým stránkám; rozbijí se při změně webu.
+  'web-automation': {
+    title: 'Automatizace webových profilů',
+    note: 'Automatické postování se ještě dolaďuje a testuje. Zatím není spolehlivé.',
+  },
+
+  // Fyzické GPS+SIM trackery přes Traccar — endpoint je otestovaný, ale end-to-end
+  // s reálným trackerem a nasazeným Traccarem zatím neproběhl.
+  'physical-tracker': {
+    title: 'Fyzické GPS trackery',
+    note: 'Napojení fyzického trackeru (Traccar) se dokončuje. Použij zatím telefon.',
+  },
+
+  // Přímý most zvuku GSM hovoru (bez SIP) — neověřené; produkčně se jede přes
+  // přesměrování na VoIP číslo.
+  'gsm-call-bridge': {
+    title: 'Přímý GSM audio most',
+    note: 'Přímé přemostění zvuku hovoru se testuje. Používej přesměrování na VoIP.',
+  },
 };
 
 export function isFeatureLocked(key) {

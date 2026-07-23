@@ -98,6 +98,10 @@ class CronService {
 
   async triggerOrganicBoosts() {
     try {
+      // Web automation je zatím uzamčená/neověřená (viz featureLocks.js na klientu).
+      // Autonomní boost neběží, dokud ho výslovně nepovolíš přes WEB_AUTOMATION_ENABLED=true.
+      if (process.env.WEB_AUTOMATION_ENABLED !== 'true') return;
+
       const { decrypt } = require('../utils/encryption');
       const { getIO } = require('./socket');
       const io = getIO();

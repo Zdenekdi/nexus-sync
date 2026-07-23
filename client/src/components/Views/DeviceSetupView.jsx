@@ -3,6 +3,7 @@ import * as tokenStore from '../../services/tokenStore';
 import { Smartphone, Download, Zap } from 'lucide-react';
 
 import { useNexus } from '../../context/ContextHook';
+import FeatureLock from '../FeatureLock';
 
 const DeviceSetupView = () => {
   const nexus = useNexus();
@@ -145,6 +146,7 @@ const DeviceSetupView = () => {
               </div>
 
               {!activeTracker ? (
+                <FeatureLock featureKey="physical-tracker">
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr minmax(180px, 240px) auto', gap: '0.75rem' }}>
                   <input 
                     id="tracker-imei-input"
@@ -177,6 +179,7 @@ const DeviceSetupView = () => {
                     {nexus.isPairingTracker ? (nexus.lang === 'cz' ? 'Páruji...' : 'Pairing...') : (nexus.lang === 'cz' ? 'Spárovat' : 'Pair')}
                   </button>
                 </div>
+                </FeatureLock>
               ) : (
                 <div style={{ padding: '1rem', background: 'rgba(34, 197, 94, 0.05)', borderRadius: '12px', border: '1px solid rgba(34, 197, 94, 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
