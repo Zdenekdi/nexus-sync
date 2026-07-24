@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
+const { secureCompare } = require('../utils/security');
 const prisma = require('../services/db');
 const logger = require('../services/logger');
 const { getIO } = require('../services/socket');
@@ -512,7 +513,7 @@ class TrackerController {
       const secret = process.env.TRACCAR_FORWARD_SECRET;
       if (!secret) return res.status(503).json({ message: 'Traccar forwarding not configured' });
       const provided = req.headers['x-forward-secret'] || req.query?.secret;
-      if (provided !== secret) return res.status(401).json({ message: 'Invalid forward secret' });
+      if (!secureCompare(String(provided || ''), secret)) return res.status(401).json({ message: 'Invalid forward secret' });
 
       const position = req.body?.position || {};
       const device = req.body?.device || {};
