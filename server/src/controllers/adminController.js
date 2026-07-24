@@ -3,6 +3,7 @@ const logger = require('../services/logger');
 const monitoringService = require('../services/monitoringService');
 const infraHealthService = require('../services/infraHealthService');
 const { isAppOwnerRole } = require('../utils/authz');
+const featureLockConfig = require('../config/featureLocks');
 const os = require('os');
 const { execSync } = require('child_process');
 
@@ -122,6 +123,59 @@ exports.updateGlobalSetting = async (req, res) => {
   } catch (err) {
     logger.error(`Error updating setting ${req.body.key}:`, err.message);
     res.status(500).json({ error: 'Failed to update global setting' });
+  }
+};
+
+// GET /api/admin/feature-locks — aktuální stav zámků nedodělaných funkcí.
+// Čte KAŽDÝ přihlášený uživatel: klient podle toho renderuje UI (zamčeno/odemčeno)
+// a vypíná reálné chování. Merge DB overrides (`lock_<key>`) s defaultem (zamčeno).
+exports.getFeatureLocks = async (req, res) => {
+  try {
+    const rows = await prisma.globalSetting.findMany({
+      where: { key: { startsWith: featureLockConfig.SETTING_PREFIX } }
+    });
+    const overrides = rows.reduce((acc, row) => {
+      acc[row.key.slice(featureLockConfig.SETTING_PREFIX.length)] = row.value === 'true';
+      return acc;
+    }, {});
+
+    const locks = {};
+    for (const key of featureLockConfig.LOCKABLE_KEYS) {
+      locks[key] = overrides[key] !== undefined ? overrides[key] : featureLockConfig.DEFAULT_LOCKED;
+    }
+    res.json({ locks });
+  } catch (err) {
+    logger.error('Error fetching feature locks:', err.message);
+    res.status(500).json({ error: 'Failed to fetch feature locks' });
+  }
+};
+
+// PATCH /api/admin/feature-locks/:key — zamkne/odemkne funkci. POUZE App Owner.
+exports.updateFeatureLock = async (req, res) => {
+  try {
+    if (!isAppOwnerRole(req.user?.role)) {
+      return res.status(403).json({ error: 'Access denied: Requires App Owner role to modify feature locks.' });
+    }
+
+    const { key } = req.params;
+    if (!featureLockConfig.LOCKABLE_KEYS.includes(key)) {
+      return res.status(400).json({ error: 'Unknown feature lock key' });
+    }
+
+    const { locked } = req.body;
+    const stringValue = locked ? 'true' : 'false';
+
+    await prisma.globalSetting.upsert({
+      where: { key: featureLockConfig.keyToSetting(key) },
+      update: { value: stringValue },
+      create: { key: featureLockConfig.keyToSetting(key), value: stringValue }
+    });
+
+    logger.info(`[FeatureLock] ${key} -> ${locked ? 'LOCKED' : 'UNLOCKED'} by ${req.user?.userId || req.user?.id || 'unknown'}`);
+    res.json({ key, locked: !!locked });
+  } catch (err) {
+    logger.error(`Error updating feature lock ${req.params.key}:`, err.message);
+    res.status(500).json({ error: 'Failed to update feature lock' });
   }
 };
 

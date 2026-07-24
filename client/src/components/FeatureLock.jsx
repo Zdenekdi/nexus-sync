@@ -1,9 +1,12 @@
 import React from 'react';
-import { getLockInfo } from '../config/featureLocks';
+import { useFeatureLock, getLockInfo } from '../config/featureLocks';
 
 /**
  * FeatureLock — když je funkce uzamčená (viz config/featureLocks.js), vykreslí
  * místo children hlášku „ve vývoji / testuje se". Jinak vykreslí children beze změny.
+ *
+ * Stav zámku je reaktivní: když ho App Owner přepne v adminu, překreslí se živě.
+ * App Owner má bypass → vidí children (funkci může otestovat).
  *
  * Použití:
  *   <FeatureLock featureKey="phone-tracking"><MojeTlačítko/></FeatureLock>
@@ -12,8 +15,9 @@ import { getLockInfo } from '../config/featureLocks';
  * isFeatureLocked(...) (ať se u bezpečnostních funkcí opravdu nic nespustí).
  */
 export default function FeatureLock({ featureKey, children, compact = false }) {
+  const locked = useFeatureLock(featureKey);
   const info = getLockInfo(featureKey);
-  if (!info) return children;
+  if (!locked || !info) return children;
 
   return (
     <div
