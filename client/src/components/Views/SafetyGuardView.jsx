@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Shield, ShieldCheck, MapPin, Activity, Battery, Clock, AlertTriangle, CheckCircle2, User, Phone, Zap, Search, Filter, RefreshCw, Eye, Settings } from 'lucide-react';
 import { useNexus } from '../../context/ContextHook';
-import { isFeatureLocked } from '../../config/featureLocks';
+import { useFeatureLock } from '../../config/featureLocks';
 import axios from 'axios';
 import 'leaflet/dist/leaflet.css';
 
@@ -35,7 +35,10 @@ const SafetyGuardView = () => {
   // Živá mapa polohy závisí na sledování polohy (telefon i fyzický tracker).
   // Dokud jsou oba zdroje uzamčené (neověřené), mapa nemá odkud brát data —
   // ukážeme místo prázdné mapy zámek, ať operátor nespoléhá na nefunkční přehled.
-  const locationLocked = isFeatureLocked('phone-tracking') && isFeatureLocked('physical-tracker');
+  // Reaktivní: když App Owner odemkne, mapa se objeví (a naopak).
+  const phoneTrackingLocked = useFeatureLock('phone-tracking');
+  const physicalTrackerLocked = useFeatureLock('physical-tracker');
+  const locationLocked = phoneTrackingLocked && physicalTrackerLocked;
 
   // Leaflet state & refs
   const [L, setL] = useState(null);

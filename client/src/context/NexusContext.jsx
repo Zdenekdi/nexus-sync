@@ -7,7 +7,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useNexusData } from '../hooks/useNexusData';
 import { getSocket } from '../services/socketBridge';
 import { ensurePhoneTracking, stopPhoneTracking } from '../services/phoneTracker';
-import { isFeatureLocked } from '../config/featureLocks';
+import { setAppOwnerBypass, useFeatureLock } from '../config/featureLocks';
 import { AgencyDataGateway } from '../services/agency/AgencyDataGateway';
 import { AnalyticsService } from '../services/analytics/AnalyticsService';
 import { ContentSyncService } from '../services/content/ContentSyncService';
@@ -577,6 +577,9 @@ export const NexusProvider = ({ children }) => {
   const phoneTrackingActive =
     manualTrackingOn || _sosActive || (!!checkinTimerEnd && checkinRemaining > 0);
 
+  // Reaktivní stav zámku — když ho App Owner přepne, efekt níž se přehodnotí.
+  const phoneTrackingLocked = useFeatureLock('phone-tracking');
+
   useEffect(() => {
     const roleUpper = String(activeOperator?.role?.name || activeOperator?.role || '')
       .toUpperCase().replace(/\s+/g, '_');
@@ -585,7 +588,7 @@ export const NexusProvider = ({ children }) => {
     // Bezpečnostní pojistka: dokud je funkce uzamčená (neověřená na zařízení),
     // NEspouštěj reálné sledování — ani při check-inu/SOS. Ať nikdo nespoléhá na
     // něco, co ještě nemusí fungovat.
-    if (isFeatureLocked('phone-tracking')) { stopPhoneTracking().catch(() => {}); return; }
+    if (phoneTrackingLocked) { stopPhoneTracking().catch(() => {}); return; }
 
     if (phoneTrackingActive) {
       let installationId = null;
@@ -594,7 +597,12 @@ export const NexusProvider = ({ children }) => {
     } else {
       stopPhoneTracking().catch(() => {});
     }
-  }, [phoneTrackingActive, isNativeApp, token, activeOperator]);
+  }, [phoneTrackingActive, phoneTrackingLocked, isNativeApp, token, activeOperator]);
+
+  // App Owner vidí zamčené funkce odemčené (může je otestovat). Ostatní role ne.
+  useEffect(() => {
+    setAppOwnerBypass(!!activeOperator?.isAppOwner);
+  }, [activeOperator?.isAppOwner]);
 
   // Při odmountování (logout / teardown) zastav sledování.
   useEffect(() => () => { stopPhoneTracking().catch(() => {}); }, []);
@@ -668,6 +676,10 @@ export const NexusProvider = ({ children }) => {
     availableServers, selectedServerId, setSelectedServerId,
     isAllowed, activeRole: normalizedRole,
     isAppOwner: activeOperator?.isAppOwner,
+    // Zámky nedodělaných funkcí (admin UI v GlobalFeaturesView)
+    featureLocks: nexusData.featureLocks,
+    handleFeatureLockToggle: nexusData.handleFeatureLockToggle,
+    lockableFeatures: nexusData.lockableFeatures,
     activeProfile, activeProfileId, setActiveProfileId, 
     myProfiles, profiles: nexusData.profiles, _profiles: nexusData.profiles,
     operators: nexusData.operators,
@@ -725,7 +737,8 @@ export const NexusProvider = ({ children }) => {
     messages, selectedChatId, messageValue, isEditProfileOpen, isAddAgencyOpen,
     isAddUserOpen, isBugReportOpen, agencyDetailModalData, editingProfileData, calViewDate, showPanicConfirm, _toasts,
     availableServers, selectedServerId, setSelectedServerId,
-    isAllowed, normalizedRole, activeProfile, activeProfileId, myProfiles, nexusData.profiles, 
+    isAllowed, normalizedRole, activeProfile, activeProfileId, myProfiles, nexusData.profiles,
+    nexusData.featureLocks, nexusData.handleFeatureLockToggle, nexusData.lockableFeatures,
     nexusData.operators, nexusData.agencies, nexusData.sessions, nexusData.handleRevokeBinding, onlineOnly,
     nexusData.activeSubscription, nexusData.subscriptionHistory, nexusData.subscriptionPlans, nexusData.fetchPlans,
     nexusData.updatePlans, nexusData.isPlansLoading, nexusData.isStartingSubscription, nexusData.onStartSubscription,

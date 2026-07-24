@@ -5,10 +5,20 @@
 // to zásadní (modelka nesmí věřit, že ji appka sleduje, když to není ověřené).
 //
 // Zámek NEjen skryje UI, ale volající vypnou i reálné chování (viz isFeatureLocked
-// v gatingu). Odemčení = odebrání klíče odsud, až je funkce ověřená.
+// v gatingu).
 //
-// (Zatím statické. Lze později převést na DB-driven přepínač pro app ownera.)
+// STAV ZÁMKŮ řídí App Owner z aplikace (bez nasazení): server drží stav v DB a
+// klient si ho při startu načte přes GET /admin/feature-locks a nasype sem přes
+// setLockOverrides(). Default (než dorazí server / u neznámého klíče) = ZAMČENO
+// (fail-closed) — bezpečnější „nespoléhej na to".
+//
+// App Owner vidí zamčené funkce ODEMČENÉ (aby je mohl otestovat) — bypass zapíná
+// setAppOwnerBypass(true); UI k tomu ukazuje odznak „zamčeno pro uživatele".
 
+import { useSyncExternalStore } from 'react';
+
+// Registr zamykatelných funkcí + texty hlášky. KLÍČE musí sedět se serverovým
+// server/src/config/featureLocks.js.
 export const LOCKED_FEATURES = {
   // Telefon jako GPS tracker — kód hotový, ale běh na pozadí NENÍ ověřený na
   // reálném zařízení (MIUI killing, oprávnění „vždy", doze). Bezpečnostní funkce.
@@ -39,10 +49,60 @@ export const LOCKED_FEATURES = {
   },
 };
 
+// ── Stav zámků (module-level store, čitelný synchronně odkudkoli) ──────────────
+let _overrides = {};   // { [key]: boolean } ze serveru (true = zamčeno)
+let _bypass = false;   // App Owner vidí funkce odemčené (test/náhled)
+const _listeners = new Set();
+
+function _notify() {
+  _listeners.forEach((cb) => { try { cb(); } catch { /* ignore */ } });
+}
+
+// Nastaví serverový stav zámků (volající předává celý objekt { key: bool }).
+export function setLockOverrides(obj) {
+  _overrides = obj && typeof obj === 'object' ? { ...obj } : {};
+  _notify();
+}
+
+// Zapne/vypne App-Owner bypass (owner vidí zamčené funkce odemčené).
+export function setAppOwnerBypass(on) {
+  const next = !!on;
+  if (next !== _bypass) { _bypass = next; _notify(); }
+}
+
+export function subscribeLocks(cb) {
+  _listeners.add(cb);
+  return () => _listeners.delete(cb);
+}
+
+// Je funkce fakticky zamčená PRO BĚŽNÉ UŽIVATELE? (ignoruje App-Owner bypass —
+// pro odznak „zamčeno pro uživatele" a pro admin UI).
+export function isLockedForUsers(key) {
+  if (!Object.prototype.hasOwnProperty.call(LOCKED_FEATURES, key)) return false;
+  const ov = _overrides[key];
+  return ov === undefined ? true : ov; // default: zamčeno (fail-closed)
+}
+
+// Je funkce zamčená pro AKTUÁLNÍHO uživatele? App Owner ji má odemčenou (bypass).
 export function isFeatureLocked(key) {
-  return Object.prototype.hasOwnProperty.call(LOCKED_FEATURES, key);
+  if (_bypass) return false;
+  return isLockedForUsers(key);
 }
 
 export function getLockInfo(key) {
   return LOCKED_FEATURES[key] || null;
+}
+
+// Seznam zamykatelných funkcí (pro admin UI): [{ key, title, note }]
+export function getLockableFeatures() {
+  return Object.entries(LOCKED_FEATURES).map(([key, info]) => ({ key, ...info }));
+}
+
+// ── React hooky (reaktivní — přepnutí zámku živě překreslí) ────────────────────
+export function useFeatureLock(key) {
+  return useSyncExternalStore(subscribeLocks, () => isFeatureLocked(key));
+}
+
+export function useLockedForUsers(key) {
+  return useSyncExternalStore(subscribeLocks, () => isLockedForUsers(key));
 }

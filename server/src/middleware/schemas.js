@@ -365,6 +365,10 @@ const updateGlobalSetting = z.object({
   value: z.any()
 });
 
+const updateFeatureLock = z.object({
+  locked: z.boolean()
+});
+
 // ── Device Relay ─────────────────────────────────────────────────────────────
 const relayMessage = z.object({
   installationId: z.string().min(1).max(256),
@@ -451,6 +455,7 @@ module.exports = {
   setSipConfig,
   updateGlobalFeature,
   updateGlobalSetting,
+  updateFeatureLock,
   relayMessage,
   mobileMessage,
   mobileCall

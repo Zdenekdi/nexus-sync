@@ -1,26 +1,31 @@
 /* src/components/Views/GlobalFeaturesView.jsx */
 import React from 'react';
-import { Zap, Cpu, Check, Shield, Loader2 } from 'lucide-react';
+import { Zap, Cpu, Check, Shield, Loader2, Lock, Unlock } from 'lucide-react';
 
 import { useNexus } from '../../context/ContextHook';
 
 const GlobalFeaturesView = () => {
   const nexus = useNexus();
-  const { 
-    t, 
-    _lang, 
-    isMobile, 
+  const {
+    t,
+    lang,
+    isMobile,
     isAppOwner,
     loading,
-    globalFeatures = [], 
+    globalFeatures = [],
     globalSettings = [],
-    handleFeatureToggle: onFeatureToggle, 
-    isTraining, 
-    trainingProgress, 
-    onStartTraining, 
+    handleFeatureToggle: onFeatureToggle,
+    isTraining,
+    trainingProgress,
+    onStartTraining,
     onResetTraining,
-    handleUpdateGlobalSetting
+    handleUpdateGlobalSetting,
+    featureLocks = {},
+    lockableFeatures = [],
+    handleFeatureLockToggle
   } = nexus;
+
+  const isCz = lang === 'cz' || lang === 'cs';
 
   if (loading) {
     return (
@@ -46,6 +51,54 @@ const GlobalFeaturesView = () => {
       </h2>
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+        {/* Zámky nedodělaných / neověřených funkcí */}
+        <div className="glass-card" style={{ padding: '2rem', border: '1px solid rgba(59, 130, 246, 0.25)' }}>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+            <Lock size={22} color="#3b82f6" /> {isCz ? 'Zámky funkcí' : 'Feature Locks'}
+          </h3>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '2rem', lineHeight: 1.5 }}>
+            {isCz
+              ? 'Nedodělané nebo neověřené funkce drž zamčené — uživatelům se ukáže hláška a reálné chování je vypnuté. Odemkni je, až je ověříš. Ty (App Owner) je vidíš odemčené i tak, abys je mohl otestovat.'
+              : 'Keep unfinished or unverified features locked — users see a notice and the real behavior is disabled. Unlock them once verified. You (App Owner) always see them unlocked so you can test.'}
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {lockableFeatures.map((feature) => {
+              const locked = featureLocks[feature.key] !== undefined ? featureLocks[feature.key] : true;
+              return (
+                <div key={feature.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', padding: '1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      {feature.title}
+                      <span style={{
+                        fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.04em', padding: '0.15rem 0.5rem', borderRadius: '999px',
+                        background: locked ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)',
+                        color: locked ? '#f87171' : '#4ade80'
+                      }}>
+                        {locked ? (isCz ? '🔒 ZAMČENO' : '🔒 LOCKED') : (isCz ? '✅ DOSTUPNÉ' : '✅ AVAILABLE')}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>{feature.note}</div>
+                    <code style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>{feature.key}</code>
+                  </div>
+                  <button
+                    onClick={() => handleFeatureLockToggle && handleFeatureLockToggle(feature.key, !locked)}
+                    aria-label={locked ? (isCz ? 'Odemknout' : 'Unlock') : (isCz ? 'Zamknout' : 'Lock')}
+                    style={{
+                      flexShrink: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer',
+                      border: 'none', borderRadius: '10px', padding: '0.55rem 0.9rem', fontSize: '0.72rem', fontWeight: 800,
+                      background: locked ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.12)',
+                      color: locked ? '#4ade80' : '#f87171'
+                    }}
+                  >
+                    {locked ? <Unlock size={14} /> : <Lock size={14} />}
+                    {locked ? (isCz ? 'Odemknout' : 'Unlock') : (isCz ? 'Zamknout' : 'Lock')}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="glass-card" style={{ padding: '2rem', border: '1px dashed var(--accent-color)' }}>
           <h3 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem' }}>
             <Zap size={24} color="#f59e0b" /> {t('masterFeatureProvisioning')}
