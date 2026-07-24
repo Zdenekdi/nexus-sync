@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Shield, ShieldCheck, MapPin, Activity, Battery, Clock, AlertTriangle, CheckCircle2, User, Phone, Zap, Search, Filter, RefreshCw, Eye, Settings } from 'lucide-react';
 import { useNexus } from '../../context/ContextHook';
+import { isFeatureLocked } from '../../config/featureLocks';
 import axios from 'axios';
 import 'leaflet/dist/leaflet.css';
 
@@ -30,6 +31,11 @@ const SafetyGuardView = () => {
   });
   
   const isCz = lang === 'cz' || lang === 'cs';
+
+  // Živá mapa polohy závisí na sledování polohy (telefon i fyzický tracker).
+  // Dokud jsou oba zdroje uzamčené (neověřené), mapa nemá odkud brát data —
+  // ukážeme místo prázdné mapy zámek, ať operátor nespoléhá na nefunkční přehled.
+  const locationLocked = isFeatureLocked('phone-tracking') && isFeatureLocked('physical-tracker');
 
   // Leaflet state & refs
   const [L, setL] = useState(null);
@@ -436,10 +442,24 @@ const SafetyGuardView = () => {
               <Zap size={16} color="#3b82f6" />
               <span style={{ fontWeight: 800, fontSize: '0.8rem', color: 'white' }}>{t('tacticalOverview')}</span>
             </div>
-            <div 
-              ref={mapContainerRef} 
-              style={{ flex: 1, minHeight: '350px', background: '#090d16' }} 
-            />
+            {locationLocked ? (
+              <div style={{ flex: 1, minHeight: '350px', background: '#090d16', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '2rem', gap: '0.85rem' }}>
+                <div style={{ fontSize: '2rem', lineHeight: 1 }}>🔒</div>
+                <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'white' }}>
+                  {isCz ? 'Živá mapa polohy se dokončuje' : 'Live location map in testing'}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', maxWidth: '320px', lineHeight: 1.5 }}>
+                  {isCz
+                    ? 'Sledování polohy (telefon i fyzické trackery) se ještě testuje, takže se poloha zatím nezobrazuje. Nespoléhej na tuto mapu pro dohled nad polohou.'
+                    : 'Location tracking (phone and physical trackers) is still being tested, so positions are not shown yet. Do not rely on this map for location monitoring.'}
+                </div>
+              </div>
+            ) : (
+              <div
+                ref={mapContainerRef}
+                style={{ flex: 1, minHeight: '350px', background: '#090d16' }}
+              />
+            )}
             <div style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.02)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
                 <Clock size={14} color="#64748b" />
