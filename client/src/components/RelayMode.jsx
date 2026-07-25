@@ -32,7 +32,7 @@ import axios from 'axios';
 
 import { useNexus } from '../context/ContextHook';
 import { useSocketBridge } from '../services/socketBridge';
-import { isFeatureLocked } from '../config/featureLocks';
+import { useFeatureLock } from '../config/featureLocks';
 
 function relayDebug(...args) {
   console.info('[Relay]', ...args);
@@ -56,6 +56,9 @@ const RelayMode = ({ operator, t, onHide: _onHide, onExit, syncPushToken, isSync
   } = nexus || {};
 
   const RELAY_API_BASE = (import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api').replace(/\/api$/, '');
+
+  // Přímý GSM audio most je zamykatelná funkce (reaktivní; App Owner může odemknout).
+  const gsmCallBridgeLocked = useFeatureLock('gsm-call-bridge');
 
 
   const updateLogStatus = useCallback((idOrPhone, newStatus) => {
@@ -814,7 +817,7 @@ const RelayMode = ({ operator, t, onHide: _onHide, onExit, syncPushToken, isSync
     <>
       {/* IncomingCallModal: GSM hovor zachycený přes InCallService (bez SIP Trunk).
           Uzamčeno — přímý GSM audio most je neověřený; produkčně jede přes VoIP. */}
-      {isInCallAvailable() && !isFeatureLocked('gsm-call-bridge') && (gsmCallState === 'ringing' || gsmCallState === 'active') && (
+      {isInCallAvailable() && !gsmCallBridgeLocked && (gsmCallState === 'ringing' || gsmCallState === 'active') && (
         <IncomingCallModal
           incomingCall={gsmIncomingCall}
           callState={gsmCallState}

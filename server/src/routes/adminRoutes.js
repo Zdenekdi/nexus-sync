@@ -3,7 +3,7 @@ const router = express.Router();
 const adminController = require('../controllers/adminController');
 const authMiddleware = require('../middleware/authMiddleware');
 const { validate } = require('../middleware/validate');
-const { updateGlobalFeature, updateGlobalSetting } = require('../middleware/schemas');
+const { updateGlobalFeature, updateGlobalSetting, updateFeatureLock } = require('../middleware/schemas');
 
 router.use(authMiddleware);
 
@@ -13,7 +13,12 @@ router.patch('/features/:id', validate(updateGlobalFeature), adminController.upd
 
 // Správa globálních nastavení
 router.get('/settings', adminController.getGlobalSettings);
-router.post('/settings', validate(updateGlobalSetting), adminController.updateGlobalSetting); 
+router.post('/settings', validate(updateGlobalSetting), adminController.updateGlobalSetting);
+
+// Zámky nedodělaných funkcí — čte každý přihlášený (klient podle toho renderuje
+// UI), měnit je smí jen App Owner (kontrola uvnitř controlleru).
+router.get('/feature-locks', adminController.getFeatureLocks);
+router.patch('/feature-locks/:key', validate(updateFeatureLock), adminController.updateFeatureLock);
 
 // Monitoring systému
 router.get('/health', adminController.getSystemHealth);

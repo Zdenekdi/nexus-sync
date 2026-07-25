@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { safeRedirect } from '../utils/safeRedirect';
 import { useSocketBridge } from '../services/socketBridge';
-import { isFeatureLocked } from '../config/featureLocks';
+import { isFeatureLocked, setLockOverrides, getLockableFeatures } from '../config/featureLocks';
 import axios from 'axios';
 
 /**
@@ -44,6 +44,9 @@ export function useNexusData({
   const [_activeSubscription, _setActiveSubscription] = useState(null);
   const [_subscriptionHistory, _setSubscriptionHistory] = useState([]);
   const [globalSettings, setGlobalSettings] = useState([]);
+  // Stav zámků nedodělaných funkcí ze serveru ({ key: bool }, true = zamčeno).
+  // Slouží admin UI; gating jinde čte module-store přes isFeatureLocked().
+  const [featureLocks, setFeatureLocks] = useState({});
   const [globalFeatures, setGlobalFeatures] = useState([
     { id: 'ai_trans', label: 'AI Voice Relay', desc: 'Enable neural speech-to-speech routing', active: true },
     { id: 'vc_hub', label: 'Cross-Agency Analytics', desc: 'Enable view of aggregated data', active: true },
@@ -94,6 +97,32 @@ export function useNexusData({
       if (showToast) showToast(lang === 'cz' ? 'Uložení selhalo.' : 'Save failed.', 'error');
     }
   }, [token, API_BASE, showToast, lang]);
+
+  // App Owner zamkne/odemkne funkci. Optimisticky nastaví lokální stav i module-store
+  // (aby se gating/UI hned překreslily), při chybě vrátí zpět.
+  const handleFeatureLockToggle = useCallback(async (key, locked) => {
+    if (!token) return;
+    const prev = featureLocks;
+    const next = { ...featureLocks, [key]: locked };
+    setFeatureLocks(next);
+    setLockOverrides(next);
+    try {
+      await axios.patch(`${API_BASE}/admin/feature-locks/${key}`, { locked }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (showToast) {
+        const msg = lang === 'cz'
+          ? (locked ? 'Funkce zamčena.' : 'Funkce odemčena.')
+          : (locked ? 'Feature locked.' : 'Feature unlocked.');
+        showToast(msg, 'success');
+      }
+    } catch (_err) {
+      console.error('Feature lock toggle failed:', _err);
+      setFeatureLocks(prev);
+      setLockOverrides(prev);
+      if (showToast) showToast(lang === 'cz' ? 'Změna zámku selhala.' : 'Lock change failed.', 'error');
+    }
+  }, [featureLocks, token, API_BASE, showToast, lang]);
 
   const [isDataLoading, setIsDataLoading] = useState(false);
   const [isBackgroundLoading, setIsBackgroundLoading] = useState(false);
@@ -402,7 +431,7 @@ export function useNexusData({
       setIsBackgroundLoading(true);
 
       // PHASE 2: HEAVY DATA (Background hydration)
-      const [chatRes, bindingRes, trackerRes, statsRes, agencyRes, analyticsRes, bookingRes, featuresRes, globalSettingsRes, subCurrentRes, subHistoryRes] = await Promise.all([
+      const [chatRes, bindingRes, trackerRes, statsRes, agencyRes, analyticsRes, bookingRes, featuresRes, globalSettingsRes, subCurrentRes, subHistoryRes, featureLocksRes] = await Promise.all([
         axiosWithTiming(`${API_BASE}/chats`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/device/bindings`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/trackers`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { trackers: [] } })),
@@ -413,9 +442,15 @@ export function useNexusData({
         axiosWithTiming(`${API_BASE}/admin/features`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] })),
         axiosWithTiming(`${API_BASE}/admin/settings`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] })),
         axiosWithTiming(`${API_BASE}/subscriptions/current`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
-        axiosWithTiming(`${API_BASE}/subscriptions/history`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null)
+        axiosWithTiming(`${API_BASE}/subscriptions/history`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
+        axiosWithTiming(`${API_BASE}/admin/feature-locks`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { locks: {} } }))
       ]);
 
+      // Zámky funkcí: nasypeme do module-store (gating) i lokálního stavu (admin UI).
+      if (featureLocksRes?.data?.locks && typeof featureLocksRes.data.locks === 'object') {
+        setFeatureLocks(featureLocksRes.data.locks);
+        setLockOverrides(featureLocksRes.data.locks);
+      }
       if (Array.isArray(featuresRes?.data)) setGlobalFeatures(featuresRes.data);
       if (Array.isArray(globalSettingsRes?.data)) setGlobalSettings(globalSettingsRes.data);
       if (subCurrentRes?.data) _setActiveSubscription(subCurrentRes.data);
@@ -1019,6 +1054,7 @@ export function useNexusData({
     subscriptionPlans: _plans, fetchPlans, updatePlans, isPlansLoading,
     isStartingSubscription, onStartSubscription, onCancelSubscription, startCheckout, startBillingPortal,
     globalSettings, handleUpdateGlobalSetting,
+    featureLocks, handleFeatureLockToggle, lockableFeatures: getLockableFeatures(),
     isTraining, trainingProgress, onStartTraining, onResetTraining,
     auditLogs: [], isDataLoading, isBackgroundLoading, hasHydrated, clientNames,
     calendar, isCalendarSyncOpen, setIsCalendarSyncOpen, calendarSyncUrl, setCalendarSyncUrl,
@@ -1033,7 +1069,7 @@ export function useNexusData({
   }), [
     profiles, agencies, _agencySettings, operators, sessions, stats, _activeSubscription, _subscriptionHistory, 
     globalFeatures, handleFeatureToggle, _plans, fetchPlans, updatePlans, isPlansLoading, isStartingSubscription, onStartSubscription, onCancelSubscription, startCheckout, startBillingPortal,
-    globalSettings, handleUpdateGlobalSetting, isTraining, trainingProgress, 
+    globalSettings, handleUpdateGlobalSetting, featureLocks, handleFeatureLockToggle, isTraining, trainingProgress,
     onStartTraining, onResetTraining, isDataLoading, isBackgroundLoading, hasHydrated, clientNames, calendar, 
     isCalendarSyncOpen, calendarSyncUrl, isBookingModalOpen, selectedScheduleEvent, newBookingForm, bioText, 
     isSyncing, _syncStatus, _syncProgress, relayOnline, trackers, gpsHistory, trackerProvisioning, isPairingTracker,
