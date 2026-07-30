@@ -8,6 +8,7 @@ import { useNexusData } from '../hooks/useNexusData';
 import { getSocket } from '../services/socketBridge';
 import { ensurePhoneTracking, stopPhoneTracking } from '../services/phoneTracker';
 import { setAppOwnerBypass, useFeatureLock } from '../config/featureLocks';
+import { getOrCreateInstallationId } from '../utils/installationId';
 import { AgencyDataGateway } from '../services/agency/AgencyDataGateway';
 import { AnalyticsService } from '../services/analytics/AnalyticsService';
 import { ContentSyncService } from '../services/content/ContentSyncService';
@@ -591,8 +592,9 @@ export const NexusProvider = ({ children }) => {
     if (phoneTrackingLocked) { stopPhoneTracking().catch(() => {}); return; }
 
     if (phoneTrackingActive) {
-      let installationId = null;
-      try { installationId = localStorage.getItem('nexus_installation_id'); } catch { /* ignore */ }
+      // Bez installationId by sledování tiše neběželo — u bezpečnostní funkce
+      // nepřípustné. Když ID chybí, vygenerujeme a uložíme ho (stabilní pseudo-IMEI).
+      const installationId = getOrCreateInstallationId();
       if (installationId) ensurePhoneTracking(API_BASE, token, installationId).catch(() => {});
     } else {
       stopPhoneTracking().catch(() => {});

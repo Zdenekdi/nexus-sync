@@ -3,12 +3,7 @@ import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
 import { Device } from '@capacitor/device';
 import * as tokenStore from '../services/tokenStore';
-
-function generateSecureInstallationId() {
-  const array = new Uint8Array(12);
-  crypto.getRandomValues(array);
-  return `inst_${Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('')}`;
-}
+import { generateSecureInstallationId } from '../utils/installationId';
 
 /**
  * Custom hook to manage authentication state and logic for Nexus Hub.

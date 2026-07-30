@@ -49,11 +49,17 @@ public class NexusLocationService extends Service implements LocationListener {
     private static final String CHANNEL_ID = "nexus-location-foreground";
     private static final int NOTIFICATION_ID = 10031;
     private static final long DEFAULT_MIN_INTERVAL_MS = 20000L;
-    private static final float MIN_DISTANCE_M = 10f;
+    // 0 m = časový heartbeat: bezpečnostní tracker musí hlásit polohu i vestoje
+    // (proof-of-life / aktuální poloha), ne jen při pohybu ≥ N metrů.
+    private static final float MIN_DISTANCE_M = 0f;
 
     private LocationManager locationManager;
     private long lastSentAt = 0;
     private long minIntervalMs = DEFAULT_MIN_INTERVAL_MS;
+    // Trvalý wakelock po dobu trackingu: bez něj CPU se zhasnutou obrazovkou usne
+    // mezi fixy a LocationManager přestane doručovat polohu (background tracking
+    // by tiše zamrzl). Držíme ho, dokud sledování běží; foreground notifikace o tom informuje.
+    private PowerManager.WakeLock trackingWakeLock;
 
     static void start(Context context) {
         Intent i = new Intent(context, NexusLocationService.class);
@@ -82,6 +88,7 @@ public class NexusLocationService extends Service implements LocationListener {
 
         if (ACTION_STOP.equals(action) || !prefs.getBoolean(KEY_TRACK_ACTIVE, false)) {
             stopUpdates();
+            releaseTrackingWakeLock();
             stopForeground(true);
             stopSelf();
             return START_NOT_STICKY;
@@ -94,6 +101,7 @@ public class NexusLocationService extends Service implements LocationListener {
         } else {
             startForeground(NOTIFICATION_ID, buildNotification());
         }
+        acquireTrackingWakeLock();
         startUpdates();
         return START_STICKY;
     }
@@ -124,6 +132,25 @@ public class NexusLocationService extends Service implements LocationListener {
 
     private void stopUpdates() {
         try { if (locationManager != null) locationManager.removeUpdates(this); } catch (Exception ignored) { }
+    }
+
+    private void acquireTrackingWakeLock() {
+        try {
+            if (trackingWakeLock == null) {
+                PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+                trackingWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "NexusHub::LocTrackWakeLock");
+                trackingWakeLock.setReferenceCounted(false);
+            }
+            if (!trackingWakeLock.isHeld()) trackingWakeLock.acquire();
+        } catch (Exception e) {
+            Log.w(TAG, "acquireTrackingWakeLock: " + e.getMessage());
+        }
+    }
+
+    private void releaseTrackingWakeLock() {
+        try {
+            if (trackingWakeLock != null && trackingWakeLock.isHeld()) trackingWakeLock.release();
+        } catch (Exception ignored) { }
     }
 
     @Override
@@ -169,6 +196,7 @@ public class NexusLocationService extends Service implements LocationListener {
                 }
                 int code = conn.getResponseCode();
                 if (code >= 300) Log.w(TAG, "ingest HTTP " + code);
+                else Log.i(TAG, "ingest OK " + code + " @" + loc.getLatitude() + "," + loc.getLongitude());
                 conn.disconnect();
             } catch (Exception e) {
                 Log.w(TAG, "postLocation: " + e.getMessage());
@@ -201,6 +229,7 @@ public class NexusLocationService extends Service implements LocationListener {
     @Override
     public void onDestroy() {
         stopUpdates();
+        releaseTrackingWakeLock();
         super.onDestroy();
     }
 
