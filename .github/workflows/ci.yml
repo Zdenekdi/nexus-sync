@@ -299,6 +299,11 @@ jobs:
             STRICT_RUNTIME_SECRETS=true node scripts/audit-runtime-secrets.js
             npm install
             ./node_modules/.bin/prisma generate
+            # Aplikuj čekající migrace na prod DB. Bez tohohle kroku se regeneroval jen
+            # Prisma klient (podle schématu), ale DB zůstala pozadu → dotazy na nové
+            # tabulky/relace (např. GpsTrackerLocation) padaly na 500. migrate deploy je
+            # bezpečný (jen aplikuje již vytvořené migrace, nic negeneruje/neshazuje).
+            ./node_modules/.bin/prisma migrate deploy
             pm2 restart nexus-backend-final --update-env || pm2 start server.js --name nexus-backend-final
             sleep 3
             pm2 status nexus-backend-final | grep -q online && echo "Deploy OK" || exit 1
