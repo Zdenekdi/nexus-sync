@@ -45,6 +45,58 @@ jobs:
       - name: Run server tests
         run: cd server && npm test
 
+  # Hlídač schema driftu: postaví DB POUZE z migrací a ověří, že odpovídá
+  # schema.prisma. Dřív se schéma nasazovalo přes `db push`, takže migrace
+  # zůstaly pozadu (chybělo 5 tabulek vč. RefreshToken/ApiKey) a prostředí
+  # postavené ze zdrojáku bylo rozbité. Tenhle job to zachytí hned v PR.
+  schema-drift:
+    name: Schema Drift Check
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: driftcheck
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/driftcheck
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install server dependencies
+        run: cd server && npm ci
+
+      - name: Apply migrations to an empty database
+        run: cd server && npx prisma migrate deploy
+
+      - name: Fail if migrations don't match schema.prisma
+        run: |
+          cd server
+          if ! npx prisma migrate diff \
+              --from-url "$DATABASE_URL" \
+              --to-schema-datamodel prisma/schema.prisma \
+              --exit-code > /dev/null 2>&1; then
+            echo "::error::Migrace neodpovídají schema.prisma — schéma bylo nejspíš změněno přes 'prisma db push' bez migrace."
+            echo "Chybějící změny (SQL, který by DB dorovnal na schéma):"
+            npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --script
+            exit 1
+          fi
+          echo "OK: databáze postavená z migrací odpovídá schema.prisma"
+
   build-client:
     name: Build Client
     runs-on: ubuntu-latest
