@@ -185,7 +185,11 @@ class SafetyController {
                 },
                 include: {
                     profile: {
-                        select: { id: true, name: true, image: true }
+                        // POZOR: Profile NEMÁ pole `image` (fotky žijí v `gallery` jako JSON
+                        // s chráněnými URL). Select neexistujícího pole Prisma odmítne
+                        // validací → celý endpoint padal na 500 a dohled zůstal prázdný.
+                        // Klient si s chybějícím avatarem poradí (fallback na ikonu).
+                        select: { id: true, name: true }
                     },
                     locationPoints: {
                         take: 1,
