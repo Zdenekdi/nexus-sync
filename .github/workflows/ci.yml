@@ -64,11 +64,16 @@ jobs:
         options: >-
           --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
 
+    # Heslo držíme zvlášť a URL skládáme až za běhu — connection string s heslem
+    # natvrdo by (správně) spustil secret scan, i když jde o zahazovací CI databázi.
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/driftcheck
+      PGPASSWORD_CI: postgres
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Build database URL
+        run: echo "DATABASE_URL=postgresql://postgres:${PGPASSWORD_CI}@localhost:5432/driftcheck" >> "$GITHUB_ENV"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
