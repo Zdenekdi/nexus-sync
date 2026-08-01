@@ -182,6 +182,25 @@ android {
     }
 
     signingConfigs {
+        // Distribuované buildy se staví jako debug varianta, takže je Gradle
+        // podepisoval výchozím ~/.android/debug.keystore. Ten si CI runner generuje
+        // znovu při každém běhu → každý build měl JINÝ podpis a aktualizace přes
+        // existující instalaci vždy skončila na INSTALL_FAILED_UPDATE_INCOMPATIBLE
+        // ("Aplikace nebyla nainstalována"). Uživatel musel odinstalovat a přijít
+        // o přihlášení i párování zařízení.
+        //
+        // Když je k dispozici stabilní klíč (v CI ze secretů), podepíšeme jím.
+        // Lokálně proměnné nastavené nejsou a použije se výchozí debug keystore,
+        // takže vývojářský workflow zůstává beze změny.
+        debug {
+            if (System.getenv("ANDROID_SIGNING_KEYSTORE") != null) {
+                storeFile file(System.getenv("ANDROID_SIGNING_KEYSTORE"))
+                storePassword System.getenv("ANDROID_SIGNING_STORE_PASSWORD")
+                keyAlias System.getenv("ANDROID_SIGNING_KEY_ALIAS")
+                keyPassword System.getenv("ANDROID_SIGNING_KEY_PASSWORD")
+            }
+        }
+
         release {
             // First check local.properties (localPropsGlobal)
             if (localPropsGlobal.getProperty("KEYSTORE_FILE") != null) {
