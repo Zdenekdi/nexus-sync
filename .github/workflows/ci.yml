@@ -282,7 +282,7 @@ jobs:
           sleep 15
           curl --retry 5 --retry-delay 5 -f -X POST \
             "${{ secrets.API_BASE_URL }}/api/vultr/upload-apk" \
-            -H "Authorization: Bearer ${{ secrets.DEPLOY_API_TOKEN }}" \
+            -H "Authorization: Bearer ${{ secrets.APK_DEPLOY_TOKEN }}" \
             -F "apk=@nexus-relay-latest.apk" \
             --max-time 120 \
             -o response_relay.json \
@@ -294,7 +294,7 @@ jobs:
           # Pokud endpoint ukládá soubor jen jako jedno hardcodované jméno, přemaže to, ale i tak pošleme
           curl --retry 5 --retry-delay 5 -f -X POST \
             "${{ secrets.API_BASE_URL }}/api/vultr/upload-apk" \
-            -H "Authorization: Bearer ${{ secrets.DEPLOY_API_TOKEN }}" \
+            -H "Authorization: Bearer ${{ secrets.APK_DEPLOY_TOKEN }}" \
             -F "apk=@nexus-full-latest.apk" \
             --max-time 120 \
             -o response_full.json \
@@ -352,6 +352,15 @@ jobs:
               echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" >> .env
               echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}" >> .env
               echo "REQUIRE_STRIPE_CONFIG=true" >> .env
+            fi
+            # Token pro nahrávání APK z CI — server ho musí znát, aby upload prošel.
+            # Doplníme ho sem ze secretu, ať se nemusí ručně editovat .env na serveru
+            # (a ať se nemůže rozejít s hodnotou, kterou posílá CI).
+            if [ -n "${{ secrets.APK_DEPLOY_TOKEN }}" ]; then
+              touch .env
+              grep -vE '^APK_DEPLOY_TOKEN=' .env > .env.tmp || true
+              mv .env.tmp .env
+              echo "APK_DEPLOY_TOKEN=${{ secrets.APK_DEPLOY_TOKEN }}" >> .env
             fi
             STRICT_RUNTIME_SECRETS=true node scripts/audit-runtime-secrets.js
             npm install
