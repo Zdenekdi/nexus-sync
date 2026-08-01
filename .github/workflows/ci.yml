@@ -218,6 +218,28 @@ jobs:
           MAJOR=$(grep "^VERSION_MAJOR=" "$PROPS" | cut -d= -f2)
           echo "Android build version: v${MAJOR}.${NEW}-b${GITHUB_RUN_NUMBER}"
 
+      # Distribuované APK musí být podepsané STÁLÝM klíčem. Bez něj Gradle použije
+      # výchozí debug keystore, který si runner generuje znovu při každém běhu —
+      # každý build má pak jiný podpis a aktualizace přes existující instalaci
+      # skončí na INSTALL_FAILED_UPDATE_INCOMPATIBLE. Radši build shodíme, než
+      # abychom znovu vydali nenainstalovatelnou aktualizaci.
+      - name: Decode Android signing keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_SIGNING_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "::error::ANDROID_SIGNING_KEYSTORE_BASE64 chybí — build by měl nestabilní podpis a uživatelé by aktualizaci nenainstalovali."
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/signing"
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/signing/nexus.keystore"
+          {
+            echo "ANDROID_SIGNING_KEYSTORE=$RUNNER_TEMP/signing/nexus.keystore"
+            echo "ANDROID_SIGNING_STORE_PASSWORD=${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}"
+            echo "ANDROID_SIGNING_KEY_PASSWORD=${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}"
+            echo "ANDROID_SIGNING_KEY_ALIAS=${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}"
+          } >> "$GITHUB_ENV"
+
       - name: Install client dependencies
         run: cd client && npm install --legacy-peer-deps
 
@@ -253,6 +275,24 @@ jobs:
           
           cp "$FULL_APK_PATH" nexus-full-latest.apk
           cp "$RELAY_APK_PATH" nexus-relay-latest.apk
+
+      # Pojistka: ověř, že APK opravdu podepsal očekávaný klíč. Kdyby konfigurace
+      # podepisování někdy tiše vypadla, Gradle by sáhl po výchozím debug keystoru
+      # a my bychom zase vydali build, který nejde nainstalovat jako aktualizace.
+      - name: Verify APKs are signed with the stable key
+        run: |
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          EXPECTED=$(keytool -list -v -keystore "$ANDROID_SIGNING_KEYSTORE" \
+            -storepass "$ANDROID_SIGNING_STORE_PASSWORD" 2>/dev/null \
+            | grep -i "SHA256:" | head -1 | sed 's/.*SHA256: //' | tr -d ' :' | tr 'A-Z' 'a-z')
+          for apk in nexus-full-latest.apk nexus-relay-latest.apk; do
+            ACTUAL=$("$APKSIGNER" verify --print-certs "$apk" | grep -i "SHA-256 digest" | head -1 | sed 's/.*: //' | tr -d ' ' | tr 'A-Z' 'a-z')
+            if [ "$ACTUAL" != "$EXPECTED" ]; then
+              echo "::error::$apk je podepsané jiným klíčem ($ACTUAL != $EXPECTED) — aktualizace by nešly nainstalovat."
+              exit 1
+            fi
+            echo "OK: $apk podepsáno očekávaným klíčem"
+          done
 
       - name: Upload APKs jako artifacts (pro ruční stažení)
         uses: actions/upload-artifact@v4
