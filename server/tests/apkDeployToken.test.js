@@ -96,6 +96,34 @@ describe('POST /api/vultr/upload-apk — deploy token', () => {
     expect(res.status).not.toBe(403);
   });
 
+  // Metadata se ukládají per varianta, ale endpoint dřív vracel natvrdo relay —
+  // Nexus Hub (full) tak dostával verzi Relay aplikace a nabízel cizí APK.
+  it('serves per-variant metadata', async () => {
+    const fs = require('fs');
+    const path = require('path');
+    const dir = path.join(__dirname, '../public/downloads');
+    fs.mkdirSync(dir, { recursive: true });
+    const written = [];
+    for (const [variant, pkg] of [['full', 'com.nexushub.app'], ['relay', 'com.nexushub.relay']]) {
+      const file = path.join(dir, `nexus-${variant}.meta.json`);
+      if (!fs.existsSync(file)) {
+        fs.writeFileSync(file, JSON.stringify({ version: `1.0-${variant}`, packageName: pkg }));
+        written.push(file);
+      }
+    }
+    try {
+      const full = await request(app).get('/api/vultr/latest-version?variant=full');
+      const relay = await request(app).get('/api/vultr/latest-version?variant=relay');
+      expect(full.body.packageName).toBe('com.nexushub.app');
+      expect(relay.body.packageName).toBe('com.nexushub.relay');
+      // bez parametru zůstává relay kvůli starším klientům
+      const def = await request(app).get('/api/vultr/latest-version');
+      expect(def.body.packageName).toBe('com.nexushub.relay');
+    } finally {
+      written.forEach(f => { try { fs.unlinkSync(f); } catch { /* ignore */ } });
+    }
+  });
+
   it('does not let a non-owner JWT upload', async () => {
     const res = await request(app)
       .post('/api/vultr/upload-apk')

@@ -168,7 +168,11 @@ router.get("/apk-info", async (req, res) => {
 // se NIKDY nezobrazil. Zařízení tak zůstávala na staré verzi.
 // Vrací pouze metadata buildu (verze, velikost, odkaz ke stažení), nic citlivého.
 router.get("/latest-version", async (req, res) => {
-  const metaPath = path.join(DOWNLOADS_DIR, "nexus-relay.meta.json");
+  // Upload zapisuje metadata zvlášť pro každou variantu, ale tahle cesta dřív
+  // vracela natvrdo relay — takže Nexus Hub (full) dostával verzi Relay aplikace
+  // a nabízel k instalaci cizí APK. Default zůstává relay kvůli starším klientům.
+  const variant = req.query.variant === "full" ? "full" : "relay";
+  const metaPath = path.join(DOWNLOADS_DIR, `nexus-${variant}.meta.json`);
   if (!fs.existsSync(metaPath)) {
     return res.status(404).json({ message: "No version info available" });
   }
