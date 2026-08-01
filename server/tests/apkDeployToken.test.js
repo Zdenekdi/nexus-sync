@@ -87,6 +87,15 @@ describe('POST /api/vultr/upload-apk — deploy token', () => {
     expect(res.status).toBe(400); // prošel autentizací, chybí soubor
   });
 
+  // Regrese: /latest-version leželo za requireAppOwner, takže kontrola aktualizací
+  // (UpdateBanner volá bez tokenu) vždy skončila na 401 a banner se nikdy neukázal.
+  it('serves /latest-version without authentication', async () => {
+    const res = await request(app).get('/api/vultr/latest-version');
+    expect([200, 404]).toContain(res.status); // 404 = jen chybí meta soubor, ne auth
+    expect(res.status).not.toBe(401);
+    expect(res.status).not.toBe(403);
+  });
+
   it('does not let a non-owner JWT upload', async () => {
     const res = await request(app)
       .post('/api/vultr/upload-apk')

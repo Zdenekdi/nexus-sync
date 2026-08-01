@@ -162,6 +162,24 @@ router.get("/apk-info", async (req, res) => {
   });
 });
 
+// Kontrola dostupné verze — VEŘEJNÁ, stejně jako samotné stahování APK níž.
+// Dřív tahle cesta ležela až za authMiddleware + requireAppOwner, jenže UpdateBanner
+// ji volá bez tokenu → vracela 401, chyba se jen zalogovala a banner s aktualizací
+// se NIKDY nezobrazil. Zařízení tak zůstávala na staré verzi.
+// Vrací pouze metadata buildu (verze, velikost, odkaz ke stažení), nic citlivého.
+router.get("/latest-version", async (req, res) => {
+  const metaPath = path.join(DOWNLOADS_DIR, "nexus-relay.meta.json");
+  if (!fs.existsSync(metaPath)) {
+    return res.status(404).json({ message: "No version info available" });
+  }
+  try {
+    const fileContent = await fs.promises.readFile(metaPath, "utf8");
+    res.json(JSON.parse(fileContent));
+  } catch (err) {
+    res.status(500).json({ message: "Error reading version info" });
+  }
+});
+
 router.get("/download-relay.apk", (req, res) => {
   const apkPath = path.join(DOWNLOADS_DIR, "nexus-relay-latest.apk");
   if (fs.existsSync(apkPath)) {
@@ -441,21 +459,7 @@ router.post("/upload-agent", (req, res, next) => {
   }
 });
 
-router.get("/latest-version", async (req, res) => {
-  const metaPath = path.join(DOWNLOADS_DIR, "nexus-relay.meta.json");
-  if (!fs.existsSync(metaPath)) {
-    return res.status(404).json({ message: "No version info available" });
-  }
-  try {
-    const fileContent = await fs.promises.readFile(metaPath, "utf8");
-    const meta = JSON.parse(fileContent);
-    res.json(meta);
-  } catch (err) {
-    res.status(500).json({ message: "Error reading version info" });
-  }
-});
-
-const otaUpload = multer({ 
+const otaUpload = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => cb(null, DOWNLOADS_DIR),
     filename: (req, file, cb) => cb(null, "nexus-relay.zip")
