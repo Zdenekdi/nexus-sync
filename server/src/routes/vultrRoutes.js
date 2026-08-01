@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const axios = require("axios");
+const crypto = require("crypto");
 const { NodeSSH } = require("node-ssh");
 const multer = require("multer");
 const path = require("path");
@@ -204,11 +205,52 @@ router.get("/agent-downloads", async (req, res) => {
   });
 });
 
+// ── Deploy token pro nahrání APK z CI ────────────────────────────────────────
+//
+// CI nahrává sestavené APK neinteraktivně, takže nemá JWT App Ownera. Dřív se
+// posílal dlouhodobý JWT jako secret — ten vypršel a upload začal tiše padat na
+// 401, takže se nové buildy přestaly distribuovat na zařízení. Pro TUTO JEDNU
+// cestu proto povolíme dedikovaný statický token; všechno ostatní ve vultrRoutes
+// zůstává owner-only.
+//
+// Pozor na dopad: kdo má token, může nahrát APK, které si uživatelé nainstalují.
+// Proto: token musí být dostatečně dlouhý, porovnává se v konstantním čase (přes
+// hash, ať neuniká ani délka) a bez nastavené proměnné je tahle cesta VYPNUTÁ.
+const APK_DEPLOY_TOKEN_MIN_LENGTH = 32;
+
+function hasValidApkDeployToken(req) {
+  const expected = process.env.APK_DEPLOY_TOKEN;
+  if (!expected || expected.length < APK_DEPLOY_TOKEN_MIN_LENGTH) return false;
+
+  const header = req.headers.authorization || '';
+  if (!header.startsWith('Bearer ')) return false;
+  const provided = header.slice(7);
+  if (!provided) return false;
+
+  const providedHash = crypto.createHash('sha256').update(provided).digest();
+  const expectedHash = crypto.createHash('sha256').update(expected).digest();
+  return crypto.timingSafeEqual(providedHash, expectedHash);
+}
+
+// Platí výhradně pro upload APK — ne pro ostatní (infrastrukturní) vultr cesty.
+function isApkDeployRequest(req) {
+  return req.method === 'POST' && req.path === '/upload-apk' && hasValidApkDeployToken(req);
+}
+
 // Apply auth to all OTHER vultr routes
-router.use(authMiddleware);
+router.use((req, res, next) => {
+  if (isApkDeployRequest(req)) {
+    logger.info('[Vultr] APK upload authorized via deploy token');
+    return next();
+  }
+  return authMiddleware(req, res, next);
+});
 
 // Infrastructure operations can read secrets or control servers; keep them owner-only.
-router.use(requireAppOwner);
+router.use((req, res, next) => {
+  if (isApkDeployRequest(req)) return next();
+  return requireAppOwner(req, res, next);
+});
 
 // ── Vultr API ─────────────────────────────────────────────────────────────────
 router.get("/status", async (req, res) => {

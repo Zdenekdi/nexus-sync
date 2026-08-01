@@ -282,7 +282,7 @@ jobs:
           sleep 15
           curl --retry 5 --retry-delay 5 -f -X POST \
             "${{ secrets.API_BASE_URL }}/api/vultr/upload-apk" \
-            -H "Authorization: Bearer ${{ secrets.DEPLOY_API_TOKEN }}" \
+            -H "Authorization: Bearer ${{ secrets.APK_DEPLOY_TOKEN }}" \
             -F "apk=@nexus-relay-latest.apk" \
             --max-time 120 \
             -o response_relay.json \
@@ -294,7 +294,7 @@ jobs:
           # Pokud endpoint ukládá soubor jen jako jedno hardcodované jméno, přemaže to, ale i tak pošleme
           curl --retry 5 --retry-delay 5 -f -X POST \
             "${{ secrets.API_BASE_URL }}/api/vultr/upload-apk" \
-            -H "Authorization: Bearer ${{ secrets.DEPLOY_API_TOKEN }}" \
+            -H "Authorization: Bearer ${{ secrets.APK_DEPLOY_TOKEN }}" \
             -F "apk=@nexus-full-latest.apk" \
             --max-time 120 \
             -o response_full.json \
