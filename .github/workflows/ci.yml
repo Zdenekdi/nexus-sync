@@ -353,6 +353,15 @@ jobs:
               echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}" >> .env
               echo "REQUIRE_STRIPE_CONFIG=true" >> .env
             fi
+            # Token pro nahrávání APK z CI — server ho musí znát, aby upload prošel.
+            # Doplníme ho sem ze secretu, ať se nemusí ručně editovat .env na serveru
+            # (a ať se nemůže rozejít s hodnotou, kterou posílá CI).
+            if [ -n "${{ secrets.APK_DEPLOY_TOKEN }}" ]; then
+              touch .env
+              grep -vE '^APK_DEPLOY_TOKEN=' .env > .env.tmp || true
+              mv .env.tmp .env
+              echo "APK_DEPLOY_TOKEN=${{ secrets.APK_DEPLOY_TOKEN }}" >> .env
+            fi
             STRICT_RUNTIME_SECRETS=true node scripts/audit-runtime-secrets.js
             npm install
             ./node_modules/.bin/prisma generate
