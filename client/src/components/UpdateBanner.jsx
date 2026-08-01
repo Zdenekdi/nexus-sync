@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Download, X, Sparkles, RefreshCw } from 'lucide-react';
 import axios from 'axios';
-import { APP_VERSION } from '../constants/config';
+import { App } from '@capacitor/app';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
@@ -14,14 +14,22 @@ const UpdateBanner = () => {
   useEffect(() => {
     const checkVersion = async () => {
       try {
-        const { data } = await axios.get(`${API_BASE}/vultr/latest-version`);
-        // Basic version comparison (e.g. v3.21.0 vs v3.22.0)
-        // We strip 'v' and compare strings or use a more robust check
-        const remoteVersion = data.version.replace('v', '');
-        const localVersion = APP_VERSION.replace('v', '').replace('-auto', '');
+        // Verzi bereme z nainstalované aplikace, ne z build konstanty: porovnáváme
+        // versionCode (číslo), takže banner naskočí jen když je na serveru opravdu
+        // novější build. Dřív se porovnávaly různě formátované řetězce a nabídka
+        // se ukazovala i na aktuální verzi.
+        const info = await App.getInfo().catch(() => null);
+        if (!info) return;   // web — aktualizace APK se ho netýká
 
-        if (remoteVersion !== localVersion) {
-          console.log(`[Update] New version available: ${data.version} (Local: ${APP_VERSION})`);
+        const variant = info.id === 'com.nexushub.relay' ? 'relay' : 'full';
+        const { data } = await axios.get(`${API_BASE}/vultr/latest-version`, { params: { variant } });
+
+        const localCode = Number(info.build);
+        const remoteCode = Number(data?.versionCode);
+        if (!localCode || !remoteCode) return;
+
+        if (remoteCode > localCode) {
+          console.log(`[Update] New version available: ${data.version} (${remoteCode} > ${localCode})`);
           setUpdateInfo(data);
           setIsVisible(true);
         }
@@ -38,31 +46,27 @@ const UpdateBanner = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // OTA (Capgo) umí vyměnit jen webový balík — nativní změny se takhle doručit
+  // nedají. Server navíc žádný OTA balík nepublikuje a URL se dřív "odhadovala"
+  // záměnou .apk → .zip, což vedlo na neexistující adresu a hlášku
+  // „Aktualizace selhala". Bleskovou cestu proto nabízíme jen tehdy, když server
+  // OTA balík opravdu ohlásí (otaUrl); jinak posíláme uživatele na instalaci APK.
+  const hasOta = Boolean(updateInfo?.otaUrl);
+
   const handleOTAUpdate = async () => {
-    if (isUpdating) return;
+    if (isUpdating || !hasOta) return;
     setIsUpdating(true);
     try {
-      console.log("[OTA] Starting update for version:", updateInfo.version);
-      
-      // 1. Download the ZIP from server (Nexus API should provide this)
-      // Note: We expect the server to have a zip at /downloads/nexus-relay.zip
-      const updateUrl = updateInfo.downloadUrl.replace('.apk', '.zip');
-      
+      console.log('[OTA] Starting update for version:', updateInfo.version);
       const version = await CapacitorUpdater.download({
-        url: updateUrl,
+        url: updateInfo.otaUrl,
         version: updateInfo.version
       });
-
-      console.log("[OTA] Update downloaded, applying...");
-      
-      // 2. Set the new version as active
       await CapacitorUpdater.set(version);
-      
-      // App will reload automatically or we can force it
-      console.log("[OTA] Update applied successfully!");
+      console.log('[OTA] Update applied successfully!');
     } catch (err) {
-      console.error("[OTA] Update failed:", err.message);
-      alert("Aktualizace selhala: " + err.message);
+      console.error('[OTA] Update failed:', err.message);
+      alert('Aktualizace selhala: ' + err.message);
       setIsUpdating(false);
     }
   };
@@ -137,11 +141,12 @@ const UpdateBanner = () => {
         >
           <Download size={16} /> STÁHNOUT APK
         </a>
-        <button 
+        {hasOta && (
+        <button
           onClick={handleOTAUpdate}
           disabled={isUpdating}
-          style={{ 
-            flex: 1, 
+          style={{
+            flex: 1,
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center', 
@@ -159,6 +164,7 @@ const UpdateBanner = () => {
           <RefreshCw size={16} className={isUpdating ? 'animate-spin' : ''} /> 
           {isUpdating ? 'AKTUALIZUJI...' : 'BLESKOVÝ UPDATE'}
         </button>
+        )}
       </div>
 
       {isUpdating && (
