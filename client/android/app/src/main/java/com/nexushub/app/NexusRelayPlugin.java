@@ -7,6 +7,8 @@ import android.app.KeyguardManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import androidx.core.content.ContextCompat;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -833,6 +835,98 @@ public class NexusRelayPlugin extends Plugin {
             call.resolve();
         } catch (Exception e) {
             call.reject("Could not open app settings: " + e.getMessage());
+        }
+    }
+
+    // ── Připravenost sledování polohy (onboarding) ───────────────────────
+    //
+    // Sledování polohy na pozadí spolehlivě běží jen když je splněno VÍC věcí najednou.
+    // Systémový dialog pokryje jen část — „vždy" u polohy a autostart na MIUI apod. si
+    // uživatel musí zapnout ručně v nastavení. Tohle vrátí stav všech podmínek, aby
+    // průvodce v aplikaci uměl říct, co konkrétně ještě chybí (a neslibovat sledování,
+    // které by ve skutečnosti neběželo).
+    @PluginMethod
+    public void checkTrackingReadiness(PluginCall call) {
+        JSObject ret = new JSObject();
+        Context ctx = getContext();
+
+        boolean fine = ContextCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION)
+            == PackageManager.PERMISSION_GRANTED;
+        ret.put("fineLocation", fine);
+
+        // ACCESS_BACKGROUND_LOCATION existuje až od Androidu 10; níž stačí fine.
+        boolean background = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q
+            ? fine
+            : ContextCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+        ret.put("backgroundLocation", background);
+
+        // Foreground service potřebuje notifikaci (Android 13+ ji podmiňuje oprávněním).
+        boolean notifications = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
+            || ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS)
+                == PackageManager.PERMISSION_GRANTED;
+        ret.put("notifications", notifications);
+
+        PowerManager pm = (PowerManager) ctx.getSystemService(Context.POWER_SERVICE);
+        boolean batteryUnrestricted = Build.VERSION.SDK_INT < Build.VERSION_CODES.M
+            || (pm != null && pm.isIgnoringBatteryOptimizations(ctx.getPackageName()));
+        ret.put("batteryUnrestricted", batteryUnrestricted);
+
+        ret.put("manufacturer", Build.MANUFACTURER == null ? "" : Build.MANUFACTURER);
+        // Autostart je vlastnost některých OEM nadstaveb (MIUI, EMUI, ColorOS, FuntouchOS).
+        // Jeho stav se z aplikace zjistit NEDÁ — umíme jen otevřít obrazovku a poprosit.
+        ret.put("autostartSupported", resolveAutostartIntent() != null);
+
+        call.resolve(ret);
+    }
+
+    // Obrazovka „autostart / spouštění na pozadí" se u každého OEM jmenuje jinak.
+    // Vracíme první intent, který na tomhle zařízení skutečně existuje, jinak null.
+    private Intent resolveAutostartIntent() {
+        String[][] candidates = new String[][] {
+            // Xiaomi / Redmi / POCO (MIUI, HyperOS)
+            { "com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity" },
+            // Huawei / Honor (EMUI)
+            { "com.huawei.systemmanager", "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity" },
+            { "com.huawei.systemmanager", "com.huawei.systemmanager.optimize.process.ProtectActivity" },
+            // Oppo / Realme (ColorOS)
+            { "com.coloros.safecenter", "com.coloros.safecenter.permission.startup.StartupAppListActivity" },
+            { "com.oppo.safe", "com.oppo.safe.permission.startup.StartupAppListActivity" },
+            // Vivo (FuntouchOS / OriginOS)
+            { "com.vivo.permissionmanager", "com.vivo.permissionmanager.activity.BgStartUpManagerActivity" },
+            // Letv / OnePlus starší
+            { "com.letv.android.letvsafe", "com.letv.android.letvsafe.AutobootManageActivity" },
+        };
+        PackageManager packageManager = getContext().getPackageManager();
+        for (String[] c : candidates) {
+            Intent intent = new Intent();
+            intent.setComponent(new ComponentName(c[0], c[1]));
+            if (intent.resolveActivity(packageManager) != null) {
+                return intent;
+            }
+        }
+        return null;
+    }
+
+    @PluginMethod
+    public void openAutostartSettings(PluginCall call) {
+        JSObject ret = new JSObject();
+        Intent intent = resolveAutostartIntent();
+        if (intent == null) {
+            // Zařízení autostart nemá (čistý Android) — není co otevírat.
+            ret.put("opened", false);
+            call.resolve(ret);
+            return;
+        }
+        try {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(intent);
+            ret.put("opened", true);
+            call.resolve(ret);
+        } catch (Exception e) {
+            android.util.Log.w("NexusRelay", "openAutostartSettings: " + e.getMessage());
+            ret.put("opened", false);
+            call.resolve(ret);
         }
     }
 

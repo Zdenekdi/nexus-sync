@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import FeatureLock from '../FeatureLock';
+import TrackingSetupGuide from './TrackingSetupGuide';
+import { getTrackingReadiness, isReadinessBlocking } from '../../services/trackingReadiness';
 import { Shield, Clock, CheckCircle, LogOut, Zap, Mic, MicOff, Battery, Phone, PhoneOff, UserCheck, XCircle, Bluetooth, Activity, Settings, ChevronDown, Volume2 } from 'lucide-react';
 import { useNexus } from '../../context/ContextHook';
 
@@ -18,6 +20,19 @@ const SafetyControlCard = () => {
 
   const isCz = lang === 'cz' || lang === 'cs';
   const suggestions = SAFETY_SUGGESTIONS || ['15m', '30m', '45m', '60m', '1.5h', '2h'];
+
+  // Průvodce nastavením sledování polohy. Zapnout tracking bez potřebných oprávnění
+  // by znamenalo, že se tiše zastaví — u bezpečnostní funkce nepřípustné, takže
+  // uživatele nejdřív provedeme nastavením a teprve pak přepneme.
+  const [showTrackingSetup, setShowTrackingSetup] = useState(false);
+
+  const handleTrackingToggle = async () => {
+    if (!setManualTracking) return;
+    if (manualTrackingOn) { setManualTracking(false); return; }   // vypnout jde vždy
+    const readiness = await getTrackingReadiness();
+    if (isReadinessBlocking(readiness)) { setShowTrackingSetup(true); return; }
+    setManualTracking(true);
+  };
 
   const handleSuggestionClick = (s) => {
     let mins = 60;
@@ -336,7 +351,7 @@ const SafetyControlCard = () => {
           background tracking ověřený na zařízení (bezpečnostní funkce). */}
       <FeatureLock featureKey="phone-tracking" compact>
       <button
-        onClick={() => setManualTracking && setManualTracking(!manualTrackingOn)}
+        onClick={handleTrackingToggle}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           width: '100%', padding: '0.7rem 0.9rem', marginBottom: '0.75rem',
@@ -368,6 +383,14 @@ const SafetyControlCard = () => {
         </div>
       </button>
       </FeatureLock>
+
+      {showTrackingSetup && (
+        <TrackingSetupGuide
+          isCz={isCz}
+          onClose={() => setShowTrackingSetup(false)}
+          onReady={() => { setShowTrackingSetup(false); setManualTracking && setManualTracking(true); }}
+        />
+      )}
 
       {/* Check-in Timer Controls */}
       <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
