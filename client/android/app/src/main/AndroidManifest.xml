@@ -4,6 +4,9 @@
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Fantomový hovor se musí zobrazit přes zámek jako skutečný hovor. -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.READ_SMS" />
     <uses-permission android:name="android.permission.SEND_SMS" />
@@ -109,6 +112,16 @@
         </activity>
 
         <!-- Service pro MMS (povinná pro DEFAULT SMS APP) -->
+        <activity
+            android:name=".NexusGhostCallActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:showOnLockScreen="true"
+            android:turnScreenOn="true"
+            android:showWhenLocked="true"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
+
         <service
             android:name=".NexusMmsService"
             android:exported="true"
