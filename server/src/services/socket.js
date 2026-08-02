@@ -90,6 +90,13 @@ const init = (server) => {
   io.on('connection', (socket) => {
     const { agencyId, userId } = socket.user;
     
+    // Vlastní místnost uživatele — pro události mířené na konkrétní osobu, ne na
+    // celou agenturu (fantomový hovor smí zazvonit jen modelce, ne operátorům).
+    // Zároveň jde díky ní poznat, jestli je její zařízení opravdu připojené.
+    if (userId) {
+      socket.join(`user:${userId}`);
+    }
+
     // Join a room for the specific agency
     if (agencyId) {
       console.log(`[Socket-DEBUG] User ${userId} joining room agency_${agencyId}`);

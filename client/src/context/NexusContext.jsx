@@ -479,14 +479,12 @@ export const NexusProvider = ({ children }) => {
     // Fantomový hovor od operátora. Event chodí do celé agentury, takže si ho
     // vezme jen zařízení té modelky, které se týká — operátoři ho ignorují.
     (d) => {
-      const targetId = d?.profileId;
-      if (!targetId) return;
-      // Event chodí do roomu celé agentury. Zobrazit ho smí VÝHRADNĚ telefon
-      // modelky — operátor/manažer má ve svých profilech i cizí profily, takže
-      // samotná shoda profileId nestačí a hovor by zazvonil i jemu.
+      if (!d?.profileId) return;
+      // Server posílá událost do osobní místnosti modelky, takže sem dorazí jen
+      // tomu, komu patří. Role se ověřuje ještě tady jako druhá pojistka — hovor
+      // nesmí vyskočit operátorovi. Shodu profilu NEkontrolujeme: modelka svůj
+      // profil ve `myProfiles` (spravované profily) nemá.
       if (!activeOperatorRef.current?.isModel) return;
-      const mine = (myProfilesRef.current || []).some(p => String(p.id) === String(targetId));
-      if (!mine) return;
       setGhostCallScheduledAt(null);   // vzdálený hovor zvoní hned, žádný odpočet
       setIncomingGhostCall(true);
     }

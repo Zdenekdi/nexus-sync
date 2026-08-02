@@ -389,23 +389,39 @@ class SafetyController {
             // ok:true — operátor viděl „úspěch", ale na telefon nedorazilo nic. U funkce,
             // která má modelce dát záminku k odchodu, je předstíraný úspěch nebezpečný,
             // takže teď hlásíme, jestli se to opravdu podařilo doručit.
+            // Komu hovor patří: uživatelům (modelkám) navázaným na tenhle profil.
+            // Broadcast do celé agentury nefungoval — modelka nemá profil ve svém
+            // `myProfiles` (to je seznam SPRAVOVANÝCH profilů, ne "můj profil"), takže
+            // si událost nevzala, zatímco operátoři ji dostávali zbytečně.
+            const recipients = await prisma.user.findMany({
+                where: {
+                    assignedProfiles: { some: { id: profile.id } },
+                    role: { name: 'Model' }
+                },
+                select: { id: true }
+            });
+
             const { getIO, getRoomSize } = require('../services/socket');
-            const room = `agency_${profile.agencyId}`;
-            // Pozor na význam: emit sám o sobě nic nedokazuje. Hlásíme zvlášť, že se
-            // událost odeslala, a kolik klientů je v roomu — víc se ze socketu zjistit
-            // nedá (room je celá agentura, ne konkrétní telefon).
             let socketEmitted = false;
             let clientsOnline = 0;
             try {
-                getIO().to(room).emit('ghost_call', {
-                    profileId: profile.id,
-                    profileName: profile.name,
-                    triggeredAt: new Date().toISOString()
-                });
-                socketEmitted = true;
-                clientsOnline = getRoomSize(room) || 0;
+                const io = getIO();
+                for (const user of recipients) {
+                    const room = `user:${user.id}`;
+                    io.to(room).emit('ghost_call', {
+                        profileId: profile.id,
+                        profileName: profile.name,
+                        triggeredAt: new Date().toISOString()
+                    });
+                    clientsOnline += getRoomSize(room) || 0;
+                }
+                socketEmitted = recipients.length > 0;
             } catch (err) {
                 logger.warn(`[Ghost Call] Socket emit failed: ${err.message}`);
+            }
+
+            if (!recipients.length) {
+                logger.warn(`[Ghost Call] Profile ${profile.id} has no Model user linked — nobody to ring`);
             }
 
             // Push MUSÍ mířit na telefon modelky. sendSafetyPush by ho poslal

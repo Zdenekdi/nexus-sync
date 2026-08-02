@@ -74,7 +74,7 @@ const SafetyControlCard = () => {
         </div>
         <div style={{ flex: 1, background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
           <Zap size={14} color="#3b82f6" />
-          <div style={{ fontSize: '0.7rem', fontWeight: 600 }}>{isCz ? 'Systém' : 'System'} {t.secure}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600 }}>{isCz ? 'Systém' : 'System'} {t('secure')}</div>
         </div>
       </div>
 
@@ -210,7 +210,7 @@ const SafetyControlCard = () => {
             </div>
           </div>
           <div>
-            <div style={{ fontWeight: 800, color: voiceGuardianActive ? 'white' : 'var(--text-secondary)' }}>{t.voiceGuardian || 'Voice SOS'}</div>
+            <div style={{ fontWeight: 800, color: voiceGuardianActive ? 'white' : 'var(--text-secondary)' }}>{t('voiceGuardian')}</div>
             <div style={{ fontSize: '0.6rem', opacity: 0.6 }}>{voiceGuardianActive ? (isCz ? 'Aktivně naslouchá' : 'Listening...') : (isCz ? 'Hlasové SOS' : 'Voice activation')}</div>
           </div>
         </div>
@@ -309,11 +309,11 @@ const SafetyControlCard = () => {
               <Phone size={18} />
             </div>
             <div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'white' }}>{t.ghostCall}</div>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'white' }}>{t('ghostCall')}</div>
               <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
                 {ghostCallScheduledAt 
                   ? (isCz ? `Vyzvánění začne za ${Math.ceil((ghostCallScheduledAt - now)/1000)}s` : `Calling in ${Math.ceil((ghostCallScheduledAt - now)/1000)}s`)
-                  : t.ghostCallDesc}
+                  : t('ghostCallDesc')}
               </div>
             </div>
           </div>
