@@ -1,6 +1,7 @@
 const prisma = require('../services/db');
 const logger = require('../services/logger');
 const safetyService = require('../services/safetyService');
+const { sendGhostCallPush } = require('../services/pushService');
 
 // Stavy, ve kterých je relace "živá" — drží se stejné definice jako trackerController.
 const ACTIVE_SESSION_STATES = ['CHECKED_IN', 'GRACE', 'ESCALATED'];
@@ -368,13 +369,76 @@ class SafetyController {
     async triggerGhostCall(req, res) {
         try {
             const { profileId } = req.body;
-            const { agencyId } = req.user;
-            
-            logger.info(`[Ghost Call] Triggered for profile ${profileId} in agency ${agencyId}`);
-            
-            // In production, this would call safetyService.sendPush(profileId, 'GHOST_CALL')
-            res.json({ ok: true, message: 'Ghost call triggered successfully' });
+            const { role, agencyId: userAgencyId } = req.user || {};
+            const isAppOwner = role?.isAppOwner;
+
+            if (!profileId) {
+                return res.status(400).json({ message: 'profileId is required' });
+            }
+
+            const profile = await prisma.profile.findUnique({
+                where: { id: profileId },
+                select: { id: true, name: true, agencyId: true }
+            });
+            if (!profile) return res.status(404).json({ message: 'Profile not found' });
+            if (!isAppOwner && profile.agencyId !== userAgencyId) {
+                return res.status(403).json({ message: 'Profile not in your agency' });
+            }
+
+            // Doručení do telefonu modelky. Dřív tahle metoda jen zalogovala a vrátila
+            // ok:true — operátor viděl „úspěch", ale na telefon nedorazilo nic. U funkce,
+            // která má modelce dát záminku k odchodu, je předstíraný úspěch nebezpečný,
+            // takže teď hlásíme, jestli se to opravdu podařilo doručit.
+            const { getIO, getRoomSize } = require('../services/socket');
+            const room = `agency_${profile.agencyId}`;
+            // Pozor na význam: emit sám o sobě nic nedokazuje. Hlásíme zvlášť, že se
+            // událost odeslala, a kolik klientů je v roomu — víc se ze socketu zjistit
+            // nedá (room je celá agentura, ne konkrétní telefon).
+            let socketEmitted = false;
+            let clientsOnline = 0;
+            try {
+                getIO().to(room).emit('ghost_call', {
+                    profileId: profile.id,
+                    profileName: profile.name,
+                    triggeredAt: new Date().toISOString()
+                });
+                socketEmitted = true;
+                clientsOnline = getRoomSize(room) || 0;
+            } catch (err) {
+                logger.warn(`[Ghost Call] Socket emit failed: ${err.message}`);
+            }
+
+            // Push MUSÍ mířit na telefon modelky. sendSafetyPush by ho poslal
+            // přiřazeným operátorům/manažerům jako nouzový poplach — tedy špatnému
+            // publiku i se špatným obsahem.
+            let pushDelivered = false;
+            try {
+                const result = await sendGhostCallPush({
+                    agencyId: profile.agencyId,
+                    profileId: profile.id,
+                    profileName: profile.name
+                });
+                pushDelivered = (result?.sent ?? 0) > 0;
+            } catch (err) {
+                logger.warn(`[Ghost Call] Push failed: ${err.message}`);
+            }
+
+            logger.info(`[Ghost Call] profile=${profile.id} emitted=${socketEmitted} online=${clientsOnline} push=${pushDelivered}`);
+
+            // Nikdo online a push nedoručen = hovor nikam nedorazil. Operátor to musí vědět.
+            if ((!socketEmitted || clientsOnline === 0) && !pushDelivered) {
+                return res.status(502).json({
+                    ok: false,
+                    socketEmitted,
+                    clientsOnline,
+                    pushDelivered,
+                    message: 'Ghost call could not be delivered to the device'
+                });
+            }
+
+            res.json({ ok: true, socketEmitted, clientsOnline, pushDelivered });
         } catch (error) {
+            logger.error('Error triggering ghost call:', error);
             res.status(500).json({ message: 'Failed to trigger ghost call' });
         }
     }

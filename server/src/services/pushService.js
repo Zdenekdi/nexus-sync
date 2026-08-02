@@ -311,6 +311,40 @@ const sendRelaySmsPush = async ({ agencyId, profileId, to, text, messageId }) =>
   return sendMulticast(tokenList, payload);
 };
 
+/**
+ * Push fantomového hovoru — MÍŘÍ NA TELEFON MODELKY.
+ *
+ * Záměrně nepoužívá sendSafetyPush: ten přes getSafetyTokens cílí na přiřazené
+ * operátory/manažery a posílá payload nouzového poplachu. U fantomového hovoru
+ * by to znamenalo, že se rozezvoní operátorům poplach, zatímco modelce, které
+ * má hovor pomoct odejít, nedorazí nic.
+ */
+const sendGhostCallPush = async ({ agencyId, profileId, profileName }) => {
+  const binding = await prisma.deviceBinding.findFirst({
+    where: { profileId, active: true, ...(agencyId ? { agencyId } : {}) },
+    select: { userId: true }
+  });
+  if (!binding) return { sent: 0, failed: 0, details: 'No active device binding for this profile' };
+
+  const tokens = await prisma.pushDevice.findMany({
+    where: { userId: binding.userId, active: true },
+    select: { token: true }
+  });
+  const tokenList = tokens.map(t => t.token).filter(Boolean);
+  if (!tokenList.length) return { sent: 0, failed: 0, details: 'No push tokens for the model device' };
+
+  return sendMulticast(tokenList, {
+    data: {
+      type: 'ghost_call',
+      profileId: ensureString(profileId),
+      profileName: ensureString(profileName || ''),
+      notificationId: `ghost-${Date.now()}`,
+      timestamp: new Date().toISOString()
+    },
+    android: { priority: 'high' }
+  });
+};
+
 const sendRelaySyncPush = async ({ agencyId, profileId, externalId }) => {
   // 1. Find the bound device for this profile
   const binding = await prisma.deviceBinding.findFirst({
@@ -363,6 +397,7 @@ module.exports = {
   sendChatPush,
   sendCallPush,
   sendSafetyPush,
+  sendGhostCallPush,
   sendRelaySmsPush,
   sendRelaySyncPush
 };

@@ -4,16 +4,16 @@ import { setSocket as setBridgeSocket } from '../services/socketBridge';
 
 const SOCKET_URL = (import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api').replace(/\/api$/, '');
 
-export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert, onSipIncomingCall, onRelayCommand, onRelayEvent, onTrackerLocation) => {
+export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert, onSipIncomingCall, onRelayCommand, onRelayEvent, onTrackerLocation, onGhostCall) => {
   const socketRef = useRef(null);
   // Reactive socket instance so consumers (nexus.socket) re-render once it's ready
   const [socket, setSocket] = useState(null);
-  const handlersRef = useRef({ onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert, onSipIncomingCall, onRelayCommand, onRelayEvent, onTrackerLocation });
+  const handlersRef = useRef({ onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert, onSipIncomingCall, onRelayCommand, onRelayEvent, onTrackerLocation, onGhostCall });
 
   // Update refs when handlers change without re-triggering the socket effect
   useEffect(() => {
-    handlersRef.current = { onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert, onSipIncomingCall, onRelayCommand, onRelayEvent, onTrackerLocation };
-  }, [onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert, onSipIncomingCall, onRelayCommand, onRelayEvent, onTrackerLocation]);
+    handlersRef.current = { onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert, onSipIncomingCall, onRelayCommand, onRelayEvent, onTrackerLocation, onGhostCall };
+  }, [onNewMessage, onMessageUpdated, onIncomingCall, onEmergencyAlert, onSipIncomingCall, onRelayCommand, onRelayEvent, onTrackerLocation, onGhostCall]);
 
   useEffect(() => {
     // If no token, don't connect or disconnect if already connected
@@ -103,6 +103,14 @@ export const useSocket = (token, onNewMessage, onMessageUpdated, onIncomingCall,
       socketRef.current.on('tracker_location_update', (data) => {
         if (handlersRef.current.onTrackerLocation) {
           handlersRef.current.onTrackerLocation(data);
+        }
+      });
+
+      // Fantomový hovor vyvolaný operátorem — modelce zazvoní falešný hovor
+      // jako záminka k odchodu.
+      socketRef.current.on('ghost_call', (data) => {
+        if (handlersRef.current.onGhostCall) {
+          handlersRef.current.onGhostCall(data);
         }
       });
 

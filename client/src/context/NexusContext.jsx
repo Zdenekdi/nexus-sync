@@ -7,7 +7,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useNexusData } from '../hooks/useNexusData';
 import { getSocket } from '../services/socketBridge';
 import { ensurePhoneTracking, stopPhoneTracking } from '../services/phoneTracker';
-import { setAppOwnerBypass, useFeatureLock } from '../config/featureLocks';
+import { setAppOwnerBypass, useFeatureLock, isFeatureLocked as isFeatureLockedNow } from '../config/featureLocks';
 import { getOrCreateInstallationId } from '../utils/installationId';
 import { AgencyDataGateway } from '../services/agency/AgencyDataGateway';
 import { AnalyticsService } from '../services/analytics/AnalyticsService';
@@ -234,6 +234,10 @@ export const NexusProvider = ({ children }) => {
   const [voiceGuardianActive, setVoiceGuardianActive] = useState(false);
   const [audioSentinelActive, setAudioSentinelActive] = useState(false);
   const handleToggleVoiceGuardian = useCallback(async () => {
+    // Dokud je Voice SOS uzamčené, neotvírej mikrofon — nesahali bychom na
+    // něj kvůli ničemu (detekce neexistuje) a uživatelka by viděla indikátor
+    // nahrávání u funkce, která nic nehlídá.
+    if (isFeatureLockedNow('voice-sos')) return;
     const next = !voiceGuardianActive;
     setVoiceGuardianActive(next);
     if (next) {
@@ -289,6 +293,11 @@ export const NexusProvider = ({ children }) => {
 
   const chatScrollRef = useRef(null);
   const isUserScrolled = useRef(false);
+  // Profily přihlášeného uživatele — v refu, protože socket handlery se registrují
+  // dřív, než je myProfiles spočítané, a nesmí se kvůli nim přepojovat socket.
+  const myProfilesRef = useRef([]);
+  const ghostCallTimerRef = useRef(null);
+  const activeOperatorRef = useRef(null);
 
   const t = useCallback((key, params = {}) => {
     try {
@@ -466,7 +475,21 @@ export const NexusProvider = ({ children }) => {
     handleIncomingRelayCall,
     handleRelayCommandSocket,
     (d) => d?.type === 'SYNC_COMPLETED' && showToast(lang === 'cz' ? '✅ Synchronizace dokončena' : '✅ Sync completed', 'success'),
-    (d) => nexusData.applyTrackerLocation?.(d)
+    (d) => nexusData.applyTrackerLocation?.(d),
+    // Fantomový hovor od operátora. Event chodí do celé agentury, takže si ho
+    // vezme jen zařízení té modelky, které se týká — operátoři ho ignorují.
+    (d) => {
+      const targetId = d?.profileId;
+      if (!targetId) return;
+      // Event chodí do roomu celé agentury. Zobrazit ho smí VÝHRADNĚ telefon
+      // modelky — operátor/manažer má ve svých profilech i cizí profily, takže
+      // samotná shoda profileId nestačí a hovor by zazvonil i jemu.
+      if (!activeOperatorRef.current?.isModel) return;
+      const mine = (myProfilesRef.current || []).some(p => String(p.id) === String(targetId));
+      if (!mine) return;
+      setGhostCallScheduledAt(null);   // vzdálený hovor zvoní hned, žádný odpočet
+      setIncomingGhostCall(true);
+    }
   );
 
   // --- Capacitor Connection Recovery ---
@@ -613,9 +636,31 @@ export const NexusProvider = ({ children }) => {
     resetCheckinTimer();
   }, [resetCheckinTimer]);
 
+  // Naplánovaný fantomový hovor. Dřív se zpoždění ignorovalo (hovor zazvonil hned)
+  // a `ghostCallScheduledAt` se po odzvonění ani odmítnutí nevynulovalo, takže
+  // v UI zůstal viset odpočet, který šel do záporu („Vyzvánění začne za −52s").
   const triggerGhostCall = useCallback((delay = 0) => {
-    setGhostCallScheduledAt(Date.now() + Number(delay || 0) * 1000);
-    setIncomingGhostCall(true);
+    const ms = Math.max(0, Number(delay || 0) * 1000);
+    if (ghostCallTimerRef.current) clearTimeout(ghostCallTimerRef.current);
+
+    const fire = () => {
+      ghostCallTimerRef.current = null;
+      setGhostCallScheduledAt(null);   // odpočet skončil, ať nepokračuje do minusu
+      setIncomingGhostCall(true);
+    };
+
+    if (ms === 0) {
+      setGhostCallScheduledAt(null);
+      fire();
+      return;
+    }
+    setGhostCallScheduledAt(Date.now() + ms);
+    ghostCallTimerRef.current = setTimeout(fire, ms);
+  }, []);
+
+  // Zrušení naplánovaného hovoru při odchodu z appky (jinak by zazvonil "z ničeho nic").
+  useEffect(() => () => {
+    if (ghostCallTimerRef.current) clearTimeout(ghostCallTimerRef.current);
   }, []);
 
   const verifyIdentity = useCallback(async () => true, []);
@@ -647,6 +692,9 @@ export const NexusProvider = ({ children }) => {
       );
     });
   }, [nexusData.profiles, activeOperator]);
+
+  useEffect(() => { myProfilesRef.current = myProfiles; }, [myProfiles]);
+  useEffect(() => { activeOperatorRef.current = activeOperator; }, [activeOperator]);
 
   const navigateStable = useCallback((path, tab) => navigate(path, tab), [navigate]);
 
