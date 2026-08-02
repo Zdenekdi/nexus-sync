@@ -14,6 +14,7 @@ const LOCKABLE_KEYS = [
   'physical-tracker',
   'gsm-call-bridge',
   'voice-sos',
+  'ghost-call',
 ];
 
 const DEFAULT_LOCKED = true;
