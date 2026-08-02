@@ -37,6 +37,7 @@ const token = () => jwt.sign(
 beforeEach(() => {
   jest.clearAllMocks();
   prisma.user.findUnique.mockResolvedValue(undefined);
+  prisma.user.findMany.mockResolvedValue([{ id: 'model-user-1' }]);
   mockSendGhostCallPush.mockResolvedValue({ sent: 1, failed: 0 });
   mockRoomSize.mockReturnValue(1);
 });
@@ -52,7 +53,8 @@ describe('POST /api/safety/ghost-call', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.socketEmitted).toBe(true);
-    expect(mockTo).toHaveBeenCalledWith('agency_agency-1');
+    // cílíme na osobní místnost modelky, ne na celou agenturu
+    expect(mockTo).toHaveBeenCalledWith('user:model-user-1');
     expect(mockEmit).toHaveBeenCalledWith('ghost_call', expect.objectContaining({ profileId: 'p1' }));
     // push MUSÍ jít na telefon modelky, ne operátorům přes safety push
     expect(mockSendGhostCallPush).toHaveBeenCalledWith(expect.objectContaining({ profileId: 'p1' }));
@@ -89,6 +91,20 @@ describe('POST /api/safety/ghost-call', () => {
     // emit sám o sobě nic nedokazuje — bez připojeného klienta a bez pushe hovor nedorazil
     expect(res.status).toBe(502);
     expect(res.body.clientsOnline).toBe(0);
+  });
+
+  it('reports failure when the profile has no model user linked', async () => {
+    prisma.profile.findUnique.mockResolvedValue({ id: 'p1', name: 'Diana', agencyId: 'agency-1' });
+    prisma.user.findMany.mockResolvedValue([]);           // profil nemá navázanou modelku
+    mockSendGhostCallPush.mockResolvedValue({ sent: 0, failed: 0 });
+
+    const res = await request(app)
+      .post('/api/safety/ghost-call')
+      .set('Authorization', `Bearer ${token()}`)
+      .send({ profileId: 'p1' });
+
+    expect(res.status).toBe(502);
+    expect(mockEmit).not.toHaveBeenCalled();
   });
 
   it("refuses to ring another agency's model", async () => {
