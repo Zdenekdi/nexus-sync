@@ -37,6 +37,9 @@ import java.util.Map;
  */
 public class NexusFcmService extends MessagingService {
 
+    private static final String GHOST_CALL_CHANNEL_ID = "nexus-ghost-call";
+    private static final int GHOST_CALL_NOTIFICATION_ID = 10041;
+
     private static final String TAG = "NexusFcmService";
     private static final String PREFS_NAME = "nexus_fcm_prefs";
     static final String PREF_FCM_TOKEN = "fcm_token";
@@ -91,6 +94,17 @@ public class NexusFcmService extends MessagingService {
             return;
         }
 
+        // ── Fantomový hovor ──────────────────────────────────────────────────
+        // Musí zazvonit i když telefon leží zamčený — proto full-screen intent
+        // notifikace (stejný mechanismus jako u skutečných hovorů), která
+        // rozsvítí displej a otevře obrazovku hovoru nad zámkem. Webové UI to
+        // neumí: běží jen když má uživatelka aplikaci otevřenou.
+        if ("ghost_call".equals(msgType)) {
+            Log.d(TAG, "[GhostCall] FCM received – showing full-screen call");
+            showGhostCall(data.get("profileName"));
+            return;
+        }
+
         // DATA-ONLY message: if the app is backgrounded, show a system tray
         // notification ourselves. Foreground handling is left to the JS layer.
         if (isAppInForeground()) {
@@ -111,6 +125,51 @@ public class NexusFcmService extends MessagingService {
     // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
+
+
+    /** Full-screen intent notifikace, která probudí telefon a otevře obrazovku hovoru. */
+    private void showGhostCall(String callerName) {
+        NotificationManager manager =
+            (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (manager == null) return;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                GHOST_CALL_CHANNEL_ID, "Fantomový hovor", NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription("Simulovaný příchozí hovor jako záminka k odchodu");
+            channel.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
+            manager.createNotificationChannel(channel);
+        }
+
+        Intent callIntent = new Intent(this, NexusGhostCallActivity.class);
+        callIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        callIntent.putExtra(NexusGhostCallActivity.EXTRA_CALLER, callerName);
+
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) flags |= PendingIntent.FLAG_IMMUTABLE;
+        PendingIntent pending = PendingIntent.getActivity(this, 4711, callIntent, flags);
+
+        NotificationCompat.Builder b = new NotificationCompat.Builder(this, GHOST_CALL_CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.sym_call_incoming)
+            .setContentTitle(callerName == null || callerName.isEmpty() ? "Agency Relay" : callerName)
+            .setContentText(getString(R.string.ghost_call_incoming))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_CALL)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setAutoCancel(true)
+            .setOngoing(false)
+            .setFullScreenIntent(pending, true);   // true = zobraz rovnou, ne jen heads-up
+
+        manager.notify(GHOST_CALL_NOTIFICATION_ID, b.build());
+
+        // Na některých systémech se full-screen intent nespustí, když aplikace
+        // nemá povolené zobrazování přes zámek — pak zůstane aspoň notifikace.
+        try {
+            startActivity(callIntent);
+        } catch (Exception e) {
+            Log.w(TAG, "[GhostCall] startActivity fallback failed: " + e.getMessage());
+        }
+    }
 
     private void storeToken(String token) {
         NexusRelayPlugin.securePrefs(this, PREFS_NAME)

@@ -319,21 +319,22 @@ const sendRelaySmsPush = async ({ agencyId, profileId, to, text, messageId }) =>
  * by to znamenalo, že se rozezvoní operátorům poplach, zatímco modelce, které
  * má hovor pomoct odejít, nedorazí nic.
  */
-const sendGhostCallPush = async ({ agencyId, profileId, profileName }) => {
-  const binding = await prisma.deviceBinding.findFirst({
-    where: { profileId, active: true, ...(agencyId ? { agencyId } : {}) },
-    select: { userId: true }
-  });
-  if (!binding) return { sent: 0, failed: 0, details: 'No active device binding for this profile' };
+const sendGhostCallPush = async ({ userIds = [], profileId, profileName }) => {
+  // Cílíme na uživatele (modelky) navázané na profil — stejné příjemce jako
+  // socketová událost. Přes DeviceBinding to nešlo: vazba profilu ukazuje na
+  // Relay aplikaci, ne na Hub, kde se hovor zobrazuje.
+  if (!userIds.length) return { sent: 0, failed: 0, details: 'No recipients for ghost call' };
 
   const tokens = await prisma.pushDevice.findMany({
-    where: { userId: binding.userId, active: true },
+    where: { userId: { in: userIds }, active: true },
     select: { token: true }
   });
   const tokenList = tokens.map(t => t.token).filter(Boolean);
   if (!tokenList.length) return { sent: 0, failed: 0, details: 'No push tokens for the model device' };
 
   return sendMulticast(tokenList, {
+    // Data-only zpráva: vyzvánění vykresluje aplikace (na popředí webové UI,
+    // na pozadí nativní full-screen notifikace), ne systémová notifikační lišta.
     data: {
       type: 'ghost_call',
       profileId: ensureString(profileId),

@@ -430,7 +430,7 @@ class SafetyController {
             let pushDelivered = false;
             try {
                 const result = await sendGhostCallPush({
-                    agencyId: profile.agencyId,
+                    userIds: recipients.map(u => u.id),
                     profileId: profile.id,
                     profileName: profile.name
                 });
