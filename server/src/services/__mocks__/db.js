@@ -11,7 +11,7 @@ const prismaMock = {
   teamMessage: { findMany: jest.fn(), findFirst: jest.fn(), create: jest.fn(), update: jest.fn(), count: jest.fn() },
   salonKey: { findMany: jest.fn(), findFirst: jest.fn(), create: jest.fn(), update: jest.fn(), deleteMany: jest.fn() },
   salonKeyLog: { findMany: jest.fn(), create: jest.fn() },
-  safetySession: { findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), count: jest.fn() },
+  safetySession: { findUnique: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), count: jest.fn() },
   safetyLocationPoint: { findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn() },
   sOSAlert: { findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn() },
   sOSLocationUpdate: { findMany: jest.fn(), create: jest.fn() },

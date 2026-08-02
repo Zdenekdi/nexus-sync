@@ -231,6 +231,26 @@ const SafetyGuardView = () => {
     }
   }, [L, filteredSessions, getCoordinates, getStatusColor]);
 
+  // Uzavření relace operátorem — bez toho eskalované relace visely v dohledu
+  // navždy (uzavřít je uměla jedině modelka potvrzením odchodu).
+  const handleResolve = async (session) => {
+    const name = session.profile?.name || '';
+    const confirmText = isCz
+      ? `Uzavřít bezpečnostní relaci${name ? ` (${name})` : ''}? Zmizí z dohledu.`
+      : `Resolve safety session${name ? ` (${name})` : ''}? It will disappear from monitoring.`;
+    if (!window.confirm(confirmText)) return;
+    try {
+      await axios.post(`${API_BASE}/safety/sessions/${session.id}/resolve`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSessions(prev => prev.filter(s => s.id !== session.id));
+      showToast(isCz ? 'Relace uzavřena' : 'Session resolved', 'success');
+    } catch (_err) {
+      console.error('Failed to resolve session:', _err);
+      showToast(isCz ? 'Uzavření selhalo' : 'Failed to resolve', 'error');
+    }
+  };
+
   const handleGhostCall = async (profileId) => {
     try {
       await axios.post(`${API_BASE}/safety/ghost-call`, { profileId }, {
@@ -422,11 +442,16 @@ const SafetyGuardView = () => {
                     >
                        <Phone size={14} /> {t('ghostCall')}
                     </button>
-                    <button style={{ 
-                      padding: '0.6rem', width: '40px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', 
-                      color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                    }}>
-                       <Eye size={16} />
+                    <button
+                      onClick={() => handleResolve(session)}
+                      data-testid={`safety-resolve-button-${session.id}`}
+                      title={isCz ? 'Uzavřít relaci' : 'Resolve session'}
+                      aria-label={isCz ? 'Uzavřít relaci' : 'Resolve session'}
+                      style={{
+                        padding: '0.6rem', width: '40px', borderRadius: '10px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)',
+                        color: '#4ade80', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}>
+                       <CheckCircle2 size={16} />
                     </button>
                   </div>
                       </>

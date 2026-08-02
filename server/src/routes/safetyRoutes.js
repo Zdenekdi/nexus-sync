@@ -15,6 +15,8 @@ router.get('/sessions/:id', (req, res) => safetyController.getSession(req, res))
 router.post('/sessions/:id/check-in', (req, res) => safetyController.checkIn(req, res));
 router.post('/sessions/:id/check-out', (req, res) => safetyController.checkOut(req, res));
 router.post('/sessions/:id/ack', (req, res) => safetyController.acknowledgeSession(req, res));
+// Uzavření relace operátorem (vyřešeno jinak / planý poplach).
+router.post('/sessions/:id/resolve', (req, res) => safetyController.resolveSession(req, res));
 
 // Emergency & Tracking
 router.post('/sessions/:id/panic', (req, res) => safetyController.triggerPanic(req, res));
