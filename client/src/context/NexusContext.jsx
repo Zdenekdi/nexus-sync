@@ -297,6 +297,7 @@ export const NexusProvider = ({ children }) => {
   // dřív, než je myProfiles spočítané, a nesmí se kvůli nim přepojovat socket.
   const myProfilesRef = useRef([]);
   const ghostCallTimerRef = useRef(null);
+  const activeOperatorRef = useRef(null);
 
   const t = useCallback((key, params = {}) => {
     try {
@@ -480,6 +481,10 @@ export const NexusProvider = ({ children }) => {
     (d) => {
       const targetId = d?.profileId;
       if (!targetId) return;
+      // Event chodí do roomu celé agentury. Zobrazit ho smí VÝHRADNĚ telefon
+      // modelky — operátor/manažer má ve svých profilech i cizí profily, takže
+      // samotná shoda profileId nestačí a hovor by zazvonil i jemu.
+      if (!activeOperatorRef.current?.isModel) return;
       const mine = (myProfilesRef.current || []).some(p => String(p.id) === String(targetId));
       if (!mine) return;
       setGhostCallScheduledAt(null);   // vzdálený hovor zvoní hned, žádný odpočet
@@ -689,6 +694,7 @@ export const NexusProvider = ({ children }) => {
   }, [nexusData.profiles, activeOperator]);
 
   useEffect(() => { myProfilesRef.current = myProfiles; }, [myProfiles]);
+  useEffect(() => { activeOperatorRef.current = activeOperator; }, [activeOperator]);
 
   const navigateStable = useCallback((path, tab) => navigate(path, tab), [navigate]);
 

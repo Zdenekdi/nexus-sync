@@ -1,7 +1,7 @@
 const prisma = require('../services/db');
 const logger = require('../services/logger');
 const safetyService = require('../services/safetyService');
-const { sendSafetyPush } = require('../services/pushService');
+const { sendGhostCallPush } = require('../services/pushService');
 
 // Stavy, ve kterých je relace "živá" — drží se stejné definice jako trackerController.
 const ACTIVE_SESSION_STATES = ['CHECKED_IN', 'GRACE', 'ESCALATED'];
@@ -389,43 +389,54 @@ class SafetyController {
             // ok:true — operátor viděl „úspěch", ale na telefon nedorazilo nic. U funkce,
             // která má modelce dát záminku k odchodu, je předstíraný úspěch nebezpečný,
             // takže teď hlásíme, jestli se to opravdu podařilo doručit.
-            const { getIO } = require('../services/socket');
-            let socketDelivered = false;
+            const { getIO, getRoomSize } = require('../services/socket');
+            const room = `agency_${profile.agencyId}`;
+            // Pozor na význam: emit sám o sobě nic nedokazuje. Hlásíme zvlášť, že se
+            // událost odeslala, a kolik klientů je v roomu — víc se ze socketu zjistit
+            // nedá (room je celá agentura, ne konkrétní telefon).
+            let socketEmitted = false;
+            let clientsOnline = 0;
             try {
-                getIO().to(`agency_${profile.agencyId}`).emit('ghost_call', {
+                getIO().to(room).emit('ghost_call', {
                     profileId: profile.id,
                     profileName: profile.name,
                     triggeredAt: new Date().toISOString()
                 });
-                socketDelivered = true;
+                socketEmitted = true;
+                clientsOnline = getRoomSize(room) || 0;
             } catch (err) {
                 logger.warn(`[Ghost Call] Socket emit failed: ${err.message}`);
             }
 
-            // Push jako záloha, když má modelka appku na pozadí / zavřenou.
+            // Push MUSÍ mířit na telefon modelky. sendSafetyPush by ho poslal
+            // přiřazeným operátorům/manažerům jako nouzový poplach — tedy špatnému
+            // publiku i se špatným obsahem.
             let pushDelivered = false;
             try {
-                const result = await sendSafetyPush({
+                const result = await sendGhostCallPush({
                     agencyId: profile.agencyId,
                     profileId: profile.id,
-                    profileName: profile.name,
-                    type: 'GHOST_CALL'
+                    profileName: profile.name
                 });
                 pushDelivered = (result?.sent ?? 0) > 0;
             } catch (err) {
                 logger.warn(`[Ghost Call] Push failed: ${err.message}`);
             }
 
-            logger.info(`[Ghost Call] profile=${profile.id} socket=${socketDelivered} push=${pushDelivered}`);
+            logger.info(`[Ghost Call] profile=${profile.id} emitted=${socketEmitted} online=${clientsOnline} push=${pushDelivered}`);
 
-            if (!socketDelivered && !pushDelivered) {
+            // Nikdo online a push nedoručen = hovor nikam nedorazil. Operátor to musí vědět.
+            if ((!socketEmitted || clientsOnline === 0) && !pushDelivered) {
                 return res.status(502).json({
                     ok: false,
+                    socketEmitted,
+                    clientsOnline,
+                    pushDelivered,
                     message: 'Ghost call could not be delivered to the device'
                 });
             }
 
-            res.json({ ok: true, socketDelivered, pushDelivered });
+            res.json({ ok: true, socketEmitted, clientsOnline, pushDelivered });
         } catch (error) {
             logger.error('Error triggering ghost call:', error);
             res.status(500).json({ message: 'Failed to trigger ghost call' });

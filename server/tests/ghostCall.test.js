@@ -3,7 +3,8 @@ const jwt = require('jsonwebtoken');
 
 const mockEmit = jest.fn();
 const mockTo = jest.fn(() => ({ emit: mockEmit }));
-const mockSendSafetyPush = jest.fn();
+const mockRoomSize = jest.fn(() => 1);
+const mockSendGhostCallPush = jest.fn();
 
 jest.mock('../src/services/db');
 jest.mock('../src/services/logger');
@@ -11,10 +12,11 @@ jest.mock('../src/services/safetyService');
 jest.mock('../src/services/socket', () => ({
   getIO: () => ({ to: mockTo }),
   initSocket: jest.fn(),
-  getRoomSize: jest.fn()
+  getRoomSize: () => mockRoomSize()
 }));
 jest.mock('../src/services/pushService', () => ({
-  sendSafetyPush: (...args) => mockSendSafetyPush(...args),
+  sendGhostCallPush: (...args) => mockSendGhostCallPush(...args),
+  sendSafetyPush: jest.fn(),
   sendRelaySmsPush: jest.fn(),
   sendRelaySyncPush: jest.fn()
 }));
@@ -35,7 +37,8 @@ const token = () => jwt.sign(
 beforeEach(() => {
   jest.clearAllMocks();
   prisma.user.findUnique.mockResolvedValue(undefined);
-  mockSendSafetyPush.mockResolvedValue({ sent: 1, failed: 0 });
+  mockSendGhostCallPush.mockResolvedValue({ sent: 1, failed: 0 });
+  mockRoomSize.mockReturnValue(1);
 });
 
 describe('POST /api/safety/ghost-call', () => {
@@ -48,16 +51,17 @@ describe('POST /api/safety/ghost-call', () => {
       .send({ profileId: 'p1' });
 
     expect(res.status).toBe(200);
-    expect(res.body.socketDelivered).toBe(true);
+    expect(res.body.socketEmitted).toBe(true);
     expect(mockTo).toHaveBeenCalledWith('agency_agency-1');
     expect(mockEmit).toHaveBeenCalledWith('ghost_call', expect.objectContaining({ profileId: 'p1' }));
-    expect(mockSendSafetyPush).toHaveBeenCalledWith(expect.objectContaining({ profileId: 'p1', type: 'GHOST_CALL' }));
+    // push MUSÍ jít na telefon modelky, ne operátorům přes safety push
+    expect(mockSendGhostCallPush).toHaveBeenCalledWith(expect.objectContaining({ profileId: 'p1' }));
   });
 
   it('reports failure when nothing could be delivered', async () => {
     prisma.profile.findUnique.mockResolvedValue({ id: 'p1', name: 'Diana', agencyId: 'agency-1' });
     mockTo.mockImplementationOnce(() => { throw new Error('socket down'); });
-    mockSendSafetyPush.mockResolvedValue({ sent: 0, failed: 2 });
+    mockSendGhostCallPush.mockResolvedValue({ sent: 0, failed: 2 });
 
     const res = await request(app)
       .post('/api/safety/ghost-call')
@@ -67,6 +71,24 @@ describe('POST /api/safety/ghost-call', () => {
     // Operátor se MUSÍ dozvědět, že hovor nedorazil — dřív vracelo vždy ok:true.
     expect(res.status).toBe(502);
     expect(res.body.ok).toBe(false);
+    // i chybová odpověď musí nést stejná pole, ať operátor ví, co selhalo
+    expect(res.body).toHaveProperty('socketEmitted', false);
+    expect(res.body).toHaveProperty('pushDelivered', false);
+  });
+
+  it('does not claim delivery when nobody is connected and push fails', async () => {
+    prisma.profile.findUnique.mockResolvedValue({ id: 'p1', name: 'Diana', agencyId: 'agency-1' });
+    mockRoomSize.mockReturnValue(0);                       // nikdo v roomu
+    mockSendGhostCallPush.mockResolvedValue({ sent: 0, failed: 0 });
+
+    const res = await request(app)
+      .post('/api/safety/ghost-call')
+      .set('Authorization', `Bearer ${token()}`)
+      .send({ profileId: 'p1' });
+
+    // emit sám o sobě nic nedokazuje — bez připojeného klienta a bez pushe hovor nedorazil
+    expect(res.status).toBe(502);
+    expect(res.body.clientsOnline).toBe(0);
   });
 
   it("refuses to ring another agency's model", async () => {
