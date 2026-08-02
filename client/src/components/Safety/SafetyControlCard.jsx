@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import FeatureLock from '../FeatureLock';
 import TrackingSetupGuide from './TrackingSetupGuide';
 import { getTrackingReadiness, isReadinessBlocking } from '../../services/trackingReadiness';
@@ -321,7 +322,11 @@ const SafetyControlCard = () => {
       )}
 
       {/* Ghost Call Fullscreen Overlay */}
-      {incomingGhostCall && (
+      {/* Přes PORTÁL do <body>: obrazovka hovoru je vnořená v kartě s `backdrop-filter`
+          (.glass-card), a ta pro position:fixed vytváří kotvicí blok — „celoobrazovkový"
+          hovor se pak vykreslil jen uvnitř kartičky. U fantomového hovoru je věrohodnost
+          celý smysl funkce: musí vypadat jako skutečný příchozí hovor, ne jako okénko. */}
+      {incomingGhostCall && createPortal((
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           background: 'linear-gradient(to bottom, #1a1a2e, #16213e)',
@@ -351,7 +356,7 @@ const SafetyControlCard = () => {
              </div>
           </div>
         </div>
-      )}
+      ), document.body)}
 
       {/* Sledování polohy — manuální přepínač (B). Automaticky se navíc zapne během
           check-inu (A) i při SOS (C). Uzamčeno přes FeatureLock, dokud není

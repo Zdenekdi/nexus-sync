@@ -296,6 +296,7 @@ export const NexusProvider = ({ children }) => {
   // Profily přihlášeného uživatele — v refu, protože socket handlery se registrují
   // dřív, než je myProfiles spočítané, a nesmí se kvůli nim přepojovat socket.
   const myProfilesRef = useRef([]);
+  const ghostCallTimerRef = useRef(null);
 
   const t = useCallback((key, params = {}) => {
     try {
@@ -481,7 +482,7 @@ export const NexusProvider = ({ children }) => {
       if (!targetId) return;
       const mine = (myProfilesRef.current || []).some(p => String(p.id) === String(targetId));
       if (!mine) return;
-      setGhostCallScheduledAt(Date.now());
+      setGhostCallScheduledAt(null);   // vzdálený hovor zvoní hned, žádný odpočet
       setIncomingGhostCall(true);
     }
   );
@@ -630,9 +631,31 @@ export const NexusProvider = ({ children }) => {
     resetCheckinTimer();
   }, [resetCheckinTimer]);
 
+  // Naplánovaný fantomový hovor. Dřív se zpoždění ignorovalo (hovor zazvonil hned)
+  // a `ghostCallScheduledAt` se po odzvonění ani odmítnutí nevynulovalo, takže
+  // v UI zůstal viset odpočet, který šel do záporu („Vyzvánění začne za −52s").
   const triggerGhostCall = useCallback((delay = 0) => {
-    setGhostCallScheduledAt(Date.now() + Number(delay || 0) * 1000);
-    setIncomingGhostCall(true);
+    const ms = Math.max(0, Number(delay || 0) * 1000);
+    if (ghostCallTimerRef.current) clearTimeout(ghostCallTimerRef.current);
+
+    const fire = () => {
+      ghostCallTimerRef.current = null;
+      setGhostCallScheduledAt(null);   // odpočet skončil, ať nepokračuje do minusu
+      setIncomingGhostCall(true);
+    };
+
+    if (ms === 0) {
+      setGhostCallScheduledAt(null);
+      fire();
+      return;
+    }
+    setGhostCallScheduledAt(Date.now() + ms);
+    ghostCallTimerRef.current = setTimeout(fire, ms);
+  }, []);
+
+  // Zrušení naplánovaného hovoru při odchodu z appky (jinak by zazvonil "z ničeho nic").
+  useEffect(() => () => {
+    if (ghostCallTimerRef.current) clearTimeout(ghostCallTimerRef.current);
   }, []);
 
   const verifyIdentity = useCallback(async () => true, []);
