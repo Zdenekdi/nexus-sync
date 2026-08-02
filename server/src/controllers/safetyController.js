@@ -2,6 +2,9 @@ const prisma = require('../services/db');
 const logger = require('../services/logger');
 const safetyService = require('../services/safetyService');
 
+// Stavy, ve kterých je relace "živá" — drží se stejné definice jako trackerController.
+const ACTIVE_SESSION_STATES = ['CHECKED_IN', 'GRACE', 'ESCALATED'];
+
 /**
  * Safety Guard Controller
  */
@@ -45,6 +48,31 @@ class SafetyController {
             // Calculate grace period
             const plannedEnd = plannedEndAt ? new Date(plannedEndAt) : new Date(Date.now() + 3600000);
             const graceUntil = new Date(plannedEnd.getTime() + graceMinutes * 60000);
+
+            // Modelka má mít nejvýš JEDNU živou relaci. Dřív se při každém startu
+            // check-inu založila nová, takže se v dohledu hromadily duplicity téže
+            // modelky (a eskalované se nikdy neuzavřely) — mezi nimi by skutečný
+            // poplach zapadl. Když už relace běží, jen ji obnovíme.
+            const existingActive = await prisma.safetySession.findFirst({
+                where: { profileId, state: { in: ACTIVE_SESSION_STATES } },
+                orderBy: { createdAt: 'desc' }
+            });
+
+            if (existingActive) {
+                const refreshed = await prisma.safetySession.update({
+                    where: { id: existingActive.id },
+                    data: {
+                        plannedEndAt: plannedEnd,
+                        graceUntil: graceUntil,
+                        locationType: locationType,
+                        state: 'CHECKED_IN',   // nový check-in ruší i probíhající eskalaci
+                        escalatedAt: null,
+                        ...(bookingId ? { bookingId } : {})
+                    }
+                });
+                logger.info(`Safety Session refreshed: ${refreshed.id} for profile ${profileId} (was ${existingActive.state})`);
+                return res.json(refreshed);
+            }
 
             const session = await prisma.safetySession.create({
                 data: {
@@ -288,6 +316,32 @@ class SafetyController {
     /**
      * Model confirmed client has left — safe
      */
+    /**
+     * Uzavření relace operátorem.
+     *
+     * Doteď šlo relaci uzavřít jedině potvrzením odchodu od modelky
+     * (departure-confirmed). Eskalovaná relace, kterou operátor vyřešil jinak
+     * (telefonátem, osobně, planý poplach), tak zůstala viset navždy a plevelila
+     * dohled — mezi starými eskalacemi by skutečný poplach zapadl.
+     */
+    async resolveSession(req, res) {
+        try {
+            const { id } = req.params;
+            if (!await this._verifySessionAgency(id, req, res)) return;
+
+            const session = await prisma.safetySession.update({
+                where: { id },
+                data: { state: 'RESOLVED', resolvedAt: new Date() }
+            });
+
+            logger.info(`Safety Session ${id} resolved by user ${req.user?.userId || 'unknown'}`);
+            res.json({ ok: true, sessionId: id, state: session.state });
+        } catch (error) {
+            logger.error('Error resolving safety session:', error);
+            res.status(500).json({ message: 'Failed to resolve session' });
+        }
+    }
+
     async departureConfirmed(req, res) {
         try {
             const { id } = req.params;
