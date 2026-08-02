@@ -164,9 +164,14 @@ const SafetyControlCard = () => {
           : (isCz ? 'NOUZOVÉ SOS' : 'EMERGENCY SOS')}
       </button>
 
-      {/* Voice Guardian & Audio Sentinel */}
+      {/* Voice Guardian & Audio Sentinel.
+          Voice SOS je uzamčené: přepínač zatím jen požádá o mikrofon, žádné
+          rozpoznávání bezpečnostního slova neexistuje — modelka by spoléhala
+          na hlídání, které neprobíhá. */}
       <div style={{ display: 'flex', gap: '0.75rem' }}>
-        <div 
+        <div style={{ flex: 1 }}>
+        <FeatureLock featureKey="voice-sos" compact>
+        <div
           onClick={handleToggleVoiceGuardian}
           style={{ 
             flex: 1,
@@ -208,8 +213,10 @@ const SafetyControlCard = () => {
             <div style={{ fontSize: '0.6rem', opacity: 0.6 }}>{voiceGuardianActive ? (isCz ? 'Aktivně naslouchá' : 'Listening...') : (isCz ? 'Hlasové SOS' : 'Voice activation')}</div>
           </div>
         </div>
+        </FeatureLock>
+        </div>
 
-        <div 
+        <div
           onClick={() => setAudioSentinelActive(!audioSentinelActive)}
           style={{ 
             flex: 1,

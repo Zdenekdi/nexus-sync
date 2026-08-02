@@ -43,6 +43,14 @@ export const LOCKED_FEATURES = {
 
   // Přímý most zvuku GSM hovoru (bez SIP) — neověřené; produkčně se jede přes
   // přesměrování na VoIP číslo.
+  // Hlasové SOS — přepínač zatím jen požádá o mikrofon a uloží stream; žádná
+  // detekce bezpečnostního slova ani spuštění SOS neexistuje. Spolehlivé
+  // rozpoznávání na pozadí je samostatný projekt (nativní engine + baterie + OEM).
+  'voice-sos': {
+    title: 'Hlasové SOS',
+    note: 'Rozpoznávání bezpečnostního slova se teprve staví. Použij tlačítko SOS nebo check-in.',
+  },
+
   'gsm-call-bridge': {
     title: 'Přímý GSM audio most',
     note: 'Přímé přemostění zvuku hovoru se testuje. Používej přesměrování na VoIP.',

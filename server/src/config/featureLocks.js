@@ -13,6 +13,7 @@ const LOCKABLE_KEYS = [
   'web-automation',
   'physical-tracker',
   'gsm-call-bridge',
+  'voice-sos',
 ];
 
 const DEFAULT_LOCKED = true;

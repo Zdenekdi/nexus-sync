@@ -7,7 +7,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useNexusData } from '../hooks/useNexusData';
 import { getSocket } from '../services/socketBridge';
 import { ensurePhoneTracking, stopPhoneTracking } from '../services/phoneTracker';
-import { setAppOwnerBypass, useFeatureLock } from '../config/featureLocks';
+import { setAppOwnerBypass, useFeatureLock, isFeatureLocked as isFeatureLockedNow } from '../config/featureLocks';
 import { getOrCreateInstallationId } from '../utils/installationId';
 import { AgencyDataGateway } from '../services/agency/AgencyDataGateway';
 import { AnalyticsService } from '../services/analytics/AnalyticsService';
@@ -234,6 +234,10 @@ export const NexusProvider = ({ children }) => {
   const [voiceGuardianActive, setVoiceGuardianActive] = useState(false);
   const [audioSentinelActive, setAudioSentinelActive] = useState(false);
   const handleToggleVoiceGuardian = useCallback(async () => {
+    // Dokud je Voice SOS uzamčené, neotvírej mikrofon — nesahali bychom na
+    // něj kvůli ničemu (detekce neexistuje) a uživatelka by viděla indikátor
+    // nahrávání u funkce, která nic nehlídá.
+    if (isFeatureLockedNow('voice-sos')) return;
     const next = !voiceGuardianActive;
     setVoiceGuardianActive(next);
     if (next) {
@@ -289,6 +293,9 @@ export const NexusProvider = ({ children }) => {
 
   const chatScrollRef = useRef(null);
   const isUserScrolled = useRef(false);
+  // Profily přihlášeného uživatele — v refu, protože socket handlery se registrují
+  // dřív, než je myProfiles spočítané, a nesmí se kvůli nim přepojovat socket.
+  const myProfilesRef = useRef([]);
 
   const t = useCallback((key, params = {}) => {
     try {
@@ -466,7 +473,17 @@ export const NexusProvider = ({ children }) => {
     handleIncomingRelayCall,
     handleRelayCommandSocket,
     (d) => d?.type === 'SYNC_COMPLETED' && showToast(lang === 'cz' ? '✅ Synchronizace dokončena' : '✅ Sync completed', 'success'),
-    (d) => nexusData.applyTrackerLocation?.(d)
+    (d) => nexusData.applyTrackerLocation?.(d),
+    // Fantomový hovor od operátora. Event chodí do celé agentury, takže si ho
+    // vezme jen zařízení té modelky, které se týká — operátoři ho ignorují.
+    (d) => {
+      const targetId = d?.profileId;
+      if (!targetId) return;
+      const mine = (myProfilesRef.current || []).some(p => String(p.id) === String(targetId));
+      if (!mine) return;
+      setGhostCallScheduledAt(Date.now());
+      setIncomingGhostCall(true);
+    }
   );
 
   // --- Capacitor Connection Recovery ---
@@ -647,6 +664,8 @@ export const NexusProvider = ({ children }) => {
       );
     });
   }, [nexusData.profiles, activeOperator]);
+
+  useEffect(() => { myProfilesRef.current = myProfiles; }, [myProfiles]);
 
   const navigateStable = useCallback((path, tab) => navigate(path, tab), [navigate]);
 
