@@ -281,7 +281,8 @@ const SafetyControlCard = () => {
       )}
 
       {!sosActive && (
-        <div 
+        <FeatureLock featureKey="ghost-call" compact>
+        <div
           onClick={() => {
             const scenarios = [
               { name: isCz ? 'Agency HQ' : 'Agency HQ', icon: Shield },
@@ -319,6 +320,7 @@ const SafetyControlCard = () => {
           </div>
           {!ghostCallScheduledAt && <ChevronDown size={16} color="var(--text-secondary)" style={{ transform: 'rotate(-90deg)' }} />}
         </div>
+        </FeatureLock>
       )}
 
       {/* Ghost Call Fullscreen Overlay */}

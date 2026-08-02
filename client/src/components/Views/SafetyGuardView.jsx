@@ -36,6 +36,7 @@ const SafetyGuardView = () => {
   // Dokud jsou oba zdroje uzamčené (neověřené), mapa nemá odkud brát data —
   // ukážeme místo prázdné mapy zámek, ať operátor nespoléhá na nefunkční přehled.
   // Reaktivní: když App Owner odemkne, mapa se objeví (a naopak).
+  const ghostCallLocked = useFeatureLock('ghost-call');
   const phoneTrackingLocked = useFeatureLock('phone-tracking');
   const physicalTrackerLocked = useFeatureLock('physical-tracker');
   const locationLocked = phoneTrackingLocked && physicalTrackerLocked;
@@ -252,6 +253,14 @@ const SafetyGuardView = () => {
   };
 
   const handleGhostCall = async (profileId) => {
+    // Zamčeno: hovor zatím zazvoní jen když má modelka otevřenou aplikaci.
+    // Operátor nesmí dostat dojem, že jí zavolal, když spí telefon v kabelce.
+    if (ghostCallLocked) {
+      showToast(isCz
+        ? 'Fantomový hovor se dokončuje — zatím zazvoní jen při otevřené aplikaci.'
+        : 'Ghost call is still in development — it only rings while the app is open.', 'info');
+      return;
+    }
     try {
       await axios.post(`${API_BASE}/safety/ghost-call`, { profileId }, {
         headers: { Authorization: `Bearer ${token}` }
@@ -435,12 +444,13 @@ const SafetyGuardView = () => {
                     <button 
                       onClick={() => handleGhostCall(session.profileId)}
                       data-testid={`safety-ghostcall-button-${session.id}`}
+                      title={ghostCallLocked ? (isCz ? 'Ve vývoji — zazvoní jen při otevřené aplikaci' : 'In development — only rings while the app is open') : undefined}
                       style={{ 
                         flex: 1, padding: '0.6rem', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', 
                         color: '#60a5fa', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem'
                       }}
                     >
-                       <Phone size={14} /> {t('ghostCall')}
+                       <Phone size={14} /> {t('ghostCall')}{ghostCallLocked ? ' 🔒' : ''}
                     </button>
                     <button
                       onClick={() => handleResolve(session)}

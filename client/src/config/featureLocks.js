@@ -51,6 +51,14 @@ export const LOCKED_FEATURES = {
     note: 'Rozpoznávání bezpečnostního slova se teprve staví. Použij tlačítko SOS nebo check-in.',
   },
 
+  // Fantomový hovor — v popředí funguje, ale se zamčeným/uspaným telefonem
+  // nezazvoní: je to UI uvnitř aplikace, neprobudí displej ani se nezobrazí přes
+  // zámek. Potřebuje nativní full-screen intent notifikaci + funkční push.
+  'ghost-call': {
+    title: 'Fantomový hovor',
+    note: 'Zatím zazvoní jen při otevřené aplikaci. Dokončujeme, aby fungoval i se zamčeným telefonem.',
+  },
+
   'gsm-call-bridge': {
     title: 'Přímý GSM audio most',
     note: 'Přímé přemostění zvuku hovoru se testuje. Používej přesměrování na VoIP.',
