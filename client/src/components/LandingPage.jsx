@@ -178,13 +178,20 @@ const LandingPage = () => {
   const t = {
     cz: {
       hero: {
-        badge: "PROVOZ A BEZPEČNOST",
-        title: "Provoz agentury\nna jedné obrazovce.",
-        desc: "Profily, směny, komunikace a fakturace na jednom místě. Když je někdo na schůzce, dispečink vidí jeho check-iny — a SOS tlačítko upozorní celý tým naráz.",
-        cta1: "Otevřít Nexus",
-        cta2: "Průvodce startem",
-        cta3: "Ke stažení"
+        badge: "PLATFORMA PRO PROVOZ AGENTURY",
+        title: "Komunikace, rezervace a bezpečnost lidí v terénu.",
+        desc: "Místo Excelu a soukromých telefonů: sdílená schránka, kalendář rezervací, fakturace — a bezpečnostní dohled, který hlídá check-iny a rozešle SOS celému týmu naráz.",
+        ctaRegister: "Založit agenturu",
+        ctaLogin: "Přihlásit se",
+        ctaDemo: "Podívat se na ukázku",
       },
+      trust: [
+        "Bez instalace, běží v prohlížeči",
+        "Česky i anglicky",
+        "Tarif změníte kdykoli"
+      ],
+      nav: { features: "Funkce", safety: "Bezpečnost", pricing: "Ceník", downloads: "Ke stažení", guide: "Manuál" },
+      heroVideoCaption: "Bezpečnostní dohled — přehled probíhajících schůzek a check-inů.",
       features: [
         { icon: Shield, title: "Safety Guard™", desc: "Real-time SOS a monitoring výjezdů." },
         { icon: Zap, title: "AI Smart Replies", desc: "Automatizované odpovědi a překlady." },
@@ -208,20 +215,26 @@ const LandingPage = () => {
         { q: "Dá se tarif později změnit?", a: "Samozřejmě. Upgrade i downgrade je možný kdykoliv přímo z vašeho administračního panelu." }
       ],
       videos: [
-        { id: 'safety', src: '/safety.mp4', poster: '/thumb_safety.jpg', title: 'Bezpečnost na prvním místě', desc: 'Safety Guard drží přehled o probíhajících schůzkách. Zmeškaný check-in i stisk SOS upozorní celý tým naráz.', features: ['Check-iny s hlídáním času', 'SOS tlačítko', 'Sdílený blacklist klientů'] },
-        { id: 'analytics', src: '/analytics.mp4', poster: '/thumb_analytics.jpg', title: 'Business pod kontrolou', desc: 'Zapomeňte na tabulky. Okamžitý přehled o tržbách, konverzích a výkonu celého týmu.', features: ['Real-time tržby', 'Výpočet provizí', 'VIP Management'], reverse: true },
-        { id: 'operations', src: '/operations.mp4', poster: '/thumb_operations.jpg', title: 'Operace jako na dlaní', desc: 'Správa profilů, hierarchie a komunikace na jednom místě. Plná kontrola bez chaosu.', features: ['Správa profilů', 'Týmová hierarchie', 'CRM & Komunikace'] }
+        { id: 'analytics', src: '/analytics.mp4', poster: '/thumb_analytics.jpg', title: 'Business pod kontrolou', desc: 'Zapomeňte na tabulky. Okamžitý přehled o tržbách, konverzích a výkonu celého týmu.', features: ['Real-time tržby', 'Výpočet provizí', 'VIP Management'] },
+        { id: 'operations', src: '/operations.mp4', poster: '/thumb_operations.jpg', title: 'Operace jako na dlaní', desc: 'Správa profilů, hierarchie a komunikace na jednom místě. Plná kontrola bez chaosu.', features: ['Správa profilů', 'Týmová hierarchie', 'CRM & Komunikace'], reverse: true }
       ]
     },
     en: {
       hero: {
-        badge: "OPERATIONS & SAFETY",
-        title: "Your agency's operations\non one screen.",
-        desc: "Profiles, shifts, messaging and billing in one place. When someone is out on a booking, dispatch sees their check-ins — and the SOS button alerts the whole team at once.",
-        cta1: "Open Nexus",
-        cta2: "Start Guide",
-        cta3: "Downloads"
+        badge: "AGENCY OPERATIONS PLATFORM",
+        title: "Messaging, bookings and the safety of people in the field.",
+        desc: "Instead of spreadsheets and private phones: a shared inbox, a booking calendar, billing — and safety oversight that watches check-ins and sends SOS to the whole team at once.",
+        ctaRegister: "Start an agency",
+        ctaLogin: "Sign in",
+        ctaDemo: "See it in action",
       },
+      trust: [
+        "No install, runs in your browser",
+        "Czech and English",
+        "Change your plan anytime"
+      ],
+      nav: { features: "Features", safety: "Safety", pricing: "Pricing", downloads: "Downloads", guide: "Manual" },
+      heroVideoCaption: "Safety oversight — bookings in progress and their check-ins.",
       features: [
         { icon: Shield, title: "Safety Guard™", desc: "Real-time SOS and outcall monitoring." },
         { icon: Zap, title: "AI Smart Replies", desc: "Automated responses and translations." },
@@ -245,9 +258,8 @@ const LandingPage = () => {
         { q: "Can I change my plan later?", a: "Absolutely. You can upgrade or downgrade your subscription at any time via the administration panel." }
       ],
       videos: [
-        { id: 'safety', src: '/safety.mp4', poster: '/thumb_safety.jpg', title: 'Safety First', desc: 'Safety Guard keeps track of bookings in progress. A missed check-in or a pressed SOS alerts the whole team at once.', features: ['Timed check-ins', 'SOS button', 'Shared client blacklist'] },
-        { id: 'analytics', src: '/analytics.mp4', poster: '/thumb_analytics.jpg', title: 'Business in Control', desc: 'Forget spreadsheets. Instant overview of revenue, conversions and team performance.', features: ['Real-time Revenue', 'Commission Calculator', 'VIP Management'], reverse: true },
-        { id: 'operations', src: '/operations.mp4', poster: '/thumb_operations.jpg', title: 'Operations at a Glance', desc: 'Profile management, hierarchy and communication in one place. Full control without the chaos.', features: ['Profile Management', 'Team Hierarchy', 'CRM & Communication'] }
+        { id: 'analytics', src: '/analytics.mp4', poster: '/thumb_analytics.jpg', title: 'Business in Control', desc: 'Forget spreadsheets. Instant overview of revenue, conversions and team performance.', features: ['Real-time Revenue', 'Commission Calculator', 'VIP Management'] },
+        { id: 'operations', src: '/operations.mp4', poster: '/thumb_operations.jpg', title: 'Operations at a Glance', desc: 'Profile management, hierarchy and communication in one place. Full control without the chaos.', features: ['Profile Management', 'Team Hierarchy', 'CRM & Communication'], reverse: true }
       ]
     }
   }[lang];
@@ -274,8 +286,19 @@ const LandingPage = () => {
     );
   }
 
+  // Jeden seznam pro desktopovou hlavičku i mobilní overlay. Dřív to byly dvě
+  // ručně udržované kopie, takže se položky mohly rozejít a na telefonu chybět.
+  const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  const navItems = [
+    { label: t.nav.features, action: () => scrollTo('features') },
+    { label: t.nav.safety, action: () => scrollTo('safety') },
+    { label: t.nav.pricing, action: () => scrollTo('pricing') },
+    { label: t.nav.downloads, action: () => navigate('/downloads', 'downloads') },
+    { label: t.nav.guide, action: () => setActiveTab('guide') }
+  ];
+
   return (
-    <div data-testid="landing-page-container" style={{ minHeight: '100vh', background: '#040507', color: 'white', fontFamily: 'Inter, sans-serif', overflowX: 'hidden' }}>
+    <div data-testid="landing-page-container" className="landing-page" style={{ minHeight: '100vh', background: '#040507', color: 'white', fontFamily: 'Inter, sans-serif', overflowX: 'hidden' }}>
       
       {/* BACKGROUND EFFECTS */}
       <div style={{ position: 'fixed', top: '0', left: '50%', transform: 'translateX(-50%)', width: '100%', height: '100%', background: 'radial-gradient(circle at 50% -20%, rgba(59, 130, 246, 0.15), transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
@@ -285,14 +308,19 @@ const LandingPage = () => {
       <div style={{ position: 'fixed', top: 0, width: '100%', zIndex: 1000, padding: '1.5rem 5%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backdropFilter: 'blur(10px)', background: 'rgba(4,5,7,0.4)', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <img src="/nexus_icon.png" alt="Nexus" style={{ width: '32px', height: '32px', borderRadius: '8px', boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)' }} />
-          <span style={{ fontWeight: '900', letterSpacing: '0.1em', fontSize: '1.1rem' }}>NEXUS HUB</span>
+          <div style={{ lineHeight: 1.15 }}>
+            <div style={{ fontWeight: '900', letterSpacing: '0.1em', fontSize: '1.1rem' }}>NEXUS HUB</div>
+            <div style={{ fontSize: '0.6rem', letterSpacing: '0.16em', color: '#60a5fa', fontWeight: '700' }}>
+              {lang === 'cz' ? 'PROVOZ A BEZPEČNOST' : 'OPERATIONS & SAFETY'}
+            </div>
+          </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
           {!isMobile && (
             <div style={{ display: 'flex', gap: '1.5rem', marginRight: '1rem' }}>
-              <button onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.6)', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', transition: 'color 0.2s' }}>{lang === 'cz' ? 'Ceník' : 'Pricing'}</button>
-              <button onClick={() => setActiveTab('guide')} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.6)', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', transition: 'color 0.2s' }}>{lang === 'cz' ? 'Průvodce' : 'Guide'}</button>
-              <button onClick={() => navigate('/downloads', 'downloads')} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.6)', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', transition: 'color 0.2s' }}>{lang === 'cz' ? 'Ke stažení' : 'Downloads'}</button>
+              {navItems.map(item => (
+                <button key={item.label} onClick={item.action} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.6)', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', transition: 'color 0.2s' }}>{item.label}</button>
+              ))}
             </div>
           )}
           <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '3px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -301,9 +329,14 @@ const LandingPage = () => {
             ))}
           </div>
           {!isMobile && (
-            <button onClick={() => navigate('/login', 'login')} style={{ background: 'white', color: 'black', border: 'none', padding: '10px 22px', borderRadius: '12px', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer', transition: 'transform 0.2s' }}>
-              {t.hero.cta1}
-            </button>
+            <>
+              <button onClick={() => navigate('/login', 'login')} style={{ background: 'transparent', color: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.12)', padding: '9px 18px', borderRadius: '12px', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s' }}>
+                {t.hero.ctaLogin}
+              </button>
+              <button onClick={() => navigate('/register', 'register-agency')} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '10px 22px', borderRadius: '12px', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer', transition: 'transform 0.2s' }}>
+                {t.hero.ctaRegister}
+              </button>
+            </>
           )}
           {isMobile && (
             <button onClick={() => setMobileMenuOpen(true)} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: '4px' }}>
@@ -320,57 +353,73 @@ const LandingPage = () => {
             <X size={28} />
           </button>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', alignItems: 'center' }}>
-            <button onClick={() => { setMobileMenuOpen(false); document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' }); }} style={{ background: 'transparent', border: 'none', color: 'white', fontWeight: '800', fontSize: '1.5rem', cursor: 'pointer' }}>{lang === 'cz' ? 'Ceník' : 'Pricing'}</button>
-            <button onClick={() => { setMobileMenuOpen(false); setActiveTab('guide'); }} style={{ background: 'transparent', border: 'none', color: 'white', fontWeight: '800', fontSize: '1.5rem', cursor: 'pointer' }}>{lang === 'cz' ? 'Průvodce' : 'Guide'}</button>
-            <button onClick={() => { setMobileMenuOpen(false); navigate('/downloads', 'downloads'); }} style={{ background: 'transparent', border: 'none', color: 'white', fontWeight: '800', fontSize: '1.5rem', cursor: 'pointer' }}>{lang === 'cz' ? 'Ke stažení' : 'Downloads'}</button>
-            <button onClick={() => { setMobileMenuOpen(false); navigate('/login', 'login'); }} style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '15px 30px', borderRadius: '15px', fontWeight: '900', fontSize: '1.2rem', cursor: 'pointer', marginTop: '1rem' }}>
-              {t.hero.cta1}
+            {navItems.map(item => (
+              <button key={item.label} onClick={() => { setMobileMenuOpen(false); item.action(); }} style={{ background: 'transparent', border: 'none', color: 'white', fontWeight: '800', fontSize: '1.5rem', cursor: 'pointer' }}>{item.label}</button>
+            ))}
+            <button onClick={() => { setMobileMenuOpen(false); navigate('/login', 'login'); }} style={{ background: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.2)', padding: '13px 28px', borderRadius: '15px', fontWeight: '800', fontSize: '1.1rem', cursor: 'pointer', marginTop: '1rem' }}>
+              {t.hero.ctaLogin}
+            </button>
+            <button onClick={() => { setMobileMenuOpen(false); navigate('/register', 'register-agency'); }} style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '15px 30px', borderRadius: '15px', fontWeight: '900', fontSize: '1.2rem', cursor: 'pointer' }}>
+              {t.hero.ctaRegister}
             </button>
           </div>
         </div>
       )}
 
       {/* HERO SECTION */}
-      <section style={{ padding: isMobile ? '8rem 5% 4rem' : '14rem 5% 6rem', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+      <section style={{ padding: isMobile ? '7rem 5% 3rem' : '11rem 5% 5rem', position: 'relative', zIndex: 1 }}>
         <ScrollReveal>
-          <div style={{ display: 'inline-block', padding: '0.6rem 1.4rem', borderRadius: '30px', background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)', color: '#60a5fa', fontWeight: '900', fontSize: '0.7rem', letterSpacing: '0.15em', marginBottom: '2.5rem', textShadow: '0 0 10px rgba(59, 130, 246, 0.3)' }}>
-            {t.hero.badge}
-          </div>
-          <h1 style={{ fontSize: isMobile ? '2.8rem' : '5.5rem', fontWeight: '900', lineHeight: 1, marginBottom: '2.5rem', letterSpacing: '-0.04em', background: 'linear-gradient(to bottom, #fff 40%, #64748b)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', whiteSpace: 'pre-line' }}>
-            {t.hero.title}
-          </h1>
-          <p style={{ fontSize: isMobile ? '1.1rem' : '1.4rem', color: 'rgba(255,255,255,0.5)', maxWidth: '750px', margin: '0 auto 4rem', lineHeight: 1.6, fontWeight: '400' }}>
-            {t.hero.desc}
-          </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1.5rem' }}>
-            {/* Kotva pro e2e login helper (tests/helpers/auth.js). Dřív se trefoval
-                jen podle textu tlačítka, takže změna marketingového textu by rozbila
-                přihlášení ve všech specech. Sedí schválně na hero CTA, ne na tom
-                v hlavičce — hlavičkové se pod `!isMobile` na mobilu nerenderuje. */}
-            <button data-testid="landing-enter-btn" onClick={() => navigate('/login', 'login')} style={{ padding: '1.25rem 3.5rem', borderRadius: '20px', border: 'none', background: '#3b82f6', color: 'white', fontWeight: '900', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 20px 40px -10px rgba(59, 130, 246, 0.5)', transition: 'all 0.3s ease' }}>
-              {t.hero.cta1}
-            </button>
-            <button onClick={() => navigate('/downloads', 'downloads')} style={{ padding: '1.25rem 3rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: 'white', fontWeight: '800', fontSize: '1.1rem', cursor: 'pointer', backdropFilter: 'blur(10px)', transition: 'all 0.3s ease' }}>
-              {t.hero.cta3}
-            </button>
-          </div>
-        </ScrollReveal>
-
-        {/* HERO PREVIEW CARD */}
-        {!isMobile && (
-          <ScrollReveal delay={0.3}>
-            <div style={{ marginTop: '6rem', position: 'relative', maxWidth: '1000px', margin: '6rem auto 0' }}>
-              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '80%', height: '80%', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.2), transparent 70%)', filter: 'blur(50px)', zIndex: -1 }} />
-              <div style={{ background: 'rgba(15, 23, 42, 0.4)', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(40px)', padding: '10px', boxShadow: '0 50px 100px -20px rgba(0,0,0,0.7)' }}>
-                <img
-                  src="/thumb_analytics.jpg"
-                  alt="Nexus Hub Dashboard"
-                  style={{ width: '100%', borderRadius: '24px', display: 'block', objectFit: 'cover' }}
-                />
+          <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.05fr 1fr', gap: isMobile ? '3rem' : '4rem', alignItems: 'center' }}>
+            <div style={{ textAlign: isMobile ? 'center' : 'left' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', padding: '0.55rem 1.2rem', borderRadius: '30px', background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)', color: '#60a5fa', fontWeight: '900', fontSize: '0.65rem', letterSpacing: '0.14em', marginBottom: '2rem' }}>
+                <Shield size={13} />
+                {t.hero.badge}
+              </div>
+              <h1 style={{ fontSize: isMobile ? '2.1rem' : '3rem', fontWeight: '900', lineHeight: 1.1, marginBottom: '1.5rem', letterSpacing: '-0.035em', textWrap: 'pretty', background: 'linear-gradient(to bottom, #fff 40%, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', whiteSpace: 'pre-line' }}>
+                {t.hero.title}
+              </h1>
+              <p style={{ fontSize: isMobile ? '1rem' : '1.15rem', color: 'rgba(255,255,255,0.5)', maxWidth: '54ch', margin: isMobile ? '0 auto 2rem' : '0 0 2rem', lineHeight: 1.65 }}>
+                {t.hero.desc}
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start', gap: '0.85rem', marginBottom: '2rem' }}>
+                <button onClick={() => navigate('/register', 'register-agency')} style={{ padding: '1rem 1.8rem', borderRadius: '14px', border: 'none', background: '#3b82f6', color: 'white', fontWeight: '800', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.6rem', boxShadow: '0 20px 40px -12px rgba(59, 130, 246, 0.5)', transition: 'all 0.3s ease' }}>
+                  {t.hero.ctaRegister} <ArrowRight size={17} />
+                </button>
+                {/* Kotva pro e2e login helper (tests/helpers/auth.js). Dřív se helper
+                    trefoval podle textu tlačítka, takže změna marketingového textu
+                    rozbila přihlášení ve všech specech. Musí sedět na prvku, který
+                    vede na /login a renderuje se i na mobilu — proto tady, ne
+                    v hlavičce (ta je celá pod `!isMobile`). */}
+                <button data-testid="landing-enter-btn" onClick={() => navigate('/login', 'login')} style={{ padding: '1rem 1.6rem', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.03)', color: 'white', fontWeight: '700', fontSize: '1rem', cursor: 'pointer', backdropFilter: 'blur(10px)', transition: 'all 0.3s ease' }}>
+                  {t.hero.ctaLogin}
+                </button>
+                {/* Návrh tu měl „Prohlídka za 3 minuty“. Takové video nemáme, tak
+                    tlačítko odscrolluje na ukázky, které v repu opravdu jsou. */}
+                <button onClick={() => scrollTo('safety')} style={{ padding: '1rem 0.2rem', border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.5)', fontWeight: '600', fontSize: '0.95rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', textDecoration: 'underline', textUnderlineOffset: '4px', textDecorationColor: 'rgba(255,255,255,0.2)' }}>
+                  {t.hero.ctaDemo} <ChevronDown size={15} />
+                </button>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start', gap: '1.4rem', fontSize: '0.8rem', color: 'rgba(255,255,255,0.35)' }}>
+                {t.trust.map(item => (
+                  <span key={item} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
+                    <Check size={13} color="#10b981" />{item}
+                  </span>
+                ))}
               </div>
             </div>
-          </ScrollReveal>
-        )}
+
+            <div>
+              <div style={{ position: 'relative', padding: '8px', background: 'rgba(15, 23, 42, 0.45)', borderRadius: '26px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 40px 80px -20px rgba(0,0,0,0.75)', backdropFilter: 'blur(20px)' }}>
+                <video poster="/thumb_safety.jpg" controls playsInline preload="metadata" style={{ width: '100%', borderRadius: '20px', display: 'block', objectFit: 'cover' }}>
+                  <source src="/safety.mp4" type="video/mp4" />
+                </video>
+              </div>
+              <p style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.85rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)' }}>
+                <Shield size={13} />{t.heroVideoCaption}
+              </p>
+            </div>
+          </div>
+        </ScrollReveal>
       </section>
 
       {/* INTEGRATIONS BAR */}
@@ -423,7 +472,7 @@ const LandingPage = () => {
       </section>
 
       {/* VIDEO CASE STUDIES */}
-      <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
+      <section id="safety" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
         {t.videos.map(v => <VideoCard key={v.id} {...v} />)}
       </section>
 
@@ -446,7 +495,7 @@ const LandingPage = () => {
                       </li>
                     ))}
                   </ul>
-                  <button onClick={() => navigate('/register', 'register-agency')} style={{ width: '100%', padding: '1rem', borderRadius: '14px', border: 'none', background: p.popular ? '#3b82f6' : 'rgba(255,255,255,0.05)', color: 'white', fontWeight: '800', cursor: 'pointer', transition: 'all 0.3s' }}>{t.hero.cta1}</button>
+                  <button onClick={() => navigate('/register', 'register-agency')} style={{ width: '100%', padding: '1rem', borderRadius: '14px', border: 'none', background: p.popular ? '#3b82f6' : 'rgba(255,255,255,0.05)', color: 'white', fontWeight: '800', cursor: 'pointer', transition: 'all 0.3s' }}>{t.hero.ctaRegister}</button>
                 </div>
               </ScrollReveal>
             ))}
