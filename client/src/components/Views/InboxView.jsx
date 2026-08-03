@@ -3,13 +3,61 @@ import { safeRedirect } from '../../utils/safeRedirect';
 import { 
   Search, MessageSquare, Phone, Clock, Link, Globe, Shield, Check, 
   Zap, Calendar, ChevronDown, ChevronLeft, ChevronRight, PlusCircle, 
-  Signal, MoreVertical, StickyNote, Languages, Sparkles, Loader2, RefreshCw, UserCheck, X, Lock
+  Signal, MoreVertical, StickyNote, Languages, Sparkles, Loader2, RefreshCw, UserCheck, X, Lock, AlertTriangle, CheckCheck
 } from 'lucide-react';
+import { deliveryState } from '../../utils/deliveryState';
 
 import { useNexus } from '../../context/ContextHook';
 import { useOmnichannel } from '../../hooks/useOmnichannel';
 import PremiumSelector from '../UI/PremiumSelector';
 import useAI from '../../hooks/useAI';
+
+
+/**
+ * Stav doručení odchozí zprávy.
+ *
+ * Relay telefon hlásí výsledek odeslání zpět (PATCH /api/messages/:id/status),
+ * server ho uloží a rozešle přes socket jako `message_updated`. Klient tu
+ * informaci dostával, ale nikde ji nevykresloval — nedoručená SMS vypadala
+ * úplně stejně jako doručená. Operátorka tak byla přesvědčená, že klient
+ * zprávu má, i když mu nikdy nedorazila.
+ *
+ * Selhání nesmí být poznat jen podle barvy: kdo barvy nerozliší nebo jen
+ * rychle přejede očima po hustém výpisu, si toho nevšimne. Proto ikona i věta.
+ */
+const DeliveryState = ({ status, isCz, onResend }) => {
+  const state = deliveryState(status);
+  if (state.kind === 'none') return null;
+
+  if (state.kind === 'failed') {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '6px', flexWrap: 'wrap' }}>
+        <AlertTriangle size={13} color="#f87171" style={{ flex: 'none' }} />
+        <span style={{ fontSize: '0.7rem', color: '#fca5a5', fontWeight: '700' }}>
+          {isCz ? 'Klientovi nedošla' : 'Not delivered'}
+        </span>
+        {state.showResend && onResend && (
+          <button
+            onClick={onResend}
+            style={{ background: 'none', border: 'none', padding: 0, marginLeft: '0.2rem', color: '#f87171', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '3px' }}
+          >
+            {isCz ? 'Poslat znovu' : 'Send again'}
+          </button>
+        )}
+      </div>
+    );
+  }
+  if (state.kind === 'pending') {
+    return <Clock size={12} style={{ opacity: 0.5 }} aria-label={isCz ? 'Odesílá se' : 'Sending'} />;
+  }
+  if (state.kind === 'delivered') {
+    return <CheckCheck size={13} style={{ opacity: 0.55 }} aria-label={isCz ? 'Doručeno' : 'Delivered'} />;
+  }
+  if (state.kind === 'sent') {
+    return <Check size={13} style={{ opacity: 0.5 }} aria-label={isCz ? 'Odesláno' : 'Sent'} />;
+  }
+  return null;
+};
 
 const InboxView = () => {
   const nexus = useNexus() || {};
@@ -633,7 +681,17 @@ const InboxView = () => {
                                   </span>
                                 </div>
                               )}
-                              <div className={msg.direction === 'OUTBOUND' ? 'message-bubble-out' : 'message-bubble-in'} style={{ alignSelf: msg.direction === 'OUTBOUND' ? 'flex-end' : 'flex-start', marginBottom: isMobile ? '0.35rem' : '0.6rem' }}>
+                              <div
+                                className={msg.direction === 'OUTBOUND' ? 'message-bubble-out' : 'message-bubble-in'}
+                                data-testid={msg.status === 'failed' ? 'message-failed' : undefined}
+                                style={{
+                                  alignSelf: msg.direction === 'OUTBOUND' ? 'flex-end' : 'flex-start',
+                                  marginBottom: isMobile ? '0.35rem' : '0.6rem',
+                                  // Rám navíc, aby selhání šlo poznat i periferním viděním
+                                  // v dlouhém výpisu — ale nikdy jako jediný signál.
+                                  ...(msg.status === 'failed' ? { border: '1px solid rgba(239, 68, 68, 0.55)' } : {})
+                                }}
+                              >
                                 <div style={{ fontSize: isMobile ? '0.88rem' : '0.95rem' }}>{finalMsgText}</div>
                                 <div style={{ fontSize: '0.65rem', opacity: 0.6, marginTop: '4px', display: 'flex', justifyContent: 'flex-end', gap: '10px', alignItems: 'center' }}>
                                   {msg.senderName && msg.direction === 'OUTBOUND' && (
@@ -644,7 +702,17 @@ const InboxView = () => {
                                   <span>
                                     {validDate.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' })}
                                   </span>
+                                  {msg.direction === 'OUTBOUND' && msg.status !== 'failed' && (
+                                    <DeliveryState status={msg.status} isCz={lang === 'cz'} />
+                                  )}
                                 </div>
+                                {msg.direction === 'OUTBOUND' && msg.status === 'failed' && (
+                                  <DeliveryState
+                                    status="failed"
+                                    isCz={lang === 'cz'}
+                                    onResend={() => sendMessage(msg.text)}
+                                  />
+                                )}
                               </div>
                             </Fragment>
                           );
