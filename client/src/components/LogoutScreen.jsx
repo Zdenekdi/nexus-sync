@@ -27,8 +27,8 @@ const LogoutScreen = () => {
               a destruktivním akcím — odhlášení není ani jedno a barva tam ubírá
               důraz tam, kde musí zabrat. Proto neutrální. */}
           <div style={{ 
-            width: '64px', height: '64px', borderRadius: '20px', 
-            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+            width: '64px', height: '64px', borderRadius: '12px', 
+            background: 'rgba(255,255,255,0.04)', border: '1px solid #242a36',
             display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.55)'
           }}>
             <LogOut size={32} />
@@ -49,7 +49,7 @@ const LogoutScreen = () => {
             style={{
               width: '100%', padding: '1.25rem',
               background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-              color: 'white', border: 'none', borderRadius: '18px',
+              color: 'white', border: 'none', borderRadius: '12px',
               fontSize: '1.1rem', fontWeight: '950', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.85rem',
               boxShadow: '0 20px 40px -10px rgba(59, 130, 246, 0.4)',
@@ -63,9 +63,9 @@ const LogoutScreen = () => {
             onClick={handleHomeRedirect}
             style={{
               width: '100%', padding: '1.25rem',
-              background: 'rgba(255,255,255,0.03)', 
-              border: '1px solid rgba(255,255,255,0.08)',
-              color: 'white', borderRadius: '18px',
+              background: '#11141c', 
+              border: '1px solid #242a36',
+              color: 'white', borderRadius: '12px',
               fontSize: '1.1rem', fontWeight: '950', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.85rem',
               transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'

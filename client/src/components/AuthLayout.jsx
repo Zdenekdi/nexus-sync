@@ -12,7 +12,6 @@ const STYLES = {
     display: 'flex', 
     flexDirection: 'row', 
     overflow: 'hidden',
-    fontFamily: 'Inter, sans-serif'
   },
   leftSide: {
     flex: 1.2,
@@ -66,7 +65,7 @@ const STYLES = {
 const FeatureItem = ({ icon: Icon, title, desc, delay }) => (
   <div style={{ ...STYLES.featureItem, animationDelay: `${delay}s` }}>
     <div style={{ 
-      width: '56px', height: '56px', borderRadius: '16px', 
+      width: '56px', height: '56px', borderRadius: '12px', 
       background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6'
     }}>
@@ -82,10 +81,10 @@ const FeatureItem = ({ icon: Icon, title, desc, delay }) => (
 const LanguageSwitcher = ({ lang, setLang }) => (
   <div style={{ 
     display: 'flex', 
-    background: 'rgba(255,255,255,0.03)', 
+    background: '#11141c', 
     padding: '3px', 
-    borderRadius: '10px', 
-    border: '1px solid rgba(255,255,255,0.06)',
+    borderRadius: '8px', 
+    border: '1px solid #242a36',
     backdropFilter: 'blur(10px)',
     zIndex: 20
   }}>
@@ -95,7 +94,7 @@ const LanguageSwitcher = ({ lang, setLang }) => (
         onClick={() => setLang(l)} 
         style={{ 
           padding: '4px 10px', 
-          borderRadius: '8px', 
+          borderRadius: '6px', 
           border: 'none', 
           background: lang === l ? 'rgba(59, 130, 246, 0.2)' : 'transparent', 
           color: lang === l ? '#60a5fa' : 'rgba(255,255,255,0.4)', 
@@ -123,12 +122,12 @@ const AuthLayout = ({ children, subtitle }) => {
           <LanguageSwitcher lang={lang} setLang={setLang} />
         </div>
         <div style={{ position: 'absolute', top: '1.5rem', left: '1.5rem' }}>
-          <button onClick={() => navigate('/')} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', padding: '8px 15px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button onClick={() => navigate('/')} style={{ background: '#181c26', border: 'none', color: 'white', padding: '8px 15px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <ArrowLeft size={18} /> {isCz ? 'Zpět' : 'Back'}
           </button>
         </div>
         <div style={{ padding: '2.5rem 1.5rem', textAlign: 'center' }}>
-          <img src="/nexus_icon.png" alt="Nexus" style={{ width: '56px', borderRadius: '14px', marginBottom: '1.5rem', boxShadow: '0 10px 30px rgba(59, 130, 246, 0.3)' }} />
+          <img src="/nexus_icon.png" alt="Nexus" style={{ width: '56px', borderRadius: '10px', marginBottom: '1.5rem', boxShadow: '0 10px 30px rgba(59, 130, 246, 0.3)' }} />
           <h1 style={{ color: 'white', fontSize: '1.75rem', fontWeight: '950', margin: 0, letterSpacing: '-0.02em' }}>Nexus Hub</h1>
           {subtitle && <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem', marginTop: '0.5rem' }}>{subtitle}</p>}
         </div>
@@ -153,17 +152,17 @@ const AuthLayout = ({ children, subtitle }) => {
 
       <div style={{ ...STYLES.leftSide, background: '#040507' }}>
         <div style={{ position: 'absolute', top: '2rem', left: '2rem', zIndex: 50 }}>
-          <button onClick={() => navigate('/')} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', padding: '8px 15px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button onClick={() => navigate('/')} style={{ background: '#181c26', border: 'none', color: 'white', padding: '8px 15px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <ArrowLeft size={18} /> {isCz ? 'Zpět' : 'Back'}
           </button>
         </div>
         <div style={{ ...STYLES.glow, top: '-10%', left: '-10%' }} />
         
         <div style={{ position: 'relative', zIndex: 10, maxWidth: '600px' }}>
-          <div style={{ 
+          <div className="pub-mono" style={{ 
             display: 'inline-flex', alignItems: 'center', gap: '0.75rem', 
             padding: '0.6rem 1.4rem', background: 'rgba(59, 130, 246, 0.08)',
-            borderRadius: '30px', color: '#60a5fa', marginBottom: '2.5rem',
+            borderRadius: '16px', color: '#60a5fa', marginBottom: '2.5rem',
             border: '1px solid rgba(59, 130, 246, 0.2)',
             fontSize: '0.7rem', fontWeight: '900', letterSpacing: '0.15em',
             animation: 'fadeInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) both'

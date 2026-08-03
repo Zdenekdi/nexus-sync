@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
 :root {
   --bg-color: #080a0f;
@@ -103,6 +104,39 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+/* ── Vizuální jazyk veřejných obrazovek ───────────────────────────────────────
+   Návrh z Claude Design staví landing a přihlášení na IBM Plexu, sevřenějších
+   rozích a plných plochách místo prosklených. Aplikace za přihlášením zůstává
+   na Interu — sjednocovat obojí by znamenalo sáhnout na každou obrazovku, a to
+   je samostatná práce. Proto je to zavřené do .landing-page a .auth-screen.
+
+   Pevných 14px ze zadání tu vědomě NENÍ: :root používá clamp() a rem se počítá
+   od kořene, takže by to znamenalo globální změnu velikosti písma všude.
+
+   --pub-* proměnné existují, aby se hodnoty daly měnit na jednom místě, až se
+   vzhled bude sjednocovat s vnitřkem aplikace. */
+.landing-page,
+.auth-screen {
+  --pub-surface: #11141c;
+  --pub-surface-2: #181c26;
+  --pub-line: #242a36;
+  --pub-dim: #94a3b8;
+  --pub-faint: #64748b;
+  --pub-r-sm: 6px;
+  --pub-r-md: 10px;
+  --pub-r-lg: 16px;
+
+  font-family: 'IBM Plex Sans', 'Inter', system-ui, sans-serif;
+}
+
+/* Monospace na to, co se čte po znacích nebo po číslicích: zvací kód, ceny,
+   popisky sekcí. V návrhu je to nosný prvek, ne ozdoba. */
+.landing-page .pub-mono,
+.auth-screen .pub-mono {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Globální `header` výše je stylovaný pro hlavičky pohledů v aplikaci: flex,
