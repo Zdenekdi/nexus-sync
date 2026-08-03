@@ -355,7 +355,11 @@ const LandingPage = () => {
             {t.hero.desc}
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1.5rem' }}>
-            <button onClick={() => navigate('/login', 'login')} style={{ padding: '1.25rem 3.5rem', borderRadius: '20px', border: 'none', background: '#3b82f6', color: 'white', fontWeight: '900', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 20px 40px -10px rgba(59, 130, 246, 0.5)', transition: 'all 0.3s ease' }}>
+            {/* Kotva pro e2e login helper (tests/helpers/auth.js). Dřív se trefoval
+                jen podle textu tlačítka, takže změna marketingového textu by rozbila
+                přihlášení ve všech specech. Sedí schválně na hero CTA, ne na tom
+                v hlavičce — hlavičkové se pod `!isMobile` na mobilu nerenderuje. */}
+            <button data-testid="landing-enter-btn" onClick={() => navigate('/login', 'login')} style={{ padding: '1.25rem 3.5rem', borderRadius: '20px', border: 'none', background: '#3b82f6', color: 'white', fontWeight: '900', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 20px 40px -10px rgba(59, 130, 246, 0.5)', transition: 'all 0.3s ease' }}>
               {t.hero.cta1}
             </button>
             <button onClick={() => navigate('/downloads', 'downloads')} style={{ padding: '1.25rem 3rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: 'white', fontWeight: '800', fontSize: '1.1rem', cursor: 'pointer', backdropFilter: 'blur(10px)', transition: 'all 0.3s ease' }}>
