@@ -4,7 +4,7 @@ import {
   Settings, Activity, Radio, Globe, Smartphone, FileSearch, 
   Shield, ShieldCheck, Building2, HardDrive, CreditCard, Zap, UserCheck,
   LogOut, Menu, X, Circle, Package as PackageIcon, Gift, Wallet,
-  ChevronDown, ChevronRight, BookOpen, Terminal, GitGraph, KeyRound
+  ChevronDown, ChevronRight, BookOpen, Terminal, GitGraph, KeyRound, Server
 } from 'lucide-react';
 import { useNexus } from '../../context/ContextHook';
 
@@ -98,7 +98,7 @@ const Sidebar = () => {
 
   const nexus = useNexus();
   const { 
-    activeTab, setActiveTab, t, navigate,
+    activeTab, setActiveTab, t, lang, navigate,
     activeOperator, logout, isMobile, 
     totalUnread,
     activeProfile, setActiveProfileId, activeRole, _profiles,
@@ -320,6 +320,31 @@ const Sidebar = () => {
           </div>
         </div>
 
+        {/* Kontext platformy.
+            App owner sahá na data všech agentur naráz — a v dosavadním rozhraní
+            to nebylo nijak poznat: owner položky měly stejnou agenturní modrou
+            jako běžná navigace. Jantarová barva a tenhle pruh drží obě úrovně
+            oddělené, aby nešlo splést, čí data má člověk zrovna před sebou.
+
+            Agentura tuhle sekci nemá zašedlou — v jejím sidebaru neexistuje
+            vůbec, protože i zašedlá položka prozrazuje, že něco takového je. */}
+        {activeOperator?.isAppOwner && !isSidebarCollapsed && (
+          <div
+            data-testid="owner-platform-banner"
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.65rem',
+              padding: '0.6rem 0.9rem', marginBottom: '0.9rem',
+              background: 'var(--owner-color)', color: 'white',
+              borderRadius: '10px', border: '1px solid var(--owner-border)'
+            }}
+          >
+            <Server size={15} style={{ flex: 'none' }} />
+            <span style={{ fontSize: '0.78rem', fontWeight: '700', letterSpacing: '0.01em' }}>
+              {lang === 'cz' ? 'PLATFORMA — kontext všech agentur' : 'PLATFORM — all agencies'}
+            </span>
+          </div>
+        )}
+
         {/* My Girls Section (Independent scroll, at the top) */}
         {showMyGirls && !isSidebarCollapsed && (
           <SidebarSection 
@@ -408,8 +433,8 @@ const Sidebar = () => {
                       { id: 'maintenance', icon: HardDrive, label: t('maintenance'), perm: 'maintenance' },
                     ].filter(item => activeOperator?.isAppOwner || isAllowed(item.perm)).map(item => (
                       <TooltipItem key={item.id} label={capitalize(item.label)} isMobile={isMobile} isSidebarCollapsed={isSidebarCollapsed}>
-                        <button data-testid={`nav-link-${item.id}`} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
-                          <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
+                        <button data-testid={`nav-link-${item.id}`} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'var(--owner-active)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
+                          <item.icon size={20} color={activeTab === item.id ? 'var(--owner-accent)' : 'var(--text-secondary)'} />
                           {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(item.label)}</span>}
                         </button>
                       </TooltipItem>
@@ -425,8 +450,8 @@ const Sidebar = () => {
                         { id: 'docs', icon: FileSearch, label: t('documentation') },
                       ].map(item => (
                         <TooltipItem key={item.id} label={capitalize(item.label)} isMobile={isMobile} isSidebarCollapsed={isSidebarCollapsed}>
-                          <button data-testid={`nav-link-${item.id}`} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
-                            <item.icon size={20} color={activeTab === item.id ? 'var(--accent-color)' : 'var(--text-secondary)'} />
+                          <button data-testid={`nav-link-${item.id}`} onClick={() => handleNavigation(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: isSidebarCollapsed ? '0' : '1.15rem', padding: '0.75rem 1.15rem', borderRadius: '12px', background: activeTab === item.id ? 'var(--owner-active)' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start' }}>
+                            <item.icon size={20} color={activeTab === item.id ? 'var(--owner-accent)' : 'var(--text-secondary)'} />
                             {!isSidebarCollapsed && <span style={{ color: activeTab === item.id ? 'white' : 'var(--text-secondary)', fontWeight: activeTab === item.id ? '800' : '600', fontSize: '0.95rem' }}>{capitalize(item.label)}</span>}
                           </button>
                         </TooltipItem>
