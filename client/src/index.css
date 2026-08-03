@@ -131,7 +131,8 @@ h1 {
   .landing-page h2,
   .landing-page header,
   .auth-screen h1,
-  .auth-screen h2 {
+  .auth-screen h2,
+  .auth-screen header {
     display: revert !important;
   }
 }

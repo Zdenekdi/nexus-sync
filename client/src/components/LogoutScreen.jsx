@@ -23,15 +23,18 @@ const LogoutScreen = () => {
     <AuthLayout subtitle={isCz ? 'Odhlášení' : 'Logout'}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', textAlign: 'center' }}>
         <header style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+          {/* Ikona byla červená. Červená je ale v tomhle produktu vyhrazená SOS
+              a destruktivním akcím — odhlášení není ani jedno a barva tam ubírá
+              důraz tam, kde musí zabrat. Proto neutrální. */}
           <div style={{ 
             width: '64px', height: '64px', borderRadius: '20px', 
-            background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444'
+            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.55)'
           }}>
             <LogOut size={32} />
           </div>
           <h3 style={{ fontSize: '2rem', fontWeight: '950', color: 'white', margin: 0, letterSpacing: '-0.02em' }}>
-            {isCz ? 'Odhlášení úspěšné' : 'Logout successful'}
+            {isCz ? 'Odhlášení proběhlo' : 'You are signed out'}
           </h3>
           <p style={{ color: 'rgba(255,255,255,0.4)', margin: 0, fontWeight: '500', lineHeight: '1.4' }}>
             {isCz 
@@ -73,6 +76,12 @@ const LogoutScreen = () => {
             <Home size={20} /> {isCz ? 'Přejít na úvodní stránku' : 'Go to landing page'}
           </button>
         </div>
+
+        <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.3)', margin: 0, lineHeight: 1.5 }}>
+          {isCz
+            ? 'Pokud jste se odhlásili na cizím počítači, doporučujeme změnit heslo.'
+            : 'If you signed out on a shared computer, we recommend changing your password.'}
+        </p>
       </div>
     </AuthLayout>
   );
