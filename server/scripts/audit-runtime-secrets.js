@@ -142,6 +142,24 @@ function validateRuntimeSecrets() {
 
   if (productionLike && !has('FIREBASE_SERVICE_ACCOUNT_JSON') && !has('GOOGLE_APPLICATION_CREDENTIALS')) {
     addIssue(issues, 'warning', 'FIREBASE_SERVICE_ACCOUNT_JSON', 'Firebase/FCM service account is not configured.');
+  } else if (has('FIREBASE_SERVICE_ACCOUNT_JSON')) {
+    // Pouhá existence proměnné nestačí: audit dlouho hlásil "FIREBASE: configured",
+    // zatímco FCM každý push odmítal s app/invalid-credential — push tak tiše
+    // nefungoval včetně bezpečnostních upozornění. Ověříme aspoň tvar klíče.
+    try {
+      const parsed = JSON.parse(value('FIREBASE_SERVICE_ACCOUNT_JSON'));
+      const missing = ['project_id', 'client_email', 'private_key'].filter((k) => !parsed[k]);
+      if (missing.length) {
+        addIssue(issues, 'error', 'FIREBASE_SERVICE_ACCOUNT_JSON',
+          `Service account is missing ${missing.join(', ')} — FCM push will fail.`);
+      } else if (!String(parsed.private_key).includes('BEGIN PRIVATE KEY')) {
+        addIssue(issues, 'error', 'FIREBASE_SERVICE_ACCOUNT_JSON',
+          'private_key does not look like a PEM key (newlines are often mangled when pasted into env) — FCM push will fail.');
+      }
+    } catch (err) {
+      addIssue(issues, 'error', 'FIREBASE_SERVICE_ACCOUNT_JSON',
+        `Service account JSON could not be parsed (${err.message}) — FCM push will fail.`);
+    }
   }
 
   if (has('TELEGRAM_BOT_TOKEN') !== has('TELEGRAM_CHAT_ID')) {
@@ -165,7 +183,12 @@ function validateRuntimeSecrets() {
       STRIPE_SECRET_KEY: redactedPresence('STRIPE_SECRET_KEY'),
       STRIPE_PUBLISHABLE_KEY: redactedPresence('STRIPE_PUBLISHABLE_KEY'),
       STRIPE_WEBHOOK_SECRET: redactedPresence('STRIPE_WEBHOOK_SECRET'),
-      FIREBASE: has('FIREBASE_SERVICE_ACCOUNT_JSON') || has('GOOGLE_APPLICATION_CREDENTIALS') ? 'configured' : 'missing',
+      // Nehlásíme "configured", když je servisní účet rozbitý — přesně tahle věta
+      // dlouho tvrdila, že push funguje, zatímco FCM odmítal každou zprávu.
+      FIREBASE: (() => {
+        if (issues.some((i) => i.key === 'FIREBASE_SERVICE_ACCOUNT_JSON' && i.level === 'error')) return 'invalid';
+        return has('FIREBASE_SERVICE_ACCOUNT_JSON') || has('GOOGLE_APPLICATION_CREDENTIALS') ? 'configured' : 'missing';
+      })(),
       TELEGRAM_ALERTS: has('TELEGRAM_BOT_TOKEN') && has('TELEGRAM_CHAT_ID') ? 'configured' : 'missing',
       BACKUP_DIR: has('BACKUP_DIR') ? 'configured' : 'default:/var/backups/nexus',
       RETENTION_DAYS: has('RETENTION_DAYS') ? 'configured' : 'default:14'
