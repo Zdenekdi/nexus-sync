@@ -14,6 +14,14 @@
   --warning-color: #f59e0b;
   --error-color: #ef4444;
   --glass-blur: blur(25px);
+
+  /* Kontext app ownera. Agenturní modrá se v owner sekcích záměrně neobjeví —
+     obě úrovně musí jít od sebe rozeznat, protože owner sahá na data všech
+     agentur naráz. Hodnoty podle návrhu (--owner / --owner-hi). */
+  --owner-color: #b45309;
+  --owner-accent: #f59e0b;
+  --owner-border: #7c2d12;
+  --owner-active: rgba(245, 158, 11, 0.14);
   --premium-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
 
   /* Responsive Font Size: 14px base, scales to ~20px on large monitors / 100% zoom */
