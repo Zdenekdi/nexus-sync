@@ -112,13 +112,13 @@ const LanguageSwitcher = ({ lang, setLang }) => (
   </div>
 );
 
-const AuthLayout = ({ children, title: _title, subtitle }) => {
+const AuthLayout = ({ children, subtitle }) => {
   const { lang, setLang, isMobile, navigate } = useNexus();
   const isCz = lang === 'cz';
 
   if (isMobile) {
     return (
-      <div style={{ ...STYLES.page, flexDirection: 'column', overflow: 'auto', background: '#040507', position: 'relative' }}>
+      <div className="auth-screen" style={{ ...STYLES.page, flexDirection: 'column', overflow: 'auto', background: '#040507', position: 'relative' }}>
         <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem' }}>
           <LanguageSwitcher lang={lang} setLang={setLang} />
         </div>
