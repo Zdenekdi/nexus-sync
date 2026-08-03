@@ -144,7 +144,7 @@ const AuthLayout = ({ children, subtitle }) => {
   }
 
   return (
-    <div style={STYLES.page}>
+    <div className="auth-screen" style={STYLES.page}>
       <style>{`
         @keyframes fadeInLeft { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes fadeInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }

@@ -2,7 +2,7 @@ import React, { useState, useEffect, memo } from 'react';
 import { 
   Lock, Mail, ArrowRight, Eye, EyeOff, 
   Building2, User, Zap, UserPlus, ShieldCheck,
-  ChevronRight, Copy, Check, AlertCircle
+  ChevronRight, Copy, Check, AlertCircle, Send
 } from 'lucide-react';
 import { useNexus } from '../context/ContextHook';
 import AuthLayout from './AuthLayout';
@@ -205,12 +205,19 @@ const RegisterAgencyView = ({ isCz, onSwitch }) => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [inviteCode, setInviteCode] = useState(null);
+  const [error, setError] = useState(null);
+  const [qrDataUrl, setQrDataUrl] = useState(null);
+
+  const fail = (message) => { setError(message); showToast(message, 'error'); };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) return showToast(isCz ? 'Hesla se neshodují' : 'Passwords do not match', 'error');
-    if (formData.password.length < 8) return showToast(isCz ? 'Heslo je příliš krátké' : 'Password too short', 'error');
-    
+    setError(null);
+    // Potvrzení hesla schválně zůstává. Je to jediná pojistka proti překlepu
+    // v hesle k účtu, který vlastní celou agenturu.
+    if (formData.password !== formData.confirmPassword) return fail(isCz ? 'Hesla se neshodují.' : 'Passwords do not match.');
+    if (formData.password.length < 8) return fail(isCz ? 'Heslo musí mít aspoň 8 znaků.' : 'Password must be at least 8 characters.');
+
     setLoading(true);
     try {
       const res = await onRegisterAgency({ 
@@ -220,8 +227,39 @@ const RegisterAgencyView = ({ isCz, onSwitch }) => {
         password: formData.password 
       });
       if (res?.success) setInviteCode(res.inviteCode);
-      else if (res?.error || res?._err) showToast(t(res.error || res._err), 'error');
+      else if (res?.error || res?._err) fail(t(res.error || res._err));
     } finally { setLoading(false); }
+  };
+
+  // QR se generuje až tady, po úspěšné registraci — knihovna se stahuje dynamicky,
+  // ať neroste balík, který se načítá při prvním otevření webu. Když se nenačte,
+  // zůstane čitelný kód i tlačítka; QR je nadstavba, ne jediná cesta.
+  useEffect(() => {
+    if (!inviteCode) return;
+    let cancelled = false;
+    import('qrcode')
+      .then(QR => QR.toDataURL(inviteCode, { width: 220, margin: 1, color: { dark: '#0b1220', light: '#ffffff' } }))
+      .then(url => { if (!cancelled) setQrDataUrl(url); })
+      .catch(() => { /* bez QR se dá kód pořád opsat i zkopírovat */ });
+    return () => { cancelled = true; };
+  }, [inviteCode]);
+
+  const shareInvite = async () => {
+    const text = isCz
+      ? `Zvací kód do Nexus Hub: ${inviteCode}`
+      : `Your Nexus Hub invite code: ${inviteCode}`;
+    // Návrh měl „Poslat SMS". To by znamenalo nový endpoint a plochu na zneužití
+    // (SMS pumping). Systémové sdílení nabídne SMS, WhatsApp i cokoli dalšího,
+    // co má uživatel v telefonu, a nás to nestojí nic.
+    if (navigator.share) {
+      try { await navigator.share({ text }); return; } catch { /* uživatel sdílení zavřel */ }
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast(isCz ? 'Zkopírováno i s textem pozvánky.' : 'Copied with the invite text.', 'success');
+    } catch {
+      showToast(isCz ? 'Nepodařilo se zkopírovat, opište kód ručně.' : 'Copy failed — please type the code manually.', 'error');
+    }
   };
 
   if (inviteCode) {
@@ -233,17 +271,36 @@ const RegisterAgencyView = ({ isCz, onSwitch }) => {
         <header>
           <h3 style={{ fontSize: '2rem', fontWeight: '950', color: 'white', margin: 0 }}>{isCz ? 'Agentura vytvořena!' : 'Agency Created!'}</h3>
           <p style={{ color: 'rgba(255,255,255,0.4)', marginTop: '0.5rem' }}>
-            {isCz ? 'Zde je váš unikátní zvací kód pro členy týmu:' : 'Here is your unique invite code for team members:'}
+            {isCz
+              ? 'Tímto kódem pozvete členy týmu. Účet si založí sami, heslo si nastaví až potom.'
+              : 'Use this code to invite your team. They create their own account and set a password afterwards.'}
           </p>
         </header>
-        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', padding: '1.5rem', position: 'relative' }}>
-          <code style={{ fontSize: '2rem', fontWeight: '900', color: '#3b82f6', letterSpacing: '0.1em', fontFamily: 'monospace' }}>{inviteCode}</code>
-          <button 
-            onClick={() => { navigator.clipboard.writeText(inviteCode); showToast(isCz ? 'Zkopírováno!' : 'Copied!', 'success'); }}
-            style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', background: 'rgba(59, 130, 246, 0.1)', border: 'none', padding: '0.75rem', borderRadius: '12px', color: '#3b82f6', cursor: 'pointer' }}
-          >
-            <Copy size={18} />
-          </button>
+        <div style={{ background: 'rgba(59, 130, 246, 0.06)', border: '1px solid rgba(59, 130, 246, 0.35)', borderRadius: '20px', padding: '1.5rem' }}>
+          <code style={{ display: 'block', fontSize: '1.9rem', fontWeight: '900', color: '#60a5fa', letterSpacing: '0.16em', fontFamily: 'monospace', marginBottom: '1rem', wordBreak: 'break-all' }}>{inviteCode}</code>
+
+          {qrDataUrl && (
+            <img
+              src={qrDataUrl}
+              alt={isCz ? 'QR kód se zvacím kódem' : 'QR code containing the invite code'}
+              style={{ width: '150px', height: '150px', borderRadius: '12px', display: 'block', margin: '0 auto 1rem' }}
+            />
+          )}
+
+          <div style={{ display: 'flex', gap: '0.6rem' }}>
+            <button
+              onClick={() => { navigator.clipboard.writeText(inviteCode); showToast(isCz ? 'Zkopírováno!' : 'Copied!', 'success'); }}
+              style={{ flex: 1, padding: '0.7rem', borderRadius: '12px', background: '#3b82f6', border: 'none', color: 'white', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+            >
+              <Copy size={15} /> {isCz ? 'Zkopírovat' : 'Copy'}
+            </button>
+            <button
+              onClick={shareInvite}
+              style={{ flex: 1, padding: '0.7rem', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', color: 'white', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+            >
+              <Send size={15} /> {isCz ? 'Sdílet pozvánku' : 'Share invite'}
+            </button>
+          </div>
         </div>
         <PrimaryButton onClick={() => onSwitch('login')}>
           {isCz ? 'Pokračovat k přihlášení' : 'Continue to Login'} <ChevronRight size={20} />
@@ -256,29 +313,36 @@ const RegisterAgencyView = ({ isCz, onSwitch }) => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       <header>
         <h3 style={{ fontSize: '2rem', fontWeight: '950', color: 'white', margin: 0 }}>{isCz ? 'Nová agentura' : 'Register Agency'}</h3>
-        <p style={{ color: 'rgba(255,255,255,0.4)', marginTop: '0.5rem' }}>{isCz ? 'Získejte Enterprise infrastrukturu pro vaši firmu.' : 'Get Enterprise infrastructure for your business.'}</p>
+        <p style={{ color: 'rgba(255,255,255,0.4)', marginTop: '0.5rem' }}>{isCz ? 'Čísla a lidi doplníte potom. Teď stačí pár údajů — platební kartu nechceme.' : 'Numbers and people come later. A few details is all we need — no card required.'}</p>
       </header>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-        <InputGroup label={isCz ? 'Název agentury' : 'Agency Name'} icon={Building2}>
-          <StyledInput required placeholder={isCz ? 'např. Elite Models' : 'e.g. Elite Models'} value={formData.agencyName} onChange={e => setFormData({...formData, agencyName: e.target.value})} />
+        <InputGroup label={isCz ? 'Název agentury' : 'Agency Name'} icon={Building2} htmlFor="reg-agency-name">
+          <StyledInput id="reg-agency-name" required placeholder={isCz ? 'např. Elite Models' : 'e.g. Elite Models'} value={formData.agencyName} onChange={e => setFormData({...formData, agencyName: e.target.value})} />
         </InputGroup>
-        <InputGroup label={isCz ? 'Vaše celé jméno' : 'Your Full Name'} icon={User}>
-          <StyledInput required placeholder="John Doe" value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} />
+        <InputGroup label={isCz ? 'Vaše celé jméno' : 'Your Full Name'} icon={User} htmlFor="reg-full-name">
+          <StyledInput id="reg-full-name" autoComplete="name" required placeholder="John Doe" value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} />
         </InputGroup>
-        <InputGroup label={isCz ? 'E-mail' : 'Email'} icon={Mail}>
-          <StyledInput type="email" required placeholder="john@agency.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+        <InputGroup label={isCz ? 'E-mail' : 'Email'} icon={Mail} htmlFor="reg-email">
+          <StyledInput id="reg-email" type="email" autoComplete="email" required placeholder="john@agency.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
         </InputGroup>
-        <InputGroup label={isCz ? 'Heslo' : 'Password'} icon={Lock}>
-          <StyledInput type={showPassword ? 'text' : 'password'} required placeholder="••••••••" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
+        <InputGroup label={isCz ? 'Heslo' : 'Password'} icon={Lock} htmlFor="reg-password">
+          <StyledInput id="reg-password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" required placeholder="••••••••" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
           <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '1.25rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer' }}>
             {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
           </button>
         </InputGroup>
         <PasswordRequirements password={formData.password} isCz={isCz} />
-        <InputGroup label={isCz ? 'Potvrďte heslo' : 'Confirm Password'} icon={Lock}>
-          <StyledInput type={showPassword ? 'text' : 'password'} required placeholder="••••••••" value={formData.confirmPassword} onChange={e => setFormData({...formData, confirmPassword: e.target.value})} />
+        <InputGroup label={isCz ? 'Potvrďte heslo' : 'Confirm Password'} icon={Lock} htmlFor="reg-password-confirm">
+          <StyledInput id="reg-password-confirm" type={showPassword ? 'text' : 'password'} autoComplete="new-password" required placeholder="••••••••" value={formData.confirmPassword} onChange={e => setFormData({...formData, confirmPassword: e.target.value})} />
         </InputGroup>
+
+        {error && (
+          <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.7rem', padding: '0.9rem 1.1rem', borderRadius: '14px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+            <AlertCircle size={18} color="#f87171" style={{ flex: 'none', marginTop: '1px' }} />
+            <span style={{ fontSize: '0.9rem', color: '#fca5a5', lineHeight: 1.5 }}>{error}</span>
+          </div>
+        )}
 
         <PrimaryButton type="submit" loading={loading}>
           {isCz ? 'Vytvořit agenturu' : 'Create Agency'} <ArrowRight size={20} />
