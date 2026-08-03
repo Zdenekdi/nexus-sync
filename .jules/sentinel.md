@@ -37,3 +37,8 @@
 **Vulnerability:** Weak random number generation using `Math.random()` for password generation in client code.
 **Learning:** `Math.random()` is not cryptographically secure and predictable, additionally the sort trick `(() => 0.5 - Math.random())` for shuffling creates non-uniform distributions.
 **Prevention:** Always use `window.crypto.getRandomValues()` for security-sensitive random number generation in the frontend, and apply a proper Fisher-Yates shuffle instead of `.sort` based shuffling.
+
+## 2026-06-28 - [CRITICAL] Fix Timing Attack in Traccar Gateway Webhook
+**Vulnerability:** Timing attack via strict inequality operator (`!==`) checking user input against `TRACCAR_FORWARD_SECRET` in the `traccarForward` method in `server/src/controllers/trackerController.js`.
+**Learning:** Checking tokens with `!==` reveals timing differences, making the token vulnerable to brute-force determination. This is particularly dangerous for webhook endpoints which are often unauthenticated except for this shared secret.
+**Prevention:** Always use `secureCompare` (or `crypto.timingSafeEqual`) from `../utils/security` instead of standard equality operators for tokens, passwords, and verification secrets. Ensure strict type checking before comparison to prevent errors.
