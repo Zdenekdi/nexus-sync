@@ -219,6 +219,24 @@ const sendChatPush = async ({ agencyId, profileId, chatId, from, messagePreview,
   return sendMulticast(tokens, payload);
 };
 
+// Testovací push míří jen na zařízení toho, kdo o test požádal. sendChatPush by
+// ho poslal přes getAgencyTokens celé agentuře — tedy rozbzučel telefony všem
+// kolegům pokaždé, když si někdo chce ověřit, že mu chodí upozornění.
+const sendSelfTestPush = async ({ userId, title, body }) => {
+  const rows = await prisma.pushDevice.findMany({
+    where: { userId: String(userId), active: true },
+    select: { token: true }
+  });
+  const tokens = rows.map((row) => row.token).filter(Boolean);
+  if (!tokens.length) {
+    return { sent: 0, failed: 0, details: 'Na tvém účtu není registrované žádné aktivní zařízení' };
+  }
+  return sendMulticast(tokens, {
+    notification: { title, body },
+    data: { type: 'push_test' }
+  });
+};
+
 const sendCallPush = async ({ agencyId, profileId, from, caller, profileName, callState }) => {
   const tokens = await getAgencyTokens(agencyId);
   const payload = buildCallPushPayload({ profileId, from, caller, profileName, callState });
@@ -408,6 +426,7 @@ module.exports = {
   buildSafetyPushPayload,
   sendChatPush,
   sendCallPush,
+  sendSelfTestPush,
   sendSafetyPush,
   sendGhostCallPush,
   sendRelaySmsPush,

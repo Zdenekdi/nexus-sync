@@ -1,7 +1,8 @@
 const prisma = require('../services/db');
 const jwt = require('jsonwebtoken');
-const { registerPushToken, sendChatPush, sendCallPush } = require('../services/pushService');
+const { registerPushToken, sendChatPush, sendCallPush, sendSelfTestPush } = require('../services/pushService');
 const { getIO } = require('../services/socket');
+const logger = require('../services/logger');
 const { secureCompare, deriveRelaySecret } = require('../utils/security');
 const { getPhoneLookupValues, normalizePhoneNumber } = require('../utils/phoneNumber');
 const { isAppOwnerRole, isManagerRole } = require('../utils/authz');
@@ -282,21 +283,38 @@ exports.revokeDeviceBinding = async (req, res) => {
   }
 };
 
+// Ověření, že push na tenhle účet opravdu dojde.
+//
+// Dřív to nešlo použít k ničemu: výsledek odeslání se zahodil a endpoint vrátil
+// ok:true i tehdy, když Firebase nic neodeslal. Přesně tímhle způsobem nám
+// mohl měsíce nefungovat push včetně bezpečnostních upozornění, aniž by to
+// cokoli nahlásilo. Test, který vždycky hlásí úspěch, je horší než žádný.
+//
+// Druhá změna: posílá se jen na zařízení volajícího. sendChatPush mířil přes
+// getAgencyTokens na celou agenturu, takže si člověk ověřil push tím, že
+// rozbzučel telefony všem kolegům.
 exports.sendTestPush = async (req, res) => {
   try {
     const { title, body } = req.body;
     const userId = String(req.user?.userId || req.user?.id || '');
-    const agencyId = req.user?.agencyId;
 
-    if (!title || !body) return res.status(400).json({ ok: false });
+    if (!title || !body) return res.status(400).json({ ok: false, message: 'title and body are required' });
+    if (!userId) return res.status(401).json({ ok: false, message: 'Missing user context' });
 
-    const binding = await prisma.deviceBinding.findFirst({ where: { userId, active: true } });
-    if (!binding) return res.status(404).json({ ok: false, message: 'No active device binding' });
+    const result = await sendSelfTestPush({ userId, title, body });
+    const delivered = (result?.sent ?? 0) > 0;
 
-    await sendChatPush({ agencyId, profileId: binding.profileId, chatId: 'test', from: 'SYSTEM', messagePreview: body, profileName: 'Test' });
-    return res.json({ ok: true });
+    return res.status(delivered ? 200 : 502).json({
+      ok: delivered,
+      sent: result?.sent ?? 0,
+      failed: result?.failed ?? 0,
+      // Bez tohohle se nedá poznat, jestli chybí registrované zařízení, nebo
+      // jestli Firebase odmítá tokeny (jiný projekt, odhlášená aplikace…).
+      details: result?.details ?? null
+    });
   } catch (error) {
-    return res.status(500).json({ ok: false });
+    logger.error('[Device] sendTestPush failed:', error);
+    return res.status(500).json({ ok: false, message: 'Push test failed' });
   }
 };
 
