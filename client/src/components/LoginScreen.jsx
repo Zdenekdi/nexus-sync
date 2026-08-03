@@ -39,8 +39,8 @@ const StyledInput = (props) => (
     {...props}
     style={{
       width: '100%', padding: '1.1rem 1.25rem 1.1rem 3.25rem',
-      background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
-      borderRadius: '18px', color: 'white', fontSize: '1.05rem', outline: 'none',
+      background: '#11141c', border: '1px solid #242a36',
+      borderRadius: '12px', color: 'white', fontSize: '1.05rem', outline: 'none',
       minHeight: '50px',
       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', backdropFilter: 'blur(10px)',
       ...props.style
@@ -55,7 +55,7 @@ const PrimaryButton = ({ children, loading, ...props }) => (
     style={{
       width: '100%', padding: '1.25rem',
       background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-      color: 'white', border: 'none', borderRadius: '18px',
+      color: 'white', border: 'none', borderRadius: '12px',
       fontSize: '1.1rem', fontWeight: '900', cursor: 'pointer',
       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.85rem',
       marginTop: '1rem', boxShadow: '0 20px 40px -10px rgba(59, 130, 246, 0.5)',
@@ -125,8 +125,8 @@ const LoginView = ({ isCz, onSwitch }) => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       <header>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-          <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img src="/nexus_icon.png" style={{ width: '32px', height: '32px', borderRadius: '8px' }} alt="Nexus Hub" onError={e => { e.target.style.display = 'none'; }} />
+          <div style={{ width: '48px', height: '48px', borderRadius: '10px', background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src="/nexus_icon.png" style={{ width: '32px', height: '32px', borderRadius: '6px' }} alt="Nexus Hub" onError={e => { e.target.style.display = 'none'; }} />
           </div>
           <h2 style={{ fontSize: '1.4rem', fontWeight: '900', color: '#60a5fa', margin: 0, letterSpacing: '0.05em' }}>
             NEXUS HUB
@@ -165,7 +165,7 @@ const LoginView = ({ isCz, onSwitch }) => {
         </InputGroup>
 
         {error && (
-          <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.7rem', padding: '0.9rem 1.1rem', borderRadius: '14px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+          <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.7rem', padding: '0.9rem 1.1rem', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
             <AlertCircle size={18} color="#f87171" style={{ flex: 'none', marginTop: '1px' }} />
             <span style={{ fontSize: '0.9rem', color: '#fca5a5', lineHeight: 1.5 }}>{error}</span>
           </div>
@@ -176,20 +176,20 @@ const LoginView = ({ isCz, onSwitch }) => {
         </PrimaryButton>
       </form>
 
-      <div style={{ padding: '1.5rem', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+      <div style={{ padding: '1.5rem', borderRadius: '12px', background: '#11141c', border: '1px solid #242a36', textAlign: 'center' }}>
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.95rem', margin: '0 0 1rem 0' }}>
           {isCz ? 'Ještě nemáte účet?' : "Don't have an account yet?"}
         </p>
         <div style={{ display: 'flex', gap: '1rem' }}>
           <button 
             onClick={() => onSwitch('register-agency')}
-            style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', color: '#3b82f6', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer' }}
+            style={{ flex: 1, padding: '0.75rem', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', color: '#3b82f6', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer' }}
           >
             {isCz ? 'Založit agenturu' : 'Start Agency'}
           </button>
           <button 
             onClick={() => onSwitch('join-agency')}
-            style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer' }}
+            style={{ flex: 1, padding: '0.75rem', borderRadius: '10px', background: '#181c26', border: '1px solid #242a36', color: 'white', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer' }}
           >
             {isCz ? 'Připojit se' : 'Join Agency'}
           </button>
@@ -265,7 +265,7 @@ const RegisterAgencyView = ({ isCz, onSwitch }) => {
   if (inviteCode) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', textAlign: 'center' }}>
-        <div style={{ width: '80px', height: '80px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', margin: '0 auto' }}>
+        <div style={{ width: '80px', height: '80px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', margin: '0 auto' }}>
           <ShieldCheck size={40} />
         </div>
         <header>
@@ -276,27 +276,27 @@ const RegisterAgencyView = ({ isCz, onSwitch }) => {
               : 'Use this code to invite your team. They create their own account and set a password afterwards.'}
           </p>
         </header>
-        <div style={{ background: 'rgba(59, 130, 246, 0.06)', border: '1px solid rgba(59, 130, 246, 0.35)', borderRadius: '20px', padding: '1.5rem' }}>
-          <code style={{ display: 'block', fontSize: '1.9rem', fontWeight: '900', color: '#60a5fa', letterSpacing: '0.16em', fontFamily: 'monospace', marginBottom: '1rem', wordBreak: 'break-all' }}>{inviteCode}</code>
+        <div style={{ background: 'rgba(59, 130, 246, 0.06)', border: '1px solid rgba(59, 130, 246, 0.35)', borderRadius: '12px', padding: '1.5rem' }}>
+          <code className="pub-mono" style={{ display: 'block', fontSize: '1.9rem', fontWeight: '900', color: '#60a5fa', letterSpacing: '0.16em', fontFamily: 'monospace', marginBottom: '1rem', wordBreak: 'break-all' }}>{inviteCode}</code>
 
           {qrDataUrl && (
             <img
               src={qrDataUrl}
               alt={isCz ? 'QR kód se zvacím kódem' : 'QR code containing the invite code'}
-              style={{ width: '150px', height: '150px', borderRadius: '12px', display: 'block', margin: '0 auto 1rem' }}
+              style={{ width: '150px', height: '150px', borderRadius: '10px', display: 'block', margin: '0 auto 1rem' }}
             />
           )}
 
           <div style={{ display: 'flex', gap: '0.6rem' }}>
             <button
               onClick={() => { navigator.clipboard.writeText(inviteCode); showToast(isCz ? 'Zkopírováno!' : 'Copied!', 'success'); }}
-              style={{ flex: 1, padding: '0.7rem', borderRadius: '12px', background: '#3b82f6', border: 'none', color: 'white', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+              style={{ flex: 1, padding: '0.7rem', borderRadius: '10px', background: '#3b82f6', border: 'none', color: 'white', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
             >
               <Copy size={15} /> {isCz ? 'Zkopírovat' : 'Copy'}
             </button>
             <button
               onClick={shareInvite}
-              style={{ flex: 1, padding: '0.7rem', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', color: 'white', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+              style={{ flex: 1, padding: '0.7rem', borderRadius: '10px', background: '#181c26', border: '1px solid #2d3444', color: 'white', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
             >
               <Send size={15} /> {isCz ? 'Sdílet pozvánku' : 'Share invite'}
             </button>
@@ -338,7 +338,7 @@ const RegisterAgencyView = ({ isCz, onSwitch }) => {
         </InputGroup>
 
         {error && (
-          <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.7rem', padding: '0.9rem 1.1rem', borderRadius: '14px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+          <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.7rem', padding: '0.9rem 1.1rem', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
             <AlertCircle size={18} color="#f87171" style={{ flex: 'none', marginTop: '1px' }} />
             <span style={{ fontSize: '0.9rem', color: '#fca5a5', lineHeight: 1.5 }}>{error}</span>
           </div>
