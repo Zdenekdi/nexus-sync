@@ -3,22 +3,12 @@
  * Capacitor plugin wrapper pro SMS interceptor (nexusRelay varianta).
  * V nexusFull variantě se plugin ignoruje — SMS přicházejí přes Socket.IO ze serveru.
  */
-import { registerPlugin } from '@capacitor/core';
+import { NexusRelay } from './nexusRelay';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 
 // Registrace Capacitor pluginu (funguje jen v Android nexusRelay APK)
-const NexusRelayPlugin = registerPlugin('NexusRelay', {
-  web: {
-    // Webový stub — vrátí bezpečné výchozí hodnoty
-    isDefaultSmsApp:     async () => ({ isDefault: false }),
-    requestDefaultSmsApp: async () => ({}),
-    isDefaultDialer:     async () => ({ isDefault: false }),
-    requestDefaultDialer: async () => ({}),
-    configureRelay:      async () => ({}),
-    syncHistory:         async () => ({ synced: 0, failed: 0, skipped: 0 }),
-  },
-});
+const NexusRelayPlugin = NexusRelay;
 
 // ── Detekce varianty APK ────────────────────────────────────────────────────
 export const APP_VARIANT = window.__APP_VARIANT__ || 'full'; // 'relay' | 'full'

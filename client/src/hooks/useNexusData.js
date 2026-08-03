@@ -428,17 +428,25 @@ export function useNexusData({
       // Phase 2 is starting
       setIsBackgroundLoading(true);
 
+      // /agency/all a /admin/settings jsou na serveru vyhrazené app ownerovi.
+      // Klient je volal každému, takže operátorkám při každém načtení spadly dvě
+      // 403 do konzole. Roli známe z /auth/me o pár řádků výš, tak se neptáme
+      // na to, co stejně nedostaneme. (/admin/features projde i manažerce,
+      // /admin/feature-locks komukoli přihlášenému — ty zůstávají.)
+      const isOwner = !!selfRes?.data?.isAppOwner;
+      const skip = (value) => Promise.resolve({ data: value });
+
       // PHASE 2: HEAVY DATA (Background hydration)
       const [chatRes, bindingRes, trackerRes, statsRes, agencyRes, analyticsRes, bookingRes, featuresRes, globalSettingsRes, subCurrentRes, subHistoryRes, featureLocksRes] = await Promise.all([
         axiosWithTiming(`${API_BASE}/chats`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/device/bindings`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/trackers`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { trackers: [] } })),
         axiosWithTiming(`${API_BASE}/agency/stats`, { headers: { Authorization: `Bearer ${token}` } }),
-        axiosWithTiming(`${API_BASE}/agency/all`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
+        isOwner ? axiosWithTiming(`${API_BASE}/agency/all`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null) : skip(null),
         axiosWithTiming(`${API_BASE}/analytics/summary?days=7`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
         axiosWithTiming(`${API_BASE}/bookings`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
         axiosWithTiming(`${API_BASE}/admin/features`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] })),
-        axiosWithTiming(`${API_BASE}/admin/settings`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] })),
+        isOwner ? axiosWithTiming(`${API_BASE}/admin/settings`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] })) : skip([]),
         axiosWithTiming(`${API_BASE}/subscriptions/current`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
         axiosWithTiming(`${API_BASE}/subscriptions/history`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
         axiosWithTiming(`${API_BASE}/admin/feature-locks`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { locks: {} } }))

@@ -9,10 +9,11 @@
 // Tenhle modul stav zjistí a nabídne akce, které uživatele dovedou na správnou
 // systémovou obrazovku. Průvodce nad tím staví TrackingSetupGuide.
 
-import { Capacitor, registerPlugin } from '@capacitor/core';
+import { Capacitor } from '@capacitor/core';
+import { NexusRelay } from '../plugins/nexusRelay';
 import { Geolocation } from '@capacitor/geolocation';
 
-const NexusRelay = registerPlugin('NexusRelay');
+
 
 const WEB_READINESS = {
   supported: false,
