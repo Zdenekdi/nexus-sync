@@ -160,6 +160,31 @@ function validateRuntimeSecrets() {
       addIssue(issues, 'error', 'FIREBASE_SERVICE_ACCOUNT_JSON',
         `Service account JSON could not be parsed (${err.message}) — FCM push will fail.`);
     }
+  } else if (has('GOOGLE_APPLICATION_CREDENTIALS')) {
+    // Druhá podporovaná cesta: klíč v souboru. Kontroluje se stejně přísně —
+    // chybějící nebo poškozený soubor se projeví až tím, že FCM odmítne push.
+    const fs = require('fs');
+    const path = require('path');
+    const credPath = path.resolve(process.cwd(), value('GOOGLE_APPLICATION_CREDENTIALS'));
+    if (!fs.existsSync(credPath)) {
+      addIssue(issues, 'error', 'GOOGLE_APPLICATION_CREDENTIALS',
+        `Service account file not found at ${credPath} — FCM push will fail.`);
+    } else {
+      try {
+        const parsed = JSON.parse(fs.readFileSync(credPath, 'utf8'));
+        const missing = ['project_id', 'client_email', 'private_key'].filter((k) => !parsed[k]);
+        if (missing.length) {
+          addIssue(issues, 'error', 'GOOGLE_APPLICATION_CREDENTIALS',
+            `Service account file is missing ${missing.join(', ')} — FCM push will fail.`);
+        } else if (!String(parsed.private_key).includes('BEGIN PRIVATE KEY')) {
+          addIssue(issues, 'error', 'GOOGLE_APPLICATION_CREDENTIALS',
+            'private_key in the service account file is not a PEM key — FCM push will fail.');
+        }
+      } catch (err) {
+        addIssue(issues, 'error', 'GOOGLE_APPLICATION_CREDENTIALS',
+          `Service account file could not be parsed (${err.message}) — FCM push will fail.`);
+      }
+    }
   }
 
   if (has('TELEGRAM_BOT_TOKEN') !== has('TELEGRAM_CHAT_ID')) {
@@ -186,7 +211,7 @@ function validateRuntimeSecrets() {
       // Nehlásíme "configured", když je servisní účet rozbitý — přesně tahle věta
       // dlouho tvrdila, že push funguje, zatímco FCM odmítal každou zprávu.
       FIREBASE: (() => {
-        if (issues.some((i) => i.key === 'FIREBASE_SERVICE_ACCOUNT_JSON' && i.level === 'error')) return 'invalid';
+        if (issues.some((i) => ['FIREBASE_SERVICE_ACCOUNT_JSON', 'GOOGLE_APPLICATION_CREDENTIALS'].includes(i.key) && i.level === 'error')) return 'invalid';
         return has('FIREBASE_SERVICE_ACCOUNT_JSON') || has('GOOGLE_APPLICATION_CREDENTIALS') ? 'configured' : 'missing';
       })(),
       TELEGRAM_ALERTS: has('TELEGRAM_BOT_TOKEN') && has('TELEGRAM_CHAT_ID') ? 'configured' : 'missing',
