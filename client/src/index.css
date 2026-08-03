@@ -129,7 +129,9 @@ h1 {
      jeho nadpisy nikdy nebyly. */
   .landing-page h1,
   .landing-page h2,
-  .landing-page header {
+  .landing-page header,
+  .auth-screen h1,
+  .auth-screen h2 {
     display: revert !important;
   }
 }

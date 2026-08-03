@@ -710,6 +710,9 @@ export const NexusProvider = ({ children }) => {
     pathname, navigate: navigateStable, authInitialTab, setAuthInitialTab,
     loading: nexusData.isDataLoading, activeOperator, isLoggedIn, token,
     logout, onLogin: handleLogin, onRegisterAgency: auth.handleRegisterAgency, onRegisterUser: auth.handleRegisterUser,
+    // Reset hesla byl hotový na serveru i v useAuth, jen ho nikdo nevystavil
+    // do kontextu, takže se k němu z přihlašovací obrazovky nedalo dostat.
+    onResetRequest: auth.handleResetRequest,
     API_BASE, showLanding, setShowLanding, hasSeenOnboarding, setHasSeenOnboarding, showOnboarding, setShowOnboarding,
     isMobile, isNativeApp, isSidebarOpen, setIsSidebarOpen,
     isSidebarCollapsed, setIsSidebarCollapsed,
@@ -780,7 +783,7 @@ export const NexusProvider = ({ children }) => {
   }), [
     t, lang, setLang, activeTab, setActiveTab, activeMarket, setActiveMarket, pathname, navigateStable, authInitialTab,
     nexusData.isDataLoading, activeOperator, isLoggedIn, token, logout, handleLogin,
-    auth.handleRegisterAgency, auth.handleRegisterUser, showToast,
+    auth.handleRegisterAgency, auth.handleRegisterUser, auth.handleResetRequest, showToast,
     showLanding, hasSeenOnboarding, showOnboarding, isMobile, isNativeApp, isSidebarOpen, isSidebarCollapsed,
     messages, selectedChatId, messageValue, isEditProfileOpen, isAddAgencyOpen,
     isAddUserOpen, isBugReportOpen, agencyDetailModalData, editingProfileData, calViewDate, showPanicConfirm, _toasts,
