@@ -428,6 +428,7 @@ class SafetyController {
             // přiřazeným operátorům/manažerům jako nouzový poplach — tedy špatnému
             // publiku i se špatným obsahem.
             let pushDelivered = false;
+            let pushDetails = null;   // proč push neprošel — bez toho se selhání nedá diagnostikovat
             try {
                 const result = await sendGhostCallPush({
                     userIds: recipients.map(u => u.id),
@@ -435,11 +436,13 @@ class SafetyController {
                     profileName: profile.name
                 });
                 pushDelivered = (result?.sent ?? 0) > 0;
+                pushDetails = result?.details || `sent=${result?.sent ?? 0} failed=${result?.failed ?? 0}`;
             } catch (err) {
+                pushDetails = err.message;
                 logger.warn(`[Ghost Call] Push failed: ${err.message}`);
             }
 
-            logger.info(`[Ghost Call] profile=${profile.id} emitted=${socketEmitted} online=${clientsOnline} push=${pushDelivered}`);
+            logger.info(`[Ghost Call] profile=${profile.id} emitted=${socketEmitted} online=${clientsOnline} push=${pushDelivered} (${pushDetails})`);
 
             // Nikdo online a push nedoručen = hovor nikam nedorazil. Operátor to musí vědět.
             if ((!socketEmitted || clientsOnline === 0) && !pushDelivered) {
@@ -448,11 +451,12 @@ class SafetyController {
                     socketEmitted,
                     clientsOnline,
                     pushDelivered,
+                    pushDetails,
                     message: 'Ghost call could not be delivered to the device'
                 });
             }
 
-            res.json({ ok: true, socketEmitted, clientsOnline, pushDelivered });
+            res.json({ ok: true, socketEmitted, clientsOnline, pushDelivered, pushDetails });
         } catch (error) {
             logger.error('Error triggering ghost call:', error);
             res.status(500).json({ message: 'Failed to trigger ghost call' });
