@@ -165,15 +165,26 @@ const sendMulticast = async (tokens, payload) => {
     ...payload
   });
 
+  const errorCodes = new Set();
   response.responses.forEach((item, index) => {
-    if (!item.success && item.error?.code === 'messaging/registration-token-not-registered') {
+    if (item.success) return;
+    const code = item.error?.code;
+    if (code) errorCodes.add(code);
+    if (code === 'messaging/registration-token-not-registered') {
       void deactivateToken(tokens[index]);
     }
   });
 
+  // Bez chybového kódu se nedá poznat, jestli jsou tokeny jen zastaralé, nebo
+  // třeba server posílá z jiného Firebase projektu než ze kterého je aplikace.
+  if (response.failureCount > 0) {
+    console.warn(`[Push] ${response.failureCount}/${tokens.length} failed: ${[...errorCodes].join(', ')}`);
+  }
+
   return {
     sent: response.successCount,
-    failed: response.failureCount
+    failed: response.failureCount,
+    details: response.failureCount > 0 ? [...errorCodes].join(', ') : undefined
   };
 };
 
