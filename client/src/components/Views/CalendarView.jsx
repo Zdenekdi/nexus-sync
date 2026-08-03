@@ -1,9 +1,9 @@
 import React from 'react';
 import { 
-  Plus, Share2, Link, X, RefreshCw, Calendar, MoreVertical, Clock
-} from 'lucide-react';
+  Plus, Share2, Link, X, RefreshCw, Calendar, MoreVertical, Clock, AlertTriangle } from 'lucide-react';
 
 import { useNexus } from '../../context/ContextHook';
+import { findConflicts } from '../../utils/bookingConflicts';
 import PremiumSelector from '../UI/PremiumSelector';
 
 const CalendarView = () => {
@@ -46,6 +46,29 @@ const CalendarView = () => {
   const safeSchedule = Array.isArray(bookingSchedule) ? bookingSchedule : [];
   const safeProfiles = Array.isArray(allAgencyProfiles) ? allAgencyProfiles : [];
   const safeMyProfiles = Array.isArray(myProfiles) ? myProfiles : [];
+
+  // Porovnává se jen v rámci jednoho profilu — dvě různé profily ve stejný čas
+  // jsou běžný provoz, ne konflikt.
+  const conflicts = React.useMemo(() => findConflicts(bookingSchedule), [bookingSchedule]);
+
+  const profileNameById = React.useMemo(() => {
+    const map = new Map();
+    for (const p of [...(allAgencyProfiles || []), ...(myProfiles || [])]) {
+      if (p?.id) map.set(p.id, p.name || p.id);
+    }
+    return map;
+  }, [allAgencyProfiles, myProfiles]);
+
+  const conflictLabel = (c) => {
+    const name = profileNameById.get(c.profileId) || c.profileId;
+    const time = (v) => {
+      const d = new Date(v);
+      return isNaN(d) ? '?' : d.toLocaleString(lang === 'cz' ? 'cs-CZ' : 'en-GB', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
+    };
+    return lang === 'cz'
+      ? `${name}: ${time(c.a.startTime)} a ${time(c.b.startTime)} se překrývají.`
+      : `${name}: ${time(c.a.startTime)} and ${time(c.b.startTime)} overlap.`;
+  };
 
   return (
     <div data-testid="page-calendar-container" style={{ padding: isMobile ? '1.5rem 1rem' : '3rem', paddingBottom: '8rem', flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }} className="fade-in custom-scrollbar">
@@ -99,6 +122,35 @@ const CalendarView = () => {
            >
              <Link size={18} /> <span>{t('syncCalendar')}</span>
            </button>
+
+      {/* Dvojitě zarezervovaná schůzka je tichá chyba: nikdo o ní neví, dokud
+          nezavolá klient, že nikdo nedorazil. Data na to v systému jsou
+          (Booking má profileId, startTime, endTime), jen se nikdy neporovnala. */}
+      {conflicts.length > 0 && (
+        <div
+          data-testid="calendar-conflicts"
+          style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '1rem 1.15rem', marginBottom: '1.5rem', borderRadius: '14px', background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.35)' }}
+        >
+          <AlertTriangle size={18} color="#f59e0b" style={{ flex: 'none', marginTop: '2px' }} />
+          <div>
+            <div style={{ fontWeight: '800', fontSize: '0.9rem', marginBottom: '0.3rem' }}>
+              {lang === 'cz'
+                ? (conflicts.length === 1 ? 'Konflikt v rozvrhu' : `Konflikty v rozvrhu (${conflicts.length})`)
+                : (conflicts.length === 1 ? 'Scheduling conflict' : `Scheduling conflicts (${conflicts.length})`)}
+            </div>
+            {conflicts.slice(0, 3).map((c, i) => (
+              <div key={i} style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                {conflictLabel(c)}
+              </div>
+            ))}
+            {conflicts.length > 3 && (
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', opacity: 0.7, marginTop: '0.2rem' }}>
+                {lang === 'cz' ? `…a další ${conflicts.length - 3}` : `…and ${conflicts.length - 3} more`}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {isCalendarSyncOpen && (
         <div className="glass-card fade-in" style={{ position: 'relative', padding: '1.5rem 1.5rem 2rem', marginBottom: '2rem', background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.2)' }}>
