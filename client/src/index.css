@@ -121,6 +121,17 @@ h1 {
     /* Titles will be in the top bar on mobile, so we hide them or reset them */
     display: none !important;
   }
+
+  /* …ale jen uvnitř aplikace. Pravidlo výše je globální, takže na telefonu
+     schovávalo i nadpisy veřejného landingu — hero H1 i všechny H2 sekcí.
+     Návštěvník z mobilu tedy viděl odstavce bez jediného titulku a nikde
+     to nehlásilo chybu. Landing má vlastní hlavičku, v horní liště appky
+     jeho nadpisy nikdy nebyly. */
+  .landing-page h1,
+  .landing-page h2,
+  .landing-page header {
+    display: revert !important;
+  }
 }
 
 .mobile-top-bar {
