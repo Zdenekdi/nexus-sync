@@ -23,6 +23,16 @@ public class MainActivity extends BridgeActivity {
         }
 
 
+        // Kanály musí existovat dřív, než dorazí první notifikace — poplach
+        // se na pozadí vykresluje Firebasem bez zavolání naší FCM služby.
+        try {
+            android.app.NotificationManager nm =
+                (android.app.NotificationManager) getSystemService(android.content.Context.NOTIFICATION_SERVICE);
+            NexusFcmService.ensureNotificationChannels(nm);
+        } catch (Exception e) {
+            android.util.Log.w("MainActivity", "Nepodařilo se vytvořit notifikační kanály: " + e.getMessage());
+        }
+
         super.onCreate(savedInstanceState);
 
         // Keep system bars visually consistent with app shell and avoid white top strip.

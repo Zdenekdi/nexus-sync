@@ -220,5 +220,13 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- Když FCM zpráva neurčí kanál (nebo určí neexistující), Android musí
+             vědět, kam ji dát. Bez tohohle skončí v náhradním kanálu, který
+             uživatel nikdy neviděl a nemá nad ním kontrolu. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="nexus_push_channel" />
+
     </application>
 </manifest>

@@ -48,6 +48,27 @@ public class NexusFcmService extends MessagingService {
     private static final String CHANNEL_NAME = "Nexus Relay Notifications";
     private static final String CHANNEL_DESC = "Incoming messages and calls";
 
+    /*
+     * Bezpečnostní upozornění mají vlastní kanál.
+     *
+     * Dosud šlo všechno jedním kanálem se stejnou důležitostí — SOS i „přišla
+     * nová zpráva". To má dva následky, které u bezpečnostního produktu vadí:
+     * operátor, který si ztlumí notifikace kvůli zprávám, si tím ztlumí i SOS,
+     * a poplach se dá odsunout swipem jako běžná zpráva.
+     *
+     * Oddělený kanál umožní ztlumit provozní šum a nechat poplach hlasitý,
+     * a Android ho pustí i přes Nerušit.
+     */
+    // POZOR: tohle id se MUSÍ shodovat s tím, co posílá server v
+    // android.notification.channelId (pushService.js, buildSafetyPushPayload).
+    // Dosud se neshodovalo — server posílal na "nexus-emergency", aplikace ten
+    // kanál nikdy nevytvořila a v manifestu nebyl ani výchozí. Na Androidu 8+
+    // taková notifikace skončí v náhradním kanálu, klidně s nízkou důležitostí.
+    // Bezpečnostní poplach tedy mohl dorazit potichu.
+    private static final String SOS_CHANNEL_ID = "nexus-emergency";
+    private static final String SOS_CHANNEL_NAME = "Bezpečnostní poplach (SOS)";
+    private static final String SOS_CHANNEL_DESC = "SOS a eskalace bezpečnostních relací. Nedoporučujeme vypínat.";
+
     // -----------------------------------------------------------------------
     // Token refresh
     // -----------------------------------------------------------------------
@@ -216,31 +237,80 @@ public class NexusFcmService extends MessagingService {
         PendingIntent pendingIntent = PendingIntent.getActivity(
             this, requestCode, launchIntent != null ? launchIntent : new Intent(), flags);
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle(title)
-            .setContentText(body)
-            .setAutoCancel(true)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(pendingIntent);
+        boolean isSafety = "safety_alert".equals(data.get("type"));
+
+        NotificationCompat.Builder builder =
+            new NotificationCompat.Builder(this, isSafety ? SOS_CHANNEL_ID : CHANNEL_ID)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setContentIntent(pendingIntent);
+
+        if (isSafety) {
+            // CATEGORY_ALARM: Android smí poplach pustit i přes Nerušit.
+            // setOngoing: poplach nejde odsunout swipem — musí se otevřít.
+            // Bez autoCancel by zůstal viset i po otevření, proto ho necháváme.
+            builder.setCategory(NotificationCompat.CATEGORY_ALARM)
+                   .setPriority(NotificationCompat.PRIORITY_MAX)
+                   .setOngoing(true)
+                   .setAutoCancel(true)
+                   .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+        } else {
+            builder.setAutoCancel(true)
+                   .setPriority(NotificationCompat.PRIORITY_HIGH);
+        }
 
         int notificationId = requestCode;
         manager.notify(notificationId, builder.build());
     }
 
+    /**
+     * Vytvoří notifikační kanály.
+     *
+     * Volá se i z MainActivity při startu, ne jen při první data-only zprávě.
+     * Bezpečnostní poplach totiž chodí s `notification` blokem — na pozadí ho
+     * zobrazí Firebase bez zavolání téhle služby, takže kanál v tu chvíli už
+     * musí existovat. Jinak notifikace skončí v náhradním kanálu.
+     */
+    static void ensureNotificationChannels(NotificationManager manager) {
+        if (manager == null) return;
+        createChannels(manager);
+    }
+
     private void ensureNotificationChannel(NotificationManager manager) {
+        createChannels(manager);
+    }
+
+    private static void createChannels(NotificationManager manager) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
 
-        NotificationChannel channel = manager.getNotificationChannel(CHANNEL_ID);
-        if (channel != null) return;
+        if (manager.getNotificationChannel(CHANNEL_ID) == null) {
+            NotificationChannel channel = new NotificationChannel(
+                CHANNEL_ID,
+                CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_HIGH
+            );
+            channel.setDescription(CHANNEL_DESC);
+            manager.createNotificationChannel(channel);
+        }
 
-        channel = new NotificationChannel(
-            CHANNEL_ID,
-            CHANNEL_NAME,
-            NotificationManager.IMPORTANCE_HIGH
-        );
-        channel.setDescription(CHANNEL_DESC);
-        manager.createNotificationChannel(channel);
+        if (manager.getNotificationChannel(SOS_CHANNEL_ID) == null) {
+            NotificationChannel sos = new NotificationChannel(
+                SOS_CHANNEL_ID,
+                SOS_CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_HIGH
+            );
+            sos.setDescription(SOS_CHANNEL_DESC);
+            // Poplach musí projít i přes Nerušit. Uživatel to pořád může
+            // v nastavení kanálu vypnout — ale je to jeho vědomé rozhodnutí,
+            // ne vedlejší efekt ztlumení zpráv.
+            sos.setBypassDnd(true);
+            sos.enableVibration(true);
+            sos.setVibrationPattern(new long[]{ 0, 500, 250, 500 });
+            sos.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
+            sos.setShowBadge(true);
+            manager.createNotificationChannel(sos);
+        }
     }
 }
 
