@@ -27,7 +27,11 @@ export async function doLogin(page, email, password) {
   const submitBtn = page.getByTestId('login-submit');
   
   // Potential landing/onboarding elements
-  const enterBtn = page.getByTestId('landing-enter-btn').or(page.getByText(/vstoupit do aplikace|enter application|open nexus|otevřít nexus/i).first());
+  // .first() patří na CELÝ or(), ne jen na textovou větev: testid sedí na hero CTA,
+  // ale stejný text nese i tlačítko v hlavičce, takže or() vidí dva různé prvky a ve
+  // strict módu vyhodí výjimku. Tu by spolkl .catch(() => false) níž a helper by
+  // landing tiše přeskočil.
+  const enterBtn = page.getByTestId('landing-enter-btn').or(page.getByText(/vstoupit do aplikace|enter application|open nexus|otevřít nexus/i)).first();
   const nextBtn = page.getByRole('button', { name: /pokračovat|continue/i }).first();
   const skipBtn = page.getByTestId('onboarding-skip').or(page.getByRole('button', { name: /přeskočit|skip/i }).first());
   const finishBtn = page.getByTestId('onboarding-finish').or(page.getByRole('button', { name: /dokončit|finish/i }).first());

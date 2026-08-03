@@ -96,7 +96,6 @@ const LoginView = ({ isCz, onSwitch }) => {
         </h3>
         <p style={{ color: 'rgba(255,255,255,0.4)', marginTop: '0.5rem', fontWeight: '500' }}>
           {isCz ? 'Přihlaste se ke svému Nexus účtu.' : 'Sign in to your Nexus account.'}
-          <br /><span style={{ fontSize: '0.8rem', opacity: 0.5 }}>URL: {useNexus().API_BASE}</span>
         </p>
       </header>
 
