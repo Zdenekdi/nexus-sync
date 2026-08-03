@@ -176,7 +176,7 @@ const RegisterAgencyView = ({ isCz, onSwitch }) => {
         <header>
           <h3 style={{ fontSize: '2rem', fontWeight: '950', color: 'white', margin: 0 }}>{isCz ? 'Agentura vytvořena!' : 'Agency Created!'}</h3>
           <p style={{ color: 'rgba(255,255,255,0.4)', marginTop: '0.5rem' }}>
-            {isCz ? 'Zde je váš unikátní zvací kód pro modelky:' : 'Here is your unique invite code for models:'}
+            {isCz ? 'Zde je váš unikátní zvací kód pro členy týmu:' : 'Here is your unique invite code for team members:'}
           </p>
         </header>
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', padding: '1.5rem', position: 'relative' }}>

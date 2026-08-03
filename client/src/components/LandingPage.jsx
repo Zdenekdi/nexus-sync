@@ -178,19 +178,13 @@ const LandingPage = () => {
   const t = {
     cz: {
       hero: {
-        badge: "BUDOUCNOST SPRÁVY AGENTUR",
-        title: "Absolutní kontrola.\nNekonečný růst.",
-        desc: "Nexus Hub je inteligentní ekosystém pro moderní adult agentury. Kombinujeme pokročilou AI, real-time bezpečnost a analytiku, kterou jinde nenajdete.",
+        badge: "PROVOZ A BEZPEČNOST",
+        title: "Provoz agentury\nna jedné obrazovce.",
+        desc: "Profily, směny, komunikace a fakturace na jednom místě. Když je někdo na schůzce, dispečink vidí jeho check-iny — a SOS tlačítko upozorní celý tým naráz.",
         cta1: "Otevřít Nexus",
         cta2: "Průvodce startem",
         cta3: "Ke stažení"
       },
-      stats: [
-        { val: '25+', label: 'Aktivních agentur' },
-        { val: '1.2M+', label: 'Zpráv / měsíc' },
-        { val: '99.9%', label: 'Bezpečnostní skóre' }
-      ],
-      integrations: ["WhatsApp", "Telegram", "OnlyFans", "Stripe", "VOIP", "Crypto"],
       features: [
         { icon: Shield, title: "Safety Guard™", desc: "Real-time SOS a monitoring výjezdů." },
         { icon: Zap, title: "AI Smart Replies", desc: "Automatizované odpovědi a překlady." },
@@ -207,33 +201,27 @@ const LandingPage = () => {
       ],
       faqTitle: "Časté dotazy",
       faqs: [
-        { q: "Je systém 100% anonymní?", a: "Ano, Nexus Hub je navržen s důrazem na soukromí. Neukládáme žádné citlivé údaje, které by mohly spojit operátory s konkrétními osobami." },
-        { q: "Jak funguje SOS a bezpečnost?", a: "V případě nebezpečí stačí vyslovit hlasový kód nebo stisknout SOS tlačítko. Systém okamžitě rozešle alerty všem managerům s polohou a zvukem." },
+        { q: "Kdo vidí naše data?", a: "Data jsou oddělená po agenturách — vidíte jen to, co patří té vaší. Uvnitř agentury pak rozhodují role: kdo je smí číst a kdo měnit. Přístup si spravujete sami." },
+        { q: "Jak funguje SOS a bezpečnost?", a: "Před schůzkou se založí relace a chodí z ní check-iny. Když check-in nepřijde včas nebo se stiskne SOS tlačítko, dostane celý tým upozornění naráz. Sdílení polohy v reálném čase a hlasové SOS zatím dokončujeme — v aplikaci je najdete zamčené, ne rozbité." },
         { q: "Nabízíte API pro vývojáře?", a: "Ano, v rámci tarifu Agency poskytujeme přístup k našemu Public REST API, díky kterému můžete Nexus propojit s vašimi interními systémy nebo vlastními boty." },
         { q: "Jak mohu zaplatit?", a: "Podporujeme okamžité platby kartou přes Stripe. Správa karet, faktur a předplatného probíhá přes zabezpečený Stripe portál." },
         { q: "Dá se tarif později změnit?", a: "Samozřejmě. Upgrade i downgrade je možný kdykoliv přímo z vašeho administračního panelu." }
       ],
       videos: [
-        { id: 'safety', src: '/safety.mp4', poster: '/thumb_safety.jpg', title: 'Bezpečnost na prvním místě', desc: 'Safety Guard™ s taktickým přehledem v reálném čase. Automatické SOS alerty a sledování polohy.', features: ['Sledování polohy', 'Hlasové SOS', 'Globální blacklist'] },
+        { id: 'safety', src: '/safety.mp4', poster: '/thumb_safety.jpg', title: 'Bezpečnost na prvním místě', desc: 'Safety Guard drží přehled o probíhajících schůzkách. Zmeškaný check-in i stisk SOS upozorní celý tým naráz.', features: ['Check-iny s hlídáním času', 'SOS tlačítko', 'Sdílený blacklist klientů'] },
         { id: 'analytics', src: '/analytics.mp4', poster: '/thumb_analytics.jpg', title: 'Business pod kontrolou', desc: 'Zapomeňte na tabulky. Okamžitý přehled o tržbách, konverzích a výkonu celého týmu.', features: ['Real-time tržby', 'Výpočet provizí', 'VIP Management'], reverse: true },
         { id: 'operations', src: '/operations.mp4', poster: '/thumb_operations.jpg', title: 'Operace jako na dlaní', desc: 'Správa profilů, hierarchie a komunikace na jednom místě. Plná kontrola bez chaosu.', features: ['Správa profilů', 'Týmová hierarchie', 'CRM & Komunikace'] }
       ]
     },
     en: {
       hero: {
-        badge: "FUTURE OF AGENCY MANAGEMENT",
-        title: "Absolute Control.\nInfinite Growth.",
-        desc: "Nexus Hub is an intelligent ecosystem for modern adult agencies. We combine advanced AI, real-time safety, and analytics you won't find anywhere else.",
+        badge: "OPERATIONS & SAFETY",
+        title: "Your agency's operations\non one screen.",
+        desc: "Profiles, shifts, messaging and billing in one place. When someone is out on a booking, dispatch sees their check-ins — and the SOS button alerts the whole team at once.",
         cta1: "Open Nexus",
         cta2: "Start Guide",
         cta3: "Downloads"
       },
-      stats: [
-        { label: "Active Agencies", val: "50+" },
-        { label: "Messages / Month", val: "2.4M+" },
-        { label: "Security Score", val: "99.9%" }
-      ],
-      integrations: ["WhatsApp", "Telegram", "OnlyFans", "Stripe", "VOIP", "Crypto"],
       features: [
         { icon: Shield, title: "Safety Guard™", desc: "Real-time SOS and outcall monitoring." },
         { icon: Zap, title: "AI Smart Replies", desc: "Automated responses and translations." },
@@ -250,14 +238,14 @@ const LandingPage = () => {
       ],
       faqTitle: "Frequently Asked Questions",
       faqs: [
-        { q: "Is the system 100% anonymous?", a: "Yes, Nexus Hub is built with privacy first. We do not store sensitive links between operators and identities." },
-        { q: "How does SOS & Safety work?", a: "In case of danger, say the voice code or press SOS. The system alerts managers with location and live audio." },
+        { q: "Who can see our data?", a: "Data is separated per agency — you only ever see your own. Inside the agency, roles decide who may read and who may change what. You manage that access yourselves." },
+        { q: "How does SOS & Safety work?", a: "A session is opened before a booking and sends check-ins. If a check-in is missed or the SOS button is pressed, the whole team is alerted at once. Live location sharing and voice SOS are still being finished — you'll find them locked in the app rather than half-working." },
         { q: "Do you offer API for developers?", a: "Yes, the Agency plan provides access to our Public REST API, allowing you to connect Nexus with your internal tools or custom bots." },
         { q: "How can I pay?", a: "We support instant card payments via Stripe. Cards, invoices, and subscriptions are managed through the secure Stripe portal." },
         { q: "Can I change my plan later?", a: "Absolutely. You can upgrade or downgrade your subscription at any time via the administration panel." }
       ],
       videos: [
-        { id: 'safety', src: '/safety.mp4', poster: '/thumb_safety.jpg', title: 'Safety First', desc: 'Safety Guard™ with real-time tactical overview. Automated SOS alerts and location tracking.', features: ['Location Tracking', 'Voice SOS', 'Global Blacklist'] },
+        { id: 'safety', src: '/safety.mp4', poster: '/thumb_safety.jpg', title: 'Safety First', desc: 'Safety Guard keeps track of bookings in progress. A missed check-in or a pressed SOS alerts the whole team at once.', features: ['Timed check-ins', 'SOS button', 'Shared client blacklist'] },
         { id: 'analytics', src: '/analytics.mp4', poster: '/thumb_analytics.jpg', title: 'Business in Control', desc: 'Forget spreadsheets. Instant overview of revenue, conversions and team performance.', features: ['Real-time Revenue', 'Commission Calculator', 'VIP Management'], reverse: true },
         { id: 'operations', src: '/operations.mp4', poster: '/thumb_operations.jpg', title: 'Operations at a Glance', desc: 'Profile management, hierarchy and communication in one place. Full control without the chaos.', features: ['Profile Management', 'Team Hierarchy', 'CRM & Communication'] }
       ]
@@ -403,11 +391,6 @@ const LandingPage = () => {
             <svg width="28" height="28" viewBox="0 0 24 24" fill="#6772e5"><path d="M13.962 8.885c-1.57-.403-2.22-.72-2.22-1.344 0-.54.512-.906 1.344-.906 1.62 0 2.394.885 2.454 1.155.06.326.357.545.673.545h.024c.42 0 .736-.375.666-.788-.236-1.393-1.554-2.296-3.144-2.296-1.5 0-2.88.75-2.88 2.35 0 1.545 1.14 2.23 2.805 2.656 1.635.405 2.145.78 2.145 1.44 0 .61-.63 1.05-1.5 1.05-1.89 0-2.82-1.12-2.92-1.44-.085-.296-.34-.492-.638-.492h-.032c-.44 0-.756.402-.647.828.32 1.253 1.683 2.502 4.237 2.502 1.59 0 3.03-.81 3.03-2.52 0-1.74-1.556-2.316-3.414-2.79zM6.5 10V8c0-.55-.45-1-1-1s-1 .45-1 1v7c0 .55.45 1 1 1s1-.45 1-1v-2h2c.55 0 1-.45 1-1s-.45-1-1-1h-2z"/></svg>
             <span style={{ fontSize: '0.85rem', fontWeight: '900', color: 'white', letterSpacing: '0.1em' }}>STRIPE</span>
           </div>
-          {/* OnlyFans */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', filter: 'drop-shadow(0 0 10px rgba(0, 175, 240, 0.2))' }}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="#00aff0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 2c4.42 0 8 3.58 8 8s-3.58 8-8 8-8-3.58-8-8 3.58-8 8-8zm-1 4h2v2h-2V8zm0 4h2v6h-2v-6z"/></svg>
-            <span style={{ fontSize: '0.85rem', fontWeight: '900', color: 'white', letterSpacing: '0.1em' }}>ONLYFANS</span>
-          </div>
           {/* SMS Relay */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', filter: 'drop-shadow(0 0 10px rgba(59, 130, 246, 0.2))' }}>
             <MessageSquare size={24} color="#3b82f6" />
@@ -416,17 +399,9 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* STATS SECTION */}
-      <section style={{ padding: '6rem 5%' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '2rem' }}>
-          {t.stats.map((s, i) => (
-            <div key={i} style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '3.5rem', fontWeight: '900', color: 'white', marginBottom: '0.5rem', background: 'linear-gradient(to bottom, #fff, #3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{s.val}</div>
-              <div style={{ fontSize: '0.85rem', fontWeight: '800', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* Sekce se statistikami je pryč záměrně. Uváděla „25+ agentur / 1,2 M zpráv"
+          v češtině a „50+ / 2,4 M" v angličtině — o téže firmě. Nešlo tedy o čísla,
+          která by někdo změřil. Radši žádná než vymyšlená. */}
 
       {/* FEATURES GRID */}
       <section id="features" style={{ padding: '6rem 5%' }}>
@@ -495,7 +470,7 @@ const LandingPage = () => {
           <img src="/nexus_icon.png" alt="Nexus" style={{ width: '28px', height: '28px', borderRadius: '8px' }} />
           <span style={{ fontWeight: '900', letterSpacing: '0.1em' }}>NEXUS HUB</span>
         </div>
-        <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem' }}>© {new Date().getFullYear()} Nexus Systems. Absolute Control. Infinite Growth.</p>
+        <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem' }}>© {new Date().getFullYear()} Nexus Systems</p>
       </footer>
     </div>
   );
