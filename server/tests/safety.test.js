@@ -140,14 +140,28 @@ describe('POST /api/sos', () => {
 });
 
 describe('Safety sessions', () => {
-  it('GET /api/safety/sessions/active returns session or empty', async () => {
+  const getActive = () => request(app)
+    .get('/api/safety/sessions/active')
+    .set('Authorization', `Bearer ${makeToken()}`);
+
+  // Původní verze tohohle testu přijímala 200 i 404, takže neověřovala nic —
+  // právě proto mohlo 404 na prázdný stav projít až na produkci a zaplavovat
+  // konzoli chybou při každém načtení dashboardu.
+  it('returns 200 with null when nobody is out on a booking', async () => {
     prismaMock.safetySession.findFirst.mockResolvedValue(null);
 
-    const res = await request(app)
-      .get('/api/safety/sessions/active')
-      .set('Authorization', `Bearer ${makeToken()}`);
+    const res = await getActive();
 
-    // Controller may return 200 with null or 404 when no active session
-    expect([200, 404]).toContain(res.status);
+    expect(res.status).toBe(200);
+    expect(res.body).toBeNull();
+  });
+
+  it('returns the session when one is running', async () => {
+    prismaMock.safetySession.findFirst.mockResolvedValue({ id: 's1', state: 'CHECKED_IN' });
+
+    const res = await getActive();
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ id: 's1', state: 'CHECKED_IN' });
   });
 });

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { MessageSquare, X, Send, ArrowLeft, Plus, Loader2, AlertCircle, Search } from 'lucide-react';
 import { useSmsRelay } from '../plugins/NexusSms';
-import { registerPlugin } from '@capacitor/core';
+import { NexusRelay } from '../plugins/nexusRelay';
 import { App as CapacitorApp } from '@capacitor/app';
 
-const NexusRelayPlugin = registerPlugin('NexusRelay', { web: {} });
+const NexusRelayPlugin = NexusRelay;
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 

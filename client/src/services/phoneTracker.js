@@ -11,10 +11,11 @@
 // POZN.: watchPosition drží polohu ve FOREGROUNDU. Spolehlivý background (zhasnutá
 // obrazovka) přidá nativní foreground service — samostatný krok. Viz [[phone-gps-tracker]].
 import axios from 'axios';
-import { Capacitor, registerPlugin } from '@capacitor/core';
+import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
+import { NexusRelay } from '../plugins/nexusRelay';
 
-const NexusRelay = registerPlugin('NexusRelay');
+
 
 let ingestToken = null;
 let ingestUrl = null;

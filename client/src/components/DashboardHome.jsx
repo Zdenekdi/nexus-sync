@@ -20,8 +20,11 @@ const DashboardHome = () => {
     isLoggedIn, showToast, API_BASE, token, totalUnread, setActiveTab
   } = nexus;
   
-  const vultr = useVultr();
-  const hetzner = useHetzner();
+  // Stav serverů je věc app ownera. Pro ostatní role tyhle endpointy vracejí 403,
+  // takže se dřív z dashboardu každých 30 vteřin doptávaly na chybu donekonečna.
+  const infraEnabled = !!nexus.isAppOwner;
+  const vultr = useVultr({ enabled: infraEnabled });
+  const hetzner = useHetzner({ enabled: infraEnabled });
   const isMainHub = nexus.selectedServerId === 'main-hub';
   const isAiNode = nexus.selectedServerId === 'ai-node';
   const server = isMainHub ? vultr : (isAiNode ? hetzner : vultr);

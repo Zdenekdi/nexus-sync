@@ -187,11 +187,11 @@ class SafetyController {
                 orderBy: { updatedAt: 'desc' }
             });
 
-            if (!session) {
-                return res.status(404).json({ message: 'No active safety session' });
-            }
-
-            return res.json(session);
+            // Že zrovna nikdo není na schůzce, je běžný stav, ne chyba. Dřív se
+            // vracelo 404, takže si klient při každém načtení dashboardu zapsal do
+            // konzole chybu — a skutečné 404 (překlep v cestě, nenasazená ruta) se
+            // v tom šumu nedaly rozeznat.
+            return res.json(session || null);
         } catch (error) {
             logger.error('Failed to load active safety session:', error);
             return res.status(500).json({ message: 'Failed to load active safety session' });

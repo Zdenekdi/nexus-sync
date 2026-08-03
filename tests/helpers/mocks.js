@@ -26,12 +26,16 @@ export async function setupApiMocks(page) {
     }
   );
 
+  // Tvar musí odpovídat tomu, co /auth/me opravdu vrací (authController.getProfile):
+  // kromě id/name/role posílá i isAppOwner a isManager. Mock ty dva příznaky
+  // vynechával, takže se tvářil jako by roli nikdo nepoznal — a kód, který se
+  // podle nich rozhoduje, se v testech choval jinak než na produkci.
   const TEST_USERS = {
-    owner: { id: 'owner-001', name: 'Owner (App Owner)', role: 'App Owner' },
-    admin: { id: 'mark-001', name: 'Mark (Agency Admin)', role: 'Agency Admin' },
-    senior: { id: 'alice-001', name: 'Alice (Senior Op)', role: 'Senior Operator' },
-    model: { id: 'diana-001', name: 'Diana (Model)', role: 'Model' },
-    manager: { id: 'jan-001', name: 'Jan (Manager)', role: 'Manager' }
+    owner: { id: 'owner-001', name: 'Owner (App Owner)', role: 'App Owner', isAppOwner: true, isManager: true },
+    admin: { id: 'mark-001', name: 'Mark (Agency Admin)', role: 'Agency Admin', isAppOwner: false, isManager: true },
+    senior: { id: 'alice-001', name: 'Alice (Senior Op)', role: 'Senior Operator', isAppOwner: false, isManager: true },
+    model: { id: 'diana-001', name: 'Diana (Model)', role: 'Model', isAppOwner: false, isManager: false },
+    manager: { id: 'jan-001', name: 'Jan (Manager)', role: 'Manager', isAppOwner: false, isManager: true }
   };
 
   // Match /auth/login universally (handles both /api/auth/login and localhost:5000/auth/login)

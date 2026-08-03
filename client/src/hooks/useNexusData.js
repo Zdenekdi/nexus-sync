@@ -127,7 +127,6 @@ export function useNexusData({
   const [isDataLoading, setIsDataLoading] = useState(false);
   const [isBackgroundLoading, setIsBackgroundLoading] = useState(false);
   const [hasHydrated, setHasHydrated] = useState(() => localStorage.getItem('nexus_hydrated') === 'true');
-  const [rolePermissions, setRolePermissions] = useState(null);
 
   const [isTraining, setIsTraining] = useState(false);
   const [trainingProgress, setTrainingProgress] = useState(0);
@@ -394,12 +393,15 @@ export function useNexusData({
 
     try {
       // PHASE 1: CRITICAL DATA (Required for Sidebar & Core UI)
-      const [selfRes, profileRes, userRes, safetyRes, permissionsRes] = await Promise.all([
+      // Volání /admin/permissions tu bylo, ale takový endpoint na serveru není —
+      // jediná ruta s oprávněními je PATCH /agency/roles/:id/permissions. Vracelo
+      // to tedy 404 při každém načtení a výsledek nikdo nečetl: PermissionsDashboard
+      // si data bere sám z /agency/roles.
+      const [selfRes, profileRes, userRes, safetyRes] = await Promise.all([
         axiosWithTiming(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/profiles`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/agency/users`, { headers: { Authorization: `Bearer ${token}` } }),
-        axiosWithTiming(`${API_BASE}/safety/sessions/active`, { headers: { Authorization: `Bearer ${token}` } }),
-        axiosWithTiming(`${API_BASE}/admin/permissions`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: null }))
+        axiosWithTiming(`${API_BASE}/safety/sessions/active`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       // Process Priority 1 Data immediately to unlock UI
@@ -417,10 +419,6 @@ export function useNexusData({
           if (!isNaN(endAt)) setTimeLeft(Math.floor((endAt - Date.now()) / 1000));
         } catch { /* ignore date parse _err */ }
       }
-      if (permissionsRes?.data) {
-        setRolePermissions(permissionsRes.data);
-      }
-
       // UNLOCK SIDEBAR AS SOON AS CRITICAL DATA IS READY
       setIsDataLoading(false);
       setHasHydrated(true);
@@ -430,17 +428,25 @@ export function useNexusData({
       // Phase 2 is starting
       setIsBackgroundLoading(true);
 
+      // /agency/all a /admin/settings jsou na serveru vyhrazené app ownerovi.
+      // Klient je volal každému, takže operátorkám při každém načtení spadly dvě
+      // 403 do konzole. Roli známe z /auth/me o pár řádků výš, tak se neptáme
+      // na to, co stejně nedostaneme. (/admin/features projde i manažerce,
+      // /admin/feature-locks komukoli přihlášenému — ty zůstávají.)
+      const isOwner = !!selfRes?.data?.isAppOwner;
+      const skip = (value) => Promise.resolve({ data: value });
+
       // PHASE 2: HEAVY DATA (Background hydration)
       const [chatRes, bindingRes, trackerRes, statsRes, agencyRes, analyticsRes, bookingRes, featuresRes, globalSettingsRes, subCurrentRes, subHistoryRes, featureLocksRes] = await Promise.all([
         axiosWithTiming(`${API_BASE}/chats`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/device/bindings`, { headers: { Authorization: `Bearer ${token}` } }),
         axiosWithTiming(`${API_BASE}/trackers`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { trackers: [] } })),
         axiosWithTiming(`${API_BASE}/agency/stats`, { headers: { Authorization: `Bearer ${token}` } }),
-        axiosWithTiming(`${API_BASE}/agency/all`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
+        isOwner ? axiosWithTiming(`${API_BASE}/agency/all`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null) : skip(null),
         axiosWithTiming(`${API_BASE}/analytics/summary?days=7`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
         axiosWithTiming(`${API_BASE}/bookings`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
         axiosWithTiming(`${API_BASE}/admin/features`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] })),
-        axiosWithTiming(`${API_BASE}/admin/settings`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] })),
+        isOwner ? axiosWithTiming(`${API_BASE}/admin/settings`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] })) : skip([]),
         axiosWithTiming(`${API_BASE}/subscriptions/current`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
         axiosWithTiming(`${API_BASE}/subscriptions/history`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
         axiosWithTiming(`${API_BASE}/admin/feature-locks`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { locks: {} } }))
@@ -1065,7 +1071,6 @@ export function useNexusData({
     handleSaveBio, handleSyncAll, handleSyncChatHistory, handleRevokeBinding, handleSaveCredentials, handleQuickSaveMeeting, handleDelayBooking, initData,
     handleExportICS, handleSaveCalendarSync, handleSaveBooking, fetchClientByPhone,
     setProfiles, toggleOperatorStatus, handleSaveAssignees,
-    rolePermissions
   }), [
     profiles, agencies, _agencySettings, operators, sessions, stats, _activeSubscription, _subscriptionHistory, 
     globalFeatures, handleFeatureToggle, _plans, fetchPlans, updatePlans, isPlansLoading, isStartingSubscription, onStartSubscription, onCancelSubscription, startCheckout, startBillingPortal,
@@ -1076,6 +1081,6 @@ export function useNexusData({
     handlePairTracker, handleUnpairTracker, applyTrackerLocation, handleSaveBio, handleSyncAll, handleSyncChatHistory,
     handleSaveCredentials, handleQuickSaveMeeting, handleDelayBooking, initData, handleExportICS, 
     handleSaveCalendarSync, handleSaveBooking, fetchClientByPhone, toggleOperatorStatus, handleSaveAssignees, 
-    handleRevokeBinding, rolePermissions
+    handleRevokeBinding
   ]);
 }
