@@ -17,7 +17,6 @@ import {
   MapPin,
   Star,
   HelpCircle,
-  ChevronUp,
   ArrowLeft,
   BookOpen,
   Check,
@@ -60,36 +59,6 @@ const ScrollReveal = ({ children, delay = 0, style = {} }) => {
       transition: `opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`
     }}>
       {children}
-    </div>
-  );
-};
-
-const FAQItem = ({ question, answer }) => {
-  const [open, setOpen] = useState(false);
-  return (
-    <div 
-      onClick={() => setOpen(!open)}
-      style={{ 
-        padding: '1.25rem 1.5rem', borderRadius: '16px', cursor: 'pointer',
-        background: open ? 'rgba(59, 130, 246, 0.05)' : 'rgba(255,255,255,0.02)', 
-        border: `1px solid ${open ? 'rgba(59, 130, 246, 0.3)' : 'var(--card-border)'}`,
-        transition: 'all 0.3s ease'
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
-        <h4 style={{ fontSize: '0.95rem', fontWeight: '700', margin: 0, color: open ? 'white' : 'rgba(255,255,255,0.8)' }}>{question}</h4>
-        {open ? <ChevronUp size={18} color="#3b82f6" /> : <ChevronDown size={18} color="#64748b" />}
-      </div>
-      <div style={{
-        maxHeight: open ? '200px' : '0',
-        overflow: 'hidden',
-        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-        opacity: open ? 1 : 0
-      }}>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.6, marginTop: '0.75rem', marginBottom: 0 }}>
-          {answer}
-        </p>
-      </div>
     </div>
   );
 };
@@ -178,19 +147,20 @@ const LandingPage = () => {
   const t = {
     cz: {
       hero: {
-        badge: "BUDOUCNOST SPRÁVY AGENTUR",
-        title: "Absolutní kontrola.\nNekonečný růst.",
-        desc: "Nexus Hub je inteligentní ekosystém pro moderní adult agentury. Kombinujeme pokročilou AI, real-time bezpečnost a analytiku, kterou jinde nenajdete.",
-        cta1: "Otevřít Nexus",
-        cta2: "Průvodce startem",
-        cta3: "Ke stažení"
+        badge: "PLATFORMA PRO PROVOZ AGENTURY",
+        title: "Komunikace, rezervace a bezpečnost lidí v terénu.",
+        desc: "Místo Excelu a soukromých telefonů: sdílená schránka, kalendář rezervací, fakturace — a bezpečnostní dohled, který hlídá check-iny a rozešle SOS celému týmu naráz.",
+        ctaRegister: "Založit agenturu",
+        ctaLogin: "Přihlásit se",
+        ctaDemo: "Podívat se na ukázku",
       },
-      stats: [
-        { val: '25+', label: 'Aktivních agentur' },
-        { val: '1.2M+', label: 'Zpráv / měsíc' },
-        { val: '99.9%', label: 'Bezpečnostní skóre' }
+      trust: [
+        "Bez instalace, běží v prohlížeči",
+        "Česky i anglicky",
+        "Tarif změníte kdykoli"
       ],
-      integrations: ["WhatsApp", "Telegram", "OnlyFans", "Stripe", "VOIP", "Crypto"],
+      nav: { features: "Funkce", safety: "Bezpečnost", pricing: "Ceník", downloads: "Ke stažení", guide: "Manuál" },
+      heroVideoCaption: "Bezpečnostní dohled — přehled probíhajících schůzek a check-inů.",
       features: [
         { icon: Shield, title: "Safety Guard™", desc: "Real-time SOS a monitoring výjezdů." },
         { icon: Zap, title: "AI Smart Replies", desc: "Automatizované odpovědi a překlady." },
@@ -199,7 +169,19 @@ const LandingPage = () => {
         { icon: BarChart3, title: "Deep Analytics", desc: "Tržby a konverze pod mikroskopem." },
         { icon: CreditCard, title: "Stripe Billing", desc: "Automatické platby kartou a správa předplatného." }
       ],
+      sectionEyebrows: { pillars: "NA ČEM TO STOJÍ", features: "CO JE V CENĚ" },
       pricingTitle: "Plány a ceny",
+      pricingNote: "Ceny za měsíc, bez DPH. Účtuje se počet profilů, ne počet operátorek.",
+      // Návrh sem psal i „sdílení polohy". To je zamčená funkce — viz featureLocks.js —
+      // takže se inzeruje jen to, co dnes opravdu funguje.
+      pricingSafetyNote: "SOS tlačítko a check-iny jsou ve všech plánech včetně nejnižšího. Bezpečnost není příplatek.",
+      finalCta: {
+        title: "Přejděte z Excelu za jedno odpoledne.",
+        desc: "Založíte agenturu, pozvete lidi zvacím kódem a rozdělíte role. Zkoušet můžete naprázdno, bez zadávání karty.",
+        primary: "Založit agenturu",
+        secondary: "Napsat nám"
+      },
+      footer: { tagline: "Provoz a bezpečnost pro agentury", privacy: "Ochrana osobních údajů", guide: "Manuál", downloads: "Ke stažení" },
       plans: [
         { id: 'starter_monthly', name: 'Starter', price: '290 Kč', desc: 'Ideální pro začínající týmy.', features: ['Správa 5 profilů', 'SOS alerty', 'Manuální SMS routing'] },
         { id: 'pro_monthly', name: 'Professional', price: '990 Kč', desc: 'Pro rostoucí profesionály.', features: ['Správa 10 profilů', 'AI Optimalizace', 'Pokročilé reporty'], popular: true },
@@ -207,33 +189,33 @@ const LandingPage = () => {
       ],
       faqTitle: "Časté dotazy",
       faqs: [
-        { q: "Je systém 100% anonymní?", a: "Ano, Nexus Hub je navržen s důrazem na soukromí. Neukládáme žádné citlivé údaje, které by mohly spojit operátory s konkrétními osobami." },
-        { q: "Jak funguje SOS a bezpečnost?", a: "V případě nebezpečí stačí vyslovit hlasový kód nebo stisknout SOS tlačítko. Systém okamžitě rozešle alerty všem managerům s polohou a zvukem." },
+        { q: "Kdo vidí naše data?", a: "Data jsou oddělená po agenturách — vidíte jen to, co patří té vaší. Uvnitř agentury pak rozhodují role: kdo je smí číst a kdo měnit. Přístup si spravujete sami." },
+        { q: "Jak funguje SOS a bezpečnost?", a: "Před schůzkou se založí relace a chodí z ní check-iny. Když check-in nepřijde včas nebo se stiskne SOS tlačítko, dostane celý tým upozornění naráz. Sdílení polohy v reálném čase a hlasové SOS zatím dokončujeme — v aplikaci je najdete zamčené, ne rozbité." },
         { q: "Nabízíte API pro vývojáře?", a: "Ano, v rámci tarifu Agency poskytujeme přístup k našemu Public REST API, díky kterému můžete Nexus propojit s vašimi interními systémy nebo vlastními boty." },
         { q: "Jak mohu zaplatit?", a: "Podporujeme okamžité platby kartou přes Stripe. Správa karet, faktur a předplatného probíhá přes zabezpečený Stripe portál." },
         { q: "Dá se tarif později změnit?", a: "Samozřejmě. Upgrade i downgrade je možný kdykoliv přímo z vašeho administračního panelu." }
       ],
       videos: [
-        { id: 'safety', src: '/safety.mp4', poster: '/thumb_safety.jpg', title: 'Bezpečnost na prvním místě', desc: 'Safety Guard™ s taktickým přehledem v reálném čase. Automatické SOS alerty a sledování polohy.', features: ['Sledování polohy', 'Hlasové SOS', 'Globální blacklist'] },
-        { id: 'analytics', src: '/analytics.mp4', poster: '/thumb_analytics.jpg', title: 'Business pod kontrolou', desc: 'Zapomeňte na tabulky. Okamžitý přehled o tržbách, konverzích a výkonu celého týmu.', features: ['Real-time tržby', 'Výpočet provizí', 'VIP Management'], reverse: true },
-        { id: 'operations', src: '/operations.mp4', poster: '/thumb_operations.jpg', title: 'Operace jako na dlaní', desc: 'Správa profilů, hierarchie a komunikace na jednom místě. Plná kontrola bez chaosu.', features: ['Správa profilů', 'Týmová hierarchie', 'CRM & Komunikace'] }
+        { id: 'analytics', src: '/analytics.mp4', poster: '/thumb_analytics.jpg', title: 'Business pod kontrolou', desc: 'Zapomeňte na tabulky. Okamžitý přehled o tržbách, konverzích a výkonu celého týmu.', features: ['Real-time tržby', 'Výpočet provizí', 'VIP Management'] },
+        { id: 'operations', src: '/operations.mp4', poster: '/thumb_operations.jpg', title: 'Operace jako na dlaní', desc: 'Správa profilů, hierarchie a komunikace na jednom místě. Plná kontrola bez chaosu.', features: ['Správa profilů', 'Týmová hierarchie', 'CRM & Komunikace'], reverse: true }
       ]
     },
     en: {
       hero: {
-        badge: "FUTURE OF AGENCY MANAGEMENT",
-        title: "Absolute Control.\nInfinite Growth.",
-        desc: "Nexus Hub is an intelligent ecosystem for modern adult agencies. We combine advanced AI, real-time safety, and analytics you won't find anywhere else.",
-        cta1: "Open Nexus",
-        cta2: "Start Guide",
-        cta3: "Downloads"
+        badge: "AGENCY OPERATIONS PLATFORM",
+        title: "Messaging, bookings and the safety of people in the field.",
+        desc: "Instead of spreadsheets and private phones: a shared inbox, a booking calendar, billing — and safety oversight that watches check-ins and sends SOS to the whole team at once.",
+        ctaRegister: "Start an agency",
+        ctaLogin: "Sign in",
+        ctaDemo: "See it in action",
       },
-      stats: [
-        { label: "Active Agencies", val: "50+" },
-        { label: "Messages / Month", val: "2.4M+" },
-        { label: "Security Score", val: "99.9%" }
+      trust: [
+        "No install, runs in your browser",
+        "Czech and English",
+        "Change your plan anytime"
       ],
-      integrations: ["WhatsApp", "Telegram", "OnlyFans", "Stripe", "VOIP", "Crypto"],
+      nav: { features: "Features", safety: "Safety", pricing: "Pricing", downloads: "Downloads", guide: "Manual" },
+      heroVideoCaption: "Safety oversight — bookings in progress and their check-ins.",
       features: [
         { icon: Shield, title: "Safety Guard™", desc: "Real-time SOS and outcall monitoring." },
         { icon: Zap, title: "AI Smart Replies", desc: "Automated responses and translations." },
@@ -242,7 +224,17 @@ const LandingPage = () => {
         { icon: BarChart3, title: "Deep Analytics", desc: "Revenue and conversion insights." },
         { icon: CreditCard, title: "Stripe Billing", desc: "Automated card payments and subscription management." }
       ],
+      sectionEyebrows: { pillars: "WHAT IT'S BUILT ON", features: "WHAT'S INCLUDED" },
       pricingTitle: "Plans & Pricing",
+      pricingNote: "Prices per month, excl. VAT. You are billed per profile, not per operator.",
+      pricingSafetyNote: "The SOS button and check-ins are in every plan, including the cheapest one. Safety is not an add-on.",
+      finalCta: {
+        title: "Move off spreadsheets in one afternoon.",
+        desc: "Create the agency, invite people with a code and assign roles. You can try it empty, no card required.",
+        primary: "Start an agency",
+        secondary: "Get in touch"
+      },
+      footer: { tagline: "Operations and safety for agencies", privacy: "Privacy policy", guide: "Manual", downloads: "Downloads" },
       plans: [
         { id: 'starter_monthly', name: 'Starter', price: '€12', desc: 'Perfect for starting teams.', features: ['5 Profiles', 'SOS Alerts', 'Manual SMS Routing'] },
         { id: 'pro_monthly', name: 'Professional', price: '€39', desc: 'For growing professionals.', features: ['10 Profiles', 'AI Optimization', 'Advanced Reports'], popular: true },
@@ -250,16 +242,15 @@ const LandingPage = () => {
       ],
       faqTitle: "Frequently Asked Questions",
       faqs: [
-        { q: "Is the system 100% anonymous?", a: "Yes, Nexus Hub is built with privacy first. We do not store sensitive links between operators and identities." },
-        { q: "How does SOS & Safety work?", a: "In case of danger, say the voice code or press SOS. The system alerts managers with location and live audio." },
+        { q: "Who can see our data?", a: "Data is separated per agency — you only ever see your own. Inside the agency, roles decide who may read and who may change what. You manage that access yourselves." },
+        { q: "How does SOS & Safety work?", a: "A session is opened before a booking and sends check-ins. If a check-in is missed or the SOS button is pressed, the whole team is alerted at once. Live location sharing and voice SOS are still being finished — you'll find them locked in the app rather than half-working." },
         { q: "Do you offer API for developers?", a: "Yes, the Agency plan provides access to our Public REST API, allowing you to connect Nexus with your internal tools or custom bots." },
         { q: "How can I pay?", a: "We support instant card payments via Stripe. Cards, invoices, and subscriptions are managed through the secure Stripe portal." },
         { q: "Can I change my plan later?", a: "Absolutely. You can upgrade or downgrade your subscription at any time via the administration panel." }
       ],
       videos: [
-        { id: 'safety', src: '/safety.mp4', poster: '/thumb_safety.jpg', title: 'Safety First', desc: 'Safety Guard™ with real-time tactical overview. Automated SOS alerts and location tracking.', features: ['Location Tracking', 'Voice SOS', 'Global Blacklist'] },
-        { id: 'analytics', src: '/analytics.mp4', poster: '/thumb_analytics.jpg', title: 'Business in Control', desc: 'Forget spreadsheets. Instant overview of revenue, conversions and team performance.', features: ['Real-time Revenue', 'Commission Calculator', 'VIP Management'], reverse: true },
-        { id: 'operations', src: '/operations.mp4', poster: '/thumb_operations.jpg', title: 'Operations at a Glance', desc: 'Profile management, hierarchy and communication in one place. Full control without the chaos.', features: ['Profile Management', 'Team Hierarchy', 'CRM & Communication'] }
+        { id: 'analytics', src: '/analytics.mp4', poster: '/thumb_analytics.jpg', title: 'Business in Control', desc: 'Forget spreadsheets. Instant overview of revenue, conversions and team performance.', features: ['Real-time Revenue', 'Commission Calculator', 'VIP Management'] },
+        { id: 'operations', src: '/operations.mp4', poster: '/thumb_operations.jpg', title: 'Operations at a Glance', desc: 'Profile management, hierarchy and communication in one place. Full control without the chaos.', features: ['Profile Management', 'Team Hierarchy', 'CRM & Communication'], reverse: true }
       ]
     }
   }[lang];
@@ -286,8 +277,19 @@ const LandingPage = () => {
     );
   }
 
+  // Jeden seznam pro desktopovou hlavičku i mobilní overlay. Dřív to byly dvě
+  // ručně udržované kopie, takže se položky mohly rozejít a na telefonu chybět.
+  const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  const navItems = [
+    { label: t.nav.features, action: () => scrollTo('features') },
+    { label: t.nav.safety, action: () => scrollTo('safety') },
+    { label: t.nav.pricing, action: () => scrollTo('pricing') },
+    { label: t.nav.downloads, action: () => navigate('/downloads', 'downloads') },
+    { label: t.nav.guide, action: () => setActiveTab('guide') }
+  ];
+
   return (
-    <div data-testid="landing-page-container" style={{ minHeight: '100vh', background: '#040507', color: 'white', fontFamily: 'Inter, sans-serif', overflowX: 'hidden' }}>
+    <div data-testid="landing-page-container" className="landing-page" style={{ minHeight: '100vh', background: '#040507', color: 'white', fontFamily: 'Inter, sans-serif', overflowX: 'hidden' }}>
       
       {/* BACKGROUND EFFECTS */}
       <div style={{ position: 'fixed', top: '0', left: '50%', transform: 'translateX(-50%)', width: '100%', height: '100%', background: 'radial-gradient(circle at 50% -20%, rgba(59, 130, 246, 0.15), transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
@@ -297,14 +299,19 @@ const LandingPage = () => {
       <div style={{ position: 'fixed', top: 0, width: '100%', zIndex: 1000, padding: '1.5rem 5%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backdropFilter: 'blur(10px)', background: 'rgba(4,5,7,0.4)', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <img src="/nexus_icon.png" alt="Nexus" style={{ width: '32px', height: '32px', borderRadius: '8px', boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)' }} />
-          <span style={{ fontWeight: '900', letterSpacing: '0.1em', fontSize: '1.1rem' }}>NEXUS HUB</span>
+          <div style={{ lineHeight: 1.15 }}>
+            <div style={{ fontWeight: '900', letterSpacing: '0.1em', fontSize: '1.1rem' }}>NEXUS HUB</div>
+            <div style={{ fontSize: '0.6rem', letterSpacing: '0.16em', color: '#60a5fa', fontWeight: '700' }}>
+              {lang === 'cz' ? 'PROVOZ A BEZPEČNOST' : 'OPERATIONS & SAFETY'}
+            </div>
+          </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
           {!isMobile && (
             <div style={{ display: 'flex', gap: '1.5rem', marginRight: '1rem' }}>
-              <button onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.6)', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', transition: 'color 0.2s' }}>{lang === 'cz' ? 'Ceník' : 'Pricing'}</button>
-              <button onClick={() => setActiveTab('guide')} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.6)', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', transition: 'color 0.2s' }}>{lang === 'cz' ? 'Průvodce' : 'Guide'}</button>
-              <button onClick={() => navigate('/downloads', 'downloads')} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.6)', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', transition: 'color 0.2s' }}>{lang === 'cz' ? 'Ke stažení' : 'Downloads'}</button>
+              {navItems.map(item => (
+                <button key={item.label} onClick={item.action} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.6)', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', transition: 'color 0.2s' }}>{item.label}</button>
+              ))}
             </div>
           )}
           <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '3px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -313,9 +320,14 @@ const LandingPage = () => {
             ))}
           </div>
           {!isMobile && (
-            <button onClick={() => navigate('/login', 'login')} style={{ background: 'white', color: 'black', border: 'none', padding: '10px 22px', borderRadius: '12px', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer', transition: 'transform 0.2s' }}>
-              {t.hero.cta1}
-            </button>
+            <>
+              <button onClick={() => navigate('/login', 'login')} style={{ background: 'transparent', color: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.12)', padding: '9px 18px', borderRadius: '12px', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s' }}>
+                {t.hero.ctaLogin}
+              </button>
+              <button onClick={() => navigate('/register', 'register-agency')} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '10px 22px', borderRadius: '12px', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer', transition: 'transform 0.2s' }}>
+                {t.hero.ctaRegister}
+              </button>
+            </>
           )}
           {isMobile && (
             <button onClick={() => setMobileMenuOpen(true)} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: '4px' }}>
@@ -332,57 +344,73 @@ const LandingPage = () => {
             <X size={28} />
           </button>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', alignItems: 'center' }}>
-            <button onClick={() => { setMobileMenuOpen(false); document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' }); }} style={{ background: 'transparent', border: 'none', color: 'white', fontWeight: '800', fontSize: '1.5rem', cursor: 'pointer' }}>{lang === 'cz' ? 'Ceník' : 'Pricing'}</button>
-            <button onClick={() => { setMobileMenuOpen(false); setActiveTab('guide'); }} style={{ background: 'transparent', border: 'none', color: 'white', fontWeight: '800', fontSize: '1.5rem', cursor: 'pointer' }}>{lang === 'cz' ? 'Průvodce' : 'Guide'}</button>
-            <button onClick={() => { setMobileMenuOpen(false); navigate('/downloads', 'downloads'); }} style={{ background: 'transparent', border: 'none', color: 'white', fontWeight: '800', fontSize: '1.5rem', cursor: 'pointer' }}>{lang === 'cz' ? 'Ke stažení' : 'Downloads'}</button>
-            <button onClick={() => { setMobileMenuOpen(false); navigate('/login', 'login'); }} style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '15px 30px', borderRadius: '15px', fontWeight: '900', fontSize: '1.2rem', cursor: 'pointer', marginTop: '1rem' }}>
-              {t.hero.cta1}
+            {navItems.map(item => (
+              <button key={item.label} onClick={() => { setMobileMenuOpen(false); item.action(); }} style={{ background: 'transparent', border: 'none', color: 'white', fontWeight: '800', fontSize: '1.5rem', cursor: 'pointer' }}>{item.label}</button>
+            ))}
+            <button onClick={() => { setMobileMenuOpen(false); navigate('/login', 'login'); }} style={{ background: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.2)', padding: '13px 28px', borderRadius: '15px', fontWeight: '800', fontSize: '1.1rem', cursor: 'pointer', marginTop: '1rem' }}>
+              {t.hero.ctaLogin}
+            </button>
+            <button onClick={() => { setMobileMenuOpen(false); navigate('/register', 'register-agency'); }} style={{ background: 'var(--accent-color)', color: 'white', border: 'none', padding: '15px 30px', borderRadius: '15px', fontWeight: '900', fontSize: '1.2rem', cursor: 'pointer' }}>
+              {t.hero.ctaRegister}
             </button>
           </div>
         </div>
       )}
 
       {/* HERO SECTION */}
-      <section style={{ padding: isMobile ? '8rem 5% 4rem' : '14rem 5% 6rem', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+      <section style={{ padding: isMobile ? '7rem 5% 3rem' : '11rem 5% 5rem', position: 'relative', zIndex: 1 }}>
         <ScrollReveal>
-          <div style={{ display: 'inline-block', padding: '0.6rem 1.4rem', borderRadius: '30px', background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)', color: '#60a5fa', fontWeight: '900', fontSize: '0.7rem', letterSpacing: '0.15em', marginBottom: '2.5rem', textShadow: '0 0 10px rgba(59, 130, 246, 0.3)' }}>
-            {t.hero.badge}
-          </div>
-          <h1 style={{ fontSize: isMobile ? '2.8rem' : '5.5rem', fontWeight: '900', lineHeight: 1, marginBottom: '2.5rem', letterSpacing: '-0.04em', background: 'linear-gradient(to bottom, #fff 40%, #64748b)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', whiteSpace: 'pre-line' }}>
-            {t.hero.title}
-          </h1>
-          <p style={{ fontSize: isMobile ? '1.1rem' : '1.4rem', color: 'rgba(255,255,255,0.5)', maxWidth: '750px', margin: '0 auto 4rem', lineHeight: 1.6, fontWeight: '400' }}>
-            {t.hero.desc}
-          </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1.5rem' }}>
-            {/* Kotva pro e2e login helper (tests/helpers/auth.js). Dřív se trefoval
-                jen podle textu tlačítka, takže změna marketingového textu by rozbila
-                přihlášení ve všech specech. Sedí schválně na hero CTA, ne na tom
-                v hlavičce — hlavičkové se pod `!isMobile` na mobilu nerenderuje. */}
-            <button data-testid="landing-enter-btn" onClick={() => navigate('/login', 'login')} style={{ padding: '1.25rem 3.5rem', borderRadius: '20px', border: 'none', background: '#3b82f6', color: 'white', fontWeight: '900', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 20px 40px -10px rgba(59, 130, 246, 0.5)', transition: 'all 0.3s ease' }}>
-              {t.hero.cta1}
-            </button>
-            <button onClick={() => navigate('/downloads', 'downloads')} style={{ padding: '1.25rem 3rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: 'white', fontWeight: '800', fontSize: '1.1rem', cursor: 'pointer', backdropFilter: 'blur(10px)', transition: 'all 0.3s ease' }}>
-              {t.hero.cta3}
-            </button>
-          </div>
-        </ScrollReveal>
-
-        {/* HERO PREVIEW CARD */}
-        {!isMobile && (
-          <ScrollReveal delay={0.3}>
-            <div style={{ marginTop: '6rem', position: 'relative', maxWidth: '1000px', margin: '6rem auto 0' }}>
-              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '80%', height: '80%', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.2), transparent 70%)', filter: 'blur(50px)', zIndex: -1 }} />
-              <div style={{ background: 'rgba(15, 23, 42, 0.4)', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(40px)', padding: '10px', boxShadow: '0 50px 100px -20px rgba(0,0,0,0.7)' }}>
-                <img
-                  src="/thumb_analytics.jpg"
-                  alt="Nexus Hub Dashboard"
-                  style={{ width: '100%', borderRadius: '24px', display: 'block', objectFit: 'cover' }}
-                />
+          <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.05fr 1fr', gap: isMobile ? '3rem' : '4rem', alignItems: 'center' }}>
+            <div style={{ textAlign: isMobile ? 'center' : 'left' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', padding: '0.55rem 1.2rem', borderRadius: '30px', background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)', color: '#60a5fa', fontWeight: '900', fontSize: '0.65rem', letterSpacing: '0.14em', marginBottom: '2rem' }}>
+                <Shield size={13} />
+                {t.hero.badge}
+              </div>
+              <h1 style={{ fontSize: isMobile ? '2.1rem' : '3rem', fontWeight: '900', lineHeight: 1.1, marginBottom: '1.5rem', letterSpacing: '-0.035em', textWrap: 'pretty', background: 'linear-gradient(to bottom, #fff 40%, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', whiteSpace: 'pre-line' }}>
+                {t.hero.title}
+              </h1>
+              <p style={{ fontSize: isMobile ? '1rem' : '1.15rem', color: 'rgba(255,255,255,0.5)', maxWidth: '54ch', margin: isMobile ? '0 auto 2rem' : '0 0 2rem', lineHeight: 1.65 }}>
+                {t.hero.desc}
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start', gap: '0.85rem', marginBottom: '2rem' }}>
+                <button onClick={() => navigate('/register', 'register-agency')} style={{ padding: '1rem 1.8rem', borderRadius: '14px', border: 'none', background: '#3b82f6', color: 'white', fontWeight: '800', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.6rem', boxShadow: '0 20px 40px -12px rgba(59, 130, 246, 0.5)', transition: 'all 0.3s ease' }}>
+                  {t.hero.ctaRegister} <ArrowRight size={17} />
+                </button>
+                {/* Kotva pro e2e login helper (tests/helpers/auth.js). Dřív se helper
+                    trefoval podle textu tlačítka, takže změna marketingového textu
+                    rozbila přihlášení ve všech specech. Musí sedět na prvku, který
+                    vede na /login a renderuje se i na mobilu — proto tady, ne
+                    v hlavičce (ta je celá pod `!isMobile`). */}
+                <button data-testid="landing-enter-btn" onClick={() => navigate('/login', 'login')} style={{ padding: '1rem 1.6rem', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.03)', color: 'white', fontWeight: '700', fontSize: '1rem', cursor: 'pointer', backdropFilter: 'blur(10px)', transition: 'all 0.3s ease' }}>
+                  {t.hero.ctaLogin}
+                </button>
+                {/* Návrh tu měl „Prohlídka za 3 minuty“. Takové video nemáme, tak
+                    tlačítko odscrolluje na ukázky, které v repu opravdu jsou. */}
+                <button onClick={() => scrollTo('safety')} style={{ padding: '1rem 0.2rem', border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.5)', fontWeight: '600', fontSize: '0.95rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', textDecoration: 'underline', textUnderlineOffset: '4px', textDecorationColor: 'rgba(255,255,255,0.2)' }}>
+                  {t.hero.ctaDemo} <ChevronDown size={15} />
+                </button>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start', gap: '1.4rem', fontSize: '0.8rem', color: 'rgba(255,255,255,0.35)' }}>
+                {t.trust.map(item => (
+                  <span key={item} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
+                    <Check size={13} color="#10b981" />{item}
+                  </span>
+                ))}
               </div>
             </div>
-          </ScrollReveal>
-        )}
+
+            <div>
+              <div style={{ position: 'relative', padding: '8px', background: 'rgba(15, 23, 42, 0.45)', borderRadius: '26px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 40px 80px -20px rgba(0,0,0,0.75)', backdropFilter: 'blur(20px)' }}>
+                <video poster="/thumb_safety.jpg" controls playsInline preload="metadata" style={{ width: '100%', borderRadius: '20px', display: 'block', objectFit: 'cover' }}>
+                  <source src="/safety.mp4" type="video/mp4" />
+                </video>
+              </div>
+              <p style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.85rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)' }}>
+                <Shield size={13} />{t.heroVideoCaption}
+              </p>
+            </div>
+          </div>
+        </ScrollReveal>
       </section>
 
       {/* INTEGRATIONS BAR */}
@@ -403,11 +431,6 @@ const LandingPage = () => {
             <svg width="28" height="28" viewBox="0 0 24 24" fill="#6772e5"><path d="M13.962 8.885c-1.57-.403-2.22-.72-2.22-1.344 0-.54.512-.906 1.344-.906 1.62 0 2.394.885 2.454 1.155.06.326.357.545.673.545h.024c.42 0 .736-.375.666-.788-.236-1.393-1.554-2.296-3.144-2.296-1.5 0-2.88.75-2.88 2.35 0 1.545 1.14 2.23 2.805 2.656 1.635.405 2.145.78 2.145 1.44 0 .61-.63 1.05-1.5 1.05-1.89 0-2.82-1.12-2.92-1.44-.085-.296-.34-.492-.638-.492h-.032c-.44 0-.756.402-.647.828.32 1.253 1.683 2.502 4.237 2.502 1.59 0 3.03-.81 3.03-2.52 0-1.74-1.556-2.316-3.414-2.79zM6.5 10V8c0-.55-.45-1-1-1s-1 .45-1 1v7c0 .55.45 1 1 1s1-.45 1-1v-2h2c.55 0 1-.45 1-1s-.45-1-1-1h-2z"/></svg>
             <span style={{ fontSize: '0.85rem', fontWeight: '900', color: 'white', letterSpacing: '0.1em' }}>STRIPE</span>
           </div>
-          {/* OnlyFans */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', filter: 'drop-shadow(0 0 10px rgba(0, 175, 240, 0.2))' }}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="#00aff0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 2c4.42 0 8 3.58 8 8s-3.58 8-8 8-8-3.58-8-8 3.58-8 8-8zm-1 4h2v2h-2V8zm0 4h2v6h-2v-6z"/></svg>
-            <span style={{ fontSize: '0.85rem', fontWeight: '900', color: 'white', letterSpacing: '0.1em' }}>ONLYFANS</span>
-          </div>
           {/* SMS Relay */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', filter: 'drop-shadow(0 0 10px rgba(59, 130, 246, 0.2))' }}>
             <MessageSquare size={24} color="#3b82f6" />
@@ -416,21 +439,24 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* STATS SECTION */}
-      <section style={{ padding: '6rem 5%' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '2rem' }}>
-          {t.stats.map((s, i) => (
-            <div key={i} style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '3.5rem', fontWeight: '900', color: 'white', marginBottom: '0.5rem', background: 'linear-gradient(to bottom, #fff, #3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{s.val}</div>
-              <div style={{ fontSize: '0.85rem', fontWeight: '800', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{s.label}</div>
-            </div>
-          ))}
+      {/* Sekce se statistikami je pryč záměrně. Uváděla „25+ agentur / 1,2 M zpráv"
+          v češtině a „50+ / 2,4 M" v angličtině — o téže firmě. Nešlo tedy o čísla,
+          která by někdo změřil. Radši žádná než vymyšlená. */}
+
+      {/* NA ČEM TO STOJÍ — video bloky */}
+      <section id="safety" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
+        <div style={{ fontSize: '0.7rem', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.3)', fontWeight: '800', paddingTop: '5rem' }}>
+          {t.sectionEyebrows.pillars}
         </div>
+        {t.videos.map(v => <VideoCard key={v.id} {...v} />)}
       </section>
 
-      {/* FEATURES GRID */}
-      <section id="features" style={{ padding: '6rem 5%' }}>
+      {/* CO JE V CENĚ */}
+      <section id="features" style={{ padding: '5rem 5% 6rem' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ fontSize: '0.7rem', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.3)', fontWeight: '800', marginBottom: '1.5rem' }}>
+            {t.sectionEyebrows.features}
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1.5rem' }}>
             {t.features.map((f, i) => (
               <ScrollReveal key={i} delay={i * 0.1}>
@@ -447,15 +473,13 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* VIDEO CASE STUDIES */}
-      <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
-        {t.videos.map(v => <VideoCard key={v.id} {...v} />)}
-      </section>
-
       {/* PRICING SECTION */}
-      <section id="pricing" style={{ padding: '8rem 5% 6rem' }}>
+      <section id="pricing" style={{ padding: '4rem 5% 6rem' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <h2 style={{ fontSize: isMobile ? '2.5rem' : '3.5rem', fontWeight: '900', textAlign: 'center', marginBottom: '4rem', letterSpacing: '-0.02em' }}>{t.pricingTitle}</h2>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <h2 style={{ fontSize: isMobile ? '2rem' : '2.6rem', fontWeight: '900', marginBottom: '0.75rem', letterSpacing: '-0.02em' }}>{t.pricingTitle}</h2>
+            <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.35)', margin: 0 }}>{t.pricingNote}</p>
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '2rem', alignItems: 'flex-end' }}>
             {t.plans.map((p, i) => (
               <ScrollReveal key={p.id} delay={i * 0.1}>
@@ -471,31 +495,71 @@ const LandingPage = () => {
                       </li>
                     ))}
                   </ul>
-                  <button onClick={() => navigate('/register', 'register-agency')} style={{ width: '100%', padding: '1rem', borderRadius: '14px', border: 'none', background: p.popular ? '#3b82f6' : 'rgba(255,255,255,0.05)', color: 'white', fontWeight: '800', cursor: 'pointer', transition: 'all 0.3s' }}>{t.hero.cta1}</button>
+                  <button onClick={() => navigate('/register', 'register-agency')} style={{ width: '100%', padding: '1rem', borderRadius: '14px', border: 'none', background: p.popular ? '#3b82f6' : 'rgba(255,255,255,0.05)', color: 'white', fontWeight: '800', cursor: 'pointer', transition: 'all 0.3s' }}>{t.hero.ctaRegister}</button>
                 </div>
               </ScrollReveal>
+            ))}
+          </div>
+          <div style={{ marginTop: '1.5rem', padding: '1rem 1.25rem', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Shield size={16} color="#10b981" style={{ flex: 'none' }} />
+            <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>{t.pricingSafetyNote}</span>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ SECTION — statický seznam, ne rozbalovačka.
+          Rozbalovačka měla `maxHeight: 200px`, což delší odpovědi (třeba tu
+          o zamčených funkcích) uřízlo bez varování. */}
+      <section style={{ padding: '5rem 5%', background: 'rgba(255,255,255,0.01)' }}>
+        <div style={{ maxWidth: '860px', margin: '0 auto' }}>
+          <h2 style={{ fontSize: isMobile ? '1.7rem' : '2rem', fontWeight: '900', marginBottom: '2rem' }}>{t.faqTitle}</h2>
+          <div style={{ border: '1px solid rgba(255,255,255,0.07)', borderRadius: '20px', overflow: 'hidden', background: 'rgba(255,255,255,0.02)' }}>
+            {t.faqs.map((f, i) => (
+              <div key={i} style={{ padding: '1.25rem 1.5rem', borderBottom: i < t.faqs.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', marginBottom: '0.5rem' }}>
+                  <HelpCircle size={15} color="#60a5fa" style={{ flex: 'none' }} />
+                  <span style={{ fontSize: '0.95rem', fontWeight: '700' }}>{f.q}</span>
+                </div>
+                <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.65, margin: 0, paddingLeft: '1.6rem' }}>{f.a}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* FAQ SECTION */}
-      <section style={{ padding: '6rem 5%', background: 'rgba(255,255,255,0.01)' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <h2 style={{ fontSize: '2rem', fontWeight: '900', textAlign: 'center', marginBottom: '3rem' }}>{t.faqTitle}</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {t.faqs.map((f, i) => <FAQItem key={i} question={f.q} answer={f.a} />)}
+      {/* ZÁVĚREČNÉ CTA */}
+      <section style={{ padding: '0 5% 5rem' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', border: '1px solid rgba(59,130,246,0.25)', borderRadius: '28px', background: 'linear-gradient(135deg, rgba(59,130,246,0.1), rgba(59,130,246,0.02))', padding: isMobile ? '2.5rem 1.75rem' : '3rem 3.5rem', display: 'flex', alignItems: 'center', gap: '2.25rem', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: '280px' }}>
+            <h2 style={{ fontSize: isMobile ? '1.6rem' : '1.9rem', fontWeight: '900', letterSpacing: '-0.025em', margin: '0 0 0.6rem' }}>{t.finalCta.title}</h2>
+            <p style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.45)', margin: 0, maxWidth: '56ch', lineHeight: 1.6 }}>{t.finalCta.desc}</p>
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <button onClick={() => navigate('/register', 'register-agency')} style={{ padding: '0.9rem 1.5rem', borderRadius: '12px', border: 'none', background: '#3b82f6', color: 'white', fontWeight: '800', fontSize: '0.95rem', cursor: 'pointer' }}>
+              {t.finalCta.primary}
+            </button>
+            {/* Stejná adresa, na kterou míří hlášení chyb v aplikaci (BugReportModal). */}
+            <a href="mailto:support@nexus-hub.ai" style={{ padding: '0.9rem 1.4rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.75)', fontWeight: '700', fontSize: '0.95rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
+              {t.finalCta.secondary}
+            </a>
           </div>
         </div>
       </section>
 
       {/* FOOTER */}
-      <footer style={{ padding: '6rem 5% 4rem', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.03)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-          <img src="/nexus_icon.png" alt="Nexus" style={{ width: '28px', height: '28px', borderRadius: '8px' }} />
-          <span style={{ fontWeight: '900', letterSpacing: '0.1em' }}>NEXUS HUB</span>
+      <footer style={{ padding: '2rem 5% 3rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
+        <img src="/nexus_systems_logo.png" alt="Nexus Systems" style={{ height: '26px', display: 'block', opacity: 0.75 }} />
+        <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.3)' }}>
+          © {new Date().getFullYear()} Nexus Systems · {t.footer.tagline}
+        </span>
+        <div style={{ flex: 1 }} />
+        {/* Jen odkazy, které někam vedou. Návrh měl i „Podmínky" a „Stav služby" —
+            takové stránky v aplikaci nejsou, tak tu nejsou ani odkazy na ně. */}
+        <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap' }}>
+          <a href="/privacy" style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.35)', textDecoration: 'none' }}>{t.footer.privacy}</a>
+          <button onClick={() => setActiveTab('guide')} style={{ background: 'transparent', border: 'none', padding: 0, fontSize: '0.78rem', color: 'rgba(255,255,255,0.35)', cursor: 'pointer' }}>{t.footer.guide}</button>
+          <button onClick={() => navigate('/downloads', 'downloads')} style={{ background: 'transparent', border: 'none', padding: 0, fontSize: '0.78rem', color: 'rgba(255,255,255,0.35)', cursor: 'pointer' }}>{t.footer.downloads}</button>
         </div>
-        <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem' }}>© {new Date().getFullYear()} Nexus Systems. Absolute Control. Infinite Growth.</p>
       </footer>
     </div>
   );

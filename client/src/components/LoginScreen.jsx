@@ -2,21 +2,27 @@ import React, { useState, useEffect, memo } from 'react';
 import { 
   Lock, Mail, ArrowRight, Eye, EyeOff, 
   Building2, User, Zap, UserPlus, ShieldCheck,
-  ChevronRight, Copy, Check
+  ChevronRight, Copy, Check, AlertCircle
 } from 'lucide-react';
 import { useNexus } from '../context/ContextHook';
 import AuthLayout from './AuthLayout';
 import PasswordRequirements from './UI/PasswordRequirements';
 
 // --- Shared Components ---
-const InputGroup = ({ label, icon: Icon, children }) => (
+// `htmlFor` + `id` na poli: popisek byl dosud jen text nad inputem, takže
+// odečítač obrazovky ohlásil pole bez názvu a kliknutí na popisek nic nedělalo.
+// `action` je volitelný doplněk vpravo v řádku popisku (např. reset hesla).
+const InputGroup = ({ label, icon: Icon, htmlFor, action, children }) => (
   <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-    <label style={{ 
-      fontSize: '0.85rem', fontWeight: '800', color: 'rgba(255,255,255,0.4)', 
-      textTransform: 'uppercase', letterSpacing: '0.12em', marginLeft: '0.5rem' 
-    }}>
-      {label}
-    </label>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginLeft: '0.5rem' }}>
+      <label htmlFor={htmlFor} style={{ 
+        fontSize: '0.85rem', fontWeight: '800', color: 'rgba(255,255,255,0.4)', 
+        textTransform: 'uppercase', letterSpacing: '0.12em'
+      }}>
+        {label}
+      </label>
+      {action}
+    </div>
     <div style={{ position: 'relative' }}>
       <Icon size={20} style={{ 
         position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', 
@@ -35,6 +41,7 @@ const StyledInput = (props) => (
       width: '100%', padding: '1.1rem 1.25rem 1.1rem 3.25rem',
       background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
       borderRadius: '18px', color: 'white', fontSize: '1.05rem', outline: 'none',
+      minHeight: '50px',
       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', backdropFilter: 'blur(10px)',
       ...props.style
     }}
@@ -64,20 +71,54 @@ const PrimaryButton = ({ children, loading, ...props }) => (
 
 // --- Sub-Views ---
 
+// Server vrací hotové anglické věty ('Invalid credentials'), ne překladové klíče,
+// takže t() je vrátí beze změny a česká verze ukazovala anglicky. Dokud to viselo
+// v mizícím toastu, nikdo si toho nevšiml; jako trvalá hláška u formuláře už to
+// vadí. Neznámou chybu radši zobecníme, než abychom uživateli ukázali hlášku
+// z backendu.
+const loginErrorMessage = (raw, isCz) => {
+  const known = {
+    'Invalid credentials': ['Nesprávný e-mail nebo heslo.', 'Incorrect email or password.'],
+    'User role is not configured': ['Účet nemá přiřazenou roli. Ozvěte se správci agentury.', 'This account has no role assigned. Contact your agency admin.'],
+    'Server error': ['Server právě neodpovídá. Zkuste to prosím za chvíli.', 'The server is not responding. Please try again shortly.']
+  }[raw];
+  if (known) return isCz ? known[0] : known[1];
+  return isCz ? 'Přihlášení se nepodařilo. Zkuste to prosím znovu.' : 'Sign-in failed. Please try again.';
+};
+
 const LoginView = ({ isCz, onSwitch }) => {
-  const { onLogin, showToast, t } = useNexus();
+  const { onLogin, onResetRequest, showToast } = useNexus();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  // Chyba přihlášení mířila jen do toastu, který za pár vteřin zmizí. Kdo si ho
+  // nestihl přečíst, zůstal u formuláře bez vysvětlení, proč se nic nestalo.
+  const [error, setError] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     try {
       const res = await onLogin(email, password);
-      if (res && !res.success) showToast(t(res.error || res._err), 'error');
+      if (res && !res.success) {
+        const message = loginErrorMessage(res.error || res._err, isCz);
+        setError(message);
+        showToast(message, 'error');
+      }
     } finally { setLoading(false); }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      const message = isCz ? 'Nejdřív vyplňte e-mail, pošleme na něj odkaz.' : 'Enter your email first — we will send the link there.';
+      setError(message);
+      return;
+    }
+    await onResetRequest(email);
+    // Server záměrně neprozrazuje, jestli e-mail existuje, tak to neprozrazujeme ani my.
+    showToast(isCz ? 'Pokud u nás účet existuje, poslali jsme na něj odkaz.' : 'If an account exists, we have sent a link to it.', 'success');
   };
 
   return (
@@ -100,12 +141,21 @@ const LoginView = ({ isCz, onSwitch }) => {
       </header>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-        <InputGroup label={isCz ? 'E-mail' : 'Email'} icon={Mail}>
-          <StyledInput data-testid="login-email" type="email" required placeholder="name@agency.com" value={email} onChange={e => setEmail(e.target.value)} />
+        <InputGroup label={isCz ? 'E-mail' : 'Email'} icon={Mail} htmlFor="login-email-field">
+          <StyledInput id="login-email-field" data-testid="login-email" type="email" required autoComplete="email" placeholder="name@agency.com" value={email} onChange={e => setEmail(e.target.value)} />
         </InputGroup>
 
-        <InputGroup label={isCz ? 'Heslo' : 'Password'} icon={Lock}>
-          <StyledInput data-testid="login-password" type={showPassword ? 'text' : 'password'} required placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} />
+        <InputGroup
+          label={isCz ? 'Heslo' : 'Password'}
+          icon={Lock}
+          htmlFor="login-password-field"
+          action={
+            <button type="button" onClick={handleForgotPassword} style={{ background: 'none', border: 'none', padding: 0, color: '#60a5fa', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer' }}>
+              {isCz ? 'Zapomenuté heslo?' : 'Forgot password?'}
+            </button>
+          }
+        >
+          <StyledInput id="login-password-field" data-testid="login-password" type={showPassword ? 'text' : 'password'} required autoComplete="current-password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} />
           <button 
             type="button" onClick={() => setShowPassword(!showPassword)}
             style={{ position: 'absolute', right: '1.25rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer' }}
@@ -113,6 +163,13 @@ const LoginView = ({ isCz, onSwitch }) => {
             {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
           </button>
         </InputGroup>
+
+        {error && (
+          <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.7rem', padding: '0.9rem 1.1rem', borderRadius: '14px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+            <AlertCircle size={18} color="#f87171" style={{ flex: 'none', marginTop: '1px' }} />
+            <span style={{ fontSize: '0.9rem', color: '#fca5a5', lineHeight: 1.5 }}>{error}</span>
+          </div>
+        )}
 
         <PrimaryButton data-testid="login-submit" type="submit" loading={loading}>
           {isCz ? 'Přihlásit se' : 'Sign In'} <ArrowRight size={20} />
@@ -176,7 +233,7 @@ const RegisterAgencyView = ({ isCz, onSwitch }) => {
         <header>
           <h3 style={{ fontSize: '2rem', fontWeight: '950', color: 'white', margin: 0 }}>{isCz ? 'Agentura vytvořena!' : 'Agency Created!'}</h3>
           <p style={{ color: 'rgba(255,255,255,0.4)', marginTop: '0.5rem' }}>
-            {isCz ? 'Zde je váš unikátní zvací kód pro modelky:' : 'Here is your unique invite code for models:'}
+            {isCz ? 'Zde je váš unikátní zvací kód pro členy týmu:' : 'Here is your unique invite code for team members:'}
           </p>
         </header>
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', padding: '1.5rem', position: 'relative' }}>
@@ -326,12 +383,7 @@ const LoginScreen = () => {
   };
 
   return (
-    <AuthLayout 
-      title={
-        view === 'login' ? null : 
-        (view === 'register-agency' ? (isCz ? 'Enterprise infrastruktura.' : 'Enterprise infrastructure.') : (isCz ? 'Vaše kariéra začíná zde.' : 'Your career starts here.'))
-      }
-    >
+    <AuthLayout>
       {view === 'login' && <LoginView isCz={isCz} onSwitch={handleSwitch} />}
       {view === 'register-agency' && <RegisterAgencyView isCz={isCz} onSwitch={handleSwitch} />}
       {view === 'join-agency' && <JoinAgencyView isCz={isCz} onSwitch={handleSwitch} />}

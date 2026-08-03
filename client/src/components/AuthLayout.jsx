@@ -112,13 +112,13 @@ const LanguageSwitcher = ({ lang, setLang }) => (
   </div>
 );
 
-const AuthLayout = ({ children, title: _title, subtitle }) => {
+const AuthLayout = ({ children, subtitle }) => {
   const { lang, setLang, isMobile, navigate } = useNexus();
   const isCz = lang === 'cz';
 
   if (isMobile) {
     return (
-      <div style={{ ...STYLES.page, flexDirection: 'column', overflow: 'auto', background: '#040507', position: 'relative' }}>
+      <div className="auth-screen" style={{ ...STYLES.page, flexDirection: 'column', overflow: 'auto', background: '#040507', position: 'relative' }}>
         <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem' }}>
           <LanguageSwitcher lang={lang} setLang={setLang} />
         </div>
@@ -169,7 +169,7 @@ const AuthLayout = ({ children, title: _title, subtitle }) => {
             animation: 'fadeInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) both'
           }}>
             <Zap size={16} fill="currentColor" />
-            {isCz ? 'BUDOUCNOST SPRÁVY AGENTUR' : 'FUTURE OF AGENCY MANAGEMENT'}
+            {isCz ? 'PROVOZ A BEZPEČNOST' : 'OPERATIONS & SAFETY'}
           </div>
 
           <h1 style={{ 
@@ -179,14 +179,14 @@ const AuthLayout = ({ children, title: _title, subtitle }) => {
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             animation: 'fadeInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both'
           }}>
-            {isCz ? 'Absolutní kontrola.\nNekonečný růst.' : 'Absolute Control.\nInfinite Growth.'}
+            {isCz ? 'Dispečink, který ví,\nkde jsou vaši lidé.' : 'Dispatch that knows\nwhere your people are.'}
           </h1>
 
           <div style={{ marginTop: '4rem' }}>
             <FeatureItem 
               icon={Shield} 
               title={isCz ? 'Bezpečnostní dohled™' : 'Safety Guard™'} 
-              desc={isCz ? 'Nepřetržitý monitoring, SOS upozornění a komplexní zabezpečení vašich dat.' : 'Real-time monitoring, SOS alerts and comprehensive security for your data.'} 
+              desc={isCz ? 'Check-iny z probíhajících schůzek. Zmeškaný check-in i stisk SOS upozorní celý tým naráz.' : 'Check-ins from bookings in progress. A missed check-in or a pressed SOS alerts the whole team at once.'} 
               delay={0.2}
             />
             <FeatureItem 
@@ -197,15 +197,15 @@ const AuthLayout = ({ children, title: _title, subtitle }) => {
             />
             <FeatureItem 
               icon={Globe} 
-              title={isCz ? 'Omnichannel synchronizace' : 'Omnichannel Sync'} 
-              desc={isCz ? 'WhatsApp, Telegram, OnlyFans a další platformy synchronizované v jednom rozhraní.' : 'WhatsApp, Telegram, OnlyFans and other platforms synced in one unified interface.'} 
+              title={isCz ? 'Propojení kanálů' : 'Connected channels'} 
+              desc={isCz ? 'WhatsApp, Telegram a SMS relay v jedné schránce — bez přepínání mezi telefony.' : 'WhatsApp, Telegram and SMS relay in one inbox — no switching between phones.'} 
               delay={0.4}
             />
           </div>
         </div>
 
         <div style={{ position: 'absolute', bottom: '4rem', left: '4rem', color: 'rgba(255,255,255,0.2)', fontSize: '0.9rem', fontWeight: '600', animation: 'fadeInLeft 1s ease 0.5s both' }}>
-          © {new Date().getFullYear()} Nexus Systems • Enterprise Grade Infrastructure
+          © {new Date().getFullYear()} Nexus Systems
         </div>
       </div>
 
