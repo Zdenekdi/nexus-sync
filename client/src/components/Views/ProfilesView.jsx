@@ -1,7 +1,6 @@
 import React from 'react';
 import { 
-  Settings, ShieldCheck, UserPlus, X, CheckCircle, PlusCircle, Key, Copy, Check 
-} from 'lucide-react';
+  Settings, ShieldCheck, UserPlus, X, CheckCircle, PlusCircle, Key, Copy, Check, Smartphone } from 'lucide-react';
 import axios from 'axios';
 
 import { useNexus } from '../../context/ContextHook';
@@ -36,6 +35,7 @@ const ProfilesView = () => {
     handleEditProfile = () => {},
     handleSaveAssignees = () => {},
     showToast = () => {},
+    sessions = [],
     API_BASE = ''
   } = nexus;
   
@@ -90,6 +90,32 @@ const ProfilesView = () => {
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Spárované relay zařízení podle profilu. Pro bezpečnostní produkt je docela
+  // podstatné vědět, jestli má člověk v terénu telefon vůbec připojený — dosud
+  // to bylo vidět jen v nastavení zařízení, ne u profilu, kterého se to týká.
+  const relayByProfile = React.useMemo(() => {
+    const map = new Map();
+    for (const s of sessions || []) {
+      if (!s?.profileId) continue;
+      const prev = map.get(s.profileId);
+      // Když je zařízení víc, zajímá nás to naposledy viděné.
+      if (!prev || new Date(s.lastSeenAt || 0) > new Date(prev.lastSeenAt || 0)) {
+        map.set(s.profileId, s);
+      }
+    }
+    return map;
+  }, [sessions]);
+
+  const relayLabel = (binding) => {
+    if (!binding) return null;
+    if (binding.status !== 'Active') return { text: 'Zařízení odpojeno', color: '#f87171' };
+    const seen = binding.lastSeenAt ? new Date(binding.lastSeenAt) : null;
+    if (!seen || isNaN(seen)) return { text: 'Spárováno', color: '#10b981' };
+    const hours = (Date.now() - seen.getTime()) / 36e5;
+    if (hours > 48) return { text: `Naposledy ${seen.toLocaleDateString('cs-CZ')}`, color: '#f59e0b' };
+    return { text: 'Spárováno', color: '#10b981' };
   };
 
   return (
@@ -180,6 +206,19 @@ const ProfilesView = () => {
                 height: '100%'
               }}
             >
+              {(() => {
+                const rl = relayLabel(relayByProfile.get(profile.id));
+                if (!rl) return null;
+                return (
+                  <div
+                    data-testid={`profile-relay-${profile.id}`}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.7rem', fontWeight: '700', color: rl.color }}
+                  >
+                    <Smartphone size={12} />
+                    {rl.text}
+                  </div>
+                );
+              })()}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div>
                   <div style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '0.5rem', color: 'white' }}>{profile.name}</div>
