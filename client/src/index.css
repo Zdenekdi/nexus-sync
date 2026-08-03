@@ -105,6 +105,15 @@ header {
   align-items: center;
 }
 
+/* Globální `header` výše je stylovaný pro hlavičky pohledů v aplikaci: flex,
+   nadpis vlevo a akce vpravo. Na přihlašovacích obrazovkách je ale <header>
+   obyčejný blok — nadpis a popis pod sebou. Flex je vedle sebe rozhodil, takže
+   „NEXUS HUB / Vítejte zpět / Přihlaste se…" stálo ve třech sloupcích. */
+.auth-screen header {
+  display: block;
+  margin-bottom: 0;
+}
+
 h1 {
   font-size: 2.5rem;
   font-weight: 700;
@@ -131,9 +140,12 @@ h1 {
   .landing-page h2,
   .landing-page header,
   .auth-screen h1,
-  .auth-screen h2,
-  .auth-screen header {
+  .auth-screen h2 {
     display: revert !important;
+  }
+
+  .auth-screen header {
+    display: block !important;
   }
 }
 
