@@ -4,7 +4,13 @@ import axios from "axios";
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
 
-export function useHetzner() {
+// Infrastrukturní endpointy smí jen app owner. DashboardHome je ale volal pro
+// každého přihlášeného, takže operátorkám běžela na pozadí smyčka, která se
+// každých 30 vteřin doptávala na 403 — donekonečna, dokud měly otevřenou
+// záložku. Kromě zbytečné zátěže tím konzole zaplavila chybami, mezi kterými
+// nebylo vidět nic skutečného. Parametr `enabled` to vypne; InfraTab (jen pro
+// ownera) ho nechává na výchozím true.
+export function useHetzner({ enabled = true } = {}) {
   const [status, setStatus] = useState(null);
   const [bandwidth, setBandwidth] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -20,6 +26,7 @@ export function useHetzner() {
   }, []);
 
   const fetchStatus = useCallback(async () => {
+    if (!enabled) return;
     try {
       const [statusRes, metricsRes] = await Promise.all([
         axios.get(`${API_BASE}/hetzner/status`, getHeaders()),
@@ -42,16 +49,17 @@ export function useHetzner() {
         err.message
       );
     }
-  }, [getHeaders]);
+  }, [getHeaders, enabled]);
 
   const fetchStats = useCallback(async () => {
+    if (!enabled) return;
     try {
       const { data } = await axios.get(`${API_BASE}/agency/stats`, getHeaders());
       setStats(data);
     } catch (err) {
       console.warn("Failed to fetch global stats:", err);
     }
-  }, [getHeaders]);
+  }, [getHeaders, enabled]);
 
   useEffect(() => {
     fetchStatus();
@@ -61,7 +69,7 @@ export function useHetzner() {
       fetchStats();
     }, 30000);
     return () => clearInterval(interval);
-  }, [fetchStatus, fetchStats]);
+  }, [fetchStatus, fetchStats, enabled]);
 
   const serverAction = async (action) => {
     setLoading(true);
