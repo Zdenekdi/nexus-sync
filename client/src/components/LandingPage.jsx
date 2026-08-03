@@ -17,7 +17,6 @@ import {
   MapPin,
   Star,
   HelpCircle,
-  ChevronUp,
   ArrowLeft,
   BookOpen,
   Check,
@@ -60,36 +59,6 @@ const ScrollReveal = ({ children, delay = 0, style = {} }) => {
       transition: `opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`
     }}>
       {children}
-    </div>
-  );
-};
-
-const FAQItem = ({ question, answer }) => {
-  const [open, setOpen] = useState(false);
-  return (
-    <div 
-      onClick={() => setOpen(!open)}
-      style={{ 
-        padding: '1.25rem 1.5rem', borderRadius: '16px', cursor: 'pointer',
-        background: open ? 'rgba(59, 130, 246, 0.05)' : 'rgba(255,255,255,0.02)', 
-        border: `1px solid ${open ? 'rgba(59, 130, 246, 0.3)' : 'var(--card-border)'}`,
-        transition: 'all 0.3s ease'
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
-        <h4 style={{ fontSize: '0.95rem', fontWeight: '700', margin: 0, color: open ? 'white' : 'rgba(255,255,255,0.8)' }}>{question}</h4>
-        {open ? <ChevronUp size={18} color="#3b82f6" /> : <ChevronDown size={18} color="#64748b" />}
-      </div>
-      <div style={{
-        maxHeight: open ? '200px' : '0',
-        overflow: 'hidden',
-        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-        opacity: open ? 1 : 0
-      }}>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.6, marginTop: '0.75rem', marginBottom: 0 }}>
-          {answer}
-        </p>
-      </div>
     </div>
   );
 };
@@ -200,7 +169,19 @@ const LandingPage = () => {
         { icon: BarChart3, title: "Deep Analytics", desc: "Tržby a konverze pod mikroskopem." },
         { icon: CreditCard, title: "Stripe Billing", desc: "Automatické platby kartou a správa předplatného." }
       ],
+      sectionEyebrows: { pillars: "NA ČEM TO STOJÍ", features: "CO JE V CENĚ" },
       pricingTitle: "Plány a ceny",
+      pricingNote: "Ceny za měsíc, bez DPH. Účtuje se počet profilů, ne počet operátorek.",
+      // Návrh sem psal i „sdílení polohy". To je zamčená funkce — viz featureLocks.js —
+      // takže se inzeruje jen to, co dnes opravdu funguje.
+      pricingSafetyNote: "SOS tlačítko a check-iny jsou ve všech plánech včetně nejnižšího. Bezpečnost není příplatek.",
+      finalCta: {
+        title: "Přejděte z Excelu za jedno odpoledne.",
+        desc: "Založíte agenturu, pozvete lidi zvacím kódem a rozdělíte role. Zkoušet můžete naprázdno, bez zadávání karty.",
+        primary: "Založit agenturu",
+        secondary: "Napsat nám"
+      },
+      footer: { tagline: "Provoz a bezpečnost pro agentury", privacy: "Ochrana osobních údajů", guide: "Manuál", downloads: "Ke stažení" },
       plans: [
         { id: 'starter_monthly', name: 'Starter', price: '290 Kč', desc: 'Ideální pro začínající týmy.', features: ['Správa 5 profilů', 'SOS alerty', 'Manuální SMS routing'] },
         { id: 'pro_monthly', name: 'Professional', price: '990 Kč', desc: 'Pro rostoucí profesionály.', features: ['Správa 10 profilů', 'AI Optimalizace', 'Pokročilé reporty'], popular: true },
@@ -243,7 +224,17 @@ const LandingPage = () => {
         { icon: BarChart3, title: "Deep Analytics", desc: "Revenue and conversion insights." },
         { icon: CreditCard, title: "Stripe Billing", desc: "Automated card payments and subscription management." }
       ],
+      sectionEyebrows: { pillars: "WHAT IT'S BUILT ON", features: "WHAT'S INCLUDED" },
       pricingTitle: "Plans & Pricing",
+      pricingNote: "Prices per month, excl. VAT. You are billed per profile, not per operator.",
+      pricingSafetyNote: "The SOS button and check-ins are in every plan, including the cheapest one. Safety is not an add-on.",
+      finalCta: {
+        title: "Move off spreadsheets in one afternoon.",
+        desc: "Create the agency, invite people with a code and assign roles. You can try it empty, no card required.",
+        primary: "Start an agency",
+        secondary: "Get in touch"
+      },
+      footer: { tagline: "Operations and safety for agencies", privacy: "Privacy policy", guide: "Manual", downloads: "Downloads" },
       plans: [
         { id: 'starter_monthly', name: 'Starter', price: '€12', desc: 'Perfect for starting teams.', features: ['5 Profiles', 'SOS Alerts', 'Manual SMS Routing'] },
         { id: 'pro_monthly', name: 'Professional', price: '€39', desc: 'For growing professionals.', features: ['10 Profiles', 'AI Optimization', 'Advanced Reports'], popular: true },
@@ -452,9 +443,20 @@ const LandingPage = () => {
           v češtině a „50+ / 2,4 M" v angličtině — o téže firmě. Nešlo tedy o čísla,
           která by někdo změřil. Radši žádná než vymyšlená. */}
 
-      {/* FEATURES GRID */}
-      <section id="features" style={{ padding: '6rem 5%' }}>
+      {/* NA ČEM TO STOJÍ — video bloky */}
+      <section id="safety" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
+        <div style={{ fontSize: '0.7rem', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.3)', fontWeight: '800', paddingTop: '5rem' }}>
+          {t.sectionEyebrows.pillars}
+        </div>
+        {t.videos.map(v => <VideoCard key={v.id} {...v} />)}
+      </section>
+
+      {/* CO JE V CENĚ */}
+      <section id="features" style={{ padding: '5rem 5% 6rem' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ fontSize: '0.7rem', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.3)', fontWeight: '800', marginBottom: '1.5rem' }}>
+            {t.sectionEyebrows.features}
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1.5rem' }}>
             {t.features.map((f, i) => (
               <ScrollReveal key={i} delay={i * 0.1}>
@@ -471,15 +473,13 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* VIDEO CASE STUDIES */}
-      <section id="safety" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
-        {t.videos.map(v => <VideoCard key={v.id} {...v} />)}
-      </section>
-
       {/* PRICING SECTION */}
-      <section id="pricing" style={{ padding: '8rem 5% 6rem' }}>
+      <section id="pricing" style={{ padding: '4rem 5% 6rem' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <h2 style={{ fontSize: isMobile ? '2.5rem' : '3.5rem', fontWeight: '900', textAlign: 'center', marginBottom: '4rem', letterSpacing: '-0.02em' }}>{t.pricingTitle}</h2>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <h2 style={{ fontSize: isMobile ? '2rem' : '2.6rem', fontWeight: '900', marginBottom: '0.75rem', letterSpacing: '-0.02em' }}>{t.pricingTitle}</h2>
+            <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.35)', margin: 0 }}>{t.pricingNote}</p>
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '2rem', alignItems: 'flex-end' }}>
             {t.plans.map((p, i) => (
               <ScrollReveal key={p.id} delay={i * 0.1}>
@@ -500,26 +500,66 @@ const LandingPage = () => {
               </ScrollReveal>
             ))}
           </div>
+          <div style={{ marginTop: '1.5rem', padding: '1rem 1.25rem', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Shield size={16} color="#10b981" style={{ flex: 'none' }} />
+            <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>{t.pricingSafetyNote}</span>
+          </div>
         </div>
       </section>
 
-      {/* FAQ SECTION */}
-      <section style={{ padding: '6rem 5%', background: 'rgba(255,255,255,0.01)' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <h2 style={{ fontSize: '2rem', fontWeight: '900', textAlign: 'center', marginBottom: '3rem' }}>{t.faqTitle}</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {t.faqs.map((f, i) => <FAQItem key={i} question={f.q} answer={f.a} />)}
+      {/* FAQ SECTION — statický seznam, ne rozbalovačka.
+          Rozbalovačka měla `maxHeight: 200px`, což delší odpovědi (třeba tu
+          o zamčených funkcích) uřízlo bez varování. */}
+      <section style={{ padding: '5rem 5%', background: 'rgba(255,255,255,0.01)' }}>
+        <div style={{ maxWidth: '860px', margin: '0 auto' }}>
+          <h2 style={{ fontSize: isMobile ? '1.7rem' : '2rem', fontWeight: '900', marginBottom: '2rem' }}>{t.faqTitle}</h2>
+          <div style={{ border: '1px solid rgba(255,255,255,0.07)', borderRadius: '20px', overflow: 'hidden', background: 'rgba(255,255,255,0.02)' }}>
+            {t.faqs.map((f, i) => (
+              <div key={i} style={{ padding: '1.25rem 1.5rem', borderBottom: i < t.faqs.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', marginBottom: '0.5rem' }}>
+                  <HelpCircle size={15} color="#60a5fa" style={{ flex: 'none' }} />
+                  <span style={{ fontSize: '0.95rem', fontWeight: '700' }}>{f.q}</span>
+                </div>
+                <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.65, margin: 0, paddingLeft: '1.6rem' }}>{f.a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ZÁVĚREČNÉ CTA */}
+      <section style={{ padding: '0 5% 5rem' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', border: '1px solid rgba(59,130,246,0.25)', borderRadius: '28px', background: 'linear-gradient(135deg, rgba(59,130,246,0.1), rgba(59,130,246,0.02))', padding: isMobile ? '2.5rem 1.75rem' : '3rem 3.5rem', display: 'flex', alignItems: 'center', gap: '2.25rem', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: '280px' }}>
+            <h2 style={{ fontSize: isMobile ? '1.6rem' : '1.9rem', fontWeight: '900', letterSpacing: '-0.025em', margin: '0 0 0.6rem' }}>{t.finalCta.title}</h2>
+            <p style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.45)', margin: 0, maxWidth: '56ch', lineHeight: 1.6 }}>{t.finalCta.desc}</p>
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <button onClick={() => navigate('/register', 'register-agency')} style={{ padding: '0.9rem 1.5rem', borderRadius: '12px', border: 'none', background: '#3b82f6', color: 'white', fontWeight: '800', fontSize: '0.95rem', cursor: 'pointer' }}>
+              {t.finalCta.primary}
+            </button>
+            {/* Stejná adresa, na kterou míří hlášení chyb v aplikaci (BugReportModal). */}
+            <a href="mailto:support@nexus-hub.ai" style={{ padding: '0.9rem 1.4rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.75)', fontWeight: '700', fontSize: '0.95rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
+              {t.finalCta.secondary}
+            </a>
           </div>
         </div>
       </section>
 
       {/* FOOTER */}
-      <footer style={{ padding: '6rem 5% 4rem', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.03)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-          <img src="/nexus_icon.png" alt="Nexus" style={{ width: '28px', height: '28px', borderRadius: '8px' }} />
-          <span style={{ fontWeight: '900', letterSpacing: '0.1em' }}>NEXUS HUB</span>
+      <footer style={{ padding: '2rem 5% 3rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
+        <img src="/nexus_systems_logo.png" alt="Nexus Systems" style={{ height: '26px', display: 'block', opacity: 0.75 }} />
+        <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.3)' }}>
+          © {new Date().getFullYear()} Nexus Systems · {t.footer.tagline}
+        </span>
+        <div style={{ flex: 1 }} />
+        {/* Jen odkazy, které někam vedou. Návrh měl i „Podmínky" a „Stav služby" —
+            takové stránky v aplikaci nejsou, tak tu nejsou ani odkazy na ně. */}
+        <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap' }}>
+          <a href="/privacy" style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.35)', textDecoration: 'none' }}>{t.footer.privacy}</a>
+          <button onClick={() => setActiveTab('guide')} style={{ background: 'transparent', border: 'none', padding: 0, fontSize: '0.78rem', color: 'rgba(255,255,255,0.35)', cursor: 'pointer' }}>{t.footer.guide}</button>
+          <button onClick={() => navigate('/downloads', 'downloads')} style={{ background: 'transparent', border: 'none', padding: 0, fontSize: '0.78rem', color: 'rgba(255,255,255,0.35)', cursor: 'pointer' }}>{t.footer.downloads}</button>
         </div>
-        <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem' }}>© {new Date().getFullYear()} Nexus Systems</p>
       </footer>
     </div>
   );
