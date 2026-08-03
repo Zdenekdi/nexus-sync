@@ -162,12 +162,14 @@ public class NexusFcmService extends MessagingService {
 
         manager.notify(GHOST_CALL_NOTIFICATION_ID, b.build());
 
-        // Na některých systémech se full-screen intent nespustí, když aplikace
-        // nemá povolené zobrazování přes zámek — pak zůstane aspoň notifikace.
-        try {
-            startActivity(callIntent);
-        } catch (Exception e) {
-            Log.w(TAG, "[GhostCall] startActivity fallback failed: " + e.getMessage());
+        // Od Androidu 14 musí být full-screen intent výslovně povolený; bez toho
+        // systém zobrazí jen běžnou notifikaci (ta probudí displej a je vidět na
+        // zámku, takže funguje jako záloha). Přímé startActivity() tu nezkoušíme:
+        // spuštění aktivity z pozadí systém stejně zablokuje (BAL) a jen by to
+        // plnilo log chybami.
+        if (Build.VERSION.SDK_INT >= 34 && !manager.canUseFullScreenIntent()) {
+            Log.w(TAG, "[GhostCall] Full-screen intent not permitted — only a notification will show. "
+                + "Grant it in app notification settings (and on MIUI also 'display pop-up windows while running in background').");
         }
     }
 
