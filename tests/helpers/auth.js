@@ -88,3 +88,34 @@ export async function doLogin(page, email, password) {
 
   console.log(`✅ UI Login Success: ${email}`);
 }
+
+/**
+ * Na telefonu je postranní navigace v zásuvce — otevře ji, pokud je zavřená.
+ *
+ * Bez tohohle hledaly mobilní testy `nav-link-*`, které na Pixelu 5 nejsou
+ * vidět, dokud se nesáhne na hamburger. Celý mobilní projekt kvůli tomu padal
+ * a nikdo si toho nevšiml, protože CI ty specy vůbec nepouštělo.
+ */
+export async function openMobileSidebar(page, testInfo) {
+  if (testInfo?.project?.name !== 'mobile') return;
+  const menu = page.locator('button:has(.lucide-menu), .lucide-menu').first();
+  if (await menu.isVisible({ timeout: 3000 }).catch(() => false)) {
+    await menu.click();
+    await page.waitForTimeout(700);
+  }
+}
+
+/**
+ * Nadpisy `h1`/`h2` schovává pod 768 px globální pravidlo v index.css —
+ * na mobilu se titulek pohledu ukazuje v horní liště. Test na „vykreslilo se
+ * to bez pádu" tedy nemůže na telefonu čekat viditelnost; stačí, že je prvek
+ * ve stromu.
+ */
+export async function expectRendered(page, expect, selector, testInfo) {
+  const el = page.locator(selector);
+  if (testInfo?.project?.name === 'mobile') {
+    await el.waitFor({ state: 'attached', timeout: 15000 });
+  } else {
+    await expect(el).toBeVisible({ timeout: 15000 });
+  }
+}

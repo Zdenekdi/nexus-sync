@@ -15,6 +15,18 @@ import { defineConfig, devices } from '@playwright/test';
  * Run API-only:   npx playwright test rbac sms-relay  (no dev server needed)
  * Run E2E-only:   npx playwright test smoke dashboard (now hits live site directly)
  */
+
+/*
+ * tests/android/** ovládá skutečné zařízení přes ADB (`_android.devices()`).
+ * V prohlížečových projektech se nemá co spouštět — bez připojeného telefonu
+ * spolehlivě spadne na timeoutu, čtyřikrát za běh, a dělá z výsledku šum,
+ * ve kterém není poznat skutečná regrese.
+ *
+ * Pouští se buď samostatně (`npx playwright test tests/android`), nebo
+ * v CI jobu, který má zařízení k dispozici.
+ */
+const BROWSER_TEST_IGNORE = [/tests\/android\//];
+
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,    // Parallelize tests for speed
@@ -36,6 +48,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      testIgnore: BROWSER_TEST_IGNORE,
       use: { 
         ...devices['Desktop Chrome'],
         launchOptions: {
@@ -45,14 +58,17 @@ export default defineConfig({
     },
     {
       name: 'mobile',
+      testIgnore: BROWSER_TEST_IGNORE,
       use: { ...devices['Pixel 5'] },
     },
     {
       name: 'firefox',
+      testIgnore: BROWSER_TEST_IGNORE,
       use: { ...devices['Desktop Firefox'] },
     },
     {
       name: 'webkit',
+      testIgnore: BROWSER_TEST_IGNORE,
       use: { ...devices['Desktop Safari'] },
     },
   ],
