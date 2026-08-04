@@ -156,6 +156,16 @@ jobs:
       - name: Install Playwright Browsers and system dependencies
         run: npx playwright install --with-deps
 
+      # BEZ TOHOHLE KROKU TESTUJE CI NASAZENOU PRODUKCI, NE TENHLE PR.
+      #
+      # tests/helpers/mocks.js servíruje frontend z client/dist. Ten je
+      # v .gitignore, takže v CI po checkoutu neexistuje — mock soubor nenajde,
+      # požadavek propadne dál a skončí na nasazeném webu. Testy pak procházely
+      # bez ohledu na to, co je v PR, a žádnou frontendovou regresi zachytit
+      # nemohly.
+      - name: Build client for e2e
+        run: cd client && npm run build
+
       - name: Run API relay/security tests
         run: npm run test:api
         env:
