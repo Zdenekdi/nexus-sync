@@ -7,6 +7,11 @@ const { createQaRecord, updateQaRecord } = require('../middleware/schemas');
 
 router.use(authMiddleware);
 
+// Kontrola komunikace — hodnocení konkrétní zprávy. Jen pro vedoucí role,
+// omezení je v controlleru (isManagerRole).
+router.post('/reviews', (req, res) => ctrl.createReview(req, res));
+router.get('/reviews', (req, res) => ctrl.getReviews(req, res));
+
 router.post('/records', validate(createQaRecord), (req, res) => ctrl.createRecord(req, res));
 router.get('/records', (req, res) => ctrl.getRecords(req, res));
 router.get('/stats', (req, res) => ctrl.getStats(req, res));
