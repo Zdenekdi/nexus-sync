@@ -54,10 +54,27 @@ class SafetyController {
             // check-inu založila nová, takže se v dohledu hromadily duplicity téže
             // modelky (a eskalované se nikdy neuzavřely) — mezi nimi by skutečný
             // poplach zapadl. Když už relace běží, jen ji obnovíme.
-            const existingActive = await prisma.safetySession.findFirst({
-                where: { profileId, state: { in: ACTIVE_SESSION_STATES } },
-                orderBy: { createdAt: 'desc' }
-            });
+            // Rezervace typu výjezd zakládá relaci dopředu ve stavu PLANNED
+            // (bookingController.ensurePlannedSafetySession). Tu je potřeba
+            // převzít, ne kolem ní založit druhou — PLANNED totiž není mezi
+            // ACTIVE_SESSION_STATES, takže by hledání níž na ni nesáhlo a
+            // vznikla by přesně ta duplicita, kterou ten kód má bránit.
+            let existingActive = null;
+            if (bookingId) {
+                existingActive = await prisma.safetySession.findUnique({
+                    where: { bookingId: String(bookingId) }
+                });
+                if (existingActive && existingActive.state === 'RESOLVED') {
+                    existingActive = null;   // uzavřenou relaci neoživujeme
+                }
+            }
+
+            if (!existingActive) {
+                existingActive = await prisma.safetySession.findFirst({
+                    where: { profileId, state: { in: ACTIVE_SESSION_STATES } },
+                    orderBy: { createdAt: 'desc' }
+                });
+            }
 
             if (existingActive) {
                 const refreshed = await prisma.safetySession.update({
