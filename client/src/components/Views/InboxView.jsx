@@ -6,6 +6,8 @@ import {
   Signal, MoreVertical, StickyNote, Languages, Sparkles, Loader2, RefreshCw, UserCheck, X, Lock, AlertTriangle, CheckCheck
 } from 'lucide-react';
 import { deliveryState } from '../../utils/deliveryState';
+import { canReviewCommunication } from '../../utils/canReviewCommunication';
+import MessageReview from '../Inbox/MessageReview';
 
 import { useNexus } from '../../context/ContextHook';
 import { useOmnichannel } from '../../hooks/useOmnichannel';
@@ -711,6 +713,18 @@ const InboxView = () => {
                                     status="failed"
                                     isCz={lang === 'cz'}
                                     onResend={() => sendMessage(msg.text)}
+                                  />
+                                )}
+                                {/* Kontrola komunikace. Ovládání vidí jen vedoucí role —
+                                    server to hlídá taky, ale nabízet akci, která skončí
+                                    403, nemá smysl. */}
+                                {msg.direction === 'OUTBOUND' && msg.id && canReviewCommunication(activeOperator) && (
+                                  <MessageReview
+                                    messageId={msg.id}
+                                    apiBase={API_BASE}
+                                    token={token}
+                                    isCz={lang === 'cz'}
+                                    showToast={showToast}
                                   />
                                 )}
                               </div>
