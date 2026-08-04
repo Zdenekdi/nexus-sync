@@ -8,68 +8,68 @@ datasource db {
 }
 
 model Agency {
-  id        String   @id @default(cuid())
-  name      String
-  email     String?
-  region    String
-  plan      String   @default("Standard")
-  tier      String   @default("Standard")
-  stripeCustomerId String? @unique
-  inviteCode String?  @unique
-  safetyAlertMode String @default("MANAGERS_AND_ASSIGNED") // MANAGERS_AND_ASSIGNED, ASSIGNED_ONLY
-  extraFeatures String?  // JSON string for purchased add-ons or bonuses
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  aiInstructions String? // Global AI strategy/behavior instructions for this agency
-  
-  referralCode String? @unique
-  referrals   Referral[] @relation("AgencyReferrer")
-  
-  apiKeys     ApiKey[]
-  referralOf  Referral?  @relation("AgencyReferred")
+  id               String   @id @default(cuid())
+  name             String
+  email            String?
+  region           String
+  plan             String   @default("Standard")
+  tier             String   @default("Standard")
+  stripeCustomerId String?  @unique
+  inviteCode       String?  @unique
+  safetyAlertMode  String   @default("MANAGERS_AND_ASSIGNED") // MANAGERS_AND_ASSIGNED, ASSIGNED_ONLY
+  extraFeatures    String? // JSON string for purchased add-ons or bonuses
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  aiInstructions   String? // Global AI strategy/behavior instructions for this agency
 
-  users     User[]
-  roles     Role[]
-  profiles  Profile[]
-  chats     Chat[]
-  pushDevices PushDevice[]
+  referralCode String?    @unique
+  referrals    Referral[] @relation("AgencyReferrer")
+
+  apiKeys    ApiKey[]
+  referralOf Referral? @relation("AgencyReferred")
+
+  users          User[]
+  roles          Role[]
+  profiles       Profile[]
+  chats          Chat[]
+  pushDevices    PushDevice[]
   deviceBindings DeviceBinding[]
-  sipTrunks   SipTrunk[]
-  gpsTrackers GpsTracker[] @relation("AgencyGpsTrackers")
-  auditLogs  AuditLog[]
-  subscriptions Subscription[]
-  
+  sipTrunks      SipTrunk[]
+  gpsTrackers    GpsTracker[]    @relation("AgencyGpsTrackers")
+  auditLogs      AuditLog[]
+  subscriptions  Subscription[]
+
   // Omnichannel & enterprise features
   omnichannelChannels OmnichannelChannel[]
-  partnerPortals PartnerPortal[] @relation("PartnerPortals")
-  clients   Client[]
-  salonKeys   SalonKey[]  @relation("SalonKeys")
-  teamMessages TeamMessage[] @relation("AgencyTeamMessages")
+  partnerPortals      PartnerPortal[]      @relation("PartnerPortals")
+  clients             Client[]
+  salonKeys           SalonKey[]           @relation("SalonKeys")
+  teamMessages        TeamMessage[]        @relation("AgencyTeamMessages")
 }
 
 model Subscription {
-  id           String   @id @default(cuid())
-  agencyId     String
-  agency       Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  plan         String   // Starter | Professional | Agency
-  status       String   @default("ACTIVE") // ACTIVE | PENDING | PAST_DUE | EXPIRED | CANCELLED | TRIAL
-  startedAt    DateTime @default(now())
-  expiresAt    DateTime
-  cancelledAt  DateTime?
-  amountPaid   Float?
-  currency     String   @default("CZK")
-  paymentRef   String?  // external payment ID (GoPay, Stripe, etc.)
-  provider      String?
-  providerStatus String?
-  stripeCheckoutSessionId String? @unique
-  stripeSubscriptionId String?
-  stripeCustomerId String?
-  stripePriceId String?
-  currentPeriodStart DateTime?
-  currentPeriodEnd DateTime?
-  note         String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                      String    @id @default(cuid())
+  agencyId                String
+  agency                  Agency    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  plan                    String // Starter | Professional | Agency
+  status                  String    @default("ACTIVE") // ACTIVE | PENDING | PAST_DUE | EXPIRED | CANCELLED | TRIAL
+  startedAt               DateTime  @default(now())
+  expiresAt               DateTime
+  cancelledAt             DateTime?
+  amountPaid              Float?
+  currency                String    @default("CZK")
+  paymentRef              String? // external payment ID (GoPay, Stripe, etc.)
+  provider                String?
+  providerStatus          String?
+  stripeCheckoutSessionId String?   @unique
+  stripeSubscriptionId    String?
+  stripeCustomerId        String?
+  stripePriceId           String?
+  currentPeriodStart      DateTime?
+  currentPeriodEnd        DateTime?
+  note                    String?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
   @@index([agencyId])
   @@index([status])
@@ -79,52 +79,54 @@ model Subscription {
 }
 
 model Role {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String
   description String?
-  permissions String   // JSON string
-  minTier     String?  // Optional minimum tier required to use this role
-  isAppOwner   Boolean  @default(false)
-  isManager    Boolean  @default(false)
+  permissions String // JSON string
+  minTier     String? // Optional minimum tier required to use this role
+  isAppOwner  Boolean @default(false)
+  isManager   Boolean @default(false)
   agencyId    String?
-  agency      Agency?  @relation(fields: [agencyId], references: [id])
-  
-  users       User[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  agency      Agency? @relation(fields: [agencyId], references: [id])
+
+  users     User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([name, agencyId])
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String
-  roleId    String
-  role      Role     @relation(fields: [roleId], references: [id])
-  tokenVersion Int    @default(0) // bump = revokace všech relay tokenů uživatele
-  agencyId  String?
-  agency    Agency?  @relation(fields: [agencyId], references: [id])
-  messages  Message[]
-  pushDevices PushDevice[]
-  deviceBindings DeviceBinding[]
-  assignedProfiles Profile[] @relation("ProfileAssignees")
-  auditLogs  AuditLog[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
+  id               String          @id @default(cuid())
+  email            String          @unique
+  password         String
+  name             String
+  roleId           String
+  role             Role            @relation(fields: [roleId], references: [id])
+  tokenVersion     Int             @default(0) // bump = revokace všech relay tokenů uživatele
+  agencyId         String?
+  agency           Agency?         @relation(fields: [agencyId], references: [id])
+  messages         Message[]
+  pushDevices      PushDevice[]
+  deviceBindings   DeviceBinding[]
+  assignedProfiles Profile[]       @relation("ProfileAssignees")
+  auditLogs        AuditLog[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
   // Operator features
-  operatorSessions OperatorWorkSession[] @relation("OperatorSessions")
-  operatorMetrics OperatorMetrics[] @relation("OperatorMetrics")
-  assignedTalents TalentAssignment[] @relation("AssignedOperator")
-  dataAccessLogs DataAccessLog[] @relation("DataAccessLogs")
-  channelMessagesAsSender ChannelMessage[] @relation("SentChannelMessages")
-  refreshTokens RefreshToken[]
-  securityPin  String?   // Hashed security PIN for sensitive actions
-  teamMessages  TeamMessage[] @relation("TeamMessageAuthor")
-  salonKeyHolding SalonKey[]  @relation("SalonKeyHolder")
-  salonKeyLogs    SalonKeyLog[] @relation("SalonKeyLogs")
+  operatorSessions        OperatorWorkSession[] @relation("OperatorSessions")
+  operatorMetrics         OperatorMetrics[]     @relation("OperatorMetrics")
+  assignedTalents         TalentAssignment[]    @relation("AssignedOperator")
+  dataAccessLogs          DataAccessLog[]       @relation("DataAccessLogs")
+  channelMessagesAsSender ChannelMessage[]      @relation("SentChannelMessages")
+  refreshTokens           RefreshToken[]
+  securityPin             String? // Hashed security PIN for sensitive actions
+  teamMessages            TeamMessage[]         @relation("TeamMessageAuthor")
+  salonKeyHolding         SalonKey[]            @relation("SalonKeyHolder")
+  salonKeyLogs            SalonKeyLog[]         @relation("SalonKeyLogs")
+  qaReviewsGiven          QaReview[]            @relation("QaReviewReviewer")
+  qaReviewsReceived       QaReview[]            @relation("QaReviewOperator")
 
   @@index([agencyId])
   @@index([roleId])
@@ -132,17 +134,17 @@ model User {
 }
 
 model PushDevice {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  agencyId  String?
-  agency    Agency?  @relation(fields: [agencyId], references: [id], onDelete: SetNull)
-  token     String   @unique
-  platform  String   @default("android")
-  active    Boolean  @default(true)
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agencyId   String?
+  agency     Agency?  @relation(fields: [agencyId], references: [id], onDelete: SetNull)
+  token      String   @unique
+  platform   String   @default("android")
+  active     Boolean  @default(true)
   lastSeenAt DateTime @default(now())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([agencyId])
   @@index([userId])
@@ -178,21 +180,21 @@ model DeviceBinding {
 // providera (dle země/preference). Příchozí hovor přesměrovaný ze SIMky modelky
 // na DID dorazí přes tento trunk do Asterisku a přemostí se operátorovi.
 model SipTrunk {
-  id         String   @id @default(cuid())
-  agencyId   String
-  agency     Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  name       String                        // popisek, např. "MyProvider CZ"
-  host       String                        // SIP host/IP providera
-  port       Int      @default(5060)
-  authMode   String   @default("register") // "register" (user/heslo) | "ip" (ACL)
-  username   String?                        // pro register auth
-  password   String?                        // AES-256-GCM šifrované (sipEncryption)
-  fromUser   String?                        // volitelný From-user override
-  codecs     String   @default("ulaw,alaw") // čárkou oddělené
-  active     Boolean  @default(true)
-  dids       SipDid[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(cuid())
+  agencyId  String
+  agency    Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  name      String // popisek, např. "MyProvider CZ"
+  host      String // SIP host/IP providera
+  port      Int      @default(5060)
+  authMode  String   @default("register") // "register" (user/heslo) | "ip" (ACL)
+  username  String? // pro register auth
+  password  String? // AES-256-GCM šifrované (sipEncryption)
+  fromUser  String? // volitelný From-user override
+  codecs    String   @default("ulaw,alaw") // čárkou oddělené
+  active    Boolean  @default(true)
+  dids      SipDid[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([agencyId])
 }
@@ -203,7 +205,7 @@ model SipDid {
   id        String   @id @default(cuid())
   trunkId   String
   trunk     SipTrunk @relation(fields: [trunkId], references: [id], onDelete: Cascade)
-  number    String                          // DID v E.164
+  number    String // DID v E.164
   profileId String?
   profile   Profile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
   active    Boolean  @default(true)
@@ -214,33 +216,33 @@ model SipDid {
 }
 
 model Profile {
-  id          String    @id @default(cuid())
-  name        String
-  phoneNumber String?
-  status      String    @default("offline")
-  bio         String?
-  description String?
-  sampleMessages String?  // Field for manual training (pasted history)
-  gallery     String?   // JSON array of image URLs
-  agencyId    String
-  agency      Agency    @relation(fields: [agencyId], references: [id])
-  data        String?
-  chats       Chat[]
-  callLogs    CallLog[]
-  bookings    Booking[]
-  sessions    SafetySession[]
-  gpsTrackers GpsTracker[] @relation("ProfileGpsTrackers")
-  qaRecords   QaRecord[]
-  icalUrl     String?
+  id             String          @id @default(cuid())
+  name           String
+  phoneNumber    String?
+  status         String          @default("offline")
+  bio            String?
+  description    String?
+  sampleMessages String? // Field for manual training (pasted history)
+  gallery        String? // JSON array of image URLs
+  agencyId       String
+  agency         Agency          @relation(fields: [agencyId], references: [id])
+  data           String?
+  chats          Chat[]
+  callLogs       CallLog[]
+  bookings       Booking[]
+  sessions       SafetySession[]
+  gpsTrackers    GpsTracker[]    @relation("ProfileGpsTrackers")
+  qaRecords      QaRecord[]
+  icalUrl        String?
   deviceBindings DeviceBinding[]
-  sipDids     SipDid[]
-  assignees   User[]    @relation("ProfileAssignees")
-  clientNotes ClientNote[]
-  credentials String?   // Encrypted JSON containing platform logins, cookies, and proxy settings
-  commission  Float     @default(50) // Percentage (0-100)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
+  sipDids        SipDid[]
+  assignees      User[]          @relation("ProfileAssignees")
+  clientNotes    ClientNote[]
+  credentials    String? // Encrypted JSON containing platform logins, cookies, and proxy settings
+  commission     Float           @default(50) // Percentage (0-100)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
   // Talent assignment
   assignedOperators TalentAssignment[] @relation("AssignedTalent")
 
@@ -266,24 +268,24 @@ model ClientNote {
 }
 
 model Booking {
-  id          String    @id @default(cuid())
+  id          String  @id @default(cuid())
   profileId   String
-  profile     Profile   @relation(fields: [profileId], references: [id])
+  profile     Profile @relation(fields: [profileId], references: [id])
   agencyId    String
   clientId    String?
-  client      Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  clientPhone String?   
-  
-  title       String
-  price       Float     @default(0)
-  startTime   DateTime
-  endTime     DateTime
-  locationType  String    @default("incall") // incall or outcall
-  source        String?   // "manual", "ical"
-  
+  client      Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientPhone String?
+
+  title        String
+  price        Float    @default(0)
+  startTime    DateTime
+  endTime      DateTime
+  locationType String   @default("incall") // incall or outcall
+  source       String? // "manual", "ical"
+
   safetySession SafetySession?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   @@index([clientId])
   @@index([clientPhone])
@@ -292,49 +294,49 @@ model Booking {
 }
 
 model SafetySession {
-  id            String    @id @default(cuid())
-  agencyId      String
-  profileId     String
-  profile       Profile   @relation(fields: [profileId], references: [id])
-  bookingId     String?   @unique
-  booking       Booking?  @relation(fields: [bookingId], references: [id])
-  locationType  String    @default("incall") 
-  
-  state         String    @default("PLANNED") // PLANNED, CHECKED_IN, GRACE, ESCALATED, RESOLVED
-  plannedEndAt  DateTime?
-  graceUntil    DateTime?
-  escalatedAt   DateTime?
-  resolvedAt    DateTime?
-  
-  locationPoints SafetyLocationPoint[]
-  trackerLocations GpsTrackerLocation[] @relation("SafetySessionTrackerLocations")
-  emergencyEvents EmergencyEvent[]
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String   @id @default(cuid())
+  agencyId     String
+  profileId    String
+  profile      Profile  @relation(fields: [profileId], references: [id])
+  bookingId    String?  @unique
+  booking      Booking? @relation(fields: [bookingId], references: [id])
+  locationType String   @default("incall")
+
+  state        String    @default("PLANNED") // PLANNED, CHECKED_IN, GRACE, ESCALATED, RESOLVED
+  plannedEndAt DateTime?
+  graceUntil   DateTime?
+  escalatedAt  DateTime?
+  resolvedAt   DateTime?
+
+  locationPoints   SafetyLocationPoint[]
+  trackerLocations GpsTrackerLocation[]  @relation("SafetySessionTrackerLocations")
+  emergencyEvents  EmergencyEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model SafetyLocationPoint {
-  id            String    @id @default(cuid())
-  sessionId     String
-  session       SafetySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  lat           Float
-  lng           Float
-  accuracy      Float?
-  capturedAt    DateTime
-  receivedAt    DateTime  @default(now())
+  id         String        @id @default(cuid())
+  sessionId  String
+  session    SafetySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  lat        Float
+  lng        Float
+  accuracy   Float?
+  capturedAt DateTime
+  receivedAt DateTime      @default(now())
 }
 
 model GpsTracker {
-  id             String   @id @default(cuid())
+  id             String               @id @default(cuid())
   agencyId       String
-  agency         Agency   @relation("AgencyGpsTrackers", fields: [agencyId], references: [id], onDelete: Cascade)
+  agency         Agency               @relation("AgencyGpsTrackers", fields: [agencyId], references: [id], onDelete: Cascade)
   profileId      String?
-  profile        Profile? @relation("ProfileGpsTrackers", fields: [profileId], references: [id], onDelete: SetNull)
-  imei           String   @unique
+  profile        Profile?             @relation("ProfileGpsTrackers", fields: [profileId], references: [id], onDelete: SetNull)
+  imei           String               @unique
   label          String?
   secretHash     String
-  active         Boolean  @default(true)
+  active         Boolean              @default(true)
   lastSeenAt     DateTime?
   lastLat        Float?
   lastLng        Float?
@@ -344,8 +346,8 @@ model GpsTracker {
   lastHeading    Float?
   lastCapturedAt DateTime?
   locations      GpsTrackerLocation[]
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
 
   @@index([agencyId])
   @@index([profileId])
@@ -382,23 +384,23 @@ model GpsTrackerLocation {
 }
 
 model EmergencyEvent {
-  id            String    @id @default(cuid())
-  sessionId     String
-  session       SafetySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  type          String    // panic, timeout
-  severity      String    @default("high")
-  
-  receipts      EmergencyReceipt[]
-  createdAt     DateTime  @default(now())
+  id        String        @id @default(cuid())
+  sessionId String
+  session   SafetySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  type      String // panic, timeout
+  severity  String        @default("high")
+
+  receipts  EmergencyReceipt[]
+  createdAt DateTime           @default(now())
 }
 
 model EmergencyReceipt {
-  id            String    @id @default(cuid())
-  eventId       String
-  event         EmergencyEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  recipientId   String    // User ID
-  recipientRole String
-  deliveredAt   DateTime  @default(now())
+  id             String         @id @default(cuid())
+  eventId        String
+  event          EmergencyEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  recipientId    String // User ID
+  recipientRole  String
+  deliveredAt    DateTime       @default(now())
   acknowledgedAt DateTime?
 }
 
@@ -435,6 +437,8 @@ model Message {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  qaReviews QaReview[]
+
   @@index([chatId])
   @@index([senderId])
 }
@@ -453,25 +457,25 @@ model CallLog {
 }
 
 model InventoryLocation {
-  id        String   @id @default(cuid())
+  id        String          @id @default(cuid())
   name      String
   agencyId  String?
   items     InventoryItem[]
-  createdAt DateTime @default(now())
+  createdAt DateTime        @default(now())
 
   @@index([agencyId])
 }
 
 model InventoryItem {
-  id          String            @id @default(cuid())
-  name        String
-  quantity    Int               @default(0)
-  threshold   Int               @default(10)
-  locationId  String
-  location    InventoryLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
-  agencyId    String?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id         String            @id @default(cuid())
+  name       String
+  quantity   Int               @default(0)
+  threshold  Int               @default(10)
+  locationId String
+  location   InventoryLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  agencyId   String?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
 
   @@index([agencyId])
   @@index([locationId])
@@ -483,10 +487,10 @@ model AuditLog {
   agency        Agency?  @relation(fields: [agencyId], references: [id])
   userId        String?
   user          User?    @relation(fields: [userId], references: [id])
-  action        String   
-  details       String?  
+  action        String
+  details       String?
   timestamp     DateTime @default(now())
-  integrityHash String?  // SHA-256 chain signature for security audits
+  integrityHash String? // SHA-256 chain signature for security audits
 
   @@index([agencyId])
 }
@@ -497,10 +501,46 @@ model QaRecord {
   profile   Profile  @relation(fields: [profileId], references: [id])
   rating    Int      @default(5)
   comment   String?
-  category  String?  
+  category  String?
   createdAt DateTime @default(now())
 
   @@index([profileId])
+}
+
+/// Kontrola komunikace — manažerka hodnotí, jak operátorka odepsala klientovi.
+///
+/// Vědomě NEUKLÁDÁ text zprávy, jen na ni odkazuje. Obsah komunikace s klientem
+/// tak zůstává na jediném místě (Message). Kdyby se kopíroval sem, držel by se
+/// dvakrát a retence by se musela řešit dvakrát — a jedna z těch kopií by se
+/// dřív nebo později zapomněla smazat.
+///
+/// onDelete: Cascade na zprávě je záměr: hodnocení nemá přežít konverzaci,
+/// ke které se vztahuje.
+///
+/// Liší se od QaRecord, který dává známku PROFILU. Míchat obojí do jedné
+/// tabulky by znamenalo, že ani jedno nefunguje pořádně.
+model QaReview {
+  id        String  @id @default(cuid())
+  agencyId  String
+  messageId String
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  /// Kdo zprávu napsal. Odvoditelné z message.senderId, ale drží se zvlášť —
+  /// hodnocení se má dát dohledat i kdyby účet zanikl.
+  operatorId String?
+  operator   User?   @relation("QaReviewOperator", fields: [operatorId], references: [id], onDelete: SetNull)
+
+  /// Kdo hodnotil. Bez toho by kontrola neměla váhu.
+  reviewerId String
+  reviewer   User   @relation("QaReviewReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  rating    Int
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([agencyId])
+  @@index([operatorId])
+  @@index([messageId])
 }
 
 model Referral {
@@ -509,7 +549,7 @@ model Referral {
   referrer     Agency   @relation("AgencyReferrer", fields: [referrerId], references: [id])
   referredId   String   @unique
   referred     Agency   @relation("AgencyReferred", fields: [referredId], references: [id])
-  status       String   @default("pending") 
+  status       String   @default("pending")
   rewardAmount Float    @default(0)
   createdAt    DateTime @default(now())
 
@@ -517,12 +557,12 @@ model Referral {
 }
 
 model DailyStat {
-  id           String   @id @default(cuid())
-  agencyId     String
-  date         DateTime 
-  revenue      Float    @default(0)
-  bookingsCount Int      @default(0)
-  activeProfiles Int     @default(0)
+  id             String   @id @default(cuid())
+  agencyId       String
+  date           DateTime
+  revenue        Float    @default(0)
+  bookingsCount  Int      @default(0)
+  activeProfiles Int      @default(0)
 
   @@unique([agencyId, date])
 }
@@ -530,28 +570,28 @@ model DailyStat {
 model GlobalSetting {
   id        String   @id @default(cuid())
   key       String   @unique
-  value     String   // Stores "true"/"false" or JSON strings
+  value     String // Stores "true"/"false" or JSON strings
   updatedAt DateTime @updatedAt
 }
 
 model Client {
-  id          String   @id @default(cuid())
-  agencyId    String
-  agency      Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  
+  id       String @id @default(cuid())
+  agencyId String
+  agency   Agency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
   phone       String
   name        String?
-  totalSpent  Float    @default(0)
+  totalSpent  Float     @default(0)
   lastVisit   DateTime?
-  tags        String?  // JSON array like ["VIP", "Frequent", "Troublemaker"]
-  preferences String?  @db.Text
-  
-  notes       ClientNote[]
-  bookings    Booking[]
-  chats       Chat[]
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  tags        String? // JSON array like ["VIP", "Frequent", "Troublemaker"]
+  preferences String?   @db.Text
+
+  notes    ClientNote[]
+  bookings Booking[]
+  chats    Chat[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([agencyId, phone])
   @@index([agencyId])
@@ -563,64 +603,64 @@ model Client {
 // ══════════════════════════════════════════════════════════════════════════════
 
 model OmnichannelChannel {
-  id           String   @id @default(cuid())
-  agencyId     String
-  agency       Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  
-  type         String   // "whatsapp", "sms", "webchat"
-  name         String   // Friendly name (e.g., "WhatsApp Business - Support")
-  enabled      Boolean  @default(true)
-  
+  id       String @id @default(cuid())
+  agencyId String
+  agency   Agency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  type    String // "whatsapp", "sms", "webchat"
+  name    String // Friendly name (e.g., "WhatsApp Business - Support")
+  enabled Boolean @default(true)
+
   // Provider credentials (encrypted at rest in application)
-  config       String   // JSON: {phoneNumber, apiKey, secretKey, etc.}
-  webhookUrl   String?  // Webhook endpoint for this channel
+  config        String // JSON: {phoneNumber, apiKey, secretKey, etc.}
+  webhookUrl    String? // Webhook endpoint for this channel
   webhookSecret String? // Signature verification
-  
+
   // Metrics
-  messagesReceived Int   @default(0)
-  messagesSent     Int   @default(0)
+  messagesReceived Int       @default(0)
+  messagesSent     Int       @default(0)
   lastActivityAt   DateTime?
-  
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  
-  messages     ChannelMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages      ChannelMessage[]
   webhookEvents ChannelWebhook[]
-  
+
   @@unique([agencyId, type])
   @@index([agencyId])
 }
 
 model ChannelMessage {
-  id           String   @id @default(cuid())
-  agencyId     String
-  channelId    String
-  channel      OmnichannelChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
-  
+  id        String             @id @default(cuid())
+  agencyId  String
+  channelId String
+  channel   OmnichannelChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
   // Unified message fields
-  externalId   String   // Provider's message ID for deduplication
-  direction    String   @default("inbound") // "inbound" or "outbound"
-  from         String   // Sender identifier (phone, email, user ID)
-  to           String   // Recipient identifier
-  body         String
-  
+  externalId String // Provider's message ID for deduplication
+  direction  String @default("inbound") // "inbound" or "outbound"
+  from       String // Sender identifier (phone, email, user ID)
+  to         String // Recipient identifier
+  body       String
+
   // Media/attachments
-  mediaUrls    String?  // JSON array of URLs
-  mediaType    String?  // "image", "video", "document"
-  
+  mediaUrls String? // JSON array of URLs
+  mediaType String? // "image", "video", "document"
+
   // Metadata
-  status       String   @default("received") // "received", "delivered", "read", "failed"
-  senderId     String?  // User ID if sent by operator
-  sender       User?    @relation("SentChannelMessages", fields: [senderId], references: [id], onDelete: SetNull)
+  status         String  @default("received") // "received", "delivered", "read", "failed"
+  senderId       String? // User ID if sent by operator
+  sender         User?   @relation("SentChannelMessages", fields: [senderId], references: [id], onDelete: SetNull)
   conversationId String? // External conversation/thread ID
-  
+
   // Error tracking
   errorMessage String?
-  retryCount   Int      @default(0)
-  
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  
+  retryCount   Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([agencyId, channelId, externalId])
   @@index([agencyId])
   @@index([channelId])
@@ -631,21 +671,21 @@ model ChannelMessage {
 }
 
 model ChannelWebhook {
-  id           String   @id @default(cuid())
-  agencyId     String
-  channelId    String
-  channel      OmnichannelChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
-  
-  eventType    String   // "message_received", "delivery_report", "status_changed"
-  externalId   String   // Event ID from provider
-  payload      String   // Raw JSON payload
-  
-  processed    Boolean  @default(false)
-  processedAt  DateTime?
-  error        String?
-  
-  receivedAt   DateTime @default(now())
-  
+  id        String             @id @default(cuid())
+  agencyId  String
+  channelId String
+  channel   OmnichannelChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  eventType  String // "message_received", "delivery_report", "status_changed"
+  externalId String // Event ID from provider
+  payload    String // Raw JSON payload
+
+  processed   Boolean   @default(false)
+  processedAt DateTime?
+  error       String?
+
+  receivedAt DateTime @default(now())
+
   @@unique([agencyId, channelId, externalId])
   @@index([agencyId])
   @@index([processed])
@@ -656,55 +696,55 @@ model ChannelWebhook {
 // ══════════════════════════════════════════════════════════════════════════════
 
 model OperatorWorkSession {
-  id           String   @id @default(cuid())
-  agencyId     String
-  userId       String
-  user         User     @relation("OperatorSessions", fields: [userId], references: [id], onDelete: Cascade)
-  
-  status       String   @default("online") // "online", "away", "offline", "on_break"
+  id       String @id @default(cuid())
+  agencyId String
+  userId   String
+  user     User   @relation("OperatorSessions", fields: [userId], references: [id], onDelete: Cascade)
+
+  status        String  @default("online") // "online", "away", "offline", "on_break"
   currentTalent String? // ID of the talent/profile operator is representing
-  
-  loginAt      DateTime @default(now())
-  logoutAt     DateTime?
-  lastActivityAt DateTime @default(now())
-  
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  
+
+  loginAt        DateTime  @default(now())
+  logoutAt       DateTime?
+  lastActivityAt DateTime  @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([agencyId])
   @@index([userId])
 }
 
 model OperatorMetrics {
-  id           String   @id @default(cuid())
-  agencyId     String
-  userId       String
-  user         User     @relation("OperatorMetrics", fields: [userId], references: [id], onDelete: Cascade)
-  
-  date         DateTime // Date for which metrics are recorded
-  
+  id       String @id @default(cuid())
+  agencyId String
+  userId   String
+  user     User   @relation("OperatorMetrics", fields: [userId], references: [id], onDelete: Cascade)
+
+  date DateTime // Date for which metrics are recorded
+
   // Message metrics
-  messagesHandled    Int   @default(0)
+  messagesHandled    Int     @default(0)
   messagesPerChannel String? // JSON: {whatsapp: 10, sms: 5, webchat: 3}
-  
+
   // Time metrics (in milliseconds)
-  totalResponseTime  Int   @default(0)
-  avgResponseTime    Int   @default(0)
-  maxResponseTime    Int   @default(0)
-  
+  totalResponseTime Int @default(0)
+  avgResponseTime   Int @default(0)
+  maxResponseTime   Int @default(0)
+
   // Quality metrics
-  resolutionRate     Float @default(0) // Percentage 0-100
+  resolutionRate       Float @default(0) // Percentage 0-100
   customerSatisfaction Float @default(0) // 1-5 scale
-  
+
   // Availability
-  onlineMinutes      Int   @default(0)
-  activeMinutes      Int   @default(0)
-  
+  onlineMinutes Int @default(0)
+  activeMinutes Int @default(0)
+
   // Channel-specific
-  activeChannels     String? // JSON array: ["whatsapp", "sms"]
-  
-  recordedAt   DateTime @default(now())
-  
+  activeChannels String? // JSON array: ["whatsapp", "sms"]
+
+  recordedAt DateTime @default(now())
+
   @@unique([agencyId, userId, date])
   @@index([agencyId])
   @@index([userId])
@@ -716,22 +756,22 @@ model OperatorMetrics {
 // ══════════════════════════════════════════════════════════════════════════════
 
 model TalentAssignment {
-  id           String   @id @default(cuid())
-  agencyId     String
-  operatorId   String
-  operator     User     @relation("AssignedOperator", fields: [operatorId], references: [id], onDelete: Cascade)
-  
-  talentId     String   // Profile/Talent ID
+  id         String @id @default(cuid())
+  agencyId   String
+  operatorId String
+  operator   User   @relation("AssignedOperator", fields: [operatorId], references: [id], onDelete: Cascade)
+
+  talentId      String // Profile/Talent ID
   talentProfile Profile @relation("AssignedTalent", fields: [talentId], references: [id], onDelete: Cascade)
-  
-  startTime    DateTime @default(now())
-  endTime      DateTime? // NULL = ongoing
-  
-  status       String   @default("active") // "active", "inactive", "paused"
-  
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  
+
+  startTime DateTime  @default(now())
+  endTime   DateTime? // NULL = ongoing
+
+  status String @default("active") // "active", "inactive", "paused"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([agencyId])
   @@index([operatorId])
   @@index([talentId])
@@ -742,63 +782,63 @@ model TalentAssignment {
 // ══════════════════════════════════════════════════════════════════════════════
 
 model PartnerPortal {
-  id           String   @id @default(cuid())
-  agencyId     String
-  agency       Agency   @relation("PartnerPortals", fields: [agencyId], references: [id], onDelete: Cascade)
-  
-  name         String   // Portal name (e.g., "XYZ Booking Portal")
-  type         String   // "rest_api", "graphql", "webhook", "custom"
-  
+  id       String @id @default(cuid())
+  agencyId String
+  agency   Agency @relation("PartnerPortals", fields: [agencyId], references: [id], onDelete: Cascade)
+
+  name String // Portal name (e.g., "XYZ Booking Portal")
+  type String // "rest_api", "graphql", "webhook", "custom"
+
   // Connection details
-  baseUrl      String
-  apiKey       String   // Encrypted at rest
-  apiSecret    String?  // Encrypted at rest
-  
+  baseUrl   String
+  apiKey    String // Encrypted at rest
+  apiSecret String? // Encrypted at rest
+
   // Sync configuration
-  syncEnabled  Boolean  @default(true)
-  syncSchedule String?  // Cron expression: "0 2 * * *" (daily at 2 AM)
+  syncEnabled  Boolean   @default(true)
+  syncSchedule String? // Cron expression: "0 2 * * *" (daily at 2 AM)
   lastSyncAt   DateTime?
-  
+
   // Content types to sync
-  syncBios     Boolean  @default(true)
-  syncGallery  Boolean  @default(true)
-  syncRates    Boolean  @default(false)
+  syncBios         Boolean @default(true)
+  syncGallery      Boolean @default(true)
+  syncRates        Boolean @default(false)
   syncAvailability Boolean @default(false)
-  
-  credentials  String   // JSON with auth details
-  
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  
-  syncJobs     ContentSyncJob[]
-  
+
+  credentials String // JSON with auth details
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  syncJobs ContentSyncJob[]
+
   @@index([agencyId])
 }
 
 model ContentSyncJob {
-  id           String   @id @default(cuid())
-  agencyId     String
-  portalId     String
-  portal       PartnerPortal @relation(fields: [portalId], references: [id], onDelete: Cascade)
-  
-  talentId     String   // Profile/Talent ID being synced
-  
-  jobType      String   // "full_sync", "incremental", "delete"
-  status       String   @default("pending") // "pending", "running", "completed", "failed"
-  
-  contentType  String   // "bio", "gallery", "rates", "availability"
-  
+  id       String        @id @default(cuid())
+  agencyId String
+  portalId String
+  portal   PartnerPortal @relation(fields: [portalId], references: [id], onDelete: Cascade)
+
+  talentId String // Profile/Talent ID being synced
+
+  jobType String // "full_sync", "incremental", "delete"
+  status  String @default("pending") // "pending", "running", "completed", "failed"
+
+  contentType String // "bio", "gallery", "rates", "availability"
+
   // Results
-  itemsSynced  Int      @default(0)
-  itemsFailed  Int      @default(0)
+  itemsSynced  Int     @default(0)
+  itemsFailed  Int     @default(0)
   errorMessage String?
-  
-  startedAt    DateTime?
-  completedAt  DateTime?
-  
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  
+
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([agencyId])
   @@index([portalId])
   @@index([talentId])
@@ -810,25 +850,25 @@ model ContentSyncJob {
 // ══════════════════════════════════════════════════════════════════════════════
 
 model DataAccessLog {
-  id           String   @id @default(cuid())
-  agencyId     String?
-  userId       String?
-  user         User?    @relation("DataAccessLogs", fields: [userId], references: [id], onDelete: SetNull)
-  
-  action       String   // "read", "create", "update", "delete"
-  resourceType String   // "Profile", "ChannelMessage", "OperatorMetrics"
+  id       String  @id @default(cuid())
+  agencyId String?
+  userId   String?
+  user     User?   @relation("DataAccessLogs", fields: [userId], references: [id], onDelete: SetNull)
+
+  action       String // "read", "create", "update", "delete"
+  resourceType String // "Profile", "ChannelMessage", "OperatorMetrics"
   resourceId   String
-  
+
   // Multi-agency audit
   accessedAgencyId String? // If user accessed different agency data (should be blocked)
-  violation    Boolean  @default(false) // TRUE = attempted unauthorized access
-  
-  details      String?  // Additional context
-  ipAddress    String?
-  userAgent    String?
-  
-  timestamp    DateTime @default(now())
-  
+  violation        Boolean @default(false) // TRUE = attempted unauthorized access
+
+  details   String? // Additional context
+  ipAddress String?
+  userAgent String?
+
+  timestamp DateTime @default(now())
+
   @@index([agencyId])
   @@index([userId])
   @@index([violation])
@@ -837,13 +877,13 @@ model DataAccessLog {
 
 // ─── Refresh Tokens ────────────────────────────────────────────
 model RefreshToken {
-  id          String   @id @default(cuid())
-  token       String   @unique
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt   DateTime
-  revokedAt   DateTime?
-  createdAt   DateTime @default(now())
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
 
   @@index([userId])
   @@index([token])
@@ -851,101 +891,101 @@ model RefreshToken {
 
 // ─── Shared Blacklist (cross-agency) ───────────────────────────
 model BlacklistEntry {
-  id            String   @id @default(cuid())
-  phone         String?
-  licensePlate  String?
-  name          String?
-  description   String
-  severity      String   @default("warning") // warning | danger
-  
+  id           String  @id @default(cuid())
+  phone        String?
+  licensePlate String?
+  name         String?
+  description  String
+  severity     String  @default("warning") // warning | danger
+
   createdById   String
   createdByName String
-  agencyId      String   // originating agency
-  
-  reports       BlacklistReport[]
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
+  agencyId      String // originating agency
+
+  reports BlacklistReport[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([phone])
   @@index([licensePlate])
 }
 
 model BlacklistReport {
-  id            String   @id @default(cuid())
-  entryId       String
-  entry         BlacklistEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
-  
-  reportedById  String
+  id      String         @id @default(cuid())
+  entryId String
+  entry   BlacklistEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  reportedById   String
   reportedByName String
-  agencyId      String   // reporting agency
-  comment       String?
-  
-  createdAt     DateTime @default(now())
-  
+  agencyId       String // reporting agency
+  comment        String?
+
+  createdAt DateTime @default(now())
+
   @@unique([entryId, agencyId]) // one report per agency per entry
   @@index([entryId])
 }
 
 // ─── SOS Alerts ────────────────────────────────────────────────
 model SOSAlert {
-  id            String   @id @default(cuid())
-  agencyId      String
-  profileId     String?
-  userId        String
-  
-  type          String   // manual | voice | timer_expired
-  status        String   @default("active") // active | acknowledged | resolved
-  
-  lat           Float?
-  lng           Float?
-  accuracy      Float?
-  
-  acknowledgedBy  String?
-  acknowledgedAt  DateTime?
-  resolvedBy      String?
-  resolvedAt      DateTime?
-  
-  locationUpdates SOSLocationUpdate[]
+  id        String  @id @default(cuid())
+  agencyId  String
+  profileId String?
+  userId    String
+
+  type   String // manual | voice | timer_expired
+  status String @default("active") // active | acknowledged | resolved
+
+  lat      Float?
+  lng      Float?
+  accuracy Float?
+
+  acknowledgedBy String?
+  acknowledgedAt DateTime?
+  resolvedBy     String?
+  resolvedAt     DateTime?
+
+  locationUpdates  SOSLocationUpdate[]
   trackerLocations GpsTrackerLocation[] @relation("SosAlertTrackerLocations")
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([agencyId])
   @@index([status])
 }
 
 model SOSLocationUpdate {
-  id          String   @id @default(cuid())
-  sosAlertId  String
-  sosAlert    SOSAlert @relation(fields: [sosAlertId], references: [id], onDelete: Cascade)
-  lat         Float
-  lng         Float
-  accuracy    Float?
-  capturedAt  DateTime
-  receivedAt  DateTime @default(now())
-  
+  id         String   @id @default(cuid())
+  sosAlertId String
+  sosAlert   SOSAlert @relation(fields: [sosAlertId], references: [id], onDelete: Cascade)
+  lat        Float
+  lng        Float
+  accuracy   Float?
+  capturedAt DateTime
+  receivedAt DateTime @default(now())
+
   @@index([sosAlertId])
 }
 
 // ─── API Keys for External Access (Agency Plan) ────────────────
 model ApiKey {
-  id          String   @id @default(cuid())
-  keyId       String   @unique // Public part for lookup (e.g. nx_live_a1b2c3)
-  keyHash     String   // Hashed secret part
-  name        String   // Friendly name
-  
-  agencyId    String
-  agency      Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  
-  scopes      String   @default("read:stats") 
-  
-  lastUsedAt  DateTime?
-  expiresAt   DateTime?
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id      String @id @default(cuid())
+  keyId   String @unique // Public part for lookup (e.g. nx_live_a1b2c3)
+  keyHash String // Hashed secret part
+  name    String // Friendly name
+
+  agencyId String
+  agency   Agency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  scopes String @default("read:stats")
+
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([agencyId])
   @@index([keyId])
@@ -953,31 +993,31 @@ model ApiKey {
 
 // ─── Salon Key Tracker ────────────────────────────────────────
 model SalonKey {
-  id          String    @id @default(cuid())
-  agencyId    String
-  agency      Agency    @relation("SalonKeys", fields: [agencyId], references: [id], onDelete: Cascade)
-  label       String    @default("Klíče od salonu") // e.g. "Klíče – Praha", "Klíče – London"
-  holderId    String?   // null = klíče jsou na místě / in safe
-  holder      User?     @relation("SalonKeyHolder", fields: [holderId], references: [id], onDelete: SetNull)
-  takenAt     DateTime?
-  note        String?   // optional note when taking
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  logs        SalonKeyLog[]
+  id        String        @id @default(cuid())
+  agencyId  String
+  agency    Agency        @relation("SalonKeys", fields: [agencyId], references: [id], onDelete: Cascade)
+  label     String        @default("Klíče od salonu") // e.g. "Klíče – Praha", "Klíče – London"
+  holderId  String? // null = klíče jsou na místě / in safe
+  holder    User?         @relation("SalonKeyHolder", fields: [holderId], references: [id], onDelete: SetNull)
+  takenAt   DateTime?
+  note      String? // optional note when taking
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  logs      SalonKeyLog[]
 
   @@index([agencyId])
   @@index([holderId])
 }
 
 model SalonKeyLog {
-  id        String    @id @default(cuid())
+  id        String   @id @default(cuid())
   keyId     String
-  key       SalonKey  @relation(fields: [keyId], references: [id], onDelete: Cascade)
-  action    String    // "TAKEN" | "RETURNED"
+  key       SalonKey @relation(fields: [keyId], references: [id], onDelete: Cascade)
+  action    String // "TAKEN" | "RETURNED"
   userId    String
-  user      User      @relation("SalonKeyLogs", fields: [userId], references: [id])
+  user      User     @relation("SalonKeyLogs", fields: [userId], references: [id])
   note      String?
-  createdAt DateTime  @default(now())
+  createdAt DateTime @default(now())
 
   @@index([keyId])
   @@index([userId])
@@ -985,14 +1025,14 @@ model SalonKeyLog {
 
 // ─── Internal Team Chat ────────────────────────────────────────────────────
 model TeamMessage {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   agencyId  String
-  agency    Agency   @relation("AgencyTeamMessages", fields: [agencyId], references: [id], onDelete: Cascade)
+  agency    Agency    @relation("AgencyTeamMessages", fields: [agencyId], references: [id], onDelete: Cascade)
   authorId  String
-  author    User     @relation("TeamMessageAuthor", fields: [authorId], references: [id])
-  room      String   @default("general") // "general" | "managers" | "models"
+  author    User      @relation("TeamMessageAuthor", fields: [authorId], references: [id])
+  room      String    @default("general") // "general" | "managers" | "models"
   text      String
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
   editedAt  DateTime?
   deletedAt DateTime?
 

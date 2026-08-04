@@ -1,7 +1,93 @@
 const prisma = require('../services/db');
 const logger = require('../services/logger');
+const { isManagerRole } = require('../utils/authz');
 
 class QaController {
+  /**
+   * POST /api/qa/reviews — hodnocení konkrétní zprávy operátorky.
+   *
+   * Tohle je kontrola lidí, ne kontrola profilu (to je QaRecord). Proto
+   * jen manažerské role: kdyby si operátorky mohly číst hodnocení navzájem,
+   * je to něco úplně jiného než nástroj pro vedoucí.
+   */
+  async createReview(req, res) {
+    try {
+      const agencyId = req.user?.agencyId;
+      const reviewerId = req.user?.userId || req.user?.id;
+      if (!agencyId) return res.status(403).json({ message: 'No agency' });
+      if (!isManagerRole(req.user?.role)) {
+        return res.status(403).json({ message: 'Kontrolu komunikace smí zapisovat jen vedoucí role.' });
+      }
+
+      const { messageId, rating, note } = req.body;
+      if (!messageId || !rating) {
+        return res.status(400).json({ message: 'messageId and rating are required' });
+      }
+
+      // Zpráva musí patřit téže agentuře — jinak by šlo hodnotit cizí provoz.
+      const message = await prisma.message.findUnique({
+        where: { id: String(messageId) },
+        include: { chat: { select: { agencyId: true } } }
+      });
+      if (!message || message.chat?.agencyId !== agencyId) {
+        return res.status(404).json({ message: 'Zpráva nenalezena v této agentuře' });
+      }
+
+      const review = await prisma.qaReview.create({
+        data: {
+          agencyId,
+          messageId: message.id,
+          // Kdo zprávu napsal. U příchozí zprávy zůstane prázdné.
+          operatorId: message.senderId || null,
+          reviewerId: String(reviewerId),
+          rating: Math.min(5, Math.max(1, parseInt(rating))),
+          note: note || null
+        }
+      });
+
+      return res.status(201).json(review);
+    } catch (error) {
+      logger.error('[QA] createReview failed:', error);
+      return res.status(500).json({ message: 'Nepodařilo se uložit hodnocení' });
+    }
+  }
+
+  /**
+   * GET /api/qa/reviews — hodnocení komunikace v agentuře.
+   *
+   * Volitelně ?operatorId= pro jednu osobu. Text zprávy se dotahuje z Message
+   * přes relaci; v QaReview uložený není.
+   */
+  async getReviews(req, res) {
+    try {
+      const agencyId = req.user?.agencyId;
+      if (!agencyId) return res.status(403).json({ message: 'No agency' });
+      if (!isManagerRole(req.user?.role)) {
+        return res.status(403).json({ message: 'Kontrola komunikace je přístupná jen vedoucím rolím.' });
+      }
+
+      const { operatorId } = req.query;
+      const reviews = await prisma.qaReview.findMany({
+        where: {
+          agencyId,
+          ...(operatorId ? { operatorId: String(operatorId) } : {})
+        },
+        include: {
+          message: { select: { id: true, text: true, direction: true, createdAt: true, chatId: true } },
+          operator: { select: { id: true, name: true } },
+          reviewer: { select: { id: true, name: true } }
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 200
+      });
+
+      return res.json(reviews);
+    } catch (error) {
+      logger.error('[QA] getReviews failed:', error);
+      return res.status(500).json({ message: 'Nepodařilo se načíst hodnocení' });
+    }
+  }
+
   /**
    * POST /api/qa/records
    * Create a QA record (rating + comment) for a profile.
