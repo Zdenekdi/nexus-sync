@@ -577,9 +577,9 @@ const Sidebar = () => {
                 <div style={{ fontSize: '0.6rem', color: 'var(--accent-color)', fontWeight: '800' }}>{displayRoleString.toUpperCase()}</div>
               </div>
             )}
-            {/* Přehled evidovaných údajů patří do sidebaru, ne do nastavení:
-                do nastavení se operátorka nedostane, a přitom je to právě ona,
-                koho se zaznamenávání týká. Musí to najít, aniž by se ptala. */}
+            {/* Přehled evidovaných údajů je v sidebaru, ne v nastavení: má se
+                dát najít, aniž by ho někdo musel hledat mezi předplatným
+                a moduly. Týká se to hlavně operátorek a ty se sem dívají. */}
             {(!isSidebarCollapsed || isMobile) && (
               <button
                 data-testid="open-data-transparency"

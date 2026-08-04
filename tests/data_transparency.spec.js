@@ -35,10 +35,9 @@ test.describe('Co o vás aplikace eviduje', () => {
     // z navigace. Přesně na tomhle původní verze testu visela.
     await openMobileSidebar(page, testInfo);
 
-    // Odkaz je v sidebaru, ne v nastavení: do nastavení se operátorka
-    // nedostane (page-settings-container se jí nevykreslí ani po kliknutí
-    // v menu, ani přes přímou navigaci) — a přitom je to právě ona, koho se
-    // zaznamenávání týká. Stačí ověřit, že v DOM je; na klik je test výš.
+    // Odkaz je v sidebaru, ne v nastavení — má se dát najít, aniž by ho
+    // někdo hledal mezi předplatným a moduly. Stačí ověřit, že v DOM je;
+    // na dostupnost samotné stránky je test výš.
     await expect(page.getByTestId('open-data-transparency')).toHaveCount(1, { timeout: 10000 });
   });
 });
