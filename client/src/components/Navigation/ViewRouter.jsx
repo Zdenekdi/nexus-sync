@@ -9,6 +9,7 @@ const AgencyUnit = lazyWithRetry(() => import('../Units/AgencyUnit'));
 const InfrastructureUnit = lazyWithRetry(() => import('../Units/InfrastructureUnit'));
 const TvDashboard = lazyWithRetry(() => import('../Units/TvDashboard'));
 const ManualView = lazyWithRetry(() => import('../Views/ManualView'));
+const DataTransparency = lazyWithRetry(() => import('../DataTransparency'));
 
 const LoadingFallback = () => (
   <div style={{ 
@@ -53,6 +54,11 @@ const ViewRouter = () => {
       case 'settings':
       case 'safety-guard':
         return <AgencyUnit />;
+      // Přehled evidovaných údajů. Vlastní obrazovka, ne sekce v nastavení —
+      // má se na ni dát odkázat i mimo aplikaci a najít ji i po odhlášení
+      // z konkrétního pohledu.
+      case 'data-transparency':
+        return <DataTransparency />;
       case 'developer':
         return isAllowed('permissions') ? <AgencyUnit /> : <DashboardHome />;
 

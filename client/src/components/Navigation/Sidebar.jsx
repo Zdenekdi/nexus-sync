@@ -577,6 +577,19 @@ const Sidebar = () => {
                 <div style={{ fontSize: '0.6rem', color: 'var(--accent-color)', fontWeight: '800' }}>{displayRoleString.toUpperCase()}</div>
               </div>
             )}
+            {/* Přehled evidovaných údajů patří do sidebaru, ne do nastavení:
+                do nastavení se operátorka nedostane, a přitom je to právě ona,
+                koho se zaznamenávání týká. Musí to najít, aniž by se ptala. */}
+            {(!isSidebarCollapsed || isMobile) && (
+              <button
+                data-testid="open-data-transparency"
+                onClick={() => handleNavigation('data-transparency')}
+                title={lang === 'cz' ? 'Co o vás aplikace eviduje' : 'What this app records about you'}
+                style={{ background: 'rgba(255,255,255,0.04)', border: 'none', color: 'var(--text-secondary)', width: '28px', height: '28px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '0.35rem' }}
+              >
+                <ShieldCheck size={14} />
+              </button>
+            )}
             {(!isSidebarCollapsed || isMobile) && <button onClick={handleLogout} style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: 'var(--_err-color)', width: '28px', height: '28px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><LogOut size={14} /></button>}
           </div>
         </div>

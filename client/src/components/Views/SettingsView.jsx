@@ -135,6 +135,7 @@ const SettingsView = () => {
 
   return (
     <div data-testid="page-settings-container" style={{ padding: isMobile ? '1.5rem 1rem' : '2rem', flex: 1, overflowY: isMobile ? 'visible' : 'auto' }} className="fade-in custom-scrollbar">
+
       <StripeEmbeddedCheckoutModal
         checkout={embeddedCheckout}
         lang={lang}
