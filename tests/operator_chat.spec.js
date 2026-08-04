@@ -31,39 +31,44 @@ test.describe('Operator Inbox & Chat E2E', () => {
     await expect(page.getByTestId('page-inbox-container')).toBeVisible({ timeout: 15000 });
   });
 
-  test('should load chat list or empty state', async ({ page }) => {
-    const chatItem = page.locator('[data-testid^="chat-list-item-"]').first();
-    const emptyState = page.getByText(/žádné zprávy|no messages/i);
-    
-    await expect(chatItem.or(emptyState)).toBeVisible({ timeout: 15000 });
-    
-    if (await chatItem.isVisible()) {
-      await chatItem.click();
-      // Check if chat window elements appear
-      await expect(page.getByTestId('chat-message-input')).toBeVisible();
-      await expect(page.getByTestId('chat-send-button')).toBeVisible();
-    }
+  // Do téhle chvíle byly všechny tři testy schované za `if (chatItem.isVisible())`.
+  // Schránka byla ale v testech vždycky prázdná — mocky rutu na /chats vůbec
+  // neměly a výchozí zachytávač z ní udělal []. Podmínka tedy nikdy neplatila
+  // a testy odbavily zelenou, aniž by cokoli ověřily. Teď mocky vracejí tvar
+  // skutečného getChats, takže se dá tvrdit napevno.
+
+  test('schránka vypíše konverzace i s poslední zprávou', async ({ page }) => {
+    const chatItems = page.locator('[data-testid^="chat-list-item-"]');
+    await expect(chatItems).toHaveCount(2, { timeout: 15000 });
+
+    // Text poslední zprávy je to, co dřív padalo na „No messages": klient ho
+    // čte z messages[0].text a mock měl dřív pole `content`.
+    await expect(page.getByTestId('page-inbox-container')).toContainText('Dobrý den, mám zájem o schůzku.');
   });
 
-  test('should be able to type a message if chat exists', async ({ page }) => {
-    const chatItem = page.locator('[data-testid^="chat-list-item-"]').first();
-    if (await chatItem.isVisible()) {
-      await chatItem.click();
-      const input = page.getByTestId('chat-message-input');
-      await input.fill('Automated Test Message');
-      await expect(input).toHaveValue('Automated Test Message');
-    } else {
-      console.log('Skipping message typing: No active chats found for Alice.');
-    }
+  test('otevřená konverzace nabídne psaní a odeslání', async ({ page }) => {
+    await page.locator('[data-testid^="chat-list-item-"]').first().click();
+
+    const input = page.getByTestId('chat-message-input');
+    await expect(input).toBeVisible();
+    await expect(page.getByTestId('chat-send-button')).toBeVisible();
+
+    await input.fill('Automated Test Message');
+    await expect(input).toHaveValue('Automated Test Message');
   });
 
-  test('should show panic and sync buttons in chat header if chat exists', async ({ page }) => {
-    const chatItem = page.locator('[data-testid^="chat-list-item-"]').first();
-    if (await chatItem.isVisible()) {
-      await chatItem.click();
-      await expect(page.getByTestId('chat-panic-button')).toBeVisible();
-      await expect(page.getByTestId('chat-sync-button')).toBeVisible();
-      await expect(page.getByTestId('chat-call-button')).toBeVisible();
-    }
+  test('hlavička konverzace má hovor a synchronizaci; nouzové tlačítko vedoucí nemá', async ({ page }) => {
+    await page.locator('[data-testid^="chat-list-item-"]').first().click();
+
+    await expect(page.getByTestId('chat-call-button')).toBeVisible();
+    await expect(page.getByTestId('chat-sync-button')).toBeVisible();
+
+    // Nouzové tlačítko patří tomu, kdo je v terénu — v InboxView.jsx je
+    // podmíněné `activeOperator?.isModel` (na mobilu i operátorce bez vedoucí
+    // role). Alice je senior operátorka s isManager: true, takže ho mít nemá.
+    //
+    // Původní test ho tu čekal bezpodmínečně. Že je to špatně, se nedalo
+    // poznat: ta větev se kvůli prázdné schránce nikdy nespustila.
+    await expect(page.getByTestId('chat-panic-button')).toHaveCount(0);
   });
 });

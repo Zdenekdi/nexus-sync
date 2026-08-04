@@ -18,6 +18,19 @@ export async function setupApiMocks(page) {
       return s.includes('/api/') || s.includes(':5000/') || s.includes('/auth/');
     },
     async route => {
+      // Nemockovaný endpoint se tímhle tiše promění v prázdný seznam. UI pak
+      // vykreslí prázdný stav, který vypadá jako legitimní „nic tu není" —
+      // a test na něm klidně projde, aniž by cokoli ověřil. Přesně tak byla
+      // schránka v testech prázdná: ruta na /chats nikdy neexistovala.
+      //
+      // Prázdné pole tu zůstává, aby se nic nerozbilo. Ale ať je aspoň vidět,
+      // co se sem propadá.
+      const path = (() => { try { return new URL(route.request().url()).pathname; } catch { return route.request().url(); } })();
+      if (!globalThis.__nexusUnmockedPaths) globalThis.__nexusUnmockedPaths = new Set();
+      if (!globalThis.__nexusUnmockedPaths.has(path)) {
+        globalThis.__nexusUnmockedPaths.add(path);
+        console.warn(`⚠️  [Mock API] NEMOCKOVÁNO → vracím []: ${path}`);
+      }
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -298,22 +311,81 @@ export async function setupApiMocks(page) {
     });
   });
 
-  await context.route('**/chat/conversations', async route => {
+  // Schránka. Dřív tu stála ruta '**/chat/conversations' — takový endpoint
+  // nemá server ani klient, nikdo ho nikdy nevolal. Skutečné volání je
+  // GET /api/chats (chatController.getChats) a to se propadalo do výchozího
+  // zachytávače, který vrací []. Schránka proto byla v každém testu prázdná.
+  //
+  // Tvar odpovídá getChats: profile, poslední zpráva v poli messages
+  // a _count. Klient z toho v useChatLogic.js čte messages[0].text,
+  // sender.name, lastMessageAt a externalId.
+  await context.route('**/chats', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify([
-        { id: 'conv-1', profileId: 'prof-1', lastMessage: 'Hello!', unreadCount: 0, updatedAt: new Date() }
+        {
+          id: 'chat-1',
+          agencyId: 'agency-1',
+          profileId: 'prof-1',
+          externalId: '+420777123456',
+          lastMessageAt: '2026-08-04T09:12:00.000Z',
+          client: null,
+          profile: { id: 'prof-1', name: 'Model Diana' },
+          messages: [
+            {
+              id: 'msg-2', chatId: 'chat-1', text: 'Dobrý den, mám zájem o schůzku.',
+              direction: 'INBOUND', transport: 'sms', status: 'read',
+              senderId: null, sender: null, createdAt: '2026-08-04T09:12:00.000Z'
+            }
+          ],
+          _count: { messages: 2 }
+        },
+        {
+          id: 'chat-2',
+          agencyId: 'agency-1',
+          profileId: 'prof-2',
+          externalId: '+420608999111',
+          lastMessageAt: '2026-08-04T08:40:00.000Z',
+          client: null,
+          profile: { id: 'prof-2', name: 'Model Sarah' },
+          messages: [
+            {
+              id: 'msg-4', chatId: 'chat-2', text: 'Potvrzuji termín na zítra v 18:00.',
+              direction: 'OUTBOUND', transport: 'sms', status: 'delivered',
+              senderId: 'user-op-1', sender: { id: 'user-op-1', name: 'Alice' },
+              createdAt: '2026-08-04T08:40:00.000Z'
+            }
+          ],
+          _count: { messages: 5 }
+        }
       ])
     });
   });
 
+  await context.route('**/chats/*/sync', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, synced: 0 }) });
+  });
+
+  // Tvar podle modelu Message a messageController.getMessages.
+  // Dřív tu bylo { content, sender: 'model' } — pole, která v databázi ani
+  // v odpovědi neexistují. Klient čte text a sender.name, takže se každá
+  // zpráva vykreslila jako „No messages" s neznámým odesílatelem.
   await context.route('**/messages/**', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify([
-        { id: 'msg-1', content: 'Hello from mock!', sender: 'model', createdAt: new Date() }
+        {
+          id: 'msg-1', chatId: 'chat-1', text: 'Dobrý den, jste dnes volná?',
+          direction: 'INBOUND', transport: 'sms', status: 'read',
+          senderId: null, sender: null, createdAt: '2026-08-04T09:05:00.000Z'
+        },
+        {
+          id: 'msg-2', chatId: 'chat-1', text: 'Dobrý den, mám zájem o schůzku.',
+          direction: 'INBOUND', transport: 'sms', status: 'read',
+          senderId: null, sender: null, createdAt: '2026-08-04T09:12:00.000Z'
+        }
       ])
     });
   });
