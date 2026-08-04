@@ -127,6 +127,7 @@ model User {
   salonKeyLogs            SalonKeyLog[]         @relation("SalonKeyLogs")
   qaReviewsGiven          QaReview[]            @relation("QaReviewReviewer")
   qaReviewsReceived       QaReview[]            @relation("QaReviewOperator")
+  aiSuggestions           AiSuggestion[]        @relation("AiSuggestionOperator")
 
   @@index([agencyId])
   @@index([roleId])
@@ -437,7 +438,8 @@ model Message {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  qaReviews QaReview[]
+  qaReviews     QaReview[]
+  aiSuggestions AiSuggestion[]
 
   @@index([chatId])
   @@index([senderId])
@@ -541,6 +543,50 @@ model QaReview {
   @@index([agencyId])
   @@index([operatorId])
   @@index([messageId])
+}
+
+/// Co se stalo s návrhem od AI.
+///
+/// Bez tohohle záznamu nejde říct nic o tom, jak je AI užitečná. Návrh se
+/// vygeneroval a stopa po něm končila — takže „schvalovací poměr" ani „kolik
+/// akcí dnes" nebylo z čeho spočítat.
+///
+/// NEUKLÁDÁ SE TEXT NÁVRHU. Je to koncept zprávy klientovi; kdyby se držel
+/// i tady, byl by obsah komunikace na dvou místech a retence by se řešila
+/// dvakrát. Když se návrh odeslal, text je v Message, na kterou vede odkaz.
+/// Stejná úvaha jako u QaReview.
+///
+/// Stavy:
+///   PENDING    vygenerováno, operátorka ještě nerozhodla
+///   SENT       odesláno beze změny
+///   EDITED     odesláno po úpravě
+///   DISCARDED  zahozeno
+model AiSuggestion {
+  id        String  @id @default(cuid())
+  agencyId  String
+  profileId String?
+  chatId    String?
+
+  /// Kdo o návrhu rozhodl. Prázdné, dokud je PENDING.
+  operatorId String?
+  operator   User?   @relation("AiSuggestionOperator", fields: [operatorId], references: [id], onDelete: SetNull)
+
+  /// Odkaz na odeslanou zprávu — jen u SENT a EDITED.
+  messageId String?
+  message   Message? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  /// 'ai' nebo 'template_fallback'. Bez toho by se do poměru počítaly
+  /// i šablonové odpovědi a číslo by o modelu nevypovídalo.
+  source String
+  model  String?
+
+  outcome   String    @default("PENDING")
+  decidedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([agencyId, createdAt])
+  @@index([operatorId])
+  @@index([outcome])
 }
 
 model Referral {
