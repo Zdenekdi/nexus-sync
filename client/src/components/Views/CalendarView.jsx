@@ -312,39 +312,65 @@ const CalendarView = () => {
                     <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{timeLeft <= 0 ? 'OVERTIME' : 'TIME REMAINING'}</div>
                   </div>
                 </div>
+                {/* Tenhle blok se ukáže jen když vypršel čas na check-in — tedy
+                    v nejvypjatější chvíli, kdy se za okamžik rozešle poplach.
+                    Dřív tu byla dvě tlačítka ~30 px vysoká, vedle sebe, jen
+                    anglicky. Tři problémy naráz: pod hranicí 48 px pro dotyk,
+                    dva sousední cíle s opačným významem, a text v jazyce, kterému
+                    nemusí modelka rozumět zrovna ve chvíli, kdy na tom záleží. */}
                 {timeLeft <= 0 && (
-                  <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.6rem' }}>
+                  <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                     <button
-                      onClick={handleCheckOut}
-                      disabled={isSafetyLoading}
-                      className="action-btn"
-                      style={{
-                        margin: 0,
-                        padding: '0.55rem 0.9rem',
-                        fontSize: '0.72rem',
-                        background: 'rgba(239, 68, 68, 0.25)',
-                        border: '1px solid rgba(239, 68, 68, 0.55)',
-                        color: '#fecaca',
-                        opacity: isSafetyLoading ? 0.7 : 1,
-                      }}
-                    >
-                      {isSafetyLoading ? 'SAVING...' : 'CHECK-OUT NOW'}
-                    </button>
-                    <button
+                      data-testid="safety-im-ok"
                       onClick={handleSafetyImOk}
                       disabled={isSafetyLoading}
                       className="action-btn"
                       style={{
                         margin: 0,
-                        padding: '0.55rem 0.9rem',
-                        fontSize: '0.72rem',
+                        minHeight: '56px',
+                        padding: '0.9rem 1.1rem',
+                        fontSize: '1rem',
+                        fontWeight: '800',
                         background: 'rgba(16, 185, 129, 0.2)',
                         border: '1px solid rgba(16, 185, 129, 0.5)',
                         color: '#86efac',
                         opacity: isSafetyLoading ? 0.7 : 1,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', lineHeight: 1.15
                       }}
                     >
-                      {isSafetyLoading ? 'SAVING...' : "I'M OK (+10m)"}
+                      {isSafetyLoading ? 'UKLÁDÁM…' : (
+                        <>
+                          <span>JSEM V POŘÁDKU (+10 min)</span>
+                          <span style={{ fontSize: '0.68rem', fontWeight: 600, opacity: 0.85, fontFamily: 'ui-monospace, monospace', letterSpacing: '0.06em' }}>I'M OK</span>
+                        </>
+                      )}
+                    </button>
+                    {/* Odhlášení je pod potvrzením a vizuálně tišší — je to
+                        akce, která relaci ukončí, ne ta, kterou člověk hledá
+                        jako první. */}
+                    <button
+                      data-testid="safety-check-out"
+                      onClick={handleCheckOut}
+                      disabled={isSafetyLoading}
+                      className="action-btn"
+                      style={{
+                        margin: 0,
+                        minHeight: '48px',
+                        padding: '0.75rem 1.1rem',
+                        fontSize: '0.85rem',
+                        background: 'rgba(239, 68, 68, 0.18)',
+                        border: '1px solid rgba(239, 68, 68, 0.45)',
+                        color: '#fecaca',
+                        opacity: isSafetyLoading ? 0.7 : 1,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', lineHeight: 1.15
+                      }}
+                    >
+                      {isSafetyLoading ? 'UKLÁDÁM…' : (
+                        <>
+                          <span>UKONČIT SCHŮZKU</span>
+                          <span style={{ fontSize: '0.65rem', fontWeight: 600, opacity: 0.85, fontFamily: 'ui-monospace, monospace', letterSpacing: '0.06em' }}>CHECK-OUT NOW</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 )}

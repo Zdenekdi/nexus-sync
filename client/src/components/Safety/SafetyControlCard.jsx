@@ -142,15 +142,20 @@ const SafetyControlCard = () => {
         }}
         style={{
           width: '100%', 
-          padding: '1.25rem', 
+          // Android parametry ze zadání: primární akce 52–104 px. Dřív se výška
+          // odvíjela jen z paddingu, takže při menším písmu spadla pod 52.
+          minHeight: '76px',
+          padding: '1rem 1.25rem', 
           borderRadius: '18px',
-          background: sosActive ? 'rgba(239, 68, 68, 0.1)' : 'linear-gradient(135deg, #ef4444, #dc2626)',
+          // Bez gradientu. Zadání ho pro Android zakazuje a má pravdu: plná barva
+          // je čitelnější na levném displeji v přímém slunci, kde se tenhle
+          // telefon nejspíš používá.
+          background: sosActive ? 'rgba(239, 68, 68, 0.1)' : '#ef4444',
           border: sosActive ? '1px solid #ef4444' : 'none', 
           color: sosActive ? '#ef4444' : 'white', 
-          fontSize: '1.2rem', 
           fontWeight: 900,
           cursor: 'pointer',
-          boxShadow: sosActive ? 'none' : '0 10px 30px rgba(239, 68, 68, 0.2)',
+          boxShadow: 'none',
           transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
           display: 'flex',
           alignItems: 'center',
@@ -159,10 +164,18 @@ const SafetyControlCard = () => {
         }}
         className={sosActive ? '' : 'pulse-subtle'}
       >
-        <Shield size={24} fill={sosActive ? 'none' : 'white'} fillOpacity={0.2} />
-        {sosActive 
-          ? (isCz ? 'ZRUŠIT SOS (IDENTITA)' : 'CANCEL SOS (IDENTITY)') 
-          : (isCz ? 'NOUZOVÉ SOS' : 'EMERGENCY SOS')}
+        <Shield size={26} fill={sosActive ? 'none' : 'white'} fillOpacity={0.2} style={{ flex: 'none' }} />
+        {/* Česky i anglicky naráz, ne jedno nebo druhé podle nastavení telefonu.
+            Modelka může být cizinka s česky nastaveným mobilem — a naopak. Ve
+            chvíli, kdy tohle tlačítko mačká, není čas luštit jazyk. */}
+        <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.15 }}>
+          <span style={{ fontSize: '1.2rem' }}>
+            {sosActive ? 'ZRUŠIT SOS' : 'NOUZOVÉ SOS'}
+          </span>
+          <span style={{ fontSize: '0.7rem', fontWeight: 600, opacity: 0.85, fontFamily: 'ui-monospace, monospace', letterSpacing: '0.06em' }}>
+            {sosActive ? 'CANCEL SOS' : 'EMERGENCY SOS'}
+          </span>
+        </span>
       </button>
 
       {/* Voice Guardian & Audio Sentinel.
