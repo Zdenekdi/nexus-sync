@@ -37,6 +37,47 @@ exports.getBookings = async (req, res) => {
 };
 
 // POST /api/bookings
+
+/**
+ * Založí plánovanou bezpečnostní relaci k rezervaci.
+ *
+ * `Booking` má vazbu `safetySession` od začátku, ale nikdo ji nezakládal —
+ * relace vznikla jedině tehdy, když si ji operátorka nebo modelka vyrobila
+ * ručně. U výjezdu to znamená, že schůzka mimo provozovnu běžela bez
+ * jakéhokoli dohledu, dokud si někdo nevzpomněl.
+ *
+ * Relace vzniká ve stavu PLANNED — tedy evidovaná, ale ještě neběžící.
+ * Odpočet spustí až check-in; `startSession` v safetyController relaci
+ * ve stavu PLANNED převezme místo zakládání nové.
+ *
+ * ZÁMĚRNĚ SE NEZAKLÁDÁ U INCALL. Schůzka v provozovně má jiný rizikový
+ * profil a zaplavovat operátorku plánovanými relacemi u všeho by vedlo
+ * k tomu, že si jich přestane všímat.
+ *
+ * Selhání nesmí shodit vytvoření rezervace — rezervace je hlavní věc,
+ * relace je nadstavba.
+ */
+async function ensurePlannedSafetySession(booking) {
+  if (!booking || booking.locationType !== 'outcall') return null;
+  try {
+    return await prisma.safetySession.upsert({
+      where: { bookingId: booking.id },
+      update: { plannedEndAt: booking.endTime },
+      create: {
+        bookingId: booking.id,
+        agencyId: booking.agencyId,
+        profileId: booking.profileId,
+        locationType: booking.locationType,
+        state: 'PLANNED',
+        plannedEndAt: booking.endTime
+      }
+    });
+  } catch (error) {
+    console.error('[Booking] Nepodařilo se založit bezpečnostní relaci:', error.message);
+    return null;
+  }
+}
+
 exports.createBooking = async (req, res) => {
   try {
     const { profileId, title, startTime, endTime, locationType, clientPhone, clientName, price } = req.body;
@@ -110,6 +151,8 @@ exports.createBooking = async (req, res) => {
       }
     });
 
+    await ensurePlannedSafetySession(booking);
+
     res.status(201).json(booking);
   } catch (error) {
     console.error('[Booking] Create error:', error);
@@ -149,6 +192,10 @@ exports.updateBooking = async (req, res) => {
         ...(req.body.locationType && { locationType: req.body.locationType })
       }
     });
+    // Když se posune konec schůzky nebo se z incall stane výjezd, musí se to
+    // promítnout i do relace — jinak by hlídala čas, který už neplatí.
+    await ensurePlannedSafetySession(updated);
+
     res.json(updated);
   } catch (error) {
     console.error('[Booking] Update error:', error);
