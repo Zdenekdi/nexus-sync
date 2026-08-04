@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { FileSearch, StickyNote, User, Phone, Edit2, Check, X, Search, ChevronDown } from 'lucide-react';
 import { useNexus } from '../context/ContextHook';
+import { canReviewCommunication } from '../utils/canReviewCommunication';
+import ReviewList from './QA/ReviewList';
 import PremiumSelector from './UI/PremiumSelector';
 
 const QAView = () => {
@@ -21,7 +23,9 @@ const QAView = () => {
     operators,
     isMobile,
     activeRole,
-    lang
+    lang,
+    token,
+    API_BASE
   } = nexus;
 
   const [mobileView, setMobileView] = useState('list');
@@ -184,6 +188,9 @@ const QAView = () => {
 
   return (
     <div style={{ display: 'flex', height: isMobile ? 'calc(100dvh - max(env(safe-area-inset-top), 1rem) - 3rem)' : '100%', background: 'rgba(0,0,0,0.2)', position: 'relative', overflow: 'hidden' }}>
+      {/* Přehled zapsaných hodnocení. Vidí ho jen vedoucí role — prázdný panel
+          s nadpisem „Kontrola komunikace" by operátorce prozrazoval, že něco
+          takového existuje, a tomu se u citlivých sekcí vyhýbáme. */}
       {/* Left Sidebar - Client List */}
       <div style={{
         width: isMobile ? '100%' : '350px',
@@ -197,6 +204,9 @@ const QAView = () => {
         paddingTop: isMobile ? `calc(env(safe-area-inset-top))` : 0,
         paddingBottom: isMobile ? `calc(max(env(safe-area-inset-bottom), 1rem))` : 0
       }}>
+        {canReviewCommunication(activeOperator) && (
+          <ReviewList apiBase={API_BASE} token={token} isCz={lang === 'cz'} operators={operators} />
+        )}
         <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--card-border)' }}>
           <h2 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
             <FileSearch size={20} color="var(--accent-color)" /> {t('qa')}
