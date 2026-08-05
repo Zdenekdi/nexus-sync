@@ -311,9 +311,10 @@ function AppContent() {
         <Loader2 className="animate-spin" size={32} color="var(--accent-color)" />
         <div className="premium-loading-text" style={{ fontSize: '0.6rem', letterSpacing: '0.3em', opacity: 0.5 }}>SYNCHRONIZACE_ROZHRANÍ...</div>
       </div>}>
+        {/* SystemBanners uvnitř sám vykresluje <UpdateBanner />, takže tady
+            už podruhé být nesmí — hlášku o aktualizaci to zobrazovalo dvakrát. */}
         <SystemBanners />
         <GlobalModalContainer />
-        <UpdateBanner />
         <ErrorBoundary name="Sidebar">
           <Sidebar />
         </ErrorBoundary>

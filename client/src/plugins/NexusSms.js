@@ -88,7 +88,9 @@ export function useSmsRelay({ onIncoming, socket, API_BASE } = {}) {
       }
       return Promise.reject(new Error('Plugin sendSms method missing'));
     } else {
-      const url = API_BASE ? `${API_BASE}/api/sms/send` : '/api/sms/send';
+      // API_BASE už na /api končí — s dalším /api z toho vzniklo
+      // …/api/api/sms/send a odeslání padalo na 404.
+      const url = API_BASE ? `${API_BASE}/sms/send` : '/api/sms/send';
       return axios.post(url, { to, text });
     }
   };
