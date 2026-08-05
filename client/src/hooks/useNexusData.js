@@ -8,6 +8,10 @@ import axios from 'axios';
  * Custom hook to manage data fetching and global data state for Nexus Hub.
  * Fetches data EXCLUSIVELY from the API. No demo fallbacks.
  */
+// Server z parametru skládá větu „Přelož do jazyka X", takže se posílá název,
+// ne dvoupísmenný kód.
+const NAZVY_JAZYKU = { en: 'English', cs: 'Czech', de: 'German', fr: 'French', es: 'Spanish' };
+
 export function useNexusData({ 
   token, 
   isLoggedIn, 
@@ -873,6 +877,54 @@ export function useNexusData({
   //
   // Pozor: NENÍ to totéž co ReferralsView. Ta ukazuje jedné agentuře její
   // vlastní doporučení; tohle je pohled přes všechny agentury.
+  // ── Překlad zprávy ────────────────────────────────────────────────────────
+  //
+  // Celá tahle funkce byla napsaná v useUILogic.js — hooku, který nevolá
+  // nikdo. Zapojit ji tak, jak byla, by nestačilo, měla tři vady:
+  //
+  //  1. IGNOROVALA VÝBĚR JAZYKA. UI nabízí AUTO/en/cs/de/fr/es, ale obsluha
+  //     jela natvrdo `lang === 'cz' ? 'en' : 'cs'` s poznámkou „simple toggle
+  //     for now". Tlačítka jazyků by tedy nedělala nic.
+  //  2. Posílala `targetLang`, server čte `target`.
+  //  3. Četla `res.data.translatedText`, server vrací `translated`.
+  //
+  // Server z parametru skládá větu „Přelož do jazyka X" (aiService), takže
+  // se posílá NÁZEV jazyka, ne dvoupísmenný kód.
+  const [sourceText, setSourceText] = useState('');
+  const [translatedText, setTranslatedText] = useState('');
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translateTargetLang, setTranslateTargetLang] = useState('AUTO');
+
+  const handleTranslate = useCallback(async () => {
+    const text = (sourceText || '').trim();
+    if (!text || isTranslating) return;
+    // AUTO = do jazyka, ve kterém má operátorka aplikaci. Explicitní volba
+    // z tlačítek má přednost.
+    const cil = translateTargetLang === 'AUTO'
+      ? (lang === 'cz' ? 'Czech' : 'English')
+      : (NAZVY_JAZYKU[translateTargetLang] || translateTargetLang);
+    setIsTranslating(true);
+    try {
+      const r = await axios.post(`${API_BASE}/ai/translate`, { text, target: cil }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const prelozeno = r.data?.translated;
+      if (!prelozeno) throw new Error('prázdná odpověď');
+      setTranslatedText(prelozeno);
+    } catch (_err) {
+      console.error('Translate failed:', _err);
+      // Prázdný výsledek se nesmí tvářit jako překlad — smažeme ho, ať
+      // operátorka nepošle klientovi starý text z minulého pokusu.
+      setTranslatedText('');
+      const status = _err?.response?.status;
+      showToast?.(status === 403
+        ? (lang === 'cz' ? 'Překlad je součástí vyššího tarifu.' : 'Translation requires a higher plan.')
+        : (lang === 'cz' ? 'Překlad se nezdařil.' : 'Translation failed.'), 'error');
+    } finally {
+      setIsTranslating(false);
+    }
+  }, [sourceText, translateTargetLang, isTranslating, API_BASE, token, lang, showToast]);
+
   const fetchAllReferrals = useCallback(async () => {
     try {
       const r = await axios.get(`${API_BASE}/referrals/admin/all`, {
@@ -1305,6 +1357,7 @@ export function useNexusData({
     handleCheckIn, handleCheckOut, handleSafetyImOk, isSafetyLoading,
     handleEditBooking, handleDeleteBooking,
     fetchAllReferrals, handleConfirmReferral,
+    sourceText, setSourceText, translatedText, isTranslating, translateTargetLang, setTranslateTargetLang, handleTranslate,
     isMaintenanceMode, setIsMaintenanceMode, globalAnnouncement, setGlobalAnnouncement, publishGlobalAnnouncement,
     calendar, isCalendarSyncOpen, setIsCalendarSyncOpen, calendarSyncUrl, setCalendarSyncUrl,
     isBookingModalOpen, setIsBookingModalOpen, selectedScheduleEvent, setSelectedScheduleEvent,
@@ -1329,5 +1382,5 @@ export function useNexusData({
     handleSaveCredentials, handleQuickSaveMeeting, handleDelayBooking, initData, handleExportICS, 
     handleSaveCalendarSync, handleSaveBooking, fetchClientByPhone, toggleOperatorStatus, handleSaveAssignees, 
     handleRevokeBinding
-  ]);
+  , sourceText, translatedText, isTranslating, translateTargetLang, handleTranslate]);
 }

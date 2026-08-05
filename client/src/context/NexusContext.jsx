@@ -434,7 +434,10 @@ export const NexusProvider = ({ children }) => {
 
   const { 
     chatMessages, fetchChatMessages, handleSendMessage,
-    handleSaveNote, handleDeleteNote, handleTranslate, clientNotes, internalNote, setInternalNote,
+    // handleTranslate z chatLogic se nerozbaluje — useChatLogic ho nikdy
+    // nedefinoval, takže by to bylo undefined. Skutečná obsluha je
+    // v useNexusData.
+    handleSaveNote, handleDeleteNote, clientNotes, internalNote, setInternalNote,
     filteredMessages, setActiveContactId, selectedChat, typingProfiles, handleRefreshMessages
   } = chatLogic;
 
@@ -749,6 +752,15 @@ export const NexusProvider = ({ children }) => {
     // odpočtu tady — CalendarView si obojí bere z kontextu.
     activeSafetySession, isTimerActive, timeLeft, formatSafetyTime,
     activeTimerEvent: (nexusData.calendar || []).find(e => e?.id && e.id === activeSafetySession?.bookingId) || null,
+    // Překladový panel ve schránce. Obsluha i stav jsou v useNexusData;
+    // handleTranslate tu dřív bylo vystavené, ale nikdo ho nedefinoval,
+    // takže bylo undefined.
+    sourceText: nexusData.sourceText,
+    setSourceText: nexusData.setSourceText,
+    translatedText: nexusData.translatedText,
+    isTranslating: nexusData.isTranslating,
+    translateTargetLang: nexusData.translateTargetLang,
+    setTranslateTargetLang: nexusData.setTranslateTargetLang,
     fetchAllReferrals: nexusData.fetchAllReferrals,
     handleConfirmReferral: nexusData.handleConfirmReferral,
     isMaintenanceMode: nexusData.isMaintenanceMode,
@@ -917,7 +929,11 @@ export const NexusProvider = ({ children }) => {
     isRelayMode, setIsRelayMode,
     // Chat Logic
     chatMessages, isHistoryLoading, fetchChatMessages, handleSendMessage,
-    handleSaveNote, handleDeleteNote, handleTranslate, clientNotes, internalNote, setInternalNote,
+    handleSaveNote, handleDeleteNote, clientNotes, internalNote, setInternalNote,
+    // Přebíjí handleTranslate z chatLogic o řádek výš — tam je undefined,
+    // protože useChatLogic ho nikdy nedefinoval. Skutečná obsluha je
+    // v useNexusData a musí být uvedená POZDĚJI, aby vyhrála.
+    handleTranslate: nexusData.handleTranslate,
     filteredMessages, setActiveContactId, selectedChat, typingProfiles, handleRefreshMessages,
     handleSyncChatHistory: nexusData.handleSyncChatHistory
   }), [
@@ -944,13 +960,13 @@ export const NexusProvider = ({ children }) => {
     isRelayMode,
     // Chat Logic Deps
     chatMessages, isHistoryLoading, fetchChatMessages, handleSendMessage,
-    handleSaveNote, handleDeleteNote, handleTranslate, clientNotes, internalNote, setInternalNote,
+    handleSaveNote, handleDeleteNote, clientNotes, internalNote, setInternalNote,
     filteredMessages, setActiveContactId, selectedChat, typingProfiles, handleRefreshMessages,
     nexusData.handleSyncChatHistory,
     socket
   , _mobileView,
     nexusData.isBookingModalOpen, nexusData.setIsBookingModalOpen, nexusData.newBookingForm, nexusData.setNewBookingForm, nexusData.handleSaveBooking, nexusData.handleExportICS, nexusData.isCalendarSyncOpen, nexusData.setIsCalendarSyncOpen, nexusData.calendarSyncUrl, nexusData.setCalendarSyncUrl, nexusData.handleSaveCalendarSync, nexusData.setSelectedScheduleEvent,
-    nexusData.agencySettings, nexusData.calendar, nexusData.clientNames, nexusData.globalFeatures, nexusData.globalSettings, nexusData.handleSaveAssignees, nexusData.handleSaveCredentials, nexusData.handleSyncAll, nexusData.handleUpdateGlobalSetting, nexusData.isSyncing, nexusData.isTraining, nexusData.onResetTraining, nexusData.onStartTraining, nexusData.relayOnline, nexusData.setProfiles, nexusData.syncProgress, nexusData.syncStatus, nexusData.toggleOperatorStatus, nexusData.trainingProgress, nexusData.stats, nexusData.fetchClientByPhone, nexusData.initData, _activeContextTab, _setActiveContextTab, _inlinePanelTab, _setInlinePanelTab, _addUserModalAgencyId, _setAddUserModalAgencyId, nexusData.updateClientName, activeSafetySession, isTimerActive, timeLeft, formatSafetyTime, nexusData.handleCheckIn, nexusData.handleCheckOut, nexusData.handleSafetyImOk, nexusData.isSafetyLoading, nexusData.handleEditBooking, nexusData.handleDeleteBooking, nexusData.fetchAllReferrals, nexusData.handleConfirmReferral, nexusData.isMaintenanceMode, nexusData.setIsMaintenanceMode, nexusData.globalAnnouncement, nexusData.setGlobalAnnouncement, nexusData.publishGlobalAnnouncement]);
+    nexusData.agencySettings, nexusData.calendar, nexusData.clientNames, nexusData.globalFeatures, nexusData.globalSettings, nexusData.handleSaveAssignees, nexusData.handleSaveCredentials, nexusData.handleSyncAll, nexusData.handleUpdateGlobalSetting, nexusData.isSyncing, nexusData.isTraining, nexusData.onResetTraining, nexusData.onStartTraining, nexusData.relayOnline, nexusData.setProfiles, nexusData.syncProgress, nexusData.syncStatus, nexusData.toggleOperatorStatus, nexusData.trainingProgress, nexusData.stats, nexusData.fetchClientByPhone, nexusData.initData, _activeContextTab, _setActiveContextTab, _inlinePanelTab, _setInlinePanelTab, _addUserModalAgencyId, _setAddUserModalAgencyId, nexusData.updateClientName, activeSafetySession, isTimerActive, timeLeft, formatSafetyTime, nexusData.handleCheckIn, nexusData.handleCheckOut, nexusData.handleSafetyImOk, nexusData.isSafetyLoading, nexusData.handleEditBooking, nexusData.handleDeleteBooking, nexusData.fetchAllReferrals, nexusData.handleConfirmReferral, nexusData.isMaintenanceMode, nexusData.setIsMaintenanceMode, nexusData.globalAnnouncement, nexusData.setGlobalAnnouncement, nexusData.publishGlobalAnnouncement, nexusData.sourceText, nexusData.setSourceText, nexusData.translatedText, nexusData.isTranslating, nexusData.translateTargetLang, nexusData.setTranslateTargetLang, nexusData.handleTranslate]);
 
   return (
     <NexusContext.Provider value={value}>
