@@ -57,18 +57,23 @@ test.describe('Operator Inbox & Chat E2E', () => {
     await expect(input).toHaveValue('Automated Test Message');
   });
 
-  test('hlavička konverzace má hovor a synchronizaci; nouzové tlačítko vedoucí nemá', async ({ page }) => {
+  test('hlavička konverzace má hovor a synchronizaci; nouzové tlačítko podle zařízení', async ({ page }, testInfo) => {
     await page.locator('[data-testid^="chat-list-item-"]').first().click();
 
     await expect(page.getByTestId('chat-call-button')).toBeVisible();
     await expect(page.getByTestId('chat-sync-button')).toBeVisible();
 
-    // Nouzové tlačítko patří tomu, kdo je v terénu — v InboxView.jsx je
-    // podmíněné `activeOperator?.isModel` (na mobilu i operátorce bez vedoucí
-    // role). Alice je senior operátorka s isManager: true, takže ho mít nemá.
+    // Nouzové tlačítko patří tomu, kdo je v terénu. Podmínka v InboxView.jsx
+    // (ř. 577) je `activeOperator?.isModel || (isMobile && !isAppOwner &&
+    // !isAdmin && !isManager)` — na telefonu ho tedy dostane i operátorka.
     //
-    // Původní test ho tu čekal bezpodmínečně. Že je to špatně, se nedalo
-    // poznat: ta větev se kvůli prázdné schránce nikdy nespustila.
-    await expect(page.getByTestId('chat-panic-button')).toHaveCount(0);
+    // Alice je senior operátorka. Klient si `isManager` počítá jako
+    // `role === 'MANAGER'` (NexusContext), takže za manažerku ji nepovažuje
+    // a na mobilu tlačítko dostane. U počítače ne.
+    //
+    // Původní test čekal nepřítomnost bezpodmínečně. Že je to špatně, se
+    // nedalo poznat: kvůli prázdné schránce se ta větev nikdy nespustila.
+    const expected = testInfo.project.name === 'mobile' ? 1 : 0;
+    await expect(page.getByTestId('chat-panic-button')).toHaveCount(expected);
   });
 });

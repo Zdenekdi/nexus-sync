@@ -47,6 +47,24 @@ Model `Message` má `text`, `direction`, `transport`, `status` a `sender` jako
 objekt `{ id, name }`. Ani jedno pole nesedělo. Klient čte `latest.text`,
 takže se každá zpráva vykreslila jako „No messages".
 
+### Na telefonu nešlo otevřít konverzaci (OPRAVENO)
+
+Jakmile měla schránka v testech obsah, mobilní běh spadl: po kliknutí na
+konverzaci se neobjevilo pole pro psaní.
+
+Příčina je stejného druhu jako u kalendáře. `InboxView` si z kontextu bere
+`mobileView` a `setMobileView`, jenže `NexusContext` ani jedno nevystavuje —
+stav si drží od začátku pod `_mobileView` (ř. 283) a nikam ho nepředá.
+`setMobileView('chat')` na ř. 454 tedy nedělalo nic, `mobileView` zůstal
+`'list'` a podmínka na ř. 534 byla trvale nepravdivá. **Detail konverzace se
+na telefonu nevykreslil nikdy.**
+
+Opraveno vystavením existujícího stavu do kontextu (včetně doplnění do pole
+závislostí `useMemo`, bez kterého by se hodnota nepřepočítala).
+
+Že to nikdo neodhalil, má stejný důvod jako všechno ostatní v tomhle
+dokumentu: schránka byla v testech prázdná, takže nebylo na co kliknout.
+
 ### Bezpečnostní relace se načte a zahodí (NEOPRAVENO)
 
 `GET /safety/sessions/active` vrací **jeden objekt, nebo `null`** — ne pole.
