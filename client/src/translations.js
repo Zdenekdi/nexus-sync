@@ -177,7 +177,6 @@ export const TRANSLATIONS = {
         globalOverview: 'GLOBAL OVERVIEW',
         globalHealthDesc: 'Real-time status of all active relay nodes and infrastructure.',
         agencyOverviewDesc: 'Performance metrics and operational status for your agency.',
-        pendingClientSms: 'PENDING CLIENT SMS',
         copySuccess: 'Copied to clipboard',
         noBookingsToday: 'No bookings for today.',
         tryAnotherDay: 'Try another day',

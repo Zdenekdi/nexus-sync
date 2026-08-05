@@ -20,7 +20,7 @@ const DashboardHome = () => {
     calendar, stats, activeSubscription, activeRole,
     isMobile, isBackgroundLoading,
     setLinkedSessionId, linkedSessionId,
-    pendingNotifications, setPendingNotifications, onDelayBooking,
+    onDelayBooking,
     isLoggedIn, showToast, API_BASE, token, totalUnread, setActiveTab
   } = nexus;
   
@@ -686,7 +686,6 @@ const DashboardHome = () => {
           <SafetyControlCard />
         </div>
 
-        <PendingNotificationsSection pendingNotifications={pendingNotifications} setPendingNotifications={setPendingNotifications} showToast={showToast} t={t} />
 
         <div style={{ marginBottom: isMobile ? '1.1rem' : '2.5rem' }}>
           <h2 style={{ fontSize: isMobile ? '1.35rem' : '2rem', fontWeight: '900', lineHeight: 1.15 }}>{t('dailyAgenda')}</h2>
@@ -847,42 +846,3 @@ const SkeletonStatsGrid = ({ columns = 3, isMobile }) => (
   </div>
 );
 
-const PendingNotificationsSection = ({ pendingNotifications, setPendingNotifications, showToast, t }) => {
-  if (!pendingNotifications || pendingNotifications.length === 0) return null;
-  return (
-    <div style={{ marginBottom: '1.5rem' }}>
-      <h3 style={{ fontSize: '0.8rem', fontWeight: '800', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b', letterSpacing: '0.05em' }}>
-        <MessageSquare size={16} />
-        {t('pendingClientSms').toUpperCase()}
-      </h3>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-        {pendingNotifications.map((notif, i) => (
-          <div key={i} className="glass-card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #f59e0b', background: 'rgba(245, 158, 11, 0.03)', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>{notif.clientName} <span style={{ color: 'var(--text-secondary)', fontWeight: '400', fontSize: '0.75rem' }}>({notif.oldTime} → {notif.newTime})</span></div>
-              <button 
-                onClick={() => setPendingNotifications(prev => prev.filter((_, idx) => idx !== i))}
-                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.2rem' }}
-              >
-                <X size={16} />
-              </button>
-            </div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontStyle: 'italic', background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-              "{notif.message}"
-            </div>
-            <button 
-              onClick={() => {
-                navigator.clipboard.writeText(notif.message);
-                showToast(t('copySuccess'), 'success');
-              }}
-              style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', fontWeight: '800', color: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '6px', cursor: 'pointer' }}
-            >
-              <Copy size={14} />
-              {t('copyText')}
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
