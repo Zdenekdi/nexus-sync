@@ -187,9 +187,23 @@ export default function TeamChatPanel({ onClose, onMinimize }) {
       });
       const newMsgs = Array.isArray(r.data) ? r.data : [];
       setMessages(prev => {
-        // Only update if changed
-        if (JSON.stringify(prev.map(m => m.id)) === JSON.stringify(newMsgs.map(m => m.id))) return prev;
-        return newMsgs;
+        // Zprávy čekající na potvrzení ze serveru musí přežít.
+        //
+        // Tohle nahrazovalo celý seznam tím, co přišlo ze serveru. Když
+        // načtení doběhlo v okamžiku mezi optimistickým přidáním (sendMessage)
+        // a odpovědí na POST, odeslaná zpráva ze seznamu ZMIZELA — uživateli
+        // před očima. Objevila se až s dalším načtením, kdy už ji server znal.
+        //
+        // Projevovalo se to jako nestabilní test „Odeslání zprávy funguje"
+        // (na nedotčeném masteru padal zhruba jednou z osmi běhů), ale je to
+        // chyba produktu, ne testu.
+        const pending = prev.filter(m => m._optimistic);
+        const sameIds = JSON.stringify(prev.map(m => m.id)) === JSON.stringify(newMsgs.map(m => m.id));
+        if (sameIds) return prev;
+        if (!pending.length) return newMsgs;
+        // Nepotvrzené držíme na konci; POST je pak nahradí podle id.
+        const knownIds = new Set(newMsgs.map(m => m.id));
+        return [...newMsgs, ...pending.filter(m => !knownIds.has(m.id))];
       });
       setError('');
     } catch (_err) {
