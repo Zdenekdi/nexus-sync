@@ -710,10 +710,26 @@ export function useNexusData({
     }
   }, [activeProfileId, token, API_BASE, initData, showToast, lang]);
 
+  // Přepnutí, jestli je operátorka přiřazená k profilu.
+  //
+  // Původně to mířilo na POST /profiles/:id/toggle-operator — takovou rutu
+  // server nemá a nikdy neměl, takže klik skončil 404. Nevšimlo se toho,
+  // protože kontext toggleOperatorStatus nevystavoval a tlačítko volalo
+  // prázdnou funkci; teprve když se jméno doplnilo, chyba vyšla najevo.
+  //
+  // Serverová ruta PATCH /profiles/:id/assignees ukládá CELÝ seznam, ne rozdíl.
+  // getProfiles ho posílá s sebou (include assignees), takže si nový seznam
+  // spočítáme tady a pošleme ho celý.
   const toggleOperatorStatus = useCallback(async (profileId, operatorId) => {
     if (!profileId || !operatorId) return;
+    const profile = (profiles || []).find(p => p?.id === profileId);
+    if (!profile) return;
+    const current = (profile.assignees || []).map(a => a?.id).filter(Boolean);
+    const next = current.includes(operatorId)
+      ? current.filter(id => id !== operatorId)
+      : [...current, operatorId];
     try {
-      await axios.post(`${API_BASE}/profiles/${profileId}/toggle-operator`, { operatorId }, {
+      await axios.patch(`${API_BASE}/profiles/${profileId}/assignees`, { userIds: next }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       initData();
@@ -721,12 +737,15 @@ export function useNexusData({
       console.error('Toggle operator status failed:', _err);
       if (showToast) showToast(lang === 'cz' ? 'Změna stavu selhala.' : 'Failed to toggle status.', 'error');
     }
-  }, [token, API_BASE, initData, showToast, lang]);
+  }, [token, API_BASE, initData, showToast, lang, profiles]);
 
   const handleSaveAssignees = useCallback(async (profileId, operatorIds) => {
     if (!profileId) return;
     try {
-      await axios.put(`${API_BASE}/profiles/${profileId}/assignees`, { operatorIds }, {
+      // Server má na assignees PATCH, ne PUT (profileRoutes.js:61).
+      // Schéma na serveru (middleware/schemas.js: assignUsers) čeká userIds,
+      // ne operatorIds — s původním klíčem to padalo na validaci.
+      await axios.patch(`${API_BASE}/profiles/${profileId}/assignees`, { userIds: operatorIds }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       initData();

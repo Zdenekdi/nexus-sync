@@ -104,7 +104,9 @@ const GlobalModalContainer = () => {
           token={token}
           onAdd={async (data) => {
             try {
-              await axios.post(`${API_BASE}/agency/all`, data, {
+              // POST /agency zakládá; /agency/all je GET pro výpis. Mířilo to na výpis,
+                  // takže zakládání agentury vždycky skončilo 404 a hláškou o chybě.
+                  await axios.post(`${API_BASE}/agency`, data, {
                 headers: { Authorization: `Bearer ${token}` }
               });
               showToast(lang === 'cz' ? 'Agentura byla vytvořena' : 'Agency provisioned successfully', 'success');
