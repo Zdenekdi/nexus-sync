@@ -47,16 +47,48 @@ Model `Message` má `text`, `direction`, `transport`, `status` a `sender` jako
 objekt `{ id, name }`. Ani jedno pole nesedělo. Klient čte `latest.text`,
 takže se každá zpráva vykreslila jako „No messages".
 
+### Bezpečnostní relace se načte a zahodí (NEOPRAVENO)
+
+`GET /safety/sessions/active` vrací **jeden objekt, nebo `null`** — ne pole.
+Mock doplněn, aby tvar odpovídal.
+
+Při ověřování se ale ukázalo něco horšího. `useNexusData` si relaci vyžádá
+(`useNexusData.js:404`) a předá ji do `setActiveSafetySession`,
+`setIsTimerActive` a `setTimeLeft`. Všechny tři jsou v `NexusContext.jsx`
+(ř. 372–374) navázané na `memoizedNoop` — **výsledek se zahodí**.
+
+A UI, které by ho zobrazilo, není dosažitelné. `CalendarView` si z kontextu
+bere 28 jmen; 20 z nich kontext nevystavuje, takže platí výchozí hodnoty
+(`isTimerActive = false`, obsluhy prázdné funkce):
+
+- **8 jmen `useNexusData` vrací, kontext je jen nepřepošle** —
+  `setIsBookingModalOpen`, `handleExportICS`, `setSelectedScheduleEvent`
+  a čtveřice kolem synchronizace kalendáře.
+- **12 jmen neexistuje nikde** — `handleCheckIn`, `handleCheckOut`,
+  `handleEditBooking`, `handleDeleteBooking`, `openBookingMenuId`
+  a celý odpočet: `isTimerActive`, `activeTimerEvent`, `timeLeft`,
+  `formatSafetyTime`, `isSafetyLoading`, `handleSafetyImOk`.
+
+Ověřeno za běhu, ne jen čtením kódu: po kliknutí na „Přidat akci" se
+stránka nezmění a žádné okno se neotevře.
+
+Prakticky to znamená, že panel „Safety Guard Active" i tlačítko „jsem
+v pořádku" v kalendáři jsou **mrtvý kód** — vykreslit se nemůžou. Po
+znovunačtení stránky během běžící schůzky se odpočet neobnoví.
+
+Není to regrese z tohohle auditu; `NexusContext.jsx` se naposledy měnil
+v #73. Oprava je na samostatné zadání: přeposlat 8 jmen je maličkost,
+zbylých 12 je potřeba doimplementovat.
+
 ## Co zbývá
 
-Dalších 15 endpointů se pořád propadá do zachytávače. Server je má všechny,
+Dalších 14 endpointů se pořád propadá do zachytávače. Server je má všechny,
 klient je volá — jen v mock souboru nejsou:
 
 | Endpoint | Co kvůli tomu v testech nejde ověřit |
 |---|---|
 | `/api/admin/feature-locks` | zamykání funkcí (`featureLocks.js` je fail-closed) |
 | `/api/subscriptions/current`, `/history` | předplatné a jeho historie |
-| `/api/safety/sessions/active` | běžící bezpečnostní relace |
 | `/api/trackers` | seznam lokátorů |
 | `/api/device/bindings` | spárovaná zařízení |
 | `/api/sip/config`, `/api/agency/relay-status` | VoIP a stav relaye |

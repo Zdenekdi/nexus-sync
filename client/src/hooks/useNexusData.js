@@ -411,7 +411,11 @@ export function useNexusData({
       }
       setProfiles(Array.isArray(profileRes?.data) ? profileRes.data : []);
       if (Array.isArray(userRes?.data)) setOperators(userRes.data);
-      if (safetyRes?.data && typeof safetyRes.data === 'object') {
+      // `typeof x === 'object'` samo nestačí: projde i prázdné pole, které je
+      // navíc pravdivostní. Spuštěný odpočet bez relace je u bezpečnostní
+      // funkce ten horší směr chyby, tak se ptáme na id skutečné relace.
+      if (safetyRes?.data && typeof safetyRes.data === 'object'
+          && !Array.isArray(safetyRes.data) && safetyRes.data.id) {
         setActiveSafetySession(safetyRes.data);
         setIsTimerActive(true);
         try {

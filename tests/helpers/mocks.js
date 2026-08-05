@@ -295,6 +295,16 @@ export async function setupApiMocks(page) {
     });
   });
 
+  // POZOR NA TVAR: getActiveSession vrací JEDEN objekt, nebo null — ne pole.
+  // Dokud tahle ruta chyběla, vracel výchozí zachytávač []. Prázdné pole je
+  // ale pravdivostní a `typeof [] === 'object'`, takže klient v useNexusData
+  // uvěřil, že běží bezpečnostní relace, a spustil odpočet. V každém testu se
+  // tak vykresloval panel „Safety Guard Active" pro relaci, která neexistuje,
+  // a tlačítko CHECK-IN v kalendáři bylo zakázané.
+  await context.route('**/safety/sessions/active', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(null) });
+  });
+
   await context.route('**/safety/sessions/summary', async route => {
     await route.fulfill({
       status: 200,
