@@ -829,17 +829,25 @@ export const NexusProvider = ({ children }) => {
     // zobrazovaly samé nuly. `initData` si berou modály a volají ho po
     // uložení — bez něj se seznam po přidání uživatele neobnovil.
     stats: nexusData.stats,
-    // isBackgroundLoading tu zatím NENÍ — ale ne z důvodu, který tu dřív stál.
+    // Načítací kostry dashboardu. DashboardHome je přepíná na pěti místech
+    // a bez tohohle příznaku se nikdy nezobrazily.
     //
-    // Původně tu bylo napsáno, že ho zapnout nejde, protože s načítacími
-    // kostrami dashboardu mizí panel týmového chatu. To BYL CHYBNÝ ZÁVĚR
-    // z jediného běhu: spec salon_keys_and_chat „Odeslání zprávy funguje"
-    // byl nestabilní sám o sobě. Přeměřeno na nedotčeném masteru padal
-    // 3× z 16 běhů. Příčinou bylo přepisování nepotvrzených zpráv
-    // v TeamChatPanel (opraveno zvlášť), ne tenhle příznak.
-    //
-    // Zbývá tedy jen rozhodnutí, jestli ty kostry na dashboardu chceme —
-    // je to změna chování při načítání, ne dopojení drátu.
+    // Dřív tu stálo, že to zapnout nejde, protože s kostrami mizí panel
+    // týmového chatu. Byl to CHYBNÝ ZÁVĚR z jediného běhu: spec
+    // salon_keys_and_chat „Odeslání zprávy funguje" byl nestabilní sám
+    // o sobě (na nedotčeném masteru padal 3× z 16). Skutečnou příčinou bylo
+    // přepisování nepotvrzených zpráv v TeamChatPanel — opraveno v #98.
+    isBackgroundLoading: nexusData.isBackgroundLoading,
+
+    // Načítací brána při startu. App.jsx z nich skládá
+    //   isSyncing = isLoggedIn && isDataLoading && !hasHydrated
+    // a při ní vrací načítací obrazovku místo rozhraní. Dosud byly obě
+    // undefined, takže se brána nikdy nezavřela a aplikace se vykreslila
+    // okamžitě — i s prázdnými daty, což je přesně to problikávání, kterému
+    // měla zabránit. (Kontext je vystavuje i pod jménem `loading`, ale
+    // App.jsx si je bere pod těmito.)
+    isDataLoading: nexusData.isDataLoading,
+    hasHydrated: nexusData.hasHydrated,
     fetchClientByPhone: nexusData.fetchClientByPhone,
     initData: nexusData.initData,
 
@@ -966,7 +974,7 @@ export const NexusProvider = ({ children }) => {
     socket
   , _mobileView,
     nexusData.isBookingModalOpen, nexusData.setIsBookingModalOpen, nexusData.newBookingForm, nexusData.setNewBookingForm, nexusData.handleSaveBooking, nexusData.handleExportICS, nexusData.isCalendarSyncOpen, nexusData.setIsCalendarSyncOpen, nexusData.calendarSyncUrl, nexusData.setCalendarSyncUrl, nexusData.handleSaveCalendarSync, nexusData.setSelectedScheduleEvent,
-    nexusData.agencySettings, nexusData.calendar, nexusData.clientNames, nexusData.globalFeatures, nexusData.globalSettings, nexusData.handleSaveAssignees, nexusData.handleSaveCredentials, nexusData.handleSyncAll, nexusData.handleUpdateGlobalSetting, nexusData.isSyncing, nexusData.isTraining, nexusData.onResetTraining, nexusData.onStartTraining, nexusData.relayOnline, nexusData.setProfiles, nexusData.syncProgress, nexusData.syncStatus, nexusData.toggleOperatorStatus, nexusData.trainingProgress, nexusData.stats, nexusData.fetchClientByPhone, nexusData.initData, _activeContextTab, _setActiveContextTab, _inlinePanelTab, _setInlinePanelTab, _addUserModalAgencyId, _setAddUserModalAgencyId, nexusData.updateClientName, activeSafetySession, isTimerActive, timeLeft, formatSafetyTime, nexusData.handleCheckIn, nexusData.handleCheckOut, nexusData.handleSafetyImOk, nexusData.isSafetyLoading, nexusData.handleEditBooking, nexusData.handleDeleteBooking, nexusData.fetchAllReferrals, nexusData.handleConfirmReferral, nexusData.isMaintenanceMode, nexusData.setIsMaintenanceMode, nexusData.globalAnnouncement, nexusData.setGlobalAnnouncement, nexusData.publishGlobalAnnouncement, nexusData.sourceText, nexusData.setSourceText, nexusData.translatedText, nexusData.isTranslating, nexusData.translateTargetLang, nexusData.setTranslateTargetLang, nexusData.handleTranslate]);
+    nexusData.agencySettings, nexusData.calendar, nexusData.clientNames, nexusData.globalFeatures, nexusData.globalSettings, nexusData.handleSaveAssignees, nexusData.handleSaveCredentials, nexusData.handleSyncAll, nexusData.handleUpdateGlobalSetting, nexusData.isSyncing, nexusData.isTraining, nexusData.onResetTraining, nexusData.onStartTraining, nexusData.relayOnline, nexusData.setProfiles, nexusData.syncProgress, nexusData.syncStatus, nexusData.toggleOperatorStatus, nexusData.trainingProgress, nexusData.stats, nexusData.fetchClientByPhone, nexusData.initData, _activeContextTab, _setActiveContextTab, _inlinePanelTab, _setInlinePanelTab, _addUserModalAgencyId, _setAddUserModalAgencyId, nexusData.updateClientName, activeSafetySession, isTimerActive, timeLeft, formatSafetyTime, nexusData.handleCheckIn, nexusData.handleCheckOut, nexusData.handleSafetyImOk, nexusData.isSafetyLoading, nexusData.handleEditBooking, nexusData.handleDeleteBooking, nexusData.fetchAllReferrals, nexusData.handleConfirmReferral, nexusData.isMaintenanceMode, nexusData.setIsMaintenanceMode, nexusData.globalAnnouncement, nexusData.setGlobalAnnouncement, nexusData.publishGlobalAnnouncement, nexusData.sourceText, nexusData.setSourceText, nexusData.translatedText, nexusData.isTranslating, nexusData.translateTargetLang, nexusData.setTranslateTargetLang, nexusData.handleTranslate, nexusData.isBackgroundLoading, nexusData.hasHydrated]);
 
   return (
     <NexusContext.Provider value={value}>
