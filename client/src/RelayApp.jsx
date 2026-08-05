@@ -189,7 +189,10 @@ const RelayDashboard = () => {
     if (incall) {
       const d = await incall.isDefaultDialer?.().catch(() => null);
       if (d) {
-        dialerOk = Boolean(d.isDefault);
+        // Když je GSM most vypnutý (výchozí stav — hovory vedeme přes SIP),
+        // role výchozího vytáčeče se nevyžaduje. Bez tohohle by zůstala
+        // navždy nesplněná a průvodce by nikdy neohlásil hotovo.
+        dialerOk = d.featureEnabled === false ? true : Boolean(d.isDefault);
         setPermDialer(dialerOk);
       }
     }
@@ -217,10 +220,15 @@ const RelayDashboard = () => {
         }
       }
 
-      // 3. Default Dialer
+      // 3. Výchozí vytáčeč — jen když je GSM most zapnutý.
+      //
+      // Hovory jdou přes SIP, takže o tuhle roli standardně nežádáme.
+      // Dřív se dialog otevřel vždycky: uživatelka odklikávala nápadné
+      // oprávnění pro funkci, která se nepoužije a která by hovor navíc
+      // dodala jednosměrný (do WebRTC jde jen mikrofon telefonu).
       if (incall) {
         const d = await incall.isDefaultDialer?.().catch(() => null);
-        if (d && !d.isDefault) {
+        if (d && d.featureEnabled !== false && !d.isDefault) {
           await incall.requestDefaultDialer?.().catch(() => null);
           await new Promise(r => setTimeout(r, 1000));
         }
@@ -271,6 +279,7 @@ const RelayDashboard = () => {
     callState: gsmCallState, incomingCall: gsmIncomingCall, callDuration: gsmCallDuration,
     answer: gsmAnswer, reject: gsmReject, hangup: gsmHangup,
     setMuted: gsmSetMuted, setSpeaker: gsmSetSpeaker,
+    isFeatureEnabled: gsmBridgeEnabled,
   } = useInCallService({
     apiUrl: `${(API_BASE || '').replace(/\/api$/, '')}/api/device`,
     installationId: localStorage.getItem('nexus_installation_id') || operator?.installationId || '',
@@ -345,7 +354,7 @@ const RelayDashboard = () => {
     <>
       {/* Incoming call modals */}
       <Suspense fallback={null}>
-        {isInCallAvailable() && (gsmCallState === 'ringing' || gsmCallState === 'active') && (
+        {isInCallAvailable() && gsmBridgeEnabled && (gsmCallState === 'ringing' || gsmCallState === 'active') && (
           <IncomingCallModal
             incomingCall={gsmIncomingCall} callState={gsmCallState} callDuration={gsmCallDuration}
             onAnswer={gsmAnswer} onReject={gsmReject} onHangup={gsmHangup}

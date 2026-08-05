@@ -38,10 +38,21 @@ def appVersionCode = (majorVersion * 10000) + minorVersion
 def localBuildProps = new Properties()
 def localBuildPropsFile = rootProject.file("local.properties")
 if (localBuildPropsFile.exists()) localBuildProps.load(new FileInputStream(localBuildPropsFile))
+// GSM most (NexusInCallService) je VÝCHOZÍ VYPNUTÝ.
+//
+// Hovory vedeme přes SIP (NexusSipPlugin → Asterisk). Kdyby byl most zapnutý,
+// soupeřil by o tytéž příchozí hovory, aplikace by si říkala o roli výchozího
+// vytáčeče (nápadné oprávnění navíc) — a hlavně by hovor dodala rozbitý:
+// bridge je jednosměrný, do WebRTC jde jen mikrofon telefonu. Hlas volajícího
+// by vyžadoval CAPTURE_AUDIO_OUTPUT (signature|privileged), které na běžném
+// telefonu získat nejde. Viz komentář v NexusInCallService.java.
+//
+// Pro pokusy se dá zapnout přes local.properties nebo proměnnou prostředí:
+//   ENABLE_GSM_CALL_BRIDGE=true
 def enableGsmCallBridge = (
     localBuildProps.getProperty("ENABLE_GSM_CALL_BRIDGE")
         ?: System.getenv("ENABLE_GSM_CALL_BRIDGE")
-        ?: "true"
+        ?: "false"
 ).toBoolean()
 
 def githubRunNumber = System.getenv("GITHUB_RUN_NUMBER")

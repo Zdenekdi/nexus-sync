@@ -8,12 +8,16 @@ import { useNexus } from '../context/ContextHook';
 import Skeleton from './UI/Skeleton';
 import SafetyControlCard from './Safety/SafetyControlCard';
 import AIInsightCard from './AIInsightCard';
+// Varianta APK je konstanta dosazená při buildu, ne stav aplikace — brát ji
+// z kontextu znamenalo `undefined`, takže se relay větev dashboardu nikdy
+// nevykreslila. Kontext ji nevystavuje a vystavovat nemá.
+import { isRelayVariant } from '../plugins/NexusSms';
 
 const DashboardHome = () => {
   const nexus = useNexus();
   const { 
     activeOperator: user, t, lang, agencies, profiles: _profiles, 
-    calendar, stats, activeSubscription, isRelayVariant, activeRole,
+    calendar, stats, activeSubscription, activeRole,
     isMobile, isBackgroundLoading,
     setLinkedSessionId, linkedSessionId,
     pendingNotifications, setPendingNotifications, onDelayBooking,
