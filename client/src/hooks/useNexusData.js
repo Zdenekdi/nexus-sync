@@ -151,11 +151,25 @@ export function useNexusData({
     setIsTraining(false);
   }, []);
 
-  const [clientNames] = useState({});
-  const [_clientNames, _setClientNames] = useState(() => {
-    const saved = localStorage.getItem('nexus_client_names');
-    return saved ? JSON.parse(saved) : {};
+  // Jména klientů se držela DVAKRÁT: prázdné `clientNames` bez setteru
+  // a `_clientNames` načtené z localStorage, které se nikde nepoužívalo.
+  // Ukládací efekt níž přitom zapisoval to prázdné — takže se uložená jména
+  // při každém načtení aplikace přepsala prázdnem a nenávratně zmizela.
+  const [clientNames, setClientNames] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nexus_client_names');
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
   });
+  const updateClientName = useCallback((externalId, name) => {
+    if (!externalId) return;
+    setClientNames(prev => {
+      const next = { ...prev };
+      if (name && name.trim()) next[externalId] = name.trim();
+      else delete next[externalId];
+      return next;
+    });
+  }, []);
   const [calendar, setCalendar] = useState([]);
   const [isCalendarSyncOpen, setIsCalendarSyncOpen] = useState(false);
   const [calendarSyncUrl, setCalendarSyncUrl] = useState('');
@@ -362,7 +376,9 @@ export function useNexusData({
   }, [API_BASE, token, showToast, lang]);
   
   useEffect(() => {
-    localStorage.setItem('nexus_client_names', JSON.stringify(clientNames));
+    try {
+      localStorage.setItem('nexus_client_names', JSON.stringify(clientNames));
+    } catch { /* soukromý režim prohlížeče — jména zůstanou jen do zavření */ }
   }, [clientNames]);
 
   const axiosWithTiming = useCallback(async (url, config = {}) => {
@@ -739,71 +755,124 @@ export function useNexusData({
     }
   }, [token, API_BASE, initData, showToast, lang, profiles]);
 
+  // ── Bezpečnostní hlídání u rezervace ──────────────────────────────────────
+  //
+  // Server na tohle měl ruty od začátku (check-in, check-out, ack, panic,
+  // resolve…), z webového klienta je ale nevolal nikdo. CalendarView si
+  // obsluhy bral z kontextu, který je nedával, takže tlačítka CHECK-IN,
+  // CHECK-OUT i „JSEM V POŘÁDKU" volala prázdnou funkci.
+  //
+  // Relaci nezakládáme napřímo: POST /safety/sessions převezme tu PLÁNOVANOU,
+  // kterou k rezervaci vytvořil server, a rovnou ji přepne na CHECKED_IN
+  // (ruší i případnou probíhající eskalaci). Jedno volání tedy stačí.
+  const [isSafetyLoading, setIsSafetyLoading] = useState(false);
+  const [safetySessionId, setSafetySessionId] = useState(null);
+
+  const handleCheckIn = useCallback(async (event) => {
+    if (!event?.id || !event?.profileId || isSafetyLoading) return;
+    setIsSafetyLoading(true);
+    try {
+      const r = await axios.post(`${API_BASE}/safety/sessions`, {
+        profileId: event.profileId,
+        bookingId: event.id,
+        plannedEndAt: event.endTime,
+        locationType: event.locationType === 'outcall' ? 'outcall' : 'incall'
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      setSafetySessionId(r.data?.id || null);
+      setActiveSafetySession(r.data);
+      setIsTimerActive(true);
+      const endAt = new Date(r.data?.plannedEndAt || event.endTime).getTime();
+      if (!isNaN(endAt)) setTimeLeft(Math.floor((endAt - Date.now()) / 1000));
+      showToast?.(lang === 'cz' ? 'Hlídání spuštěno.' : 'Safety session started.', 'success');
+    } catch (_err) {
+      console.error('Check-in failed:', _err);
+      showToast?.(lang === 'cz' ? 'Hlídání se nepodařilo spustit.' : 'Could not start safety session.', 'error');
+    } finally {
+      setIsSafetyLoading(false);
+    }
+  }, [API_BASE, token, showToast, lang, isSafetyLoading, setActiveSafetySession, setIsTimerActive, setTimeLeft]);
+
+  const handleCheckOut = useCallback(async () => {
+    if (!safetySessionId || isSafetyLoading) return;
+    setIsSafetyLoading(true);
+    try {
+      // Check-out přepne relaci do GRACE a řekne telefonu, ať začne hlídat
+      // odchod — proto se odpočet tímhle NEKONČÍ, jen se přestane zobrazovat
+      // u rezervace. Dohled dál běží v SafetyGuardView.
+      await axios.post(`${API_BASE}/safety/sessions/${safetySessionId}/check-out`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setIsTimerActive(false);
+      setActiveSafetySession(null);
+      setSafetySessionId(null);
+      showToast?.(lang === 'cz' ? 'Odchod zaznamenán.' : 'Check-out recorded.', 'success');
+    } catch (_err) {
+      console.error('Check-out failed:', _err);
+      showToast?.(lang === 'cz' ? 'Odchod se nepodařilo zaznamenat.' : 'Could not record check-out.', 'error');
+    } finally {
+      setIsSafetyLoading(false);
+    }
+  }, [API_BASE, token, safetySessionId, isSafetyLoading, showToast, lang, setActiveSafetySession, setIsTimerActive]);
+
+  // Tlačítko „JSEM V POŘÁDKU (+10 min)". Ukazuje se až po vypršení času,
+  // tedy ve chvíli, kdy se za okamžik rozešle poplach — proto se stav při
+  // chybě NEMĚNÍ a odpočet zůstane přetažený. Tichý neúspěch by tady
+  // znamenal, že si někdo myslí, že poplach odvolal, a on se rozešle.
+  const handleSafetyImOk = useCallback(async () => {
+    if (!safetySessionId || isSafetyLoading) return;
+    setIsSafetyLoading(true);
+    try {
+      await axios.post(`${API_BASE}/safety/sessions/${safetySessionId}/ack`, { extendMinutes: 10 }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setTimeLeft(prev => (typeof prev === 'number' ? prev : 0) + 600);
+      showToast?.(lang === 'cz' ? 'Prodlouženo o 10 minut.' : 'Extended by 10 minutes.', 'success');
+    } catch (_err) {
+      console.error('Safety ack failed:', _err);
+      showToast?.(lang === 'cz' ? 'Prodloužení SELHALO — ozvi se dispečinku.' : 'Extension FAILED — contact dispatch.', 'error');
+    } finally {
+      setIsSafetyLoading(false);
+    }
+  }, [API_BASE, token, safetySessionId, isSafetyLoading, showToast, lang, setTimeLeft]);
+
+  // ── Rezervace: úprava a smazání ───────────────────────────────────────────
+  const handleEditBooking = useCallback((event) => {
+    if (!event) return;
+    setNewBookingForm(f => ({
+      ...f,
+      id: event.id,
+      title: event.title || '',
+      date: (event.startTime || '').split('T')[0] || f.date,
+      profileId: event.profileId || f.profileId,
+      locationType: event.locationType || f.locationType,
+      address: event.address || ''
+    }));
+    setIsBookingModalOpen(true);
+  }, []);
+
+  const handleDeleteBooking = useCallback(async (bookingId) => {
+    if (!bookingId) return;
+    try {
+      await axios.delete(`${API_BASE}/bookings/${bookingId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCalendar(prev => prev.filter(e => e.id !== bookingId));
+      showToast?.(lang === 'cz' ? 'Rezervace smazána.' : 'Booking deleted.', 'success');
+    } catch (_err) {
+      console.error('Delete booking failed:', _err);
+      showToast?.(lang === 'cz' ? 'Rezervaci se nepodařilo smazat.' : 'Could not delete booking.', 'error');
+    }
+  }, [API_BASE, token, showToast, lang]);
+
   // ── Doporučení: přehled pro App Ownera ────────────────────────────────────
   //
   // Server má /referrals/admin/all i /referrals/:id/confirm od začátku,
-  // AgenciesView na nich staví sekci „Master Referrals" — jen si obsluhy
-  // bral z kontextu, který je nedával. Sekce se tedy vykreslila prázdná
-  // a tlačítko potvrzení nedělalo nic.
+  // AgenciesView na nich staví sekci „Master Referrals" — jen si obsluhy bral
+  // z kontextu, který je nedával. Sekce se vykreslila prázdná a tlačítko
+  // potvrzení nedělalo nic.
   //
-  // Pozor: tohle NENÍ totéž co ReferralsView. Ta ukazuje jedné agentuře
-  // její vlastní doporučení; tohle je pohled přes všechny agentury.
-  // ── Režim údržby a globální oznámení ──────────────────────────────────────
-  //
-  // Ukládají se do GlobalSetting (klíč–hodnota) přes POST /admin/settings,
-  // který smí jen App Owner. Číst je ale musí KAŽDÝ, jinak by banner nikoho
-  // nevaroval — na to je GET /admin/settings/public, který vrací jen tyhle
-  // dvě hodnoty.
-  //
-  // Text oznámení se NEUKLÁDÁ při psaní, jen se drží ve stavu; zapíše ho až
-  // publishGlobalAnnouncement (tlačítko PUBLISH). Do té doby tlačítko jen
-  // vypsalo hlášku „Announcement published!" a neuložilo nic.
-  const [isMaintenanceMode, _setIsMaintenanceMode] = useState(false);
-  const [globalAnnouncement, setGlobalAnnouncement] = useState('');
-
-  useEffect(() => {
-    if (!isLoggedIn || !token) return;
-    axios.get(`${API_BASE}/admin/settings/public`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => {
-        _setIsMaintenanceMode(Boolean(r.data?.maintenanceMode));
-        setGlobalAnnouncement(r.data?.globalAnnouncement || '');
-      })
-      .catch(() => { /* bez nastavení prostě bannery nebudou */ });
-  }, [isLoggedIn, token, API_BASE]);
-
-  const ulozNastaveni = useCallback(async (key, value) => {
-    await axios.post(`${API_BASE}/admin/settings`, { key, value }, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-  }, [API_BASE, token]);
-
-  const setIsMaintenanceMode = useCallback(async (next) => {
-    const puvodni = isMaintenanceMode;
-    _setIsMaintenanceMode(next);          // přepínač reaguje hned
-    try {
-      await ulozNastaveni('maintenance_mode', next ? 'true' : 'false');
-      showToast?.(next
-        ? (lang === 'cz' ? 'Režim údržby zapnut.' : 'Maintenance mode on.')
-        : (lang === 'cz' ? 'Režim údržby vypnut.' : 'Maintenance mode off.'), 'success');
-    } catch (_err) {
-      // Vrátit přepínač zpět. Kdyby zůstal zapnutý a na serveru ne, admin by
-      // si myslel, že je aplikace uzavřená, a ona by běžela dál.
-      _setIsMaintenanceMode(puvodni);
-      showToast?.(lang === 'cz' ? 'Nastavení se nepodařilo uložit.' : 'Could not save setting.', 'error');
-    }
-  }, [isMaintenanceMode, ulozNastaveni, showToast, lang]);
-
-  const publishGlobalAnnouncement = useCallback(async () => {
-    try {
-      await ulozNastaveni('global_announcement', globalAnnouncement || '');
-      showToast?.(globalAnnouncement?.trim()
-        ? (lang === 'cz' ? 'Oznámení zveřejněno.' : 'Announcement published.')
-        : (lang === 'cz' ? 'Oznámení smazáno.' : 'Announcement cleared.'), 'success');
-    } catch (_err) {
-      showToast?.(lang === 'cz' ? 'Oznámení se nepodařilo zveřejnit.' : 'Could not publish announcement.', 'error');
-    }
-  }, [globalAnnouncement, ulozNastaveni, showToast, lang]);
-
+  // Pozor: NENÍ to totéž co ReferralsView. Ta ukazuje jedné agentuře její
+  // vlastní doporučení; tohle je pohled přes všechny agentury.
   const fetchAllReferrals = useCallback(async () => {
     try {
       const r = await axios.get(`${API_BASE}/referrals/admin/all`, {
@@ -830,6 +899,61 @@ export function useNexusData({
       return { success: false };
     }
   }, [API_BASE, token, showToast, lang]);
+
+  // ── Režim údržby a globální oznámení ──────────────────────────────────────
+  //
+  // Ukládají se do GlobalSetting přes POST /admin/settings (jen App Owner).
+  // Číst je musí KAŽDÝ, jinak by banner nikoho nevaroval — na to je
+  // GET /admin/settings/public, který vrací jen tyhle dvě hodnoty.
+  //
+  // Text oznámení se NEUKLÁDÁ při psaní, jen se drží ve stavu; zapíše ho až
+  // publishGlobalAnnouncement. Do té doby tlačítko PUBLISH jen vypsalo hlášku
+  // „Announcement published!" a neuložilo nic.
+  const [isMaintenanceMode, _setIsMaintenanceMode] = useState(false);
+  const [globalAnnouncement, setGlobalAnnouncement] = useState('');
+
+  useEffect(() => {
+    if (!isLoggedIn || !token) return;
+    axios.get(`${API_BASE}/admin/settings/public`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => {
+        _setIsMaintenanceMode(Boolean(r.data?.maintenanceMode));
+        setGlobalAnnouncement(r.data?.globalAnnouncement || '');
+      })
+      .catch(() => { /* bez nastavení prostě bannery nebudou */ });
+  }, [isLoggedIn, token, API_BASE]);
+
+  const ulozNastaveni = useCallback(async (key, value) => {
+    await axios.post(`${API_BASE}/admin/settings`, { key, value }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  }, [API_BASE, token]);
+
+  const setIsMaintenanceMode = useCallback(async (next) => {
+    const puvodni = isMaintenanceMode;
+    _setIsMaintenanceMode(next);
+    try {
+      await ulozNastaveni('maintenance_mode', next ? 'true' : 'false');
+      showToast?.(next
+        ? (lang === 'cz' ? 'Režim údržby zapnut.' : 'Maintenance mode on.')
+        : (lang === 'cz' ? 'Režim údržby vypnut.' : 'Maintenance mode off.'), 'success');
+    } catch (_err) {
+      // Vrátit přepínač zpět. Kdyby zůstal zapnutý a na serveru ne, admin by
+      // si myslel, že je aplikace uzavřená, a ona by běžela dál.
+      _setIsMaintenanceMode(puvodni);
+      showToast?.(lang === 'cz' ? 'Nastavení se nepodařilo uložit.' : 'Could not save setting.', 'error');
+    }
+  }, [isMaintenanceMode, ulozNastaveni, showToast, lang]);
+
+  const publishGlobalAnnouncement = useCallback(async () => {
+    try {
+      await ulozNastaveni('global_announcement', globalAnnouncement || '');
+      showToast?.(globalAnnouncement?.trim()
+        ? (lang === 'cz' ? 'Oznámení zveřejněno.' : 'Announcement published.')
+        : (lang === 'cz' ? 'Oznámení smazáno.' : 'Announcement cleared.'), 'success');
+    } catch (_err) {
+      showToast?.(lang === 'cz' ? 'Oznámení se nepodařilo zveřejnit.' : 'Could not publish announcement.', 'error');
+    }
+  }, [globalAnnouncement, ulozNastaveni, showToast, lang]);
 
   const handleSaveAssignees = useCallback(async (profileId, operatorIds) => {
     if (!profileId) return;
@@ -1177,9 +1301,11 @@ export function useNexusData({
     globalSettings, handleUpdateGlobalSetting,
     featureLocks, handleFeatureLockToggle, lockableFeatures: getLockableFeatures(),
     isTraining, trainingProgress, onStartTraining, onResetTraining,
-    auditLogs: [], isDataLoading, isBackgroundLoading, hasHydrated, clientNames,
-    isMaintenanceMode, setIsMaintenanceMode, globalAnnouncement, setGlobalAnnouncement, publishGlobalAnnouncement,
+    auditLogs: [], isDataLoading, isBackgroundLoading, hasHydrated, clientNames, updateClientName,
+    handleCheckIn, handleCheckOut, handleSafetyImOk, isSafetyLoading,
+    handleEditBooking, handleDeleteBooking,
     fetchAllReferrals, handleConfirmReferral,
+    isMaintenanceMode, setIsMaintenanceMode, globalAnnouncement, setGlobalAnnouncement, publishGlobalAnnouncement,
     calendar, isCalendarSyncOpen, setIsCalendarSyncOpen, calendarSyncUrl, setCalendarSyncUrl,
     isBookingModalOpen, setIsBookingModalOpen, selectedScheduleEvent, setSelectedScheduleEvent,
     newBookingForm, setNewBookingForm, bioText, setBioText, isSyncing, syncStatus: _syncStatus, syncProgress: _syncProgress,
@@ -1192,9 +1318,11 @@ export function useNexusData({
     profiles, agencies, _agencySettings, operators, sessions, stats, _activeSubscription, _subscriptionHistory, 
     globalFeatures, handleFeatureToggle, _plans, fetchPlans, updatePlans, isPlansLoading, isStartingSubscription, onStartSubscription, onCancelSubscription, startCheckout, startBillingPortal,
     globalSettings, handleUpdateGlobalSetting, featureLocks, handleFeatureLockToggle, isTraining, trainingProgress,
-    onStartTraining, onResetTraining, isDataLoading, isBackgroundLoading, hasHydrated, clientNames, calendar,
+    onStartTraining, onResetTraining, isDataLoading, isBackgroundLoading, hasHydrated, clientNames, updateClientName, calendar, 
+    handleCheckIn, handleCheckOut, handleSafetyImOk, isSafetyLoading,
+    handleEditBooking, handleDeleteBooking, fetchAllReferrals, handleConfirmReferral,
     isMaintenanceMode, setIsMaintenanceMode, globalAnnouncement, setGlobalAnnouncement, publishGlobalAnnouncement,
-    fetchAllReferrals, handleConfirmReferral, 
+
     isCalendarSyncOpen, calendarSyncUrl, isBookingModalOpen, selectedScheduleEvent, newBookingForm, bioText, 
     isSyncing, _syncStatus, _syncProgress, relayOnline, trackers, gpsHistory, trackerProvisioning, isPairingTracker,
     handlePairTracker, handleUnpairTracker, applyTrackerLocation, handleSaveBio, handleSyncAll, handleSyncChatHistory,

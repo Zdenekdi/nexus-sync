@@ -8,6 +8,10 @@ import PremiumSelector from '../UI/PremiumSelector';
 
 const CalendarView = () => {
   const nexus = useNexus();
+  // Která rezervace má otevřenou nabídku. Je to čistě zobrazovací stav jedné
+  // komponenty — do globálního kontextu nepatří a nikdy tam nebyl, takže
+  // tlačítko se třemi tečkami nešlo otevřít.
+  const [openBookingMenuId, setOpenBookingMenuId] = React.useState(null);
   const {
     isMobile = false, 
     t = (k) => k, 
@@ -27,8 +31,7 @@ const CalendarView = () => {
     calendar: bookingSchedule = [], 
     activeTimerEvent = null, 
     isTimerActive = false,
-    openBookingMenuId = null, 
-    setOpenBookingMenuId = () => {}, 
+
     handleCheckIn = () => {}, 
     handleCheckOut = () => {},
     handleEditBooking = () => {}, 

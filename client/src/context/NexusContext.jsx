@@ -361,7 +361,27 @@ export const NexusProvider = ({ children }) => {
   const memoizedSetActiveOperator = useCallback((op) => setActiveOperatorState(op), []);
   const memoizedSetMessages = useCallback((msgs) => setMessages(msgs), []);
   const memoizedNormalizeProfileId = useCallback((id) => id, []);
-  const memoizedNoop = useCallback(() => {}, []);
+  const [activeSafetySession, setActiveSafetySession] = useState(null);
+  const [isTimerActive, setIsTimerActive] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
+
+  // Odpočet tiká vteřinu po vteřině a ZÁMĚRNĚ jde i do záporu: po vypršení
+  // se v kalendáři ukáže „OVERTIME" a tlačítko „JSEM V POŘÁDKU (+10 min)".
+  // Zastavit ho na nule by ten nejdůležitější stav schovalo.
+  useEffect(() => {
+    if (!isTimerActive) return undefined;
+    const t = setInterval(() => setTimeLeft(prev => (typeof prev === 'number' ? prev : 0) - 1), 1000);
+    return () => clearInterval(t);
+  }, [isTimerActive]);
+
+  // mm:ss, u přetažení s mínusem.
+  const formatSafetyTime = useCallback((totalSeconds) => {
+    const s = Math.abs(Math.round(Number(totalSeconds) || 0));
+    const mm = String(Math.floor(s / 60)).padStart(2, '0');
+    const ss = String(s % 60).padStart(2, '0');
+    return `${(Number(totalSeconds) || 0) < 0 ? '-' : ''}${mm}:${ss}`;
+  }, []);
+
 
   const nexusData = useNexusData({
     token, isLoggedIn, API_BASE, activeProfileId,
@@ -369,9 +389,12 @@ export const NexusProvider = ({ children }) => {
     setActiveOperator: memoizedSetActiveOperator,
     normalizeProfileId: memoizedNormalizeProfileId,
     setMessages: memoizedSetMessages,
-    setActiveSafetySession: memoizedNoop,
-    setIsTimerActive: memoizedNoop,
-    setTimeLeft: memoizedNoop,
+    // Dřív sem šly prázdné funkce, takže si useNexusData běžící relaci
+    // vyžádal ze serveru a zahodil ji. Odpočet se proto po znovunačtení
+    // stránky neobnovil a panel v kalendáři se neměl z čeho vykreslit.
+    setActiveSafetySession,
+    setIsTimerActive,
+    setTimeLeft,
     showToast, lang
   });
 
@@ -722,13 +745,23 @@ export const NexusProvider = ({ children }) => {
     editingProfileData, setEditingProfileData,
     handleEditProfile: (profile) => { setEditingProfileData(profile); setIsEditProfileOpen(true); },
     agencyDetailModalData, setAgencyDetailModalData,
+    // Bezpečnostní hlídání u rezervace. Obsluhy jsou v useNexusData, stav
+    // odpočtu tady — CalendarView si obojí bere z kontextu.
+    activeSafetySession, isTimerActive, timeLeft, formatSafetyTime,
+    activeTimerEvent: (nexusData.calendar || []).find(e => e?.id && e.id === activeSafetySession?.bookingId) || null,
+    fetchAllReferrals: nexusData.fetchAllReferrals,
+    handleConfirmReferral: nexusData.handleConfirmReferral,
     isMaintenanceMode: nexusData.isMaintenanceMode,
     setIsMaintenanceMode: nexusData.setIsMaintenanceMode,
     globalAnnouncement: nexusData.globalAnnouncement,
     setGlobalAnnouncement: nexusData.setGlobalAnnouncement,
     publishGlobalAnnouncement: nexusData.publishGlobalAnnouncement,
-    fetchAllReferrals: nexusData.fetchAllReferrals,
-    handleConfirmReferral: nexusData.handleConfirmReferral,
+    handleCheckIn: nexusData.handleCheckIn,
+    handleCheckOut: nexusData.handleCheckOut,
+    handleSafetyImOk: nexusData.handleSafetyImOk,
+    isSafetyLoading: nexusData.isSafetyLoading,
+    handleEditBooking: nexusData.handleEditBooking,
+    handleDeleteBooking: nexusData.handleDeleteBooking,
     calViewDate, setCalViewDate, showPanicConfirm, setShowPanicConfirm,
     // Kalendář a okno rezervace. useNexusData tohle všechno vrací, jenže
     // kontext si z něj vybírá jednotlivé hodnoty a tyhle se nikdy nevyjmenovaly.
@@ -776,6 +809,7 @@ export const NexusProvider = ({ children }) => {
     // Zbytek jednotlivě.
     agencySettings: nexusData.agencySettings,
     clientNames: nexusData.clientNames,
+    updateClientName: nexusData.updateClientName,
     calendar: nexusData.calendar,
 
     // Třetí dávka. `stats` je z nich nejdůležitější: v DashboardHome na něm
@@ -822,6 +856,15 @@ export const NexusProvider = ({ children }) => {
     // a na žádnou konverzaci se nedalo kliknout.
     mobileView: _mobileView, setMobileView: _setMobileView,
     availableServers, selectedServerId, setSelectedServerId,
+    // TV nástěnka do kanceláře. TvDashboard je hotová obrazovka (GPS stream,
+    // stav SOS, biometrické varování, baterie, tep, počty relayů) a všechny
+    // hodnoty, které potřebuje, kontext vystavuje — chyběl jen přepínač,
+    // takže ji nešlo zapnout. ViewRouter ho čte na řádku 27.
+    //
+    // Odvozeno z adresy, ne z vlastního stavu: na televizi se otevře
+    // https://…/tv a zůstane tam. Kdyby to byl přepínač v aplikaci, musel by
+    // ho někdo na té televizi po každém restartu naklikat.
+    isTvMode: activeTab === 'tv',
     isAllowed, activeRole: normalizedRole,
     isAppOwner: activeOperator?.isAppOwner,
     // Zámky nedodělaných funkcí (admin UI v GlobalFeaturesView)
@@ -853,7 +896,7 @@ export const NexusProvider = ({ children }) => {
     audioSentinelActive, setAudioSentinelActive,
     sosActive: _sosActive, triggerSOS, cancelSOS,
     manualTrackingOn, setManualTracking, phoneTrackingActive,
-    linkedSessionId, checkinMinutes, setCheckinMinutes,
+    linkedSessionId, setLinkedSessionId, checkinMinutes, setCheckinMinutes,
     checkinTimerEnd, checkinRemaining, startCheckinTimer, resetCheckinTimer, confirmDeparture,
     SAFETY_SUGGESTIONS: ['15m', '30m', '45m', '60m', '1.5h', '2h'],
     onDelayBooking: nexusData.handleDelayBooking,
@@ -907,7 +950,7 @@ export const NexusProvider = ({ children }) => {
     socket
   , _mobileView,
     nexusData.isBookingModalOpen, nexusData.setIsBookingModalOpen, nexusData.newBookingForm, nexusData.setNewBookingForm, nexusData.handleSaveBooking, nexusData.handleExportICS, nexusData.isCalendarSyncOpen, nexusData.setIsCalendarSyncOpen, nexusData.calendarSyncUrl, nexusData.setCalendarSyncUrl, nexusData.handleSaveCalendarSync, nexusData.setSelectedScheduleEvent,
-    nexusData.agencySettings, nexusData.calendar, nexusData.clientNames, nexusData.globalFeatures, nexusData.globalSettings, nexusData.handleSaveAssignees, nexusData.handleSaveCredentials, nexusData.handleSyncAll, nexusData.handleUpdateGlobalSetting, nexusData.isSyncing, nexusData.isTraining, nexusData.onResetTraining, nexusData.onStartTraining, nexusData.relayOnline, nexusData.setProfiles, nexusData.syncProgress, nexusData.syncStatus, nexusData.toggleOperatorStatus, nexusData.trainingProgress, nexusData.stats, nexusData.fetchClientByPhone, nexusData.initData, _activeContextTab, _setActiveContextTab, _inlinePanelTab, _setInlinePanelTab, _addUserModalAgencyId, _setAddUserModalAgencyId, nexusData.fetchAllReferrals, nexusData.handleConfirmReferral, nexusData.isMaintenanceMode, nexusData.setIsMaintenanceMode, nexusData.globalAnnouncement, nexusData.setGlobalAnnouncement, nexusData.publishGlobalAnnouncement]);
+    nexusData.agencySettings, nexusData.calendar, nexusData.clientNames, nexusData.globalFeatures, nexusData.globalSettings, nexusData.handleSaveAssignees, nexusData.handleSaveCredentials, nexusData.handleSyncAll, nexusData.handleUpdateGlobalSetting, nexusData.isSyncing, nexusData.isTraining, nexusData.onResetTraining, nexusData.onStartTraining, nexusData.relayOnline, nexusData.setProfiles, nexusData.syncProgress, nexusData.syncStatus, nexusData.toggleOperatorStatus, nexusData.trainingProgress, nexusData.stats, nexusData.fetchClientByPhone, nexusData.initData, _activeContextTab, _setActiveContextTab, _inlinePanelTab, _setInlinePanelTab, _addUserModalAgencyId, _setAddUserModalAgencyId, nexusData.updateClientName, activeSafetySession, isTimerActive, timeLeft, formatSafetyTime, nexusData.handleCheckIn, nexusData.handleCheckOut, nexusData.handleSafetyImOk, nexusData.isSafetyLoading, nexusData.handleEditBooking, nexusData.handleDeleteBooking, nexusData.fetchAllReferrals, nexusData.handleConfirmReferral, nexusData.isMaintenanceMode, nexusData.setIsMaintenanceMode, nexusData.globalAnnouncement, nexusData.setGlobalAnnouncement, nexusData.publishGlobalAnnouncement]);
 
   return (
     <NexusContext.Provider value={value}>
