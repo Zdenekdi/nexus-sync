@@ -722,6 +722,13 @@ export const NexusProvider = ({ children }) => {
     editingProfileData, setEditingProfileData,
     handleEditProfile: (profile) => { setEditingProfileData(profile); setIsEditProfileOpen(true); },
     agencyDetailModalData, setAgencyDetailModalData,
+    isMaintenanceMode: nexusData.isMaintenanceMode,
+    setIsMaintenanceMode: nexusData.setIsMaintenanceMode,
+    globalAnnouncement: nexusData.globalAnnouncement,
+    setGlobalAnnouncement: nexusData.setGlobalAnnouncement,
+    publishGlobalAnnouncement: nexusData.publishGlobalAnnouncement,
+    fetchAllReferrals: nexusData.fetchAllReferrals,
+    handleConfirmReferral: nexusData.handleConfirmReferral,
     calViewDate, setCalViewDate, showPanicConfirm, setShowPanicConfirm,
     // Kalendář a okno rezervace. useNexusData tohle všechno vrací, jenže
     // kontext si z něj vybírá jednotlivé hodnoty a tyhle se nikdy nevyjmenovaly.
@@ -900,7 +907,7 @@ export const NexusProvider = ({ children }) => {
     socket
   , _mobileView,
     nexusData.isBookingModalOpen, nexusData.setIsBookingModalOpen, nexusData.newBookingForm, nexusData.setNewBookingForm, nexusData.handleSaveBooking, nexusData.handleExportICS, nexusData.isCalendarSyncOpen, nexusData.setIsCalendarSyncOpen, nexusData.calendarSyncUrl, nexusData.setCalendarSyncUrl, nexusData.handleSaveCalendarSync, nexusData.setSelectedScheduleEvent,
-    nexusData.agencySettings, nexusData.calendar, nexusData.clientNames, nexusData.globalFeatures, nexusData.globalSettings, nexusData.handleSaveAssignees, nexusData.handleSaveCredentials, nexusData.handleSyncAll, nexusData.handleUpdateGlobalSetting, nexusData.isSyncing, nexusData.isTraining, nexusData.onResetTraining, nexusData.onStartTraining, nexusData.relayOnline, nexusData.setProfiles, nexusData.syncProgress, nexusData.syncStatus, nexusData.toggleOperatorStatus, nexusData.trainingProgress, nexusData.stats, nexusData.fetchClientByPhone, nexusData.initData, _activeContextTab, _setActiveContextTab, _inlinePanelTab, _setInlinePanelTab, _addUserModalAgencyId, _setAddUserModalAgencyId]);
+    nexusData.agencySettings, nexusData.calendar, nexusData.clientNames, nexusData.globalFeatures, nexusData.globalSettings, nexusData.handleSaveAssignees, nexusData.handleSaveCredentials, nexusData.handleSyncAll, nexusData.handleUpdateGlobalSetting, nexusData.isSyncing, nexusData.isTraining, nexusData.onResetTraining, nexusData.onStartTraining, nexusData.relayOnline, nexusData.setProfiles, nexusData.syncProgress, nexusData.syncStatus, nexusData.toggleOperatorStatus, nexusData.trainingProgress, nexusData.stats, nexusData.fetchClientByPhone, nexusData.initData, _activeContextTab, _setActiveContextTab, _inlinePanelTab, _setInlinePanelTab, _addUserModalAgencyId, _setAddUserModalAgencyId, nexusData.fetchAllReferrals, nexusData.handleConfirmReferral, nexusData.isMaintenanceMode, nexusData.setIsMaintenanceMode, nexusData.globalAnnouncement, nexusData.setGlobalAnnouncement, nexusData.publishGlobalAnnouncement]);
 
   return (
     <NexusContext.Provider value={value}>

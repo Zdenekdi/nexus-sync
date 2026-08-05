@@ -101,6 +101,33 @@ exports.getGlobalSettings = async (req, res) => {
 };
 
 // POST /api/admin/settings — create or update a setting (App Owner only)
+// GET /api/admin/settings/public — dvě hodnoty, které se zobrazují VŠEM
+//
+// getGlobalSettings je vyhrazený App Ownerovi a to je správně: mezi
+// globálními nastaveními můžou být provozní věci, které ostatním do oka
+// nic nejsou. Jenže banner údržby a globální oznámení má vidět každý —
+// v tom je jejich celý smysl. Bez téhle ruty by si je SystemBanners
+// nemohl přečíst (403) a banner by se nezobrazil nikomu kromě ownera.
+//
+// Vrací se JEN tyhle dva klíče, ne celý seznam. Stejný vzor jako
+// u feature-locks: čte každý přihlášený, mění jen App Owner.
+exports.getPublicSettings = async (req, res) => {
+  try {
+    const rows = await prisma.globalSetting.findMany({
+      where: { key: { in: ['maintenance_mode', 'global_announcement'] } }
+    });
+    const map = Object.fromEntries(rows.map(r => [r.key, r.value]));
+    res.json({
+      maintenanceMode: String(map.maintenance_mode || '') === 'true',
+      globalAnnouncement: map.global_announcement || ''
+    });
+  } catch (err) {
+    logger.error('Error fetching public settings:', err.message);
+    // Nedostupné nastavení nesmí shodit aplikaci — bannery prostě nebudou.
+    res.json({ maintenanceMode: false, globalAnnouncement: '' });
+  }
+};
+
 exports.updateGlobalSetting = async (req, res) => {
   try {
     const userRole = req.user?.role;

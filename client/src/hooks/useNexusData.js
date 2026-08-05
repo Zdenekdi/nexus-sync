@@ -739,6 +739,98 @@ export function useNexusData({
     }
   }, [token, API_BASE, initData, showToast, lang, profiles]);
 
+  // ── Doporučení: přehled pro App Ownera ────────────────────────────────────
+  //
+  // Server má /referrals/admin/all i /referrals/:id/confirm od začátku,
+  // AgenciesView na nich staví sekci „Master Referrals" — jen si obsluhy
+  // bral z kontextu, který je nedával. Sekce se tedy vykreslila prázdná
+  // a tlačítko potvrzení nedělalo nic.
+  //
+  // Pozor: tohle NENÍ totéž co ReferralsView. Ta ukazuje jedné agentuře
+  // její vlastní doporučení; tohle je pohled přes všechny agentury.
+  // ── Režim údržby a globální oznámení ──────────────────────────────────────
+  //
+  // Ukládají se do GlobalSetting (klíč–hodnota) přes POST /admin/settings,
+  // který smí jen App Owner. Číst je ale musí KAŽDÝ, jinak by banner nikoho
+  // nevaroval — na to je GET /admin/settings/public, který vrací jen tyhle
+  // dvě hodnoty.
+  //
+  // Text oznámení se NEUKLÁDÁ při psaní, jen se drží ve stavu; zapíše ho až
+  // publishGlobalAnnouncement (tlačítko PUBLISH). Do té doby tlačítko jen
+  // vypsalo hlášku „Announcement published!" a neuložilo nic.
+  const [isMaintenanceMode, _setIsMaintenanceMode] = useState(false);
+  const [globalAnnouncement, setGlobalAnnouncement] = useState('');
+
+  useEffect(() => {
+    if (!isLoggedIn || !token) return;
+    axios.get(`${API_BASE}/admin/settings/public`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => {
+        _setIsMaintenanceMode(Boolean(r.data?.maintenanceMode));
+        setGlobalAnnouncement(r.data?.globalAnnouncement || '');
+      })
+      .catch(() => { /* bez nastavení prostě bannery nebudou */ });
+  }, [isLoggedIn, token, API_BASE]);
+
+  const ulozNastaveni = useCallback(async (key, value) => {
+    await axios.post(`${API_BASE}/admin/settings`, { key, value }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  }, [API_BASE, token]);
+
+  const setIsMaintenanceMode = useCallback(async (next) => {
+    const puvodni = isMaintenanceMode;
+    _setIsMaintenanceMode(next);          // přepínač reaguje hned
+    try {
+      await ulozNastaveni('maintenance_mode', next ? 'true' : 'false');
+      showToast?.(next
+        ? (lang === 'cz' ? 'Režim údržby zapnut.' : 'Maintenance mode on.')
+        : (lang === 'cz' ? 'Režim údržby vypnut.' : 'Maintenance mode off.'), 'success');
+    } catch (_err) {
+      // Vrátit přepínač zpět. Kdyby zůstal zapnutý a na serveru ne, admin by
+      // si myslel, že je aplikace uzavřená, a ona by běžela dál.
+      _setIsMaintenanceMode(puvodni);
+      showToast?.(lang === 'cz' ? 'Nastavení se nepodařilo uložit.' : 'Could not save setting.', 'error');
+    }
+  }, [isMaintenanceMode, ulozNastaveni, showToast, lang]);
+
+  const publishGlobalAnnouncement = useCallback(async () => {
+    try {
+      await ulozNastaveni('global_announcement', globalAnnouncement || '');
+      showToast?.(globalAnnouncement?.trim()
+        ? (lang === 'cz' ? 'Oznámení zveřejněno.' : 'Announcement published.')
+        : (lang === 'cz' ? 'Oznámení smazáno.' : 'Announcement cleared.'), 'success');
+    } catch (_err) {
+      showToast?.(lang === 'cz' ? 'Oznámení se nepodařilo zveřejnit.' : 'Could not publish announcement.', 'error');
+    }
+  }, [globalAnnouncement, ulozNastaveni, showToast, lang]);
+
+  const fetchAllReferrals = useCallback(async () => {
+    try {
+      const r = await axios.get(`${API_BASE}/referrals/admin/all`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return Array.isArray(r.data) ? r.data : [];
+    } catch (_err) {
+      console.error('Fetch referrals failed:', _err);
+      return [];
+    }
+  }, [API_BASE, token]);
+
+  const handleConfirmReferral = useCallback(async (referralId, amount) => {
+    if (!referralId) return { success: false };
+    try {
+      await axios.post(`${API_BASE}/referrals/${referralId}/confirm`, { amount }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      showToast?.(lang === 'cz' ? 'Doporučení potvrzeno.' : 'Referral confirmed.', 'success');
+      return { success: true };
+    } catch (_err) {
+      console.error('Confirm referral failed:', _err);
+      showToast?.(lang === 'cz' ? 'Potvrzení se nezdařilo.' : 'Could not confirm referral.', 'error');
+      return { success: false };
+    }
+  }, [API_BASE, token, showToast, lang]);
+
   const handleSaveAssignees = useCallback(async (profileId, operatorIds) => {
     if (!profileId) return;
     try {
@@ -1086,6 +1178,8 @@ export function useNexusData({
     featureLocks, handleFeatureLockToggle, lockableFeatures: getLockableFeatures(),
     isTraining, trainingProgress, onStartTraining, onResetTraining,
     auditLogs: [], isDataLoading, isBackgroundLoading, hasHydrated, clientNames,
+    isMaintenanceMode, setIsMaintenanceMode, globalAnnouncement, setGlobalAnnouncement, publishGlobalAnnouncement,
+    fetchAllReferrals, handleConfirmReferral,
     calendar, isCalendarSyncOpen, setIsCalendarSyncOpen, calendarSyncUrl, setCalendarSyncUrl,
     isBookingModalOpen, setIsBookingModalOpen, selectedScheduleEvent, setSelectedScheduleEvent,
     newBookingForm, setNewBookingForm, bioText, setBioText, isSyncing, syncStatus: _syncStatus, syncProgress: _syncProgress,
@@ -1098,7 +1192,9 @@ export function useNexusData({
     profiles, agencies, _agencySettings, operators, sessions, stats, _activeSubscription, _subscriptionHistory, 
     globalFeatures, handleFeatureToggle, _plans, fetchPlans, updatePlans, isPlansLoading, isStartingSubscription, onStartSubscription, onCancelSubscription, startCheckout, startBillingPortal,
     globalSettings, handleUpdateGlobalSetting, featureLocks, handleFeatureLockToggle, isTraining, trainingProgress,
-    onStartTraining, onResetTraining, isDataLoading, isBackgroundLoading, hasHydrated, clientNames, calendar, 
+    onStartTraining, onResetTraining, isDataLoading, isBackgroundLoading, hasHydrated, clientNames, calendar,
+    isMaintenanceMode, setIsMaintenanceMode, globalAnnouncement, setGlobalAnnouncement, publishGlobalAnnouncement,
+    fetchAllReferrals, handleConfirmReferral, 
     isCalendarSyncOpen, calendarSyncUrl, isBookingModalOpen, selectedScheduleEvent, newBookingForm, bioText, 
     isSyncing, _syncStatus, _syncProgress, relayOnline, trackers, gpsHistory, trackerProvisioning, isPairingTracker,
     handlePairTracker, handleUnpairTracker, applyTrackerLocation, handleSaveBio, handleSyncAll, handleSyncChatHistory,

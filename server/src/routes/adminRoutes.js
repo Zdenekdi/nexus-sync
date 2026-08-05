@@ -12,6 +12,10 @@ router.get('/features', adminController.getGlobalFeatures);
 router.patch('/features/:id', validate(updateGlobalFeature), adminController.updateGlobalFeature);
 
 // Správa globálních nastavení
+// Banner údržby a globální oznámení čte každý přihlášený — jinak by je
+// SystemBanners nemohl zobrazit nikomu kromě App Ownera. Zbytek nastavení
+// zůstává jen jemu.
+router.get('/settings/public', adminController.getPublicSettings);
 router.get('/settings', adminController.getGlobalSettings);
 router.post('/settings', validate(updateGlobalSetting), adminController.updateGlobalSetting);
 
