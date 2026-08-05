@@ -179,7 +179,10 @@ jobs:
       # neproběhlá kontrola není totéž co kontrola v pořádku.
       - name: Check API is reachable
         run: |
-          API="${NEXUS_API_URL%/api}"
+          # Nejdřív pryč s lomítkem na konci, teprve pak s /api — jinak by
+          # se z 'https://host/api/' stalo 'https://host/api//api/health'
+          # a pojistka by hlásila výpadek i u zdravého backendu.
+          API="${NEXUS_API_URL%/}"; API="${API%/api}"
           if ! curl -fsS --max-time 15 -o /dev/null "$API/api/health"; then
             echo "::error::Backend $API neodpovídá — bezpečnostní testy (rbac, sms-relay) nelze spustit."
             exit 1
