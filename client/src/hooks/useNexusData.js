@@ -864,6 +864,97 @@ export function useNexusData({
     }
   }, [API_BASE, token, showToast, lang]);
 
+  // ── Doporučení: přehled pro App Ownera ────────────────────────────────────
+  //
+  // Server má /referrals/admin/all i /referrals/:id/confirm od začátku,
+  // AgenciesView na nich staví sekci „Master Referrals" — jen si obsluhy bral
+  // z kontextu, který je nedával. Sekce se vykreslila prázdná a tlačítko
+  // potvrzení nedělalo nic.
+  //
+  // Pozor: NENÍ to totéž co ReferralsView. Ta ukazuje jedné agentuře její
+  // vlastní doporučení; tohle je pohled přes všechny agentury.
+  const fetchAllReferrals = useCallback(async () => {
+    try {
+      const r = await axios.get(`${API_BASE}/referrals/admin/all`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return Array.isArray(r.data) ? r.data : [];
+    } catch (_err) {
+      console.error('Fetch referrals failed:', _err);
+      return [];
+    }
+  }, [API_BASE, token]);
+
+  const handleConfirmReferral = useCallback(async (referralId, amount) => {
+    if (!referralId) return { success: false };
+    try {
+      await axios.post(`${API_BASE}/referrals/${referralId}/confirm`, { amount }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      showToast?.(lang === 'cz' ? 'Doporučení potvrzeno.' : 'Referral confirmed.', 'success');
+      return { success: true };
+    } catch (_err) {
+      console.error('Confirm referral failed:', _err);
+      showToast?.(lang === 'cz' ? 'Potvrzení se nezdařilo.' : 'Could not confirm referral.', 'error');
+      return { success: false };
+    }
+  }, [API_BASE, token, showToast, lang]);
+
+  // ── Režim údržby a globální oznámení ──────────────────────────────────────
+  //
+  // Ukládají se do GlobalSetting přes POST /admin/settings (jen App Owner).
+  // Číst je musí KAŽDÝ, jinak by banner nikoho nevaroval — na to je
+  // GET /admin/settings/public, který vrací jen tyhle dvě hodnoty.
+  //
+  // Text oznámení se NEUKLÁDÁ při psaní, jen se drží ve stavu; zapíše ho až
+  // publishGlobalAnnouncement. Do té doby tlačítko PUBLISH jen vypsalo hlášku
+  // „Announcement published!" a neuložilo nic.
+  const [isMaintenanceMode, _setIsMaintenanceMode] = useState(false);
+  const [globalAnnouncement, setGlobalAnnouncement] = useState('');
+
+  useEffect(() => {
+    if (!isLoggedIn || !token) return;
+    axios.get(`${API_BASE}/admin/settings/public`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => {
+        _setIsMaintenanceMode(Boolean(r.data?.maintenanceMode));
+        setGlobalAnnouncement(r.data?.globalAnnouncement || '');
+      })
+      .catch(() => { /* bez nastavení prostě bannery nebudou */ });
+  }, [isLoggedIn, token, API_BASE]);
+
+  const ulozNastaveni = useCallback(async (key, value) => {
+    await axios.post(`${API_BASE}/admin/settings`, { key, value }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  }, [API_BASE, token]);
+
+  const setIsMaintenanceMode = useCallback(async (next) => {
+    const puvodni = isMaintenanceMode;
+    _setIsMaintenanceMode(next);
+    try {
+      await ulozNastaveni('maintenance_mode', next ? 'true' : 'false');
+      showToast?.(next
+        ? (lang === 'cz' ? 'Režim údržby zapnut.' : 'Maintenance mode on.')
+        : (lang === 'cz' ? 'Režim údržby vypnut.' : 'Maintenance mode off.'), 'success');
+    } catch (_err) {
+      // Vrátit přepínač zpět. Kdyby zůstal zapnutý a na serveru ne, admin by
+      // si myslel, že je aplikace uzavřená, a ona by běžela dál.
+      _setIsMaintenanceMode(puvodni);
+      showToast?.(lang === 'cz' ? 'Nastavení se nepodařilo uložit.' : 'Could not save setting.', 'error');
+    }
+  }, [isMaintenanceMode, ulozNastaveni, showToast, lang]);
+
+  const publishGlobalAnnouncement = useCallback(async () => {
+    try {
+      await ulozNastaveni('global_announcement', globalAnnouncement || '');
+      showToast?.(globalAnnouncement?.trim()
+        ? (lang === 'cz' ? 'Oznámení zveřejněno.' : 'Announcement published.')
+        : (lang === 'cz' ? 'Oznámení smazáno.' : 'Announcement cleared.'), 'success');
+    } catch (_err) {
+      showToast?.(lang === 'cz' ? 'Oznámení se nepodařilo zveřejnit.' : 'Could not publish announcement.', 'error');
+    }
+  }, [globalAnnouncement, ulozNastaveni, showToast, lang]);
+
   const handleSaveAssignees = useCallback(async (profileId, operatorIds) => {
     if (!profileId) return;
     try {
@@ -1213,6 +1304,8 @@ export function useNexusData({
     auditLogs: [], isDataLoading, isBackgroundLoading, hasHydrated, clientNames, updateClientName,
     handleCheckIn, handleCheckOut, handleSafetyImOk, isSafetyLoading,
     handleEditBooking, handleDeleteBooking,
+    fetchAllReferrals, handleConfirmReferral,
+    isMaintenanceMode, setIsMaintenanceMode, globalAnnouncement, setGlobalAnnouncement, publishGlobalAnnouncement,
     calendar, isCalendarSyncOpen, setIsCalendarSyncOpen, calendarSyncUrl, setCalendarSyncUrl,
     isBookingModalOpen, setIsBookingModalOpen, selectedScheduleEvent, setSelectedScheduleEvent,
     newBookingForm, setNewBookingForm, bioText, setBioText, isSyncing, syncStatus: _syncStatus, syncProgress: _syncProgress,
@@ -1227,7 +1320,9 @@ export function useNexusData({
     globalSettings, handleUpdateGlobalSetting, featureLocks, handleFeatureLockToggle, isTraining, trainingProgress,
     onStartTraining, onResetTraining, isDataLoading, isBackgroundLoading, hasHydrated, clientNames, updateClientName, calendar, 
     handleCheckIn, handleCheckOut, handleSafetyImOk, isSafetyLoading,
-    handleEditBooking, handleDeleteBooking, 
+    handleEditBooking, handleDeleteBooking, fetchAllReferrals, handleConfirmReferral,
+    isMaintenanceMode, setIsMaintenanceMode, globalAnnouncement, setGlobalAnnouncement, publishGlobalAnnouncement,
+
     isCalendarSyncOpen, calendarSyncUrl, isBookingModalOpen, selectedScheduleEvent, newBookingForm, bioText, 
     isSyncing, _syncStatus, _syncProgress, relayOnline, trackers, gpsHistory, trackerProvisioning, isPairingTracker,
     handlePairTracker, handleUnpairTracker, applyTrackerLocation, handleSaveBio, handleSyncAll, handleSyncChatHistory,

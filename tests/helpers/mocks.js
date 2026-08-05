@@ -673,6 +673,16 @@ export async function setupApiMocks(page) {
     });
   });
 
+  // Banner údržby a globální oznámení — čte je KAŽDÝ přihlášený, ne jen
+  // App Owner (jinak by banner nikoho nevaroval). Vrací se objekt, ne pole.
+  await context.route('**/admin/settings/public', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ maintenanceMode: false, globalAnnouncement: '' })
+    });
+  });
+
   await context.route('**/admin/settings', async route => {
     await route.fulfill({
       status: 200,

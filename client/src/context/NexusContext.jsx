@@ -749,6 +749,13 @@ export const NexusProvider = ({ children }) => {
     // odpočtu tady — CalendarView si obojí bere z kontextu.
     activeSafetySession, isTimerActive, timeLeft, formatSafetyTime,
     activeTimerEvent: (nexusData.calendar || []).find(e => e?.id && e.id === activeSafetySession?.bookingId) || null,
+    fetchAllReferrals: nexusData.fetchAllReferrals,
+    handleConfirmReferral: nexusData.handleConfirmReferral,
+    isMaintenanceMode: nexusData.isMaintenanceMode,
+    setIsMaintenanceMode: nexusData.setIsMaintenanceMode,
+    globalAnnouncement: nexusData.globalAnnouncement,
+    setGlobalAnnouncement: nexusData.setGlobalAnnouncement,
+    publishGlobalAnnouncement: nexusData.publishGlobalAnnouncement,
     handleCheckIn: nexusData.handleCheckIn,
     handleCheckOut: nexusData.handleCheckOut,
     handleSafetyImOk: nexusData.handleSafetyImOk,
@@ -943,7 +950,7 @@ export const NexusProvider = ({ children }) => {
     socket
   , _mobileView,
     nexusData.isBookingModalOpen, nexusData.setIsBookingModalOpen, nexusData.newBookingForm, nexusData.setNewBookingForm, nexusData.handleSaveBooking, nexusData.handleExportICS, nexusData.isCalendarSyncOpen, nexusData.setIsCalendarSyncOpen, nexusData.calendarSyncUrl, nexusData.setCalendarSyncUrl, nexusData.handleSaveCalendarSync, nexusData.setSelectedScheduleEvent,
-    nexusData.agencySettings, nexusData.calendar, nexusData.clientNames, nexusData.globalFeatures, nexusData.globalSettings, nexusData.handleSaveAssignees, nexusData.handleSaveCredentials, nexusData.handleSyncAll, nexusData.handleUpdateGlobalSetting, nexusData.isSyncing, nexusData.isTraining, nexusData.onResetTraining, nexusData.onStartTraining, nexusData.relayOnline, nexusData.setProfiles, nexusData.syncProgress, nexusData.syncStatus, nexusData.toggleOperatorStatus, nexusData.trainingProgress, nexusData.stats, nexusData.fetchClientByPhone, nexusData.initData, _activeContextTab, _setActiveContextTab, _inlinePanelTab, _setInlinePanelTab, _addUserModalAgencyId, _setAddUserModalAgencyId, nexusData.updateClientName, activeSafetySession, isTimerActive, timeLeft, formatSafetyTime, nexusData.handleCheckIn, nexusData.handleCheckOut, nexusData.handleSafetyImOk, nexusData.isSafetyLoading, nexusData.handleEditBooking, nexusData.handleDeleteBooking]);
+    nexusData.agencySettings, nexusData.calendar, nexusData.clientNames, nexusData.globalFeatures, nexusData.globalSettings, nexusData.handleSaveAssignees, nexusData.handleSaveCredentials, nexusData.handleSyncAll, nexusData.handleUpdateGlobalSetting, nexusData.isSyncing, nexusData.isTraining, nexusData.onResetTraining, nexusData.onStartTraining, nexusData.relayOnline, nexusData.setProfiles, nexusData.syncProgress, nexusData.syncStatus, nexusData.toggleOperatorStatus, nexusData.trainingProgress, nexusData.stats, nexusData.fetchClientByPhone, nexusData.initData, _activeContextTab, _setActiveContextTab, _inlinePanelTab, _setInlinePanelTab, _addUserModalAgencyId, _setAddUserModalAgencyId, nexusData.updateClientName, activeSafetySession, isTimerActive, timeLeft, formatSafetyTime, nexusData.handleCheckIn, nexusData.handleCheckOut, nexusData.handleSafetyImOk, nexusData.isSafetyLoading, nexusData.handleEditBooking, nexusData.handleDeleteBooking, nexusData.fetchAllReferrals, nexusData.handleConfirmReferral, nexusData.isMaintenanceMode, nexusData.setIsMaintenanceMode, nexusData.globalAnnouncement, nexusData.setGlobalAnnouncement, nexusData.publishGlobalAnnouncement]);
 
   return (
     <NexusContext.Provider value={value}>

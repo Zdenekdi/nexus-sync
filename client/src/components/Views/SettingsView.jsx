@@ -28,6 +28,7 @@ const SettingsView = () => {
     setIsMaintenanceMode = () => {},
     globalAnnouncement = '',
     setGlobalAnnouncement = () => {},
+    publishGlobalAnnouncement = () => {},
     isAllowed = () => false,
     showToast = () => {},
     setLang = () => {},
@@ -759,7 +760,7 @@ const SettingsView = () => {
                     value={globalAnnouncement}
                     onChange={(_err) => setGlobalAnnouncement(_err.target.value)}
                   />
-                  <button className="action-btn" style={{ width: 'auto', padding: '0 1.5rem' }} onClick={() => showToast('Announcement published!', 'success')}>PUBLISH</button>
+                  <button className="action-btn" style={{ width: 'auto', padding: '0 1.5rem' }} onClick={() => publishGlobalAnnouncement()}>PUBLISH</button>
                 </div>
               </div>
             </div>
