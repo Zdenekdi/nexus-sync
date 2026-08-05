@@ -741,6 +741,67 @@ export const NexusProvider = ({ children }) => {
     setCalendarSyncUrl: nexusData.setCalendarSyncUrl,
     handleSaveCalendarSync: nexusData.handleSaveCalendarSync,
     setSelectedScheduleEvent: nexusData.setSelectedScheduleEvent,
+
+    // Druhá dávka téhož: useNexusData tyhle hodnoty vrací, kontext si je
+    // ale nikdy nevyjmenoval. Komponenty si je berou s výchozími hodnotami,
+    // takže se ovládání vykreslilo a nereagovalo. Rozpis v
+    // docs/context-contract-audit.md.
+    //
+    // GlobalFeaturesView — celá obrazovka globálních funkcí a trénování.
+    globalFeatures: nexusData.globalFeatures,
+    globalSettings: nexusData.globalSettings,
+    handleUpdateGlobalSetting: nexusData.handleUpdateGlobalSetting,
+    isTraining: nexusData.isTraining,
+    trainingProgress: nexusData.trainingProgress,
+    onStartTraining: nexusData.onStartTraining,
+    onResetTraining: nexusData.onResetTraining,
+    // WebProfilesView — přihlašovací údaje, synchronizace, stav relaye.
+    handleSaveCredentials: nexusData.handleSaveCredentials,
+    handleSyncAll: nexusData.handleSyncAll,
+    isSyncing: nexusData.isSyncing,
+    syncProgress: nexusData.syncProgress,
+    syncStatus: nexusData.syncStatus,
+    relayOnline: nexusData.relayOnline,
+    // ProfilesView — přiřazování profilů a přepínání stavu operátorky.
+    setProfiles: nexusData.setProfiles,
+    handleSaveAssignees: nexusData.handleSaveAssignees,
+    toggleOperatorStatus: nexusData.toggleOperatorStatus,
+    // Zbytek jednotlivě.
+    agencySettings: nexusData.agencySettings,
+    clientNames: nexusData.clientNames,
+    calendar: nexusData.calendar,
+
+    // Třetí dávka. `stats` je z nich nejdůležitější: v DashboardHome na něm
+    // visí všechna čísla (zprávy, hovory, tržby, grafy), takže se dosud
+    // zobrazovaly samé nuly. `initData` si berou modály a volají ho po
+    // uložení — bez něj se seznam po přidání uživatele neobnovil.
+    stats: nexusData.stats,
+    // isBackgroundLoading tu SCHVÁLNĚ NENÍ, i když ho hook vrací a
+    // DashboardHome ho čeká. Zapnutím se rozsvítí načítací kostry na pěti
+    // místech dashboardu — a s nimi zmizí panel týmového chatu: spec
+    // salon_keys_and_chat „Odeslání zprávy funguje" pak napsanou zprávu
+    // nenajde. Ověřeno izolovaně (s ním 11 padajících, bez něj 10, stejně
+    // jako na masteru). Ty kostry mají smysl, ale je to změna chování
+    // a patří k ní vyřešit, proč se při překreslení ztrácí chat.
+    fetchClientByPhone: nexusData.fetchClientByPhone,
+    initData: nexusData.initData,
+
+    // Čtvrtá dávka — tady už to nejsou hodnoty z useNexusData.
+    //
+    // Tyhle tři stavy si kontext drží od začátku pod podtržítkem a nikdy je
+    // nevystavil (stejný případ jako _mobileView). Komponenty je čekaly, takže
+    // přepínání záložek v postranním panelu schránky a předvyplnění agentury
+    // v okně „přidat uživatele" nefungovalo.
+    activeContextTab: _activeContextTab, setActiveContextTab: _setActiveContextTab,
+    inlinePanelTab: _inlinePanelTab, setInlinePanelTab: _setInlinePanelTab,
+    addUserModalAgencyId: _addUserModalAgencyId, setAddUserModalAgencyId: _setAddUserModalAgencyId,
+
+    // Dvě jména, pod kterými si tytéž hodnoty žádají jiné komponenty.
+    // App.jsx si myProfiles přejmenovává na assignedProfiles a CalendarView
+    // si calendar přejmenovává na bookingSchedule — WebProfilesView a
+    // InboxView si je ale berou rovnou pod tím druhým jménem.
+    assignedProfiles: myProfiles,
+    bookingSchedule: nexusData.calendar,
     chatScrollRef, isUserScrolled, showToast, _toasts, toasts: _toasts, setToasts: _setToasts,
     // Stav se tu držel od začátku (ř. 283), jen se nikdy nevystavil. InboxView
     // si ho bere z kontextu, takže dostával výchozí 'list' a prázdnou funkci:
@@ -834,7 +895,8 @@ export const NexusProvider = ({ children }) => {
     nexusData.handleSyncChatHistory,
     socket
   , _mobileView,
-    nexusData.isBookingModalOpen, nexusData.setIsBookingModalOpen, nexusData.newBookingForm, nexusData.setNewBookingForm, nexusData.handleSaveBooking, nexusData.handleExportICS, nexusData.isCalendarSyncOpen, nexusData.setIsCalendarSyncOpen, nexusData.calendarSyncUrl, nexusData.setCalendarSyncUrl, nexusData.handleSaveCalendarSync, nexusData.setSelectedScheduleEvent]);
+    nexusData.isBookingModalOpen, nexusData.setIsBookingModalOpen, nexusData.newBookingForm, nexusData.setNewBookingForm, nexusData.handleSaveBooking, nexusData.handleExportICS, nexusData.isCalendarSyncOpen, nexusData.setIsCalendarSyncOpen, nexusData.calendarSyncUrl, nexusData.setCalendarSyncUrl, nexusData.handleSaveCalendarSync, nexusData.setSelectedScheduleEvent,
+    nexusData.agencySettings, nexusData.calendar, nexusData.clientNames, nexusData.globalFeatures, nexusData.globalSettings, nexusData.handleSaveAssignees, nexusData.handleSaveCredentials, nexusData.handleSyncAll, nexusData.handleUpdateGlobalSetting, nexusData.isSyncing, nexusData.isTraining, nexusData.onResetTraining, nexusData.onStartTraining, nexusData.relayOnline, nexusData.setProfiles, nexusData.syncProgress, nexusData.syncStatus, nexusData.toggleOperatorStatus, nexusData.trainingProgress, nexusData.stats, nexusData.fetchClientByPhone, nexusData.initData, _activeContextTab, _setActiveContextTab, _inlinePanelTab, _setInlinePanelTab, _addUserModalAgencyId, _setAddUserModalAgencyId]);
 
   return (
     <NexusContext.Provider value={value}>
