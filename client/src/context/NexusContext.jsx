@@ -776,13 +776,17 @@ export const NexusProvider = ({ children }) => {
     // zobrazovaly samé nuly. `initData` si berou modály a volají ho po
     // uložení — bez něj se seznam po přidání uživatele neobnovil.
     stats: nexusData.stats,
-    // isBackgroundLoading tu SCHVÁLNĚ NENÍ, i když ho hook vrací a
-    // DashboardHome ho čeká. Zapnutím se rozsvítí načítací kostry na pěti
-    // místech dashboardu — a s nimi zmizí panel týmového chatu: spec
-    // salon_keys_and_chat „Odeslání zprávy funguje" pak napsanou zprávu
-    // nenajde. Ověřeno izolovaně (s ním 11 padajících, bez něj 10, stejně
-    // jako na masteru). Ty kostry mají smysl, ale je to změna chování
-    // a patří k ní vyřešit, proč se při překreslení ztrácí chat.
+    // isBackgroundLoading tu zatím NENÍ — ale ne z důvodu, který tu dřív stál.
+    //
+    // Původně tu bylo napsáno, že ho zapnout nejde, protože s načítacími
+    // kostrami dashboardu mizí panel týmového chatu. To BYL CHYBNÝ ZÁVĚR
+    // z jediného běhu: spec salon_keys_and_chat „Odeslání zprávy funguje"
+    // byl nestabilní sám o sobě. Přeměřeno na nedotčeném masteru padal
+    // 3× z 16 běhů. Příčinou bylo přepisování nepotvrzených zpráv
+    // v TeamChatPanel (opraveno zvlášť), ne tenhle příznak.
+    //
+    // Zbývá tedy jen rozhodnutí, jestli ty kostry na dashboardu chceme —
+    // je to změna chování při načítání, ne dopojení drátu.
     fetchClientByPhone: nexusData.fetchClientByPhone,
     initData: nexusData.initData,
 
