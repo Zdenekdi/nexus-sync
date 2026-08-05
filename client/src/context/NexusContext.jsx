@@ -723,6 +723,24 @@ export const NexusProvider = ({ children }) => {
     handleEditProfile: (profile) => { setEditingProfileData(profile); setIsEditProfileOpen(true); },
     agencyDetailModalData, setAgencyDetailModalData,
     calViewDate, setCalViewDate, showPanicConfirm, setShowPanicConfirm,
+    // Kalendář a okno rezervace. useNexusData tohle všechno vrací, jenže
+    // kontext si z něj vybírá jednotlivé hodnoty a tyhle se nikdy nevyjmenovaly.
+    // CalendarView i GlobalModalContainer si je berou z kontextu, takže
+    // dostávaly výchozí hodnoty: příznak false, obsluha prázdná funkce.
+    // Kliknutí na „Přidat akci" proto neudělalo vůbec nic — tlačítko šlo
+    // zmáčknout a žádné okno se neotevřelo.
+    isBookingModalOpen: nexusData.isBookingModalOpen,
+    setIsBookingModalOpen: nexusData.setIsBookingModalOpen,
+    newBookingForm: nexusData.newBookingForm,
+    setNewBookingForm: nexusData.setNewBookingForm,
+    handleSaveBooking: nexusData.handleSaveBooking,
+    handleExportICS: nexusData.handleExportICS,
+    isCalendarSyncOpen: nexusData.isCalendarSyncOpen,
+    setIsCalendarSyncOpen: nexusData.setIsCalendarSyncOpen,
+    calendarSyncUrl: nexusData.calendarSyncUrl,
+    setCalendarSyncUrl: nexusData.setCalendarSyncUrl,
+    handleSaveCalendarSync: nexusData.handleSaveCalendarSync,
+    setSelectedScheduleEvent: nexusData.setSelectedScheduleEvent,
     chatScrollRef, isUserScrolled, showToast, _toasts, toasts: _toasts, setToasts: _setToasts,
     // Stav se tu držel od začátku (ř. 283), jen se nikdy nevystavil. InboxView
     // si ho bere z kontextu, takže dostával výchozí 'list' a prázdnou funkci:
@@ -815,7 +833,8 @@ export const NexusProvider = ({ children }) => {
     filteredMessages, setActiveContactId, selectedChat, typingProfiles, handleRefreshMessages,
     nexusData.handleSyncChatHistory,
     socket
-  , _mobileView]);
+  , _mobileView,
+    nexusData.isBookingModalOpen, nexusData.setIsBookingModalOpen, nexusData.newBookingForm, nexusData.setNewBookingForm, nexusData.handleSaveBooking, nexusData.handleExportICS, nexusData.isCalendarSyncOpen, nexusData.setIsCalendarSyncOpen, nexusData.calendarSyncUrl, nexusData.setCalendarSyncUrl, nexusData.handleSaveCalendarSync, nexusData.setSelectedScheduleEvent]);
 
   return (
     <NexusContext.Provider value={value}>

@@ -25,7 +25,7 @@ se rozbalují z kontextu, používají v těle komponenty a kontext je nedává*
 
 | Soubor | Počet | Jména |
 |---|---|---|
-| `Views/CalendarView.jsx` | 20 | `setIsBookingModalOpen`, `handleExportICS`, `handleCheckIn`, `handleCheckOut`, `handleEditBooking`, `handleDeleteBooking`, `isTimerActive`, `activeTimerEvent`, `timeLeft`, `handleSafetyImOk`, … |
+| `Views/CalendarView.jsx` | 12 zbývá | `setIsBookingModalOpen`, `handleExportICS`, `handleCheckIn`, `handleCheckOut`, `handleEditBooking`, `handleDeleteBooking`, `isTimerActive`, `activeTimerEvent`, `timeLeft`, `handleSafetyImOk`, … |
 | `Views/SettingsView.jsx` | 8 | `agencySettings`, `updateAgencySettings`, `departureIntervalMin`, `isMaintenanceMode`, `globalAnnouncement`, … |
 | `Views/WebProfilesView.jsx` | 7 | `assignedProfiles`, `handleSaveCredentials`, `isSyncing`, `syncStatus`, `relayOnline`, `handleSyncAll` |
 | `Views/GlobalFeaturesView.jsx` | 7 | `globalFeatures`, `globalSettings`, `isTraining`, `onStartTraining`, `handleUpdateGlobalSetting` |
@@ -43,8 +43,10 @@ se rozbalují z kontextu, používají v těle komponenty a kontext je nedává*
 
 - **Mobilní schránka** — po kliknutí na konverzaci se detail neotevřel.
   Opraveno; stav existoval pod `_mobileView`, jen se nikam nepředal.
-- **Kalendář** — klik na „Přidat akci" nezmění stránku ani neotevře okno.
-  Neopraveno.
+- **Kalendář** — klik na „Přidat akci" nezměnil stránku ani neotevřel okno.
+  Opraveno u těch jmen, která `useNexusData` už vracelo (12: okno rezervace,
+  ICS export, synchronizace kalendáře). Zbylých 8 z kalendáře je z druhé
+  skupiny — neexistují nikde a je potřeba je napsat.
 
 **Zbytek je statický nález.** Tabulka říká, že jméno chybí a komponenta ho
 používá — neříká, jak moc to v praxi vadí. Než se kterákoli položka

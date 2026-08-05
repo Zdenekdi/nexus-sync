@@ -107,7 +107,8 @@ const CalendarView = () => {
 
       {isMobile && (
         <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
-           <button onClick={() => setIsBookingModalOpen(true)} style={{ flex: 1, padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', cursor: 'pointer', color: 'white', border: 'none', background: 'var(--accent-color)', borderRadius: '12px', fontWeight: '800', fontSize: '0.8rem' }}>
+           {/* Stejný testid jako desktopová varianta výš — větve se vylučují (!isMobile / isMobile), v DOM je vždy nejvýš jedna. */}
+           <button data-testid="btn-add-booking" onClick={() => setIsBookingModalOpen(true)} style={{ flex: 1, padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', cursor: 'pointer', color: 'white', border: 'none', background: 'var(--accent-color)', borderRadius: '12px', fontWeight: '800', fontSize: '0.8rem' }}>
              <Plus size={14} /> {lang === 'cz' ? 'Přidat' : 'Add'}
            </button>
            <button onClick={handleExportICS} className="glass-card" style={{ flex: 1, padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', cursor: 'pointer', color: 'white', border: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', fontWeight: '800', fontSize: '0.8rem' }}>
