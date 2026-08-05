@@ -675,6 +675,20 @@ export async function setupApiMocks(page) {
 
   // Banner údržby a globální oznámení — čte je KAŽDÝ přihlášený, ne jen
   // App Owner (jinak by banner nikoho nevaroval). Vrací se objekt, ne pole.
+  // Překlad zprávy. Server čte { text, target } a vrací { translated } —
+  // ne { targetLang } / { translatedText }, jak to měla původní (nezapojená)
+  // implementace. Mock vrací cílový jazyk zpátky, aby šlo ověřit, že se
+  // posílá výběr z UI, a ne natvrdo nastavená dvojice.
+  await context.route('**/ai/translate', async route => {
+    let body = {};
+    try { body = JSON.parse(route.request().postData() || '{}'); } catch { /* prázdné tělo */ }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ translated: `[${body.target}] ${body.text}` })
+    });
+  });
+
   await context.route('**/admin/settings/public', async route => {
     await route.fulfill({
       status: 200,
