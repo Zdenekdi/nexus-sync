@@ -11,7 +11,19 @@ import axios from 'axios';
 const NexusRelayPlugin = NexusRelay;
 
 // ── Detekce varianty APK ────────────────────────────────────────────────────
-export const APP_VARIANT = window.__APP_VARIANT__ || 'full'; // 'relay' | 'full'
+//
+// __APP_VARIANT__ je konstanta, kterou dosazuje Vite při buildu
+// (vite.config.js, z VITE_APP_VARIANT). Dosazuje ale HOLÝ IDENTIFIKÁTOR —
+// zápis `window.__APP_VARIANT__` je přístup k vlastnosti, ten Vite nenahradí
+// a `window.__APP_VARIANT__` za běhu nikdo nenastavuje. Vycházelo tedy
+// vždycky 'full', i v relay APK.
+//
+// Důsledek byl, že se relay chovala jako plná aplikace: nativní posluchač
+// příchozích SMS se nezaregistroval, místo něj běžela socketová větev
+// určená pro full, a odchozí SMS šly přes API serveru místo přes telefon.
+// Ostatní místa v kódu (App.jsx, Sidebar, MobileBottomNav, useOperatorWebRTC)
+// to čtou správně — jen tady byl překlep.
+export const APP_VARIANT = (typeof __APP_VARIANT__ !== 'undefined' ? __APP_VARIANT__ : 'full'); // 'relay' | 'full'
 export const isRelayVariant = APP_VARIANT === 'relay';
 
 // ── useSmsRelay hook ────────────────────────────────────────────────────────
