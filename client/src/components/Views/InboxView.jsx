@@ -80,7 +80,7 @@ const InboxView = () => {
     translateTargetLang = 'AUTO', setTranslateTargetLang = () => {},
     lang = 'en', t = (k) => k, token = '', API_BASE = '',
     activeProfile = null, handleSendMessage = () => {}, handleTranslate = () => {}, handleSaveNote = () => {},
-    handleDeleteNote = () => {}, startCall = () => {}, showToast = () => {}, handleSyncChatHistory = () => {},
+    handleDeleteNote = () => {}, showToast = () => {}, handleSyncChatHistory = () => {},
     loading: isInitialLoading = false,
     initData: refreshData = () => {}, isBackgroundLoading = false, fetchClientByPhone = () => {},
     setActiveTab = () => {}, agencies = [], handleRefreshMessages = () => {}
@@ -552,9 +552,21 @@ const InboxView = () => {
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '1rem' }}>
-                    <button onClick={startCall} data-testid="chat-call-button" className="status-badge" style={{ color: 'var(--accent-color)', cursor: 'pointer', background: 'rgba(59, 130, 246, 0.1)', border: 'none', padding: '0.5rem 0.75rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', fontWeight: '800' }}>
-                      <Signal size={14} /> CALL
-                    </button>
+                    {/* Tlačítko CALL je odstraněné, protože odchozí hovor NIKDO NEUMÍ.
+
+                        Jediná obsluha `startCall` žila v useUILogic.js — hooku, který
+                        nevolá nikdo — a hovor jen PŘEDSTÍRALA: nastavila stav a přes
+                        setTimeout po dvou vteřinách přepnula na „aktivní hovor". Nikam
+                        nevolala. Navíc se volala bez argumentů, i když čeká (profile, chat).
+
+                        Vytáčení neumí ani SIP: useOperatorSip i NexusSip mají answer,
+                        reject, hangup — nic pro zahájení. A generovaný dialplan Asterisku
+                        má jen [from-trunk] a [nexushub] pro PŘÍCHOZÍ; odchozí kontext
+                        s Dial() tam není, takže by hovor stejně neodešel.
+
+                        Zapojit to znamená napsat funkci napříč vrstvami (dialplan,
+                        JsSIP vytáčení, volba čísla, které klient uvidí). Do té doby je
+                        poctivější tlačítko nemít než mít takové, které nic neudělá. */}
                     <button 
                       onClick={() => handleSyncChatHistory(selectedChatId)} 
                       data-testid="chat-sync-button"

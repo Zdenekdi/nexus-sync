@@ -60,7 +60,9 @@ test.describe('Operator Inbox & Chat E2E', () => {
   test('hlavička konverzace má hovor a synchronizaci; nouzové tlačítko podle zařízení', async ({ page }, testInfo) => {
     await page.locator('[data-testid^="chat-list-item-"]').first().click();
 
-    await expect(page.getByTestId('chat-call-button')).toBeVisible();
+    // Tlačítko CALL bylo odstraněné: odchozí hovor neumí ani SIP, ani
+    // dialplan Asterisku, a jediná obsluha ho jen předstírala přes setTimeout.
+    await expect(page.getByTestId('chat-call-button')).toHaveCount(0);
     await expect(page.getByTestId('chat-sync-button')).toBeVisible();
 
     // Nouzové tlačítko patří tomu, kdo je v terénu. Podmínka v InboxView.jsx
