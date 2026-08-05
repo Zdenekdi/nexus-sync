@@ -755,6 +755,115 @@ export function useNexusData({
     }
   }, [token, API_BASE, initData, showToast, lang, profiles]);
 
+  // ── Bezpečnostní hlídání u rezervace ──────────────────────────────────────
+  //
+  // Server na tohle měl ruty od začátku (check-in, check-out, ack, panic,
+  // resolve…), z webového klienta je ale nevolal nikdo. CalendarView si
+  // obsluhy bral z kontextu, který je nedával, takže tlačítka CHECK-IN,
+  // CHECK-OUT i „JSEM V POŘÁDKU" volala prázdnou funkci.
+  //
+  // Relaci nezakládáme napřímo: POST /safety/sessions převezme tu PLÁNOVANOU,
+  // kterou k rezervaci vytvořil server, a rovnou ji přepne na CHECKED_IN
+  // (ruší i případnou probíhající eskalaci). Jedno volání tedy stačí.
+  const [isSafetyLoading, setIsSafetyLoading] = useState(false);
+  const [safetySessionId, setSafetySessionId] = useState(null);
+
+  const handleCheckIn = useCallback(async (event) => {
+    if (!event?.id || !event?.profileId || isSafetyLoading) return;
+    setIsSafetyLoading(true);
+    try {
+      const r = await axios.post(`${API_BASE}/safety/sessions`, {
+        profileId: event.profileId,
+        bookingId: event.id,
+        plannedEndAt: event.endTime,
+        locationType: event.locationType === 'outcall' ? 'outcall' : 'incall'
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      setSafetySessionId(r.data?.id || null);
+      setActiveSafetySession(r.data);
+      setIsTimerActive(true);
+      const endAt = new Date(r.data?.plannedEndAt || event.endTime).getTime();
+      if (!isNaN(endAt)) setTimeLeft(Math.floor((endAt - Date.now()) / 1000));
+      showToast?.(lang === 'cz' ? 'Hlídání spuštěno.' : 'Safety session started.', 'success');
+    } catch (_err) {
+      console.error('Check-in failed:', _err);
+      showToast?.(lang === 'cz' ? 'Hlídání se nepodařilo spustit.' : 'Could not start safety session.', 'error');
+    } finally {
+      setIsSafetyLoading(false);
+    }
+  }, [API_BASE, token, showToast, lang, isSafetyLoading, setActiveSafetySession, setIsTimerActive, setTimeLeft]);
+
+  const handleCheckOut = useCallback(async () => {
+    if (!safetySessionId || isSafetyLoading) return;
+    setIsSafetyLoading(true);
+    try {
+      // Check-out přepne relaci do GRACE a řekne telefonu, ať začne hlídat
+      // odchod — proto se odpočet tímhle NEKONČÍ, jen se přestane zobrazovat
+      // u rezervace. Dohled dál běží v SafetyGuardView.
+      await axios.post(`${API_BASE}/safety/sessions/${safetySessionId}/check-out`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setIsTimerActive(false);
+      setActiveSafetySession(null);
+      setSafetySessionId(null);
+      showToast?.(lang === 'cz' ? 'Odchod zaznamenán.' : 'Check-out recorded.', 'success');
+    } catch (_err) {
+      console.error('Check-out failed:', _err);
+      showToast?.(lang === 'cz' ? 'Odchod se nepodařilo zaznamenat.' : 'Could not record check-out.', 'error');
+    } finally {
+      setIsSafetyLoading(false);
+    }
+  }, [API_BASE, token, safetySessionId, isSafetyLoading, showToast, lang, setActiveSafetySession, setIsTimerActive]);
+
+  // Tlačítko „JSEM V POŘÁDKU (+10 min)". Ukazuje se až po vypršení času,
+  // tedy ve chvíli, kdy se za okamžik rozešle poplach — proto se stav při
+  // chybě NEMĚNÍ a odpočet zůstane přetažený. Tichý neúspěch by tady
+  // znamenal, že si někdo myslí, že poplach odvolal, a on se rozešle.
+  const handleSafetyImOk = useCallback(async () => {
+    if (!safetySessionId || isSafetyLoading) return;
+    setIsSafetyLoading(true);
+    try {
+      await axios.post(`${API_BASE}/safety/sessions/${safetySessionId}/ack`, { extendMinutes: 10 }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setTimeLeft(prev => (typeof prev === 'number' ? prev : 0) + 600);
+      showToast?.(lang === 'cz' ? 'Prodlouženo o 10 minut.' : 'Extended by 10 minutes.', 'success');
+    } catch (_err) {
+      console.error('Safety ack failed:', _err);
+      showToast?.(lang === 'cz' ? 'Prodloužení SELHALO — ozvi se dispečinku.' : 'Extension FAILED — contact dispatch.', 'error');
+    } finally {
+      setIsSafetyLoading(false);
+    }
+  }, [API_BASE, token, safetySessionId, isSafetyLoading, showToast, lang, setTimeLeft]);
+
+  // ── Rezervace: úprava a smazání ───────────────────────────────────────────
+  const handleEditBooking = useCallback((event) => {
+    if (!event) return;
+    setNewBookingForm(f => ({
+      ...f,
+      id: event.id,
+      title: event.title || '',
+      date: (event.startTime || '').split('T')[0] || f.date,
+      profileId: event.profileId || f.profileId,
+      locationType: event.locationType || f.locationType,
+      address: event.address || ''
+    }));
+    setIsBookingModalOpen(true);
+  }, []);
+
+  const handleDeleteBooking = useCallback(async (bookingId) => {
+    if (!bookingId) return;
+    try {
+      await axios.delete(`${API_BASE}/bookings/${bookingId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCalendar(prev => prev.filter(e => e.id !== bookingId));
+      showToast?.(lang === 'cz' ? 'Rezervace smazána.' : 'Booking deleted.', 'success');
+    } catch (_err) {
+      console.error('Delete booking failed:', _err);
+      showToast?.(lang === 'cz' ? 'Rezervaci se nepodařilo smazat.' : 'Could not delete booking.', 'error');
+    }
+  }, [API_BASE, token, showToast, lang]);
+
   const handleSaveAssignees = useCallback(async (profileId, operatorIds) => {
     if (!profileId) return;
     try {
@@ -1102,6 +1211,8 @@ export function useNexusData({
     featureLocks, handleFeatureLockToggle, lockableFeatures: getLockableFeatures(),
     isTraining, trainingProgress, onStartTraining, onResetTraining,
     auditLogs: [], isDataLoading, isBackgroundLoading, hasHydrated, clientNames, updateClientName,
+    handleCheckIn, handleCheckOut, handleSafetyImOk, isSafetyLoading,
+    handleEditBooking, handleDeleteBooking,
     calendar, isCalendarSyncOpen, setIsCalendarSyncOpen, calendarSyncUrl, setCalendarSyncUrl,
     isBookingModalOpen, setIsBookingModalOpen, selectedScheduleEvent, setSelectedScheduleEvent,
     newBookingForm, setNewBookingForm, bioText, setBioText, isSyncing, syncStatus: _syncStatus, syncProgress: _syncProgress,
@@ -1115,6 +1226,8 @@ export function useNexusData({
     globalFeatures, handleFeatureToggle, _plans, fetchPlans, updatePlans, isPlansLoading, isStartingSubscription, onStartSubscription, onCancelSubscription, startCheckout, startBillingPortal,
     globalSettings, handleUpdateGlobalSetting, featureLocks, handleFeatureLockToggle, isTraining, trainingProgress,
     onStartTraining, onResetTraining, isDataLoading, isBackgroundLoading, hasHydrated, clientNames, updateClientName, calendar, 
+    handleCheckIn, handleCheckOut, handleSafetyImOk, isSafetyLoading,
+    handleEditBooking, handleDeleteBooking, 
     isCalendarSyncOpen, calendarSyncUrl, isBookingModalOpen, selectedScheduleEvent, newBookingForm, bioText, 
     isSyncing, _syncStatus, _syncProgress, relayOnline, trackers, gpsHistory, trackerProvisioning, isPairingTracker,
     handlePairTracker, handleUnpairTracker, applyTrackerLocation, handleSaveBio, handleSyncAll, handleSyncChatHistory,
