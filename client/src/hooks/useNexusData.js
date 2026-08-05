@@ -151,11 +151,25 @@ export function useNexusData({
     setIsTraining(false);
   }, []);
 
-  const [clientNames] = useState({});
-  const [_clientNames, _setClientNames] = useState(() => {
-    const saved = localStorage.getItem('nexus_client_names');
-    return saved ? JSON.parse(saved) : {};
+  // Jména klientů se držela DVAKRÁT: prázdné `clientNames` bez setteru
+  // a `_clientNames` načtené z localStorage, které se nikde nepoužívalo.
+  // Ukládací efekt níž přitom zapisoval to prázdné — takže se uložená jména
+  // při každém načtení aplikace přepsala prázdnem a nenávratně zmizela.
+  const [clientNames, setClientNames] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nexus_client_names');
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
   });
+  const updateClientName = useCallback((externalId, name) => {
+    if (!externalId) return;
+    setClientNames(prev => {
+      const next = { ...prev };
+      if (name && name.trim()) next[externalId] = name.trim();
+      else delete next[externalId];
+      return next;
+    });
+  }, []);
   const [calendar, setCalendar] = useState([]);
   const [isCalendarSyncOpen, setIsCalendarSyncOpen] = useState(false);
   const [calendarSyncUrl, setCalendarSyncUrl] = useState('');
@@ -362,7 +376,9 @@ export function useNexusData({
   }, [API_BASE, token, showToast, lang]);
   
   useEffect(() => {
-    localStorage.setItem('nexus_client_names', JSON.stringify(clientNames));
+    try {
+      localStorage.setItem('nexus_client_names', JSON.stringify(clientNames));
+    } catch { /* soukromý režim prohlížeče — jména zůstanou jen do zavření */ }
   }, [clientNames]);
 
   const axiosWithTiming = useCallback(async (url, config = {}) => {
@@ -1085,7 +1101,7 @@ export function useNexusData({
     globalSettings, handleUpdateGlobalSetting,
     featureLocks, handleFeatureLockToggle, lockableFeatures: getLockableFeatures(),
     isTraining, trainingProgress, onStartTraining, onResetTraining,
-    auditLogs: [], isDataLoading, isBackgroundLoading, hasHydrated, clientNames,
+    auditLogs: [], isDataLoading, isBackgroundLoading, hasHydrated, clientNames, updateClientName,
     calendar, isCalendarSyncOpen, setIsCalendarSyncOpen, calendarSyncUrl, setCalendarSyncUrl,
     isBookingModalOpen, setIsBookingModalOpen, selectedScheduleEvent, setSelectedScheduleEvent,
     newBookingForm, setNewBookingForm, bioText, setBioText, isSyncing, syncStatus: _syncStatus, syncProgress: _syncProgress,
@@ -1098,7 +1114,7 @@ export function useNexusData({
     profiles, agencies, _agencySettings, operators, sessions, stats, _activeSubscription, _subscriptionHistory, 
     globalFeatures, handleFeatureToggle, _plans, fetchPlans, updatePlans, isPlansLoading, isStartingSubscription, onStartSubscription, onCancelSubscription, startCheckout, startBillingPortal,
     globalSettings, handleUpdateGlobalSetting, featureLocks, handleFeatureLockToggle, isTraining, trainingProgress,
-    onStartTraining, onResetTraining, isDataLoading, isBackgroundLoading, hasHydrated, clientNames, calendar, 
+    onStartTraining, onResetTraining, isDataLoading, isBackgroundLoading, hasHydrated, clientNames, updateClientName, calendar, 
     isCalendarSyncOpen, calendarSyncUrl, isBookingModalOpen, selectedScheduleEvent, newBookingForm, bioText, 
     isSyncing, _syncStatus, _syncProgress, relayOnline, trackers, gpsHistory, trackerProvisioning, isPairingTracker,
     handlePairTracker, handleUnpairTracker, applyTrackerLocation, handleSaveBio, handleSyncAll, handleSyncChatHistory,
