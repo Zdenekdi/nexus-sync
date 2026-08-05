@@ -313,7 +313,31 @@ export async function setupApiMocks(page) {
     });
   });
 
+  // POZOR NA METODU: GET vrací seznam, POST zakládá JEDNU relaci a vrací ji
+  // jako objekt (safetyController.createSession, stav rovnou CHECKED_IN).
+  // Dřív se na obojí vracelo pole, takže check-in z kalendáře dostal seznam
+  // místo relace a neměl z čeho vzít id ani plannedEndAt.
   await context.route('**/safety/sessions', async route => {
+    if (route.request().method() === 'POST') {
+      let body = {};
+      try { body = JSON.parse(route.request().postData() || '{}'); } catch { /* prázdné tělo */ }
+      const plannedEndAt = body.plannedEndAt || new Date(Date.now() + 45 * 60000).toISOString();
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'sess-new-1',
+          agencyId: 'agency-1',
+          profileId: body.profileId || 'prof-1',
+          bookingId: body.bookingId || null,
+          state: 'CHECKED_IN',
+          plannedEndAt,
+          graceUntil: new Date(new Date(plannedEndAt).getTime() + 10 * 60000).toISOString(),
+          locationType: body.locationType || 'incall'
+        })
+      });
+      return;
+    }
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -321,6 +345,14 @@ export async function setupApiMocks(page) {
         { id: 'sess-1', profileId: 'prof-1', profile: { name: 'Diana' }, bpm: 75, battery: 85, state: 'CHECKED_IN' }
       ])
     });
+  });
+
+  await context.route('**/safety/sessions/*/check-out', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'sess-new-1', state: 'GRACE' }) });
+  });
+
+  await context.route('**/safety/sessions/*/ack', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'sess-new-1', state: 'CHECKED_IN' }) });
   });
 
   // Schránka. Dřív tu stála ruta '**/chat/conversations' — takový endpoint
@@ -597,8 +629,38 @@ export async function setupApiMocks(page) {
   await context.route('**/calendar**', async route => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
   });
+  // Tvar podle modelu Booking a bookingController.getBookings (include profile).
+  // Dřív se vracelo prázdné pole, takže kalendář neměl na co kliknout —
+  // a tlačítka CHECK-IN, „Upravit" i „Smazat" tím zůstala neověřená.
+  //
+  // Časy jsou počítané ode dneška: kalendář filtruje podle vybraného dne,
+  // s pevným datem by rezervace zmizely hned druhý den.
   await context.route('**/bookings**', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
+    if (route.request().method() !== 'GET') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
+      return;
+    }
+    const den = new Date().toISOString().split('T')[0];
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          id: 'book-1', profileId: 'prof-1', agencyId: 'agency-1',
+          title: 'Schůzka — hotel Central', price: 4000,
+          startTime: `${den}T09:00:00.000Z`, endTime: `${den}T23:30:00.000Z`,
+          locationType: 'outcall', address: 'Hotel Central', source: 'manual',
+          profile: { id: 'prof-1', name: 'Model Diana' }
+        },
+        {
+          id: 'book-2', profileId: 'prof-2', agencyId: 'agency-1',
+          title: 'Schůzka — provozovna', price: 2500,
+          startTime: `${den}T14:00:00.000Z`, endTime: `${den}T15:00:00.000Z`,
+          locationType: 'incall', address: null, source: 'manual',
+          profile: { id: 'prof-2', name: 'Model Sarah' }
+        }
+      ])
+    });
   });
 
   await context.route('**/admin/features', async route => {
@@ -651,15 +713,11 @@ export async function setupApiMocks(page) {
     });
   });
 
-  await context.route('**/bookings', async route => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify([
-        { id: 'booking-1', title: 'Diana - Photo Shoot', start: new Date().toISOString(), end: new Date().toISOString() }
-      ])
-    });
-  });
+  // POZOR: tady stál DRUHÝ mock rezervací, registrovaný později, takže
+  // přebíjel ten výš. Vracel { id, title, start, end } — tvar, který se
+  // s modelem Booking nepotkává: chybělo profileId a časy se jmenují
+  // startTime/endTime. Check-in z kalendáře proto neměl profil, ke kterému
+  // by relaci založil, a tiše se vracel.
 
 }
 
