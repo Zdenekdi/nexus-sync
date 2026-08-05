@@ -50,7 +50,7 @@ takže se každá zpráva vykreslila jako „No messages".
 ## Co zbývá
 
 Dalších 15 endpointů se pořád propadá do zachytávače. Server je má všechny,
-klient je volá — jen v mocích nejsou:
+klient je volá — jen v mock souboru nejsou:
 
 | Endpoint | Co kvůli tomu v testech nejde ověřit |
 |---|---|

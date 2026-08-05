@@ -25,11 +25,13 @@ export async function setupApiMocks(page) {
       //
       // Prázdné pole tu zůstává, aby se nic nerozbilo. Ale ať je aspoň vidět,
       // co se sem propadá.
-      const path = (() => { try { return new URL(route.request().url()).pathname; } catch { return route.request().url(); } })();
+      // Ne `path` — ten je nahoře naimportovaný z Node a používá se níž
+      // při servírování client/dist.
+      const reqPath = (() => { try { return new URL(route.request().url()).pathname; } catch { return route.request().url(); } })();
       if (!globalThis.__nexusUnmockedPaths) globalThis.__nexusUnmockedPaths = new Set();
-      if (!globalThis.__nexusUnmockedPaths.has(path)) {
-        globalThis.__nexusUnmockedPaths.add(path);
-        console.warn(`⚠️  [Mock API] NEMOCKOVÁNO → vracím []: ${path}`);
+      if (!globalThis.__nexusUnmockedPaths.has(reqPath)) {
+        globalThis.__nexusUnmockedPaths.add(reqPath);
+        console.warn(`⚠️  [Mock API] NEMOCKOVÁNO → vracím []: ${reqPath}`);
       }
       await route.fulfill({
         status: 200,
