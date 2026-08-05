@@ -724,6 +724,13 @@ export const NexusProvider = ({ children }) => {
     agencyDetailModalData, setAgencyDetailModalData,
     calViewDate, setCalViewDate, showPanicConfirm, setShowPanicConfirm,
     chatScrollRef, isUserScrolled, showToast, _toasts, toasts: _toasts, setToasts: _setToasts,
+    // Stav se tu držel od začátku (ř. 283), jen se nikdy nevystavil. InboxView
+    // si ho bere z kontextu, takže dostával výchozí 'list' a prázdnou funkci:
+    // setMobileView('chat') nic neudělalo a podmínka na ř. 534 zůstala nepravdivá.
+    // Na telefonu tedy nešlo otevřít konverzaci — seznam se nikdy nepřepnul na
+    // detail. Nešlo to poznat, protože schránka byla v testech vždycky prázdná
+    // a na žádnou konverzaci se nedalo kliknout.
+    mobileView: _mobileView, setMobileView: _setMobileView,
     availableServers, selectedServerId, setSelectedServerId,
     isAllowed, activeRole: normalizedRole,
     isAppOwner: activeOperator?.isAppOwner,
@@ -808,7 +815,7 @@ export const NexusProvider = ({ children }) => {
     filteredMessages, setActiveContactId, selectedChat, typingProfiles, handleRefreshMessages,
     nexusData.handleSyncChatHistory,
     socket
-  ]);
+  , _mobileView]);
 
   return (
     <NexusContext.Provider value={value}>
