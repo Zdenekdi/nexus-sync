@@ -802,6 +802,7 @@ export const NexusProvider = ({ children }) => {
     // Zbytek jednotlivě.
     agencySettings: nexusData.agencySettings,
     clientNames: nexusData.clientNames,
+    updateClientName: nexusData.updateClientName,
     calendar: nexusData.calendar,
 
     // Třetí dávka. `stats` je z nich nejdůležitější: v DashboardHome na něm
@@ -848,6 +849,15 @@ export const NexusProvider = ({ children }) => {
     // a na žádnou konverzaci se nedalo kliknout.
     mobileView: _mobileView, setMobileView: _setMobileView,
     availableServers, selectedServerId, setSelectedServerId,
+    // TV nástěnka do kanceláře. TvDashboard je hotová obrazovka (GPS stream,
+    // stav SOS, biometrické varování, baterie, tep, počty relayů) a všechny
+    // hodnoty, které potřebuje, kontext vystavuje — chyběl jen přepínač,
+    // takže ji nešlo zapnout. ViewRouter ho čte na řádku 27.
+    //
+    // Odvozeno z adresy, ne z vlastního stavu: na televizi se otevře
+    // https://…/tv a zůstane tam. Kdyby to byl přepínač v aplikaci, musel by
+    // ho někdo na té televizi po každém restartu naklikat.
+    isTvMode: activeTab === 'tv',
     isAllowed, activeRole: normalizedRole,
     isAppOwner: activeOperator?.isAppOwner,
     // Zámky nedodělaných funkcí (admin UI v GlobalFeaturesView)
@@ -933,7 +943,7 @@ export const NexusProvider = ({ children }) => {
     socket
   , _mobileView,
     nexusData.isBookingModalOpen, nexusData.setIsBookingModalOpen, nexusData.newBookingForm, nexusData.setNewBookingForm, nexusData.handleSaveBooking, nexusData.handleExportICS, nexusData.isCalendarSyncOpen, nexusData.setIsCalendarSyncOpen, nexusData.calendarSyncUrl, nexusData.setCalendarSyncUrl, nexusData.handleSaveCalendarSync, nexusData.setSelectedScheduleEvent,
-    nexusData.agencySettings, nexusData.calendar, nexusData.clientNames, nexusData.globalFeatures, nexusData.globalSettings, nexusData.handleSaveAssignees, nexusData.handleSaveCredentials, nexusData.handleSyncAll, nexusData.handleUpdateGlobalSetting, nexusData.isSyncing, nexusData.isTraining, nexusData.onResetTraining, nexusData.onStartTraining, nexusData.relayOnline, nexusData.setProfiles, nexusData.syncProgress, nexusData.syncStatus, nexusData.toggleOperatorStatus, nexusData.trainingProgress, nexusData.stats, nexusData.fetchClientByPhone, nexusData.initData, _activeContextTab, _setActiveContextTab, _inlinePanelTab, _setInlinePanelTab, _addUserModalAgencyId, _setAddUserModalAgencyId, activeSafetySession, isTimerActive, timeLeft, formatSafetyTime, nexusData.handleCheckIn, nexusData.handleCheckOut, nexusData.handleSafetyImOk, nexusData.isSafetyLoading, nexusData.handleEditBooking, nexusData.handleDeleteBooking]);
+    nexusData.agencySettings, nexusData.calendar, nexusData.clientNames, nexusData.globalFeatures, nexusData.globalSettings, nexusData.handleSaveAssignees, nexusData.handleSaveCredentials, nexusData.handleSyncAll, nexusData.handleUpdateGlobalSetting, nexusData.isSyncing, nexusData.isTraining, nexusData.onResetTraining, nexusData.onStartTraining, nexusData.relayOnline, nexusData.setProfiles, nexusData.syncProgress, nexusData.syncStatus, nexusData.toggleOperatorStatus, nexusData.trainingProgress, nexusData.stats, nexusData.fetchClientByPhone, nexusData.initData, _activeContextTab, _setActiveContextTab, _inlinePanelTab, _setInlinePanelTab, _addUserModalAgencyId, _setAddUserModalAgencyId, nexusData.updateClientName, activeSafetySession, isTimerActive, timeLeft, formatSafetyTime, nexusData.handleCheckIn, nexusData.handleCheckOut, nexusData.handleSafetyImOk, nexusData.isSafetyLoading, nexusData.handleEditBooking, nexusData.handleDeleteBooking]);
 
   return (
     <NexusContext.Provider value={value}>

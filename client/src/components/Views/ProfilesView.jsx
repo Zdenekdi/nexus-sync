@@ -28,7 +28,11 @@ const ProfilesView = () => {
     myProfiles = [],
     operators = [],
     assigningProfile,
-    setAssigningProfile = () => {},
+    // BEZ VÝCHOZÍ HODNOTY. Níž je `setAssigningProfile || setLocalAssigningProfile`
+    // a prázdná funkce je pravdivostní — s výchozí hodnotou by se na lokální
+    // setter nikdy nepřepnulo a zápis by padal do prázdna. Okno pro přiřazení
+    // profilu se pak nedalo otevřít.
+    setAssigningProfile,
     setActiveProfileId = () => {},
     setActiveTab = () => {},
     toggleOperatorStatus = () => {},
