@@ -434,6 +434,34 @@ export async function setupApiMocks(page) {
     });
   });
 
+  // Vlastní agentura přihlášeného. DŮLEŽITÉ: klient tuhle rutu volá jako
+  // ZÁLOŽNÍ cestu, když /agency/all nic nevrátí — a to je případ všech rolí
+  // kromě App Ownera, protože /agency/all je vyhrazené jemu.
+  //
+  // Bez tohohle mocku se odpověď propadala do výchozího zachytávače, který
+  // vrací [], takže operátorce vyšel prázdný tarif a aplikace jí zamkla AI
+  // funkce (překlad, návrhy) i s tarifem, který na ně má nárok. Vypadalo to
+  // jako vada v oprávněních; byla to díra v mocích.
+  //
+  // Tvar podle agencyController.getSettings (select vrací i plan).
+  await context.route('**/agency/settings', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        // Tarif SCHVÁLNĚ nízký. Kdyby tu byl Professional, tlačítka pro
+        // upgrade v nastavení by se chovala jako „už tento tarif máte"
+        // a rozbila by spec settings.spec.js. Testy, které potřebují AI
+        // funkce, si tuhle rutu přebijí vlastní odpovědí — viz
+        // inbox_translator.spec.js.
+        id: 'agency-1', name: 'Premium Sync Europe', tier: 'Starter', plan: 'Starter',
+        safetyAlertMode: 'MANAGERS_AND_ASSIGNED', inviteCode: 'NEXUS-TEST',
+        referralCode: 'REF-TEST', aiInstructions: null,
+        email: 'info@premium.test', region: 'EU'
+      })
+    });
+  });
+
   await context.route('**/agency/all', async route => {
     await route.fulfill({
       status: 200,
