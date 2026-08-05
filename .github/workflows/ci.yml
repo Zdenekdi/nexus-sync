@@ -131,6 +131,11 @@ jobs:
   e2e-tests:
     name: Playwright E2E Tests
     runs-on: ubuntu-latest
+    # Běh trvá běžně 8–11 minut. Bez tohohle limitu platí výchozích šest hodin:
+    # když spadne backend, `test:api` se zavěsí na mrtvý host a úloha drží
+    # runner celé odpoledne, místo aby řekla, že něco není v pořádku.
+    # Stalo se to 4. 8. 2026, kdy přestal odpovídat nexus-api.myvnc.com.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
 
@@ -165,6 +170,25 @@ jobs:
       # nemohly.
       - name: Build client for e2e
         run: cd client && npm run build
+
+      # rbac a sms-relay jedou proti živému API, ne proti mockům. Když backend
+      # neodpovídá, čekají na spojení, které nikdy nenaváže — z výpadku se
+      # stane zásek bez vysvětlení. Tohle to řekne za pár vteřin a nahlas.
+      #
+      # Úmyslně to shodí celý běh: RBAC a relay jsou bezpečnostní testy a
+      # neproběhlá kontrola není totéž co kontrola v pořádku.
+      - name: Check API is reachable
+        run: |
+          # Nejdřív pryč s lomítkem na konci, teprve pak s /api — jinak by
+          # se z 'https://host/api/' stalo 'https://host/api//api/health'
+          # a pojistka by hlásila výpadek i u zdravého backendu.
+          API="${NEXUS_API_URL%/}"; API="${API%/api}"
+          if ! curl -fsS --max-time 15 -o /dev/null "$API/api/health"; then
+            echo "::error::Backend $API neodpovídá — bezpečnostní testy (rbac, sms-relay) nelze spustit."
+            exit 1
+          fi
+        env:
+          NEXUS_API_URL: ${{ secrets.NEXUS_API_URL || 'https://nexus-api.myvnc.com/api' }}
 
       - name: Run API relay/security tests
         run: npm run test:api
