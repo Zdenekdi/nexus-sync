@@ -363,6 +363,16 @@ export async function setupApiMocks(page) {
   // Tvar odpovídá getChats: profile, poslední zpráva v poli messages
   // a _count. Klient z toho v useChatLogic.js čte messages[0].text,
   // sender.name, lastMessageAt a externalId.
+  // Čísla pro odchozí hovory. Schválně PRÁZDNÉ — tlačítko volání je pak
+  // nedostupné, což je nudnější stav a nerozbije nic. Spec, který volání
+  // ověřuje, si rutu přebije sám.
+  await context.route('**/sip/dids', async route => {
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ ok: true, dids: [] })
+    });
+  });
+
   await context.route('**/chats', async route => {
     await route.fulfill({
       status: 200,

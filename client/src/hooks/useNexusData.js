@@ -974,6 +974,20 @@ export function useNexusData({
       .catch(() => { /* bez nastavení prostě bannery nebudou */ });
   }, [isLoggedIn, token, API_BASE]);
 
+  // ── Čísla, pod kterými smí operátorka volat ven ────────────────────────────
+  // Určuje, jaké číslo klient uvidí. Seznam je autoritativní: dialplan přijme
+  // hovor jen pod DID, které je v databázi, takže co tu není, stejně neprojde.
+  // Když se načtení nepovede, zůstane prázdno a tlačítko volání je nedostupné —
+  // radši nezavolat, než zavolat pod cizím číslem.
+  const [sipDids, setSipDids] = useState([]);
+
+  useEffect(() => {
+    if (!isLoggedIn || !token) { setSipDids([]); return; }
+    axios.get(`${API_BASE}/sip/dids`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => setSipDids(Array.isArray(r.data?.dids) ? r.data.dids : []))
+      .catch(() => setSipDids([]));
+  }, [isLoggedIn, token, API_BASE]);
+
   const ulozNastaveni = useCallback(async (key, value) => {
     await axios.post(`${API_BASE}/admin/settings`, { key, value }, {
       headers: { Authorization: `Bearer ${token}` }
@@ -1367,6 +1381,7 @@ export function useNexusData({
     handleSaveBio, handleSyncAll, handleSyncChatHistory, handleRevokeBinding, handleSaveCredentials, handleQuickSaveMeeting, handleDelayBooking, initData,
     handleExportICS, handleSaveCalendarSync, handleSaveBooking, fetchClientByPhone,
     setProfiles, toggleOperatorStatus, handleSaveAssignees,
+    sipDids,
   }), [
     profiles, agencies, _agencySettings, operators, sessions, stats, _activeSubscription, _subscriptionHistory, 
     globalFeatures, handleFeatureToggle, _plans, fetchPlans, updatePlans, isPlansLoading, isStartingSubscription, onStartSubscription, onCancelSubscription, startCheckout, startBillingPortal,
@@ -1382,5 +1397,5 @@ export function useNexusData({
     handleSaveCredentials, handleQuickSaveMeeting, handleDelayBooking, initData, handleExportICS, 
     handleSaveCalendarSync, handleSaveBooking, fetchClientByPhone, toggleOperatorStatus, handleSaveAssignees, 
     handleRevokeBinding
-  , sourceText, translatedText, isTranslating, translateTargetLang, handleTranslate]);
+  , sourceText, translatedText, isTranslating, translateTargetLang, handleTranslate, sipDids]);
 }

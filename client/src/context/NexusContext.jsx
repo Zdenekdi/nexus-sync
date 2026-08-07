@@ -9,6 +9,7 @@ import { getSocket } from '../services/socketBridge';
 import { ensurePhoneTracking, stopPhoneTracking } from '../services/phoneTracker';
 import { setAppOwnerBypass, useFeatureLock, isFeatureLocked as isFeatureLockedNow } from '../config/featureLocks';
 import { getOrCreateInstallationId } from '../utils/installationId';
+import { sestavOdchoziCil, najdiDidProfilu } from '../utils/sipDial';
 import { AgencyDataGateway } from '../services/agency/AgencyDataGateway';
 import { AnalyticsService } from '../services/analytics/AnalyticsService';
 import { ContentSyncService } from '../services/content/ContentSyncService';
@@ -298,6 +299,14 @@ export const NexusProvider = ({ children }) => {
   const myProfilesRef = useRef([]);
   const ghostCallTimerRef = useRef(null);
   const activeOperatorRef = useRef(null);
+
+  // ── Vytáčení odchozích hovorů ──────────────────────────────────────────────
+  // SIP spojení drží SipManager (jedna instance na celou aplikaci). Kontext ho
+  // sem nepřebírá — jen si nechá zaregistrovat vytáčecí funkci, aby na ni
+  // dosáhla schránka. Přesouvat UA do kontextu by znamenalo sáhnout do
+  // funkční telefonie kvůli jednomu tlačítku.
+  const sipDialerRef = useRef(null);
+  const registerSipDialer = useCallback((fn) => { sipDialerRef.current = fn; }, []);
 
   const t = useCallback((key, params = {}) => {
     try {
@@ -730,6 +739,55 @@ export const NexusProvider = ({ children }) => {
     return Math.max(0, Math.ceil((expiresAt - now) / 86400000));
   }, [nexusData]);
 
+  // ── Odchozí hovor ──────────────────────────────────────────────────────────
+  // Klient uvidí číslo modelky, ne číslo agentury. DID se bere ze seznamu ze
+  // serveru — kdyby si ho skládal prohlížeč, dalo by se volat pod cizím
+  // číslem. Dialplan to stejně odmítne, ale hlásit to chceme dřív a srozumitelně.
+  const DUVODY_HOVORU = useMemo(() => ({
+    cz: {
+      sipNepripojen:     'Telefonie není připojená. Zkus to za chvíli.',
+      chybiDid:          'Tenhle profil nemá přiřazené telefonní číslo, není pod čím volat.',
+      chybiCislo:        'U konverzace není číslo klienta.',
+      nepouzitelneDid:   'Číslo profilu má divný tvar, volat pod ním nejde.',
+      nepouzitelneCislo: 'Číslo klienta má divný tvar, volat na něj nejde.',
+      jinyHovor:         'Jeden hovor už běží.',
+      chybiCil:          'Nepodařilo se sestavit cíl hovoru.',
+      vytaceniSelhalo:   'Vytáčení selhalo.',
+    },
+    en: {
+      sipNepripojen:     'Telephony is not connected. Try again shortly.',
+      chybiDid:          'This profile has no phone number assigned, there is nothing to call from.',
+      chybiCislo:        'The conversation has no client number.',
+      nepouzitelneDid:   'The profile number has an odd format and cannot be used.',
+      nepouzitelneCislo: 'The client number has an odd format and cannot be dialled.',
+      jinyHovor:         'A call is already in progress.',
+      chybiCil:          'Could not compose the call target.',
+      vytaceniSelhalo:   'Dialling failed.',
+    },
+  }), []);
+
+  const startCall = useCallback((profileId, cisloKlienta, popis = {}) => {
+    const hlaska = (duvod) => {
+      const sada = DUVODY_HOVORU[lang === 'cz' ? 'cz' : 'en'];
+      showToast(sada[duvod] || sada.vytaceniSelhalo, 'error');
+    };
+
+    const dialer = sipDialerRef.current;
+    if (!dialer) { hlaska('sipNepripojen'); return { ok: false, duvod: 'sipNepripojen' }; }
+
+    const did = najdiDidProfilu(nexusData.sipDids, profileId);
+    const slozeni = sestavOdchoziCil(did, cisloKlienta);
+    if (!slozeni.ok) { hlaska(slozeni.duvod); return slozeni; }
+
+    const vysledek = dialer(slozeni.cil, {
+      cislo:        cisloKlienta,
+      jmenoKlienta: popis.jmenoKlienta || '',
+      jmenoModelky: popis.jmenoModelky || null,
+    });
+    if (!vysledek?.ok) hlaska(vysledek?.duvod);
+    return vysledek || { ok: false, duvod: 'vytaceniSelhalo' };
+  }, [DUVODY_HOVORU, lang, showToast, nexusData.sipDids]);
+
   const value = useMemo(() => ({
     socket,
     t, lang, setLang, activeTab, setActiveTab, activeMarket, setActiveMarket,
@@ -885,6 +943,10 @@ export const NexusProvider = ({ children }) => {
     // https://…/tv a zůstane tam. Kdyby to byl přepínač v aplikaci, musel by
     // ho někdo na té televizi po každém restartu naklikat.
     isTvMode: activeTab === 'tv',
+    // Odchozí hovory: schránka volá startCall, SipManager si přes
+    // registerSipDialer zaregistruje vytáčení. sipDids říká, pod jakým
+    // číslem se u kterého profilu smí volat.
+    startCall, registerSipDialer, sipDids: nexusData.sipDids,
     isAllowed, activeRole: normalizedRole,
     isAppOwner: activeOperator?.isAppOwner,
     // Zámky nedodělaných funkcí (admin UI v GlobalFeaturesView)
@@ -974,7 +1036,7 @@ export const NexusProvider = ({ children }) => {
     socket
   , _mobileView,
     nexusData.isBookingModalOpen, nexusData.setIsBookingModalOpen, nexusData.newBookingForm, nexusData.setNewBookingForm, nexusData.handleSaveBooking, nexusData.handleExportICS, nexusData.isCalendarSyncOpen, nexusData.setIsCalendarSyncOpen, nexusData.calendarSyncUrl, nexusData.setCalendarSyncUrl, nexusData.handleSaveCalendarSync, nexusData.setSelectedScheduleEvent,
-    nexusData.agencySettings, nexusData.calendar, nexusData.clientNames, nexusData.globalFeatures, nexusData.globalSettings, nexusData.handleSaveAssignees, nexusData.handleSaveCredentials, nexusData.handleSyncAll, nexusData.handleUpdateGlobalSetting, nexusData.isSyncing, nexusData.isTraining, nexusData.onResetTraining, nexusData.onStartTraining, nexusData.relayOnline, nexusData.setProfiles, nexusData.syncProgress, nexusData.syncStatus, nexusData.toggleOperatorStatus, nexusData.trainingProgress, nexusData.stats, nexusData.fetchClientByPhone, nexusData.initData, _activeContextTab, _setActiveContextTab, _inlinePanelTab, _setInlinePanelTab, _addUserModalAgencyId, _setAddUserModalAgencyId, nexusData.updateClientName, activeSafetySession, isTimerActive, timeLeft, formatSafetyTime, nexusData.handleCheckIn, nexusData.handleCheckOut, nexusData.handleSafetyImOk, nexusData.isSafetyLoading, nexusData.handleEditBooking, nexusData.handleDeleteBooking, nexusData.fetchAllReferrals, nexusData.handleConfirmReferral, nexusData.isMaintenanceMode, nexusData.setIsMaintenanceMode, nexusData.globalAnnouncement, nexusData.setGlobalAnnouncement, nexusData.publishGlobalAnnouncement, nexusData.sourceText, nexusData.setSourceText, nexusData.translatedText, nexusData.isTranslating, nexusData.translateTargetLang, nexusData.setTranslateTargetLang, nexusData.handleTranslate, nexusData.isBackgroundLoading, nexusData.hasHydrated]);
+    nexusData.agencySettings, nexusData.calendar, nexusData.clientNames, nexusData.globalFeatures, nexusData.globalSettings, nexusData.handleSaveAssignees, nexusData.handleSaveCredentials, nexusData.handleSyncAll, nexusData.handleUpdateGlobalSetting, nexusData.isSyncing, nexusData.isTraining, nexusData.onResetTraining, nexusData.onStartTraining, nexusData.relayOnline, nexusData.setProfiles, nexusData.syncProgress, nexusData.syncStatus, nexusData.toggleOperatorStatus, nexusData.trainingProgress, nexusData.stats, nexusData.fetchClientByPhone, nexusData.initData, _activeContextTab, _setActiveContextTab, _inlinePanelTab, _setInlinePanelTab, _addUserModalAgencyId, _setAddUserModalAgencyId, nexusData.updateClientName, activeSafetySession, isTimerActive, timeLeft, formatSafetyTime, nexusData.handleCheckIn, nexusData.handleCheckOut, nexusData.handleSafetyImOk, nexusData.isSafetyLoading, nexusData.handleEditBooking, nexusData.handleDeleteBooking, nexusData.fetchAllReferrals, nexusData.handleConfirmReferral, nexusData.isMaintenanceMode, nexusData.setIsMaintenanceMode, nexusData.globalAnnouncement, nexusData.setGlobalAnnouncement, nexusData.publishGlobalAnnouncement, nexusData.sourceText, nexusData.setSourceText, nexusData.translatedText, nexusData.isTranslating, nexusData.translateTargetLang, nexusData.setTranslateTargetLang, nexusData.handleTranslate, nexusData.isBackgroundLoading, nexusData.hasHydrated, startCall, registerSipDialer, nexusData.sipDids]);
 
   return (
     <NexusContext.Provider value={value}>

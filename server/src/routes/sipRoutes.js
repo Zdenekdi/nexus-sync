@@ -15,6 +15,8 @@ router.post('/status/ping', auth, express.json(), sip.ping);
 router.get('/status', auth, sip.getStatus);
 
 // Web operátor: metadata o probíhajícím hovoru (jméno modelky dle caller čísla)
+router.get('/dids', auth, sip.getDids);
+
 router.get('/call-meta', auth, sip.getCallMeta);
 
 // Admin: manuální regenerace Asterisk konfigurace z DB + SSH nasazení
