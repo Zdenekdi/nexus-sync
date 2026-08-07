@@ -100,22 +100,42 @@ zbylých 12 je potřeba doimplementovat.
 
 ## Co zbývá
 
-Dalších 14 endpointů se pořád propadá do zachytávače. Server je má všechny,
-klient je volá — jen v mock souboru nejsou:
+Tři z původního seznamu jsou hotové — a u každého se za tím prázdnem něco
+skrývalo, takže to nebyla jen formalita:
+
+| Doplněno | Co se ukázalo |
+|---|---|
+| `/api/admin/feature-locks` | zámky jsou fail-closed; test hlídá, že při výpadku serveru zůstane sledování polohy zamčené |
+| `/api/device/bindings` | relay bez přiřazeného profilu tiše nic nedělá; varovný pruh se do teď nikdy nevykreslil |
+| `/api/agency/relay-status` | odznak „Agent online“ svítil zeleně, kdykoli měl kdokoli otevřený dashboard |
+
+Zbývá šestnáct. Server je má všechny, klient je volá — jen v mock souboru
+nejsou:
 
 | Endpoint | Co kvůli tomu v testech nejde ověřit |
 |---|---|
-| `/api/admin/feature-locks` | zamykání funkcí (`featureLocks.js` je fail-closed) |
-| `/api/subscriptions/current`, `/history` | předplatné a jeho historie |
+| `/api/subscriptions/current`, `/history`, `/plans` | předplatné a jeho historie |
 | `/api/trackers` | seznam lokátorů |
-| `/api/device/bindings` | spárovaná zařízení |
-| `/api/sip/config`, `/api/agency/relay-status` | VoIP a stav relaye |
+| `/api/sip/config` | VoIP konfigurace |
 | `/api/agency/stats` | přehled v QA Hubu |
+| `/api/audit-logs` | auditní záznamy — pozor, ruta `**/audit-logs/**` v mocích existuje, ale `/api/audit-logs` bez lomítka na konci nechytá |
+| `/api/blacklist` | černá listina |
+| `/api/ai/test` | zkouška AI napojení |
+| `/api/admin/infra-health` | zdraví infrastruktury |
 | `/api/vultr/status`, `/bandwidth`, `/apk-info`, `/agent-downloads` | infrastrukturní panel |
 | `/api/hetzner/status`, `/metrics` | infrastrukturní panel |
 
 Doplňovat je má smysl vždycky spolu s testem, který na daných datech něco
 tvrdí. Samotný mock bez testu jen posune prázdno o úroveň dál.
+
+**Globální mock ať drží nejnudnější možný stav.** Prázdný seznam, vypnutá
+funkce, nízký tarif. Jednou jsem do něj dal `plan: 'Professional'` a rozbil
+tím čtyři testy nákupu vyššího tarifu. Spec, který potřebuje bohatší data,
+si rutu přebije sám — a rovnou tím řekne, na čem stojí.
+
+**Ke každému testu patří kontrolní vzorek.** Tvrzení „něco tam není“ platí
+i na prázdné stránce, takže bez opačného případu neověřuje nic. Dvakrát se
+kvůli tomu tady zelenal test, který se ve skutečnosti chytal něčeho jiného.
 
 ## Jak si seznam ověřit znovu
 

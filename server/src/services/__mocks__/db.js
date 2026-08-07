@@ -20,7 +20,7 @@ const prismaMock = {
   gpsTracker: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn() },
   gpsTrackerLocation: { findMany: jest.fn(), create: jest.fn() },
   blacklistEntry: { findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn(), count: jest.fn() },
-  deviceBinding: { findFirst: jest.fn(), findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), updateMany: jest.fn(), upsert: jest.fn(), delete: jest.fn() },
+  deviceBinding: { findFirst: jest.fn(), findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), updateMany: jest.fn(), upsert: jest.fn(), delete: jest.fn(), count: jest.fn() },
   dailyStat: { findMany: jest.fn(), create: jest.fn() },
   callLog: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), count: jest.fn() },
   inventory: { findMany: jest.fn(), create: jest.fn(), update: jest.fn() },
