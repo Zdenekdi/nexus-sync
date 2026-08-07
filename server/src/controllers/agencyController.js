@@ -2,7 +2,6 @@ const prisma = require('../services/db');
 const logger = require('../services/logger');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
-const { getRoomSize } = require('../services/socket');
 const { isEffectiveAdmin } = require('./roleController');
 
 exports.getUsers = async (req, res) => {
@@ -216,11 +215,38 @@ exports.addUser = async (req, res) => {
   }
 };
 
+// Doba, po kterou se relay bere jako připojený. Foreground service se ptá na
+// outbox každých 30 s, takže dvě minuty snesou tři zmeškané dotazy — dost na
+// krátký výpadek sítě, málo na to, aby vypnutý telefon svítil zeleně dlouho.
+const RELAY_ONLINE_MS = 2 * 60 * 1000;
+
 exports.getRelayStatus = async (req, res) => {
   try {
     const { agencyId } = req.user;
-    const connectedCount = getRoomSize(`agency_${agencyId}`);
-    res.json({ online: connectedCount > 0, activeRelays: connectedCount });
+    if (!agencyId) return res.json({ online: false, activeRelays: 0 });
+
+    // Dřív se počítala velikost místnosti `agency_<id>`. Do té ale vstupuje
+    // KAŽDÝ přihlášený socket včetně prohlížečů operátorek (socket.js), takže
+    // odznak „Agent online" svítil zeleně, kdykoli měl někdo otevřený
+    // dashboard — i když nebyl připojený žádný relay telefon. U ukazatele,
+    // podle kterého se pozná, jestli vůbec chodí SMS, je to horší než nic.
+    //
+    // Nešlo to spočítat ani podle místnosti `relay:<installationId>`: do ní se
+    // hlásí jedině NexusInCall.js, tedy GSM most, který je od #96 výchozí
+    // vypnutý. Stav by pak hlásil offline pořád.
+    //
+    // lastSeenAt je oproti tomu skutečný tep zařízení — obnovuje ho příchozí
+    // SMS (handleRelay), dotaz na outbox (getOutbox) i SIP ping.
+    const cerstve = new Date(Date.now() - RELAY_ONLINE_MS);
+    const activeRelays = await prisma.deviceBinding.count({
+      where: {
+        agencyId: String(agencyId),
+        active: true,
+        lastSeenAt: { gte: cerstve },
+      },
+    });
+
+    res.json({ online: activeRelays > 0, activeRelays });
   } catch (error) {
     res.status(500).json({ message: 'Failed' });
   }
