@@ -182,7 +182,7 @@ export default function TrunkManager() {
                   <code style={{ fontWeight: 700 }}>{d.number}</code>
                   <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>→ {d.profile?.name || '(nenamapováno)'}</span>
                 </div>
-                <button onClick={() => deleteDid(t.id, d.id)} style={{ background: 'none', border: 'none', color: 'var(--_err-color, #ef4444)', cursor: 'pointer' }}><Trash2 size={14} /></button>
+                <button onClick={() => deleteDid(t.id, d.id)} style={{ background: 'none', border: 'none', color: 'var(--error-color)', cursor: 'pointer' }}><Trash2 size={14} /></button>
               </div>
             ))}
 

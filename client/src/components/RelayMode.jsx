@@ -302,7 +302,7 @@ const RelayMode = ({ operator, t, onHide: _onHide, onExit, syncPushToken, isSync
     },
     disconnected: {
       label: t('relayDisconnected') || 'DISCONNECTED',
-      color: 'var(--_err-color)',
+      color: 'var(--error-color)',
       icon: AlertCircle
     }
   };
@@ -977,8 +977,8 @@ const RelayMode = ({ operator, t, onHide: _onHide, onExit, syncPushToken, isSync
 
        <div style={{ padding: '1.5rem', borderRadius: '20px', background: isActive ? 'rgba(34, 197, 94, 0.05)' : 'rgba(239, 68, 68, 0.05)', border: `1px solid ${isActive ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`, width: '100%', maxWidth: '320px', textAlign: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: isActive ? 'var(--success-color)' : 'var(--_err-color)', boxShadow: `0 0 10px ${isActive ? 'var(--success-color)' : 'var(--_err-color)'}` }} />
-            <span style={{ fontWeight: '800', fontSize: '1.1rem', color: isActive ? 'var(--success-color)' : 'var(--_err-color)' }}>
+            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: isActive ? 'var(--success-color)' : 'var(--error-color)', boxShadow: `0 0 10px ${isActive ? 'var(--success-color)' : 'var(--error-color)'}` }} />
+            <span style={{ fontWeight: '800', fontSize: '1.1rem', color: isActive ? 'var(--success-color)' : 'var(--error-color)' }}>
               {isActive ? (lang === 'cz' ? 'RELAY AKTIVNÍ' : 'RELAY ACTIVE') : (lang === 'cz' ? 'RELAY POZASTAVEN' : 'RELAY PAUSED')}
             </span>
           </div>
@@ -992,11 +992,11 @@ const RelayMode = ({ operator, t, onHide: _onHide, onExit, syncPushToken, isSync
        {/* Status Badges */}
        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)' }}>
-             <Server size={16} color={isServerConnected ? 'var(--success-color)' : 'var(--_err-color)'} />
+             <Server size={16} color={isServerConnected ? 'var(--success-color)' : 'var(--error-color)'} />
              <span style={{ fontSize: '0.8rem', fontWeight: '800' }}>{isServerConnected ? 'API OK' : 'Offline'}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)' }}>
-             <Battery size={16} color={batteryLevel > 20 ? 'var(--success-color)' : 'var(--_err-color)'} />
+             <Battery size={16} color={batteryLevel > 20 ? 'var(--success-color)' : 'var(--error-color)'} />
              <span style={{ fontSize: '0.8rem', fontWeight: '800' }}>{Math.round(batteryLevel)}% {isCharging && '⚡'}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)' }}>
@@ -1015,7 +1015,7 @@ const RelayMode = ({ operator, t, onHide: _onHide, onExit, syncPushToken, isSync
           
           <button
             onClick={handleExitMode}
-            style={{ padding: '1rem', borderRadius: '14px', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', color: 'var(--_err-color)', fontWeight: '900', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            style={{ padding: '1rem', borderRadius: '14px', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', color: 'var(--error-color)', fontWeight: '900', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             {lang === 'cz' ? 'Odhlásit (Ukončit)' : 'Logout (Exit)'}
           </button>
        </div>

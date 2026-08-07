@@ -228,7 +228,7 @@ const AIInsightCard = ({ stats, _agencies, systemHealth }) => {
               <div className="skeleton-text" style={{ width: '85%', height: '12px', borderRadius: '4px' }}></div>
             </div>
           ) : aiError ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--_err-color)', fontSize: '0.85rem', fontWeight: '600', padding: '1rem', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--error-color)', fontSize: '0.85rem', fontWeight: '600', padding: '1rem', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '10px' }}>
               <AlertCircle size={18} /> {aiError}
             </div>
           ) : insight ? (

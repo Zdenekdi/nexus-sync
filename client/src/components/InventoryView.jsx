@@ -134,7 +134,7 @@ const InventoryView = () => {
     };
   }, [items, selectedLocation]);
 
-  const getColor = (q, t) => q === 0 ? 'var(--_err-color)' : q <= t ? 'var(--warning-color)' : 'var(--success-color)';
+  const getColor = (q, t) => q === 0 ? 'var(--error-color)' : q <= t ? 'var(--warning-color)' : 'var(--success-color)';
   const getLabel = (q, thr) => q === 0 ? (t?.outOfStock || 'Out of Stock') : q <= thr ? (t?.lowStock || 'Low Stock') : (t?.inStock || 'In Stock');
   const locName = (id) => locations.find(l => l.id === id)?.name || id;
 
@@ -200,7 +200,7 @@ const InventoryView = () => {
                 <Plus size={16} />
               </button>
               {selectedLocation !== 'all' && (
-                <button onClick={() => handleDeleteLocation(selectedLocation)} title="Smazat lokaci" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', padding: '0.55rem', borderRadius: '10px', color: 'var(--_err-color)', cursor: 'pointer', display: 'flex' }}>
+                <button onClick={() => handleDeleteLocation(selectedLocation)} title="Smazat lokaci" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', padding: '0.55rem', borderRadius: '10px', color: 'var(--error-color)', cursor: 'pointer', display: 'flex' }}>
                   <Trash2 size={16} />
                 </button>
               )}
@@ -223,7 +223,7 @@ const InventoryView = () => {
         {[
           { label: t?.itemsInStock || 'Skladem', val: stats.inStock, color: 'var(--accent-color)', Icon: PackageIcon },
           { label: t?.lowStockItems || 'Nízké zásoby', val: stats.lowStock, color: 'var(--warning-color)', Icon: AlertTriangle },
-          { label: t?.outOfStockItems || 'Vyprodáno', val: stats.outOfStock, color: 'var(--_err-color)', Icon: XCircle },
+          { label: t?.outOfStockItems || 'Vyprodáno', val: stats.outOfStock, color: 'var(--error-color)', Icon: XCircle },
           { label: 'Celkem položek', val: stats.total, color: 'var(--success-color)', Icon: CheckCircle2 },
         ].map(({ label, val, color, Icon: _Icon }) => (
           <div key={label} className="glass-card" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
@@ -266,7 +266,7 @@ const InventoryView = () => {
                     <button onClick={() => setEditingQty({ id: item.id, value: item.quantity })} style={{ fontWeight: '800', fontSize: '1.1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '8px', color: item.quantity <= item.threshold ? 'var(--warning-color)' : 'white', padding: '0.3rem 0.75rem', cursor: 'pointer' }}>{item.quantity} <span style={{ fontSize: '0.7rem', opacity: 0.5 }}>{item.unit || 'ks'}</span></button>
                   )}
                   {renderConsumeButtons(item)}
-                  <button onClick={() => handleDeleteItem(item.id)} style={{ background: 'none', border: 'none', color: 'var(--_err-color)', cursor: 'pointer', marginLeft: 'auto', display: 'flex' }}><Trash2 size={16} /></button>
+                  <button onClick={() => handleDeleteItem(item.id)} style={{ background: 'none', border: 'none', color: 'var(--error-color)', cursor: 'pointer', marginLeft: 'auto', display: 'flex' }}><Trash2 size={16} /></button>
                 </div>
               </div>
             ))}

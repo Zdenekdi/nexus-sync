@@ -122,9 +122,9 @@ const SystemHealthTab = ({ server }) => {
   );
 
   if (error && !health) return (
-    <div className="glass-card" style={{ padding: '2rem', textAlign: 'center', border: '1px solid var(--_err-color)' }}>
-      <AlertTriangle size={48} color="var(--_err-color)" style={{ marginBottom: '1rem' }} />
-      <p style={{ color: 'var(--_err-color)', fontWeight: '700' }}>{error}</p>
+    <div className="glass-card" style={{ padding: '2rem', textAlign: 'center', border: '1px solid var(--error-color)' }}>
+      <AlertTriangle size={48} color="var(--error-color)" style={{ marginBottom: '1rem' }} />
+      <p style={{ color: 'var(--error-color)', fontWeight: '700' }}>{error}</p>
       <button onClick={fetchHealth} className="action-btn" style={{ marginTop: '1rem', background: 'var(--accent-color)' }}>
         <RefreshCw size={14} style={{ marginRight: '0.5rem' }} /> {t('retry')}
       </button>
@@ -304,7 +304,7 @@ const UsageBar = ({ label, percent, value, color }) => (
         <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>{label.toUpperCase()}</div>
         <div style={{ fontSize: '1rem', fontWeight: '900' }}>{value}</div>
       </div>
-      <div style={{ fontSize: '1.25rem', fontWeight: '900', color: percent > 90 ? 'var(--_err-color)' : percent > 75 ? 'var(--warning-color)' : 'white' }}>{Math.round(percent)}%</div>
+      <div style={{ fontSize: '1.25rem', fontWeight: '900', color: percent > 90 ? 'var(--error-color)' : percent > 75 ? 'var(--warning-color)' : 'white' }}>{Math.round(percent)}%</div>
     </div>
     <div style={{ width: '100%', height: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden', padding: '2px' }}>
       <div style={{ width: `${percent}%`, height: '100%', background: color, borderRadius: '10px', transition: 'width 1s ease-out', boxShadow: `0 0 10px ${color}44` }}></div>

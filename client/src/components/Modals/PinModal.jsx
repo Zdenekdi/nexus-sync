@@ -93,7 +93,7 @@ const PinModal = ({ onSuccess, onCancel, title, description }) => {
                 width: '50px',
                 height: '60px',
                 background: 'rgba(255,255,255,0.05)',
-                border: `2px solid ${_err ? 'var(--_err-color)' : (digit ? 'var(--accent-color)' : 'var(--card-border)')}`,
+                border: `2px solid ${_err ? 'var(--error-color)' : (digit ? 'var(--accent-color)' : 'var(--card-border)')}`,
                 borderRadius: '12px',
                 textAlign: 'center',
                 fontSize: '1.5rem',
@@ -107,7 +107,7 @@ const PinModal = ({ onSuccess, onCancel, title, description }) => {
         </div>
 
         {_err && (
-          <div style={{ color: 'var(--_err-color)', fontSize: '0.85rem', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', marginBottom: '1.5rem' }}>
+          <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', marginBottom: '1.5rem' }}>
             <AlertTriangle size={14} /> {_err}
           </div>
         )}
