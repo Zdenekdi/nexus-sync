@@ -250,7 +250,7 @@ const CalendarView = () => {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: '700', fontSize: isMobile ? '0.9rem' : '1rem', marginBottom: '0.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.title}</div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: (event.status || '').toLowerCase() === 'busy' ? 'var(--_err-color)' : 'var(--success-color)' }}></div>
+                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: (event.status || '').toLowerCase() === 'busy' ? 'var(--error-color)' : 'var(--success-color)' }}></div>
                         {(event.status || 'AVAILABLE').toUpperCase()}
                       </div>
                     </div>

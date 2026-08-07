@@ -120,7 +120,7 @@ const MobileBottomNav = () => {
                   position: 'absolute',
                   top: '-5px',
                   right: '-10px',
-                  background: 'var(--_err-color)',
+                  background: 'var(--error-color)',
                   color: 'white',
                   borderRadius: '10px',
                   minWidth: '16px',

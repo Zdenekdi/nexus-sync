@@ -102,8 +102,8 @@ function InfraTab() {
   const statusColor = {
     running: "var(--success-color)",
     active: "var(--success-color)",
-    stopped: "var(--_err-color)",
-    off: "var(--_err-color)",
+    stopped: "var(--error-color)",
+    off: "var(--error-color)",
     pending: "var(--accent-color)",
     starting: "var(--accent-color)",
     stopping: "var(--accent-color)",
@@ -184,8 +184,8 @@ function InfraTab() {
 
       {_err && (
         <div className="glass-card" style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '0.75rem', borderRadius: '12px' }}>
-          <AlertCircle size={20} color="var(--_err-color)" />
-          <div style={{ fontSize: '0.85rem', color: 'var(--_err-color)', fontWeight: '600' }}>{_err}</div>
+          <AlertCircle size={20} color="var(--error-color)" />
+          <div style={{ fontSize: '0.85rem', color: 'var(--error-color)', fontWeight: '600' }}>{_err}</div>
         </div>
       )}
 
@@ -265,7 +265,7 @@ function InfraTab() {
                 onClick={() => serverAction("stop")} 
                 disabled={loading || status?.power_status === 'stopped'}
                 className="action-button _err"
-                style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: 'var(--_err-color)', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: (loading || status?.power_status === 'stopped') ? 0.3 : 1 }}
+                style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: 'var(--error-color)', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: (loading || status?.power_status === 'stopped') ? 0.3 : 1 }}
               >
                 <Square size={14} fill="currentColor" /> {t('stop').toUpperCase()}
               </button>
@@ -440,7 +440,7 @@ function InfraTab() {
               )}
             </div>
 
-            {apkError && <div style={{ fontSize: '0.72rem', color: 'var(--_err-color)', marginTop: '0.5rem' }}>{apkError}</div>}
+            {apkError && <div style={{ fontSize: '0.72rem', color: 'var(--error-color)', marginTop: '0.5rem' }}>{apkError}</div>}
             {apkSuccess && <div style={{ fontSize: '0.72rem', color: 'var(--success-color)', marginTop: '0.5rem' }}>{t('apk_uploaded_success')}</div>}
           </div>
         </div>

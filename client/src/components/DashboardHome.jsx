@@ -180,7 +180,7 @@ const DashboardHome = () => {
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('totalMessages', 'TOTAL MESSAGES').toUpperCase()}</div>
                 <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{(stats || {}).totalMessages || 0}</div>
                 {totalUnread > 0 && (
-                  <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'var(--_err-color)', color: 'white', borderRadius: '10px', padding: '0 6px', fontSize: '0.65rem', fontWeight: 'bold' }}>
+                  <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'var(--error-color)', color: 'white', borderRadius: '10px', padding: '0 6px', fontSize: '0.65rem', fontWeight: 'bold' }}>
                     {totalUnread}
                   </div>
                 )}
@@ -248,8 +248,8 @@ const DashboardHome = () => {
     const statusColor = {
       running: "var(--success-color)",
       active: "var(--success-color)",
-      stopped: "var(--_err-color)",
-      off: "var(--_err-color)",
+      stopped: "var(--error-color)",
+      off: "var(--error-color)",
     }[currentServerStatus?.power_status?.toLowerCase()] ?? "var(--text-secondary)";
 
     return (
@@ -554,7 +554,7 @@ const DashboardHome = () => {
                  <MessageSquare size={18} color="var(--text-secondary)" style={{ opacity: 0.3 }} />
                </div>
                {totalUnread > 0 && (
-                 <div style={{ position: 'absolute', top: '15px', right: '15px', background: 'var(--_err-color)', color: 'white', borderRadius: '12px', padding: '2px 8px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                 <div style={{ position: 'absolute', top: '15px', right: '15px', background: 'var(--error-color)', color: 'white', borderRadius: '12px', padding: '2px 8px', fontSize: '0.75rem', fontWeight: 'bold' }}>
                    {totalUnread}
                  </div>
                )}

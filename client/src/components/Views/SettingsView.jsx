@@ -744,7 +744,7 @@ const SettingsView = () => {
                 </div>
                 <div 
                   className={`status-badge ${isMaintenanceMode ? 'active' : ''}`} 
-                  style={{ cursor: 'pointer', background: isMaintenanceMode ? 'var(--_err-color)' : 'rgba(255,255,255,0.06)' }}
+                  style={{ cursor: 'pointer', background: isMaintenanceMode ? 'var(--error-color)' : 'rgba(255,255,255,0.06)' }}
                   onClick={() => setIsMaintenanceMode(!isMaintenanceMode)}
                 >
                   {isMaintenanceMode ? 'ACTIVE' : 'INACTIVE'}

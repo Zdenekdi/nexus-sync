@@ -426,7 +426,7 @@ const WebProfilesView = () => {
                 padding: '4px 10px', 
                 borderRadius: '20px', 
                 background: relayOnline ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                color: relayOnline ? 'var(--success-color)' : 'var(--_err-color)',
+                color: relayOnline ? 'var(--success-color)' : 'var(--error-color)',
                 border: `1px solid ${relayOnline ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
                 fontWeight: '800'
               }}>
@@ -740,7 +740,7 @@ const WebProfilesView = () => {
                 ></textarea>
                 <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', fontWeight: '700' }}>
                   <span style={{ opacity: 0.6 }}>{t('bioFormattingNote')}</span>
-                  <span style={{ color: (localBios[bioLang]?.length || 0) > 1800 ? 'var(--_err-color)' : 'var(--accent-color)' }}>
+                  <span style={{ color: (localBios[bioLang]?.length || 0) > 1800 ? 'var(--error-color)' : 'var(--accent-color)' }}>
                     {localBios[bioLang]?.length || 0} / 2000
                   </span>
                 </div>
