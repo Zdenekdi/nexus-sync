@@ -202,7 +202,7 @@ export default function TeamChatFloat() {
     <>
       {/* ── Chat Panel ── */}
       {open && (
-        <div style={{
+        <div data-testid="team-chat-panel" style={{
           position: 'fixed',
           bottom: isMobile ? '80px' : '88px',
           right: rightOffset,

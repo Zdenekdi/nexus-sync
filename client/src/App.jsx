@@ -2,7 +2,8 @@ import React, { Suspense, useState } from "react";
 import { 
   Loader2, Menu, LayoutDashboard, MessageSquare, Calendar, 
   Shield, Users, Globe, Smartphone, FileSearch, BarChart3, 
-  Activity, Settings, UserCheck, Terminal, Lock, Mail, Eye, EyeOff
+  Activity, Settings, UserCheck, Terminal, Lock, Mail, Eye, EyeOff,
+  KeyRound, Package, Gift, Wallet
 } from 'lucide-react';
 import { useNexus } from './context/ContextHook';
 import GlobalAppStyles from './styles/GlobalAppStyles';
@@ -138,7 +139,22 @@ function AppContent() {
     crm: { label: t('crm') || 'CRM', icon: UserCheck },
     activity: { label: t('activity'), icon: Activity },
     developer: { label: 'Developer API', icon: Terminal },
-    settings: { label: t('settings'), icon: Settings }
+    settings: { label: t('settings'), icon: Settings },
+
+    // Na telefonu se nadpis stránky bere JEN odsud: index.css uvnitř
+    // aplikace schovává všechny h1/h2 (@media max-width: 768px) s tím, že
+    // titulek patří do horní lišty. Když tady klíč chybí, spadne se na
+    // `t('dashboard')` — uživatel má na obrazovce Klíče od salonu
+    // a lišta hlásí Dashboard.
+    //
+    // Těmhle šesti to chybělo. Popisky jsou schválně stejné jako
+    // v Sidebar.jsx, ať lišta říká totéž, na co uživatel klikl.
+    'audit-logs':   { label: t('auditLogs'), icon: FileSearch },
+    'salon-keys':   { label: t('salonKeys') || 'Klíče od salonu', icon: KeyRound },
+    'safety-guard': { label: t('safetyGuard'), icon: Activity },
+    inventory:      { label: t('inventory'), icon: Package },
+    referrals:      { label: t('referrals'), icon: Gift },
+    payouts:        { label: t('payouts'), icon: Wallet }
   };
 
   const isPrivacyPage = typeof window !== 'undefined' && 

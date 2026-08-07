@@ -21,6 +21,21 @@ async function navigateTo(page, tab) {
   await link.click();
 }
 
+// ── Nadpis stránky: na telefonu je jinde ─────────────────────────────────────
+// index.css uvnitř aplikace schovává všechny h1/h2 (@media max-width: 768px)
+// s tím, že titulek patří do horní lišty. Kontrolovat na mobilu h1 tedy
+// nedává smysl — vždycky bude skrytý. Zároveň je to užitečná kontrola: lišta
+// bere popisek z mapy `viewTitles` v App.jsx a při chybějícím klíči spadne
+// na „Dashboard", takže tenhle test odhalí, když někdo přidá stránku
+// a na nadpis pro telefon zapomene.
+async function ocekavejNadpis(page, testInfo, vzor, timeout = 15000) {
+  if (testInfo.project.name === 'mobile') {
+    await expect(page.locator('.mobile-top-bar h2').filter({ hasText: vzor })).toBeVisible({ timeout });
+  } else {
+    await expect(page.locator('h1').filter({ hasText: vzor })).toBeVisible({ timeout });
+  }
+}
+
 // ── Selector helpers that avoid strict-mode violations ───────────────────────
 // Looks for text INSIDE the chat panel only (avoids matching dashboard heading)
 const chatPanel = (page) => page.locator('.team-chat-panel, [data-testid="team-chat-panel"]')
@@ -31,13 +46,13 @@ const chatPanel = (page) => page.locator('.team-chat-panel, [data-testid="team-c
 // ────────────────────────────────────────────────────────────────────────────
 test.describe('Sledování klíčů od salonu', () => {
 
-  test('Manager vidí klíče a může je spravovat', async ({ page }) => {
+  test('Manager vidí klíče a může je spravovat', async ({ page }, testInfo) => {
     await setupApiMocks(page);
     await loginToApp(page, TEST_USERS.manager.email, TEST_USERS.manager.password);
     await navigateTo(page, 'salon-keys');
 
     // Heading — use data-testid or h1 inside the view to be precise
-    await expect(page.locator('h1').filter({ hasText: /klíče od salonu/i })).toBeVisible({ timeout: 15000 });
+    await ocekavejNadpis(page, testInfo, /klíče od salonu/i);
 
     // Oba mockované klíče musí být vidět
     await expect(page.getByText('Klíče od salonu').first()).toBeVisible({ timeout: 10000 });
@@ -47,24 +62,24 @@ test.describe('Sledování klíčů od salonu', () => {
     await expect(page.getByRole('button', { name: /přidat klíče/i })).toBeVisible();
   });
 
-  test('Volná sada klíčů zobrazuje tlačítko Převzít', async ({ page }) => {
+  test('Volná sada klíčů zobrazuje tlačítko Převzít', async ({ page }, testInfo) => {
     await setupApiMocks(page);
     await loginToApp(page, TEST_USERS.manager.email, TEST_USERS.manager.password);
     await navigateTo(page, 'salon-keys');
 
-    await expect(page.locator('h1').filter({ hasText: /klíče od salonu/i })).toBeVisible({ timeout: 15000 });
+    await ocekavejNadpis(page, testInfo, /klíče od salonu/i);
 
     // "Klíče od salonu" jsou volné → tlačítko Převzít
     const takeBtn = page.getByRole('button', { name: /převzít klíče/i }).first();
     await expect(takeBtn).toBeVisible({ timeout: 10000 });
   });
 
-  test('Obsazená sada klíčů zobrazuje držitele a čas', async ({ page }) => {
+  test('Obsazená sada klíčů zobrazuje držitele a čas', async ({ page }, testInfo) => {
     await setupApiMocks(page);
     await loginToApp(page, TEST_USERS.manager.email, TEST_USERS.manager.password);
     await navigateTo(page, 'salon-keys');
 
-    await expect(page.locator('h1').filter({ hasText: /klíče od salonu/i })).toBeVisible({ timeout: 15000 });
+    await ocekavejNadpis(page, testInfo, /klíče od salonu/i);
 
     // "Klíče – zadní vchod" jsou obsazené → vidíme Alici
     await expect(page.getByText('Alice (Senior Op)')).toBeVisible({ timeout: 10000 });
@@ -74,12 +89,12 @@ test.describe('Sledování klíčů od salonu', () => {
     await expect(page.getByText('MIMO SALON').first()).toBeVisible();
   });
 
-  test('Operátor vidí klíče, ale ne tlačítko Přidat', async ({ page }) => {
+  test('Operátor vidí klíče, ale ne tlačítko Přidat', async ({ page }, testInfo) => {
     await setupApiMocks(page);
     await loginToApp(page, TEST_USERS.operator.email, TEST_USERS.operator.password);
     await navigateTo(page, 'salon-keys');
 
-    await expect(page.locator('h1').filter({ hasText: /klíče od salonu/i })).toBeVisible({ timeout: 15000 });
+    await ocekavejNadpis(page, testInfo, /klíče od salonu/i);
 
     // Přidat klíče nesmí být viditelné pro operátora
     await expect(page.getByRole('button', { name: /přidat klíče/i })).not.toBeVisible();
@@ -88,24 +103,24 @@ test.describe('Sledování klíčů od salonu', () => {
     await expect(page.getByText('Klíče od salonu').first()).toBeVisible({ timeout: 10000 });
   });
 
-  test('Klik na Přidat klíče otevře modal', async ({ page }) => {
+  test('Klik na Přidat klíče otevře modal', async ({ page }, testInfo) => {
     await setupApiMocks(page);
     await loginToApp(page, TEST_USERS.manager.email, TEST_USERS.manager.password);
     await navigateTo(page, 'salon-keys');
 
-    await expect(page.locator('h1').filter({ hasText: /klíče od salonu/i })).toBeVisible({ timeout: 15000 });
+    await ocekavejNadpis(page, testInfo, /klíče od salonu/i);
     await page.getByRole('button', { name: /přidat klíče/i }).click();
 
     // Modal se otevřel — hledáme input (placeholder: např. "Klíče – Praha 1")
     await expect(page.getByPlaceholder(/klíče|vchod|např/i)).toBeVisible({ timeout: 5000 });
   });
 
-  test('Historie klíčů se otevře v modalu', async ({ page }) => {
+  test('Historie klíčů se otevře v modalu', async ({ page }, testInfo) => {
     await setupApiMocks(page);
     await loginToApp(page, TEST_USERS.manager.email, TEST_USERS.manager.password);
     await navigateTo(page, 'salon-keys');
 
-    await expect(page.locator('h1').filter({ hasText: /klíče od salonu/i })).toBeVisible({ timeout: 15000 });
+    await ocekavejNadpis(page, testInfo, /klíče od salonu/i);
 
     // Klik na historii (první dostupné tlačítko s title)
     const historyBtn = page.locator('button[title="Historie předání"]').first();
@@ -117,22 +132,22 @@ test.describe('Sledování klíčů od salonu', () => {
     await expect(page.getByText(/vráceno|vzato/i).first()).toBeVisible({ timeout: 5000 });
   });
 
-  test('Zelený stav V SALONU je zobrazen pro volné klíče', async ({ page }) => {
+  test('Zelený stav V SALONU je zobrazen pro volné klíče', async ({ page }, testInfo) => {
     await setupApiMocks(page);
     await loginToApp(page, TEST_USERS.operator.email, TEST_USERS.operator.password);
     await navigateTo(page, 'salon-keys');
 
-    await expect(page.locator('h1').filter({ hasText: /klíče od salonu/i })).toBeVisible({ timeout: 15000 });
+    await ocekavejNadpis(page, testInfo, /klíče od salonu/i);
     // Use .first() to avoid strict mode if text appears multiple times
     await expect(page.getByText('V SALONU').first()).toBeVisible({ timeout: 10000 });
   });
 
-  test('Shrnutí stavů — počty v záhlaví', async ({ page }) => {
+  test('Shrnutí stavů — počty v záhlaví', async ({ page }, testInfo) => {
     await setupApiMocks(page);
     await loginToApp(page, TEST_USERS.manager.email, TEST_USERS.manager.password);
     await navigateTo(page, 'salon-keys');
 
-    await expect(page.locator('h1').filter({ hasText: /klíče od salonu/i })).toBeVisible({ timeout: 15000 });
+    await ocekavejNadpis(page, testInfo, /klíče od salonu/i);
 
     // Mock: 1 volný + 1 obsazený → zobrazí se oba počítadla
     await expect(page.getByText(/1 mimo salon/i)).toBeVisible({ timeout: 10000 });
@@ -146,7 +161,7 @@ test.describe('Sledování klíčů od salonu', () => {
 // ────────────────────────────────────────────────────────────────────────────
 test.describe('Týmový interní chat', () => {
 
-  test('Plovoucí tlačítko chatu je viditelné po přihlášení', async ({ page }) => {
+  test('Plovoucí tlačítko chatu je viditelné po přihlášení', async ({ page }, testInfo) => {
     await setupApiMocks(page);
     await loginToApp(page, TEST_USERS.manager.email, TEST_USERS.manager.password);
 
@@ -154,7 +169,7 @@ test.describe('Týmový interní chat', () => {
     await expect(chatBtn).toBeVisible({ timeout: 15000 });
   });
 
-  test('Klik na tlačítko otevře chat panel', async ({ page }) => {
+  test('Klik na tlačítko otevře chat panel', async ({ page }, testInfo) => {
     await setupApiMocks(page);
     await loginToApp(page, TEST_USERS.manager.email, TEST_USERS.manager.password);
 
@@ -164,7 +179,7 @@ test.describe('Týmový interní chat', () => {
     await expect(page.locator('text=Týmový chat').first()).toBeVisible({ timeout: 8000 });
   });
 
-  test('Chat panel zobrazuje záložky místností', async ({ page }) => {
+  test('Chat panel zobrazuje záložky místností', async ({ page }, testInfo) => {
     await setupApiMocks(page);
     await loginToApp(page, TEST_USERS.manager.email, TEST_USERS.manager.password);
 
@@ -177,7 +192,7 @@ test.describe('Týmový interní chat', () => {
     await expect(page.getByRole('button', { name: /týmová nástěnka/i })).toBeVisible();
   });
 
-  test('Operátor nevidí místnost Manažeři', async ({ page }) => {
+  test('Operátor nevidí místnost Manažeři', async ({ page }, testInfo) => {
     await setupApiMocks(page);
     await loginToApp(page, TEST_USERS.operator.email, TEST_USERS.operator.password);
 
@@ -189,7 +204,7 @@ test.describe('Týmový interní chat', () => {
     await expect(page.getByRole('button', { name: /týmová nástěnka/i })).toBeVisible();
   });
 
-  test('Mockované zprávy se zobrazí v panelu', async ({ page }) => {
+  test('Mockované zprávy se zobrazí v panelu', async ({ page }, testInfo) => {
     await setupApiMocks(page);
     await loginToApp(page, TEST_USERS.manager.email, TEST_USERS.manager.password);
 
@@ -200,21 +215,31 @@ test.describe('Týmový interní chat', () => {
     await expect(page.getByText('Dobré ráno! ☀️')).toBeVisible();
   });
 
-  test('Jméno autora je zobrazeno nad cizí zprávou', async ({ page }) => {
+  test('Jméno autora je zobrazeno nad cizí zprávou', async ({ page }, testInfo) => {
     await setupApiMocks(page);
     await loginToApp(page, TEST_USERS.manager.email, TEST_USERS.manager.password);
 
     await page.getByTestId('team-chat-float-btn').click();
     await expect(page.locator('text=Týmový chat').first()).toBeVisible({ timeout: 8000 });
 
-    // Čekáme na zprávy — pak hledáme jméno autora UVNITŘ chat panelu (ne v headingu dashboardu)
     await expect(page.getByText('Ahoj všichni, nový den!')).toBeVisible({ timeout: 10000 });
-    // Hledáme span/div se jménem přesně — ne heading (exact match)
-    await expect(page.getByText('Jan (Manager)', { exact: true }).first()).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText('Alice (Senior Op)', { exact: true })).toBeVisible();
+
+    const panel = page.getByTestId('team-chat-panel');
+
+    // Cizí zpráva jméno autora nese.
+    await expect(panel.getByText('Alice (Senior Op)', { exact: true })).toBeVisible({ timeout: 5000 });
+
+    // Vlastní zpráva ho nést NEMÁ — panel ji pozná podle authorId a popisek
+    // vynechá (`!isOwn` v TeamChatPanel.jsx). Přihlášený je Jan, takže první
+    // zpráva je jeho.
+    //
+    // Původní verze čekala „Jan (Manager)" i tady a na počítači procházela —
+    // jenže se chytala uživatelské karty v postranním panelu, ne chatu.
+    // Na telefonu je postranní panel schovaný, a tím se to provalilo.
+    await expect(panel.getByText('Jan (Manager)', { exact: true })).toHaveCount(0);
   });
 
-  test('Přepnutí místnosti načte odpovídající zprávy', async ({ page }) => {
+  test('Přepnutí místnosti načte odpovídající zprávy', async ({ page }, testInfo) => {
     await setupApiMocks(page);
     await loginToApp(page, TEST_USERS.manager.email, TEST_USERS.manager.password);
 
@@ -225,7 +250,7 @@ test.describe('Týmový interní chat', () => {
     await expect(page.getByText('Ahoj všichni, nový den!')).toBeVisible({ timeout: 8000 });
   });
 
-  test('Textové pole a tlačítko Odeslat jsou přítomny', async ({ page }) => {
+  test('Textové pole a tlačítko Odeslat jsou přítomny', async ({ page }, testInfo) => {
     await setupApiMocks(page);
     await loginToApp(page, TEST_USERS.operator.email, TEST_USERS.operator.password);
 
@@ -236,7 +261,7 @@ test.describe('Týmový interní chat', () => {
     await expect(textarea).toBeVisible();
   });
 
-  test('Odeslání zprávy funguje (optimistic update)', async ({ page }) => {
+  test('Odeslání zprávy funguje (optimistic update)', async ({ page }, testInfo) => {
     await setupApiMocks(page);
     await loginToApp(page, TEST_USERS.manager.email, TEST_USERS.manager.password);
 
@@ -250,7 +275,7 @@ test.describe('Týmový interní chat', () => {
     await expect(page.getByText('Testovací zpráva z E2E testu')).toBeVisible({ timeout: 5000 });
   });
 
-  test('Tlačítko X zavře chat panel', async ({ page }) => {
+  test('Tlačítko X zavře chat panel', async ({ page }, testInfo) => {
     await setupApiMocks(page);
     await loginToApp(page, TEST_USERS.manager.email, TEST_USERS.manager.password);
 
@@ -261,7 +286,7 @@ test.describe('Týmový interní chat', () => {
     await expect(page.locator('text=Týmový chat').first()).not.toBeVisible({ timeout: 3000 });
   });
 
-  test('Minimalizovat skryje panel a ukáže chip', async ({ page }) => {
+  test('Minimalizovat skryje panel a ukáže chip', async ({ page }, testInfo) => {
     await setupApiMocks(page);
     await loginToApp(page, TEST_USERS.manager.email, TEST_USERS.manager.password);
 
@@ -274,7 +299,7 @@ test.describe('Týmový interní chat', () => {
     await expect(page.getByRole('button', { name: /💬 chat/i })).toBeVisible({ timeout: 3000 });
   });
 
-  test('Klik na chip znovu otevře panel', async ({ page }) => {
+  test('Klik na chip znovu otevře panel', async ({ page }, testInfo) => {
     await setupApiMocks(page);
     await loginToApp(page, TEST_USERS.manager.email, TEST_USERS.manager.password);
 
@@ -287,20 +312,20 @@ test.describe('Týmový interní chat', () => {
     await expect(page.locator('text=Týmový chat').first()).toBeVisible({ timeout: 5000 });
   });
 
-  test('Chat funguje současně s libovolným view (Klíče)', async ({ page }) => {
+  test('Chat funguje současně s libovolným view (Klíče)', async ({ page }, testInfo) => {
     await setupApiMocks(page);
     await loginToApp(page, TEST_USERS.manager.email, TEST_USERS.manager.password);
 
     await navigateTo(page, 'salon-keys');
-    await expect(page.locator('h1').filter({ hasText: /klíče od salonu/i })).toBeVisible({ timeout: 15000 });
+    await ocekavejNadpis(page, testInfo, /klíče od salonu/i);
 
     await page.getByTestId('team-chat-float-btn').click();
     await expect(page.locator('text=Týmový chat').first()).toBeVisible({ timeout: 8000 });
 
-    await expect(page.locator('h1').filter({ hasText: /klíče od salonu/i })).toBeVisible();
+    await ocekavejNadpis(page, testInfo, /klíče od salonu/i);
   });
 
-  test('Modelka vidí Obecné a Týmovou nástěnku, ne Manažery', async ({ page }) => {
+  test('Modelka vidí Obecné a Týmovou nástěnku, ne Manažery', async ({ page }, testInfo) => {
     await setupApiMocks(page);
     await loginToApp(page, TEST_USERS.model.email, TEST_USERS.model.password);
 

@@ -189,6 +189,15 @@ h1 {
   .auth-screen header {
     display: block !important;
   }
+
+  /* Horní lišta je přesně to místo, KAM se nadpisy měly na telefonu
+     přesunout — jenže pravidlo výše schovává h2 globálně, takže schovalo
+     i ji. Výsledek: na telefonu nebyl vidět nadpis stránky nikde, ani na
+     stránce, ani v liště. Platilo to od začátku a pro všechny obrazovky
+     včetně Dashboardu, takže si toho nikdo nemohl všimnout jako změny. */
+  .mobile-top-bar h2 {
+    display: block !important;
+  }
 }
 
 .mobile-top-bar {

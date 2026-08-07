@@ -2,6 +2,17 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Nexus Hub Onboarding Flow', () => {
   test.beforeEach(async ({ page }) => {
+    // Onboarding se vykresluje JEN v nativní aplikaci — `showOnboarding`
+    // v NexusContext.jsx má podmínku `isNativeApp &&`. Ve webu se místo něj
+    // ukazuje landing (a je to tak schválně). Testy proto celou dobu čekaly
+    // na obrazovku, která v prohlížeči nemůže vzniknout, a padaly.
+    //
+    // CapacitorCustomPlatform je oficiální způsob, jak Capacitoru podstrčit
+    // platformu; musí se nastavit dřív, než se stránka načte.
+    await page.addInitScript(() => {
+      window.CapacitorCustomPlatform = { name: 'android', plugins: {} };
+    });
+
     // Clear localStorage to ensure onboarding shows up
     await page.goto('/');
     await page.evaluate(() => localStorage.clear());

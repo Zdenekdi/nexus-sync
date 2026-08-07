@@ -32,6 +32,43 @@ export const TEST_USERS = {
   model:       { email: 'diana@nexus.sync',   password: 'password123',  roleName: 'Model'           },
 };
 
+let _dostupnost = null;
+
+/**
+ * Jednou zjistí, jestli živé API vůbec odpovídá.
+ *
+ * Lokálně míří API_BASE na http://localhost:3000/api, kde obvykle nic neběží.
+ * Testy proti živému API tam padaly na odmítnuté spojení a dělaly v každém
+ * běhu 28 falešně červených řádků. V takovém šumu nejde poznat skutečný
+ * regres — a přesně kvůli tomu jsem ho dvakrát přehlédl.
+ *
+ * V CI se NIKDY nepřeskakuje. Tam běží krok „Check API is reachable“, který
+ * job shodí dřív; kdyby se skákalo i tam, výpadek backendu by vypadal jako
+ * úspěšný běh a bezpečnostní testy by tiše zmizely.
+ */
+export async function apiJeDostupne() {
+  if (process.env.CI) return true;
+  if (_dostupnost !== null) return _dostupnost;
+
+  const base = API_BASE.replace(/\/+$/, '').replace(/\/api$/, '');
+  try {
+    const res = await axios.get(`${base}/api/health`, {
+      timeout: 3000,
+      validateStatus: () => true,
+    });
+    // 5xx znamená, že něco běží, ale je to rozbité — to je nález, ne prostředí.
+    _dostupnost = res.status < 500;
+  } catch {
+    _dostupnost = false;
+  }
+  return _dostupnost;
+}
+
+/** Hláška do přeskočených testů, ať je z reportu poznat proč. */
+export const DUVOD_BEZ_API =
+  `Živé API na ${API_BASE} neodpovídá — testy proti němu se lokálně přeskakují. `
+  + 'V CI se nepřeskakují nikdy (job má vlastní kontrolu dostupnosti).';
+
 /**
  * Login a user and return { token, user }.
  * Returns null on failure instead of throwing — lets beforeAll skip gracefully.
