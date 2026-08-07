@@ -213,8 +213,18 @@ android {
         }
 
         release {
-            // First check local.properties (localPropsGlobal)
-            if (localPropsGlobal.getProperty("KEYSTORE_FILE") != null) {
+            // CI podepisuje ze secretů přes proměnné prostředí — stejné, jaké
+            // používá debug varianta. Bez téhle větve umí release konfigurace
+            // číst klíč jen z local.properties, tedy jen na vývojářském stroji,
+            // a v CI by vznikl NEPODEPSANÝ build. Google Play přijímá výhradně
+            // podepsaný .aab.
+            if (System.getenv("ANDROID_SIGNING_KEYSTORE") != null) {
+                storeFile file(System.getenv("ANDROID_SIGNING_KEYSTORE"))
+                storePassword System.getenv("ANDROID_SIGNING_STORE_PASSWORD")
+                keyAlias System.getenv("ANDROID_SIGNING_KEY_ALIAS")
+                keyPassword System.getenv("ANDROID_SIGNING_KEY_PASSWORD")
+            // Jinak local.properties (localPropsGlobal)
+            } else if (localPropsGlobal.getProperty("KEYSTORE_FILE") != null) {
                 storeFile file(localPropsGlobal.getProperty("KEYSTORE_FILE"))
                 storePassword localPropsGlobal.getProperty("KEYSTORE_PASSWORD")
                 keyAlias localPropsGlobal.getProperty("KEY_ALIAS")

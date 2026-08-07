@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Oprávnění JEN pro relay APK.
+
+  Google Play schvaluje SMS a seznam hovorů pouze aplikacím, jejichž hlavní
+  funkce je vyžaduje — typicky výchozí SMS aplikaci. Relay takový je, plná
+  aplikace pro operátorky ne. Dokud byla oprávnění ve sdíleném manifestu,
+  dědila je i nexusFull a ta by na tom v Obchodu spadla.
+
+  Relay se do Obchodu nedává, instaluje se stranou.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.WRITE_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_MMS" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+
+    <!-- GSM most (NexusInCallService). Výchozí vypnutý, hovory vedeme přes
+         SIP — ale když se pro pokusy zapne, potřebuje tohle. -->
+    <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+
+
+    <application>
+
+        <receiver
+                android:name=".NexusSmsReceiver"
+                android:exported="true"
+                android:permission="android.permission.BROADCAST_SMS">
+                <intent-filter android:priority="999">
+                    <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+                </intent-filter>
+                <intent-filter>
+                    <action android:name="android.provider.Telephony.SMS_DELIVER" />
+                    <category android:name="android.intent.category.DEFAULT" />
+                </intent-filter>
+            </receiver>
+
+        <receiver
+                android:name=".NexusMmsReceiver"
+                android:exported="true"
+                android:permission="android.permission.BROADCAST_WAP_PUSH">
+                <intent-filter>
+                    <action android:name="android.provider.Telephony.WAP_PUSH_DELIVER" />
+                    <data android:mimeType="application/vnd.wap.mms-message" />
+                </intent-filter>
+            </receiver>
+
+        <service
+                android:name=".NexusHeadlessSmsSendService"
+                android:permission="android.permission.SEND_RESPOND_VIA_MESSAGE"
+                android:exported="true">
+                <intent-filter>
+                    <action android:name="android.intent.action.RESPOND_VIA_MESSAGE" />
+                    <category android:name="android.intent.category.DEFAULT" />
+                    <data android:scheme="sms" />
+                    <data android:scheme="smsto" />
+                    <data android:scheme="mms" />
+                    <data android:scheme="mmsto" />
+                </intent-filter>
+            </service>
+
+        <activity
+                android:name=".NexusSmsComposeActivity"
+                android:exported="true"
+                android:label="Nová zpráva"
+                android:theme="@style/AppTheme.NoActionBar">
+                <intent-filter>
+                    <action android:name="android.intent.action.SENDTO" />
+                    <data android:scheme="sms" />
+                    <data android:scheme="smsto" />
+                    <data android:scheme="mms" />
+                    <data android:scheme="mmsto" />
+                    <category android:name="android.intent.category.DEFAULT" />
+                </intent-filter>
+                <intent-filter>
+                    <action android:name="android.intent.action.SEND" />
+                    <category android:name="android.intent.category.DEFAULT" />
+                    <data android:mimeType="text/plain" />
+                </intent-filter>
+            </activity>
+
+        <service
+                android:name=".NexusInCallService"
+                android:enabled="${enableGsmCallBridge}"
+                android:exported="true"
+                android:permission="android.permission.BIND_INCALL_SERVICE"
+                android:foregroundServiceType="phoneCall">
+                <meta-data
+                    android:name="android.telecom.IN_CALL_SERVICE_UI"
+                    android:value="true" />
+                <meta-data
+                    android:name="android.telecom.IN_CALL_SERVICE_RINGING"
+                    android:value="true" />
+                <intent-filter>
+                    <action android:name="android.telecom.InCallService" />
+                </intent-filter>
+            </service>
+
+
+        <service
+                android:name=".NexusMmsService"
+                android:exported="true"
+                android:permission="android.permission.BIND_CARRIER_MESSAGING_CLIENT_SERVICE">
+                <intent-filter>
+                    <action android:name="android.telephony.action.CARRIER_MESSAGING_CLIENT_SERVICE" />
+                </intent-filter>
+            </service>
+
+    </application>
+
+</manifest>
