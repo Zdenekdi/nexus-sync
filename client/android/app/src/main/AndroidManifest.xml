@@ -3,30 +3,20 @@
 
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
 
+    <!-- Sdílená oprávnění. Citlivá jsou schválně v manifestech příchutí:
+         SMS a seznam hovorů v src/nexusRelay, poloha v src/nexusFull.
+         Sdílený manifest je dědil oběma a plná aplikace by kvůli tomu
+         v Google Play neprošla. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Fantomový hovor se musí zobrazit přes zámek jako skutečný hovor. -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.RECEIVE_SMS" />
-    <uses-permission android:name="android.permission.READ_SMS" />
-    <uses-permission android:name="android.permission.SEND_SMS" />
-    <uses-permission android:name="android.permission.WRITE_SMS" />
-    <uses-permission android:name="android.permission.RECEIVE_MMS" />
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <uses-permission android:name="android.permission.READ_CALL_LOG" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <!-- InCallService: příjem GSM hovorů bez SIP Trunk -->
-    <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
-    <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
@@ -66,50 +56,13 @@
         </activity>
 
         <!-- SMS Receiver — výchozí SMS aplikace -->
-        <receiver
-            android:name=".NexusSmsReceiver"
-            android:exported="true"
-            android:permission="android.permission.BROADCAST_SMS">
-            <intent-filter android:priority="999">
-                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.provider.Telephony.SMS_DELIVER" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </receiver>
+        
 
         <!-- MMS Receiver — výchozí SMS aplikace -->
-        <receiver
-            android:name=".NexusMmsReceiver"
-            android:exported="true"
-            android:permission="android.permission.BROADCAST_WAP_PUSH">
-            <intent-filter>
-                <action android:name="android.provider.Telephony.WAP_PUSH_DELIVER" />
-                <data android:mimeType="application/vnd.wap.mms-message" />
-            </intent-filter>
-        </receiver>
+        
 
         <!-- Aktivita pro psaní nové zprávy (povinná pro DEFAULT SMS APP) -->
-        <activity
-            android:name=".NexusSmsComposeActivity"
-            android:exported="true"
-            android:label="Nová zpráva"
-            android:theme="@style/AppTheme.NoActionBar">
-            <intent-filter>
-                <action android:name="android.intent.action.SENDTO" />
-                <data android:scheme="sms" />
-                <data android:scheme="smsto" />
-                <data android:scheme="mms" />
-                <data android:scheme="mmsto" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="text/plain" />
-            </intent-filter>
-        </activity>
+        
 
         <!-- Service pro MMS (povinná pro DEFAULT SMS APP) -->
         <activity
@@ -122,29 +75,10 @@
             android:showWhenLocked="true"
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
 
-        <service
-            android:name=".NexusMmsService"
-            android:exported="true"
-            android:permission="android.permission.BIND_CARRIER_MESSAGING_CLIENT_SERVICE">
-            <intent-filter>
-                <action android:name="android.telephony.action.CARRIER_MESSAGING_CLIENT_SERVICE" />
-            </intent-filter>
-        </service>
+        
 
         <!-- Service pro odeslání rychlé zprávy (povinná pro DEFAULT SMS APP) -->
-        <service
-            android:name=".NexusHeadlessSmsSendService"
-            android:permission="android.permission.SEND_RESPOND_VIA_MESSAGE"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.RESPOND_VIA_MESSAGE" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="sms" />
-                <data android:scheme="smsto" />
-                <data android:scheme="mms" />
-                <data android:scheme="mmsto" />
-            </intent-filter>
-        </service>
+        
 
         <receiver android:name=".NexusCallReceiver" android:exported="true">
             <intent-filter android:priority="999">
@@ -194,22 +128,7 @@
         </receiver>
 
         <!-- InCallService: Nexus jako výchozí telefonní aplikace -->
-        <service
-            android:name=".NexusInCallService"
-            android:enabled="${enableGsmCallBridge}"
-            android:exported="true"
-            android:permission="android.permission.BIND_INCALL_SERVICE"
-            android:foregroundServiceType="phoneCall">
-            <meta-data
-                android:name="android.telecom.IN_CALL_SERVICE_UI"
-                android:value="true" />
-            <meta-data
-                android:name="android.telecom.IN_CALL_SERVICE_RINGING"
-                android:value="true" />
-            <intent-filter>
-                <action android:name="android.telecom.InCallService" />
-            </intent-filter>
-        </service>
+        
 
         <provider
             android:name="androidx.core.content.FileProvider"

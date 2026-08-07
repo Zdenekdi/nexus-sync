@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Oprávnění JEN pro plnou aplikaci.
+
+  Poloha na pozadí je jádro bezpečnostního sledování: telefon modelky hlásí
+  polohu i se zhasnutou obrazovkou, jinak by dohled během schůzky nefungoval.
+  Relay ji nepotřebuje — je to zařízení se SIM, které nikam nechodí; ověřeno,
+  že RelayApp ani RelayMode na polohu nesahají.
+
+  Google k ní chce samostatnou deklaraci a video ukazující, k čemu v aplikaci
+  slouží. Proto je tady, ne ve sdíleném manifestu — ať je z rozdělení vidět,
+  která aplikace ji doopravdy potřebuje.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+
+</manifest>

@@ -104,6 +104,15 @@ public class NexusRelayPlugin extends Plugin {
     static final String SMS_PERMISSION_ALIAS = "sms";
     static final String PHONE_PERMISSION_ALIAS = "phone";
     static final String LOCATION_PERMISSION_ALIAS = "location";
+
+    // Polohu vyžaduje jen plná aplikace — telefon modelky hlásí polohu během
+    // schůzky. Relay je zařízení se SIM, které nikam nechodí, a od rozdělení
+    // manifestů (src/nexusRelay vs. src/nexusFull) ji ani nedeklaruje.
+    //
+    // Bez tohohle hradla by relay čekala na oprávnění, o které si nemůže říct:
+    // hasAllRequiredPermissions() by nikdy nevyšlo a průvodce nastavením by
+    // nikdy neohlásil hotovo.
+    private static final boolean VYZADUJE_POLOHU = !"relay".equals(BuildConfig.APP_VARIANT);
     private static final String[] SUPPORTED_RCS_PACKAGES = { "com.google.android.apps.messaging" };
     private static final long SMS_DEDUP_WINDOW_MS = 8000L;
     private static final long DEFAULT_SMS_SYNC_LOOKBACK_MS = 31L * 24L * 60L * 60L * 1000L;
@@ -162,7 +171,7 @@ public class NexusRelayPlugin extends Plugin {
     private boolean hasAllRequiredPermissions() {
         return getPermissionState(SMS_PERMISSION_ALIAS) == PermissionState.GRANTED &&
             getPermissionState(PHONE_PERMISSION_ALIAS) == PermissionState.GRANTED &&
-            getPermissionState(LOCATION_PERMISSION_ALIAS) == PermissionState.GRANTED;
+            (!VYZADUJE_POLOHU || getPermissionState(LOCATION_PERMISSION_ALIAS) == PermissionState.GRANTED);
     }
 
     private String[] getMissingPermissionAliases() {
@@ -173,7 +182,7 @@ public class NexusRelayPlugin extends Plugin {
         if (getPermissionState(PHONE_PERMISSION_ALIAS) != PermissionState.GRANTED) {
             missing.add(PHONE_PERMISSION_ALIAS);
         }
-        if (getPermissionState(LOCATION_PERMISSION_ALIAS) != PermissionState.GRANTED) {
+        if (VYZADUJE_POLOHU && getPermissionState(LOCATION_PERMISSION_ALIAS) != PermissionState.GRANTED) {
             missing.add(LOCATION_PERMISSION_ALIAS);
         }
         return missing.toArray(new String[0]);
@@ -196,7 +205,7 @@ public class NexusRelayPlugin extends Plugin {
         status.put("ready",
             smsState == PermissionState.GRANTED &&
             phoneState == PermissionState.GRANTED &&
-            locationState == PermissionState.GRANTED);
+            (!VYZADUJE_POLOHU || locationState == PermissionState.GRANTED));
         status.put("callMonitoring", phoneState == PermissionState.GRANTED);
         status.put("smsMonitoring", smsState == PermissionState.GRANTED);
         status.put("locationMonitoring", locationState == PermissionState.GRANTED);

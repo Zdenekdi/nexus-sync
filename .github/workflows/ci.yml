@@ -203,6 +203,60 @@ jobs:
         env:
           FRONTEND_URL: ${{ secrets.FRONTEND_URL || 'https://nexus-sync-8d50b.web.app' }}
 
+  # ── Kontrola oprávnění v manifestech ────────────────────────────────────────
+  #
+  # Plná aplikace míří do Google Play. SMS a seznam hovorů tam Google schválí
+  # jen aplikaci, jejíž hlavní funkce je vyžaduje — to je relay, ne aplikace
+  # pro operátorky. Dokud byla oprávnění ve sdíleném manifestu, dědily je obě.
+  #
+  # Tohle není jen ověření změny, ale POJISTKA DO BUDOUCNA: kdo přidá SMS
+  # oprávnění do src/main, dozví se to tady, ne až při zamítnutí v Obchodu.
+  #
+  # Běží i na PR (na rozdíl od stavby APK) a trvá vteřiny — slučuje jen
+  # manifesty, nestaví aplikaci.
+  android-manifest-check:
+    name: Android Manifest Permissions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Merge manifests for both flavours
+        run: |
+          cd client/android
+          ./gradlew :app:processNexusFullDebugManifest :app:processNexusRelayDebugManifest -q
+
+      - name: Full app must not declare SMS or call-log permissions
+        run: |
+          FULL=client/android/app/build/intermediates/merged_manifests/nexusFullDebug/processNexusFullDebugManifest/AndroidManifest.xml
+          RELAY=client/android/app/build/intermediates/merged_manifests/nexusRelayDebug/processNexusRelayDebugManifest/AndroidManifest.xml
+          test -f "$FULL" || { echo "::error::Sloučený manifest plné aplikace nenalezen"; exit 1; }
+          test -f "$RELAY" || { echo "::error::Sloučený manifest relay nenalezen"; exit 1; }
+
+          ZAKAZANE="READ_SMS SEND_SMS RECEIVE_SMS RECEIVE_MMS WRITE_SMS READ_CALL_LOG WRITE_CALL_LOG"
+          CHYBA=0
+          for P in $ZAKAZANE; do
+            if grep -q "android.permission.$P" "$FULL"; then
+              echo "::error::Plná aplikace deklaruje $P — Google Play to schválí jen výchozí SMS aplikaci. Patří do client/android/app/src/nexusRelay/AndroidManifest.xml."
+              CHYBA=1
+            fi
+          done
+
+          # Kontrola opačným směrem: relay ta oprávnění mít MUSÍ, jinak
+          # přestane přijímat a odesílat SMS a nikdo si toho nevšimne.
+          for P in RECEIVE_SMS SEND_SMS; do
+            grep -q "android.permission.$P" "$RELAY" || {
+              echo "::error::Relay NEdeklaruje $P — přestala by přijímat nebo odesílat SMS."; CHYBA=1; }
+          done
+
+          [ "$CHYBA" = 0 ] && echo "OK: plná aplikace je bez SMS oprávnění, relay je má."
+          exit $CHYBA
+
   # ── Android APK Build ───────────────────────────────────────────────────────
   build-android:
     name: Build Android APK
