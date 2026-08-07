@@ -363,6 +363,16 @@ export async function setupApiMocks(page) {
   // Tvar odpovídá getChats: profile, poslední zpráva v poli messages
   // a _count. Klient z toho v useChatLogic.js čte messages[0].text,
   // sender.name, lastMessageAt a externalId.
+  // Zámky nedodělaných funkcí. Prázdné `locks` = všechno zamčené, protože
+  // isLockedForUsers má výchozí hodnotu „zamčeno" (fail-closed). Je to
+  // nejnudnější možný stav a odpovídá tomu, co dělal zachytávač předtím.
+  await context.route('**/admin/feature-locks', async route => {
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ locks: {} })
+    });
+  });
+
   // Čísla pro odchozí hovory. Schválně PRÁZDNÉ — tlačítko volání je pak
   // nedostupné, což je nudnější stav a nerozbije nic. Spec, který volání
   // ověřuje, si rutu přebije sám.
