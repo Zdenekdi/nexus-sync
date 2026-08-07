@@ -18,6 +18,12 @@ test.describe('Nexus Hub Onboarding Flow', () => {
     await page.evaluate(() => localStorage.clear());
     await page.reload();
     await page.waitForLoadState('networkidle');
+
+    // Počkat na první snímek už tady. Výchozí limit tvrzení je 5 s, což při
+    // plné sadě (čtyři projekty naráz) na webkitu občas nestačí a test spadl
+    // asi v jednom z dvaceti běhů. Samotný onboarding přitom prošel 54× po
+    // sobě — nešlo o rozbitou funkci, ale o těsný limit pod zátěží.
+    await expect(page.getByTestId('onboarding-slide-relay')).toBeVisible({ timeout: 20000 });
   });
 
   test('Complete full onboarding flow', async ({ page }) => {
