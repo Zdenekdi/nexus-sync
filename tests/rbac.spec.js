@@ -7,12 +7,17 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { loginAs, authClient, anonClient, TEST_USERS, API_BASE, isApiUnavailableStatus } from './helpers/api.js';
+import { loginAs, authClient, anonClient, TEST_USERS, API_BASE, isApiUnavailableStatus, apiJeDostupne, DUVOD_BEZ_API } from './helpers/api.js';
 import { doLogin as loginToApp } from './helpers/auth.js';
 // ─── Token cache (login once per role) ────────────────────────────────────
 let tokens = {};
 
+let apiBezi = true;
+
 test.beforeAll(async () => {
+  apiBezi = await apiJeDostupne();
+  if (!apiBezi) return;   // bez běžícího API nemá smysl se ani přihlašovat
+
   console.log(`\n🔑 Logging in all roles against ${API_BASE}...`);
 
   for (const [key, creds] of Object.entries(TEST_USERS)) {
@@ -25,6 +30,10 @@ test.beforeAll(async () => {
       console.error(`  ❌ ${key} (${creds.email}): login FAILED — tests for this role will be skipped`);
     }
   }
+});
+
+test.beforeEach(() => {
+  test.skip(!apiBezi, DUVOD_BEZ_API);
 });
 
 /** Helper: get an auth client or skip test if login failed */
@@ -348,8 +357,13 @@ test.describe('UI RBAC — QAView (Inbox)', () => {
     } else {
       await navLink.click();
     }
-    await page.waitForTimeout(1000);
-    // Ensure selector is hidden
+    // Kladná kotva PŘED záporným tvrzením. Bez ní je test bezcenný:
+    // „All Operators" není vidět ani na prázdné stránce, takže když se
+    // přihlášení nepovede, projde a neověří nic. Přesně tak to lokálně
+    // bez běžícího API vypadalo.
+    await expect(page.getByTestId('page-inbox-container')).toBeVisible({ timeout: 15000 });
+
+    // Teprve teď má smysl tvrdit, že přepínač profilů tam není.
     await expect(page.locator('text="All Operators"').first()).not.toBeVisible();
   });
 });

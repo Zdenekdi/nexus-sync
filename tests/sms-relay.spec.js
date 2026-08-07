@@ -11,7 +11,7 @@
 
 import { test, expect } from '@playwright/test';
 import axios from 'axios';
-import { loginAs, authClient, TEST_USERS, API_BASE, DEVICE_SECRET, HAS_DEVICE_SECRET, isApiUnavailableStatus } from './helpers/api.js';
+import { loginAs, authClient, TEST_USERS, API_BASE, DEVICE_SECRET, HAS_DEVICE_SECRET, isApiUnavailableStatus, apiJeDostupne, DUVOD_BEZ_API } from './helpers/api.js';
 
 const anonRelay = axios.create({ baseURL: `${API_BASE}/device`, validateStatus: () => true });
 
@@ -27,7 +27,16 @@ function skipIfApiUnavailable(res) {
   test.skip(isApiUnavailableStatus(res.status), `API gateway unavailable (${res.status})`);
 }
 
+let apiBezi = true;
+
+test.beforeEach(() => {
+  test.skip(!apiBezi, DUVOD_BEZ_API);
+});
+
 test.beforeAll(async () => {
+  apiBezi = await apiJeDostupne();
+  if (!apiBezi) return;   // bez běžícího API nemá smysl se ani přihlašovat
+
   // Login as Senior Operator (Alice) who has permission to register devices
   const loginResult = await loginAs(TEST_USERS.manager);
   managerToken = loginResult?.token || null;
