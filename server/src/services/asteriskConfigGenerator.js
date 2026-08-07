@@ -291,6 +291,42 @@ function generateExtensionsConf(relays, operators, trunks = []) {
     );
   }
 
+  // ── Odchozí hovory (operátorka → klient) ────────────────────────
+  //
+  // Vytáčí se <DID>*<číslo klienta>. Prefix vybírá, jaké číslo klient uvidí —
+  // podle rozhodnutí to má být číslo modelky, tedy DID přiřazené jejímu profilu.
+  //
+  // Pravidlo vznikne JEN pro DID, která jsou v databázi (loadSipDataFromDB je
+  // filtruje na active + profileId). Cokoli jiného propadne na _X. níž a hovor
+  // se položí. Kdyby se caller ID bralo z toho, co pošle prohlížeč, mohla by
+  // si operátorka nastavit libovolné cizí číslo — takhle ne.
+  //
+  // ZÁMĚRNĚ SE NENAHRÁVÁ: žádný MixMonitor. Kdyby se to měnilo, patří to
+  // i do stránky o evidenci údajů.
+  for (const trunk of trunks) {
+    const trunkId = sipId(trunk.id);
+    if (!trunkId) continue;
+    for (const did of trunk.dids) {
+      const number = phoneId(did.number);
+      if (!number) continue;
+      const safeName = callText(did.profileName || number).replace(/[^a-zA-Z0-9 _-]/g, '').trim();
+      // Dvě podoby cílového čísla: holé číslice a E.164 s plusem. `X` je
+      // v Asterisku jen číslice, takže samotné `*X.` by číslo s plusem
+      // nechytilo a hovor by spadl na fallback.
+      lines.push(`; Odchozí za ${number} (${safeName})`);
+      for (const suffix of ['X.', '+X.']) {
+        lines.push(
+          `exten => _${number}*${suffix},1,NoOp(Odchozí hovor, klient uvidí ${number})`,
+          ` same => n,Set(CALLERID(num)=${number})`,
+          ` same => n,Set(CALLERID(name)=${safeName})`,
+          ` same => n,Dial(PJSIP/\${EXTEN:${number.length + 1}}@trunk_${trunkId},60,rT)`,
+          ' same => n,Hangup()',
+        );
+      }
+      lines.push('');
+    }
+  }
+
   // Fallback
   lines.push(
     'exten => _X.,1,NoOp(Neznámé číslo: ${EXTEN})',
