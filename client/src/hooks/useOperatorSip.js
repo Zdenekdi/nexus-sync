@@ -19,16 +19,28 @@ export function useOperatorSip(config, handlers = {}) {
   const uaRef = useRef(null);
   const sessionRef = useRef(null);
   const timerRef = useRef(null);
+  const domainRef = useRef('asterisk');
+  // Popis toho, komu právě voláme — session ho sama nezná v podobě, kterou
+  // chceme ukázat (jméno modelky, číslo klienta).
+  const odchoziRef = useRef(null);
+
+  // `handlers` chodí z volajícího jako objektový literál, takže má při každém
+  // překreslení novou identitu. Kdyby visel v závislostech efektu, UA by se
+  // při každém překreslení zastavil a založil znovu — a rozestavěný odchozí
+  // hovor by se rozpadl dřív, než ho někdo zvedne.
+  const handlersRef = useRef(handlers);
+  useEffect(() => { handlersRef.current = handlers; });
 
   const cleanup = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     sessionRef.current = null;
+    odchoziRef.current = null;
     setCallSession(null);
     setActiveCall(null);
     setCallDuration(0);
     setIsMuted(false);
-    handlers.onEnded?.();
-  }, [handlers]);
+    handlersRef.current.onEnded?.();
+  }, []);
 
   useEffect(() => {
     if (!config?.wsUrl || !config?.username || !config?.password) return;
@@ -41,6 +53,7 @@ export function useOperatorSip(config, handlers = {}) {
 
     const socket = new JsSIP.WebSocketInterface(config.wsUrl);
     const domain = (() => { try { return new URL(config.wsUrl).hostname; } catch { return 'asterisk'; } })();
+    domainRef.current = domain;
 
     const ua = new JsSIP.UA({
       sockets: [socket],
@@ -53,9 +66,16 @@ export function useOperatorSip(config, handlers = {}) {
     });
     uaRef.current = ua;
 
-    const updateStatus = (s) => { 
-      setSipStatus(s); 
-      handlers.onStatusChange?.(s); 
+    const updateStatus = (s) => {
+      setSipStatus(s);
+      handlersRef.current.onStatusChange?.(s);
+    };
+
+    // Odpočet běží až od chvíle, kdy hovor někdo zvedne — ne od vytočení.
+    const spustOdpocet = () => {
+      setCallDuration(0);
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = setInterval(() => setCallDuration(s => s + 1), 1000);
     };
 
     ua.on('connecting', () => updateStatus('connecting'));
@@ -66,8 +86,32 @@ export function useOperatorSip(config, handlers = {}) {
     ua.on('registrationFailed', () => updateStatus('failed'));
 
     ua.on('newRTCSession', ({ session, originator }) => {
-      if (originator !== 'remote') return;
       sessionRef.current = session;
+
+      // ── Odchozí hovor ──────────────────────────────────────────────────
+      // Vznikne hned po ua.call(). Do 'accepted' jen vyzvání — ale zavěsit
+      // musí jít i během vyzvánění, proto se overlay ukáže rovnou.
+      if (originator !== 'remote') {
+        const info = {
+          callerId:    odchoziRef.current?.cislo || session.remote_identity?.uri?.user || '',
+          callerName:  odchoziRef.current?.jmenoKlienta || '',
+          targetModel: odchoziRef.current?.jmenoModelky || null,
+          odchozi:     true,
+          vyzvani:     true,
+          session,
+        };
+        setCallDuration(0);
+        setActiveCall(info);
+
+        session.on('accepted', () => {
+          setActiveCall({ ...info, vyzvani: false });
+          spustOdpocet();
+          handlersRef.current.onAnswered?.(info);
+        });
+        session.on('ended',  () => cleanup());
+        session.on('failed', () => cleanup());
+        return;
+      }
 
       // Extrahuj jméno modelky z Asterisk SIP hlavičky
       let targetModel = null;
@@ -85,15 +129,13 @@ export function useOperatorSip(config, handlers = {}) {
         session,
       };
       setCallSession(info);
-      handlers.onIncoming?.(info);
+      handlersRef.current.onIncoming?.(info);
 
       session.on('accepted', () => {
-        setCallDuration(0);
         setActiveCall(info);
         setCallSession(null);
-        if (timerRef.current) clearInterval(timerRef.current);
-        timerRef.current = setInterval(() => setCallDuration(s => s + 1), 1000);
-        handlers.onAnswered?.(info);
+        spustOdpocet();
+        handlersRef.current.onAnswered?.(info);
       });
 
       session.on('ended', () => cleanup());
@@ -105,7 +147,7 @@ export function useOperatorSip(config, handlers = {}) {
       try { ua.stop(); } catch { /* ignore stop _err */ } 
       if (timerRef.current) clearInterval(timerRef.current); 
     };
-  }, [config?.wsUrl, config?.username, config?.password, cleanup, handlers]);
+  }, [config?.wsUrl, config?.username, config?.password, cleanup]);
 
   const answer = useCallback(() => {
     sessionRef.current?.answer({
@@ -124,6 +166,36 @@ export function useOperatorSip(config, handlers = {}) {
     cleanup();
   }, [cleanup]);
 
+  /**
+   * Vytočí klienta pod číslem modelky.
+   *
+   * `cil` má tvar `<DID>*<číslo klienta>` — skládá ho `sestavOdchoziCil`.
+   * Prefix vybírá, jaké číslo klient uvidí, ale rozhoduje o tom server:
+   * dialplan má pravidlo jen pro DID, která jsou v databázi, takže vymyšlené
+   * číslo hovor rovnou položí.
+   *
+   * @returns {{ ok: boolean, duvod?: string }}
+   */
+  const startCall = useCallback((cil, popis = {}) => {
+    const ua = uaRef.current;
+    if (!ua) return { ok: false, duvod: 'sipNepripojen' };
+    if (!cil) return { ok: false, duvod: 'chybiCil' };
+    if (sessionRef.current) return { ok: false, duvod: 'jinyHovor' };
+
+    odchoziRef.current = popis;
+    try {
+      ua.call(`sip:${cil}@${domainRef.current}`, {
+        mediaConstraints: { audio: true, video: false },
+        pcConfig: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] },
+      });
+      return { ok: true };
+    } catch (err) {
+      odchoziRef.current = null;
+      console.warn('[SIP] vytáčení selhalo:', err?.message);
+      return { ok: false, duvod: 'vytaceniSelhalo' };
+    }
+  }, []);
+
   const toggleMute = useCallback(() => {
     const sess = sessionRef.current;
     if (!sess) return;
@@ -135,12 +207,13 @@ export function useOperatorSip(config, handlers = {}) {
   return {
     sipStatus,    // 'idle'|'connecting'|'connected'|'registered'|'failed'|'disconnected'
     callSession,  // { callerId, callerName, session } | null — příchozí, čeká na přijetí
-    activeCall,   // { callerId, callerName } | null — aktivní hovor
-    callDuration, // sekundy
+    activeCall,   // { callerId, callerName, odchozi, vyzvani } | null
+    callDuration, // sekundy — běží až od zvednutí
     isMuted,
     answer,
     reject,
     hangup,
+    startCall,    // (cil, popis) => { ok, duvod? }
     toggleMute,
   };
 }

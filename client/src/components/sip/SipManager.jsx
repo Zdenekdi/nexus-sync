@@ -21,7 +21,7 @@ import { IncomingOperatorCall, ActiveOperatorCall } from './OperatorCallScreen';
 const SIP_WS_URL = import.meta.env.VITE_SIP_WS_URL || 'wss://nexus-api.myvnc.com:8089/ws';
 
 export default function SipManager() {
-  const { token, API_BASE, activeRole, isLoggedIn, showToast, lang } = useNexus();
+  const { token, API_BASE, activeRole, isLoggedIn, showToast, lang, registerSipDialer } = useNexus();
   const [sipCredentials, setSipCredentials] = useState(null);
   const fetchedRef = useRef(false);
 
@@ -71,6 +71,7 @@ export default function SipManager() {
     answer,
     reject,
     hangup,
+    startCall,
     toggleMute,
   } = useOperatorSip(sipConfig, {
     onIncoming: (info) => {
@@ -88,6 +89,15 @@ export default function SipManager() {
       );
     },
   });
+
+  // SIP spojení žije tady, ale zavolat potřebuje schránka. Kontext si proto
+  // nechá zaregistrovat vytáčecí funkci — přesouvat celé UA do kontextu kvůli
+  // jednomu tlačítku by znamenalo sáhnout do funkční telefonie.
+  useEffect(() => {
+    if (!registerSipDialer) return undefined;
+    registerSipDialer(isSipRole && isLoggedIn ? startCall : null);
+    return () => registerSipDialer(null);
+  }, [registerSipDialer, startCall, isSipRole, isLoggedIn]);
 
   // Don't render anything for non-SIP roles or when not logged in
   if (!isSipRole || !isLoggedIn) return null;

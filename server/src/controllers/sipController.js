@@ -314,6 +314,50 @@ exports.ping = async (req, res) => {
   }
 };
 
+// ─── GET /api/sip/dids ───────────────────────────────────────────────────────
+// Čísla agentury, pod kterými smí operátorka volat ven.
+//
+// Není to jen pohodlí pro UI. Dialplan přijme odchozí hovor jen pod DID, které
+// je v databázi — tenhle seznam tedy říká, co reálně projde. Kdyby si číslo
+// volajícího vybíral prohlížeč, dalo by se volat pod cizím číslem; server ho
+// proto skládá sám a klient jen vybírá z téhle množiny.
+//
+// Žádné tajemství se tu nevydává: jsou to čísla vlastní agentury, která už
+// vidí v nastavení trunků.
+exports.getDids = async (req, res) => {
+  try {
+    const isOwner  = isAppOwnerRole(req.user?.role);
+    const agencyId = req.user?.agencyId;
+    if (!isOwner && !agencyId) return res.json({ ok: true, dids: [] });
+
+    const rows = await prisma.sipDid.findMany({
+      where: {
+        active:    true,
+        profileId: { not: null },
+        trunk: { active: true, ...(isOwner ? {} : { agencyId }) },
+      },
+      select: {
+        number:    true,
+        profileId: true,
+        profile:   { select: { name: true } },
+      },
+      orderBy: { number: 'asc' },
+    });
+
+    return res.json({
+      ok: true,
+      dids: rows.map(d => ({
+        number:      d.number,
+        profileId:   d.profileId,
+        profileName: d.profile?.name || null,
+      })),
+    });
+  } catch (err) {
+    console.error('[SIP] getDids error:', err);
+    return res.status(500).json({ ok: false, message: 'Failed to load DIDs' });
+  }
+};
+
 // ─── GET /api/sip/call-meta ──────────────────────────────────────────────────
 // Web operátor přečte metadata o probíhajícím hovoru (jméno modelky) dle caller čísla
 exports.getCallMeta = async (req, res) => {

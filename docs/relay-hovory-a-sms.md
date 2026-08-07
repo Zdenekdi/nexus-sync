@@ -58,6 +58,34 @@ původní soubory, nasadí je přes SSH a udělá `pjsip reload` +
 Podklady pro server jsou v [docs/asterisk/](asterisk/) — `setup.sh`,
 `pjsip.conf`, `extensions.conf`.
 
+### Odchozí (operátorka → klient)
+
+Operátorka volá **za profil**: klient uvidí číslo modelky, ne číslo agentury.
+Vytáčí se `<DID>*<číslo klienta>`, prefix vybírá zobrazené číslo.
+
+```
+exten => _+420777111222*X.,1,NoOp(Odchozí hovor, klient uvidí +420777111222)
+ same => n,Set(CALLERID(num)=+420777111222)
+ same => n,Dial(PJSIP/${EXTEN:14}@trunk_trunkA,60,rT)
+```
+
+**Číslo volajícího skládá server, ne prohlížeč.** Pravidlo vznikne jen pro
+DID, které je v databázi (`loadSipDataFromDB` filtruje na `active`
+a přiřazený profil); cokoli jiného propadne na `_X.` a hovor se položí.
+Kdyby si caller ID vybíral klient, dalo by se volat pod cizím číslem.
+DID a trunk drží pohromadě, takže číslo agentury A neodejde trunkem B.
+
+Cíl se generuje ve dvou podobách — `*X.` a `*+X.`. `X` je v Asterisku jen
+číslice, takže samotné `*X.` by číslo v E.164 s plusem nechytilo.
+
+**Hovor se ZÁMĚRNĚ nenahrává.** Žádný `MixMonitor`. Hlídá to test, protože
+zapnutí by mělo důsledky i pro stránku o evidenci údajů.
+
+V prohlížeči to obsluhuje `startCall` z kontextu → `useOperatorSip.startCall`
+→ `ua.call()`. Seznam čísel chodí z `GET /api/sip/dids` (jen vlastní
+agentura). Když se seznam nenačte, tlačítko volání ve schránce je nedostupné
+— radši nezavolat než zavolat pod cizím číslem.
+
 ### GSM most (výchozí VYPNUTÝ)
 
 `NexusInCallService` umí udělat z telefonu výchozí vytáčeč a přemostit

@@ -1,5 +1,6 @@
 import React, { Fragment } from 'react';
 import { safeRedirect } from '../../utils/safeRedirect';
+import { najdiDidProfilu } from '../../utils/sipDial';
 import { 
   Search, MessageSquare, Phone, Clock, Link, Globe, Shield, Check, 
   Zap, Calendar, ChevronDown, ChevronLeft, ChevronRight, PlusCircle, 
@@ -83,8 +84,16 @@ const InboxView = () => {
     handleDeleteNote = () => {}, showToast = () => {}, handleSyncChatHistory = () => {},
     loading: isInitialLoading = false,
     initData: refreshData = () => {}, isBackgroundLoading = false, fetchClientByPhone = () => {},
-    setActiveTab = () => {}, agencies = [], handleRefreshMessages = () => {}
+    setActiveTab = () => {}, agencies = [], handleRefreshMessages = () => {},
+    startCall = () => ({ ok: false }), sipDids = []
   } = nexus;
+
+  // Číslo, pod kterým se u téhle konverzace smí volat ven. Seznam chodí ze
+  // serveru; když profil číslo nemá, tlačítko volání je nedostupné.
+  const didProfilu = React.useMemo(
+    () => najdiDidProfilu(sipDids, selectedChat?.profileId),
+    [sipDids, selectedChat?.profileId]
+  );
 
   const omnichannel = useOmnichannel({
     token,
@@ -552,21 +561,43 @@ const InboxView = () => {
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '1rem' }}>
-                    {/* Tlačítko CALL je odstraněné, protože odchozí hovor NIKDO NEUMÍ.
+                    {/* Tlačítko CALL se vrátilo — od #108 existuje odchozí směr
+                        v dialplanu. Klient uvidí číslo modelky, ne číslo agentury.
 
-                        Jediná obsluha `startCall` žila v useUILogic.js — hooku, který
-                        nevolá nikdo — a hovor jen PŘEDSTÍRALA: nastavila stav a přes
-                        setTimeout po dvou vteřinách přepnula na „aktivní hovor". Nikam
-                        nevolala. Navíc se volala bez argumentů, i když čeká (profile, chat).
-
-                        Vytáčení neumí ani SIP: useOperatorSip i NexusSip mají answer,
-                        reject, hangup — nic pro zahájení. A generovaný dialplan Asterisku
-                        má jen [from-trunk] a [nexushub] pro PŘÍCHOZÍ; odchozí kontext
-                        s Dial() tam není, takže by hovor stejně neodešel.
-
-                        Zapojit to znamená napsat funkci napříč vrstvami (dialplan,
-                        JsSIP vytáčení, volba čísla, které klient uvidí). Do té doby je
-                        poctivější tlačítko nemít než mít takové, které nic neudělá. */}
+                        Když profil číslo přiřazené nemá, tlačítko je nedostupné
+                        a řekne proč. Poctivější než nechat kliknout a mlčky
+                        zahodit hovor. */}
+                    <button
+                      onClick={() => startCall(selectedChat.profileId, selectedChat.from, {
+                        jmenoKlienta: clientNames[selectedChat.from] || '',
+                        jmenoModelky: selectedChat.profileName || null,
+                      })}
+                      disabled={!didProfilu}
+                      data-testid="chat-call-button"
+                      aria-label={lang === 'cz' ? 'Zavolat klientovi' : 'Call client'}
+                      title={didProfilu
+                        ? (lang === 'cz'
+                          ? `Zavolat — klient uvidí ${didProfilu}`
+                          : `Call — the client will see ${didProfilu}`)
+                        : (lang === 'cz'
+                          ? 'Profil nemá přiřazené telefonní číslo, není pod čím volat.'
+                          : 'This profile has no phone number assigned, there is nothing to call from.')}
+                      style={{
+                        background: didProfilu ? 'rgba(74, 222, 128, 0.1)' : 'rgba(148, 163, 184, 0.08)',
+                        border: `1px solid ${didProfilu ? 'rgba(74, 222, 128, 0.2)' : 'rgba(148, 163, 184, 0.15)'}`,
+                        color: didProfilu ? '#4ade80' : 'var(--text-secondary)',
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: didProfilu ? 'pointer' : 'not-allowed',
+                        opacity: didProfilu ? 1 : 0.5,
+                      }}
+                    >
+                      <Phone size={16} />
+                    </button>
                     <button 
                       onClick={() => handleSyncChatHistory(selectedChatId)} 
                       data-testid="chat-sync-button"
