@@ -363,6 +363,16 @@ export async function setupApiMocks(page) {
   // Tvar odpovídá getChats: profile, poslední zpráva v poli messages
   // a _count. Klient z toho v useChatLogic.js čte messages[0].text,
   // sender.name, lastMessageAt a externalId.
+  // Stav relaye. Schválně OFFLINE — je to nudnější a poctivější výchozí stav
+  // než tvrdit, že zařízení běží. Spec, který na tom něco staví, si rutu
+  // přebije sám.
+  await context.route('**/agency/relay-status', async route => {
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ online: false, activeRelays: 0 })
+    });
+  });
+
   // Spárovaná zařízení. Schválně PRÁZDNÉ — nastavení pak ukáže „žádná
   // zařízení", což je nejnudnější stav. Spec, který na zařízeních něco
   // tvrdí, si rutu přebije sám.
