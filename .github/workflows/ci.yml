@@ -226,10 +226,31 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
+      # Gradle projekt odkazuje na Capacitor pluginy, které žijí
+      # v client/node_modules — bez instalace balíčků a `cap sync` ty adresáře
+      # neexistují a build spadne na „Configuring project ':capacitor-app'
+      # without an existing directory".
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install client dependencies
+        run: cd client && npm install --legacy-peer-deps --prefer-offline --no-audit
+
+      - name: Build web assets and sync Capacitor
+        run: |
+          cd client
+          npm run build
+          npx cap sync android
+
       - name: Merge manifests for both flavours
         run: |
           cd client/android
-          ./gradlew :app:processNexusFullDebugManifest :app:processNexusRelayDebugManifest -q
+          chmod +x gradlew
+          ./gradlew :app:processNexusFullDebugManifest :app:processNexusRelayDebugManifest --no-daemon -q
 
       - name: Full app must not declare SMS or call-log permissions
         run: |
