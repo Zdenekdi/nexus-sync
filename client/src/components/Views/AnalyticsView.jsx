@@ -49,7 +49,7 @@ const AnalyticsView = () => {
   // 1. Subscription Check (Higher Priority than PIN)
   if (!hasAnalyticsAccess) {
     return (
-      <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100%', background: 'var(--bg-main)' }}>
+      <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100%', background: 'var(--bg-color)' }}>
         <div style={{ textAlign: 'center', maxWidth: '500px', padding: '3rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--card-border)', borderRadius: '32px', backdropFilter: 'blur(10px)' }}>
           <div style={{ 
             width: '100px', height: '100px', 
@@ -93,7 +93,7 @@ const AnalyticsView = () => {
               {lang === 'cz' ? 'UPGRADOVAT NA PROFESSIONAL' : 'UPGRADE TO PROFESSIONAL'}
             </button>
             
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.5rem' }}>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
               {lang === 'cz' ? 'Okamžitá aktivace po zaplacení' : 'Instant activation after payment'}
             </p>
           </div>
@@ -105,7 +105,7 @@ const AnalyticsView = () => {
   // 2. PIN Verification (Sensitive Data Access)
   if (!pinVerified) {
     return (
-      <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100%', background: 'var(--bg-main)' }}>
+      <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100%', background: 'var(--bg-color)' }}>
         <div style={{ textAlign: 'center', maxWidth: '400px', padding: '2rem' }}>
           <div style={{ width: '80px', height: '80px', background: 'rgba(167, 139, 250, 0.1)', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem', border: '1px solid rgba(167, 139, 250, 0.2)' }}>
             <Lock size={40} color="#a78bfa" />

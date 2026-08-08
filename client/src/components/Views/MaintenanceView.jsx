@@ -43,7 +43,7 @@ const MaintenanceView = () => {
 
   if (!isAppOwner) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-dim)' }}>
+      <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
         <Shield size={48} style={{ marginBottom: '1rem', opacity: 0.2 }} />
         <p>{t('app_owner_only')}</p>
       </div>

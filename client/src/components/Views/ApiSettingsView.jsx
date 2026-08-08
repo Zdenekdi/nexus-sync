@@ -108,7 +108,7 @@ const ApiSettingsView = () => {
             <Terminal size={24} color="var(--accent-color)" />
             <h1 style={{ fontSize: '2rem', fontWeight: '900', margin: 0, letterSpacing: '-0.02em' }}>Developer API</h1>
           </div>
-          <p style={{ color: 'var(--text-dim)', margin: 0, fontSize: '0.95rem' }}>
+          <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.95rem' }}>
             Spravujte přístup k vašim datům přes externí aplikace a skripty.
           </p>
         </div>
@@ -202,7 +202,7 @@ const ApiSettingsView = () => {
                           {key.keyId}
                         </span>
                       </div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)', display: 'flex', gap: '1rem' }}>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', gap: '1rem' }}>
                         <span>Vytvořeno: {new Date(key.createdAt).toLocaleDateString()}</span>
                         <span>Poslední užití: {key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleString() : 'Nikdy'}</span>
                       </div>
@@ -238,7 +238,7 @@ const ApiSettingsView = () => {
             
             <form onSubmit={handleCreateKey}>
               <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem', color: 'var(--text-dim)' }}>Název klíče</label>
+                <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Název klíče</label>
                 <input 
                   name="keyName"
                   placeholder="Např. Google Sheets Export" 
@@ -252,7 +252,7 @@ const ApiSettingsView = () => {
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.75rem', color: 'var(--text-dim)' }}>Oprávnění (Scopes)</label>
+                <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.75rem', color: 'var(--text-secondary)' }}>Oprávnění (Scopes)</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   {[
                     { val: 'read:stats', label: 'Statistiky agentury' },
@@ -303,7 +303,7 @@ const ApiSettingsView = () => {
               <CheckCircle2 size={32} />
             </div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '1rem' }}>Klíč byl vygenerován!</h2>
-            <p style={{ color: 'var(--text-dim)', marginBottom: '2rem' }}>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
               Toto je jediný moment, kdy klíč uvidíte. Po zavření tohoto okna už ho nebude možné zobrazit.
             </p>
 
@@ -339,7 +339,7 @@ const ApiSettingsView = () => {
           <div className="glass-panel" style={{ padding: '2rem', borderRadius: '24px', maxWidth: '400px', width: '90%', textAlign: 'center' }}>
             <AlertTriangle size={48} color="#ef4444" style={{ marginBottom: '1rem' }} />
             <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>Zneplatnit API klíč?</h3>
-            <p style={{ color: 'var(--text-dim)', marginBottom: '2rem', fontSize: '0.9rem' }}>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '0.9rem' }}>
               Všechny aplikace a skripty používající tento klíč okamžitě přestanou fungovat. Tato akce je nevratná.
             </p>
             <div style={{ display: 'flex', gap: '1rem' }}>

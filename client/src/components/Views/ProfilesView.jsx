@@ -178,7 +178,7 @@ const ProfilesView = () => {
             textAlign: 'center', 
             background: 'var(--card-bg)', 
             borderRadius: '16px', 
-            border: '1px dashed var(--border-color)',
+            border: '1px dashed var(--card-border)',
             color: 'var(--text-secondary)'
           }}>
             <p style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.5rem' }}>

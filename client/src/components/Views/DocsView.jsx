@@ -57,7 +57,7 @@ const CommandBlock = ({ title, command, description, t }) => {
       }}>
         {command}
       </div>
-      {description && <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-dim)' }}>{description}</p>}
+      {description && <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{description}</p>}
     </div>
   );
 };
@@ -68,7 +68,7 @@ const DocsView = () => {
   // Check permission via hook directly
   if (!activeOperator?.isAppOwner) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-dim)' }}>
+      <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
         <Shield size={48} style={{ marginBottom: '1rem', opacity: 0.2 }} />
         <p>{t('app_owner_only')}</p>
       </div>
@@ -88,7 +88,7 @@ const DocsView = () => {
           </div>
           <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: '900' }}>{t('docs_title')}</h1>
         </div>
-        <p style={{ color: 'var(--text-dim)', fontSize: '0.95rem' }}>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
           {t('docs_subtitle')}
         </p>
       </header>

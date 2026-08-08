@@ -1186,7 +1186,7 @@ const InboxView = () => {
                         </div>
                       );
                     })()}
-                    <div style={{ padding: '0.75rem', borderTop: '1px solid var(--card-border)', background: 'var(--bg-secondary, #0f1117)', flexShrink: 0 }}>
+                    <div style={{ padding: '0.75rem', borderTop: '1px solid var(--card-border)', background: 'var(--card-bg)', flexShrink: 0 }}>
                       <button
                         onClick={() => { const d = calViewDate.toISOString().split('T')[0]; setNewBookingForm(f => ({ ...f, date: d })); setIsBookingModalOpen(true); }}
                         style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', background: 'var(--accent-color)', border: 'none', color: 'white', fontSize: '0.85rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}

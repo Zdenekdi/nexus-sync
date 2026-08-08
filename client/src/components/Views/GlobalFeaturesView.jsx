@@ -30,14 +30,14 @@ const GlobalFeaturesView = () => {
   if (loading) {
     return (
       <div style={{ padding: '4rem', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <div className="spinning" style={{ width: '30px', height: '30px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--accent-primary)', borderRadius: '50%' }}></div>
+        <div className="spinning" style={{ width: '30px', height: '30px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--accent-color)', borderRadius: '50%' }}></div>
       </div>
     );
   }
 
   if (!isAppOwner) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-dim)' }}>
+      <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
         <Shield size={48} style={{ marginBottom: '1rem', opacity: 0.2 }} />
         <p>{t('app_owner_only')}</p>
       </div>
@@ -78,7 +78,7 @@ const GlobalFeaturesView = () => {
                       </span>
                     </div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>{feature.note}</div>
-                    <code style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>{feature.key}</code>
+                    <code style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{feature.key}</code>
                   </div>
                   <button
                     onClick={() => handleFeatureLockToggle && handleFeatureLockToggle(feature.key, !locked)}
