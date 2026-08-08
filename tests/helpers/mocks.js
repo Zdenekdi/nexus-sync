@@ -161,15 +161,6 @@ export async function setupApiMocks(page) {
       body: JSON.stringify([])
     });
   });
-
-  // Audit logs
-  await context.route('**/audit-logs/**', async route => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ logs: [], total: 0, page: 1, pageSize: 20 })
-    });
-  });
   await context.route('**/audit/**', async route => {
     await route.fulfill({
       status: 200,
@@ -370,6 +361,18 @@ export async function setupApiMocks(page) {
     await route.fulfill({
       status: 200, contentType: 'application/json',
       body: JSON.stringify({ logs: [], total: 0, pages: 1 })
+    });
+  });
+
+  // Přehled klientů. Server vždycky posílá všechna tři čísla
+  // (`totalRevenue._sum.totalSpent || 0`), takže nuly jsou věrný nudný stav.
+  // Klient dělá setStats(statsData), čímž přepíše i výchozí nuly — když
+  // odpověď pole nemá, vyjde z Number(undefined) hodnota NaN a v CRM svítí
+  // „NaN CZK". Kód je proti tomu od téhle větve zpevněný, ale mock ať sedí.
+  await context.route('**/clients/stats', async route => {
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ totalClients: 0, vipClients: 0, totalRevenue: 0 })
     });
   });
 

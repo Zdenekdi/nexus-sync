@@ -100,42 +100,57 @@ zbylých 12 je potřeba doimplementovat.
 
 ## Co zbývá
 
-Tři z původního seznamu jsou hotové — a u každého se za tím prázdnem něco
-skrývalo, takže to nebyla jen formalita:
+Z původního seznamu je hotová většina, a **u čtyř z pěti prověřených se za
+tím prázdnem něco skrývalo** — takže to nebyla formalita:
 
 | Doplněno | Co se ukázalo |
 |---|---|
 | `/api/admin/feature-locks` | zámky jsou fail-closed; test hlídá, že při výpadku serveru zůstane sledování polohy zamčené |
-| `/api/device/bindings` | relay bez přiřazeného profilu tiše nic nedělá; varovný pruh se do teď nikdy nevykreslil |
+| `/api/device/bindings` | relay bez přiřazeného profilu tiše nic nedělá; varovný pruh se nikdy nevykreslil |
 | `/api/agency/relay-status` | odznak „Agent online“ svítil zeleně, kdykoli měl kdokoli otevřený dashboard |
+| `/api/agency/stats` | dlaždice „Rezervací celkem“ počítala bezpečnostní relace, takže incall schůzky v čísle nebyly |
+| `/api/audit-logs`, `/api/blacklist` | logy padaly na bílou obrazovku bez pole `logs`; blacklist byl v testech vždy prázdný |
+| `/api/subscriptions/current`, `/history` | jen šum v testech: `[]` je pravdivostně true, takže banner ukazoval „NaN dní“ |
+| `/api/clients/stats` | zdroj „NaN CZK“ v CRM |
 
-Zbývá šestnáct. Server je má všechny, klient je volá — jen v mock souboru
-nejsou:
+Zbývá devět, prakticky jen infrastrukturní panel pro vlastníka aplikace:
 
 | Endpoint | Co kvůli tomu v testech nejde ověřit |
 |---|---|
-| `/api/subscriptions/current`, `/history`, `/plans` | předplatné a jeho historie |
-| `/api/trackers` | seznam lokátorů |
+| `/api/subscriptions/plans` | ceník v adminu |
+| `/api/trackers` | seznam lokátorů — dnes stejně za zámkem `phone-tracking` |
 | `/api/sip/config` | VoIP konfigurace |
-| `/api/agency/stats` | přehled v QA Hubu |
-| `/api/audit-logs` | auditní záznamy — pozor, ruta `**/audit-logs/**` v mocích existuje, ale `/api/audit-logs` bez lomítka na konci nechytá |
-| `/api/blacklist` | černá listina |
 | `/api/ai/test` | zkouška AI napojení |
 | `/api/admin/infra-health` | zdraví infrastruktury |
 | `/api/vultr/status`, `/bandwidth`, `/apk-info`, `/agent-downloads` | infrastrukturní panel |
 | `/api/hetzner/status`, `/metrics` | infrastrukturní panel |
 
-Doplňovat je má smysl vždycky spolu s testem, který na daných datech něco
-tvrdí. Samotný mock bez testu jen posune prázdno o úroveň dál.
+**Procházet zbytek endpoint po endpointu se ale nevyplatí.** Dva plošné
+specy pokryjí všechny stránky pro všech pět rolí najednou a najdou víc:
+
+- `zadna_stranka_nepada.spec.js` — žádná stránka se nerozsype na bílou
+  obrazovku (odhalilo Hierarchii a Výplaty)
+- `zadne_smeti_v_textu.spec.js` — nikde `NaN`, `Invalid Date`, `undefined`
+  ani `[object Object]` (odhalilo „NaN CZK“, „undefined GB“, „NaN %“)
+
+Oběma zbylé infrastrukturní stránky procházejí čistě.
+
+## Tři zásady, které se osvědčily
 
 **Globální mock ať drží nejnudnější možný stav.** Prázdný seznam, vypnutá
 funkce, nízký tarif. Jednou jsem do něj dal `plan: 'Professional'` a rozbil
 tím čtyři testy nákupu vyššího tarifu. Spec, který potřebuje bohatší data,
 si rutu přebije sám — a rovnou tím řekne, na čem stojí.
 
+**Mock musí mít TVAR, jaký vrací server.** Ne jen „něco“. Prázdné pole tam,
+kde server posílá `{ entries: [...] }`, je horší než nic: panel se tváří
+prázdně a nikdo nepozná rozdíl. Dvě stránky kvůli špatnému tvaru mocku roky
+padaly a nikdo si toho nevšiml.
+
 **Ke každému testu patří kontrolní vzorek.** Tvrzení „něco tam není“ platí
-i na prázdné stránce, takže bez opačného případu neověřuje nic. Dvakrát se
-kvůli tomu tady zelenal test, který se ve skutečnosti chytal něčeho jiného.
+i na prázdné stránce, takže bez opačného případu neověřuje nic. U plošných
+speců to znamená dočasně vrátit opravu a ověřit, že test spadne — jinak je
+to test, který neumí najít nic.
 
 ## Jak si seznam ověřit znovu
 
