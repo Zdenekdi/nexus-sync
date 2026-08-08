@@ -66,9 +66,15 @@ exports.getStats = async (req, res) => {
 
     const agencyFilter = isAppOwner ? {} : { agencyId: String(agencyId) };
 
+    // totalBookings se dřív počítalo z safetySession. Jenže plánovaná relace
+    // vzniká JEN u výjezdů (`ensurePlannedSafetySession` v bookingController
+    // se u incall schválně nespustí), takže dlaždice „Rezervací celkem“ na
+    // dashboardu nepočítala žádnou schůzku v provozovně. Agentuře, která dělá
+    // převážně incall, ukazovala skoro nulu — číslo bylo prostě špatně pod
+    // svým vlastním popiskem.
     const [totalMessages, totalBookings, totalCalls] = await Promise.all([
       prisma.message.count({ where: isAppOwner ? {} : { chat: { agencyId: String(agencyId) } } }),
-      prisma.safetySession.count({ where: agencyFilter }),
+      prisma.booking.count({ where: agencyFilter }),
       prisma.callLog.count({ where: isAppOwner ? {} : { profile: { agencyId: String(agencyId) } } })
     ]);
 

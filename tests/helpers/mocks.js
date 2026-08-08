@@ -363,6 +363,35 @@ export async function setupApiMocks(page) {
   // Tvar odpovídá getChats: profile, poslední zpráva v poli messages
   // a _count. Klient z toho v useChatLogic.js čte messages[0].text,
   // sender.name, lastMessageAt a externalId.
+  // Předplatné. `null` je to, co server vrací agentuře BEZ předplatného
+  // (`res.json(active || null)`), takže banner se schová — nejnudnější stav.
+  //
+  // Prázdné pole ze zachytávače tady bylo aktivně škodlivé: `[]` je
+  // pravdivostně true, takže stráž `if (!activeSubscription) return null`
+  // v DashboardHome neplatila a banner se vykreslil s „NaN dní“
+  // a „Invalid Date“. V produkci se to nestane (expiresAt je v schématu
+  // povinné), ale v testech to zašumělo každý dashboard.
+  await context.route('**/subscriptions/current', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: 'null' });
+  });
+
+  await context.route('**/subscriptions/history', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
+  });
+
+  // Přehled agentury. Nuly jsou nejnudnější stav — dashboard pak ukáže
+  // samé nuly, což nerozbije nic. Spec, který na číslech něco tvrdí, si
+  // rutu přebije sám.
+  await context.route('**/agency/stats', async route => {
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({
+        totalMessages: 0, totalBookings: 0, totalCalls: 0,
+        revenue: '0.00', uptime: '100%', chartData: [0, 0, 0, 0, 0, 0, 0]
+      })
+    });
+  });
+
   // Stav relaye. Schválně OFFLINE — je to nudnější a poctivější výchozí stav
   // než tvrdit, že zařízení běží. Spec, který na tom něco staví, si rutu
   // přebije sám.
