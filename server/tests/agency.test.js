@@ -26,7 +26,10 @@ afterEach(() => jest.clearAllMocks());
 describe('GET /api/agency/stats', () => {
   it('returns stats for authenticated user', async () => {
     prismaMock.message.count.mockResolvedValue(42);
-    prismaMock.safetySession.count.mockResolvedValue(10);
+    // Dřív se tu mockoval safetySession — test tím kódoval chybu, kterou
+    // getStats měl: rezervace se počítaly z bezpečnostních relací, jenže ty
+    // vznikají jen u výjezdů, takže incall schůzky v čísle nebyly.
+    prismaMock.booking.count.mockResolvedValue(10);
     prismaMock.callLog.count.mockResolvedValue(5);
     prismaMock.dailyStat.findMany.mockResolvedValue([
       { date: new Date('2026-01-01'), revenue: 100, bookings: 2 },
