@@ -176,7 +176,7 @@ const SystemHealthTab = ({ server }) => {
         <HealthStatCard 
           icon={<Activity color="#10b981" />}
           label={t('ramUsage')}
-          value={`${health?.memory?.percent}%`}
+          value={Number.isFinite(Number(health?.memory?.percent)) ? `${health.memory.percent}%` : '—'}
           subtitle={`${health?.memory?.used} / ${health?.memory?.total}`}
           color="#10b981"
         />
@@ -259,7 +259,7 @@ const SystemHealthTab = ({ server }) => {
             <div style={{ marginTop: '1rem', paddingTop: '1.5rem', borderTop: '1px solid var(--card-border)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
                 <RefreshCw size={12} className={loading ? "spin-animation" : ""} />
-                {t('last_updated')}: {new Date(health?.timestamp).toLocaleTimeString()}
+                {t('last_updated')}: {Number.isFinite(new Date(health?.timestamp).getTime()) ? new Date(health.timestamp).toLocaleTimeString() : '—'}
               </div>
             </div>
           </div>
@@ -304,7 +304,7 @@ const UsageBar = ({ label, percent, value, color }) => (
         <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>{label.toUpperCase()}</div>
         <div style={{ fontSize: '1rem', fontWeight: '900' }}>{value}</div>
       </div>
-      <div style={{ fontSize: '1.25rem', fontWeight: '900', color: percent > 90 ? 'var(--error-color)' : percent > 75 ? 'var(--warning-color)' : 'white' }}>{Math.round(percent)}%</div>
+      <div style={{ fontSize: '1.25rem', fontWeight: '900', color: percent > 90 ? 'var(--error-color)' : percent > 75 ? 'var(--warning-color)' : 'white' }}>{Number.isFinite(Number(percent)) ? `${Math.round(percent)}%` : '—'}</div>
     </div>
     <div style={{ width: '100%', height: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden', padding: '2px' }}>
       <div style={{ width: `${percent}%`, height: '100%', background: color, borderRadius: '10px', transition: 'width 1s ease-out', boxShadow: `0 0 10px ${color}44` }}></div>

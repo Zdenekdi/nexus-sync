@@ -236,7 +236,7 @@ function InfraTab() {
                  <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '700' }}>{t('performance_resources').toUpperCase()}</div>
                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: '700' }}>
                    <Cpu size={14} color="var(--accent-color)" />
-                   {status?.vcpu_count} vCPU • {status?.ram > 128 ? `${status.ram} MB` : `${status?.ram} GB`}
+                   {status?.vcpu_count ?? '?'} vCPU • {status?.ram > 128 ? `${status.ram} MB` : `${status?.ram ?? '?'} GB`}
                  </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
