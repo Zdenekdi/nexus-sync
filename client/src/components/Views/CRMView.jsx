@@ -95,7 +95,7 @@ const CRMView = () => {
       <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
         <StatCard icon={UserCheck} label={t('totalClients')} value={stats.totalClients} color="var(--accent-color)" />
         <StatCard icon={Star} label={t('vipClients')} value={stats.vipClients} color="#fbbf24" />
-        <StatCard icon={TrendingUp} label={t('totalRevenue')} value={`${Number(stats.totalRevenue).toLocaleString()} CZK`} color="var(--success-color)" />
+        <StatCard icon={TrendingUp} label={t('totalRevenue')} value={`${(Number(stats.totalRevenue) || 0).toLocaleString()} CZK`} color="var(--success-color)" />
       </div>
 
       {/* Main Content */}
@@ -180,7 +180,7 @@ const CRMView = () => {
                       </div>
                     </td>
                     <td style={{ padding: '1.2rem 1.5rem' }}>
-                      <div style={{ color: 'white', fontWeight: '800' }}>{Number(client.totalSpent).toLocaleString()} CZK</div>
+                      <div style={{ color: 'white', fontWeight: '800' }}>{(Number(client.totalSpent) || 0).toLocaleString()} CZK</div>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(34, 197, 94, 0.8)' }}>
                         {client._count?.bookings || 0} visits
                       </div>
