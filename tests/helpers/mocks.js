@@ -363,6 +363,26 @@ export async function setupApiMocks(page) {
   // Tvar odpovídá getChats: profile, poslední zpráva v poli messages
   // a _count. Klient z toho v useChatLogic.js čte messages[0].text,
   // sender.name, lastMessageAt a externalId.
+  // Auditní logy. Zachytávač tu vracel [], takže `data.logs` bylo undefined
+  // a stránka padala na `logs.length` — v testech tedy nešlo o prázdný
+  // seznam, ale o „Kritickou chybu renderu".
+  await context.route('**/audit-logs**', async route => {
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ logs: [], total: 0, pages: 1 })
+    });
+  });
+
+  // Blacklist. Prázdný seznam ve tvaru, který server opravdu vrací
+  // ({ entries, total, page, totalPages }) — panel čte `data.entries`,
+  // takže holé pole ze zachytávače mu nikdy nic nedalo.
+  await context.route('**/blacklist', async route => {
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ entries: [], total: 0, page: 1, totalPages: 0 })
+    });
+  });
+
   // Předplatné. `null` je to, co server vrací agentuře BEZ předplatného
   // (`res.json(active || null)`), takže banner se schová — nejnudnější stav.
   //

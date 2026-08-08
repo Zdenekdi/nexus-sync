@@ -28,9 +28,15 @@ const AuditLogsView = () => {
       });
       if (res.ok) {
         const data = await res.json();
-        setLogs(data.logs);
-        setTotal(data.total);
-        setPages(data.pages);
+        // Bez záložních hodnot stačí jedna odpověď 200 bez `logs` a stránka
+        // spadne na `logs.length` s bílou obrazovkou — ne prázdný seznam,
+        // ale „Kritická chyba renderu“. Server dnes vždycky posílá správný
+        // tvar, takže se to uživateli nestane; jenže rozdíl mezi „nic tu
+        // není“ a „appka se rozsypala“ je pro obsluhu zásadní a nemá viset
+        // na tom, že se tvar odpovědi nikdy nezmění.
+        setLogs(Array.isArray(data.logs) ? data.logs : []);
+        setTotal(Number(data.total) || 0);
+        setPages(Number(data.pages) || 1);
       }
     } catch (_err) {
       console.error('Failed to fetch audit logs:', _err);
