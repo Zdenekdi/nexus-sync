@@ -12,7 +12,8 @@
     "cap:sync": "node scripts/sync-android-assets.js && node scripts/post-cap-sync.js",
     "cap:open": "npx cap open android",
     "cap:build": "npm run build && npm run cap:sync && npx cap open android",
-    "deploy:ota": "node scripts/deploy-ota.js"
+    "deploy:ota": "node scripts/deploy-ota.js",
+    "check:translations": "node scripts/kontrola-prekladu.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.2.0",
