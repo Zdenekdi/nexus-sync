@@ -256,7 +256,7 @@ const HierarchyView = () => {
                         boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
                         border: '2px solid rgba(255,255,255,0.15)'
                       }}>
-                        {user.avatar || user.name.charAt(0)}
+                        {user.avatar || user.name?.charAt(0) || '?'}
                       </div>
                       
                       <div style={{ textAlign: 'center' }}>
