@@ -201,7 +201,7 @@ export async function setupApiMocks(page) {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ payouts: [], total: 0 })
+      body: JSON.stringify([])  // /payouts/summary vrací POLE (Object.values), ne objekt
     });
   });
 
@@ -837,8 +837,12 @@ export async function setupApiMocks(page) {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify([
-        { id: 'user-1', email: 'mark@nexus.sync', role: 'Agency Admin' },
-        { id: 'user-2', email: 'alice@nexus.sync', role: 'Senior Operator' }
+        // `name` je v schématu povinné a server ho vždycky posílá. Když
+        // v mocku chybělo, padala celá stránka Hierarchie na
+        // `user.name.charAt(0)` — a nikdo si toho nevšiml, protože tam
+        // žádný test nechodil.
+        { id: 'user-1', name: 'Mark (Admin)', email: 'mark@nexus.sync', role: 'Agency Admin' },
+        { id: 'user-2', name: 'Alice (Senior Op)', email: 'alice@nexus.sync', role: 'Senior Operator' }
       ])
     });
   });

@@ -25,7 +25,10 @@ const PayoutsView = () => {
       });
       if (res.ok) {
         const data = await res.json();
-        setSummary(data);
+        // Endpoint vrací Object.values(...), tedy pole. Kdyby se tvar někdy
+        // změnil, `summary.reduce` níž shodí celou stránku na bílou obrazovku
+        // místo prázdné tabulky.
+        setSummary(Array.isArray(data) ? data : []);
       }
     } catch (_err) {
       console.error('Failed to fetch payout summary:', _err);
