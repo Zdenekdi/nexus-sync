@@ -130,6 +130,12 @@ jobs:
       - name: Check translation keys
         run: cd client && npm run check:translations
 
+      # Nedefinovaná var() se taky nikde nenahlásí — u color: se zdědí barva
+      # rodiče, u background: vyjde průhledná. V srpnu 2026 takhle nefungovalo
+      # 72 zápisů a varovné stavy nebyly červené.
+      - name: Check CSS variables
+        run: cd client && npm run check:css-vars
+
       - name: Build client
         run: |
           cd client

@@ -341,7 +341,10 @@ const AIInsightCard = ({ stats, _agencies, systemHealth }) => {
                     <div className="skeleton-text" style={{ width: '95%', height: '14px', borderRadius: '4px' }}></div>
                   </div>
                 ) : (
-                  <div style={{ fontFamily: 'var(--font-main)' }}>
+                  // Písmo se dědí z body (Inter). Dřív tu stálo
+                  // odkaz na proměnnou font-main, jenže ta nikdy neexistovala:
+                  // deklarace byla neplatná a stejně se dědilo.
+                  <div>
                     {renderFormattedContent(detailedReport)}
                   </div>
                 )}

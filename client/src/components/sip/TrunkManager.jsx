@@ -93,7 +93,7 @@ export default function TrunkManager() {
 
   if (!isManager) return null;
 
-  const inputStyle = { width: '100%', padding: '0.6rem 0.75rem', background: 'var(--input-bg, rgba(255,255,255,0.05))', border: '1px solid var(--card-border)', borderRadius: '8px', color: 'var(--text-primary, white)', fontSize: '0.9rem' };
+  const inputStyle = { width: '100%', padding: '0.6rem 0.75rem', background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '8px', color: 'var(--text-primary, white)', fontSize: '0.9rem' };
   const labelStyle = { fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em', marginBottom: '0.35rem', display: 'block' };
 
   return (

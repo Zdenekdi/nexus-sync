@@ -376,7 +376,7 @@ const PlansDashboard = () => {
                           <div style={{ fontSize: '0.65rem', fontWeight: '900', color: 'rgba(255,255,255,0.3)', marginBottom: '0.5rem', letterSpacing: '0.1em' }}>VLASTNÍ (NEZNÁMÉ) POLOŽKY</div>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.5rem' }}>
                             {customFeatures.map(feat => (
-                              <div key={feat} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 0.8rem', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', color: 'var(--danger-color)', fontSize: '0.8rem', fontWeight: '600' }}>
+                              <div key={feat} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 0.8rem', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', color: 'var(--error-color)', fontSize: '0.8rem', fontWeight: '600' }}>
                                 <AlertCircle size={14} /> {feat}
                                 <button onClick={() => setEditingPlan(prev => ({...prev, features: prev.features.filter(f => f !== feat)}))} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0 }}>×</button>
                               </div>

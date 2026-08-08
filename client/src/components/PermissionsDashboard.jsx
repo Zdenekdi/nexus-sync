@@ -189,7 +189,7 @@ const PermissionsDashboard = ({ agencyId: agencyIdProp = null, onUpdate = null }
           <div style={{ fontWeight: '700' }}>{t('loading') || 'Načítání...'}</div>
         </div>
       ) : roles.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-dim)' }}>
+        <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>
           <Shield size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
           <p>{t('noResults') || 'Žádné role nenalezeny.'}</p>
         </div>
@@ -236,7 +236,7 @@ const PermissionsDashboard = ({ agencyId: agencyIdProp = null, onUpdate = null }
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <Shield size={18} color={perms.merged_with_admin ? '#10b981' : 'var(--text-dim)'} />
+                        <Shield size={18} color={perms.merged_with_admin ? '#10b981' : 'var(--text-secondary)'} />
                         <div>
                           <div style={{ fontWeight: '800', fontSize: '0.9rem', color: perms.merged_with_admin ? '#10b981' : 'white' }}>
                             {t('merge_with_admin') || 'Sloučit s Agency Admin'}
@@ -306,7 +306,7 @@ const PermissionsDashboard = ({ agencyId: agencyIdProp = null, onUpdate = null }
 
                           return (
                             <div key={permKey} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: '0.9rem', color: isEnabled ? 'white' : 'var(--text-dim)', fontWeight: '600' }}>
+                              <span style={{ fontSize: '0.9rem', color: isEnabled ? 'white' : 'var(--text-secondary)', fontWeight: '600' }}>
                                 {label}
                               </span>
                               <div

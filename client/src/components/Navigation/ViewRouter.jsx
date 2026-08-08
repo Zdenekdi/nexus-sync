@@ -14,9 +14,9 @@ const DataTransparency = lazyWithRetry(() => import('../DataTransparency'));
 const LoadingFallback = () => (
   <div style={{ 
     display: 'flex', flex: 1, height: '100%', alignItems: 'center', 
-    justifyContent: 'center', background: 'var(--bg-main)', color: 'var(--text-dim)' 
+    justifyContent: 'center', background: 'var(--bg-color)', color: 'var(--text-secondary)' 
   }}>
-    <div className="spinning" style={{ width: '30px', height: '30px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--accent-primary)', borderRadius: '50%' }}></div>
+    <div className="spinning" style={{ width: '30px', height: '30px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--accent-color)', borderRadius: '50%' }}></div>
   </div>
 );
 
