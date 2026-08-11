@@ -16,9 +16,32 @@ const requireProfileManager = (req, res, next) => {
   next();
 };
 
+// Identifikátor profilu se dostane do cesty na disku DŘÍV, než controller
+// ověří, že takový profil vůbec existuje — multer běží před ním. A Express
+// dekóduje %2F, takže `..%2F..%2Fevil` skončí v req.params.id jako
+// `../../evil` a path.join z toho udělá cestu MIMO adresář pro nahrávání.
+// Ověřeno testem, ne odvozeno.
+//
+// Přihlášená manažerka tak mohla nechat vytvořit adresář a zapsat obrázek
+// kamkoli, kam má proces právo psát. Přepsat cizí soubor nešlo (jméno se
+// generuje náhodně a přípona je z whitelistu), ale i tak to sem nepatří.
+const ID_PROFILU = /^[A-Za-z0-9_-]+$/;
+
+const overIdProfilu = (req, res, next) => {
+  if (!ID_PROFILU.test(String(req.params.id || ''))) {
+    return res.status(400).json({ message: 'Invalid profile id' });
+  }
+  next();
+};
+
 const galleryStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = path.join(__dirname, '..', '..', 'uploads', 'profile-gallery', String(req.params.id));
+    // Pojistka i po kontrole výše: basename usekne cokoli s lomítkem, takže
+    // se z tohohle místa nedá vyjít z adresáře ani kdyby stráž někdo obešel.
+    const dir = path.join(
+      __dirname, '..', '..', 'uploads', 'profile-gallery',
+      path.basename(String(req.params.id || ''))
+    );
     fs.mkdirSync(dir, { recursive: true });
     cb(null, dir);
   },
@@ -56,7 +79,7 @@ router.post('/', authMiddleware, requireProfileManager, validate(createProfile),
 router.patch('/:id', authMiddleware, requireProfileManager, validate(patchProfile), profileController.patchProfile);
 router.get('/:id/gallery', authMiddleware, profileController.getGallery);
 router.get('/:id/gallery/:photoId/file', authMiddleware, profileController.getGalleryPhoto);
-router.post('/:id/gallery', authMiddleware, requireProfileManager, handleGalleryUpload, profileController.uploadGalleryPhoto);
+router.post('/:id/gallery', authMiddleware, requireProfileManager, overIdProfilu, handleGalleryUpload, profileController.uploadGalleryPhoto);
 router.delete('/:id/gallery/:photoId', authMiddleware, requireProfileManager, profileController.deleteGalleryPhoto);
 router.patch('/:id/assignees', authMiddleware, requireProfileManager, validate(assignUsers), profileController.assignUsersToProfile);
 router.post('/:id/sync', authMiddleware, profileController.syncProfile);
