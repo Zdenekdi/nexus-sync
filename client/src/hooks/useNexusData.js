@@ -520,6 +520,19 @@ export function useNexusData({
           model: b.model || null,
           platform: b.platform || 'android',
           lastSeenAt: b.lastSeenAt,
+          // `active` je příznak z databáze — říká, že vazba je povolená, NE že
+          // zařízení žije. Mrtvý relay se proto v seznamu tvářil jako „Active",
+          // i když se hodinu neozval.
+          //
+          // Život se pozná z lastSeenAt: relay obnovuje tuhle značku při každém
+          // dotazu na outbox (co 30 s), při příchozí SMS i při SIP pingu. Dvě
+          // minuty jsou stejná hranice jako u /agency/relay-status.
+          jeOnline: Boolean(
+            b.active && b.lastSeenAt && (Date.now() - new Date(b.lastSeenAt).getTime()) < 2 * 60 * 1000
+          ),
+          // POZOR: `status` zůstává jak bylo. Visí na něm tlačítko pro odpojení
+          // (SettingsView ř. 679–682), takže vložit sem „Offline" by znamenalo,
+          // že nefunkční zařízení nejde odpojit.
           status: b.active ? 'Active' : 'Disabled'
         })));
       }
