@@ -357,7 +357,13 @@ exports.syncProfile = async (req, res) => {
       : [];
     const platforms = configuredPlatforms.length ? configuredPlatforms : KNOWN_PLATFORMS;
     const io = getIO();
-    io.to(`agency_${profile.agencyId}`).emit('relay_command', { type: 'SYNC_WEB_PROFILE', profileId: id, payload: { name: name || profile.name, bio: bio || profile.bio, credentials: decryptedCredentials, platforms } });
+    // POUZE agentovi, ne celé agentuře. Do `agency_<id>` vstupuje každý
+    // přihlášený socket včetně prohlížečů operátorek — ty by tak v síťovém
+    // provozu dostaly hesla modelky k externím webům, přestože je nepotřebují.
+    //
+    // POZOR: `sync_chat` a `send_sms` míří na relay TELEFON a musí zůstat
+    // v agency_ místnosti. Přesouvají se jen příkazy, které nesou credentials.
+    io.to(`agent_${profile.agencyId}`).emit('relay_command', { type: 'SYNC_WEB_PROFILE', profileId: id, payload: { name: name || profile.name, bio: bio || profile.bio, credentials: decryptedCredentials, platforms } });
     res.json({ ok: true });
   } catch (error) {
     res.status(500).json({ message: 'Failed' });
@@ -418,7 +424,8 @@ exports.boostProfile = async (req, res) => {
     const automationSettings = data.awAutomation || {};
 
     const io = getIO();
-    io.to(`agency_${profile.agencyId}`).emit('relay_command', {
+    // Taky jen agentovi — nese credentials, viz komentář u SYNC_WEB_PROFILE.
+    io.to(`agent_${profile.agencyId}`).emit('relay_command', {
       type: 'BOOST_WEB_PROFILE',
       profileId: id,
       payload: {

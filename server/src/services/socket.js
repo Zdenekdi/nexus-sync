@@ -97,6 +97,23 @@ const init = (server) => {
       socket.join(`user:${userId}`);
     }
 
+    // Automatizační agent (local-agent) má vlastní místnost. Do `agency_<id>`
+    // vstupuje KAŽDÝ přihlášený socket včetně prohlížečů operátorek, takže
+    // příkazy s přihlašovacími údaji k externím webům by tam dostal každý —
+    // operátorka je nepotřebuje a v síťovém provozu je vidět.
+    //
+    // Agent ověřený API klíčem má type 'agent' (resolveSocketUser). Starší
+    // agenti se ale připojují JWT a ten typ nenesou; hlásí se aspoň v
+    // handshake jako 'local-bridge', takže bereme i to. Prohlížeč by se za
+    // něj sice mohl vydávat, ale dostal by jen data vlastní agentury, která
+    // mu dnes stejně chodí — nezhoršuje to nic a nezlomí to starší agenty.
+    const jeAgent = socket.user?.type === 'agent'
+      || socket.handshake.auth?.type === 'local-bridge';
+    if (agencyId && jeAgent) {
+      socket.join(`agent_${agencyId}`);
+      console.log(`[Socket-DEBUG] Agent připojen do agent_${agencyId}`);
+    }
+
     // Join a room for the specific agency
     if (agencyId) {
       console.log(`[Socket-DEBUG] User ${userId} joining room agency_${agencyId}`);
