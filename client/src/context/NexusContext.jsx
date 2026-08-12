@@ -292,8 +292,16 @@ export const NexusProvider = ({ children }) => {
   ], []);
   const [selectedServerId, setSelectedServerId] = useState('main-hub');
 
-  const chatScrollRef = useRef(null);
-  const isUserScrolled = useRef(false);
+  // POZOR: chatScrollRef ani isUserScrolled se tady NEVYTVÁŘEJÍ.
+  //
+  // Kontext si dřív zakládal vlastní dvojici a tu vystavoval komponentám —
+  // takže InboxView připojil DOM na kontextový ref, zatímco posouvání
+  // v useChatLogic sahalo na svůj vlastní, který nebyl připojený k ničemu.
+  // `chatScrollRef.current` tam byl vždycky null a automatický posun na
+  // konec konverzace tím pádem NIKDY nefungoval. Kód existoval a vypadal
+  // správně, jen nikam nedosáhl.
+  //
+  // Refy se proto berou z chatLogic (viz níž ve `value`).
   // Profily přihlášeného uživatele — v refu, protože socket handlery se registrují
   // dřív, než je myProfiles spočítané, a nesmí se kvůli nim přepojovat socket.
   const myProfilesRef = useRef([]);
@@ -440,6 +448,13 @@ export const NexusProvider = ({ children }) => {
     isHistoryLoading,
     setIsHistoryLoading
   });
+
+  // Refy na posouvání chatu se berou z chatLogic — tam na ně sahají efekty,
+  // které posouvají konverzaci na konec. Kontext si dřív zakládal vlastní
+  // dvojici a vystavoval ji komponentám, takže DOM visel na jednom refu
+  // a posouvání koukalo do druhého: `current` byl vždycky null a automatický
+  // posun NIKDY nefungoval.
+  const { chatScrollRef, isUserScrolled } = chatLogic;
 
   const { 
     chatMessages, fetchChatMessages, handleSendMessage,
@@ -1036,7 +1051,7 @@ export const NexusProvider = ({ children }) => {
     socket
   , _mobileView,
     nexusData.isBookingModalOpen, nexusData.setIsBookingModalOpen, nexusData.newBookingForm, nexusData.setNewBookingForm, nexusData.handleSaveBooking, nexusData.handleExportICS, nexusData.isCalendarSyncOpen, nexusData.setIsCalendarSyncOpen, nexusData.calendarSyncUrl, nexusData.setCalendarSyncUrl, nexusData.handleSaveCalendarSync, nexusData.setSelectedScheduleEvent,
-    nexusData.agencySettings, nexusData.calendar, nexusData.clientNames, nexusData.globalFeatures, nexusData.globalSettings, nexusData.handleSaveAssignees, nexusData.handleSaveCredentials, nexusData.handleSyncAll, nexusData.handleUpdateGlobalSetting, nexusData.isSyncing, nexusData.isTraining, nexusData.onResetTraining, nexusData.onStartTraining, nexusData.relayOnline, nexusData.setProfiles, nexusData.syncProgress, nexusData.syncStatus, nexusData.toggleOperatorStatus, nexusData.trainingProgress, nexusData.stats, nexusData.fetchClientByPhone, nexusData.initData, _activeContextTab, _setActiveContextTab, _inlinePanelTab, _setInlinePanelTab, _addUserModalAgencyId, _setAddUserModalAgencyId, nexusData.updateClientName, activeSafetySession, isTimerActive, timeLeft, formatSafetyTime, nexusData.handleCheckIn, nexusData.handleCheckOut, nexusData.handleSafetyImOk, nexusData.isSafetyLoading, nexusData.handleEditBooking, nexusData.handleDeleteBooking, nexusData.fetchAllReferrals, nexusData.handleConfirmReferral, nexusData.isMaintenanceMode, nexusData.setIsMaintenanceMode, nexusData.globalAnnouncement, nexusData.setGlobalAnnouncement, nexusData.publishGlobalAnnouncement, nexusData.sourceText, nexusData.setSourceText, nexusData.translatedText, nexusData.isTranslating, nexusData.translateTargetLang, nexusData.setTranslateTargetLang, nexusData.handleTranslate, nexusData.isBackgroundLoading, nexusData.hasHydrated, startCall, registerSipDialer, nexusData.sipDids]);
+    nexusData.agencySettings, nexusData.calendar, nexusData.clientNames, nexusData.globalFeatures, nexusData.globalSettings, nexusData.handleSaveAssignees, nexusData.handleSaveCredentials, nexusData.handleSyncAll, nexusData.handleUpdateGlobalSetting, nexusData.isSyncing, nexusData.isTraining, nexusData.onResetTraining, nexusData.onStartTraining, nexusData.relayOnline, nexusData.setProfiles, nexusData.syncProgress, nexusData.syncStatus, nexusData.toggleOperatorStatus, nexusData.trainingProgress, nexusData.stats, nexusData.fetchClientByPhone, nexusData.initData, _activeContextTab, _setActiveContextTab, _inlinePanelTab, _setInlinePanelTab, _addUserModalAgencyId, _setAddUserModalAgencyId, nexusData.updateClientName, activeSafetySession, isTimerActive, timeLeft, formatSafetyTime, nexusData.handleCheckIn, nexusData.handleCheckOut, nexusData.handleSafetyImOk, nexusData.isSafetyLoading, nexusData.handleEditBooking, nexusData.handleDeleteBooking, nexusData.fetchAllReferrals, nexusData.handleConfirmReferral, nexusData.isMaintenanceMode, nexusData.setIsMaintenanceMode, nexusData.globalAnnouncement, nexusData.setGlobalAnnouncement, nexusData.publishGlobalAnnouncement, nexusData.sourceText, nexusData.setSourceText, nexusData.translatedText, nexusData.isTranslating, nexusData.translateTargetLang, nexusData.setTranslateTargetLang, nexusData.handleTranslate, nexusData.isBackgroundLoading, nexusData.hasHydrated, startCall, registerSipDialer, nexusData.sipDids, chatScrollRef, isUserScrolled]);
 
   return (
     <NexusContext.Provider value={value}>

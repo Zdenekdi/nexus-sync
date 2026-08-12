@@ -19,6 +19,7 @@ const IncomingCallScreen = lazy(() => import('./components/sip/IncomingCallScree
 const ActiveCallScreen = lazy(() => import('./components/sip/ActiveCallScreen'));
 const IncomingCallModal = lazy(() => import('./components/IncomingCallModal'));
 const IncomingSmsModal = lazy(() => import('./components/IncomingSmsModal'));
+const IncomingSmsToast = lazy(() => import('./components/IncomingSmsToast'));
 
 const RelayDialerModal = lazy(() => import('./components/RelayDialerModal'));
 const RelaySmsModal = lazy(() => import('./components/RelaySmsModal'));
@@ -152,6 +153,8 @@ const RelayDashboard = () => {
   const [setupFailedCount, setSetupFailedCount] = useState(0);
   const [showDialer, setShowDialer] = useState(false);
   const [showSms, setShowSms] = useState(false);
+  // Zpráva, na kterou se právě odpovídá — teprve ta otevře celé okno.
+  const [odpovidamNa, setOdpovidamNa] = useState(null);
 
   // Battery info via native API
   React.useEffect(() => {
@@ -361,7 +364,24 @@ const RelayDashboard = () => {
             onMute={gsmSetMuted} onSpeaker={gsmSetSpeaker} lang={lang}
           />
         )}
-        <IncomingSmsModal sms={incomingSms} onClose={clearIncomingSms} onReply={text => sendSms(incomingSms.from, text)} lang={lang} />
+        {/* Relay nikdo neobsluhuje, takže se u každé zprávy neotvírá celé okno —
+            jen oznámení, které samo zmizí. Odpovědět jde po klepnutí. */}
+        {!odpovidamNa && (
+          <IncomingSmsToast
+            sms={incomingSms}
+            onOpen={() => setOdpovidamNa(incomingSms)}
+            onClose={clearIncomingSms}
+            lang={lang}
+          />
+        )}
+        {odpovidamNa && (
+          <IncomingSmsModal
+            sms={odpovidamNa}
+            onClose={() => { setOdpovidamNa(null); clearIncomingSms(); }}
+            onReply={text => sendSms(odpovidamNa.from, text)}
+            lang={lang}
+          />
+        )}
         {sipState === 'ringing' && sipIncomingCall && (
           <IncomingCallScreen caller={sipIncomingCall.caller || sipIncomingCall.callerId} profileName={sipIncomingCall.callerName} onAnswer={sipAnswer} onReject={sipReject} />
         )}

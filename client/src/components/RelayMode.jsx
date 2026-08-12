@@ -27,6 +27,7 @@ import IncomingCallScreen from './sip/IncomingCallScreen';
 import ActiveCallScreen from './sip/ActiveCallScreen';
 import IncomingCallModal from './IncomingCallModal';
 import IncomingSmsModal from './IncomingSmsModal';
+import IncomingSmsToast from './IncomingSmsToast';
 import axios from 'axios';
 
 
@@ -86,6 +87,8 @@ const RelayMode = ({ operator, t, onHide: _onHide, onExit, syncPushToken, isSync
   });
   const [relayNotice, setRelayNotice] = useState(null);
   const [showTestSmsConfirm, setShowTestSmsConfirm] = useState(false);
+  // Zpráva, na kterou se právě odpovídá — teprve ta otevře celé okno.
+  const [odpovidamNa, setOdpovidamNa] = useState(null);
   const [_noProfileWarning] = useState(false);
   const latestHealthCheckRef = useRef(0);
   const consecutiveHealthFailuresRef = useRef(0);
@@ -831,13 +834,25 @@ const RelayMode = ({ operator, t, onHide: _onHide, onExit, syncPushToken, isSync
         />
       )}
 
-      {/* IncomingSmsModal: příchozí SMS */}
-      <IncomingSmsModal
-        sms={incomingSms}
-        onClose={clearIncomingSms}
-        onReply={(text) => sendSms(incomingSms.from, text)}
-        lang={lang}
-      />
+      {/* Příchozí SMS: oznámení, které se samo zavře.
+          Celé okno u každé zprávy tu nedává smysl — relay nikdo neobsluhuje.
+          Odpovědět jde po klepnutí na oznámení. */}
+      {!odpovidamNa && (
+        <IncomingSmsToast
+          sms={incomingSms}
+          onOpen={() => setOdpovidamNa(incomingSms)}
+          onClose={clearIncomingSms}
+          lang={lang}
+        />
+      )}
+      {odpovidamNa && (
+        <IncomingSmsModal
+          sms={odpovidamNa}
+          onClose={() => { setOdpovidamNa(null); clearIncomingSms(); }}
+          onReply={(text) => sendSms(odpovidamNa.from, text)}
+          lang={lang}
+        />
+      )}
 
       {/* ERROR OVERLAY IF DISCONNECTED */}
       {connectionStatus === 'disconnected' && (
