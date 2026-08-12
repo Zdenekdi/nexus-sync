@@ -147,14 +147,19 @@ public class NexusRelayForegroundService extends Service {
         String baseUrl       = prefs.getString(NexusRelayPlugin.KEY_BASE_URL, null);
         String profileId     = prefs.getString(NexusRelayPlugin.KEY_PROFILE_ID, null);
         String installationId = prefs.getString(NexusRelayPlugin.KEY_INSTALLATION_ID, null);
+        String deviceSecret  = prefs.getString(NexusRelayPlugin.KEY_DEVICE_SECRET, null);
         String authToken     = prefs.getString(NexusRelayPlugin.KEY_AUTH_TOKEN, null);
 
         if (baseUrl == null || profileId == null) {
             Log.w(TAG, "pollOutboxNative: missing baseUrl or profileId");
             return;
         }
-        if (authToken == null || authToken.isEmpty()) {
-            Log.w(TAG, "pollOutboxNative: missing auth token");
+        // Secret zařízení nevyprší, authToken po hodině ano. Stačí jedno z nich,
+        // ale bez obojího nemá smysl se serverem vůbec mluvit.
+        boolean maSecret = deviceSecret != null && !deviceSecret.isEmpty();
+        if (!maSecret && (authToken == null || authToken.isEmpty())) {
+            Log.w(TAG, "pollOutboxNative: no credentials");
+            oznamProblem(R.string.relay_potrebuje_prihlaseni);
             return;
         }
 
@@ -183,7 +188,7 @@ public class NexusRelayForegroundService extends Service {
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
             conn.setRequestProperty("Accept", "application/json");
-            conn.setRequestProperty("Authorization", "Bearer " + authToken);
+            NexusRelayPlugin.applyRelayCredentials(this, conn);
             conn.setConnectTimeout(10000);
             conn.setReadTimeout(10000);
 
@@ -191,8 +196,17 @@ public class NexusRelayForegroundService extends Service {
             if (code != 200) {
                 Log.w(TAG, "pollOutboxNative: outbox returned HTTP " + code);
                 conn.disconnect();
+                // 401/403 se samo nespraví. Dřív se tady jen zapsal řádek do
+                // logu a služba se vrátila — navenek se nezměnilo nic a relay
+                // mohl mlčet hodiny, aniž by to šlo poznat.
+                if (code == 401 || code == 403) {
+                    oznamProblem(maSecret ? R.string.relay_server_odmita : R.string.relay_potrebuje_prihlaseni);
+                } else {
+                    oznamVporadku();
+                }
                 return;
             }
+            oznamVporadku();
 
             BufferedReader reader = new BufferedReader(
                 new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
@@ -233,10 +247,10 @@ public class NexusRelayForegroundService extends Service {
                     }
                     NexusRelayPlugin.insertSentSms(this, to, text);
                     Log.d(TAG, "pollOutboxNative: SMS sent to " + to + " (msg=" + messageId + ")");
-                    updateMessageStatus(apiBase, messageId, "sent", authToken);
+                    updateMessageStatus(apiBase, messageId, "sent");
                 } catch (Exception smsEx) {
                     Log.e(TAG, "pollOutboxNative: SMS send failed for " + messageId, smsEx);
-                    updateMessageStatus(apiBase, messageId, "failed", authToken);
+                    updateMessageStatus(apiBase, messageId, "failed");
                 }
             }
 
@@ -250,16 +264,14 @@ public class NexusRelayForegroundService extends Service {
     /**
      * PATCH /api/messages/{id}/status — marks message as sent or failed.
      */
-    private void updateMessageStatus(String apiBase, String messageId, String status, String authToken) {
+    private void updateMessageStatus(String apiBase, String messageId, String status) {
         if (messageId == null || messageId.isEmpty()) return;
         try {
             URL url = new URL(apiBase + "/api/messages/" + messageId + "/status");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("PATCH");
             conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-            if (authToken != null && !authToken.isEmpty()) {
-                conn.setRequestProperty("Authorization", "Bearer " + authToken);
-            }
+            NexusRelayPlugin.applyRelayCredentials(this, conn);
             conn.setDoOutput(true);
             conn.setConnectTimeout(8000);
             conn.setReadTimeout(8000);
@@ -280,14 +292,53 @@ public class NexusRelayForegroundService extends Service {
     // ── Notification ──────────────────────────────────────────────────────────
 
     private Notification buildNotification() {
+        return buildNotification(0);
+    }
+
+    /**
+     * @param problemResId 0 = běžný stav; jinak text závady
+     */
+    private Notification buildNotification(int problemResId) {
+        boolean jeProblem = problemResId != 0;
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(getString(R.string.relay_service_title))
-            .setContentText(getString(R.string.relay_service_text))
-            .setSmallIcon(android.R.drawable.stat_notify_sync)
+            .setContentTitle(getString(jeProblem ? R.string.relay_service_title_problem : R.string.relay_service_title))
+            .setContentText(getString(jeProblem ? problemResId : R.string.relay_service_text))
+            .setSmallIcon(jeProblem ? android.R.drawable.stat_notify_error : android.R.drawable.stat_notify_sync)
             .setOngoing(true)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build();
+    }
+
+    /**
+     * Trvalé oznámení je jediné, co je na relay telefonu vidět. Když se
+     * nedaří mluvit se serverem, musí to říct — dřív se stav zapsal jen do
+     * logu a navenek relay dál tvrdil „je aktivní", zatímco nedělal nic.
+     *
+     * Poslední zobrazený stav si pamatujeme, aby se oznámení nepřepisovalo
+     * každých 30 s zbytečně.
+     */
+    private int zobrazenyProblem = 0;
+
+    private void oznamProblem(int textResId) {
+        if (zobrazenyProblem == textResId) return;
+        zobrazenyProblem = textResId;
+        prekresliOznameni(textResId);
+    }
+
+    private void oznamVporadku() {
+        if (zobrazenyProblem == 0) return;
+        zobrazenyProblem = 0;
+        prekresliOznameni(0);
+    }
+
+    private void prekresliOznameni(int problemResId) {
+        try {
+            NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) nm.notify(NOTIFICATION_ID, buildNotification(problemResId));
+        } catch (Exception e) {
+            Log.w(TAG, "Nepodařilo se překreslit oznámení", e);
+        }
     }
 
     private void createNotificationChannel() {

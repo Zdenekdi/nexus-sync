@@ -253,6 +253,13 @@ exports.getOutbox = async (req, res) => {
     const { agencyId } = req.user;
     if (!profileId) return res.status(400).json({ message: 'profileId required' });
 
+    // Když se prokázalo ZAŘÍZENÍ (ne uživatel), smí vidět jedině frontu profilu,
+    // ke kterému je spárované. Jinak by stačil ukradený secret jednoho telefonu
+    // k přečtení odchozích zpráv všech profilů v agentuře.
+    if (req.relayBinding && String(req.relayBinding.profileId) !== String(profileId)) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
     const profile = await prisma.profile.findUnique({ where: { id: profileId }, select: { agencyId: true } });
     if (!profile || profile.agencyId !== agencyId) return res.status(403).json({ message: 'Access denied' });
 
@@ -303,10 +310,15 @@ exports.updateMessageStatus = async (req, res) => {
 
     const prevMessage = await prisma.message.findUnique({
       where: { id: messageId },
-      select: { status: true, chat: { select: { agencyId: true } } }
+      select: { status: true, chat: { select: { agencyId: true, profileId: true } } }
     });
     if (!prevMessage) return res.status(404).json({ message: 'Message not found' });
     if (prevMessage.chat.agencyId !== agencyId) return res.status(403).json({ message: 'Access denied' });
+    // Zařízení hlásí stav jen u zpráv svého profilu — stejné omezení jako
+    // u výdeje fronty, jinak by šlo přepsat stav cizí zprávy.
+    if (req.relayBinding && String(req.relayBinding.profileId) !== String(prevMessage.chat.profileId)) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
     const prevStatus = prevMessage.status || 'unknown';
 
     const message = await prisma.message.update({
