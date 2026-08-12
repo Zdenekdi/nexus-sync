@@ -26,8 +26,12 @@ async function deploy() {
 
     // 1. Build the project
     console.log(`📦 Building project (varianta: ${VARIANTA})...`);
+    // cwd se předává natvrdo. Kořenový package.json skript `build` NEMÁ
+    // (jmenuje se tam build:client), takže spuštění odjinud než z client/
+    // by skončilo na „Missing script: build".
     execSync('npm run build', {
       stdio: 'inherit',
+      cwd: path.join(__dirname, '..'),
       env: { ...process.env, VITE_APP_VARIANT: VARIANTA },
     });
 
