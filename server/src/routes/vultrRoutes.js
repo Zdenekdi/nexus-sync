@@ -463,19 +463,25 @@ router.post("/upload-agent", (req, res, next) => {
   }
 });
 
+// Varianta se bere z těla požadavku. Dřív se balík vždycky ukládal jako
+// nexus-relay.zip, i když šlo o plnou aplikaci — a relay zařízení by si tak
+// stáhlo cizí build.
+const otaVarianta = (req) => (req.body?.variant === "full" ? "full" : "relay");
+
 const otaUpload = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => cb(null, DOWNLOADS_DIR),
-    filename: (req, file, cb) => cb(null, "nexus-relay.zip")
+    filename: (req, file, cb) => cb(null, `nexus-${otaVarianta(req)}.zip`)
   }),
   limits: { fileSize: 100 * 1024 * 1024 }
 });
 
 router.post("/upload-ota", otaUpload.single("ota"), async (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No OTA file provided' });
+  const varianta = otaVarianta(req);
   const version = req.body.version || "1.0";
-  const metaPath = path.join(DOWNLOADS_DIR, "nexus-relay.meta.json");
-  
+  const metaPath = path.join(DOWNLOADS_DIR, `nexus-${varianta}.meta.json`);
+
   let meta = {};
   if (fs.existsSync(metaPath)) {
     try {
@@ -484,13 +490,20 @@ router.post("/upload-ota", otaUpload.single("ota"), async (req, res) => {
     } catch {}
   }
 
-  meta.version = version;
-  meta.uploadedAt = new Date().toISOString();
-  meta.otaUrl = `${process.env.API_BASE_URL || "https://nexus-api.myvnc.com"}/downloads/nexus-relay.zip`;
+  // OTA verze se drží ZVLÁŠŤ od APK.
+  //
+  // `version` a `versionCode` popisují nainstalovanou aplikaci a zapisuje je
+  // jedině nahrání APK. UpdateBanner porovnával právě versionCode, takže po
+  // nahrání samotného webového balíku se nezměnilo nic — a bleskový update
+  // se uživateli NIKDY nenabídl. Přepisovat kvůli tomu `version` by rozbilo
+  // hlášení verze aplikace, protože web a APK jsou dvě různé věci.
+  meta.otaVersion = version;
+  meta.otaUploadedAt = new Date().toISOString();
+  meta.otaUrl = `${process.env.API_BASE_URL || "https://nexus-api.myvnc.com"}/downloads/nexus-${varianta}.zip`;
 
   await fs.promises.writeFile(metaPath, JSON.stringify(meta, null, 2));
-  logger.info(`[OTA] New web bundle v${version} uploaded`);
-  res.json({ ok: true, version });
+  logger.info(`[OTA] Nový webový balík v${version} (${varianta}) nahrán`);
+  res.json({ ok: true, version, variant: varianta });
 });
 
 module.exports = router;
