@@ -656,7 +656,21 @@ const SettingsView = () => {
                     </div>
                     <div>
                       <div style={{ fontWeight: '700' }}>{s.device} {s.current && <span style={{ color: 'var(--success-color)', fontSize: '0.7rem' }}>({t('thisDevice')})</span>}</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{s.location} • {s.status}</div>
+                      {/* `s.location` se nikdy nevyplňovalo, takže tu byl prázdný
+                          text s oddělovačem. Místo něj poslední kontakt — u relaye
+                          je to jediné, z čeho se pozná, jestli ještě žije. */}
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        {s.status === 'Disabled'
+                          ? (lang === 'cz' ? 'Odpojeno' : 'Disabled')
+                          : s.jeOnline
+                            ? (lang === 'cz' ? 'Odpovídá' : 'Responding')
+                            : (
+                              <span style={{ color: 'var(--warning-color)', fontWeight: 700 }}>
+                                {lang === 'cz' ? 'Neodpovídá' : 'Not responding'}
+                                {s.lastSeenAt && ` — ${lang === 'cz' ? 'naposledy' : 'last seen'} ${new Date(s.lastSeenAt).toLocaleString(lang === 'cz' ? 'cs-CZ' : 'en-GB')}`}
+                              </span>
+                            )}
+                      </div>
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
