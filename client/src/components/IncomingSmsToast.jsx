@@ -19,18 +19,25 @@ import { MessageSquare, X } from 'lucide-react';
  *   trvaniMs  jak dlouho zůstat; 0 = nezavírat samo
  */
 export default function IncomingSmsToast({ sms, onOpen, onClose, lang = 'cz', trvaniMs = 8000 }) {
-  const [odchazi, setOdchazi] = useState(false);
+  // Stav se váže ke KONKRÉTNÍ zprávě, ne k „odchází ano/ne".
+  //
+  // Kdyby se při každé nové zprávě volalo setOdchazi(false) rovnou v efektu,
+  // je to synchronní setState uvnitř efektu — a to React Compiler odmítá,
+  // protože to spouští kaskádu překreslení. Takhle se stav nastavuje jedině
+  // v časovači a nová zpráva dostane jiný klíč, takže začne neprůhledná.
+  const [odchaziPro, setOdchaziPro] = useState(null);
+  const klic = sms ? `${sms.from || ''}|${sms.timestamp || ''}` : null;
+  const odchazi = klic !== null && odchaziPro === klic;
 
   useEffect(() => {
     if (!sms || !trvaniMs) return undefined;
-    setOdchazi(false);
 
     // Nejdřív se spustí animace zmizení, teprve pak se stav vyčistí — jinak
     // proužek zmizí skokem uprostřed čtení.
-    const doOdchodu = setTimeout(() => setOdchazi(true), Math.max(0, trvaniMs - 400));
+    const doOdchodu = setTimeout(() => setOdchaziPro(klic), Math.max(0, trvaniMs - 400));
     const doZavreni = setTimeout(() => onClose?.(), trvaniMs);
     return () => { clearTimeout(doOdchodu); clearTimeout(doZavreni); };
-  }, [sms, trvaniMs, onClose]);
+  }, [sms, klic, trvaniMs, onClose]);
 
   if (!sms) return null;
 
