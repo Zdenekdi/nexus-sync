@@ -76,13 +76,27 @@ exports.createMessage = async (req, res) => {
     // 2. Notify the relay device via Push (The phone will then pull or act on this)
     if (direction === 'OUTBOUND') {
       try {
-        await sendRelaySmsPush({
+        // Návratová hodnota se DŘÍV zahazovala. sendRelaySmsPush ale při
+        // chybějícím push tokenu nebo vazbě nevyhazuje výjimku — vrátí
+        // { ok: false, message }. Server tedy tiše neudělal nic a zpráva
+        // zůstala viset na pending_relay bez jakékoli stopy, proč.
+        //
+        // Socket je hlavní cesta a push jen záloha, takže selhání push
+        // nesmí shodit odeslání. Ale musí být vidět v logu, jinak se to
+        // nedá vůbec diagnostikovat.
+        const vysledekPush = await sendRelaySmsPush({
           agencyId: chat.agencyId,
           profileId: chat.profileId,
           to: chat.externalId,
           text: text,
           messageId: message.id
         });
+        if (vysledekPush && vysledekPush.ok === false) {
+          console.warn(
+            `[Relay] Push záloha neodešla pro zprávu ${message.id} (profil ${chat.profileId}): `
+            + `${vysledekPush.message}. Zpráva čeká na socket nebo na dotaz relaye na outbox.`
+          );
+        }
       } catch (e) {
         console.error('[Relay] Failed to trigger outbound push:', e.message);
       }
