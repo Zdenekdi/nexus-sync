@@ -26,10 +26,30 @@ const UpdateBanner = () => {
 
         const localCode = Number(info.build);
         const remoteCode = Number(data?.versionCode);
-        if (!localCode || !remoteCode) return;
 
-        if (remoteCode > localCode) {
-          console.log(`[Update] New version available: ${data.version} (${remoteCode} > ${localCode})`);
+        // Nová APK — vyžaduje ruční instalaci.
+        const jeNoveApk = Boolean(localCode && remoteCode && remoteCode > localCode);
+
+        // Nový webový balík — dá se vyměnit bleskově.
+        //
+        // Tohle se posuzuje ZVLÁŠŤ. Dřív se banner řídil jen versionCode, který
+        // se mění jedině při nahrání APK, takže po nahrání samotného webového
+        // balíku se nenabídlo nic a bleskový update nešlo udělat vůbec.
+        let jeNovyBalik = false;
+        if (data?.otaVersion && data?.otaUrl) {
+          try {
+            const soucasny = await CapacitorUpdater.current();
+            const bezici = soucasny?.bundle?.version;
+            // 'builtin' znamená, že zařízení jede na balíku z APK a žádný OTA
+            // zatím nepřevzalo — pak je každý ohlášený balík novinka.
+            jeNovyBalik = !bezici || bezici === 'builtin' || bezici !== data.otaVersion;
+          } catch (e) {
+            console.warn('[Update] Nepodařilo se zjistit běžící balík:', e.message);
+          }
+        }
+
+        if (jeNoveApk || jeNovyBalik) {
+          console.log(`[Update] Dostupné: apk=${jeNoveApk} balík=${jeNovyBalik}`);
           setUpdateInfo(data);
           setIsVisible(true);
         }
@@ -51,7 +71,7 @@ const UpdateBanner = () => {
   // záměnou .apk → .zip, což vedlo na neexistující adresu a hlášku
   // „Aktualizace selhala". Bleskovou cestu proto nabízíme jen tehdy, když server
   // OTA balík opravdu ohlásí (otaUrl); jinak posíláme uživatele na instalaci APK.
-  const hasOta = Boolean(updateInfo?.otaUrl);
+  const hasOta = Boolean(updateInfo?.otaUrl && updateInfo?.otaVersion);
 
   const handleOTAUpdate = async () => {
     if (isUpdating || !hasOta) return;
@@ -60,7 +80,10 @@ const UpdateBanner = () => {
       console.log('[OTA] Starting update for version:', updateInfo.version);
       const version = await CapacitorUpdater.download({
         url: updateInfo.otaUrl,
-        version: updateInfo.version
+        // Verze BALÍKU, ne aplikace. Kdyby se sem dala `version` (z APK),
+        // Capgo by si běžící balík označil číslem, které se nikdy nezmění,
+        // a další bleskový update by se už nenabídl.
+        version: updateInfo.otaVersion
       });
       await CapacitorUpdater.set(version);
       console.log('[OTA] Update applied successfully!');
