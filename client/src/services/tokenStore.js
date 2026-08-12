@@ -18,6 +18,8 @@
  * secret je na zařízení navíc šifrovaný v nativním úložišti — #9).
  */
 
+import { useSyncExternalStore } from 'react';
+
 // Zatím perzistujeme na všech platformách (viz poznámka výše). Přepnout na
 // `Capacitor.isNativePlatform()` až bude web + API same-origin.
 const PERSIST = true;
@@ -61,6 +63,16 @@ export function getRelaySecret() { return relaySecret; }
 export function setRelaySecret(s) {
   relaySecret = s || null;
   writePersisted(SECRET_KEY, relaySecret);
+  // Musí upozornit posluchače. Secret přichází až z /device/verify, tedy po
+  // prvním vykreslení — a nativní relay ho potřebuje dostat do configureRelay.
+  // Dokud se tady mlčelo, efekt, který relay nastavuje, se už nikdy nespustil
+  // a služba na pozadí zůstala jen s tokenem, který za hodinu vyprší.
+  emit();
+}
+
+/** Secret zařízení jako reaktivní hodnota (viz socketBridge — stejný vzor). */
+export function useRelaySecret() {
+  return useSyncExternalStore(subscribe, getRelaySecret, getRelaySecret);
 }
 
 export function clear() {

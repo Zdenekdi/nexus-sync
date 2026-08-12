@@ -9,6 +9,12 @@
     <string name="relay_service_channel_name">Relay background service</string>
     <string name="relay_service_channel_desc">Keeps relay forwarding active when the app is in background</string>
     <string name="relay_rcs_listener_label">Nexus Relay RCS listener</string>
+    <!-- Relay běží na telefonu, ke kterému nikdo nesedí. Když se nemůže
+         přihlásit k serveru, MUSÍ to být vidět z oznámení — jinak se tváří,
+         že pracuje, a odchozí SMS tiše zůstávají ve frontě. -->
+    <string name="relay_service_title_problem">Nexus Relay is stuck</string>
+    <string name="relay_potrebuje_prihlaseni">Sign-in expired — open the app to reconnect</string>
+    <string name="relay_server_odmita">Server rejected this device — open the app</string>
     <string name="ghost_call_incoming">Incoming call…</string>
     <string name="ghost_call_accept">Accept</string>
     <string name="ghost_call_decline">Decline</string>

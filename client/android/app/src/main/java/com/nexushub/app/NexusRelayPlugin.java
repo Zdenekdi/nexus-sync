@@ -99,6 +99,11 @@ public class NexusRelayPlugin extends Plugin {
     static final String KEY_IS_ACTIVE = "isActive";
     static final String KEY_PROFILE_ID = "profileId";
     static final String KEY_AUTH_TOKEN = "authToken";
+    // Pověření ZAŘÍZENÍ. Na rozdíl od authTokenu (1 h) nevyprší, takže služba
+    // na pozadí funguje i poté, co systém zabije WebView a přihlášení se
+    // přestane obnovovat. Server ho odvozuje jako HMAC(DEVICE_SECRET,
+    // installationId) a vydá při párování v /device/verify.
+    static final String KEY_DEVICE_SECRET = "deviceSecret";
     static final String KEY_LAST_SMS_HISTORY_SYNC_AT = "lastSmsHistorySyncAt";
 
     static final String SMS_PERMISSION_ALIAS = "sms";
@@ -328,6 +333,7 @@ public class NexusRelayPlugin extends Plugin {
         String installationId = call.getString("installationId");
         String authToken = call.getString("authToken");
         if (authToken == null) authToken = call.getString("token");
+        String deviceSecret = call.getString("deviceSecret");
         Boolean isActive = call.getBoolean("isActive", false);
 
         Context context = getContext();
@@ -343,6 +349,13 @@ public class NexusRelayPlugin extends Plugin {
             } else {
                 editor.putString(KEY_AUTH_TOKEN, authToken);
             }
+        }
+        // Prázdný řetězec NEPŘEPISUJE uložený secret. JS ho posílá při každém
+        // překreslení a chvíli po startu ještě nemusí být načtený z úložiště —
+        // kdyby ho prázdná hodnota smazala, služba by přišla o jediné pověření,
+        // které nevyprší, a byli bychom zpátky u tiše mrtvého relaye.
+        if (deviceSecret != null && !deviceSecret.isEmpty()) {
+            editor.putString(KEY_DEVICE_SECRET, deviceSecret);
         }
         String profileId = call.getString("profileId");
         if (profileId != null) editor.putString(KEY_PROFILE_ID, profileId);
@@ -750,12 +763,12 @@ public class NexusRelayPlugin extends Plugin {
             android.util.Log.e("NexusRelay", "sendSmsFromData: failed to send SMS", e);
             finalStatus = "failed";
         } finally {
-            reportMessageStatusBlocking(baseUrl, messageId, finalStatus, authToken);
+            reportMessageStatusBlocking(context, baseUrl, messageId, finalStatus);
             if (wakeLock.isHeld()) wakeLock.release();
         }
     }
 
-    private static void reportMessageStatusBlocking(String baseUrl, String messageId, String statusToReport, String authToken) {
+    private static void reportMessageStatusBlocking(Context context, String baseUrl, String messageId, String statusToReport) {
         if (messageId == null || messageId.isEmpty() || baseUrl == null) {
             return;
         }
@@ -768,9 +781,7 @@ public class NexusRelayPlugin extends Plugin {
             conn = (java.net.HttpURLConnection) url.openConnection();
             conn.setRequestMethod("PATCH");
             conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-            if (authToken != null && !authToken.isEmpty()) {
-                conn.setRequestProperty("Authorization", "Bearer " + authToken);
-            }
+            applyRelayCredentials(context, conn);
             conn.setDoOutput(true);
             conn.setConnectTimeout(8000);
             conn.setReadTimeout(8000);
@@ -787,6 +798,33 @@ public class NexusRelayPlugin extends Plugin {
                 conn.disconnect();
             }
         }
+    }
+
+    /**
+     * Přiloží k žádosti pověření zařízení a — je-li po ruce — i přihlášení
+     * uživatele. Pořadí je záměrné: server dá přednost hlavičkám zařízení,
+     * protože ty nevyprší. Bearer zůstává pro cesty, které zatím ověření
+     * zařízení neumí.
+     *
+     * @return true, když se podařilo přiložit aspoň jedno pověření
+     */
+    static boolean applyRelayCredentials(Context context, java.net.HttpURLConnection conn) {
+        android.content.SharedPreferences prefs = securePrefs(context, PREFS_NAME);
+        String installationId = prefs.getString(KEY_INSTALLATION_ID, null);
+        String deviceSecret = prefs.getString(KEY_DEVICE_SECRET, null);
+        String authToken = prefs.getString(KEY_AUTH_TOKEN, null);
+
+        boolean maZarizeni = installationId != null && !installationId.isEmpty()
+            && deviceSecret != null && !deviceSecret.isEmpty();
+        if (maZarizeni) {
+            conn.setRequestProperty("X-Installation-Id", installationId);
+            conn.setRequestProperty("X-Device-Secret", deviceSecret);
+        }
+        if (authToken != null && !authToken.isEmpty()) {
+            conn.setRequestProperty("Authorization", "Bearer " + authToken);
+            return true;
+        }
+        return maZarizeni;
     }
 
     static void insertSentSms(Context context, String to, String text) {
@@ -1228,9 +1266,11 @@ public class NexusRelayPlugin extends Plugin {
         try {
             android.content.SharedPreferences prefs = securePrefs(context, PREFS_NAME);
             String profileId = prefs.getString(KEY_PROFILE_ID, null);
+            String deviceSecret = prefs.getString(KEY_DEVICE_SECRET, null);
             String authToken = prefs.getString(KEY_AUTH_TOKEN, null);
-            if (authToken == null || authToken.isEmpty()) {
-                android.util.Log.w("NexusRelay", "Native Forward skipped: missing auth token");
+            boolean maSecret = deviceSecret != null && !deviceSecret.isEmpty();
+            if (!maSecret && (authToken == null || authToken.isEmpty())) {
+                android.util.Log.w("NexusRelay", "Native Forward skipped: no credentials");
                 return false;
             }
 
@@ -1239,7 +1279,9 @@ public class NexusRelayPlugin extends Plugin {
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
             conn.setRequestProperty("Accept", "application/json");
-            conn.setRequestProperty("Authorization", "Bearer " + authToken);
+            if (authToken != null && !authToken.isEmpty()) {
+                conn.setRequestProperty("Authorization", "Bearer " + authToken);
+            }
             conn.setDoOutput(true);
             conn.setConnectTimeout(12000);
             conn.setReadTimeout(12000);
@@ -1251,6 +1293,12 @@ public class NexusRelayPlugin extends Plugin {
             }
             if (profileId != null && !profileId.isEmpty()) {
                 jsonParam.put("profileId", profileId);
+            }
+            // /device/relay čte pověření zařízení z těla, ne z hlavičky
+            // (deviceController.handleRelay). Bez něj by příchozí SMS přestaly
+            // chodit ve chvíli, kdy vyprší authToken — a přesně to se dělo.
+            if (maSecret) {
+                jsonParam.put("secret", deviceSecret);
             }
             jsonParam.put("transport", normalizeTransport(type));
             jsonParam.put("type", normalizeTransport(type));

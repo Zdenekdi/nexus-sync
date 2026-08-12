@@ -274,6 +274,10 @@ const RelayDashboard = () => {
 
   // Relay auth token + Socket.IO — needed to bridge GSM call audio to the web operator
   const relayAuthToken = operator?.token || tokenStore.getToken() || '';
+  // Secret zařízení musí být reaktivní: přichází až z /device/verify, tedy po
+  // prvním vykreslení. Kdyby se jen přečetl, configureRelay by ho nikdy
+  // nedostal a služba na pozadí by zůstala u tokenu, co za hodinu vyprší.
+  const relaySecret = tokenStore.useRelaySecret() || '';
   const relaySocket = useSocket(relayAuthToken);
 
   // GSM calls via InCallService — with WebRTC bridge config so an incoming GSM call
@@ -302,10 +306,12 @@ const RelayDashboard = () => {
         installationId: localStorage.getItem('nexus_installation_id') || '',
         isActive: isActive,
         profileId: relayProfileId || '',
-        authToken: relayAuthToken
+        authToken: relayAuthToken,
+        // Viz RelayMode: authToken vyprší za hodinu, secret zařízení ne.
+        deviceSecret: relaySecret || tokenStore.getRelaySecret() || ''
       }).catch(console.error);
     }
-  }, [isNativeApp, API_BASE, isActive, operator, relayProfileId, relayAuthToken, configureRelay]);
+  }, [isNativeApp, API_BASE, isActive, operator, relayProfileId, relayAuthToken, relaySecret, configureRelay]);
 
   // Bind device with backend so SMS endpoints authorize this installationId
   React.useEffect(() => {
@@ -323,6 +329,7 @@ const RelayDashboard = () => {
           headers: { Authorization: `Bearer ${relayAuthToken}` }
         });
         // Ulož per-device relay secret (odvozený serverem) pro WebRTC signaling
+        // a pro nativní službu, která ho používá místo vypršitelného tokenu.
         if (vr?.data?.deviceSecret) {
           tokenStore.setRelaySecret(vr.data.deviceSecret);
         }

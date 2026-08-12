@@ -58,6 +58,9 @@ const RelayMode = ({ operator, t, onHide: _onHide, onExit, syncPushToken, isSync
 
   const RELAY_API_BASE = (import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api').replace(/\/api$/, '');
 
+  // Reaktivně, ne jednorázovým čtením: secret přichází až z /device/verify.
+  const relaySecret = tokenStore.useRelaySecret() || '';
+
   // Přímý GSM audio most je zamykatelná funkce (reaktivní; App Owner může odemknout).
   const gsmCallBridgeLocked = useFeatureLock('gsm-call-bridge');
 
@@ -265,9 +268,13 @@ const RelayMode = ({ operator, t, onHide: _onHide, onExit, syncPushToken, isSync
       installationId: localStorage.getItem('nexus_installation_id') || operator?.installationId || '',
       isActive,
       profileId: relayProfileId || '',
-      authToken: relayAuthToken
+      authToken: relayAuthToken,
+      // Pověření zařízení. authToken žije hodinu a jakmile systém uspí WebView,
+      // nemá ho kdo obnovit — nativní služba pak mlčky dostávala 401 a odchozí
+      // SMS zůstávaly ve frontě. Secret z /device/verify nevyprší.
+      deviceSecret: relaySecret
     }).catch((err) => console.warn('[Relay] Failed to configure native relay', err));
-  }, [activeProfileId, configureRelay, isActive, nexusToken, operator?.id, operator?.installationId, operator?.profileId, operator?.token, RELAY_API_BASE]);
+  }, [activeProfileId, configureRelay, isActive, nexusToken, operator?.id, operator?.installationId, operator?.profileId, operator?.token, relaySecret, RELAY_API_BASE]);
 
   // Persist logs to localStorage whenever they change
 
