@@ -301,21 +301,41 @@ export function useChatLogic({
     }
   }, [selectedChatId, fetchChatMessages]);
 
-  // Auto-scroll logic
-  useEffect(() => {
-    if (!isUserScrolled.current && chatScrollRef.current) {
-      const el = chatScrollRef.current;
+  // ── Posun na konec konverzace ──────────────────────────────────────────
+  //
+  // Dřív se scrollTop nastavoval rovnou v efektu. Jenže v tu chvíli ještě
+  // nemusí být hotové rozvržení: bublina se stavem doručení a řádkem
+  // „Ohodnotit" doroste až o kus dál, takže odeslaná zpráva zůstala napůl
+  // schovaná za polem pro psaní.
+  //
+  // Proto se posouvá až po vykreslení, a dvakrát: první rámec dá prohlížeči
+  // šanci spočítat výšku, druhý dorovná to, co dorostlo mezitím.
+  const posunNaKonec = useCallback(() => {
+    const el = chatScrollRef.current;
+    if (!el) return undefined;
+    let druhy;
+    const prvni = requestAnimationFrame(() => {
       el.scrollTop = el.scrollHeight;
-    }
-  }, [chatMessages]);
+      druhy = requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+    });
+    return () => { cancelAnimationFrame(prvni); if (druhy) cancelAnimationFrame(druhy); };
+  }, []);
 
   useEffect(() => {
+    if (isUserScrolled.current) return undefined;
+    return posunNaKonec();
+  }, [chatMessages, posunNaKonec]);
+
+  // Přepnutí konverzace: vždycky ukázat nejnovější zprávy.
+  //
+  // Dřív tu bylo setTimeout(50). Zprávy se ale načítají ze serveru, takže po
+  // 50 ms se často posouval ještě starý (nebo prázdný) obsah a nová
+  // konverzace se otevřela někde uprostřed historie. Teď se posouvá znovu,
+  // jakmile zprávy opravdu dorazí — o to se stará efekt výš.
+  useEffect(() => {
     isUserScrolled.current = false;
-    if (chatScrollRef.current) {
-      const el = chatScrollRef.current;
-      setTimeout(() => { el.scrollTop = el.scrollHeight; }, 50);
-    }
-  }, [selectedChatId]);
+    return posunNaKonec();
+  }, [selectedChatId, posunNaKonec]);
 
   // Meeting detection
   useEffect(() => {
