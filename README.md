@@ -1,5 +1,15 @@
 # Nexus Hub - Omnichannel Communication Platform
 
+> **Stav: 🟡 Pozastaveno (údržba, bez nového vývoje)**
+>
+> Rozhodnuto 8/2026: největší projekt portfolia (~68 000 LOC, 2 060 commitů)
+> zatím nemá platícího zákazníka. Kapacita se přesouvá na TachoData, kde běží
+> regulatorní okno. Kód zůstává funkční a udržovaný, nový vývoj se nezahajuje,
+> dokud TachoData neukáže konverzi.
+>
+> Jediná část s obhajitelným výzkumným jádrem (pro daňový odpočet na VaV):
+> delta sync napříč portály s odlišnou konzistenční sémantikou.
+
 **A comprehensive platform for managing multi-channel communications, agency operations, and talent management.**
 
 ## 🚀 Quick Start

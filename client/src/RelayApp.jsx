@@ -7,6 +7,7 @@ import React, { useState, Suspense, lazy, useCallback } from 'react';
 import { Loader2, Lock, Mail, Eye, EyeOff, Smartphone, Battery, Server, ShieldCheck, Pause, Play, Settings } from 'lucide-react';
 import { useRelay } from './context/RelayContext';
 import * as tokenStore from './services/tokenStore';
+import { initPushNotifications } from './services/pushService';
 import GlobalAppStyles from './styles/GlobalAppStyles';
 import { useSipCall } from './plugins/NexusSip';
 import { useInCallService, isInCallAvailable } from './plugins/NexusInCall';
@@ -312,6 +313,21 @@ const RelayDashboard = () => {
       }).catch(console.error);
     }
   }, [isNativeApp, API_BASE, isActive, operator, relayProfileId, relayAuthToken, relaySecret, configureRelay]);
+
+  // Registrace FCM tokenu. Bez ní je pushová záloha pro odchozí SMS mrtvá:
+  // server hledá pushDevice podle uživatele vazby, žádný nenajde a vrátí
+  // { ok: false }. Nativní strana přitom `send_sms` přes FCM umí odbavit
+  // i se zavřenou aplikací (NexusFcmService) — chyběl jen ten token.
+  //
+  // initPushNotifications se VOLÁ ZNOVU při každé změně tokenu. Registrace
+  // se serverem chodí s přístupovým tokenem; když ten mezitím vypršel,
+  // dotáhne se až tímhle opakovaným voláním.
+  React.useEffect(() => {
+    if (!isNativeApp || !API_BASE || !relayAuthToken) return;
+    // Bez posluchače v JS: relay příkazy odbavuje nativní služba, aby to
+    // fungovalo i tehdy, když aplikace vůbec neběží.
+    initPushNotifications(API_BASE, relayAuthToken, () => {});
+  }, [isNativeApp, API_BASE, relayAuthToken]);
 
   // Bind device with backend so SMS endpoints authorize this installationId
   React.useEffect(() => {
