@@ -37,6 +37,20 @@ const API_BASE = Capacitor.isNativePlatform()
  * Main Provider for Nexus Hub.
  * Centralizes all global states: Auth, Data, Navigation, I18n.
  */
+
+// Cesty, které smí vidět nepřihlášený návštěvník a u kterých se drží landing.
+//
+// Tenhle seznam byl rozepsaný na pěti místech zvlášť (`p === '/' || p === '/guide'
+// || ...`). Přidat šestou veřejnou cestu znamenalo trefit všechny — a když se na
+// jedno zapomnělo, odkaz fungoval, ale po obnovení stránky spadl návštěvník do
+// přihlašovací obrazovky. Nic nespadlo, nikde chyba, jen to nefungovalo.
+export const VEREJNE_CESTY = ['/', '/guide', '/downloads', '/prezentace'];
+
+// Která veřejná cesta odpovídá které záložce. '/' zůstává na dashboardu.
+const ZALOZKA_CESTY = { '/guide': 'guide', '/downloads': 'downloads', '/prezentace': 'presentation' };
+
+export const jeVerejnaCesta = (cesta) => VEREJNE_CESTY.includes(cesta);
+
 export const NexusProvider = ({ children }) => {
   // --- 1. SETTINGS & PERSISTENCE ---
   const getSafeStorage = (key, fallback) => {
@@ -122,7 +136,7 @@ export const NexusProvider = ({ children }) => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
       const cleanPath = path.replace(/^\/(en|cz)/, '') || '/';
-      return cleanPath === '/' || cleanPath === '/guide' || cleanPath === '/downloads';
+      return jeVerejnaCesta(cleanPath);
     }
     return true;
   });
@@ -145,9 +159,9 @@ export const NexusProvider = ({ children }) => {
       targetPath = `/${lang}${path === '/' ? '' : path}`;
     }
     
-    if (clean !== '/' && clean !== '/guide' && clean !== '/downloads') {
+    if (!jeVerejnaCesta(clean)) {
       setShowLanding(false);
-    } else if (clean === '/guide' || clean === '/downloads') {
+    } else if (clean !== '/') {
       setShowLanding(true);
     }
 
@@ -159,12 +173,10 @@ export const NexusProvider = ({ children }) => {
 
   useEffect(() => {
     const p = pathname.replace(/^\/(en|cz)/, '') || '/';
-    if (p === '/' || p === '/guide' || p === '/downloads') {
+    if (jeVerejnaCesta(p)) {
       setTimeout(() => {
         setShowLanding(true);
-        if (p === '/guide') setActiveTab('guide');
-        else if (p === '/downloads') setActiveTab('downloads');
-        else setActiveTab('dashboard');
+        setActiveTab(ZALOZKA_CESTY[p] || 'dashboard');
       }, 0);
     } else {
       setTimeout(() => {
@@ -359,7 +371,7 @@ export const NexusProvider = ({ children }) => {
   useEffect(() => {
     if (!isLoggedIn) {
       const clean = pathname.replace(/^\/(en|cz)/, '') || '/';
-      if (clean !== '/' && clean !== '/guide' && clean !== '/downloads' && clean !== '/login' && clean !== '/register' && clean !== '/logout') {
+      if (!jeVerejnaCesta(clean) && clean !== '/login' && clean !== '/register' && clean !== '/logout') {
         setTimeout(() => navigate('/login', 'login'), 0);
       }
     }
