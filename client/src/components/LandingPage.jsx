@@ -25,11 +25,14 @@ import {
   Phone,
   Database,
   Menu,
-  X
+  X,
+  Presentation,
+  Download
 } from 'lucide-react';
 
 import { useNexus } from '../context/ContextHook';
 import ManualView from './Views/ManualView';
+import PresentationDeck from './PresentationDeck';
 import DownloadsView from './Views/DownloadsView';
 
 // Scroll-reveal hook
@@ -141,6 +144,7 @@ const LandingPage = () => {
   
   const viewingManual = activeTab === 'guide';
   const viewingDownloads = activeTab === 'downloads';
+  const viewingDeck = activeTab === 'presentation';
 
   useEffect(() => { window.scrollTo(0, 0); }, [viewingManual, viewingDownloads]);
 
@@ -159,7 +163,7 @@ const LandingPage = () => {
         "Česky i anglicky",
         "Tarif změníte kdykoli"
       ],
-      nav: { features: "Funkce", safety: "Bezpečnost", pricing: "Ceník", downloads: "Ke stažení", guide: "Manuál" },
+      nav: { features: "Funkce", safety: "Bezpečnost", pricing: "Ceník", deck: "Prezentace", downloads: "Ke stažení", guide: "Manuál" },
       heroVideoCaption: "Bezpečnostní dohled — přehled probíhajících schůzek a check-inů.",
       features: [
         { icon: Shield, title: "Safety Guard™", desc: "Real-time SOS a monitoring výjezdů." },
@@ -170,6 +174,13 @@ const LandingPage = () => {
         { icon: CreditCard, title: "Stripe Billing", desc: "Automatické platby kartou a správa předplatného." }
       ],
       sectionEyebrows: { pillars: "NA ČEM TO STOJÍ", features: "CO JE V CENĚ" },
+      deck: {
+        oci: "PRO ZÁJEMCE",
+        nadpis: "Prezentace, kterou si můžete v klidu projít",
+        text: "Devět snímků o tom, co Nexus Hub dělá, komu je určený a co stojí. Otevřete si ji tady, nebo stáhněte jako PDF a pošlete dál.",
+        otevrit: "Otevřít prezentaci",
+        stahnout: "Stáhnout jako PDF"
+      },
       pricingTitle: "Plány a ceny",
       pricingNote: "Ceny za měsíc, bez DPH. Účtuje se počet profilů, ne počet operátorek.",
       // Návrh sem psal i „sdílení polohy". To je zamčená funkce — viz featureLocks.js —
@@ -214,7 +225,7 @@ const LandingPage = () => {
         "Czech and English",
         "Change your plan anytime"
       ],
-      nav: { features: "Features", safety: "Safety", pricing: "Pricing", downloads: "Downloads", guide: "Manual" },
+      nav: { features: "Features", safety: "Safety", pricing: "Pricing", deck: "Presentation", downloads: "Downloads", guide: "Manual" },
       heroVideoCaption: "Safety oversight — bookings in progress and their check-ins.",
       features: [
         { icon: Shield, title: "Safety Guard™", desc: "Real-time SOS and outcall monitoring." },
@@ -225,6 +236,13 @@ const LandingPage = () => {
         { icon: CreditCard, title: "Stripe Billing", desc: "Automated card payments and subscription management." }
       ],
       sectionEyebrows: { pillars: "WHAT IT'S BUILT ON", features: "WHAT'S INCLUDED" },
+      deck: {
+        oci: "FOR PROSPECTS",
+        nadpis: "A deck you can go through at your own pace",
+        text: "Nine slides on what Nexus Hub does, who it is for and what it costs. Open it here, or download it as a PDF and pass it on.",
+        otevrit: "Open the presentation",
+        stahnout: "Download as PDF"
+      },
       pricingTitle: "Plans & Pricing",
       pricingNote: "Prices per month, excl. VAT. You are billed per profile, not per operator.",
       pricingSafetyNote: "The SOS button and check-ins are in every plan, including the cheapest one. Safety is not an add-on.",
@@ -255,6 +273,10 @@ const LandingPage = () => {
     }
   }[lang];
 
+  // Prezentace si nese vlastní ovládání i tiskový styl, proto se nevkládá
+  // do společného obalu s manuálem a stahováním.
+  if (viewingDeck) return <PresentationDeck />;
+
   if (viewingManual || viewingDownloads) {
     return (
       <div className="landing-page" style={{ background: '#040507', minHeight: '100vh', color: 'white' }}>
@@ -284,6 +306,7 @@ const LandingPage = () => {
     { label: t.nav.features, action: () => scrollTo('features') },
     { label: t.nav.safety, action: () => scrollTo('safety') },
     { label: t.nav.pricing, action: () => scrollTo('pricing') },
+    { label: t.nav.deck, action: () => navigate('/prezentace', 'presentation') },
     { label: t.nav.downloads, action: () => navigate('/downloads', 'downloads') },
     { label: t.nav.guide, action: () => setActiveTab('guide') }
   ];
@@ -442,6 +465,49 @@ const LandingPage = () => {
       {/* Sekce se statistikami je pryč záměrně. Uváděla „25+ agentur / 1,2 M zpráv"
           v češtině a „50+ / 2,4 M" v angličtině — o téže firmě. Nešlo tedy o čísla,
           která by někdo změřil. Radši žádná než vymyšlená. */}
+
+      {/* Na místě těch statistik je teď nabídka prezentace. Zájemce, který se
+          dostal až sem, chce většinou něco, co si projde po svém a pošle dál —
+          a tohle je poctivější způsob, jak to místo využít, než vymyšlená čísla. */}
+      <section style={{ padding: '4rem 5% 1rem' }}>
+        <div style={{
+          maxWidth: '1000px', margin: '0 auto', display: 'flex', flexWrap: 'wrap',
+          alignItems: 'center', justifyContent: 'space-between', gap: '2rem',
+          padding: isMobile ? '1.8rem' : '2.4rem 2.8rem',
+          border: '1px solid rgba(59,130,246,0.25)', borderRadius: '18px',
+          background: 'linear-gradient(135deg, rgba(59,130,246,0.08), rgba(139,92,246,0.05))'
+        }}>
+          <div style={{ flex: '1 1 340px', minWidth: 0 }}>
+            <div className="pub-mono" style={{ fontSize: '0.7rem', letterSpacing: '0.12em', color: '#3b82f6', fontWeight: '800', marginBottom: '0.7rem' }}>
+              {t.deck.oci}
+            </div>
+            <h3 style={{ fontSize: 'clamp(1.3rem, 3vw, 1.75rem)', fontWeight: '900', margin: '0 0 0.7rem', lineHeight: 1.2 }}>
+              {t.deck.nadpis}
+            </h3>
+            <p style={{ color: 'rgba(255,255,255,0.55)', margin: 0, lineHeight: 1.65, fontSize: '0.95rem' }}>
+              {t.deck.text}
+            </p>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem', flexShrink: 0 }}>
+            <button
+              data-testid="landing-deck-btn"
+              onClick={() => navigate('/prezentace', 'presentation')}
+              style={{ padding: '0.9rem 1.6rem', borderRadius: '10px', border: 'none', background: '#3b82f6', color: 'white', fontWeight: '800', fontSize: '0.95rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.6rem', whiteSpace: 'nowrap' }}
+            >
+              <Presentation size={17} /> {t.deck.otevrit}
+            </button>
+            {/* Stažení vede taky do prezentace — PDF vzniká tiskem z ní, takže
+                nemůže zastarat proti webu. Samostatný soubor v repu by se při
+                změně ceníku rozešel a nikdo by si toho nevšiml. */}
+            <button
+              onClick={() => navigate('/prezentace', 'presentation')}
+              style={{ padding: '0.85rem 1.6rem', borderRadius: '10px', border: '1px solid #2d3444', background: '#11141c', color: 'rgba(255,255,255,0.85)', fontWeight: '700', fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.6rem', whiteSpace: 'nowrap' }}
+            >
+              <Download size={16} /> {t.deck.stahnout}
+            </button>
+          </div>
+        </div>
+      </section>
 
       {/* NA ČEM TO STOJÍ — video bloky */}
       <section id="safety" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>

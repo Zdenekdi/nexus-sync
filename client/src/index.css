@@ -854,3 +854,60 @@ h1 {
   70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(52, 211, 153, 0); }
   100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
 }
+
+/* ── Prezentace pro zájemce: tisk do PDF ──────────────────────────────────────
+   Na obrazovce je vidět jeden snímek, při tisku se musí vytisknout všechny —
+   proto jsou v DOMu pořád a schovává je `display: none` z inline stylu.
+   Tiskový styl ho musí přebít, což bez !important nejde: inline styl má vyšší
+   specificitu než jakýkoli selektor v souboru.
+
+   Barvy pozadí prohlížeč při tisku standardně zahazuje. Tmavý deck by se
+   vytiskl jako bílý list s bílým písmem, takže se pro tisk překlápí do světlé
+   varianty — čitelné i na papíře a nespotřebuje toner na celostránkovou čerň. */
+@media print {
+  @page { size: A4 landscape; margin: 14mm; }
+
+  body { background: white !important; }
+
+  /* Vše mimo prezentaci ven — jinak by se tiskla i hlavička aplikace. */
+  body > *:not(#root) { display: none !important; }
+
+  .prezentace {
+    background: white !important;
+    color: #0b0d12 !important;
+    min-height: auto !important;
+  }
+
+  /* Ovládací prvky do PDF nepatří. */
+  .prezentace-ovladani { display: none !important; }
+
+  /* Plocha je na obrazovce flex a snímky v ní jsou položky. Při tisku, kdy
+     jsou viditelné všechny naráz, by se z nich staly sloupce vedle sebe
+     a text by se přes sebe přeložil — první vytištěné PDF vypadalo přesně
+     tak. V tisku proto musí být obal blokový. */
+  .prezentace-plocha {
+    display: block !important;
+    padding: 0 !important;
+  }
+
+  .prezentace-snimek {
+    display: block !important;
+    break-after: page;
+    page-break-after: always;
+    padding: 0;
+  }
+  .prezentace-snimek:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  /* Snímek se nesmí rozlomit uprostřed odrážky. */
+  .prezentace-snimek > div > div > div { break-inside: avoid; page-break-inside: avoid; }
+
+  /* Tlumená barva textu je navržená na tmavé pozadí; na bílé je nečitelná.
+     Vybírá se PODLE TŘÍDY, ne podle řetězce v inline stylu — selektor typu
+     [style*="rgba(255,255,255,0.62)"] by se tiše rozpadl, jakmile by někdo
+     sáhl na `BARVA.tlum` v komponentě, a nic by to nenahlásilo. */
+  .prezentace .prezentace-tlum { color: #444c5c !important; }
+  .prezentace .prezentace-karta { border-color: #d7dce5 !important; background: #fbfcfe !important; }
+}
