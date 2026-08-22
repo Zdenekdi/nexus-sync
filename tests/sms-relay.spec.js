@@ -16,7 +16,14 @@ import { loginAs, authClient, TEST_USERS, API_BASE, DEVICE_SECRET, HAS_DEVICE_SE
 const anonRelay = axios.create({ baseURL: `${API_BASE}/device`, validateStatus: () => true });
 
 // Known seeded test data (from prisma/seed.js)
-const TEST_PROFILE_PHONE = '+420 735 231 027'; // Diana (Central London) — real DB number
+// Telefonní číslo profilu se zjišťuje z API, nepíše se sem natvrdo.
+//
+// Dřív tu bylo číslo opsané z PRODUKČNÍ databáze. Proti seedu, kde má Diana
+// jiné číslo, testy padaly — a proti produkci procházely jen díky tomu, že
+// tam ten konkrétní záznam náhodou je. Test má stát na datech, která si
+// prostředí umí vyrobit samo.
+const ZALOZNI_PROFILE_PHONE = '+420 773 227 907';   // Diana v prisma/seed.js
+let TEST_PROFILE_PHONE = ZALOZNI_PROFILE_PHONE;
 const TEST_INSTALLATION_ID = 'playwright-test-device-001';
 
 let managerToken;
@@ -49,6 +56,22 @@ test.beforeAll(async () => {
 
   // Register a test device binding for relay tests
   const client = authClient(managerToken);
+
+  // Vezmi skutečné číslo prvního profilu agentury. Když ho API nevrátí,
+  // zůstane záložní ze seedu — ať test spadne na tom, co měří, a ne na
+  // prázdné odpovědi.
+  try {
+    const profilesRes = await client.get('/profiles');
+    const profily = Array.isArray(profilesRes.data) ? profilesRes.data : [];
+    const sCislem = profily.find((p) => p.phoneNumber);
+    if (sCislem) {
+      TEST_PROFILE_PHONE = sCislem.phoneNumber;
+      console.log(`  ☎️  Profil pro testy: ${sCislem.name} (${TEST_PROFILE_PHONE})`);
+    }
+  } catch {
+    // Necháme záložní číslo.
+  }
+
   const verifyRes = await client.post('/device/verify', {
     installationId: TEST_INSTALLATION_ID,
     platform: 'android',
