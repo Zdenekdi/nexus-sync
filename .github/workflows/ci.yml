@@ -145,11 +145,43 @@ jobs:
   e2e-tests:
     name: Playwright E2E Tests
     runs-on: ubuntu-latest
-    # Běh trvá běžně 8–11 minut. Bez tohohle limitu platí výchozích šest hodin:
-    # když spadne backend, `test:api` se zavěsí na mrtvý host a úloha drží
-    # runner celé odpoledne, místo aby řekla, že něco není v pořádku.
-    # Stalo se to 4. 8. 2026, kdy přestal odpovídat nexus-api.myvnc.com.
+    # Běh trvá běžně 8–11 minut. Bez tohohle limitu platí výchozích šest hodin
+    # a úloha, která se na něčem zasekne, drží runner celé odpoledne, místo
+    # aby řekla, že něco není v pořádku. (Stalo se to 4. 8. 2026, kdy testy
+    # ještě mířily na produkční API a to přestalo odpovídat.)
     timeout-minutes: 25
+
+    # Backend si zvedáme vlastní, zahazovací.
+    #
+    # Dřív testy `rbac` a `sms-relay` mířily na PRODUKČNÍ API (výchozí hodnota
+    # v tests/helpers/api.js) a skutečně tam zapisovaly — každý PR zakládal
+    # v ostré databázi testovací vazby zařízení a testovací SMS. Navíc se tím
+    # neověřoval kód z PR, ale to, co je zrovna nasazené.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nexus_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+
+    env:
+      # Hodnoty jsou schválně zahazovací a veřejné — databáze i server žijí
+      # jen po dobu běhu úlohy a nejsou odnikud dostupné. Heslo držíme zvlášť
+      # a URL skládáme za běhu, aby connection string nespustil secret scan.
+      PGPASSWORD_CI: postgres
+      NODE_ENV: test
+      JWT_SECRET: ci-e2e-jwt-secret-nejmene-32-znaku-dlouhy
+      DEVICE_SECRET: devicesecret12345
+      NEXUS_DEVICE_SECRET: devicesecret12345
+      # app.js odmítne nastartovat bez těchhle tří (min. 32/16/32 znaků).
+      ENCRYPTION_KEY: ci-e2e-encryption-key-nejmene-32-znaku
+      # Sem míří testy proti živému API místo na produkci.
+      NEXUS_API_URL: http://localhost:3000/api
+
     steps:
       - uses: actions/checkout@v4
 
@@ -185,32 +217,53 @@ jobs:
       - name: Build client for e2e
         run: cd client && npm run build
 
-      # rbac a sms-relay jedou proti živému API, ne proti mockům. Když backend
-      # neodpovídá, čekají na spojení, které nikdy nenaváže — z výpadku se
-      # stane zásek bez vysvětlení. Tohle to řekne za pár vteřin a nahlas.
-      #
-      # Úmyslně to shodí celý běh: RBAC a relay jsou bezpečnostní testy a
-      # neproběhlá kontrola není totéž co kontrola v pořádku.
-      - name: Check API is reachable
-        run: |
-          # Nejdřív pryč s lomítkem na konci, teprve pak s /api — jinak by
-          # se z 'https://host/api/' stalo 'https://host/api//api/health'
-          # a pojistka by hlásila výpadek i u zdravého backendu.
-          API="${NEXUS_API_URL%/}"; API="${API%/api}"
-          if ! curl -fsS --max-time 15 -o /dev/null "$API/api/health"; then
-            echo "::error::Backend $API neodpovídá — bezpečnostní testy (rbac, sms-relay) nelze spustit."
-            exit 1
-          fi
-        env:
-          NEXUS_API_URL: ${{ secrets.NEXUS_API_URL || 'https://nexus-api.myvnc.com/api' }}
+      # ── Zahazovací backend pro testy proti živému API ──────────────────────
 
+      - name: Build database URL
+        run: echo "DATABASE_URL=postgresql://postgres:${PGPASSWORD_CI}@localhost:5432/nexus_e2e" >> "$GITHUB_ENV"
+
+      - name: Prepare database
+        run: |
+          cd server
+          npm install --prefer-offline --no-audit
+          npx prisma generate
+          npx prisma migrate deploy
+          # Seed zakládá přesně ty účty, které testy používají
+          # (owner@nexus.sync, jan@, alice@ …) — viz tests/helpers/api.js.
+          npm run seed
+
+      - name: Start backend
+        run: |
+          cd server
+          nohup node src/index.js > "$RUNNER_TEMP/server.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/server.pid"
+
+      # Server startuje déle než nulu sekund a testy, které nemají kam se
+      # připojit, se zaseknou na spojení místo aby řekly proč. Čeká se aktivně
+      # a s limitem, ať je z výpadku hlášená chyba, ne dvacet minut ticha.
+      - name: Wait for backend
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS --max-time 5 -o /dev/null http://localhost:3000/api/health; then
+              echo "Backend odpovídá po ${i} pokusech."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::Zahazovací backend nenastartoval do 60 s."
+          cat "$RUNNER_TEMP/server.log" || true
+          exit 1
+
+      # Úmyslně to shodí celý běh: RBAC a relay jsou bezpečnostní testy
+      # a neproběhlá kontrola není totéž co kontrola v pořádku.
       - name: Run API relay/security tests
         run: npm run test:api
-        env:
-          NEXUS_API_URL: ${{ secrets.NEXUS_API_URL || 'https://nexus-api.myvnc.com/api' }}
-          NEXUS_DEVICE_SECRET: ${{ secrets.NEXUS_DEVICE_SECRET }}
-          TEST_OWNER_EMAIL: ${{ secrets.TEST_OWNER_EMAIL }}
-          TEST_OWNER_PASSWORD: ${{ secrets.TEST_OWNER_PASSWORD }}
+
+      # Log serveru je jediné, z čeho jde poznat, proč test proti živému API
+      # spadl — bez něj zbývá jen stavový kód odpovědi.
+      - name: Backend log
+        if: failure()
+        run: tail -n 200 "$RUNNER_TEMP/server.log" || true
 
       - name: Run Playwright tests
         run: npm run test:all:e2e
