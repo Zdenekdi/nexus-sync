@@ -230,7 +230,9 @@ jobs:
           npx prisma migrate deploy
           # Seed zakládá přesně ty účty, které testy používají
           # (owner@nexus.sync, jan@, alice@ …) — viz tests/helpers/api.js.
-          npm run seed
+          # Skript se jmenuje prisma:seed; samotné "seed" v package.json je
+          # konfigurace Prismy pro `prisma db seed`, ne npm skript.
+          npm run prisma:seed
 
       - name: Start backend
         run: |
