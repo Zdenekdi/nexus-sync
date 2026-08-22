@@ -280,7 +280,10 @@ const updateAgencySettings = z.object({
 });
 
 const updateRolePermissions = z.object({
-  permissions: z.record(z.boolean())
+  // Zod 4 bere u z.record() první argument jako typ KLÍČE. Jednoargumentové
+  // z.record(z.boolean()) tedy vyžadovalo boolean klíče — klíč je vždy string,
+  // takže endpoint vracel 400 na každý požadavek. Mapa je název → boolean.
+  permissions: z.record(z.string(), z.boolean())
 });
 
 const purchaseAddon = z.object({
