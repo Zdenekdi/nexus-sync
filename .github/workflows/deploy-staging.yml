@@ -33,7 +33,7 @@ jobs:
       - name: Zkontrolovat, že testovací secrety existují
         run: |
           chybi=""
-          for k in STAGING_HOST STAGING_USER STAGING_PASSWORD STAGING_JWT_SECRET STAGING_DEVICE_SECRET STAGING_ENCRYPTION_KEY STAGING_DATABASE_URL; do
+          for k in STAGING_HOST STAGING_USER STAGING_PASSWORD STAGING_JWT_SECRET STAGING_DEVICE_SECRET STAGING_ENCRYPTION_KEY STAGING_DATABASE_URL STAGING_API_URL; do
             # Nepřímé rozbalení; `if`, ne `[ ... ] && ...` — krok běží pod `bash -e`
             # a nepravdivý test na konci těla smyčky by ho shodil s prázdnou chybou.
             if [ -z "${!k}" ]; then chybi="$chybi $k"; fi
@@ -52,6 +52,7 @@ jobs:
           STAGING_DEVICE_SECRET: ${{ secrets.STAGING_DEVICE_SECRET }}
           STAGING_ENCRYPTION_KEY: ${{ secrets.STAGING_ENCRYPTION_KEY }}
           STAGING_DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+          STAGING_API_URL: ${{ secrets.STAGING_API_URL }}
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
@@ -64,13 +65,16 @@ jobs:
             cd /root/nexus-backend-test/server
 
             git fetch origin
-            git checkout "${{ inputs.branch }}"
-            git reset --hard "origin/${{ inputs.branch }}"
+            # -B funguje, ať už lokální větev existuje, nebo ne.
+            git checkout -B "${{ inputs.branch }}" "origin/${{ inputs.branch }}"
 
             # .env se skládá ZNOVU při každém nasazení, ne edituje. Ruční úpravy
             # na serveru se tím zahodí — ale právě proto se sem nemůže přistěhovat
             # produkční hodnota, kterou by tam někdo někdy dopsal.
-            cat > .env <<ENVEOF
+            # Oddělovač v apostrofech: bez nich by shell rozbalil $ uvnitř
+            # hodnot. Heslo k databázi s dolarem by se tiše zkomolilo a server
+            # by se nepřipojil — s chybou, která ukazuje úplně jinam.
+            cat > .env <<'ENVEOF'
             NODE_ENV=production
             NEXUS_ENVIRONMENT=staging
             PORT=3001
@@ -87,7 +91,10 @@ jobs:
             # na skutečné peníze, banku nebo telefony (viz NEXUS_ENVIRONMENT).
             STRICT_RUNTIME_SECRETS=true node scripts/audit-runtime-secrets.js
 
-            npm install --omit=dev --no-audit
+            # NE --omit=dev: `prisma` (CLI) je devDependency, takže by
+            # `prisma generate` i `migrate deploy` skončily na chybějícím
+            # souboru. Produkční nasazení proto taky instaluje všechno.
+            npm install --no-audit
             ./node_modules/.bin/prisma generate
             ./node_modules/.bin/prisma migrate deploy
 

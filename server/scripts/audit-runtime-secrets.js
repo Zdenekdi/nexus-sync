@@ -90,6 +90,9 @@ function validateRuntimeSecrets() {
   const issues = [];
   const strict = process.env.STRICT_RUNTIME_SECRETS === 'true' || process.env.NODE_ENV === 'production';
   const productionLike = strict || process.env.NODE_ENV === 'production';
+  // Testovací server běží schválně s NODE_ENV=production, aby se choval jako
+  // ostrý provoz. Odlišuje ho až NEXUS_ENVIRONMENT.
+  const jeStaging = process.env.NEXUS_ENVIRONMENT === 'staging';
 
   validateMinLength(issues, 'JWT_SECRET', 32, strict);
   validateMinLength(issues, 'DEVICE_SECRET', 16, strict);
@@ -132,7 +135,12 @@ function validateRuntimeSecrets() {
     addIssue(issues, 'error', 'ALLOW_UNSIGNED_BILLING_WEBHOOK', 'Unsigned billing webhooks must not be enabled in production.');
   }
 
-  if (productionLike && value('ALLOW_MOCK_BILLING') === 'true') {
+  // Na testu je předstíraná platba přesně to, co chceme: dá se proklikat celý
+  // objednávkový tok a nikde neteče ani koruna. Zákaz míří na produkci.
+  //
+  // Bez téhle výjimky by nasazení testovacího serveru padalo POKAŽDÉ —
+  // workflow mu ALLOW_MOCK_BILLING zapíná a NODE_ENV má produkční.
+  if (productionLike && !jeStaging && value('ALLOW_MOCK_BILLING') === 'true') {
     addIssue(issues, 'error', 'ALLOW_MOCK_BILLING', 'Mock billing must not be enabled in production.');
   }
 

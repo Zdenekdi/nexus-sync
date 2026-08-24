@@ -70,7 +70,7 @@ Settings → Secrets and variables → Actions:
 |---|---|
 | `STAGING_HOST` | tentýž stroj jako produkce |
 | `STAGING_USER`, `STAGING_PASSWORD` | přístup přes SSH |
-| `STAGING_DATABASE_URL` | `postgresql://nexus_test:…@localhost:5432/nexus_test` |
+| `STAGING_DATABASE_URL` | připojení k `nexus_test` na `localhost:5432` (uživatel a heslo z kroku 1) |
 | `STAGING_JWT_SECRET` | **jiný než produkční**, aspoň 32 znaků |
 | `STAGING_DEVICE_SECRET` | **jiný než produkční**, aspoň 16 znaků |
 | `STAGING_ENCRYPTION_KEY` | **jiný než produkční**, aspoň 32 znaků |
