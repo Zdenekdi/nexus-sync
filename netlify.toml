@@ -2,6 +2,34 @@
   command = "cd client && npm install --legacy-peer-deps && npm run build"
   publish = "client/dist"
 
+# Náhledy pull requestů.
+#
+# Frontend je z pull requestu, ale API je pořád PRODUKČNÍ — klient bez
+# nastaveného VITE_API_URL spadne na zadrátovanou výchozí hodnotu
+# https://nexus-api.myvnc.com/api. Náhled tedy vypadá jako pískoviště
+# a přitom maže a odesílá doopravdy.
+#
+# Než bude stát testovací backend, aspoň to musí být vidět: pruh dole
+# varuje, že jsou data ostrá.
+[context.deploy-preview.environment]
+  VITE_NEXUS_ENVIRONMENT = "preview"
+
+[context.branch-deploy.environment]
+  VITE_NEXUS_ENVIRONMENT = "preview"
+
+# ── Až poběží testovací backend ────────────────────────────────────────────
+# Odkomentuj řádky níž a v obou blocích výš přepiš hodnotu na "staging".
+# Teprve pak náhledy přestanou sahat na ostrá data. Postup je v
+# docs/testovaci-prostredi.md.
+#
+# [context.deploy-preview.environment]
+#   VITE_API_URL = "https://nexus-test-api.myvnc.com/api"
+#   VITE_NEXUS_ENVIRONMENT = "staging"
+#
+# [context.branch-deploy.environment]
+#   VITE_API_URL = "https://nexus-test-api.myvnc.com/api"
+#   VITE_NEXUS_ENVIRONMENT = "staging"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

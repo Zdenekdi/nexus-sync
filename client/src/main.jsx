@@ -3,6 +3,7 @@ import React from 'react'
 import { NexusProvider } from './context/NexusContext.jsx'
 import App from './App'
 import ErrorBoundary from './ErrorBoundary'
+import EnvironmentBadge from './components/EnvironmentBadge'
 import './index.css'
 
 // 0. ENVIRONMENT HARDENING (Polyfills for Android Webview)
@@ -36,11 +37,14 @@ const bootstrap = () => {
 
     const root = createRoot(container);
     root.render(
-      <ErrorBoundary>
-        <NexusProvider>
-          <App />
-        </NexusProvider>
-      </ErrorBoundary>
+      <>
+        <EnvironmentBadge />
+        <ErrorBoundary>
+          <NexusProvider>
+            <App />
+          </NexusProvider>
+        </ErrorBoundary>
+      </>
     );
   } catch (_err) {
     console.error('FATAL BOOT ERROR:', _err);
