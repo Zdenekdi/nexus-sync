@@ -284,8 +284,12 @@ test.describe('RBAC — GET /api/bookings', () => {
   });
 
   test('Senior Operator/Model/Operator can access bookings → 200', async () => {
-    test.skip(!tokens.manager || !tokens.model, 'Logins failed');
-    const resSenior = await client('manager').get('/bookings');
+    // Používal se tu klient `manager`, přestože Manager je na /bookings
+    // zakázaný ZÁMĚRNĚ (bookingController.js:16 — rozvrh nevidí App Owner,
+    // Agency Admin ani Manager). Test procházel jen proto, že mířil na
+    // produkci, kde má jan@nexus.sync jinou roli než v seedu.
+    test.skip(!tokens.seniorOp || !tokens.model, 'Logins failed');
+    const resSenior = await client('seniorOp').get('/bookings');
     const resModel = await client('model').get('/bookings');
     expect(resSenior.status).toBe(200);
     expect(resModel.status).toBe(200);

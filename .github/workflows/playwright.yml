@@ -39,29 +39,12 @@ jobs:
     - name: Install Playwright Browsers
       timeout-minutes: 20
       run: npx playwright install --with-deps
-    # Stejná pojistka jako v ci.yml. Tenhle workflow dělá totéž a bez ní
-    # 4. 8. 2026 vyčerpal celý hodinový limit úlohy, protože se test:api
-    # zavěsil na nedostupný backend.
-    - name: Check API is reachable
-      run: |
-        # Nejdřív pryč s lomítkem na konci, teprve pak s /api — jinak by
-        # se z 'https://host/api/' stalo 'https://host/api//api/health'
-        # a pojistka by hlásila výpadek i u zdravého backendu.
-        API="${NEXUS_API_URL%/}"; API="${API%/api}"
-        if ! curl -fsS --max-time 15 -o /dev/null "$API/api/health"; then
-          echo "::error::Backend $API neodpovídá — bezpečnostní testy (rbac, sms-relay) nelze spustit."
-          exit 1
-        fi
-      env:
-        NEXUS_API_URL: ${{ secrets.NEXUS_API_URL || 'https://nexus-api.myvnc.com/api' }}
-
-    - name: Run API relay/security tests
-      run: npm run test:api
-      env:
-        NEXUS_API_URL: ${{ secrets.NEXUS_API_URL || 'https://nexus-api.myvnc.com/api' }}
-        NEXUS_DEVICE_SECRET: ${{ secrets.NEXUS_DEVICE_SECRET }}
-        TEST_OWNER_EMAIL: ${{ secrets.TEST_OWNER_EMAIL }}
-        TEST_OWNER_PASSWORD: ${{ secrets.TEST_OWNER_PASSWORD }}
+    # Testy proti živému API (rbac, sms-relay) běží JEN v ci.yml, kde k nim
+    # patří zahazovací backend s vlastní databází. Tady se schválně nespouští:
+    # dvakrát totéž nic nepřidá a hlavně mířily na PRODUKČNÍ API, do kterého
+    # při každém PR zapisovaly testovací vazby zařízení a testovací SMS.
+    #
+    # Tenhle workflow zůstává u sady proti mockům a lokálnímu client/dist.
     - name: Run Playwright tests
       run: npm run test:all:e2e
       env:
