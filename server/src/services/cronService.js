@@ -20,6 +20,12 @@ class CronService {
     // Production health monitoring every 5 minutes
     cron.schedule('*/5 * * * *', () => this.runOperationalMonitoring());
 
+    // Párování plateb převodem. Worker existoval, ale nikdo ho nespouštěl —
+    // i s nastaveným tokenem by tedy nikdy neproběhl a zaplacené převody by
+    // zůstaly viset jako PENDING. Sám se vypne, když není zapnutý převod
+    // nebo chybí token, takže tady nemusí být žádná podmínka.
+    cron.schedule('*/10 * * * *', () => this.syncBankTransfers());
+
     logger.info('Cron service started (daily stats @ 01:00, subscription check @ 02:00, monitoring every 5 min)');
   }
 
@@ -74,6 +80,55 @@ class CronService {
       logger.info(`Daily stats generated for ${agencies.length} agencies (${yesterday.toISOString().slice(0, 10)})`);
     } catch (err) {
       logger.error('Failed to generate daily stats:', err);
+    }
+  }
+
+  /**
+   * Párování plateb převodem s Fio API.
+   *
+   * Worker si sám ohlídá, jestli je převod zapnutý a jestli je token — takže
+   * na vypnutém nasazení jen zapíše řádek a skončí.
+   */
+  async syncBankTransfers() {
+    try {
+      const { syncFioTransactions } = require('../workers/fioSyncWorker');
+      await syncFioTransactions();
+      await this.expireBankTransferOrders();
+    } catch (error) {
+      logger.error('[Cron] Párování plateb převodem selhalo:', error.message);
+    }
+  }
+
+  /**
+   * Nezaplacené objednávky převodem po splatnosti.
+   *
+   * Bez tohohle by ve frontě k ručnímu potvrzení narůstaly objednávky, které
+   * nikdo nikdy nezaplatil, a mezi nimi by zanikly ty skutečné. Objednávka se
+   * jen uzavře — nic se neruší zákazníkovi, který má aktivní předplatné.
+   */
+  async expireBankTransferOrders() {
+    try {
+      const ted = new Date();
+      const cekajici = await prisma.subscription.findMany({
+        where: { status: 'PENDING', provider: 'bank_transfer' },
+        select: { id: true, note: true, paymentRef: true },
+      });
+
+      const propadle = cekajici.filter((s) => {
+        try {
+          const dueAt = JSON.parse(s.note || '{}').dueAt;
+          return dueAt && new Date(dueAt) < ted;
+        } catch { return false; }
+      });
+      if (!propadle.length) return;
+
+      await prisma.subscription.updateMany({
+        where: { id: { in: propadle.map((s) => s.id) } },
+        data: { status: 'EXPIRED', providerStatus: 'transfer_not_received' },
+      });
+      logger.info(`[Cron] Propadlo ${propadle.length} nezaplacených objednávek převodem (VS: ${propadle.map((s) => s.paymentRef).join(', ')})`);
+    } catch (error) {
+      logger.error('[Cron] Uzavírání propadlých objednávek selhalo:', error.message);
     }
   }
 

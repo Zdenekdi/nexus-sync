@@ -1,4 +1,5 @@
 import React from 'react';
+import BankTransferInstructions from '../BankTransferInstructions';
 import { 
   Activity, Building2, Smartphone, ShieldCheck, Lock, 
   DollarSign, Sparkles, TrendingUp, Terminal, CheckCircle2, CalendarClock, AlertTriangle
@@ -67,7 +68,31 @@ const SettingsView = () => {
   };
   const [embeddedCheckout, setEmbeddedCheckout] = React.useState(null);
 
-  const handleUpgrade = async (planId, method = 'card') => {
+  // Způsob platby a pokyny k převodu.
+  //
+  // `dostupneMetody` se ptá serveru schválně: převod je za přepínačem
+  // ALLOW_BANK_TRANSFER_BILLING a nabízet ho tam, kde není zapnutý, znamená
+  // poslat uživatele do chyby.
+  const [zpusobPlatby, setZpusobPlatby] = React.useState('card');
+  const [pokynyPrevodem, setPokynyPrevodem] = React.useState(null);
+  const [dostupneMetody, setDostupneMetody] = React.useState({ card: true, transfer: false });
+
+  React.useEffect(() => {
+    if (!nexus?.token) return undefined;
+    let zruseno = false;
+    (async () => {
+      try {
+        const zaklad = import.meta.env.VITE_API_URL || 'https://nexus-api.myvnc.com/api';
+        const r = await fetch(`${zaklad}/billing/methods`, { headers: { Authorization: `Bearer ${nexus.token}` } });
+        if (!r.ok) return;
+        const d = await r.json();
+        if (!zruseno) setDostupneMetody({ card: d.card !== false, transfer: d.transfer === true });
+      } catch { /* zůstane výchozí: jen karta */ }
+    })();
+    return () => { zruseno = true; };
+  }, [nexus?.token]);
+
+  const handleUpgrade = async (planId, method = zpusobPlatby) => {
     if (isStartingSubscription) return;
     if (!nexus?.token) {
       showToast(lang === 'cz' ? 'Nejste přihlášený. Přihlaste se prosím znovu.' : 'You are not signed in. Please sign in again.', 'error');
@@ -84,7 +109,12 @@ const SettingsView = () => {
           successUrl: window.location.href,
           cancelUrl: window.location.href
         });
-        if (checkout?.clientSecret && checkout?.publishableKey) {
+        // Převod nikam nepřesměrovává — vrací platební pokyny, které se
+        // musí ukázat. Kdyby se sem propadl, uživatel by klikl a nestalo
+        // by se navenek vůbec nic.
+        if (checkout?.paymentMethod === 'transfer' && checkout?.pokyny) {
+          setPokynyPrevodem(checkout.pokyny);
+        } else if (checkout?.clientSecret && checkout?.publishableKey) {
           setEmbeddedCheckout(checkout);
         } else if (checkout?.url) {
           window.location.assign(checkout.url);
@@ -359,7 +389,40 @@ const SettingsView = () => {
               <div style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1.25rem' }}>
                 {lang === 'cz' ? 'SROVNÁNÍ A ZMĚNA TARIFŮ' : 'PLAN COMPARISON & UPGRADES'}
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1.25rem' }}>
+              {/* Volba způsobu platby. Zobrazí se, jen když server převod
+                  opravdu umí — jinak by tlačítko vedlo do chyby. */}
+              {dostupneMetody.transfer && (
+                <div data-testid="volba-zpusobu-platby" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700, marginRight: '0.3rem' }}>
+                    {lang === 'cz' ? 'PLATBA:' : 'PAYMENT:'}
+                  </span>
+                  {[
+                    { id: 'card', popisek: lang === 'cz' ? 'Kartou' : 'Card' },
+                    { id: 'transfer', popisek: lang === 'cz' ? 'Převodem' : 'Bank transfer' },
+                  ].map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      data-testid={`zpusob-platby-${m.id}`}
+                      onClick={() => { setZpusobPlatby(m.id); setPokynyPrevodem(null); }}
+                      style={{
+                        padding: '0.4rem 0.9rem', borderRadius: 8, cursor: 'pointer', fontWeight: 800, fontSize: '0.75rem',
+                        border: zpusobPlatby === m.id ? '1px solid var(--accent-color)' : '1px solid var(--card-border)',
+                        background: zpusobPlatby === m.id ? 'rgba(59,130,246,0.14)' : 'transparent',
+                        color: zpusobPlatby === m.id ? 'var(--accent-color)' : 'var(--text-secondary)',
+                      }}
+                    >
+                      {m.popisek}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {pokynyPrevodem && (
+                <BankTransferInstructions pokyny={pokynyPrevodem} lang={lang} onClose={() => setPokynyPrevodem(null)} />
+              )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1.25rem', marginTop: pokynyPrevodem ? '1.25rem' : 0 }}>
                 
                 {/* Starter Plan Card */}
                 <div className="glass-card" style={{ 

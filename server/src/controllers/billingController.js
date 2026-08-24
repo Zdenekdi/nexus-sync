@@ -13,6 +13,9 @@ try {
 /**
  * Billing & Subscription Automation Controller
  */
+const bankTransfer = require('../config/bankTransfer');
+const { isAppOwnerRole } = require('../utils/authz');
+
 class BillingController {
   /**
    * Canonical paid plans. Older ids are accepted only as aliases to avoid
@@ -309,10 +312,19 @@ class BillingController {
       const currency = this.normalizeCurrency(requestedCurrency, market);
       const checkoutMode = String(requestedCheckoutMode || '').toLowerCase() === 'embedded' ? 'embedded' : 'redirect';
 
-      if (paymentMethod !== 'card') {
+      if (paymentMethod !== 'card' && paymentMethod !== 'transfer') {
         return res.status(400).json({
-          code: paymentMethod === 'transfer' ? 'bank_transfer_disabled' : 'unsupported_payment_method',
-          message: 'Only card checkout is currently available.'
+          code: 'unsupported_payment_method',
+          message: 'Supported payment methods: card, transfer.'
+        });
+      }
+
+      // Převod se nabízí, jen když je zapnutý. Vystavit platební pokyny dřív,
+      // než je čím platby párovat, znamená vybrat peníze a nezapnout službu.
+      if (paymentMethod === 'transfer' && !bankTransfer.jeZapnuty()) {
+        return res.status(400).json({
+          code: 'bank_transfer_disabled',
+          message: 'Bank transfer is not enabled on this backend.'
         });
       }
 
@@ -323,6 +335,12 @@ class BillingController {
 
       const { type, targetValue, price, durationDays = 30 } = planConfig;
       if (!price) return res.status(400).json({ message: `Price is not configured for ${planId} in ${currency}` });
+
+      if (paymentMethod === 'transfer') {
+        return this.createBankTransferOrder(res, {
+          agencyId, planId, requestedPlanId, type, targetValue, price, currency, market, durationDays
+        });
+      }
 
       const mockBillingAllowed = process.env.NODE_ENV === 'test' ||
         (process.env.NODE_ENV !== 'production' && process.env.ALLOW_MOCK_BILLING === 'true');
@@ -501,6 +519,217 @@ class BillingController {
       logger.error('[Billing] Create Session Error:', error);
       res.status(500).json({ message: 'Failed to initialize payment' });
     }
+  }
+
+  /**
+   * Objednávka k zaplacení převodem.
+   *
+   * Nezapíná nic. Vytvoří jen čekající předplatné s variabilním symbolem a
+   * vrátí platební pokyny; aktivuje se teprve tehdy, až dorazí peníze —
+   * automaticky přes fioSyncWorker, nebo ručně potvrzením App Ownera.
+   *
+   * `amountPaid` tu neznamená „zaplaceno", ale „očekáváno". Na tuhle hodnotu
+   * se v `_activateSubscription` porovnává skutečně přijatá částka, takže
+   * nesmí chybět — bez ní by šlo aktivovat plán poslaním jedné koruny.
+   */
+  async createBankTransferOrder(res, { agencyId, planId, requestedPlanId, type, targetValue, price, currency, market, durationDays }) {
+    // Jedna nezaplacená objednávka na plán stačí. Bez tohohle by každé
+    // kliknutí vyrobilo další VS a zákazník by měl na výběr z pěti různých
+    // symbolů, z nichž čtyři by nikdy nikdo nespároval.
+    const stavajici = await prisma.subscription.findFirst({
+      where: { agencyId, status: 'PENDING', provider: 'bank_transfer', plan: targetValue },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (stavajici && stavajici.paymentRef) {
+      return res.json(this.bankTransferOdpoved(stavajici, { planId, price, currency }));
+    }
+
+    // VS musí být jedinečný — párování jde výhradně přes něj. Kolize by
+    // znamenala, že platba jedné agentury aktivuje předplatné jiné.
+    let vs = null;
+    for (let pokus = 0; pokus < 5 && !vs; pokus += 1) {
+      const kandidat = bankTransfer.vygenerujVS();
+      const obsazeny = await prisma.subscription.findFirst({ where: { paymentRef: kandidat } });
+      if (!obsazeny) vs = kandidat;
+    }
+    if (!vs) {
+      logger.error('[Billing] Nepodařilo se vygenerovat jedinečný variabilní symbol');
+      return res.status(503).json({ code: 'vs_generation_failed', message: 'Could not allocate a payment reference.' });
+    }
+
+    const splatnost = new Date(Date.now() + bankTransfer.SPLATNOST_DNI * 24 * 60 * 60 * 1000);
+    const note = {
+      type,
+      targetValue,
+      planId,
+      requestedPlanId: requestedPlanId || null,
+      paymentMethod: 'transfer',
+      provider: 'bank_transfer',
+      currency,
+      market: market || null,
+      dueAt: splatnost.toISOString(),
+    };
+
+    const subscription = await prisma.subscription.create({
+      data: {
+        agencyId,
+        plan: targetValue,
+        status: 'PENDING',
+        amountPaid: price,
+        currency,
+        // Předplatné poběží od zaplacení, ne od objednání — `expiresAt` se
+        // při aktivaci přepočítá. Tady drží jen splatnost objednávky.
+        expiresAt: this.fallbackExpiresAt(durationDays),
+        provider: 'bank_transfer',
+        providerStatus: 'awaiting_transfer',
+        paymentRef: vs,
+        note: JSON.stringify(note),
+      },
+    });
+
+    logger.info(`[Billing] Objednávka převodem: agentura ${agencyId}, plán ${targetValue}, VS ${vs}, ${price} ${currency}`);
+    return res.json(this.bankTransferOdpoved(subscription, { planId, price, currency }));
+  }
+
+  /** Platební pokyny pro klienta. Token k Fio API se sem nikdy nedostane. */
+  bankTransferOdpoved(subscription, { planId, price, currency }) {
+    const udaje = bankTransfer.bankovniUdaje();
+    const note = this.safeJson(subscription.note);
+    return {
+      paymentMethod: 'transfer',
+      provider: 'bank_transfer',
+      id: subscription.id,
+      localSubscriptionId: subscription.id,
+      status: subscription.status,
+      planId,
+      pokyny: {
+        ...udaje,
+        castka: price ?? subscription.amountPaid,
+        mena: currency || subscription.currency,
+        variabilniSymbol: subscription.paymentRef,
+        splatnostDo: note.dueAt || null,
+        automatickePotvrzeni: bankTransfer.maAutomatickeParovani(),
+      },
+    };
+  }
+
+  /**
+   * Které způsoby platby server opravdu umí.
+   *
+   * Bez tohohle by klient nabízel převod i tam, kde není zapnutý, uživatel
+   * by klikl a dostal chybu. Nabízet platbu, která nefunguje, je horší než
+   * ji nenabízet vůbec.
+   */
+  async getPaymentMethods(req, res) {
+    return res.json({
+      card: Boolean(this.stripe) || process.env.NODE_ENV === 'test' || process.env.ALLOW_MOCK_BILLING === 'true',
+      transfer: bankTransfer.jeZapnuty(),
+    });
+  }
+
+  /**
+   * Čekající platby převodem — seznam pro ruční potvrzení.
+   *
+   * Vidí je jedině App Owner, protože potvrzení je zásah do peněz napříč
+   * agenturami: kdyby to směl Agency Admin, potvrdil by si vlastní platbu sám.
+   */
+  async listPendingTransfers(req, res) {
+    if (!isAppOwnerRole(req.user?.role)) {
+      return res.status(403).json({ message: 'Only the app owner can review bank transfers' });
+    }
+    const cekajici = await prisma.subscription.findMany({
+      where: { status: 'PENDING', provider: 'bank_transfer' },
+      include: { agency: { select: { id: true, name: true, email: true } } },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return res.json({
+      ok: true,
+      automatickeParovani: bankTransfer.maAutomatickeParovani(),
+      polozky: cekajici.map((s) => {
+        const note = this.safeJson(s.note);
+        return {
+          id: s.id,
+          agentura: s.agency?.name || s.agencyId,
+          agencyId: s.agencyId,
+          email: s.agency?.email || null,
+          plan: s.plan,
+          castka: s.amountPaid,
+          mena: s.currency,
+          variabilniSymbol: s.paymentRef,
+          vytvoreno: s.createdAt,
+          splatnostDo: note.dueAt || null,
+          poSplatnosti: note.dueAt ? new Date(note.dueAt) < new Date() : false,
+        };
+      }),
+    });
+  }
+
+  /**
+   * Ruční potvrzení přijaté platby.
+   *
+   * Existuje pro případ, kdy není nastavený token k Fio API nebo banka
+   * nedostupná. Bez téhle možnosti platí, že zákazník zaplatí a nestane se
+   * nic — u platební funkce nejhorší možný výsledek.
+   *
+   * Potvrzující tvrdí, že peníze dorazily. Proto to smí jedině App Owner,
+   * proto se to zapisuje do auditu se jménem a proto se sem předává
+   * OČEKÁVANÁ částka: kontrola v `_activateSubscription` se tím nevypíná,
+   * jen se prohlašuje, že přišla celá.
+   */
+  async confirmBankTransfer(req, res) {
+    if (!isAppOwnerRole(req.user?.role)) {
+      return res.status(403).json({ message: 'Only the app owner can confirm bank transfers' });
+    }
+    const { subscriptionId, note: poznamka } = req.body || {};
+    if (!subscriptionId) return res.status(400).json({ message: 'subscriptionId required' });
+
+    const objednavka = await prisma.subscription.findFirst({
+      where: { id: String(subscriptionId), status: 'PENDING', provider: 'bank_transfer' },
+    });
+    if (!objednavka) return res.status(404).json({ message: 'Pending bank transfer not found' });
+    if (!objednavka.paymentRef) return res.status(409).json({ message: 'Order has no payment reference' });
+
+    const vysledek = await this._activateSubscription(objednavka.paymentRef, true, {
+      provider: 'bank_transfer_manual',
+      providerStatus: 'confirmed_manually',
+      amount: objednavka.amountPaid,
+      currency: objednavka.currency,
+    });
+
+    if (!vysledek.success) {
+      logger.warn(`[Billing] Ruční potvrzení VS ${objednavka.paymentRef} selhalo: ${vysledek.message}`);
+      return res.status(409).json({ ok: false, message: vysledek.message });
+    }
+
+    // Zápis do auditu je součást operace, ne kosmetika: je to jediná stopa
+    // o tom, kdo prohlásil, že peníze dorazily.
+    try {
+      // Načteno až tady: auditController a billingController se odkazují
+      // navzájem a při načtení na začátku souboru by `logAction` byl
+      // undefined. Zápis do auditu je v try/catch, takže by to neshodilo
+      // potvrzení — jen by tiše nevznikla jediná stopa o tom, kdo peníze
+      // prohlásil za přijaté.
+      const { logAction } = require('./auditController');
+      await logAction(
+        objednavka.agencyId,
+        req.user.userId,
+        'BANK_TRANSFER_CONFIRMED',
+        JSON.stringify({
+          subscriptionId: objednavka.id,
+          variabilniSymbol: objednavka.paymentRef,
+          castka: objednavka.amountPaid,
+          mena: objednavka.currency,
+          plan: objednavka.plan,
+          poznamka: poznamka || null,
+        })
+      );
+    } catch (e) {
+      logger.error('[Billing] Potvrzení proběhlo, ale nezapsalo se do auditu:', e.message);
+    }
+
+    logger.info(`[Billing] Platba převodem potvrzena ručně: VS ${objednavka.paymentRef}, agentura ${objednavka.agencyId}, potvrdil ${req.user.userId}`);
+    return res.json({ ok: true, targetValue: vysledek.targetValue });
   }
 
   async createPortalSession(req, res) {
