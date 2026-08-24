@@ -90,6 +90,9 @@ function validateRuntimeSecrets() {
   const issues = [];
   const strict = process.env.STRICT_RUNTIME_SECRETS === 'true' || process.env.NODE_ENV === 'production';
   const productionLike = strict || process.env.NODE_ENV === 'production';
+  // Testovací server běží schválně s NODE_ENV=production, aby se choval jako
+  // ostrý provoz. Odlišuje ho až NEXUS_ENVIRONMENT.
+  const jeStaging = process.env.NEXUS_ENVIRONMENT === 'staging';
 
   validateMinLength(issues, 'JWT_SECRET', 32, strict);
   validateMinLength(issues, 'DEVICE_SECRET', 16, strict);
@@ -132,12 +135,49 @@ function validateRuntimeSecrets() {
     addIssue(issues, 'error', 'ALLOW_UNSIGNED_BILLING_WEBHOOK', 'Unsigned billing webhooks must not be enabled in production.');
   }
 
-  if (productionLike && value('ALLOW_MOCK_BILLING') === 'true') {
+  // Na testu je předstíraná platba přesně to, co chceme: dá se proklikat celý
+  // objednávkový tok a nikde neteče ani koruna. Zákaz míří na produkci.
+  //
+  // Bez téhle výjimky by nasazení testovacího serveru padalo POKAŽDÉ —
+  // workflow mu ALLOW_MOCK_BILLING zapíná a NODE_ENV má produkční.
+  if (productionLike && !jeStaging && value('ALLOW_MOCK_BILLING') === 'true') {
     addIssue(issues, 'error', 'ALLOW_MOCK_BILLING', 'Mock billing must not be enabled in production.');
   }
 
-  if (productionLike && value('ALLOW_BANK_TRANSFER_BILLING') === 'true') {
-    addIssue(issues, 'warning', 'ALLOW_BANK_TRANSFER_BILLING', 'Bank transfer billing is disabled for the current pilot plan.');
+  // Platba převodem je od PR #131 hotová funkce, ne výhled. Varování tu
+  // zůstává jen jako připomínka, že bez FIO_API_TOKEN se platby nepárují
+  // samy a musí je potvrzovat App Owner ručně.
+  if (productionLike && value('ALLOW_BANK_TRANSFER_BILLING') === 'true' && !has('FIO_API_TOKEN')) {
+    addIssue(issues, 'warning', 'ALLOW_BANK_TRANSFER_BILLING', 'Bank transfer is enabled without FIO_API_TOKEN — payments require manual confirmation.');
+  }
+
+  // ── Testovací prostředí ────────────────────────────────────────────────────
+  //
+  // Testovací server sdílí kód s produkcí, takže umí úplně totéž: strhnout
+  // peníze, poslat push na skutečné telefony, spárovat bankovní platbu. Tyhle
+  // kontroly to zakazují — jinak by stačilo zkopírovat produkční .env a první
+  // proklikání testovacího webu by odeslalo SMS skutečné klientce.
+  //
+  // POZOR na to, co odsud ověřit NEJDE: `JWT_SECRET` musí být jiný než
+  // produkční. Kdyby byl stejný, token vydaný testovacím serverem by na
+  // produkci prošel jako platný. Skript nemá produkční hodnotu s čím porovnat,
+  // proto to hlídá nasazovací workflow tím, že vyžaduje samostatné secrety.
+  if (value('NEXUS_ENVIRONMENT') === 'staging') {
+    if (has('FIO_API_TOKEN')) {
+      addIssue(issues, 'error', 'FIO_API_TOKEN', 'Staging must not read the real bank account.');
+    }
+    if (value('ALLOW_BANK_TRANSFER_BILLING') === 'true') {
+      addIssue(issues, 'error', 'ALLOW_BANK_TRANSFER_BILLING', 'Staging must not issue real payment instructions.');
+    }
+    if (value('STRIPE_SECRET_KEY').startsWith('sk_live_')) {
+      addIssue(issues, 'error', 'STRIPE_SECRET_KEY', 'Staging must not use live Stripe keys.');
+    }
+    if (has('FIREBASE_SERVICE_ACCOUNT_JSON') || has('GOOGLE_APPLICATION_CREDENTIALS')) {
+      addIssue(issues, 'error', 'FIREBASE_SERVICE_ACCOUNT_JSON', 'Staging must not push notifications to real devices.');
+    }
+    if (has('TELEGRAM_CHAT_ID')) {
+      addIssue(issues, 'warning', 'TELEGRAM_CHAT_ID', 'Staging alerts will mix into the production Telegram chat.');
+    }
   }
 
   if (productionLike && !has('FIREBASE_SERVICE_ACCOUNT_JSON') && !has('GOOGLE_APPLICATION_CREDENTIALS')) {

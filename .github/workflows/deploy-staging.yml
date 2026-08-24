@@ -1,0 +1,121 @@
+name: "🧪 Nasadit testovací backend"
+
+# Jen ručně. Testovací backend nemá vznikat sám při každém pushi — jinak by se
+# pod rukama měnil zrovna ve chvíli, kdy na něm někdo něco zkouší.
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Větev, která se nasadí (výchozí master)"
+        required: false
+        default: master
+      seed:
+        description: "Naplnit databázi demo daty (seed)"
+        type: boolean
+        required: false
+        default: true
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy staging backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # Bez samostatných secretů by se dalo omylem nasadit testovací server
+      # s produkčním .env. Nejnebezpečnější je JWT_SECRET: kdyby byl stejný,
+      # token vydaný testovacím serverem by prošel i na produkci. Proto se
+      # nedědí NIC z produkčních secretů a chybějící hodnota je důvod
+      # k zastavení, ne k záložnímu chování.
+      - name: Zkontrolovat, že testovací secrety existují
+        run: |
+          chybi=""
+          for k in STAGING_HOST STAGING_USER STAGING_PASSWORD STAGING_JWT_SECRET STAGING_DEVICE_SECRET STAGING_ENCRYPTION_KEY STAGING_DATABASE_URL STAGING_API_URL; do
+            # Nepřímé rozbalení; `if`, ne `[ ... ] && ...` — krok běží pod `bash -e`
+            # a nepravdivý test na konci těla smyčky by ho shodil s prázdnou chybou.
+            if [ -z "${!k}" ]; then chybi="$chybi $k"; fi
+          done
+          if [ -n "$chybi" ]; then
+            echo "::error::Chybí secrety pro testovací prostředí:$chybi"
+            echo "Nastav je v Settings → Secrets. Produkční hodnoty se sem ZÁMĚRNĚ nedědí —"
+            echo "shodný JWT_SECRET by znamenal, že token z testu platí i na produkci."
+            exit 1
+          fi
+        env:
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+          STAGING_USER: ${{ secrets.STAGING_USER }}
+          STAGING_PASSWORD: ${{ secrets.STAGING_PASSWORD }}
+          STAGING_JWT_SECRET: ${{ secrets.STAGING_JWT_SECRET }}
+          STAGING_DEVICE_SECRET: ${{ secrets.STAGING_DEVICE_SECRET }}
+          STAGING_ENCRYPTION_KEY: ${{ secrets.STAGING_ENCRYPTION_KEY }}
+          STAGING_DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+          STAGING_API_URL: ${{ secrets.STAGING_API_URL }}
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          password: ${{ secrets.STAGING_PASSWORD }}
+          script: |
+            set -e
+            cd /root/nexus-backend-test/server
+
+            git fetch origin
+            # -B funguje, ať už lokální větev existuje, nebo ne.
+            git checkout -B "${{ inputs.branch }}" "origin/${{ inputs.branch }}"
+
+            # .env se skládá ZNOVU při každém nasazení, ne edituje. Ruční úpravy
+            # na serveru se tím zahodí — ale právě proto se sem nemůže přistěhovat
+            # produkční hodnota, kterou by tam někdo někdy dopsal.
+            # Oddělovač v apostrofech: bez nich by shell rozbalil $ uvnitř
+            # hodnot. Heslo k databázi s dolarem by se tiše zkomolilo a server
+            # by se nepřipojil — s chybou, která ukazuje úplně jinam.
+            cat > .env <<'ENVEOF'
+            NODE_ENV=production
+            NEXUS_ENVIRONMENT=staging
+            PORT=3001
+            DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}
+            JWT_SECRET=${{ secrets.STAGING_JWT_SECRET }}
+            DEVICE_SECRET=${{ secrets.STAGING_DEVICE_SECRET }}
+            ENCRYPTION_KEY=${{ secrets.STAGING_ENCRYPTION_KEY }}
+            ALLOW_BANK_TRANSFER_BILLING=false
+            ALLOW_MOCK_BILLING=true
+            ALLOW_MESSAGE_SIMULATION=true
+            ENVEOF
+
+            # Audit odmítne nasadit testovací server, který by uměl sáhnout
+            # na skutečné peníze, banku nebo telefony (viz NEXUS_ENVIRONMENT).
+            STRICT_RUNTIME_SECRETS=true node scripts/audit-runtime-secrets.js
+
+            # NE --omit=dev: `prisma` (CLI) je devDependency, takže by
+            # `prisma generate` i `migrate deploy` skončily na chybějícím
+            # souboru. Produkční nasazení proto taky instaluje všechno.
+            npm install --no-audit
+            ./node_modules/.bin/prisma generate
+            ./node_modules/.bin/prisma migrate deploy
+
+            if [ "${{ inputs.seed }}" = "true" ]; then
+              npm run prisma:seed
+            fi
+
+            pm2 restart nexus-backend-test --update-env || pm2 start src/index.js --name nexus-backend-test
+            sleep 3
+            pm2 status nexus-backend-test | grep -q online || { pm2 logs nexus-backend-test --lines 50 --nostream; exit 1; }
+
+      # Zdravotní kontrola sahá na databázi, takže projde teprve tehdy, když je
+      # backend opravdu použitelný — ne jen když naběhl proces.
+      - name: Ověřit, že testovací backend odpovídá
+        run: |
+          for i in $(seq 1 15); do
+            if curl -fsS --max-time 10 -o /dev/null "${{ secrets.STAGING_API_URL }}/api/health"; then
+              echo "Testovací backend odpovídá."
+              exit 0
+            fi
+            sleep 4
+          done
+          echo "::error::Testovací backend po nasazení neodpovídá na /api/health."
+          exit 1

@@ -127,6 +127,12 @@ jobs:
       # konzole. V srpnu 2026 takhle chybělo 75 klíčů, mimo jiné pět nadpisů
       # stránek. Skript má vlastní kontrolní vzorek: když se rozbije sám,
       # skončí kódem 2, ne tichým „0 chybějících".
+      # Klientské testy (vitest) v CI dlouho neběžely vůbec — job dělal lint,
+      # překlady, CSS a build, ale `npm run test` v něm nebyl. Testy tedy
+      # existovaly a nikdo je nespouštěl.
+      - name: Run client unit tests
+        run: cd client && npm run test
+
       - name: Check translation keys
         run: cd client && npm run check:translations
 
