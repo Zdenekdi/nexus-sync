@@ -1,6 +1,10 @@
 const prisma = require('../services/db');
 const logger = require('../services/logger');
-const { logAction } = require('./auditController');
+// logAction se requiruje lazy uvnitř handlerů — auditController ↔ roleController
+// mají cyklus a top-level destrukturující require by zachytil undefined:
+// auditController se načítá první (přes authController) a v okamžiku, kdy odsud
+// requirujeme zpět, exports.logAction ještě neexistuje. Zápis do auditu by pak
+// tiše zmizel a handler by spadl do catch až PO úspěšném zápisu role.
 
 /**
  * Role Controller - Handles dynamic permissions and add-ons
@@ -133,6 +137,7 @@ exports.updateRolePermissions = async (req, res) => {
         }
 
         logger.info(`Role ${id} permissions updated by ${req.user.userId}`);
+        const { logAction } = require('./auditController');
         logAction(req.user.agencyId, req.user.userId || req.user.id, 'ROLE_UPDATED', `Role "${existingRole.name}" permissions changed`);
         res.json(role);
     } catch (error) {
@@ -215,6 +220,7 @@ exports.toggleAdminMerge = async (req, res) => {
         await prisma.role.update({ where: { id }, data: { permissions: JSON.stringify(perms) } });
 
         logger.info(`Manager role (${id}) admin-merge → ${newMerged}`);
+        const { logAction } = require('./auditController');
         logAction(existing.agencyId, req.user.userId, 'ROLE_MERGE_TOGGLED',
             `Manager role merged_with_admin set to ${newMerged}`);
 
