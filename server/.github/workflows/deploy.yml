@@ -25,7 +25,26 @@ jobs:
             git pull origin master
             npm install --prefer-offline 2>/dev/null || npm install
             ./node_modules/.bin/prisma generate
-            ./node_modules/.bin/prisma db push
+
+            # ── Schéma se odsud NEMĚNÍ ────────────────────────────────────────
+            #
+            # Tady stálo `prisma db push`. To je nejkratší cesta ke ztrátě dat,
+            # jakou tenhle repozitář měl:
+            #
+            #   - `db push` srovná databázi podle schema.prisma a SLOUPCE, které
+            #     v schématu nejsou, zahodí. Bez migrace, bez varování, bez
+            #     zálohy. Prisma ho sama označuje za nástroj na prototypování,
+            #     ne na produkci.
+            #   - Nic nezapíše do _prisma_migrations, takže po něm `migrate
+            #     deploy` zkouší aplikovat migraci na už změněnou databázi
+            #     a spadne.
+            #   - Tenhle workflow běží na push do masteru stejně jako
+            #     deploy-backend v nexus-sync, tedy SOUBĚŽNĚ s ním. Kdo z nich
+            #     stihne schéma dřív, je otázka náhody — a tenhle neměl zálohu.
+            #
+            # Migrace teď patří výhradně úloze deploy-backend v nexus-sync,
+            # kde před `prisma migrate deploy` stojí brána s ověřenou zálohou.
+            # Tenhle workflow dělá jen to ostatní: env proměnné a restart.
 
             # ── Injekce SIP / Asterisk env proměnných ───────────────────────
             # Přidej/aktualizuj proměnné v .env bez přepsání ostatních hodnot

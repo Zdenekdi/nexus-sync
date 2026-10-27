@@ -605,6 +605,14 @@ jobs:
             # vrací nenulu i při nedostupné databázi, takže samotný kód
             # nerozliší „něco čeká" od „nevím". Obě hlášky jsou ověřené proti
             # prisma 6.1.0 (node_modules/prisma/build/index.js).
+            #
+            # CO BRÁNA NEPOZNÁ: `migrate status` čte tabulku _prisma_migrations
+            # a porovnává ji se složkou prisma/migrations. Skutečnou strukturu
+            # databáze NEKONTROLUJE — ruční `ALTER TABLE` na produkci historii
+            # nezmění, takže status dál hlásí „up to date" a záloha se nevezme.
+            # Na schema drift tedy tahle brána není a nikdy nebude; od toho je
+            # samostatná úloha Schema Drift Check a `prisma migrate diff`.
+            # Brána hlídá jen to, co umí: aby MIGRACE neproběhla bez zálohy.
             stav="$(./node_modules/.bin/prisma migrate status 2>&1 || true)"
             printf '%s\n' "$stav"
 
@@ -641,13 +649,15 @@ jobs:
               fi
               echo "→ Záloha ověřena, pokračuji migrací."
             else
-              # Sem spadne rozejitá historie migrací, drift i nedostupná
-              # databáze. V žádném z těch stavů nemá `migrate deploy` co dělat
-              # naslepo. Pozor: rozejitá historie taky obsahuje „have not yet
-              # been applied", proto se výš hledá celá hláška „Following
-              # migration… have not yet been applied", ne jen její konec.
+              # Sem spadne rozejitá historie migrací, databáze, kterou Prisma
+              # nespravuje, i nedostupná databáze. V žádném z těch stavů nemá
+              # `migrate deploy` co dělat naslepo.
+              #
+              # Pozor: rozejitá historie taky obsahuje „have not yet been
+              # applied", proto se výš hledá celá hláška „Following migration…
+              # have not yet been applied", ne jen její konec.
               echo "❌ Stav migrací se nepodařilo určit (výpis výše)."
-              echo "   Rozejitá historie, drift, nebo nedostupná databáze."
+              echo "   Rozejitá historie, neřízená databáze, nebo nedostupná databáze."
               echo "   Deploy zastavuji — tohle chce člověka."
               exit 1
             fi

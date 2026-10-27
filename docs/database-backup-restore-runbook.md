@@ -54,8 +54,16 @@ push to `master` the job runs `prisma migrate status`; if migrations are
 pending it takes a verified backup into `/var/backups/nexus-pred-migraci`
 (90-day retention) and refuses to run `prisma migrate deploy` unless that
 backup succeeded. If the migration state cannot be determined — diverged
-history, drift, unreachable database — the deploy stops instead of migrating
-blind.
+history, a database Prisma does not manage, an unreachable database — the
+deploy stops instead of migrating blind.
+
+**The gate does not detect schema drift.** `prisma migrate status` reads the
+`_prisma_migrations` table and compares it with `prisma/migrations`; it never
+inspects the live table structure. A hand-run `ALTER TABLE` on production
+leaves migration history intact, so the gate still reports "up to date" and
+takes no backup. Use the `Schema Drift Check` job and `prisma migrate diff`
+for that. The gate guarantees one thing only: a **migration** will not run
+without a verified backup.
 
 `migrate deploy` is **not** harmless: it applies migrations as written, and
 `20261027000001_blacklist_reasons` drops columns. The gate exists because that
