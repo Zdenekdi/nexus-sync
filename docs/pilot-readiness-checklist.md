@@ -6,8 +6,7 @@ Tento checklist slouzi jako go/no-go brana pred rizenym pilotnim provozem Nexus 
 
 - `master` je aktualni a pushnuty na GitHub.
 - GitHub Actions jsou zelene:
-  - `Pipeline: Build & Deploy`
-  - `QA: E2E Testing Suite`
+  - `Pipeline: Build & Deploy` (obsahuje i Playwright E2E Tests)
   - `GCP Cloud Build`, pokud se pouziva GCP deploy
 - Client build pro produkci prosel.
 - Server lint prosel bez errors.
