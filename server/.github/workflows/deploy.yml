@@ -31,13 +31,16 @@ jobs:
             # Tady stálo `prisma db push`. To je nejkratší cesta ke ztrátě dat,
             # jakou tenhle repozitář měl:
             #
-            #   - `db push` srovná databázi podle schema.prisma a SLOUPCE, které
-            #     v schématu nejsou, zahodí. Bez migrace, bez varování, bez
-            #     zálohy. Prisma ho sama označuje za nástroj na prototypování,
-            #     ne na produkci.
-            #   - Nic nezapíše do _prisma_migrations, takže po něm `migrate
-            #     deploy` zkouší aplikovat migraci na už změněnou databázi
-            #     a spadne.
+            #   - Nic nezapíše do _prisma_migrations. Schéma se tedy změní
+            #     mimo historii migrací a `migrate deploy` pak zkouší
+            #     aplikovat migraci na už změněnou databázi a spadne. Prisma
+            #     sama `db push` označuje za nástroj na prototypování, ne na
+            #     produkci.
+            #   - Co by naopak NEUDĚLAL: zahodit sloupce. Bez
+            #     `--accept-data-loss` a bez terminálu Prisma 6.1.0 vyhodí
+            #     DbPushIgnoreWarningsWithFlagError a skončí — ověřeno ve
+            #     zdrojáku, ne odhadnuto. Ztrátu dat tedy nehrozil, zato tiše
+            #     měnil schéma a rozbíjel gated cestu.
             #   - Tenhle workflow běží na push do masteru stejně jako
             #     deploy-backend v nexus-sync, tedy SOUBĚŽNĚ s ním. Kdo z nich
             #     stihne schéma dřív, je otázka náhody — a tenhle neměl zálohu.
