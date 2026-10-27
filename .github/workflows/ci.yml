@@ -589,10 +589,69 @@ jobs:
             STRICT_RUNTIME_SECRETS=true node scripts/audit-runtime-secrets.js
             npm install
             ./node_modules/.bin/prisma generate
-            # Aplikuj čekající migrace na prod DB. Bez tohohle kroku se regeneroval jen
-            # Prisma klient (podle schématu), ale DB zůstala pozadu → dotazy na nové
-            # tabulky/relace (např. GpsTrackerLocation) padaly na 500. migrate deploy je
-            # bezpečný (jen aplikuje již vytvořené migrace, nic negeneruje/neshazuje).
+
+            # ── Brána: čekající migrace jen přes ověřenou zálohu ───────────────
+            #
+            # Tady dřív stálo, že `migrate deploy` je bezpečný, protože „nic
+            # negeneruje/neshazuje". To už neplatí. Aplikuje migrace tak, jak
+            # jsou napsané, a 20261027000001_blacklist_reasons ZAHAZUJE sloupce
+            # s volným textem. Po jejím proběhnutí není z čeho je vzít zpět
+            # a v celém řetězci sync-backend → deploy-backend nebyla záloha.
+            #
+            # Zálohuje se JEN když něco čeká. Když ne, denní záloha z cronu
+            # stačí a dump navíc by prodloužil každý deploy o minuty.
+            #
+            # Stav se pozná z VÝPISU, ne z návratového kódu: `migrate status`
+            # vrací nenulu i při nedostupné databázi, takže samotný kód
+            # nerozliší „něco čeká" od „nevím". Obě hlášky jsou ověřené proti
+            # prisma 6.1.0 (node_modules/prisma/build/index.js).
+            stav="$(./node_modules/.bin/prisma migrate status 2>&1 || true)"
+            printf '%s\n' "$stav"
+
+            if printf '%s' "$stav" | grep -q 'Database schema is up to date'; then
+              echo "→ Nic nečeká, zálohu nepotřebuji."
+            elif printf '%s' "$stav" | grep -q 'Following migration.* have not yet been applied'; then
+              echo "→ Čekající migrace. Nejdřív ověřená záloha, pak teprve migrace."
+
+              # Bez pg_dump/pg_restore nejde záloha ani pořídit, ani ověřit.
+              # Radši sem spadne deploy s jasnou hláškou, než aby migrace
+              # proběhla nezajištěná.
+              for n in pg_dump pg_restore; do
+                if ! command -v "$n" >/dev/null 2>&1; then
+                  echo "❌ Chybí $n — zálohu nelze pořídit. Migraci nepouštím."
+                  echo "   Na serveru: apt-get install -y postgresql-client"
+                  exit 1
+                fi
+              done
+
+              # backup-postgres.sh si sám ověří velikost, čitelnost
+              # (pg_restore --list) i checksum; při jakékoli chybě vadný soubor
+              # smaže a skončí nenulově. Vlastní adresář a delší retence proto,
+              # že tahle záloha je poslední stav PŘED nevratnou změnou — ta se
+              # nemá protáčet po čtrnácti dnech spolu s běžnými dumpy.
+              #
+              # Explicitní `if !` je potřeba: ssh-action nemá script_stop, takže
+              # samotné selhání příkazu běh nezastaví (proto jsou výš u Stripe
+              # kontrol taky ruční `exit 1`).
+              if ! BACKUP_DIR=/var/backups/nexus-pred-migraci \
+                   RETENTION_DAYS=90 \
+                   bash scripts/backup-postgres.sh; then
+                echo "❌ Záloha neprošla. Migraci NEPOUŠTÍM, databáze zůstává, jak je."
+                exit 1
+              fi
+              echo "→ Záloha ověřena, pokračuji migrací."
+            else
+              # Sem spadne rozejitá historie migrací, drift i nedostupná
+              # databáze. V žádném z těch stavů nemá `migrate deploy` co dělat
+              # naslepo. Pozor: rozejitá historie taky obsahuje „have not yet
+              # been applied", proto se výš hledá celá hláška „Following
+              # migration… have not yet been applied", ne jen její konec.
+              echo "❌ Stav migrací se nepodařilo určit (výpis výše)."
+              echo "   Rozejitá historie, drift, nebo nedostupná databáze."
+              echo "   Deploy zastavuji — tohle chce člověka."
+              exit 1
+            fi
+
             ./node_modules/.bin/prisma migrate deploy
             pm2 restart nexus-backend-final --update-env || pm2 start server.js --name nexus-backend-final
             sleep 3
