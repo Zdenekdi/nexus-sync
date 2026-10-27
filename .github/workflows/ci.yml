@@ -210,7 +210,19 @@ jobs:
           npm install --legacy-peer-deps --prefer-offline --no-audit
           cd client && npm install --legacy-peer-deps --prefer-offline --no-audit
 
+      # Vlastní limit, kratší než limit celé úlohy.
+      #
+      # `--with-deps` stahuje apt balíčky z ubuntu mirroru a ten se občas
+      # zadrhne — 27. 10. 2026 trval tenhle krok přes 20 minut a sebral celý
+      # rozpočet úlohy, takže testy se vůbec nespustily a ve výsledku stálo
+      # jen „timed out". S limitem tady spadne krok, který za to může, a je
+      # z běhu poznat, že šlo o stahování, ne o regresi.
+      #
+      # Instalují se VŠECHNY prohlížeče schválně: test:all:e2e nemá
+      # --project, takže běží i firefox a webkit (viz playwright.config.js).
+      # Zúžit instalaci na chromium by ty dva projekty shodilo.
       - name: Install Playwright Browsers and system dependencies
+        timeout-minutes: 15
         run: npx playwright install --with-deps
 
       # BEZ TOHOHLE KROKU TESTUJE CI NASAZENOU PRODUKCI, NE TENHLE PR.
@@ -277,6 +289,20 @@ jobs:
         run: npm run test:all:e2e
         env:
           FRONTEND_URL: ${{ secrets.FRONTEND_URL || 'https://nexus-sync-8d50b.web.app' }}
+
+      # Jediná věc, kterou měl zrušený workflow „QA: E2E Testing Suite" a tenhle
+      # job ne. Bez reportu zbývá po spadlém testu jen řádek v logu — žádná
+      # trasa, žádný snímek, žádné video, přesně ve chvíli, kdy jsou potřeba.
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 30
+          if-no-files-found: ignore
 
   # ── Kontrola oprávnění v manifestech ────────────────────────────────────────
   #
