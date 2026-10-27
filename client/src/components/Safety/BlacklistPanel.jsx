@@ -75,9 +75,15 @@ const BlacklistPanel = () => {
     }
   };
 
-  const filteredEntries = entries.filter(_err => 
-    _err.phone.includes(searchTerm) || (_err.reason || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Hledá se i v POPISKU kategorie, ne jen v jejím kódu. Uživatel vidí
+  // „Nezaplatil", ale v datech je 'unpaid' — bez toho by hledání podle toho,
+  // co má před očima, schovalo právě ty záznamy, které hledá.
+  const filteredEntries = entries.filter(_err => {
+    const hledane = searchTerm.toLowerCase();
+    return _err.phone.includes(searchTerm)
+      || (_err.reason || '').toLowerCase().includes(hledane)
+      || popisDuvodu(_err.reason, lang).toLowerCase().includes(hledane);
+  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', height: '100%' }}>

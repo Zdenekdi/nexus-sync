@@ -77,6 +77,56 @@ function uklidSosPoints(hranice) {
   });
 }
 
+/**
+ * Souřadnice uložené PŘÍMO na poplachu.
+ *
+ * SOSAlert nese vlastní lat/lng/accuracy — první polohu v okamžiku spuštění.
+ * Mazat jen podřízené SOSLocationUpdate tedy polohu nesmaže: zůstane na
+ * poplachu napořád, a u poplachu, který žádné další body nedostal, je to
+ * dokonce JEDINÁ uložená poloha. Proto se nuluje za stejných podmínek.
+ */
+function uklidSosSouradnice(hranice) {
+  return prisma.sOSAlert.updateMany({
+    where: {
+      status: 'resolved',
+      resolvedAt: { not: null, lt: hranice },
+      OR: [{ lat: { not: null } }, { lng: { not: null } }, { accuracy: { not: null } }],
+    },
+    data: { lat: null, lng: null, accuracy: null },
+  });
+}
+
+/**
+ * Poslední známá poloha trackeru.
+ *
+ * GpsTracker si drží lastLat/lastLng/lastAccuracy/lastCapturedAt jako cache
+ * posledního hlášení. Historii v GpsTrackerLocation uklidíme, ale tahle kopie
+ * by přežila — u trackeru, který přestal hlásit, by jeho poslední poloha
+ * zůstala uložená navždy.
+ *
+ * Podmínka na lastCapturedAt zároveň zaručuje, že čerstvé hlášení se nesmaže:
+ * jakmile tracker pošle novou polohu, časové razítko je mimo hranici a
+ * záznam se neaktualizuje. Tracker, jehož polohy visí na nevyřešené relaci
+ * nebo neuzavřeném SOS, se vynechává úplně.
+ */
+function uklidTrackerPosledniPoloha(hranice) {
+  return prisma.gpsTracker.updateMany({
+    where: {
+      lastCapturedAt: { not: null, lt: hranice },
+      OR: [{ lastLat: { not: null } }, { lastLng: { not: null } }, { lastAccuracy: { not: null } }],
+      locations: {
+        none: {
+          OR: [
+            { safetySession: { state: { not: 'RESOLVED' } } },
+            { sosAlert: { status: { not: 'resolved' } } },
+          ],
+        },
+      },
+    },
+    data: { lastLat: null, lastLng: null, lastAccuracy: null, lastCapturedAt: null },
+  });
+}
+
 /** Obsah zpráv. */
 function uklidZpravy(hranice) {
   return prisma.message.deleteMany({ where: { createdAt: { lt: hranice } } });
@@ -119,7 +169,9 @@ async function spustUklid(ted = new Date()) {
   const vysledek = {
     safetyLocationPoint: await uklid('Body trasy (relace)', h.safetyLocationPoint, () => uklidSafetyPoints(h.safetyLocationPoint)),
     gpsTrackerLocation: await uklid('Polohy trackerů', h.gpsTrackerLocation, () => uklidTrackerPoints(h.gpsTrackerLocation)),
+    gpsTrackerLast: await uklid('Poslední poloha trackerů', h.gpsTrackerLocation, () => uklidTrackerPosledniPoloha(h.gpsTrackerLocation)),
     sosLocationUpdate: await uklid('Polohy SOS', h.sosLocationUpdate, () => uklidSosPoints(h.sosLocationUpdate)),
+    sosAlertSouradnice: await uklid('Souřadnice poplachů', h.sosLocationUpdate, () => uklidSosSouradnice(h.sosLocationUpdate)),
     message: await uklid('Zprávy', h.message, () => uklidZpravy(h.message)),
     dataAccessLog: await uklid('Logy přístupu', h.dataAccessLog, () => uklidPristupoveLogy(h.dataAccessLog)),
     auditLog: await uklid('Auditní logy', h.auditLog, () => uklidAuditniLogy(h.auditLog)),

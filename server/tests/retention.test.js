@@ -36,13 +36,24 @@ const ENV = [
   'RETENTION_AUDIT_LOGS_DAYS',
 ];
 
+/** Tabulky, kde se nemaže, ale nuluje — souřadnice visí na rodiči. */
+const NULOVANE = ['sOSAlert', 'gpsTracker'];
+
 /** `where` z prvního volání deleteMany na dané tabulce. */
 const kdeU = (tabulka) => prisma[tabulka].deleteMany.mock.calls[0][0].where;
+
+/** Argument prvního updateMany na dané tabulce. */
+const updateU = (tabulka) => prisma[tabulka].updateMany.mock.calls[0][0];
+
+const nastavMocky = () => {
+  TABULKY.forEach((t) => prisma[t].deleteMany.mockResolvedValue({ count: 0 }));
+  NULOVANE.forEach((t) => prisma[t].updateMany.mockResolvedValue({ count: 0 }));
+};
 
 beforeEach(() => {
   jest.clearAllMocks();
   ENV.forEach((k) => delete process.env[k]);
-  TABULKY.forEach((t) => prisma[t].deleteMany.mockResolvedValue({ count: 0 }));
+  nastavMocky();
 });
 
 afterAll(() => ENV.forEach((k) => delete process.env[k]));
@@ -93,6 +104,53 @@ describe('Živý incident', () => {
   });
 });
 
+describe('Souřadnice uložené na rodiči', () => {
+  it('poplach SOS přijde i o vlastní lat/lng, nejen o podřízené body', async () => {
+    // SOSAlert nese první polohu přímo na sobě. Kdyby se mazaly jen
+    // SOSLocationUpdate, u poplachu bez dalších bodů by zůstala JEDINÁ
+    // uložená poloha napořád.
+    await spustUklid();
+
+    const { where, data } = updateU('sOSAlert');
+    expect(where.status).toBe('resolved');
+    expect(where.resolvedAt).toMatchObject({ not: null });
+    expect(data).toEqual({ lat: null, lng: null, accuracy: null });
+  });
+
+  it('neuzavřenému poplachu souřadnice nesmaže', async () => {
+    await spustUklid();
+
+    // Jediná přípustná hodnota je 'resolved' — cokoli jiného by sahalo na
+    // živý poplach.
+    expect(updateU('sOSAlert').where.status).toBe('resolved');
+  });
+
+  it('tracker přijde o uloženou poslední polohu', async () => {
+    await spustUklid();
+
+    const { where, data } = updateU('gpsTracker');
+    expect(where.lastCapturedAt).toMatchObject({ not: null });
+    expect(data).toEqual({ lastLat: null, lastLng: null, lastAccuracy: null, lastCapturedAt: null });
+  });
+
+  it('čerstvé hlášení trackeru se nepřepíše', async () => {
+    await spustUklid();
+
+    // Podmínka na stáří razítka je to jediné, co brání vynulování polohy,
+    // kterou tracker poslal před minutou.
+    expect(updateU('gpsTracker').where.lastCapturedAt.lt).toBeInstanceOf(Date);
+  });
+
+  it('tracker visící na živém incidentu se vynechá', async () => {
+    await spustUklid();
+
+    expect(updateU('gpsTracker').where.locations.none.OR).toEqual([
+      { safetySession: { state: { not: 'RESOLVED' } } },
+      { sosAlert: { status: { not: 'resolved' } } },
+    ]);
+  });
+});
+
 describe('Co se nemaže', () => {
   it('pokusy o neoprávněný přístup v logu zůstávají', async () => {
     await spustUklid();
@@ -127,7 +185,7 @@ describe('Konfigurace', () => {
     const prvni = kdeU('message').createdAt.lt;
 
     jest.clearAllMocks();
-    TABULKY.forEach((t) => prisma[t].deleteMany.mockResolvedValue({ count: 0 }));
+    nastavMocky();
 
     process.env.RETENTION_MESSAGES_DAYS = '1';
     await spustUklid();
