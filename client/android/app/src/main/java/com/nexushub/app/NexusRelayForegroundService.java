@@ -3,6 +3,7 @@ package com.nexushub.app;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
@@ -204,6 +205,17 @@ public class NexusRelayForegroundService extends Service {
         try {
             NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             if (nm == null) return;
+            // Oznámení říká „otevřete aplikaci" — musí se tedy dát otevřít
+            // kliknutím, jinak je to jen hláška. Otevření aplikace zároveň
+            // resetuje rozpočet a NexusRelayPlugin.handleOnResume() relay
+            // znovu nastartuje, takže ten text platí doslova.
+            PendingIntent otevriAplikaci = PendingIntent.getActivity(
+                this,
+                0,
+                new Intent(this, MainActivity.class)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
             nm.notify(TIMEOUT_NOTIFICATION_ID, new NotificationCompat.Builder(this, TIMEOUT_CHANNEL_ID)
                 .setContentTitle(getString(R.string.relay_timeout_title))
                 .setContentText(getString(R.string.relay_timeout_text))
@@ -211,6 +223,7 @@ public class NexusRelayForegroundService extends Service {
                 .setSmallIcon(android.R.drawable.stat_notify_error)
                 .setCategory(NotificationCompat.CATEGORY_ERROR)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setContentIntent(otevriAplikaci)
                 .setAutoCancel(true)
                 .build());
         } catch (Exception e) {
