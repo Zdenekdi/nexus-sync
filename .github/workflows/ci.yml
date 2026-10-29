@@ -379,6 +379,41 @@ jobs:
           [ "$CHYBA" = 0 ] && echo "OK: plná aplikace je bez SMS oprávnění, relay je má."
           exit $CHYBA
 
+      # Android 15+ dává typu dataSync rozpočet 6 hodin na 24 a po jeho
+      # vyčerpání službu ukončí; časovač resetuje jedině otevření aplikace na
+      # popředí, což se na relay telefonu v šuplíku nestane. Relay proto běží
+      # na specialUse. Plná aplikace ho mít NESMÍ — Google Play k němu chce
+      # samostatné zdůvodnění a ona ho nepotřebuje.
+      - name: Relay runs on specialUse, full app stays on dataSync
+        run: |
+          FULL=client/android/app/build/intermediates/merged_manifests/nexusFullDebug/processNexusFullDebugManifest/AndroidManifest.xml
+          RELAY=client/android/app/build/intermediates/merged_manifests/nexusRelayDebug/processNexusRelayDebugManifest/AndroidManifest.xml
+          CHYBA=0
+
+          grep -q 'android:foregroundServiceType="specialUse' "$RELAY" || {
+            echo "::error::Relay neběží na specialUse — Android 15 mu službu po 6 hodinách ukončí a sám se už nerozjede."
+            CHYBA=1; }
+          grep -q 'android.permission.FOREGROUND_SERVICE_SPECIAL_USE' "$RELAY" || {
+            echo "::error::Relay nedeklaruje FOREGROUND_SERVICE_SPECIAL_USE — startForeground se specialUse by spadl."
+            CHYBA=1; }
+
+          if grep -q 'android.permission.FOREGROUND_SERVICE_SPECIAL_USE' "$FULL"; then
+            echo "::error::Plná aplikace deklaruje FOREGROUND_SERVICE_SPECIAL_USE — Google Play k němu chce zvláštní zdůvodnění a ona ho nepotřebuje. Patří jen do src/nexusRelay."
+            CHYBA=1
+          fi
+
+          [ "$CHYBA" = 0 ] && echo "OK: relay na specialUse, plná aplikace bez něj."
+          exit $CHYBA
+
+      # Typ si sdílený kód vybírá podle toho, co má příchuť v manifestu. Když
+      # se ta úvaha splete, nepřijde varování — plná aplikace spadne až na
+      # telefonu na startForeground.
+      - name: Foreground service type picker
+        run: |
+          cd client/android
+          ./gradlew :app:testNexusRelayDebugUnitTest --no-daemon \
+            --tests 'com.nexushub.app.NexusRelayForegroundServiceTest'
+
   # ── Android APK Build ───────────────────────────────────────────────────────
   build-android:
     name: Build Android APK
